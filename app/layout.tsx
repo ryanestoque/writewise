@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
+import { Inter } from "next/font/google";
+import { cn } from "@/lib/utils";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const chillax = localFont({
+  src: "../public/fonts/Chillax-Variable.woff2",
+  variable: "--font-chillax",
 });
 
 export const metadata: Metadata = {
@@ -25,7 +24,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={cn("h-full", "antialiased", chillax.variable, chillax.className, "font-sans", inter.variable)}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
