@@ -2,7 +2,7 @@
 
 **A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and Progress Monitoring System**
 
-- **Document type:** Internal engineering PRD (build guide for the dev team)
+- **Document type:** Internal engineering PRD (build guide for the dev team, companion to ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md)
 - **Team:** Ryan Christopher B. Estoque, John Lawrence V. Monleon, James David B. Asoy, Saara Eliana G. Ibag
 - **Institution:** Holy Cross of Davao College, BSIT
 - **Research locale:** Matina Aplaya Elementary School, Talomo, Davao City
