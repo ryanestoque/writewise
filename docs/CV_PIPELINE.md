@@ -2,7 +2,7 @@
 
 **OpenCV-Based Feature Extraction Pipeline — Build Guide**
 
-- **Document type:** Internal engineering build guide (companion to PRD.md, ARCHITECTURE.md, DESIGN.md ML_PIPELINE.md)
+- **Document type:** Internal engineering build guide (companion to PRD.md, ARCHITECTURE.md, DESIGN.md ML_PIPELINE.md, DATABASE.md)
 - **Scope:** everything from a validated worksheet photo through to (a) raw per-criterion measurements and (b) word-crop images handed off for CNN classification. Does **not** cover CNN architecture, training, or inference (see `ML_PIPELINE.md`, not yet written) or score computation from raw measurements (see ARCHITECTURE.md §10, the `ScoreProvider` abstraction — already fully specified there).
 - **Status:** Draft v1
 
