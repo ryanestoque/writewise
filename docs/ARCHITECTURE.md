@@ -2,7 +2,7 @@
 
 **A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and Progress Monitoring System**
 
-- **Document type:** Internal engineering architecture guide (companion to PRD.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md)
+- **Document type:** Internal engineering architecture guide (companion to PRD.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md)
 - **Team:** Ryan Christopher B. Estoque, John Lawrence V. Monleon, James David B. Asoy, Saara Eliana G. Ibag
 - **Status:** Draft v1 — reflects decisions locked as of this document's creation. Update this file whenever an architecture decision changes; it should stay the single source of truth for "how the system is built," the way PRD.md is the source of truth for "what the system does."
 

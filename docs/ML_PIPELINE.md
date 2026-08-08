@@ -2,7 +2,7 @@
 
 **CNN Letter-Formation Model — Build Guide**
 
-- **Document type:** Internal engineering build guide (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, DATABASE.md)
+- **Document type:** Internal engineering build guide (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, DATABASE.md, API_SPEC.md)
 - **Scope:** the CNN itself — architecture, training (both stages), evaluation, export, and deployed inference for letter-formation scoring. Picks up exactly where CV_PIPELINE.md §7 leaves off (a deskewed grayscale word crop) and ends at a per-word letter-formation score fed into the same `Measurement` output CV_PIPELINE.md defined (§8 there).
 - **Status:** Draft v1
 
