@@ -2,7 +2,7 @@
 
 **A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and Progress Monitoring System**
 
-- **Document type:** Internal engineering operational reference (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md)
+- **Document type:** Internal engineering operational reference (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md, SECURITY.md)
 - **Team:** Ryan Christopher B. Estoque, John Lawrence V. Monleon, James David B. Asoy, Saara Eliana G. Ibag
 - **Status:** Draft v1
 - **Scope:** the concrete, operational half of "what runs this system" — exact version pins, package managers, linting/formatting tools, dependency management, environment-variable conventions, and a literal getting-started setup. This document answers **"what exact command do I run."** For **"why is it structured this way,"** see ARCHITECTURE.md — repo layout, CI/CD philosophy, data-access patterns, and testing strategy are not repeated here.

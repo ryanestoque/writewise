@@ -2,7 +2,7 @@
 
 **A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and Progress Monitoring System**
 
-- **Document type:** Internal engineering build guide (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, API_SPEC.md, TECH_STACK.md)
+- **Document type:** Internal engineering build guide (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, API_SPEC.md, TECH_STACK.md, SECURITY.md)
 - **Scope:** the full Postgres schema — tables, enums, constraints, RLS policies, Storage policies, and indexes — that everything else in this system reads from and writes to. Picks up from ARCHITECTURE.md §6's entity summary and goes all the way to literal, runnable DDL.
 - **Status:** Draft v1
 
