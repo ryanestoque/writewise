@@ -2,7 +2,7 @@
 
 **CNN Letter-Formation Model — Build Guide**
 
-- **Document type:** Internal engineering build guide (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, SECURITY.md)
+- **Document type:** Internal engineering build guide (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, SECURITY.md, TESTING.md, DEPLOYMENT.md)
 - **Scope:** the CNN itself — architecture, training (both stages), evaluation, export, and deployed inference for letter-formation scoring. Picks up exactly where CV_PIPELINE.md §7 leaves off (a deskewed grayscale word crop) and ends at a per-word letter-formation score fed into the same `Measurement` output CV_PIPELINE.md defined (§8 there).
 - **Status:** Draft v1
 
@@ -153,10 +153,7 @@ training/                # repo root, NOT under backend/app — never deployed
 
 ## 10. Testing Strategy
 
-- **Stage 1** has real ground truth: CCC's held-out test set (§5). This is the actual PRD §11 evaluation, run in `training/`, not a repeated CI check.
-- **Stage 2** has no equivalent — there's no synthetic way to fake "teacher-judged letter formation quality" the way CV_PIPELINE.md faked known angles and distances for its unit tests. Stage 2 gets **shape/plumbing tests only**: does `run_letter_formation_inference()` accept a word crop and return a float in [0, 100]; does it handle an empty word-crop list without crashing; does clamping actually clamp. These verify the code doesn't break — not that the model is good.
-
-**Actual Stage 2 quality** is judged by the same offline Spearman's Rho correlation against real Phase 1 teacher scores that PRD §5 already runs for the OpenCV criteria — inherently offline, not a CI gate, same treatment CV_PIPELINE.md gave its own calibration validation.
+See **TESTING.md §4.2** — the single source of truth for Stage 2's shape/plumbing test approach and how it fits into the full CI suite, including how CI mocks CNN inference entirely (TESTING.md §3.2) so tests don't block on a trained model existing. Stage 1's real evaluation (CCC held-out test set, §5 above) stays offline and unchanged. (Superseded here; this section previously held the CI-testing content directly.)
 
 ---
 

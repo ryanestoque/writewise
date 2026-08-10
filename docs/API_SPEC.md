@@ -2,7 +2,7 @@
 
 **FastAPI HTTP API — Build Guide**
 
-- **Document type:** Internal engineering build guide (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, TECH_STACK.md, SECURITY.md)
+- **Document type:** Internal engineering build guide (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, TECH_STACK.md, SECURITY.md, TESTING.md, DEPLOYMENT.md)
 - **Scope:** every HTTP endpoint FastAPI exposes to the frontend — request/response shapes, auth rules, error codes, and the conventions shared across all of them. Picks up from ARCHITECTURE.md §4's hybrid access-pattern decision and goes all the way to literal, implementable request/response contracts, the way DATABASE.md goes from ARCHITECTURE §6's entity summary to runnable DDL.
 - **Status:** Draft v1
 

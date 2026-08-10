@@ -2,7 +2,7 @@
 
 **A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and Progress Monitoring System**
 
-- **Document type:** Internal engineering security reference (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md)
+- **Document type:** Internal engineering security reference (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, TESTING.md, DEPLOYMENT.md)
 - **Team:** Ryan Christopher B. Estoque, John Lawrence V. Monleon, James David B. Asoy, Saara Eliana G. Ibag
 - **Institution:** Holy Cross of Davao College, BSIT
 - **Research locale:** Matina Aplaya Elementary School, Talomo, Davao City
@@ -160,14 +160,7 @@ API_SPEC §8 already flagged the absence of rate limiting as "reasonable at pilo
 
 ## 10. Pre-Defense Security Testing
 
-ARCHITECTURE §13 locked a "targeted, not exhaustive" testing strategy — unit tests on CV/CNN correctness, integration tests on the submission-upload endpoint, no frontend suite. Notably absent from that list: anything that verifies the security claims *this* document makes. RLS and `deps.py`'s ownership checks are assumed correct because they're written correctly, not because anyone's confirmed it.
-
-**Two-part approach, run once before the October defense:**
-
-1. **A small set of automated negative-auth-path tests**, added to the existing integration-test file for the submission endpoint (ARCHITECTURE §13) — e.g. "a parent cannot fetch another family's submission," "an unauthenticated request to a protected route returns 401," "a teacher referencing a real-but-not-theirs `student_id` gets 404, not 403" (API_SPEC §2.2's own info-leak reasoning, actually verified rather than assumed).
-2. **A manual checklist** for the RLS-gated direct-read paths that FastAPI never touches (dashboard/roster reads, ARCHITECTURE §4): log in as Parent A, confirm Parent B's child is invisible; attempt a teacher-only screen as a parent; confirm role-based route guarding (ARCHITECTURE §11) actually redirects rather than just hiding UI.
-
-This gives the team an actually-defensible claim — "we have automated tests proving cross-role access is blocked" — instead of "we're pretty sure RLS works."
+See **TESTING.md §6** — the single source of truth for the automated negative-auth test suite (run on every PR, not just pre-defense) and the manual RLS checklist (pre-defense), each test case cited back to the specific threat in §1 above that it closes. (Superseded here; this section previously held that content directly.)
 
 ---
 
@@ -179,5 +172,5 @@ Matching the pattern every other doc in this set closes with — things this doc
 - **Free-tier backup/keep-alive mitigations (§5.1) are unvalidated in practice** — the weekly manual backup script and the health-ping GitHub Action need to actually exist and be exercised once (a real restore test, not just "the script ran without erroring") before Phase 1 goes live with real student data behind it.
 - **NPC registration conclusion (§6.1) is scoped to this pilot specifically** — explicitly not a standing exemption; must be re-examined if WriteWise is ever deployed beyond the single Matina Aplaya Elementary pilot.
 - **EXIF-stripping and decompression-bomb guards (§4) are new scope beyond anything CV_PIPELINE.md currently documents** — CV_PIPELINE.md's preprocessing section (grayscale → denoise → threshold → deskew) should get a one-line addition noting these run *before* that pipeline starts, so the two documents don't silently disagree on where the upload path begins.
-- **Automated negative-auth tests (§10) don't exist yet** — this document specifies what they should cover, not that they've been written. Needs to land before the "we tested this" claim is actually true.
+- **Automated negative-auth tests (TESTING.md §6.1) don't exist yet** — TESTING.md specifies what they should cover, not that they've been written. Needs to land before the "we tested this" claim is actually true.
 - **No formal Data Protection Officer designated** — RA 10173 compliance in spirit doesn't require a DPO at this pilot's scale/registration status (§6.1), but if the project's compliance posture is ever questioned by the school or a panel, "who is accountable for this" should have a named answer, not just "the team."

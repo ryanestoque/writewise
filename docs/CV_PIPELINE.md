@@ -2,7 +2,7 @@
 
 **OpenCV-Based Feature Extraction Pipeline — Build Guide**
 
-- **Document type:** Internal engineering build guide (companion to PRD.md, ARCHITECTURE.md, DESIGN.md ML_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, SECURITY.md)
+- **Document type:** Internal engineering build guide (companion to PRD.md, ARCHITECTURE.md, DESIGN.md ML_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, SECURITY.md, TESTING.md, DEPLOYMENT.md)
 - **Scope:** everything from a validated worksheet photo through to (a) raw per-criterion measurements and (b) word-crop images handed off for CNN classification. Does **not** cover CNN architecture, training, or inference (see `ML_PIPELINE.md`, not yet written) or score computation from raw measurements (see ARCHITECTURE.md §10, the `ScoreProvider` abstraction — already fully specified there).
 - **Status:** Draft v1
 
@@ -221,13 +221,7 @@ This number matters beyond raw UX: DESIGN.md's loading state is simulated/timed 
 
 ## 11. Testing Strategy
 
-Unit tests use **synthetic, programmatically-generated test images** with known ground truth — not real handwriting samples, which don't exist yet and are inherently messy/inconsistent even once they do. Examples:
-
-- Draw a line at a precise angle → assert `compute_slant()` returns that angle within tolerance.
-- Draw two shapes a known pixel distance apart → assert the spacing function returns that distance.
-- Draw guide lines at known y-positions → assert guide-line detection finds them.
-
-This verifies algorithm correctness (the math), independent of handwriting variability, and runs deterministically in CI (GitHub Actions / pytest, per ARCHITECTURE.md's required PR check). Real Phase 1 photos serve a different, later purpose — Spearman's Rho calibration validation against teacher scores — which is a separate offline analysis step, not part of this test suite.
+See **TESTING.md §4.1** — the single source of truth for this pipeline's unit test strategy (synthetic, ground-truth-asserting images, generated at test-run time) and how it fits into the full CI suite. (Superseded here; this section previously held that content directly.)
 
 ---
 

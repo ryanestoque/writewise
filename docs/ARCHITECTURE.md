@@ -2,7 +2,7 @@
 
 **A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and Progress Monitoring System**
 
-- **Document type:** Internal engineering architecture guide (companion to PRD.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, SECURITY.md)
+- **Document type:** Internal engineering architecture guide (companion to PRD.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, SECURITY.md, TESTING.md, DEPLOYMENT.md)
 - **Team:** Ryan Christopher B. Estoque, John Lawrence V. Monleon, James David B. Asoy, Saara Eliana G. Ibag
 - **Status:** Draft v1 — reflects decisions locked as of this document's creation. Update this file whenever an architecture decision changes; it should stay the single source of truth for "how the system is built," the way PRD.md is the source of truth for "what the system does."
 
@@ -210,11 +210,7 @@ The frontend branches on `error.code`, never on parsing `message` text — this 
 
 ## 13. Testing Strategy
 
-Targeted, not exhaustive — chosen to protect the parts of the system whose *correctness* the thesis's own statistics depend on:
-
-- **Unit tests** on the OpenCV feature-extraction functions and the CNN inference wrapper. A silent bug here (e.g. a slant-angle formula off by a systematic factor) doesn't just break a feature — it quietly invalidates the Spearman's Rho correlation study and the CNN accuracy/precision/recall/F1 figures the defense depends on.
-- **Integration tests** on the core submission-upload endpoint (upload → quality gate → preprocess → segment → CNN → measurements) — the single most-hit critical path during the live pilot.
-- **No frontend test suite.** UI is QA'd manually. Not worth the setup/maintenance cost for a 4-person team on a 9-week runway relative to what manual click-through testing already catches at this scale.
+See **TESTING.md** — the single source of truth for unit tests, integration tests, security tests, manual QA, and pre-launch/pre-defense checklists. (Superseded here; this section previously held that content directly.)
 
 ---
 
