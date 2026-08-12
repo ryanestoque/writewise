@@ -202,15 +202,16 @@ Inline banner on the same upload screen (no navigation to a separate screen), wi
 |---|---|
 | `QUALITY_GATE_BLUR` | "This photo is too blurry to analyze. Hold the camera steady and try again." |
 | `QUALITY_GATE_BRIGHTNESS` | "This photo is too dark to analyze. Try moving to a brighter spot and retake it." |
+| `QUALITY_GATE_CONTRAST` | "This photo looks washed out. Try adjusting the lighting or angle and retake it." |
 | `QUALITY_GATE_RESOLUTION` | "This photo doesn't have enough detail to analyze. Move a little closer and retake it." |
 
 A **Retake** button re-opens the native picker immediately.
 
 ### 7.4 Diagnostic Overlay (Phase 2)
 
-Default view: all four annotation types shown at once, at **low visual weight** (subtle lines/boxes, not heavy markup) alongside the text criterion breakdown. Selecting a criterion in the text breakdown highlights just that annotation type on the image and dims the others.
+Five annotation types, one per criterion — baseline drift line, spacing highlight, size highlight, slant indicator, and a subtle per-word highlight/underline for letter formation (visually distinct from the other four's geometric lines/boxes, since it's not marking a specific measured distance/angle but flagging *which words* the CNN scored weakest, per ML_PIPELINE.md §6.1's per-word output). Default view: all five shown at once, at **low visual weight** (subtle lines/boxes, not heavy markup) alongside the text criterion breakdown. Selecting a criterion in the text breakdown highlights just that annotation type on the image and dims the others.
 
-> **Why composite-by-default with drill-in, not one-at-a-time or all-at-once-heavy:** a parent or teacher genuinely wants the full picture in one glance, but four overlapping annotation types at full visual weight on one worksheet photo risks looking like the paper is covered in red flags — exactly the alarm signal the whole band-color system (§2.1) is designed to avoid. The drill-in interaction itself is frontend-only state (the coordinates already live on the Measurement record per ARCHITECTURE §7) — no backend cost.
+> **Why composite-by-default with drill-in, not one-at-a-time or all-at-once-heavy:** a parent or teacher genuinely wants the full picture in one glance, but five overlapping annotation types at full visual weight on one worksheet photo risks looking like the paper is covered in red flags — exactly the alarm signal the whole band-color system (§2.1) is designed to avoid. The drill-in interaction itself is frontend-only state (the coordinates already live on the Measurement record per ARCHITECTURE §7) — no backend cost.
 
 ### 7.5 Composite Score Display
 

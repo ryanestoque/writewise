@@ -93,6 +93,8 @@ create table public.parent (
 
 Resolves ARCHITECTURE §17's open item ("Teacher account creation: not yet fully specified") with a single mechanism that covers *both* provisioning flows — a teacher provisioned via Supabase CLI/dashboard with `role: teacher` set in `raw_user_meta_data`, and a parent who completes ARCHITECTURE §5's invite-email flow with `role: parent` set at invite time.
 
+**Also resolves API_SPEC.md §3.1's dependency:** the parent branch below inserts into `student_parent` too, atomically in the same trigger, whenever the invite's `raw_user_meta_data` includes a `student_id` — which API_SPEC.md's `POST /students` / `PATCH /students/{id}` invite mechanism already passes at invite time. Previously this trigger only created the `parent` row and never linked it to a child; a parent who accepted an invite got a working account that was never actually connected to their student's records.
+
 ```sql
 create or replace function public.handle_new_user()
 returns trigger
@@ -107,6 +109,10 @@ begin
   elsif new.raw_user_meta_data ->> 'role' = 'parent' then
     insert into public.parent (id, full_name, email)
     values (new.id, coalesce(new.raw_user_meta_data ->> 'full_name', ''), new.email);
+    if new.raw_user_meta_data ->> 'student_id' is not null then
+      insert into public.student_parent (student_id, parent_id)
+      values ((new.raw_user_meta_data ->> 'student_id')::uuid, new.id);
+    end if;
   end if;
   return new;
 end;
@@ -117,7 +123,7 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 ```
 
-Whoever sets up the pilot's first teacher accounts just needs to set `role: teacher` in metadata at creation time (Supabase dashboard supports this directly) — no separate manual `insert` step to remember or get wrong.
+Whoever sets up the pilot's first teacher accounts just needs to set `role: teacher` in metadata at creation time (Supabase dashboard supports this directly) — no separate manual `insert` step to remember or get wrong. Same for parents: the invite call (API_SPEC §3.1) sets `role: parent` plus `student_id`, and this trigger handles both the account creation and the roster link in one atomic step — no window where a parent account exists but isn't linked yet.
 
 ---
 

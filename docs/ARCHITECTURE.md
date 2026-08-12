@@ -61,7 +61,7 @@ writewise/
 ├── supabase/            # SQL migrations (schema + RLS + Storage policies)
 │   └── migrations/
 ├── research/             # offline scripts (dataset export/anonymization)
-├── ml/                   # model training notebooks/artifacts (Kaggle fine-tuning)
+├── ml/                   # model training notebooks/artifacts (CCC/C-Cube fine-tuning)
 └── .github/workflows/     # CI (test-gating, not deploy)
 ```
 
@@ -140,8 +140,8 @@ The CNN model artifact also lives in Storage (a separate, private location from 
 
 Per the PRD, processing is synchronous — the teacher/parent waits in the same session, no background job queue at pilot scale. Flow, on `POST` to the submission endpoint:
 
-1. **Upload received** — image bytes POSTed directly to FastAPI (not client-uploaded to Storage first). FastAPI writes the original to Storage using the service-role key as part of this same request.
-2. **Quality gate** (cheap, runs first, before anything expensive):
+1. **Upload received & hardened** — image bytes POSTed directly to FastAPI (not client-uploaded to Storage first). Before anything else touches the file: magic-byte file-signature validation, a decompression-bomb pixel-dimension cap at decode time, and unconditional EXIF metadata stripping (GPS especially) — see SECURITY.md §4 for the full rationale and specifics; these are security/privacy controls, not data-quality checks, so they run ahead of the quality gate below rather than as part of it. FastAPI then writes the hardened original to Storage using the service-role key as part of this same request.
+2. **Quality gate** (cheap, runs next, before anything expensive):
    - Blur check (Laplacian variance)
    - Brightness/contrast range check
    - Minimum resolution check
@@ -155,13 +155,13 @@ Per the PRD, processing is synchronous — the teacher/parent waits in the same 
 
 **Why the quality gate matters here specifically:** Phase 1's entire purpose is collecting a *clean* paired dataset (raw measurements ↔ teacher scores) for calibration. A blurry photo that limps through the pipeline doesn't just give one teacher a bad result — it pollutes the dataset the whole Spearman's Rho validation depends on. The gate is a few milliseconds of OpenCV calls sitting in front of a pipeline you're already building; cheap insurance against the project's own top-flagged risk.
 
-**Why no physical scale marker (ruler/ArUco marker) on the worksheet:** measurements stay in units relative to the handwriting itself (e.g. spacing as a ratio of average letter height in the same image) rather than converting to absolute mm. This sidesteps the problem of two teachers photographing the same worksheet from different distances/zoom producing different pixel-per-mm ratios for the same physical handwriting — and it means no dependency on a marker being present, undamaged, and correctly framed in every photo across the pilot.
+**Why no physical scale marker (ruler/ArUco marker) on the worksheet:** measurements stay in units relative to a fixed reference already printed on the page — specifically the detected baseline-to-midline guide-line distance (CV_PIPELINE.md §6.5) — rather than converting to absolute mm. This sidesteps the problem of two teachers photographing the same worksheet from different distances/zoom producing different pixel-per-mm ratios for the same physical handwriting, and it means no dependency on a marker being present, undamaged, and correctly framed in every photo across the pilot. (Guide-line spacing, not average letter height, is the actual normalization reference — using the handwriting itself would circularly normalize a handwriting-quality measurement against a value derived from that same handwriting; see CV_PIPELINE.md §6.5 for why.)
 
 ---
 
 ## 9. CV/CNN Module
 
-The fine-tuned Keras model (transfer-learned on the Kaggle cursive alphabet dataset) is **not committed to git.** It's stored in Supabase Storage (a private, model-specific location, separate from submission images) and downloaded once by FastAPI's startup/lifespan event into the container's local filesystem, then kept resident in memory for the life of the process — no per-request reload.
+The fine-tuned Keras model (transfer-learned on the CCC/C-Cube cursive character dataset — see ML_PIPELINE.md §2 for why this superseded the originally-scoped Kaggle dataset) is **not committed to git.** It's stored in Supabase Storage (a private, model-specific location, separate from submission images) and downloaded once by FastAPI's startup/lifespan event into the container's local filesystem, then kept resident in memory for the life of the process — no per-request reload.
 
 **Why Storage instead of git/Git LFS:** the model will likely be re-tuned or re-evaluated between now and the CNN evaluation step (target: late September). Storing it in Storage means updating the model is a file upload, not a code redeploy — and it avoids Git LFS setup/quota overhead in a repo an academic panel may end up reviewing.
 

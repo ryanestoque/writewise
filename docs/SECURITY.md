@@ -36,6 +36,8 @@ Scoped to what's actually plausible for a 30-student, one-school academic pilot 
 
 The Supabase **service-role key** for `writewise-prod` bypasses RLS entirely (ARCHITECTURE §4) — it is the single highest-impact secret in this system. Access to it, and to the `writewise-prod` dashboard generally, is restricted to **two named team members**: Ryan Christopher B. Estoque and one designated teammate *[name to be finalized by the team]*. The remaining team members work exclusively against `writewise-dev`'s seeded fake data (ARCHITECTURE §3) — which already costs nothing, since dev already exists precisely to keep local work off real data.
 
+**This restriction covers Railway's dashboard too, not just Supabase's.** `SUPABASE_SERVICE_ROLE_KEY` is a required backend env var and is readable in plaintext from Railway's Settings → Variables (TECH_STACK.md §8.3) — normal Railway collaborator access for all four team members would silently bypass this policy. Railway dashboard access is restricted to the same two named key-holders; the other two team members work against `writewise-dev` locally and via Vercel/GitHub collaborator access only (DEPLOYMENT.md §7).
+
 **Why restrict rather than share with all four:** "who could touch 30 real children's names and photos" is a question a thesis panel will ask, and RA 10173 asks it too, if implicitly. "Two named individuals" is a materially stronger answer than "the whole team, unrestricted."
 
 ### 2.2 Acceptable use of prod access
@@ -118,7 +120,7 @@ RA 10173's IRR requires notifying both the NPC and affected data subjects within
 
 No prior doc defines an endpoint for "the purpose has been served." Two data categories, two rules:
 
-- **Identified prod data** (real names, images, tied to real children in `writewise-prod`): retained through the October defense **plus a 6-month buffer** (covers any panel follow-up or re-validation request), then deleted from prod — both DB rows and Storage images — via a documented deletion pass, not left indefinitely.
+- **Identified prod data** (real names, images, tied to real children in `writewise-prod`): retained through the October defense **plus a 6-month buffer** (covers any panel follow-up or re-validation request), then deleted from prod — both DB rows and Storage images — via a documented deletion pass, not left indefinitely. **This commitment extends to backup copies** (DEPLOYMENT.md §11) — a weekly backup is still identified data, so it's deleted on the same 6-months-post-defense schedule as the live database and Storage bucket, not left sitting in the shared backup folder indefinitely.
 - **Anonymized exported dataset** (`research/export_dataset.py`'s output, ARCHITECTURE §16): retained indefinitely / for potential future publication, since it no longer contains identifiers and RA 10173's disposal pressure is much lighter on data that's genuinely no longer personal.
 
 ### 6.4 Data subject withdrawal procedure
@@ -171,6 +173,6 @@ Matching the pattern every other doc in this set closes with — things this doc
 - **Second prod-key holder not yet named** (§2.1) — needs a name filled in before Phase 1 launch; the *policy* (two named holders, not all four) is locked, the specific second person isn't yet recorded here.
 - **Free-tier backup/keep-alive mitigations (§5.1) are unvalidated in practice** — the weekly manual backup script and the health-ping GitHub Action need to actually exist and be exercised once (a real restore test, not just "the script ran without erroring") before Phase 1 goes live with real student data behind it.
 - **NPC registration conclusion (§6.1) is scoped to this pilot specifically** — explicitly not a standing exemption; must be re-examined if WriteWise is ever deployed beyond the single Matina Aplaya Elementary pilot.
-- **EXIF-stripping and decompression-bomb guards (§4) are new scope beyond anything CV_PIPELINE.md currently documents** — CV_PIPELINE.md's preprocessing section (grayscale → denoise → threshold → deskew) should get a one-line addition noting these run *before* that pipeline starts, so the two documents don't silently disagree on where the upload path begins.
+- ~~EXIF-stripping and decompression-bomb guards (§4) are new scope beyond anything CV_PIPELINE.md currently documents~~ — **Resolved:** ARCHITECTURE.md §8 step 1 and CV_PIPELINE.md §1's diagram (step 0) now both document these running before the CV pipeline starts, and TESTING.md §6.1 has explicit test rows for both.
 - **Automated negative-auth tests (TESTING.md §6.1) don't exist yet** — TESTING.md specifies what they should cover, not that they've been written. Needs to land before the "we tested this" claim is actually true.
 - **No formal Data Protection Officer designated** — RA 10173 compliance in spirit doesn't require a DPO at this pilot's scale/registration status (§6.1), but if the project's compliance posture is ever questioned by the school or a panel, "who is accountable for this" should have a named answer, not just "the team."

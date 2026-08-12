@@ -14,6 +14,10 @@
 Worksheet photo
       │
       ▼
+0. Upload Hardening ──────────── reject (spoofed file type / decompression bomb)
+   (magic-byte check, pixel-dimension cap, EXIF strip — SECURITY.md §4)
+      │
+      ▼
 1. Quality Gate ──────────────── reject (blur / brightness / contrast / resolution)
       │
       ▼
@@ -42,7 +46,9 @@ Worksheet photo
                       └── Grayscale word crops (→ CNN inference, ML_PIPELINE.md)
 ```
 
-Two things to notice about this ordering, since they weren't obvious going in:
+**Step 0 is out of this document's scope, deliberately.** Magic-byte file-signature validation, the decompression-bomb pixel-dimension cap, and unconditional EXIF stripping are security/privacy controls, not data-quality checks — they're specified in full in SECURITY.md §4 and run in ARCHITECTURE.md §8's step 1, before this pipeline (and its own Quality Gate, §2) ever sees the file. Listed here only so the full upload-to-response path is visible in one diagram.
+
+Two things to notice about the rest of this ordering, since they weren't obvious going in:
 
 - **Guide-line detection happens before deskew, and drives it.** Worksheets used in the pilot reliably have printed baseline/midline/topline ruling (confirmed for Matina Aplaya Elementary — Grade 3 handwriting practice sheets universally use this ruling regardless of activity content). That means the guide lines are a more reliable deskew-angle source than trying to infer rotation from the handwriting itself, and once deskewed, the guide lines' y-positions directly define line boundaries — no separate ink-density row-projection step is needed for line segmentation.
 - **Segmentation stops at word-level.** The CNN receives whole-word crops, not individual letters. Cursive strokes connect letters within a word, and automatic letter-level segmentation is a genuinely hard, error-prone problem (even the CCC/C-Cube academic benchmark dataset needed *manual* character extraction from cursive words). Given the compressed timeline and that Phase 1 calibration-data integrity is the project's top-flagged risk, this pipeline does not attempt it. See §5 and §6.2 for how spacing is still measured at near-letter granularity without full letter segmentation.

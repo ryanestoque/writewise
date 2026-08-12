@@ -285,7 +285,7 @@ FastAPI auto-generates interactive docs at **`/docs`** (Swagger UI) from the sam
 | `MODEL_STORAGE_BUCKET` / `MODEL_ARTIFACT_PATH` | Supabase Storage location of the CNN model artifact, downloaded at container startup (ARCHITECTURE §9) |
 | `SCORING_ENGINE` | `manual` \| `calibrated` — the Phase 1→2 scoring-provider swap flag (ARCHITECTURE §10) |
 | `CORS_ALLOWED_ORIGINS` | Vercel frontend URL(s) — dev preview + prod |
-| `ENVIRONMENT` | `dev` \| `prod` — tags structured logs (ARCHITECTURE §15) |
+| `ENVIRONMENT` | `dev` \| `prod` \| `test` — tags structured logs (ARCHITECTURE §15). `test` is CI-only: set automatically by the GitHub Actions workflow (never in a local `.env` file), and skips the real CNN model download/load in favor of TESTING.md §3.2's mocked inference function |
 
 ---
 

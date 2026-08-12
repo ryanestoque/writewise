@@ -90,7 +90,7 @@ SECURITY.md §2.1 already restricts the Supabase `writewise-prod` service-role k
 
 **Decision:** Railway dashboard access is restricted to the **same two named key-holders** as Supabase prod. The other two team members work against `writewise-dev` locally and via Vercel/GitHub collaborator access, same as everyone else — they just don't get a Railway login.
 
-> ⚠️ **Follow-up needed:** SECURITY.md §2.1 currently only names the Supabase dashboard explicitly. It should be updated with a one-line cross-reference so the "two key-holders" policy is stated as covering Railway too, not just Supabase — otherwise the written policy and the actual practice quietly diverge. See §15.
+> ✅ **Resolved:** SECURITY.md §2.1 now explicitly states the two-key-holder policy covers Railway dashboard access, not just Supabase.
 
 ---
 
@@ -175,7 +175,7 @@ SECURITY.md §5.1 already decided the mechanism: a weekly manual `pg_dump` (via 
 - **Cadence:** weekly during the live Phase 1 window (SECURITY.md §5.1), by whichever key-holder is current.
 - **Retention:** backups are deleted on the **same 6-months-post-defense schedule as prod itself** (§12).
 
-> ⚠️ **Follow-up needed:** SECURITY.md §6.3 currently only commits to deleting identified data from the *live* database and Storage 6 months post-defense. A backup is a copy of that same identified data — if backups aren't deleted on the same schedule, the retention policy is incomplete in practice, even though it reads as complete on paper. §6.3 should get a one-line addition extending the deletion commitment to backup copies. See §15.
+> ✅ **Resolved:** SECURITY.md §6.3 now explicitly extends the 6-months-post-defense deletion commitment to backup copies, not just the live database and Storage bucket.
 
 **Restore testing:** per TESTING.md §8's pre-launch checklist, the backup script needs to actually be exercised with a real restore — not just confirmed to run without erroring — before Phase 1 goes live with real student data behind it.
 
@@ -226,8 +226,8 @@ This is a clean, deliberate decommission rather than an indefinite live deployme
 
 Things this document surfaced that need a small edit elsewhere, not resolved here:
 
-- **SECURITY.md §2.1** needs a one-line addition making explicit that the two-named-key-holder restriction covers **Railway dashboard access**, not just the Supabase dashboard — the underlying secret (`SUPABASE_SERVICE_ROLE_KEY`) is equally exposed in both places (§7).
-- **SECURITY.md §6.3** needs a one-line addition extending the 6-months-post-defense deletion commitment to **backup copies** of identified data, not just the live database and Storage bucket (§11).
+- ~~SECURITY.md §2.1 needs a one-line addition making explicit that the two-named-key-holder restriction covers Railway dashboard access~~ — **Resolved**, SECURITY.md §2.1 now states this explicitly.
+- ~~SECURITY.md §6.3 needs a one-line addition extending the 6-months-post-defense deletion commitment to backup copies~~ — **Resolved**, SECURITY.md §6.3 now states this explicitly.
 - **Second Railway/Supabase-prod key-holder** is still unnamed (mirrors SECURITY.md §11's existing open item) — needs a name before Phase 1 launch, since §7's access restriction depends on knowing who the second person is.
 - **Region availability at Railway signup** should be verified at actual provisioning time (§4) rather than assumed — regional options can vary by plan and change over time.
 - **`writewise-dev`'s auto-pause exposure post-defense** (§9, §14): once active development stops but before the 6-month decommission point, `writewise-dev` has no health-ping covering it and could auto-pause. Low-stakes since it only holds seeded fake data, but worth a conscious decision rather than an accidental pause if `dev` is still wanted for any reason during that window.

@@ -147,6 +147,8 @@ Each test case is written against, and cited back to, the specific SECURITY.md �
 | A parent hitting a teacher-only route (e.g. `POST /activities`) → `403` | #1 (role-level mismatch) |
 | A teacher referencing a real-but-not-theirs `student_id` → `404`, not `403` | #1 + API_SPEC §2.2's info-leak reasoning, actually verified rather than assumed |
 | Malformed/corrupt image upload doesn't crash the process | #4 Malicious/malformed file upload |
+| A non-image file with a spoofed image MIME type is rejected by the magic-byte check before decode | #4 Malicious/malformed file upload |
+| A stored submission image's EXIF data (GPS especially) is verified absent after upload | #5 Incidental privacy leakage via the image itself |
 
 ### 6.2 Manual RLS Checklist (pre-defense only)
 
@@ -245,9 +247,7 @@ backend/tests/
 
 ## 11. Dependencies on Other Documents
 
-This document assumes one small addition to TECH_STACK.md that hasn't been made yet:
-
-- **`ENVIRONMENT` (TECH_STACK §8.3) needs a third value, `test`**, alongside the existing `dev`/`prod`. §3.2 depends on this value existing so the app's startup lifespan event knows to skip the real CNN model download/load and use the mocked inference function instead. Today TECH_STACK §8.3 only documents `dev` and `prod`.
+**Resolved:** TECH_STACK.md §8.3's `ENVIRONMENT` variable now documents a third value, `test`, alongside `dev`/`prod` — exactly what §3.2 needs so the app's startup lifespan event knows to skip the real CNN model download/load and use the mocked inference function instead.
 
 ---
 
@@ -256,6 +256,6 @@ This document assumes one small addition to TECH_STACK.md that hasn't been made 
 - **The ephemeral CI Supabase stack (§3.1) is new infrastructure, unexercised until the first real CI run using it.** The PR that introduces this workflow deserves closer review than a typical change — if `supabase start` proves flaky or slow in GitHub Actions, this needs a fallback plan before it becomes a merge-blocking bottleneck for a 4-person team.
 - **Mocked CNN inference (§3.2) means integration tests never catch a real model-loading regression.** That's an accepted trade — it's caught instead by ML_PIPELINE §8's fail-loud startup behavior in an actual Railway deployment — but it does mean a broken model artifact could theoretically reach a Railway deploy attempt before anyone notices, rather than being caught in CI.
 - **`CalibratedScoreProvider` tests (§4.3) can't be meaningful until real thresholds exist.** Until PRD §5's "Between Phases" calibration step runs, these tests necessarily exercise placeholder/example formulas, not the real ones — revisit and rewrite once calibration lands, don't treat early green checkmarks here as validating the real thing.
-- **The TECH_STACK.md §8.3 dependency (§11) is not yet implemented there.** Needs to land before `ENVIRONMENT=test` can actually be relied on in CI.
+- ~~The TECH_STACK.md §8.3 dependency (§11) is not yet implemented there~~ — **Resolved**, see §11.
 - **Manual QA and the milestone checklists (§7, §8, §9) are process, not automation** — they depend on someone actually running them, the same category of risk SECURITY §11 already flags for the backup/restore test. A checklist that exists but never gets executed provides zero actual assurance.
 - **No numeric coverage target (§4) is a deliberate choice, not an oversight** — if it ever proves too loose in practice (real bugs slipping through untested code paths), the fallback is introducing a coverage tool as a *visibility* aid, not a gate, without changing the underlying "named checklist over percentage" philosophy.

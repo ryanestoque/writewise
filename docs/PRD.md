@@ -52,7 +52,7 @@ There is no separate admin role for the pilot — the teacher setting up the cla
 - Teacher-defined handwriting activities (freeform text: letters, words, or sentences — no fixed template library)
 - Photo upload of a full worksheet per activity (not per-letter)
 - Image preprocessing: grayscale conversion, noise removal, thresholding, segmentation, deskewing
-- CNN-based letter formation analysis (fine-tuned on the Kaggle cursive alphabet dataset)
+- CNN-based letter formation analysis (fine-tuned on the CCC/C-Cube cursive character dataset)
 - OpenCV-based feature extraction: spacing, slant, baseline alignment, size consistency
 - Diagnostic engine generating criterion scores and feedback
 - Progress monitoring dashboard (role-specific views, see §7)
@@ -85,7 +85,7 @@ The scoring system cannot be "designed" up front the normal way — the rubric t
 - Analyze the paired raw-measurement / teacher-score dataset
 - Derive threshold ranges per criterion (what raw-unit range maps to what percentage/rubric band)
 - Validate via Spearman's Rho correlation
-- Fine-tune and evaluate the CNN model (Accuracy, Precision, Recall, F1-Score) on the Kaggle dataset in parallel with this step
+- Fine-tune and evaluate the CNN model (Accuracy, Precision, Recall, F1-Score) on the CCC/C-Cube dataset in parallel with this step
 
 ### Phase 2 — Calibrated Scoring & Full System (built in parallel with Phase 1, integrated after calibration)
 **Built concurrently while Phase 1 is live**, using placeholder/manual scores as stand-in data so the UI doesn't block on calibration finishing:
@@ -132,7 +132,7 @@ The scoring system cannot be "designed" up front the normal way — the rubric t
 ## 7. Functional Requirements by Module
 
 ### 7.1 Teacher Portal
-- Class roster management (add/edit students: real name + section)
+- Class roster management (add/edit students: real name + section; remove a student from own roster — e.g. a mid-pilot transfer — without deleting their historical submission/measurement records)
 - Activity creation (freeform target text entry)
 - Submission upload (single photo per activity per student)
 - **Phase 1:** raw CV measurement display + manual rubric score entry
@@ -149,7 +149,7 @@ The scoring system cannot be "designed" up front the normal way — the rubric t
 ### 7.3 Computer Vision & CV/CNN Module
 - Image preprocessing: grayscale conversion, noise removal, thresholding, deskewing
 - Segmentation: isolate individual letters/words from the full worksheet image
-- CNN letter-formation analysis (fine-tuned on Kaggle cursive uppercase/lowercase dataset, 80/10/10 train/val/test split)
+- CNN letter-formation analysis (fine-tuned on the CCC/C-Cube cursive character dataset, using CCC's own predefined train/val/test split — see ML_PIPELINE.md §2.1 for the exact numbers)
 - OpenCV feature extraction: slant angle, spacing distance, baseline deviation, size consistency ratio
 - Phase 1 output: raw measurement values only
 - Phase 2 output: calibrated numeric score (0–100) per criterion + composite score
@@ -218,7 +218,7 @@ The program has not issued specific required thresholds, so the following are pr
 - **Timeline risk:** ~9-10 weeks from Phase 1 launch to defense is tight for a system with an embedded validation study; parallel-track development is the mitigation, but slippage in Phase 1 data collection directly threatens the October defense date.
 - **Calibration risk:** if the correlation between raw CV measurements and teacher scores comes out weak, the rubric-to-threshold mapping may need rework, which would cascade into Phase 2 timing.
 - **Image quality assumption:** the system assumes clear, well-oriented photos; poor lighting, skew, or low resolution will degrade both segmentation and CNN accuracy.
-- **Generalization risk:** the CNN is fine-tuned on a public Kaggle dataset of individual letters, not on the actual Grade 3 handwriting samples — real student handwriting may behave differently than the training distribution, which is exactly why Phase 1's calibration step exists.
+- **Generalization risk:** the CNN's Stage 1 classifier is fine-tuned on CCC/C-Cube, a public dataset of individual cursive characters, not on the actual Grade 3 handwriting samples — real student handwriting may behave differently than the training distribution, which is exactly why Phase 1's calibration step exists.
 
 ---
 

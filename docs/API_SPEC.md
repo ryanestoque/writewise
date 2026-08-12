@@ -209,7 +209,7 @@ student_id: "22222222-..."
 - **Max file size:** 15 MB. Over this → `400 FILE_TOO_LARGE`. Chosen as generous headroom above a typical phone photo (2–8 MB) without inviting a pathological upload that stalls the synchronous request past CV_PIPELINE §10 / ML_PIPELINE §8's combined ~8s processing budget.
 - `uploader_id` / `uploader_role` are derived from the caller's JWT (§2.5), never accepted from the request body.
 
-This request runs the full synchronous pipeline: quality gate → preprocessing → segmentation → post-segmentation gate → CV feature extraction → CNN inference → score computation (ARCHITECTURE §8).
+This request runs the full synchronous pipeline: upload hardening (magic-byte check, decompression-bomb cap, EXIF strip — SECURITY.md §4) → quality gate → preprocessing → segmentation → post-segmentation gate → CV feature extraction → CNN inference → score computation (ARCHITECTURE §8).
 
 **Rejection (quality gate or post-segmentation gate failure) — `422 Unprocessable Entity`:**
 
@@ -376,16 +376,14 @@ One file per resource, matching §3's resource-based grouping. `deps.py` holds t
 
 ## 7. Dependencies on Other Documents
 
-This document assumes one change to DATABASE.md that hasn't been made yet:
-
-- **`handle_new_user()` (DATABASE §4.1) needs to also insert into `student_parent`.** Today the trigger only creates a `public.parent` row when `role = 'parent'` — it never links that parent to a student. §3.1's `POST /students` / `PATCH /students/{id}` invite mechanism depends on the trigger also inserting the matching `student_parent` row, atomically, when the invite's `raw_user_meta_data` includes a `student_id`. Without this amendment, a parent who accepts an invite gets an account but is never actually linked to their child's records.
+**Resolved:** `handle_new_user()` (DATABASE §4.1) now also inserts into `student_parent`, atomically, whenever the invite's `raw_user_meta_data` includes a `student_id` — which §3.1's `POST /students` / `PATCH /students/{id}` invite mechanism already passes at invite time. A parent who accepts an invite is now linked to their child's records in the same transaction that creates their account.
 
 ---
 
 ## 8. Known Risks & Open Items
 
-- **The DATABASE.md `handle_new_user()` dependency (§7) is not yet implemented** — this is the single hard blocker for the parent-invite flow working end to end. Needs to land before any parent-linking testing can happen.
+- ~~The DATABASE.md `handle_new_user()` dependency (§7) is not yet implemented~~ — **Resolved**, see §7.
 - **File-size/type limits (§3.3 — 15 MB, JPEG/PNG only) are starting defaults, not validated values** — chosen with zero real worksheet photos to test against, same caveat CV_PIPELINE §12 gives its own tunable constants. Revisit once real Phase 1 uploads are flowing.
 - **No rate limiting anywhere in this spec** — reasonable at pilot scale (5 teachers, 30 students, ARCHITECTURE §15) but worth a deliberate note that it's an absence, not an oversight, in case this ever needs to scale beyond one school.
 - **`MANUAL_SCORING_DISABLED` (§3.3) has no automated end-to-end test yet** — since `SCORING_ENGINE` hasn't actually flipped from `manual` to `calibrated` in any real environment. Worth an explicit test once calibration ships (PRD §5's "Between Phases" step) and the flag flips for the first time, not just a code review of the conditional.
-- **`DELETE /students/{id}/teacher-link` is new scope beyond what PRD.md explicitly describes** — added here to close a realistic mid-pilot gap (a student transferring out) that no source document accounted for. Worth a one-line addition to PRD §7.1 / §13 so this isn't only documented here.
+- ~~`DELETE /students/{id}/teacher-link` is new scope beyond what PRD.md explicitly describes~~ — **Resolved**, PRD §7.1 now documents this capability.
