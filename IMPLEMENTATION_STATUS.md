@@ -8,7 +8,7 @@ Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §
 
 | Phase | Done / Total |
 |---|---|
-| Phase 0 — Setup | 3 / 17 |
+| Phase 0 — Setup | 4 / 17 |
 | Phase 1 — Teacher Tooling & Raw CV Pipeline | 0 / 17 |
 | Between Phases — Calibration | 0 / 6 |
 | Phase 2 — Calibrated Scoring & Full System | 0 / 11 |
@@ -30,7 +30,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 - [ ] Frontend lint/format configs committed (ESLint flat config, Prettier)
 - [ ] Backend lint/format configs committed (ruff)
 - [ ] `.env.example` templates committed (frontend + backend)
-- [ ] Initial Supabase migration files written (schema skeleton — `DATABASE.md`)
+- [x] Initial Supabase migration files written (schema skeleton — `DATABASE.md`)
 - [ ] CI workflow committed (`.github/workflows/`)
 
 **Cloud provisioning** (`DEPLOYMENT.md` provisioning order-of-operations)
