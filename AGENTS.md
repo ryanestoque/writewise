@@ -14,7 +14,7 @@ Built in two functional phases running on a parallel timeline (full detail: `PRD
 
 Team: Ryan Christopher B. Estoque, John Lawrence V. Monleon, James David B. Asoy, Saara Eliana G. Ibag — Holy Cross of Davao College, BSIT. Target technical defense: **October 2026**.
 
-**Current build status is not tracked in this file.** Check `IMPLEMENTATION_STATUS.md` (once created) for what's actually built vs. still scaffolding before assuming either.
+**Current build status is not tracked in this file.** Check `IMPLEMENTATION_STATUS.md` for what's actually built vs. still scaffolding before assuming either.
 
 ---
 
@@ -131,7 +131,7 @@ Full detail → `TESTING.md`.
 | Threat model, secrets, RA 10173, PII rules | `SECURITY.md` |
 | Test strategy, CI mechanics, pre-launch/pre-defense checklists | `TESTING.md` |
 | Platform setup, env vars, rollback, go-live/decommission | `DEPLOYMENT.md` |
-| What's actually built vs. still scaffolding | `IMPLEMENTATION_STATUS.md` (once created) |
+| What's actually built vs. still scaffolding | `IMPLEMENTATION_STATUS.md` |
 
 ---
 
