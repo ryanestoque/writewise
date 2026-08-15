@@ -8,7 +8,7 @@ Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §
 
 | Phase | Done / Total |
 |---|---|
-| Phase 0 — Setup | 4 / 17 |
+| Phase 0 — Setup | 11 / 16 |
 | Phase 1 — Teacher Tooling & Raw CV Pipeline | 0 / 17 |
 | Between Phases — Calibration | 0 / 6 |
 | Phase 2 — Calibrated Scoring & Full System | 0 / 11 |
@@ -26,18 +26,18 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 - [x] Frontend skeleton (`create-next-app`)
 - [x] Backend skeleton (FastAPI app structure — `ARCHITECTURE.md` §2)
 - [x] shadcn/ui components installed
-- [ ] shadcn/ui theme tokens applied (`DESIGN.md` §2 — palette, type pairing, spacing scale)
-- [ ] Frontend lint/format configs committed (ESLint flat config, Prettier)
+- [x] shadcn/ui theme tokens applied (`DESIGN.md` §2 — palette, type pairing, spacing scale)
+- [x] Frontend lint/format configs committed (ESLint flat config, Prettier)
 - [x] Backend lint/format configs committed (ruff)
 - [x] `.env.example` templates committed (frontend + backend)
 - [x] Initial Supabase migration files written (schema skeleton — `DATABASE.md`)
-- [ ] CI workflow committed (`.github/workflows/`)
+- [x] CI workflow committed (`.github/workflows/`)
 
 **Cloud provisioning** (`DEPLOYMENT.md` provisioning order-of-operations)
-- [ ] `writewise-dev` + `writewise-prod` Supabase projects created
+- [x] `writewise-dev` + `writewise-prod` Supabase projects created
 - [ ] Railway project created (backend root, Nixpacks)
 - [ ] Railway env vars filled, Railway URL obtained
-- [ ] Vercel project created (frontend root), Preview/Production env vars set
+- [x] Vercel project created (frontend root), Preview/Production env vars set
 - [ ] Railway + Supabase-prod access restricted to the two named key-holders
 - [ ] Health-ping GitHub Action set up
 - [ ] First CNN model artifact uploaded to Storage *(depends on Between-Phases training completing first — expect this to stay unchecked until then)*

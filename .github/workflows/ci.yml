@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node 24
+      uses: actions/setup-node@v4
+      with:
+        node-version: 24
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
+        cache-dependency-glob: "backend/uv.lock"
+
+    - name: Setup Python 3.13
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+        
+    - name: Install Supabase CLI
+      uses: supabase/setup-cli@v1
+      with:
+        version: latest
+
+    - name: Install Frontend Dependencies
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: Frontend Lint
+      working-directory: ./frontend
+      run: npm run lint
+
+    - name: Frontend Type Check
+      working-directory: ./frontend
+      run: npx tsc --noEmit
+
+    - name: Install Backend Dependencies
+      working-directory: ./backend
+      run: uv sync
+
+    - name: Backend Lint (ruff)
+      working-directory: ./backend
+      run: uv run ruff check .
+
+    - name: Start Ephemeral Supabase Stack
+      run: supabase start
+      
+    - name: Apply Migrations
+      run: supabase db reset
+      
+    - name: Run Backend Pytest
+      working-directory: ./backend
+      env:
+        ENVIRONMENT: test
+      run: uv run pytest
+      
+    - name: Teardown Supabase
+      if: always()
+      run: supabase stop
