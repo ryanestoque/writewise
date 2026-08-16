@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Inter, Poppins } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { Providers } from "@/components/providers";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -26,7 +27,9 @@ export default function RootLayout({
       lang="en"
       className={cn("h-full", "antialiased", inter.variable, poppins.variable, "font-sans")}
     >
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
