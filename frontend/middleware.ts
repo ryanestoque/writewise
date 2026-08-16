@@ -72,6 +72,7 @@ export async function middleware(request: NextRequest) {
     await supabase.auth.signOut();
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    url.searchParams.set("error", "missing_role");
     return NextResponse.redirect(url);
   }
 

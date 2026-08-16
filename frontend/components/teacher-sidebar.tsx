@@ -13,16 +13,28 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarRail,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 import {
   LayoutDashboardIcon,
   UsersIcon,
   ClipboardListIcon,
   SettingsIcon,
   LogOutIcon,
+  PenToolIcon,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const navItems = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboardIcon },
@@ -50,13 +62,29 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
   }
 
   return (
-    <Sidebar>
-      <SidebarHeader className="p-4">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <span className="font-heading text-lg font-semibold text-primary">
-            WriteWise
-          </span>
-        </Link>
+    <Sidebar variant="floating" collapsible="icon">
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              size="lg"
+              render={<Link href="/dashboard" id="nav-brand" />}
+              tooltip="WriteWise"
+            >
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xs">
+                <PenToolIcon className="size-4" />
+              </div>
+              <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                <span className="font-heading font-semibold text-primary truncate">
+                  WriteWise
+                </span>
+                <span className="truncate text-xs text-muted-foreground">
+                  Teacher Portal
+                </span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
@@ -80,29 +108,48 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
-        <SidebarSeparator />
-        <div className="flex flex-col gap-2 pt-2">
-          <div className="flex flex-col truncate">
-            <span className="truncate text-sm font-medium">
-              {user.fullName}
-            </span>
-            <span className="truncate text-xs text-muted-foreground">
-              {user.email}
-            </span>
-          </div>
-          <Button
-            id="sign-out"
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start"
-            onClick={handleSignOut}
-          >
-            <LogOutIcon />
-            <span>Sign out</span>
-          </Button>
-        </div>
+      <SidebarFooter>
+        <SidebarSeparator className="group-data-[collapsible=icon]:hidden" />
+        <SidebarMenu>
+          <SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
+            <div className="flex flex-col gap-0.5 px-2 py-1.5">
+              <span className="truncate text-sm font-medium text-sidebar-foreground">
+                {user.fullName}
+              </span>
+              <span className="truncate text-xs text-muted-foreground">
+                {user.email}
+              </span>
+            </div>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <AlertDialog>
+              <AlertDialogTrigger
+                render={
+                  <SidebarMenuButton id="sign-out" tooltip="Sign out" />
+                }
+              >
+                <LogOutIcon />
+                <span>Sign out</span>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Sign out of WriteWise?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    You will need to sign in again to access the teacher portal.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleSignOut}>
+                    Sign out
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   );
 }

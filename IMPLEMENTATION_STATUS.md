@@ -52,7 +52,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
-| Class roster management (add/edit/remove student) | Not Started | | PRD §7.1, API_SPEC §3.1, DATABASE §5 |
+| Class roster management (add/edit/remove student) | Done | | PRD §7.1, API_SPEC §3.1, DATABASE §5 |
 | Activity creation (freeform target text) | Not Started | | PRD §7.1, API_SPEC §3.2 |
 | Submission upload (single photo per activity) | Not Started | | PRD §7.1, API_SPEC §3.3 |
 | Raw CV measurement display | Not Started | | PRD §7.1/§7.3, CV_PIPELINE §8, DESIGN §7.2 |
