@@ -252,11 +252,12 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                   type="email"
                   {...form.register("parent_email")} 
                   aria-invalid={!!form.formState.errors.parent_email}
+                  aria-describedby="parent_email_hint"
                   placeholder="parent@example.com"
                   className="h-10"
                 />
               </FieldContent>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p id="parent_email_hint" className="text-xs text-muted-foreground mt-1">
                 Parent will receive an invitation to access their child&apos;s handwriting progress portal.
               </p>
               <FieldError errors={[form.formState.errors.parent_email]} />

@@ -10,10 +10,16 @@
   --font-sans: var(--font-sans);
   --font-heading: var(--font-heading);
 
-  /* Custom Brand Colors */
+  /* Custom Brand Colors — full scale */
+  --color-brand-50:  #f0f9f7;
   --color-brand-100: #e4f1ef;
+  --color-brand-200: #b8ddd7;
+  --color-brand-300: #8cc8be;
   --color-brand-600: #1b6b63;
   --color-brand-700: #145049;
+  --color-brand-800: #0f3d38;
+  --color-brand-900: #0a2b27;
+  --color-brand-950: #061a17;
 
   /* Custom Band Colors */
   --color-band-1: #b6754a;

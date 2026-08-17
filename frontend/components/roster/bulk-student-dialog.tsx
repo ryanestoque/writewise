@@ -16,6 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { useStudents } from "@/lib/hooks/use-students";
 import { createClient } from "@/lib/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { runConcurrentPool } from "@/lib/utils/concurrent-pool";
 import { Loader2, Users, AlertCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -100,60 +101,42 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
       return;
     }
 
-    const CONCURRENCY = 4;
-    let completedCount = 0;
-    let successCount = 0;
-    const failedNames: string[] = [];
-
-    // Worker pool for parallel processing with smooth progress updates
-    let nextIdx = 0;
-    async function worker() {
-      while (nextIdx < parsedNames.length) {
-        const i = nextIdx++;
-        const studentName = parsedNames[i];
-        
-        try {
-          const response = await fetch("/api/students", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              full_name: studentName,
-              section: trimmedSection,
-            }),
-          });
-
-          if (!response.ok) {
-            failedNames.push(studentName);
-          } else {
-            successCount++;
-          }
-        } catch {
-          failedNames.push(studentName);
-        }
-
-        completedCount++;
-        setProgress(Math.round((completedCount / parsedNames.length) * 100));
-        setStatusMessage(`Enrolled ${completedCount} of ${parsedNames.length} students...`);
+    const { successCount, failedItems } = await runConcurrentPool(
+      parsedNames,
+      async (studentName) => {
+        const response = await fetch("/api/students", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            full_name: studentName,
+            section: trimmedSection,
+          }),
+        });
+        return response.ok;
+      },
+      {
+        concurrency: 4,
+        onProgress: (completed, total) => {
+          setProgress(Math.round((completed / total) * 100));
+          setStatusMessage(`Enrolled ${completed} of ${total} students...`);
+        },
       }
-    }
-
-    const workerCount = Math.min(CONCURRENCY, parsedNames.length);
-    await Promise.all(Array.from({ length: workerCount }, () => worker()));
+    );
 
     // Refresh student query cache
     await queryClient.invalidateQueries({ queryKey: ["students"] });
     setIsProcessing(false);
 
-    if (failedNames.length === 0) {
+    if (failedItems.length === 0) {
       toast.success(`Successfully enrolled ${successCount} students into ${trimmedSection}!`);
       handleOpenChange(false);
     } else if (successCount > 0) {
-      toast.warning(`Enrolled ${successCount} students. ${failedNames.length} names failed.`);
-      setRawText(failedNames.join("\n")); // Leave failed names for retry
-      setStatusMessage(`Completed with ${failedNames.length} errors. You can retry the remaining names.`);
+      toast.warning(`Enrolled ${successCount} students. ${failedItems.length} names failed.`);
+      setRawText(failedItems.join("\n")); // Leave failed names for retry
+      setStatusMessage(`Completed with ${failedItems.length} errors. You can retry the remaining names.`);
     } else {
       toast.error("Failed to enroll students. Please check your connection and try again.");
       setStatusMessage("Enrollment failed. Please try again.");
@@ -195,6 +178,7 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
                     value={section}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSection(e.target.value)}
                     disabled={isProcessing}
+                    aria-required="true"
                     className="h-10"
                   />
                   {existingSections.length > 0 && (
@@ -230,10 +214,12 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
                   disabled={isProcessing}
                   placeholder="Juan Dela Cruz&#10;Maria Santos&#10;Jose Rizal&#10;Andres Bonifacio&#10;Gabriela Silang"
                   rows={7}
+                  aria-required="true"
+                  aria-describedby="bulk_names_tip"
                   className="font-mono text-sm leading-relaxed resize-none"
                 />
               </FieldContent>
-              <p className="text-xs text-muted-foreground">
+              <p id="bulk_names_tip" className="text-xs text-muted-foreground">
                 Tip: Copy and paste directly from an Excel column or Word roster. Blank lines are ignored automatically.
               </p>
               {duplicateNames.length > 0 && !isProcessing && (
