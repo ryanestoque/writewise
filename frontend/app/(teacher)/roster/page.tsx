@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useStudents, useRemoveStudent, Student } from "@/lib/hooks/use-students";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Kbd } from "@/components/ui/kbd";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import {
@@ -24,6 +25,7 @@ import {
   ArrowDown,
   UserPlus,
   SearchX,
+  Mail,
 } from "lucide-react";
 import { StudentDialog } from "@/components/roster/student-dialog";
 import { BulkStudentDialog } from "@/components/roster/bulk-student-dialog";
@@ -87,6 +89,30 @@ export default function RosterPage() {
   const [selectedSection, setSelectedSection] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("full_name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Keyboard shortcut: Press "/" or "Cmd/Ctrl+K" to focus search input
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isTyping =
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable ||
+          target.getAttribute("role") === "combobox");
+
+      if (isDialogOpen || isBulkDialogOpen) return;
+
+      if ((e.key === "/" || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k")) && !isTyping) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isDialogOpen, isBulkDialogOpen]);
 
   const handleEdit = (student: Student) => {
     setStudentToEdit(student);
@@ -134,7 +160,8 @@ export default function RosterPage() {
       const matchesSearch =
         searchQuery === "" ||
         student.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.section.toLowerCase().includes(searchQuery.toLowerCase());
+        student.section.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (student.parent_email && student.parent_email.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const matchesSection =
         selectedSection === "all" || student.section === selectedSection;
@@ -236,20 +263,38 @@ export default function RosterPage() {
             <div className="relative w-full lg:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               <Input
+                ref={searchInputRef}
                 placeholder="Search student or section..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    if (searchQuery) {
+                      setSearchQuery("");
+                    } else {
+                      searchInputRef.current?.blur();
+                    }
+                  }
+                }}
                 className="pl-9 pr-8 h-9 text-sm rounded-lg"
+                aria-keyshortcuts="/"
               />
-              {searchQuery && (
+              {searchQuery ? (
                 <button
                   type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-full"
+                  onClick={() => {
+                    setSearchQuery("");
+                    searchInputRef.current?.focus();
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-full transition-colors"
                   aria-label="Clear search"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
+              ) : (
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center pointer-events-none">
+                  <Kbd className="text-[10px] h-5 px-1 bg-muted/60 text-muted-foreground/80 border border-border/50">/</Kbd>
+                </div>
               )}
             </div>
 
@@ -315,7 +360,7 @@ export default function RosterPage() {
               onClick={handleResetFilters}
               className="text-primary hover:underline font-medium"
             >
-              Reset filters
+              Clear filters
             </button>
           </div>
         )}
@@ -462,7 +507,7 @@ export default function RosterPage() {
                       key={student.id} 
                       className="border-b border-border/60 hover:bg-muted/30 transition-colors group"
                     >
-                      {/* Name + Avatar */}
+                      {/* Name + Avatar + Parent Email */}
                       <TableCell className="text-foreground font-medium py-3">
                         <div className="flex items-center gap-3">
                           <Avatar size="sm" className={`border ${getAvatarColor(student.full_name)}`}>
@@ -470,7 +515,19 @@ export default function RosterPage() {
                               {getInitials(student.full_name)}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="font-medium text-foreground tracking-tight">{student.full_name}</span>
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-medium text-foreground tracking-tight truncate">{student.full_name}</span>
+                            {student.parent_email ? (
+                              <span className="text-xs text-muted-foreground flex items-center gap-1 truncate font-normal">
+                                <Mail className="w-3 h-3 text-muted-foreground/70 shrink-0" />
+                                {student.parent_email}
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-muted-foreground/60 italic font-normal">
+                                No parent email linked
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -15,6 +15,16 @@ import {
   ComboboxList,
   ComboboxItem,
 } from "@/components/ui/combobox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useCreateStudent, useUpdateStudent, useStudents, Student } from "@/lib/hooks/use-students";
 import { Loader2, Plus, Check } from "lucide-react";
 import { toast } from "sonner";
@@ -50,6 +60,9 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
     return Array.from(sections).sort();
   }, [students]);
 
+  const [duplicateData, setDuplicateData] = useState<StudentFormValues | null>(null);
+  const [pendingAddAnother, setPendingAddAnother] = useState(false);
+
   const form = useForm<StudentFormValues>({
     resolver: zodResolver(studentSchema),
     defaultValues: {
@@ -76,6 +89,14 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
       }
     }
   }, [open, student, defaultSection, form]);
+
+  const handleDialogOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      setDuplicateData(null);
+      setPendingAddAnother(false);
+    }
+    onOpenChange(isOpen);
+  };
 
   const handleSave = (data: StudentFormValues, addAnother = false) => {
     const payload = {
@@ -121,19 +142,38 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
     }
   };
 
+  const onSubmit = (data: StudentFormValues, addAnother = false) => {
+    const isDuplicate = students?.some((s) => {
+      if (isEditing && s.id === student.id) return false;
+      return (
+        s.full_name.trim().toLowerCase() === data.full_name.trim().toLowerCase() &&
+        s.section.trim().toLowerCase() === data.section.trim().toLowerCase()
+      );
+    });
+
+    if (isDuplicate) {
+      setDuplicateData(data);
+      setPendingAddAnother(addAnother);
+      return;
+    }
+
+    handleSave(data, addAnother);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[460px] rounded-2xl">
-        <DialogHeader>
-          <DialogTitle className="font-heading text-xl">{isEditing ? "Edit Student" : "Add Student"}</DialogTitle>
-          <DialogDescription>
-            {isEditing
-              ? "Update the student's details and class section below."
-              : "Enter the student's details to add them to your active class roster."}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <form onSubmit={form.handleSubmit((data) => handleSave(data, false))} className="space-y-5 pt-2">
+    <>
+      <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+        <DialogContent className="sm:max-w-[460px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-xl">{isEditing ? "Edit Student" : "Add Student"}</DialogTitle>
+            <DialogDescription>
+              {isEditing
+                ? "Update the student's details and class section below."
+                : "Enter the student's details to add them to your active class roster."}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={form.handleSubmit((data) => onSubmit(data, false))} className="space-y-5 pt-2">
           <FieldGroup className="space-y-4">
             {/* Full Name */}
             <Field data-invalid={!!form.formState.errors.full_name}>
@@ -220,7 +260,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
             <Button 
               type="button" 
               variant="ghost" 
-              onClick={() => onOpenChange(false)}
+              onClick={() => handleDialogOpenChange(false)}
               className="w-full sm:w-auto text-muted-foreground hover:text-foreground"
             >
               Cancel
@@ -232,7 +272,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                   type="button"
                   variant="outline"
                   disabled={isPending}
-                  onClick={form.handleSubmit((data) => handleSave(data, true))}
+                  onClick={form.handleSubmit((data) => onSubmit(data, true))}
                   className="w-full sm:w-auto text-xs"
                 >
                   {isCreating ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Plus className="w-3.5 h-3.5 mr-1.5" />}
@@ -256,5 +296,34 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
         </form>
       </DialogContent>
     </Dialog>
+
+    {/* Duplicate Student Confirmation Dialog */}
+    <AlertDialog open={!!duplicateData} onOpenChange={(isOpen) => !isOpen && setDuplicateData(null)}>
+      <AlertDialogContent className="rounded-2xl">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="font-heading">Duplicate Student Name?</AlertDialogTitle>
+          <AlertDialogDescription>
+            A student named <strong className="text-foreground">{duplicateData?.full_name}</strong> is already enrolled in <strong className="text-foreground">{duplicateData?.section}</strong>. Do you want to continue and add another student with this exact name?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="rounded-lg" onClick={() => setDuplicateData(null)}>
+            Review Details
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              if (duplicateData) {
+                handleSave(duplicateData, pendingAddAnother);
+                setDuplicateData(null);
+              }
+            }}
+            className="rounded-lg bg-primary hover:bg-brand-700 text-primary-foreground"
+          >
+            Add Anyway
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

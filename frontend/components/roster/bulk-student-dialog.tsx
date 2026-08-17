@@ -51,6 +51,18 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
       .filter((line) => line.length > 0);
   }, [rawText]);
 
+  // Check for any duplicate names within the selected section
+  const duplicateNames = useMemo(() => {
+    if (!students || !section.trim() || parsedNames.length === 0) return [];
+    const lowerSection = section.trim().toLowerCase();
+    const existingNamesSet = new Set(
+      students
+        .filter((s) => s.section?.trim().toLowerCase() === lowerSection)
+        .map((s) => s.full_name.trim().toLowerCase())
+    );
+    return parsedNames.filter((name) => existingNamesSet.has(name.toLowerCase()));
+  }, [students, section, parsedNames]);
+
   const handleOpenChange = (newOpen: boolean) => {
     if (isProcessing) return; // Prevent closing while processing
     if (!newOpen) {
@@ -88,37 +100,48 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
       return;
     }
 
+    const CONCURRENCY = 4;
+    let completedCount = 0;
     let successCount = 0;
     const failedNames: string[] = [];
 
-    for (let i = 0; i < parsedNames.length; i++) {
-      const studentName = parsedNames[i];
-      setStatusMessage(`Enrolling ${studentName} (${i + 1} of ${parsedNames.length})...`);
-      
-      try {
-        const response = await fetch("/api/students", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            full_name: studentName,
-            section: trimmedSection,
-          }),
-        });
+    // Worker pool for parallel processing with smooth progress updates
+    let nextIdx = 0;
+    async function worker() {
+      while (nextIdx < parsedNames.length) {
+        const i = nextIdx++;
+        const studentName = parsedNames[i];
+        
+        try {
+          const response = await fetch("/api/students", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              full_name: studentName,
+              section: trimmedSection,
+            }),
+          });
 
-        if (!response.ok) {
+          if (!response.ok) {
+            failedNames.push(studentName);
+          } else {
+            successCount++;
+          }
+        } catch {
           failedNames.push(studentName);
-        } else {
-          successCount++;
         }
-      } catch {
-        failedNames.push(studentName);
-      }
 
-      setProgress(Math.round(((i + 1) / parsedNames.length) * 100));
+        completedCount++;
+        setProgress(Math.round((completedCount / parsedNames.length) * 100));
+        setStatusMessage(`Enrolled ${completedCount} of ${parsedNames.length} students...`);
+      }
     }
+
+    const workerCount = Math.min(CONCURRENCY, parsedNames.length);
+    await Promise.all(Array.from({ length: workerCount }, () => worker()));
 
     // Refresh student query cache
     await queryClient.invalidateQueries({ queryKey: ["students"] });
@@ -213,6 +236,17 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
               <p className="text-xs text-muted-foreground">
                 Tip: Copy and paste directly from an Excel column or Word roster. Blank lines are ignored automatically.
               </p>
+              {duplicateNames.length > 0 && !isProcessing && (
+                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-900 text-xs mt-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                  <div>
+                    <span className="font-semibold">Notice:</span>{" "}
+                    {duplicateNames.length === 1 ? "1 student" : `${duplicateNames.length} students`} (
+                    {duplicateNames.slice(0, 3).join(", ")}
+                    {duplicateNames.length > 3 ? "..." : ""}) already enrolled in {section}. They will be added as additional entries.
+                  </div>
+                </div>
+              )}
             </Field>
           </FieldGroup>
 
