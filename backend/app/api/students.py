@@ -45,9 +45,16 @@ def create_student(student_in: StudentCreate, teacher: dict = Depends(get_curren
     teacher_id = teacher.get("sub")
 
     # 1. Insert student
+    insert_data = {
+        "full_name": student_in.full_name,
+        "section": student_in.section,
+    }
+    if student_in.parent_email and student_in.parent_email.strip():
+        insert_data["parent_email"] = student_in.parent_email.strip()
+
     res = (
         supabase_client.table("student")
-        .insert({"full_name": student_in.full_name, "section": student_in.section})
+        .insert(insert_data)
         .execute()
     )
 
@@ -68,15 +75,18 @@ def create_student(student_in: StudentCreate, teacher: dict = Depends(get_curren
     # 3. Optional parent invite
     parent_invited = False
     parent_invite_error = None
-    if student_in.parent_email:
+    if student_in.parent_email and student_in.parent_email.strip():
         parent_invited, parent_invite_error = _invite_parent(
-            email=student_in.parent_email, student_id=student_id, student_name=student_in.full_name
+            email=student_in.parent_email.strip(),
+            student_id=student_id,
+            student_name=student_in.full_name,
         )
 
     return {
         "id": student_id,
         "full_name": student["full_name"],
         "section": student["section"],
+        "parent_email": student.get("parent_email"),
         "parent_invited": parent_invited,
         "parent_invite_error": parent_invite_error,
         "created_at": student["created_at"],
@@ -113,6 +123,9 @@ def update_student(
         update_data["full_name"] = student_in.full_name
     if student_in.section is not None:
         update_data["section"] = student_in.section
+    if student_in.parent_email is not None:
+        cleaned_email = student_in.parent_email.strip()
+        update_data["parent_email"] = cleaned_email if cleaned_email else None
 
     student = None
     if update_data:
@@ -128,9 +141,9 @@ def update_student(
     # 3. Optional parent invite
     parent_invited = False
     parent_invite_error = None
-    if student_in.parent_email:
+    if student_in.parent_email and student_in.parent_email.strip():
         parent_invited, parent_invite_error = _invite_parent(
-            email=student_in.parent_email,
+            email=student_in.parent_email.strip(),
             student_id=student_id,
             student_name=student["full_name"],
         )
@@ -139,6 +152,7 @@ def update_student(
         "id": student_id,
         "full_name": student["full_name"],
         "section": student["section"],
+        "parent_email": student.get("parent_email"),
         "parent_invited": parent_invited,
         "parent_invite_error": parent_invite_error,
         "created_at": student["created_at"],

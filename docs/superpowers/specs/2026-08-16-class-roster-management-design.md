@@ -17,7 +17,7 @@ Following `DESIGN.md` principles (Diagnostic/Flat for data, Rounded for forms):
 
 ### 3.1 Roster Table
 - **Layout:** A shadcn `Table` component (`rounded-none` or `rounded-sm`, flat surface).
-- **Columns:** Student Name, Section, Parent Email (Invited/Status), Date Added, Actions.
+- **Columns:** Student Name, Section, Parent Email (stored directly on `student.parent_email` and shown under student name / "No parent email linked"), Date Added, Actions.
 - **Empty State:** "No students yet. Add your first student to start creating activities." with a primary "Add Student" button.
 
 ### 3.2 Add / Edit Student Modal
@@ -26,7 +26,7 @@ Following `DESIGN.md` principles (Diagnostic/Flat for data, Rounded for forms):
 - **Form Fields (React Hook Form + Zod):**
   - `full_name` (Text input, required)
   - `section` (Combobox/Autocomplete, required): Displays previously used sections for quick selection and allows typing new ones to prevent typos.
-  - `parent_email` (Text input, optional, email validation)
+  - `parent_email` (Text input, optional, email validation — persisted to `student.parent_email` and triggers Supabase Auth invite)
 - **Actions:** "Cancel" and "Save Student" (with loading spinner during mutation).
 
 ### 3.3 Remove Student

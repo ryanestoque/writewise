@@ -136,6 +136,7 @@ create table public.student (
   id uuid primary key default gen_random_uuid(),
   full_name text not null,
   section text not null,
+  parent_email text, -- added via migration 0011_add_parent_email_to_student.sql (optional parent contact/invite email)
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -155,7 +156,7 @@ create trigger set_student_updated_at
   for each row execute function public.set_updated_at();
 ```
 
-Deliberately minimal — `full_name` + `section`, matching PRD §8's data model exactly. No LRN/external ID: the PRD never scopes one, the paper consent forms don't collect one, and disambiguating duplicate names within a class is a roster-UI concern the teacher already handles by construction (they added the student), not a schema one.
+Stores the core roster entity (`full_name` + `section`, plus optional `parent_email` for immediate contact tracking and portal invitations). No LRN/external ID: the PRD never scopes one, the paper consent forms don't collect one, and disambiguating duplicate names within a class is a roster-UI concern the teacher already handles by construction (they added the student), not a schema one.
 
 ```sql
 create table public.teacher_student (

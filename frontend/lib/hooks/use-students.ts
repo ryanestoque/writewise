@@ -7,7 +7,7 @@ export interface Student {
   full_name: string;
   section: string;
   created_at: string;
-  parent_email?: string;
+  parent_email?: string | null;
   status?: string; // from parent invitation status if joined
 }
 
@@ -25,6 +25,7 @@ export function useStudents() {
           id,
           full_name,
           section,
+          parent_email,
           created_at
         `)
         .order("full_name");
@@ -83,7 +84,7 @@ export function useUpdateStudent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data: updateData }: { id: string; data: { full_name?: string; section?: string; parent_email?: string } }) => {
+    mutationFn: async ({ id, data: updateData }: { id: string; data: { full_name?: string; section?: string; parent_email?: string | null } }) => {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
 

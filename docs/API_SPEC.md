@@ -111,13 +111,14 @@ Response (`201 Created`):
   "id": "22222222-2222-2222-2222-222222222222",
   "full_name": "Juan Dela Cruz",
   "section": "Grade 3 - Sampaguita",
+  "parent_email": "parent@example.com",
   "parent_invited": true,
   "parent_invite_error": null,
   "created_at": "2026-08-08T09:00:00Z"
 }
 ```
 
-If `parent_email` was supplied but the invite call failed (malformed email, Supabase Auth error), the student is still created: `parent_invited: false`, `parent_invite_error` holds a short human-readable reason.
+If `parent_email` was supplied, it is saved directly to the `student` record. If the invite call failed (malformed email, Supabase Auth error), the student is still created: `parent_invited: false`, `parent_invite_error` holds a short human-readable reason.
 
 > **Invite mechanism (see §7 for the required DATABASE.md dependency):** this endpoint calls Supabase Auth's admin `inviteUserByEmail`, passing `{ role: "parent", full_name, student_id: <newly created student's id> }` in `raw_user_meta_data`. `handle_new_user()` (DATABASE §4.1) needs a small addition to also insert the matching `student_parent` row, atomically, when `role = "parent"` and `student_id` is present in the invite metadata — today it only creates the `parent` row, with no linking step.
 
@@ -125,7 +126,7 @@ If `parent_email` was supplied but the invite call failed (malformed email, Supa
 
 **Caller:** Teacher only, and only for a student on their own roster (§2.2 ownership check → `404` otherwise).
 
-Partial update. Also supports adding a parent to an already-created student, reusing the exact same invite mechanism as `POST /students` — covering the realistic gap where a teacher didn't have the parent's email at creation time.
+Partial update. Also supports adding/updating/clearing a parent email on an already-created student, saving to `student.parent_email` and reusing the invite mechanism — covering the realistic gap where a teacher didn't have the parent's email at creation time.
 
 Request (all fields optional):
 ```json

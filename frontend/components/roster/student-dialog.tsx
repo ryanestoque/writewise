@@ -99,12 +99,13 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
   };
 
   const handleSave = (data: StudentFormValues, addAnother = false) => {
-    const payload = {
-      ...data,
-      parent_email: data.parent_email || undefined,
-    };
-
     if (isEditing) {
+      const payload = {
+        full_name: data.full_name,
+        section: data.section,
+        parent_email: data.parent_email?.trim() || null,
+      };
+
       updateStudent(
         { id: student.id, data: payload },
         {
@@ -118,6 +119,12 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
         }
       );
     } else {
+      const payload = {
+        full_name: data.full_name,
+        section: data.section,
+        parent_email: data.parent_email?.trim() || undefined,
+      };
+
       createStudent(payload, {
         onSuccess: () => {
           toast.success(`Enrolled ${data.full_name} in ${data.section}.`);
