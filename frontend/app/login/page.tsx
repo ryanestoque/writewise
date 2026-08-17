@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,16 +15,22 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { CircleAlertIcon } from "lucide-react";
+import {
+  CircleAlertIcon,
+  EyeIcon,
+  EyeOffIcon,
+  PenToolIcon,
+} from "lucide-react";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const missingRoleError =
     searchParams.get("error") === "missing_role"
@@ -39,7 +45,7 @@ function LoginForm() {
 
     try {
       const { error: authError } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -62,18 +68,21 @@ function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-sm shadow-[var(--shadow-warm)]">
+    <Card className="w-full max-w-sm shadow-warm">
       <CardHeader className="text-center">
-        <CardTitle className="font-heading text-2xl text-primary">
-          WriteWise
+        <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xs">
+          <PenToolIcon className="size-5" aria-hidden="true" />
+        </div>
+        <CardTitle className="font-heading text-2xl font-bold tracking-tight text-primary">
+          <h1>WriteWise</h1>
         </CardTitle>
         <CardDescription>Sign in to your account</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="grid gap-4">
+        <form onSubmit={handleSubmit} className="grid gap-4" noValidate={false}>
           {error && (
             <Alert variant="destructive" id="login-error">
-              <CircleAlertIcon />
+              <CircleAlertIcon aria-hidden="true" />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
@@ -88,27 +97,51 @@ function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
               disabled={isLoading}
+              aria-invalid={!!error}
+              aria-describedby={error ? "login-error" : undefined}
+              className="h-10"
             />
           </div>
 
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                disabled={isLoading}
+                aria-invalid={!!error}
+                aria-describedby={error ? "login-error" : undefined}
+                className="h-10 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                disabled={isLoading}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 transition-colors outline-none focus-visible:ring-2 disabled:pointer-events-none"
+              >
+                {showPassword ? (
+                  <EyeOffIcon className="size-4" aria-hidden="true" />
+                ) : (
+                  <EyeIcon className="size-4" aria-hidden="true" />
+                )}
+              </button>
+            </div>
           </div>
 
           <Button
             id="login-submit"
             type="submit"
-            className="w-full"
+            size="lg"
+            className="h-10 w-full font-medium"
             disabled={isLoading}
           >
             {isLoading ? <Spinner className="mr-2" /> : null}
@@ -122,10 +155,10 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <main className="flex min-h-screen items-center justify-center bg-background px-4">
       <Suspense fallback={<Spinner className="size-8 text-primary" />}>
         <LoginForm />
       </Suspense>
-    </div>
+    </main>
   );
 }

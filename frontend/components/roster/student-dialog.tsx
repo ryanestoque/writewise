@@ -112,8 +112,8 @@ export function StudentDialog({ open, onOpenChange, student }: StudentDialogProp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="font-poppins">{isEditing ? "Edit Student" : "Add Student"}</DialogTitle>
-          <DialogDescription className="font-inter">
+          <DialogTitle className="font-heading">{isEditing ? "Edit Student" : "Add Student"}</DialogTitle>
+          <DialogDescription>
             {isEditing
               ? "Update the student's details below."
               : "Enter the student's details to add them to your roster."}
@@ -124,12 +124,15 @@ export function StudentDialog({ open, onOpenChange, student }: StudentDialogProp
           <FieldGroup>
             {/* Full Name */}
             <Field data-invalid={!!form.formState.errors.full_name}>
-              <FieldLabel htmlFor="full_name">Full Name</FieldLabel>
+              <FieldLabel htmlFor="full_name">
+                Full Name <span className="text-destructive" aria-hidden="true">*</span>
+              </FieldLabel>
               <FieldContent>
                 <Input 
                   id="full_name" 
                   {...form.register("full_name")} 
                   aria-invalid={!!form.formState.errors.full_name}
+                  aria-required="true"
                   placeholder="Juan Dela Cruz"
                 />
               </FieldContent>
@@ -138,7 +141,9 @@ export function StudentDialog({ open, onOpenChange, student }: StudentDialogProp
 
             {/* Section (Combobox) */}
             <Field data-invalid={!!form.formState.errors.section}>
-              <FieldLabel htmlFor="section">Section</FieldLabel>
+              <FieldLabel htmlFor="section">
+                Section <span className="text-destructive" aria-hidden="true">*</span>
+              </FieldLabel>
               <FieldContent>
                 <Controller
                   name="section"
@@ -149,10 +154,12 @@ export function StudentDialog({ open, onOpenChange, student }: StudentDialogProp
                       onValueChange={(val: string | null) => field.onChange(val || "")}
                     >
                       <ComboboxInput 
-                        placeholder="e.g. Rizal" 
+                        id="section"
+                        placeholder="e.g. Grade 3 - Rizal" 
                         value={field.value}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(e.target.value)}
                         aria-invalid={!!form.formState.errors.section}
+                        aria-required="true"
                       />
                       {existingSections.length > 0 && (
                         <ComboboxContent>
@@ -174,7 +181,9 @@ export function StudentDialog({ open, onOpenChange, student }: StudentDialogProp
 
             {/* Parent Email */}
             <Field data-invalid={!!form.formState.errors.parent_email}>
-              <FieldLabel htmlFor="parent_email">Parent Email (Optional)</FieldLabel>
+              <FieldLabel htmlFor="parent_email">
+                Parent Email <span className="text-muted-foreground font-normal text-xs">(Optional)</span>
+              </FieldLabel>
               <FieldContent>
                 <Input 
                   id="parent_email" 
@@ -187,7 +196,7 @@ export function StudentDialog({ open, onOpenChange, student }: StudentDialogProp
             </Field>
           </FieldGroup>
           
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-4 border-t border-border">
             <Button 
               type="button" 
               variant="outline" 
@@ -199,7 +208,7 @@ export function StudentDialog({ open, onOpenChange, student }: StudentDialogProp
             <Button 
               type="submit" 
               disabled={isPending}
-              className="rounded-lg bg-[#1B6B63] hover:bg-[#145049] text-white"
+              className="rounded-lg bg-primary hover:bg-brand-700 text-primary-foreground"
             >
               {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {isEditing ? "Save Changes" : "Save Student"}

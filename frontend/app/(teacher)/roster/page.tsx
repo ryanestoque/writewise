@@ -1,9 +1,11 @@
 "use client";
 
-import { useStudents, useRemoveStudent } from "@/lib/hooks/use-students";
+import { useStudents, useRemoveStudent, Student } from "@/lib/hooks/use-students";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Plus, Loader2, Trash2, Edit2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { MoreHorizontal, Plus, Loader2, Trash2, Edit2, Users, AlertCircle, RotateCcw } from "lucide-react";
 import { StudentDialog } from "@/components/roster/student-dialog";
 import {
   DropdownMenu,
@@ -23,17 +25,12 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
-import { toast } from "sonner"; // Assuming sonner is used for toasts (from shadcn preset)
-import { Student } from "@/lib/hooks/use-students";
+import { toast } from "sonner";
 
 export default function RosterPage() {
-  const { data: students, isLoading, error } = useStudents();
+  const { data: students, isLoading, error, refetch } = useStudents();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [studentToEdit, setStudentToEdit] = useState<Student | null>(null);
-
-  if (error) {
-    return <div className="p-8 text-red-500">Error loading roster: {error.message}</div>;
-  }
 
   const handleEdit = (student: Student) => {
     setStudentToEdit(student);
@@ -45,55 +42,114 @@ export default function RosterPage() {
     setIsDialogOpen(true);
   };
 
+  if (error) {
+    return (
+      <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto">
+        <div
+          role="alert"
+          className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl border border-destructive/20 bg-destructive/10 text-destructive"
+        >
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <span className="text-sm font-medium">Failed to load roster: {error.message}</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            className="border-destructive/30 hover:bg-destructive/10 text-destructive"
+          >
+            <RotateCcw className="w-4 h-4 mr-1.5" />
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-poppins font-semibold text-primary">Class Roster</h1>
-        <Button onClick={handleOpenNew} className="rounded-lg bg-[#1B6B63] hover:bg-[#145049] text-white">
+    <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground">Class Roster</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Manage students and class sections for handwriting activities.
+          </p>
+        </div>
+        <Button onClick={handleOpenNew} className="bg-primary hover:bg-brand-700 text-primary-foreground shadow-xs self-start sm:self-auto">
           <Plus className="w-4 h-4 mr-2" />
           Add Student
         </Button>
       </div>
 
-      <div className="bg-surface border border-border rounded-sm shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader className="bg-slate-50">
-            <TableRow>
-              <TableHead className="font-poppins font-medium text-text-primary">Name</TableHead>
-              <TableHead className="font-poppins font-medium text-text-primary">Section</TableHead>
-              <TableHead className="font-poppins font-medium text-text-primary">Date Added</TableHead>
-              <TableHead className="text-right font-poppins font-medium text-text-primary">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
-                </TableCell>
+      <div className="bg-surface border border-border rounded-sm shadow-xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-muted/40">
+              <TableRow className="border-b border-border hover:bg-transparent">
+                <TableHead className="font-heading font-medium text-foreground">Name</TableHead>
+                <TableHead className="font-heading font-medium text-foreground">Section</TableHead>
+                <TableHead className="font-heading font-medium text-foreground">Date Added</TableHead>
+                <TableHead className="text-right font-heading font-medium text-foreground">Actions</TableHead>
               </TableRow>
-            ) : students?.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="h-32 text-center text-text-secondary">
-                  No students yet. Add your first student to start creating activities.
-                </TableCell>
-              </TableRow>
-            ) : (
-              students?.map((student) => (
-                <TableRow key={student.id}>
-                  <TableCell className="font-inter text-text-primary font-medium">{student.full_name}</TableCell>
-                  <TableCell className="font-inter text-text-secondary">{student.section}</TableCell>
-                  <TableCell className="font-inter text-text-secondary">
-                    {new Date(student.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <RowActions student={student} onEdit={() => handleEdit(student)} />
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-40 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                      <span className="text-sm">Loading roster...</span>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : students?.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="p-0">
+                    <Empty className="py-12 border-0">
+                      <EmptyMedia variant="icon" className="bg-brand-100 text-brand-700">
+                        <Users className="w-6 h-6" />
+                      </EmptyMedia>
+                      <EmptyHeader>
+                        <EmptyTitle>No students yet</EmptyTitle>
+                        <EmptyDescription>
+                          Add your first student to start creating activities and tracking handwriting progress.
+                        </EmptyDescription>
+                      </EmptyHeader>
+                      <EmptyContent>
+                        <Button onClick={handleOpenNew} size="sm" className="bg-primary hover:bg-brand-700 text-primary-foreground">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Student
+                        </Button>
+                      </EmptyContent>
+                    </Empty>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                students?.map((student) => (
+                  <TableRow key={student.id} className="border-b border-border/60 hover:bg-muted/30 transition-colors">
+                    <TableCell className="text-foreground font-medium">{student.full_name}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <Badge variant="secondary" className="font-normal text-xs bg-brand-100/70 text-brand-700">
+                        {student.section}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {new Date(student.created_at).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <RowActions student={student} onEdit={() => handleEdit(student)} />
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <StudentDialog 
@@ -114,7 +170,7 @@ function RowActions({ student, onEdit }: { student: Student; onEdit: () => void 
         toast.success(`Removed ${student.full_name} from roster.`);
       },
       onError: (err: Error) => {
-        toast.error(`Error: ${err.message || 'Failed to remove student'}`);
+        toast.error(err.message || "Failed to remove student");
       }
     });
   };
@@ -122,27 +178,41 @@ function RowActions({ student, onEdit }: { student: Student; onEdit: () => void 
   return (
     <AlertDialog>
       <DropdownMenu>
-        <DropdownMenuTrigger render={<Button variant="ghost" className="h-8 w-8 p-0" />}>
-          <span className="sr-only">Open menu</span>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              aria-label={`Actions for ${student.full_name}`}
+            />
+          }
+        >
+          <span className="sr-only">Actions for {student.full_name}</span>
           <MoreHorizontal className="h-4 w-4" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="rounded-xl">
+        <DropdownMenuContent align="end" className="rounded-xl min-w-36">
           <DropdownMenuItem onClick={onEdit} className="cursor-pointer">
-            <Edit2 className="w-4 h-4 mr-2 text-text-secondary" />
+            <Edit2 className="w-4 h-4 mr-2 text-muted-foreground" />
             Edit
           </DropdownMenuItem>
-          <AlertDialogTrigger nativeButton={false} render={<DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-700" />}>
-            <Trash2 className="w-4 h-4 mr-2" />
-            Remove
-          </AlertDialogTrigger>
+          <AlertDialogTrigger
+            nativeButton={false}
+            render={
+              <DropdownMenuItem variant="destructive" className="cursor-pointer text-destructive focus:text-destructive">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Remove
+              </DropdownMenuItem>
+            }
+          />
         </DropdownMenuContent>
       </DropdownMenu>
 
       <AlertDialogContent className="rounded-2xl">
         <AlertDialogHeader>
-          <AlertDialogTitle className="font-poppins">Remove Student?</AlertDialogTitle>
-          <AlertDialogDescription className="font-inter">
-            This will unenroll <strong>{student.full_name}</strong> from your roster. Their historical data will not be deleted, but they will no longer appear in your active class list.
+          <AlertDialogTitle className="font-heading">Remove Student?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will unenroll <strong className="text-foreground">{student.full_name}</strong> from your roster. Their historical data will not be deleted, but they will no longer appear in your active class list.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -150,7 +220,8 @@ function RowActions({ student, onEdit }: { student: Student; onEdit: () => void 
           <AlertDialogAction 
             onClick={handleRemove} 
             disabled={isPending}
-            className="rounded-lg bg-red-600 hover:bg-red-700 text-white"
+            variant="destructive"
+            className="rounded-lg bg-destructive hover:bg-destructive/90 text-white"
           >
             {isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
             Remove
