@@ -51,17 +51,24 @@ Three principles run through the whole system:
 | `bg` | `#F7F8F7` | Page background |
 | `surface` | `#FFFFFF` | Cards, panels, table rows |
 | `border` | `#E3E6E4` | Dividers, input borders, table gridlines |
-| `text-primary` | `#1E2422` | Body copy, headings |
-| `text-secondary` | `#5B6663` | Labels, captions, secondary info |
+| `text-primary` | `#1E2422` | Body copy, headings (`text-foreground`) |
+| `text-secondary` | `#5B6663` | Labels, captions, secondary info (`text-muted-foreground`) |
+
+**System status & destructive actions.** Diagnostic cursive scoring intentionally avoids red in favor of the developmental band gradient above. However, system-level critical events (network query failures, form errors, student deletion actions) use high-contrast WCAG 2.1 AA compliant tokens:
+
+| Token | Light Hex | Dark Hex | Contrast | Use |
+|---|---|---|---|---|
+| `--destructive` | `#9C4A2F` | `#E69875` | 6.03:1 (Light) / 6.3:1 (Dark) | Error alerts, form validation warnings, destructive dialog actions |
+| `--destructive-foreground` | `#FFFFFF` | `#1A1D1C` | >10:1 | Text/icon within solid destructive buttons |
 
 ### 2.2 Typography
 
 Two-font pairing: a warm display face for headers/branding, a highly legible sans for body text and dense data.
 
-| Role | Typeface | Notes |
-|---|---|---|
-| Display / headings | **Poppins** | Geometric, rounded terminals — carries the Warm Educational personality on headers, the wordmark, and section titles. Used with restraint (headings only, not body copy). |
-| Body / data | **Inter** | Optimized for legibility at small sizes with tabular figures — used for all body copy, table cells, and score numbers, where misreading a digit has real consequences. |
+| Role | Typeface | Tailwind Token Class | Notes |
+|---|---|---|---|
+| Display / headings | **Poppins** | `font-heading` | Geometric, rounded terminals — carries the Warm Educational personality on headers, the wordmark, and section titles. Used with restraint (headings only, not body copy). |
+| Body / data | **Inter** | `font-sans` | Optimized for legibility at small sizes with tabular figures — used for all body copy, table cells, and score numbers, where misreading a digit has real consequences. |
 
 Both are free, widely supported Google Fonts with no licensing overhead for an academic project a panel may review.
 
@@ -89,8 +96,9 @@ Radius and shadow follow the same precision/warmth split described in §1.
 | Element class | Radius | Shadow |
 |---|---|---|
 | Data-dense (tables, roster rows, score cells, raw measurement displays) | `rounded-none` – `rounded-sm` (0–4px) | None — 1px `border` only |
-| Buttons, inputs | `rounded-lg` (8px) | None (default state) |
-| Cards, modals, panels, feedback UI | `rounded-xl`–`rounded-2xl` (12–16px) | Soft, warm-toned, low-opacity (e.g. `rgba(30,40,35,0.06)`, not default cool-gray box-shadow) |
+| Buttons, inputs, interactive controls | `rounded-lg` (8px) | None (default state) |
+| Cards, feedback UI, panel containers | `rounded-xl` (12px) | `shadow-warm` (`rgba(30,40,35,0.06)` via `--shadow-warm`) |
+| Modals, alert dialogs | `rounded-2xl` (16px) | `shadow-warm` + `border border-border` |
 
 > **Why split it:** shape and elevation do real communicative work here, not just decoration. Sharp, flat surfaces on data signal "this is precise, trust the number." Rounded, soft-shadowed surfaces on feedback/cards signal "this is a supportive tool, not a report card." The split is free to implement — it's a per-component Tailwind class choice, not a separate system.
 
@@ -133,6 +141,8 @@ Two primary contexts, not one generic responsive layout:
 
 Both remain functional (not broken) at the non-primary size — this is about which breakpoint gets primary design attention, not about excluding either device.
 
+**Touch Target Standard (WCAG 2.5.5 / 2.5.8):** All interactive controls (buttons, form inputs, dialog triggers/actions, and sidebar nav links) must maintain a minimum touch target height of 40px (`h-10`) on mobile viewports (<640px/768px), scaling to desktop `h-9` (`h-10 sm:h-9` or `h-10 md:h-9`).
+
 ---
 
 ## 5. Navigation & Information Architecture
@@ -140,6 +150,9 @@ Both remain functional (not broken) at the non-primary size — this is about wh
 Role-differentiated, matching how much "surface area" each role actually manages:
 
 - **Teacher:** persistent left sidebar (desktop) — Roster, Activities, Dashboard, Settings — collapsing to a top bar + drawer on mobile.
+  - **Collapsed Desktop Mode:** Icon-only navigation with rich Base UI tooltips, preserving the teacher's identity indicator via an initials avatar (`getInitials`) that reveals full name and email on hover/focus.
+  - **Mobile Drawer:** Sheet drawer auto-dismisses (`setOpenMobile(false)`) immediately upon link navigation to prevent background trapping.
+  - **Subroute Matching:** Prefix-aware active state highlighting (`pathname === href || pathname.startsWith(href + '/')`) to maintain parent tab highlighting on nested detail pages (e.g. `/roster/[id]`).
 - **Parent:** lightweight top nav, mobile-first — the parent's world is effectively one screen (their child's progress) plus an upload action, so a full sidebar would be wasted structure.
 - **Multi-child parents:** an always-present child switcher at the top of the parent nav (a simple selector, not conditional UI) — for a parent with one child it just shows their name; for a parent with more than one enrolled at the school, it scales automatically. Cheap insurance against a real edge case at a single-school pilot scale.
 
@@ -299,21 +312,24 @@ Twenty template notes — five criteria × four bands:
 
 ### 8.3 Empty States
 
-Text + a small Lucide icon (reused from the shared icon system — no dedicated illustration work), each with a direct call-to-action. Treated as an invitation to act, not a dead end:
+Built using the Base UI / shadcn `Empty` primitive pattern: `EmptyMedia` (Lucide icon enclosed in a `bg-brand-100 text-brand-700` badge) + `EmptyTitle` + `EmptyDescription` + `EmptyContent` with a direct call-to-action button. Treated as an invitation to act, not a dead end:
 
-| Screen | Copy |
-|---|---|
-| Roster, no students | "No students yet. Add your first student to start creating activities." → **Add Student** |
-| Activities, none created | "No activities yet. Create one to start collecting handwriting samples." → **Create Activity** |
-| Submission history, none | "No submissions yet. Once a worksheet is uploaded, progress will show up here." |
+| Screen | Copy | CTA |
+|---|---|---|
+| Roster, no students | "No students yet. Add your first student to start creating activities and tracking handwriting progress." | **Add Student** (`Users` icon) |
+| Activities, none created | "No activities yet. Create one to start collecting handwriting samples." | **Create Activity** (`ClipboardList` icon) |
+| Submission history, none | "No submissions yet. Once a worksheet is uploaded, progress will show up here." | |
 
 ---
 
 ## 9. Accessibility
 
 - **Color is never the sole signal.** Every band indicator (badges, chart zones, overlay legend, table cells) always pairs its color with the band's text name — covers the largest real accessibility gap (color-blindness affects roughly 1 in 12 men) without needing a secondary pattern/texture system.
-- **Visible keyboard focus** on all interactive elements (shadcn's defaults cover this; don't override away from it).
-- **Reduced motion respected** — Framer Motion's scoped moments (§2.6) should honor `prefers-reduced-motion`.
+- **Accessible Text Contrast (WCAG 2.1 AA):** All foreground text meets or exceeds the 4.5:1 ratio against light/dark card backgrounds. System destructive and error states enforce >6:1 contrast (`#9C4A2F` in light mode, `#E69875` in dark mode).
+- **Semantic Landmark Hierarchy:** Enforce a single `<main>` landmark per view (outer `SidebarInset` serves as `<main>`, nested page wrappers inside use `<div>` or `<section>`). Navigation menus are wrapped in `<nav aria-label="...">` with dynamic `aria-current="page"` active bindings.
+- **Screen Reader Context for Row Actions:** Interactive table actions provide dynamic, student-specific labels (e.g. `aria-label="Actions for [Student Name]"` and `<span className="sr-only">Actions for [Student Name]</span>`) per WCAG 2.4.4.
+- **Visible Keyboard Focus:** Visible focus rings on all interactive elements (`focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`).
+- **Reduced Motion Respected:** Framer Motion sequences and Base UI / shadcn modal dialog overlays strictly enforce `motion-reduce:animate-none motion-reduce:transition-none`, honoring the system's `prefers-reduced-motion` setting.
 
 ---
 
