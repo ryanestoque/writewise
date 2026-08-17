@@ -18,8 +18,18 @@ export default async function TeacherLayout({
     redirect("/login");
   }
 
+  // Fetch teacher profile from public.teacher, falling back to metadata / email
+  const { data: teacherProfile } = await supabase
+    .from("teacher")
+    .select("full_name")
+    .eq("id", user.id)
+    .single();
+
   const fullName =
-    (user.user_metadata?.full_name as string) || user.email || "Teacher";
+    teacherProfile?.full_name ||
+    (user.user_metadata?.full_name as string) ||
+    user.email ||
+    "Teacher";
   const email = user.email || "";
 
   return (
