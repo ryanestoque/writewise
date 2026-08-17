@@ -25,9 +25,9 @@ import {
   ClipboardListIcon,
   SettingsIcon,
   LogOutIcon,
-  PenToolIcon,
   Loader2Icon,
 } from "lucide-react";
+import { BrandIcon } from "@/components/brand-logo";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -125,7 +125,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
               className="h-14 group-data-[collapsible=icon]:p-0"
             >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-xs">
-                <PenToolIcon className="size-4" />
+                <BrandIcon className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="font-heading font-semibold text-sidebar-foreground truncate">
