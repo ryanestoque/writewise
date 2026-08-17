@@ -88,7 +88,7 @@ function getAvatarColor(name: string) {
 export default function RosterPage() {
   const queryClient = useQueryClient();
   const { data: students, isLoading, error, refetch } = useStudents();
-  
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
   const [studentToEdit, setStudentToEdit] = useState<Student | null>(null);
@@ -377,7 +377,7 @@ export default function RosterPage() {
 
         <div className="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
           {students && students.length > 0 && (
-            <Button 
+            <Button
               onClick={handleExportRoster}
               variant="outline"
               className="border-border text-foreground hover:bg-muted font-medium shadow-2xs"
@@ -387,7 +387,7 @@ export default function RosterPage() {
             </Button>
           )}
 
-          <Button 
+          <Button
             onClick={handleOpenBulk}
             variant="outline"
             className="border-border text-foreground hover:bg-muted font-medium shadow-2xs"
@@ -396,8 +396,8 @@ export default function RosterPage() {
             Bulk Add
           </Button>
 
-          <Button 
-            onClick={handleOpenNew} 
+          <Button
+            onClick={handleOpenNew}
             className="bg-primary hover:bg-brand-700 text-primary-foreground font-medium shadow-xs"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -475,17 +475,15 @@ export default function RosterPage() {
                   type="button"
                   onClick={() => setSelectedSection("all")}
                   aria-pressed={selectedSection === "all"}
-                  className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2 after:content-[''] ${
-                    selectedSection === "all"
+                  className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2 after:content-[''] ${selectedSection === "all"
                       ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-2xs"
                       : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   All
                   <span
-                    className={`text-[10px] font-medium px-1.5 py-0.2 rounded-full ${
-                      selectedSection === "all" ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground" : "bg-muted text-foreground"
-                    }`}
+                    className={`text-[10px] font-medium px-1.5 py-0.2 rounded-full ${selectedSection === "all" ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground" : "bg-muted text-foreground"
+                      }`}
                   >
                     {students.length}
                   </span>
@@ -500,17 +498,15 @@ export default function RosterPage() {
                       type="button"
                       onClick={() => setSelectedSection(sec)}
                       aria-pressed={isSelected}
-                      className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2 after:content-[''] ${
-                        isSelected
+                      className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2 after:content-[''] ${isSelected
                           ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-2xs"
                           : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
-                      }`}
+                        }`}
                     >
                       {sec}
                       <span
-                        className={`text-[10px] font-medium px-1.5 py-0.2 rounded-full ${
-                          isSelected ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground" : "bg-muted text-foreground"
-                        }`}
+                        className={`text-[10px] font-medium px-1.5 py-0.2 rounded-full ${isSelected ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground" : "bg-muted text-foreground"
+                          }`}
                       >
                         {count}
                       </span>
@@ -568,7 +564,7 @@ export default function RosterPage() {
                   </TableHead>
 
                   {/* Name Sort Column */}
-                  <TableHead 
+                  <TableHead
                     aria-sort={sortField === "full_name" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
                     className="p-0 font-heading"
                   >
@@ -592,7 +588,7 @@ export default function RosterPage() {
                   </TableHead>
 
                   {/* Section Sort Column */}
-                  <TableHead 
+                  <TableHead
                     aria-sort={sortField === "section" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
                     className="p-0 font-heading"
                   >
@@ -616,7 +612,7 @@ export default function RosterPage() {
                   </TableHead>
 
                   {/* Date Enrolled Column */}
-                  <TableHead 
+                  <TableHead
                     aria-sort={sortField === "created_at" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
                     className="p-0 font-heading"
                   >
@@ -666,8 +662,8 @@ export default function RosterPage() {
                           </EmptyDescription>
                         </EmptyHeader>
                         <EmptyContent className="flex flex-row items-center justify-center gap-3">
-                          <Button 
-                            onClick={handleOpenBulk} 
+                          <Button
+                            onClick={handleOpenBulk}
                             variant="outline"
                             size="sm"
                             className="font-medium"
@@ -675,9 +671,9 @@ export default function RosterPage() {
                             <UserPlus className="w-4 h-4 mr-2" />
                             Bulk Add
                           </Button>
-                          <Button 
-                            onClick={handleOpenNew} 
-                            size="sm" 
+                          <Button
+                            onClick={handleOpenNew}
+                            size="sm"
                             className="bg-primary hover:bg-brand-700 text-primary-foreground font-medium"
                           >
                             <Plus className="w-4 h-4 mr-2" />
@@ -713,11 +709,10 @@ export default function RosterPage() {
                   filteredStudents.map((student) => {
                     const isSelected = selectedStudentIds.has(student.id);
                     return (
-                      <TableRow 
-                        key={student.id} 
-                        className={`border-b border-border/60 transition-colors group ${
-                          isSelected ? "bg-brand-50/70 dark:bg-brand-950/40" : "hover:bg-muted/30"
-                        }`}
+                      <TableRow
+                        key={student.id}
+                        className={`border-b border-border/60 transition-colors group ${isSelected ? "bg-brand-50/70 dark:bg-brand-950/40" : "hover:bg-muted/30"
+                          }`}
                       >
                         {/* Checkbox Column */}
                         <TableCell className="w-10 px-3 py-3">
@@ -798,9 +793,9 @@ export default function RosterPage() {
       />
 
       {/* Modals */}
-      <StudentDialog 
-        open={isDialogOpen} 
-        onOpenChange={setIsDialogOpen} 
+      <StudentDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
         student={studentToEdit}
         defaultSection={selectedSection !== "all" ? selectedSection : undefined}
       />
@@ -832,8 +827,8 @@ export default function RosterPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-lg" disabled={isBatchRemoving}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleBatchRemoveConfirm} 
+            <AlertDialogAction
+              onClick={handleBatchRemoveConfirm}
               disabled={isBatchRemoving}
               variant="destructive"
               className="rounded-lg bg-destructive hover:bg-destructive/90 text-white"
@@ -904,8 +899,8 @@ function RowActions({ student, onEdit }: { student: Student; onEdit: () => void 
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel className="rounded-lg">Cancel</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={handleRemove} 
+          <AlertDialogAction
+            onClick={handleRemove}
             disabled={isPending}
             variant="destructive"
             className="rounded-lg bg-destructive hover:bg-destructive/90 text-white"
