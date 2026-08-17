@@ -41,6 +41,12 @@ function LoginForm() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFormError(null);
+
+    if (password.length < 10) {
+      setFormError("Password must be at least 10 characters.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -50,7 +56,10 @@ function LoginForm() {
       });
 
       if (authError) {
-        if (authError.message === "Invalid login credentials") {
+        if (
+          authError.code === "invalid_credentials" ||
+          authError.message === "Invalid login credentials"
+        ) {
           setFormError("Invalid email or password.");
         } else {
           setFormError("Something went wrong. Please try again.");
@@ -115,6 +124,7 @@ function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={10}
                 autoComplete="current-password"
                 disabled={isLoading}
                 aria-invalid={!!error}
