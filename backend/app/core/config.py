@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     SUPABASE_URL: str
     SUPABASE_SERVICE_ROLE_KEY: str
     SUPABASE_DB_URL: str
+    SUPABASE_JWT_SECRET: str
     MODEL_STORAGE_BUCKET: str = "model-artifacts"
     MODEL_ARTIFACT_PATH: str
     SCORING_ENGINE: str = "manual"
@@ -12,5 +13,6 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "dev"
 
     model_config = SettingsConfigDict(env_file=".env")
+
 
 settings = Settings()

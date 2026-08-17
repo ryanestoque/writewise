@@ -1,9 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api import students
 from app.core.config import settings
 
 app = FastAPI(title="WriteWise API")
+
+app.include_router(students.router)
 
 # Configure CORS
 origins = [origin.strip() for origin in settings.CORS_ALLOWED_ORIGINS.split(",")]
@@ -15,6 +18,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/health")
 def health_check():
