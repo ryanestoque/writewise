@@ -29,11 +29,11 @@ import {
   SearchX,
   Mail,
   Download,
-  ArrowRightLeft,
 } from "lucide-react";
 import { StudentDialog } from "@/components/roster/student-dialog";
 import { BulkStudentDialog } from "@/components/roster/bulk-student-dialog";
 import { BatchMoveDialog } from "@/components/roster/batch-move-dialog";
+import { FloatingBatchBar } from "@/components/roster/floating-batch-bar";
 import { exportStudentsToCSV } from "@/lib/utils/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -785,70 +785,17 @@ export default function RosterPage() {
       </div>
 
       {/* Floating Batch Actions Bar */}
-      {selectedStudentIds.size > 0 && (
-        <div 
-          role="region" 
-          aria-label="Batch student actions" 
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-xl animate-in fade-in slide-in-from-bottom-4 motion-reduce:animate-none motion-reduce:transition-none duration-200"
-        >
-          <span className="sr-only" aria-live="polite">
-            {selectedStudentIds.size} {selectedStudentIds.size === 1 ? "student" : "students"} selected. Batch action toolbar is available.
-          </span>
-          <div className="bg-surface/95 backdrop-blur-md border border-border shadow-warm rounded-2xl p-2 sm:px-4 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-3 text-foreground">
-            <div className="flex items-center gap-2 shrink-0">
-              <Badge className="bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground font-semibold text-xs px-2 sm:px-2.5 py-0.5 shadow-2xs shrink-0">
-                {selectedStudentIds.size} Selected
-              </Badge>
-              <span className="text-xs text-muted-foreground hidden sm:inline">
-                of {students?.length || 0}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsBatchMoveOpen(true)}
-                className="h-8 px-2 sm:px-3 text-xs font-medium border-border hover:bg-muted shrink-0"
-              >
-                <ArrowRightLeft className="w-3.5 h-3.5 sm:mr-1.5 text-muted-foreground shrink-0" />
-                <span className="hidden sm:inline">Move Section</span>
-                <span className="sm:hidden">Move</span>
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportSelected}
-                className="h-8 px-2 sm:px-3 text-xs font-medium border-border hover:bg-muted shrink-0"
-              >
-                <Download className="w-3.5 h-3.5 sm:mr-1.5 text-muted-foreground shrink-0" />
-                <span>Export</span>
-              </Button>
-
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setIsBatchRemoveOpen(true)}
-                className="h-8 px-2 sm:px-3 text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive hover:text-white border border-destructive/30 shrink-0"
-              >
-                <Trash2 className="w-3.5 h-3.5 sm:mr-1.5 shrink-0" />
-                <span>Remove</span>
-              </Button>
-
-              <button
-                type="button"
-                onClick={clearSelection}
-                className="relative text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted transition-colors ml-0.5 after:absolute after:-inset-2 after:content-[''] shrink-0"
-                aria-label="Clear selection"
-                title="Clear selection (Esc)"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <FloatingBatchBar
+        selectedCount={selectedStudentIds.size}
+        totalCount={filteredStudents.length}
+        allSelected={allFilteredSelected}
+        onSelectAll={toggleSelectAll}
+        onClearSelection={clearSelection}
+        onMoveSection={() => setIsBatchMoveOpen(true)}
+        onExportCSV={handleExportSelected}
+        onRemove={() => setIsBatchRemoveOpen(true)}
+        isRemoving={isBatchRemoving}
+      />
 
       {/* Modals */}
       <StudentDialog 
