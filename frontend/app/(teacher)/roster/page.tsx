@@ -131,7 +131,7 @@ function RowActions({ student, onEdit }: { student: Student; onEdit: () => void 
             <Edit2 className="w-4 h-4 mr-2 text-text-secondary" />
             Edit
           </DropdownMenuItem>
-          <AlertDialogTrigger render={<DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-700" />}>
+          <AlertDialogTrigger nativeButton={false} render={<DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-700" />}>
             <Trash2 className="w-4 h-4 mr-2" />
             Remove
           </AlertDialogTrigger>

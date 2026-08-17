@@ -53,8 +53,7 @@ export function useCreateStudent() {
         throw new Error("No active session");
       }
 
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-      const response = await fetch(`${baseUrl}/api/students`, {
+      const response = await fetch("/api/students", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -67,6 +66,7 @@ export function useCreateStudent() {
 
       if (!response.ok) {
         // Standardized error envelope: { error: { code, message, details } }
+        console.error("Backend returned error:", data.error);
         throw data.error; 
       }
 
@@ -91,8 +91,7 @@ export function useUpdateStudent() {
         throw new Error("No active session");
       }
 
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-      const response = await fetch(`${baseUrl}/api/students/${id}`, {
+      const response = await fetch(`/api/students/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -128,8 +127,7 @@ export function useRemoveStudent() {
         throw new Error("No active session");
       }
 
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-      const response = await fetch(`${baseUrl}/api/students/${id}/teacher-link`, {
+      const response = await fetch(`/api/students/${id}/teacher-link`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

@@ -1,68 +1,60 @@
-from typing import Annotated
-
-import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.core.config import settings
+from app.core.supabase import supabase_client
 
 security = HTTPBearer()
 
 
-def get_current_user(
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)]
-) -> dict:
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+    token = credentials.credentials
     try:
-        token = credentials.credentials
-        payload = jwt.decode(
-            token,
-            settings.SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
-            options={"verify_aud": False},
-        )
+        # Pass the token to Supabase Auth API to verify signature and retrieve the user
+        response = supabase_client.auth.get_user(token)
+
+        # The response payload contains the user's metadata and role
+        user = response.user
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={"code": "UNAUTHORIZED", "message": "User not found", "details": {}},
+            )
+
+        # We simulate the JWT payload shape for compatibility with our role checks
+        payload = {
+            "sub": user.id,
+            "role": (user.user_metadata or {}).get("role", "authenticated"),
+            "email": user.email,
+        }
         return payload
-    except jwt.ExpiredSignatureError:
+
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
-                "error": {
-                    "code": "token_expired",
-                    "message": "Token has expired",
-                    "details": None,
-                }
-            },
-        )
-    except jwt.InvalidTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "error": {
-                    "code": "unauthorized",
-                    "message": "Invalid authentication credentials",
-                    "details": None,
-                }
+                "code": "UNAUTHORIZED",
+                "message": "Invalid token",
+                "details": {"error": str(e)},
             },
         )
 
 
-def get_current_teacher(user: Annotated[dict, Depends(get_current_user)]) -> dict:
-    # Supabase roles might be in user_metadata or app_metadata
-    user_metadata = user.get("user_metadata", {})
-    app_metadata = user.get("app_metadata", {})
-
-    # Check if the user is a teacher
-    role = user_metadata.get("role") or app_metadata.get("role") or user.get("role")
-
+def get_current_teacher(payload: dict = Depends(get_current_user)) -> dict:
+    role = payload.get("role")
     if role != "teacher":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail={
-                "error": {
-                    "code": "forbidden",
-                    "message": "Requires teacher role",
-                    "details": None,
-                }
-            },
+            detail={"code": "FORBIDDEN", "message": "Teacher access required", "details": {}},
         )
+    return payload
 
-    return user
+
+def get_current_parent(payload: dict = Depends(get_current_user)) -> dict:
+    role = payload.get("role")
+    if role != "parent":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "FORBIDDEN", "message": "Parent access required", "details": {}},
+        )
+    return payload
