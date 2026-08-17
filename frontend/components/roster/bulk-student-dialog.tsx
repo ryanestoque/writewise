@@ -199,8 +199,8 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
             {/* Student Names Textarea */}
             <Field>
               <div className="flex items-center justify-between">
-                <FieldLabel htmlFor="bulk_names" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Student Names (One per line) <span className="text-destructive" aria-hidden="true">*</span>
+                <FieldLabel htmlFor="bulk_names" className="inline-block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Student Names (One per line)<span className="text-destructive ml-1" aria-hidden="true">*</span>
                 </FieldLabel>
                 <span className="text-xs font-medium text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200/60">
                   {parsedNames.length} {parsedNames.length === 1 ? "student" : "students"} detected

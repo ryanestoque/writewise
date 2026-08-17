@@ -96,7 +96,7 @@ function LoginForm() {
             <Alert
               variant="destructive"
               id="login-error"
-              className="animate-in fade-in-50 slide-in-from-top-1 duration-200"
+              className="[&>svg]:translate-y-0 animate-in fade-in-50 slide-in-from-top-1 duration-200"
             >
               <CircleAlertIcon aria-hidden="true" />
               <AlertDescription className="text-xs leading-normal">
