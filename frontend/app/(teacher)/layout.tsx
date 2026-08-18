@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { TeacherSidebar } from "@/components/teacher-sidebar";
 import { TeacherHeader } from "@/components/teacher-header";
+import { TeacherModalsProvider } from "@/components/teacher-modals-provider";
 
 export default async function TeacherLayout({
   children,
@@ -19,23 +20,12 @@ export default async function TeacherLayout({
     redirect("/login");
   }
 
-  // Fetch teacher profile and live counts in parallel
-  const [{ data: teacherProfile }, { count: studentCount }, { count: activityCount }] =
-    await Promise.all([
-      supabase
-        .from("teacher")
-        .select("full_name")
-        .eq("id", user.id)
-        .single(),
-      supabase
-        .from("teacher_student")
-        .select("*", { count: "exact", head: true })
-        .eq("teacher_id", user.id),
-      supabase
-        .from("activity")
-        .select("*", { count: "exact", head: true })
-        .eq("created_by", user.id),
-    ]);
+  // Fetch teacher profile
+  const { data: teacherProfile } = await supabase
+    .from("teacher")
+    .select("full_name")
+    .eq("id", user.id)
+    .single();
 
   const fullName =
     teacherProfile?.full_name ||
@@ -45,18 +35,15 @@ export default async function TeacherLayout({
   const email = user.email || "";
 
   return (
-    <SidebarProvider>
-      <TeacherSidebar
-        user={{ fullName, email }}
-        badgeCounts={{
-          roster: studentCount ?? undefined,
-          activities: activityCount ?? undefined,
-        }}
-      />
-      <SidebarInset>
-        <TeacherHeader />
-        <div className="flex-1 p-6">{children}</div>
-      </SidebarInset>
-    </SidebarProvider>
+    <TeacherModalsProvider>
+      <SidebarProvider>
+        <TeacherSidebar user={{ fullName, email }} />
+        <SidebarInset>
+          <TeacherHeader />
+          <div className="flex-1 p-6">{children}</div>
+        </SidebarInset>
+      </SidebarProvider>
+    </TeacherModalsProvider>
   );
 }
+

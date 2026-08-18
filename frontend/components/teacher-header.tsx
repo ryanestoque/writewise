@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -18,7 +17,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Kbd } from "@/components/ui/kbd";
-import { GraduationCapIcon } from "lucide-react";
 
 const routeTitles: Record<string, string> = {
   dashboard: "Dashboard",
@@ -66,8 +64,6 @@ export function TeacherHeader() {
           </TooltipContent>
         </Tooltip>
 
-        <Separator orientation="vertical" className="h-4" />
-
         <Breadcrumb className="truncate">
           <BreadcrumbList>
             <BreadcrumbItem className="hidden sm:inline-flex">
@@ -106,13 +102,6 @@ export function TeacherHeader() {
             )}
           </BreadcrumbList>
         </Breadcrumb>
-      </div>
-
-      <div className="hidden md:flex items-center gap-2 shrink-0 text-xs text-muted-foreground bg-muted/40 px-2.5 py-1 rounded-full border border-border/60">
-        <GraduationCapIcon className="size-3.5 text-primary" />
-        <span className="font-medium text-foreground">Grade 3</span>
-        <span className="text-muted-foreground/60">•</span>
-        <span>Matina Aplaya ES</span>
       </div>
     </header>
   );

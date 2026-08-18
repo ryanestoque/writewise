@@ -38,6 +38,16 @@ const shortcuts: ShortcutItem[] = [
     description: "Move focus to previous element",
   },
   {
+    category: "Worksheet & Assessment",
+    keys: ["⌘", "K"],
+    description: "Open Quick Worksheet Upload / Scan dialog",
+  },
+  {
+    category: "Dialogs & Actions",
+    keys: ["?"],
+    description: "Open keyboard shortcuts guide",
+  },
+  {
     category: "Dialogs & Actions",
     keys: ["Esc"],
     description: "Close open dialog or modal",
