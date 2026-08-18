@@ -16,7 +16,7 @@ import { Student } from "@/lib/hooks/use-students";
 import { createClient } from "@/lib/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { runConcurrentPool } from "@/lib/utils/concurrent-pool";
-import { Loader2, ArrowRightLeft, Check } from "lucide-react";
+import { Loader2, ArrowRightLeft, Check, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 interface BatchMoveDialogProps {
@@ -145,44 +145,64 @@ export function BatchMoveDialog({
                   Destination Section <span className="text-destructive" aria-hidden="true">*</span>
                 </FieldLabel>
                 <FieldContent>
-                  <Combobox 
-                    value={targetSection} 
-                    onValueChange={(val: string | null) => {
-                      setTargetSection(val || "");
-                      if (sectionError) setSectionError(null);
-                    }}
-                  >
-                    <ComboboxInput 
-                      id="batch_target_section"
-                      aria-label="Destination Class Section"
-                      placeholder="e.g. Grade 3 - Rizal" 
-                      value={targetSection}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        setTargetSection(e.target.value);
-                        if (sectionError) setSectionError(null);
-                      }}
-                      disabled={isProcessing}
-                      aria-invalid={!!sectionError}
-                      aria-describedby={sectionError ? "batch_target_section_error" : undefined}
-                      aria-required="true"
-                      autoCapitalize="words"
-                      autoCorrect="off"
-                      spellCheck={false}
-                      className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl"
-                    />
-                    {existingSections.length > 0 && (
-                      <ComboboxContent>
-                        <ComboboxList>
-                          {existingSections.map((sec) => (
-                            <ComboboxItem key={sec} value={sec} className="py-2.5 px-3">
-                              {sec}
-                            </ComboboxItem>
-                          ))}
-                        </ComboboxList>
-                      </ComboboxContent>
-                    )}
-                  </Combobox>
+                  {(() => {
+                    const trimmedInput = targetSection.trim();
+                    const isCustomSection =
+                      trimmedInput.length > 0 &&
+                      !existingSections.some(
+                        (sec) => sec.toLowerCase() === trimmedInput.toLowerCase()
+                      );
+
+                    return (
+                      <Combobox 
+                        value={targetSection} 
+                        onValueChange={(val: string | null) => {
+                          setTargetSection(val || "");
+                          if (sectionError) setSectionError(null);
+                        }}
+                      >
+                        <ComboboxInput 
+                          id="batch_target_section"
+                          aria-label="Destination Class Section"
+                          placeholder="e.g. Grade 3 - Rizal" 
+                          value={targetSection}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            setTargetSection(e.target.value);
+                            if (sectionError) setSectionError(null);
+                          }}
+                          disabled={isProcessing}
+                          aria-invalid={!!sectionError}
+                          aria-describedby={sectionError ? "batch_target_section_error batch_section_hint" : "batch_section_hint"}
+                          aria-required="true"
+                          autoCapitalize="words"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl"
+                        />
+                        {(existingSections.length > 0 || isCustomSection) && (
+                          <ComboboxContent>
+                            <ComboboxList>
+                              {existingSections.map((sec) => (
+                                <ComboboxItem key={sec} value={sec} className="py-2.5 px-3">
+                                  {sec}
+                                </ComboboxItem>
+                              ))}
+                              {isCustomSection && (
+                                <ComboboxItem value={trimmedInput} className="py-2.5 px-3 text-primary font-medium">
+                                  <Plus className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                                  Create section &ldquo;{trimmedInput}&rdquo;
+                                </ComboboxItem>
+                              )}
+                            </ComboboxList>
+                          </ComboboxContent>
+                        )}
+                      </Combobox>
+                    );
+                  })()}
                 </FieldContent>
+                <p id="batch_section_hint" className="text-xs text-muted-foreground mt-1 leading-normal">
+                  Type a new section name or select from existing sections.
+                </p>
                 {sectionError && <FieldError id="batch_target_section_error">{sectionError}</FieldError>}
               </Field>
             </FieldGroup>

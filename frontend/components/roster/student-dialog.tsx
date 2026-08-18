@@ -243,40 +243,62 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                     <Controller
                       name="section"
                       control={form.control}
-                      render={({ field }) => (
-                        <Combobox 
-                          value={field.value} 
-                          onValueChange={(val: string | null) => field.onChange(val || "")}
-                        >
-                          <ComboboxInput 
-                            id="section"
-                            aria-label="Class Section"
-                            placeholder="e.g. Grade 3 - Rizal" 
-                            value={field.value}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(e.target.value)}
-                            aria-invalid={!!form.formState.errors.section}
-                            aria-describedby={form.formState.errors.section ? "section-error" : undefined}
-                            aria-required="true"
-                            autoCapitalize="words"
-                            autoCorrect="off"
-                            spellCheck={false}
-                            className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl"
-                          />
-                          {existingSections.length > 0 && (
-                            <ComboboxContent>
-                              <ComboboxList>
-                                {existingSections.map((sec) => (
-                                  <ComboboxItem key={sec} value={sec} className="py-2.5 px-3">
-                                    {sec}
-                                  </ComboboxItem>
-                                ))}
-                              </ComboboxList>
-                            </ComboboxContent>
-                          )}
-                        </Combobox>
-                      )}
+                      render={({ field }) => {
+                        const trimmedInput = (field.value || "").trim();
+                        const isCustomSection =
+                          trimmedInput.length > 0 &&
+                          !existingSections.some(
+                            (sec) => sec.toLowerCase() === trimmedInput.toLowerCase()
+                          );
+
+                        return (
+                          <Combobox 
+                            value={field.value} 
+                            onValueChange={(val: string | null) => field.onChange(val || "")}
+                          >
+                            <ComboboxInput 
+                              id="section"
+                              aria-label="Class Section"
+                              placeholder="e.g. Grade 3 - Rizal" 
+                              value={field.value}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(e.target.value)}
+                              aria-invalid={!!form.formState.errors.section}
+                              aria-describedby={
+                                form.formState.errors.section
+                                  ? "section-error section-hint"
+                                  : "section-hint"
+                              }
+                              aria-required="true"
+                              autoCapitalize="words"
+                              autoCorrect="off"
+                              spellCheck={false}
+                              className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl"
+                            />
+                            {(existingSections.length > 0 || isCustomSection) && (
+                              <ComboboxContent>
+                                <ComboboxList>
+                                  {existingSections.map((sec) => (
+                                    <ComboboxItem key={sec} value={sec} className="py-2.5 px-3">
+                                      {sec}
+                                    </ComboboxItem>
+                                  ))}
+                                  {isCustomSection && (
+                                    <ComboboxItem value={trimmedInput} className="py-2.5 px-3 text-primary font-medium">
+                                      <Plus className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                                      Create section &ldquo;{trimmedInput}&rdquo;
+                                    </ComboboxItem>
+                                  )}
+                                </ComboboxList>
+                              </ComboboxContent>
+                            )}
+                          </Combobox>
+                        );
+                      }}
                     />
                   </FieldContent>
+                  <p id="section-hint" className="text-xs text-muted-foreground mt-1 leading-normal">
+                    Type a new section name or select from existing sections.
+                  </p>
                   <FieldError id="section-error" errors={[form.formState.errors.section]} />
                 </Field>
 

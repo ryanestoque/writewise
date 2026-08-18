@@ -183,44 +183,64 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
                   Target Section <span className="text-destructive" aria-hidden="true">*</span>
                 </FieldLabel>
                 <FieldContent>
-                  <Combobox 
-                    value={section} 
-                    onValueChange={(val: string | null) => {
-                      setSection(val || "");
-                      if (sectionError) setSectionError(null);
-                    }}
-                  >
-                    <ComboboxInput 
-                      id="bulk_section"
-                      aria-label="Target Class Section"
-                      placeholder="e.g. Grade 3 - Rizal" 
-                      value={section}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        setSection(e.target.value);
-                        if (sectionError) setSectionError(null);
-                      }}
-                      disabled={isProcessing}
-                      aria-invalid={!!sectionError}
-                      aria-describedby={sectionError ? "bulk_section_error" : undefined}
-                      aria-required="true"
-                      autoCapitalize="words"
-                      autoCorrect="off"
-                      spellCheck={false}
-                      className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl"
-                    />
-                    {existingSections.length > 0 && (
-                      <ComboboxContent>
-                        <ComboboxList>
-                          {existingSections.map((sec) => (
-                            <ComboboxItem key={sec} value={sec} className="py-2.5 px-3">
-                              {sec}
-                            </ComboboxItem>
-                          ))}
-                        </ComboboxList>
-                      </ComboboxContent>
-                    )}
-                  </Combobox>
+                  {(() => {
+                    const trimmedInput = section.trim();
+                    const isCustomSection =
+                      trimmedInput.length > 0 &&
+                      !existingSections.some(
+                        (sec) => sec.toLowerCase() === trimmedInput.toLowerCase()
+                      );
+
+                    return (
+                      <Combobox 
+                        value={section} 
+                        onValueChange={(val: string | null) => {
+                          setSection(val || "");
+                          if (sectionError) setSectionError(null);
+                        }}
+                      >
+                        <ComboboxInput 
+                          id="bulk_section"
+                          aria-label="Target Class Section"
+                          placeholder="e.g. Grade 3 - Rizal" 
+                          value={section}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            setSection(e.target.value);
+                            if (sectionError) setSectionError(null);
+                          }}
+                          disabled={isProcessing}
+                          aria-invalid={!!sectionError}
+                          aria-describedby={sectionError ? "bulk_section_error bulk_section_hint" : "bulk_section_hint"}
+                          aria-required="true"
+                          autoCapitalize="words"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl"
+                        />
+                        {(existingSections.length > 0 || isCustomSection) && (
+                          <ComboboxContent>
+                            <ComboboxList>
+                              {existingSections.map((sec) => (
+                                <ComboboxItem key={sec} value={sec} className="py-2.5 px-3">
+                                  {sec}
+                                </ComboboxItem>
+                              ))}
+                              {isCustomSection && (
+                                <ComboboxItem value={trimmedInput} className="py-2.5 px-3 text-primary font-medium">
+                                  <UserPlus className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                                  Create section &ldquo;{trimmedInput}&rdquo;
+                                </ComboboxItem>
+                              )}
+                            </ComboboxList>
+                          </ComboboxContent>
+                        )}
+                      </Combobox>
+                    );
+                  })()}
                 </FieldContent>
+                <p id="bulk_section_hint" className="text-xs text-muted-foreground mt-1 leading-normal">
+                  Type a new section name or select from existing sections.
+                </p>
                 {sectionError && <FieldError id="bulk_section_error">{sectionError}</FieldError>}
               </Field>
 
