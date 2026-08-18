@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.activities import router as activities_router
 from app.api.students import router as students_router
 from app.core.config import settings
 
@@ -41,3 +42,4 @@ def health_check():
 
 
 app.include_router(students_router, prefix="/api/students", tags=["students"])
+app.include_router(activities_router, prefix="/api/activities", tags=["activities"])
