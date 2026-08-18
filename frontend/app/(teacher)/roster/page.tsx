@@ -928,27 +928,33 @@ export default function RosterPage() {
 
       {/* Batch Remove Confirmation Dialog */}
       <AlertDialog open={isBatchRemoveOpen} onOpenChange={setIsBatchRemoveOpen}>
-        <AlertDialogContent className="w-[calc(100%-1.5rem)] max-w-md rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xl border border-border/80">
-          <AlertDialogHeader className="text-left">
-            <AlertDialogTitle className="font-heading text-lg sm:text-xl font-semibold">
-              Remove {selectedStudentsList.length} Students?
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Remove {selectedStudentsList.length} {selectedStudentsList.length === 1 ? "Student" : "Students"}?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs sm:text-sm text-muted-foreground mt-1">
-              This will unenroll the {selectedStudentsList.length} selected students from your roster. Their historical assessment data will not be deleted, but they will no longer appear in your active class list.
+            <AlertDialogDescription>
+              This will unenroll the {selectedStudentsList.length} selected {selectedStudentsList.length === 1 ? "student" : "students"} from your roster. Their historical assessment data will not be deleted, but they will no longer appear in your active class list.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-col-reverse sm:flex-row gap-2 mt-4 pt-2 border-t border-border/60">
-            <AlertDialogCancel className="h-10 sm:h-9 rounded-lg sm:rounded-xl text-xs sm:text-sm" disabled={isBatchRemoving}>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBatchRemoving}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBatchRemoveConfirm}
               disabled={isBatchRemoving}
               variant="destructive"
-              className="h-10 sm:h-9 rounded-lg sm:rounded-xl bg-destructive hover:bg-destructive/90 text-white text-xs sm:text-sm font-medium"
+              className="gap-2"
             >
-              {isBatchRemoving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Remove {selectedStudentsList.length} Students
+              {isBatchRemoving ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  <span>Removing...</span>
+                </>
+              ) : (
+                `Remove ${selectedStudentsList.length} ${selectedStudentsList.length === 1 ? "Student" : "Students"}`
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1004,23 +1010,29 @@ function RowActions({ student, onEdit }: { student: Student; onEdit: () => void 
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <AlertDialogContent className="w-[calc(100%-1.5rem)] max-w-md rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xl border border-border/80">
-        <AlertDialogHeader className="text-left">
-          <AlertDialogTitle className="font-heading text-lg sm:text-xl font-semibold">Remove Student?</AlertDialogTitle>
-          <AlertDialogDescription className="text-xs sm:text-sm text-muted-foreground mt-1">
-            This will unenroll <strong className="text-foreground">{student.full_name}</strong> from your roster. Their historical data will not be deleted, but they will no longer appear in your active class list.
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Remove Student?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will unenroll <strong className="font-semibold text-foreground">{student.full_name}</strong> from your roster. Their historical data will not be deleted, but they will no longer appear in your active class list.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="flex flex-col-reverse sm:flex-row gap-2 mt-4 pt-2 border-t border-border/60">
-          <AlertDialogCancel className="h-10 sm:h-9 rounded-lg sm:rounded-xl text-xs sm:text-sm">Cancel</AlertDialogCancel>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleRemove}
             disabled={isPending}
             variant="destructive"
-            className="h-10 sm:h-9 rounded-lg sm:rounded-xl bg-destructive hover:bg-destructive/90 text-white text-xs sm:text-sm font-medium"
+            className="gap-2"
           >
-            {isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-            Remove
+            {isPending ? (
+              <>
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                <span>Removing...</span>
+              </>
+            ) : (
+              "Remove"
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

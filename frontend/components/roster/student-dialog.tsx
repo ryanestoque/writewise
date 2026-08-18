@@ -349,15 +349,15 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
 
       {/* Duplicate Student Confirmation Dialog */}
       <AlertDialog open={!!duplicateData} onOpenChange={(isOpen) => !isOpen && setDuplicateData(null)}>
-        <AlertDialogContent className="w-[calc(100%-1.5rem)] max-w-md rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xl border border-border/80">
-          <AlertDialogHeader className="text-left">
-            <AlertDialogTitle className="font-heading text-lg sm:text-xl font-semibold">Duplicate Student Name?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs sm:text-sm text-muted-foreground mt-1">
-              A student named <strong className="text-foreground">{duplicateData?.full_name}</strong> is already enrolled in <strong className="text-foreground">{duplicateData?.section}</strong>. Do you want to continue and add another student with this exact name?
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Duplicate Student Name?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A student named <strong className="font-semibold text-foreground">{duplicateData?.full_name}</strong> is already enrolled in <strong className="font-semibold text-foreground">{duplicateData?.section}</strong>. Do you want to continue and add another student with this exact name?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-col-reverse sm:flex-row gap-2 mt-4 pt-2 border-t border-border/60">
-            <AlertDialogCancel className="h-10 sm:h-9 rounded-lg sm:rounded-xl text-xs sm:text-sm" onClick={() => setDuplicateData(null)}>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDuplicateData(null)}>
               Review Details
             </AlertDialogCancel>
             <AlertDialogAction
@@ -367,7 +367,6 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                   setDuplicateData(null);
                 }
               }}
-              className="h-10 sm:h-9 rounded-lg sm:rounded-xl bg-primary hover:bg-brand-700 text-primary-foreground text-xs sm:text-sm font-medium"
             >
               Add Anyway
             </AlertDialogAction>
