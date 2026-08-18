@@ -50,3 +50,6 @@ __pycache__/
 
 # supabase
 supabase/.temp/
+
+# agent tooling artifacts
+.impeccable/

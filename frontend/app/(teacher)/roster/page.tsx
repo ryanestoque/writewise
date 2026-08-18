@@ -358,31 +358,31 @@ export default function RosterPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-16">
+    <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6 pb-20 sm:pb-16 px-1 sm:px-0">
       {/* Header section with title and actions */}
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">Class Roster</h1>
             {students && students.length > 0 && (
-              <Badge variant="outline" className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 border-brand-200/80">
+              <Badge variant="outline" className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900">
                 {students.length} {students.length === 1 ? "Student" : "Students"}
               </Badge>
             )}
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-normal">
             Manage student enrollment and class sections for handwriting assessment activities.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
+        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
           {students && students.length > 0 && (
             <Button
               onClick={handleExportRoster}
               variant="outline"
-              className="border-border text-foreground hover:bg-muted font-medium shadow-2xs"
+              className="h-10 sm:h-9 flex-1 sm:flex-none border-border text-foreground hover:bg-muted text-xs sm:text-sm font-medium shadow-2xs rounded-lg sm:rounded-xl"
             >
-              <Download className="w-4 h-4 mr-2 text-muted-foreground" />
+              <Download className="w-4 h-4 mr-1.5 text-muted-foreground shrink-0" />
               Export CSV
             </Button>
           )}
@@ -390,17 +390,17 @@ export default function RosterPage() {
           <Button
             onClick={handleOpenBulk}
             variant="outline"
-            className="border-border text-foreground hover:bg-muted font-medium shadow-2xs"
+            className="h-10 sm:h-9 flex-1 sm:flex-none border-border text-foreground hover:bg-muted text-xs sm:text-sm font-medium shadow-2xs rounded-lg sm:rounded-xl"
           >
-            <UserPlus className="w-4 h-4 mr-2 text-muted-foreground" />
+            <UserPlus className="w-4 h-4 mr-1.5 text-muted-foreground shrink-0" />
             Bulk Add
           </Button>
 
           <Button
             onClick={handleOpenNew}
-            className="bg-primary hover:bg-brand-700 text-primary-foreground font-medium shadow-xs"
+            className="h-10 sm:h-9 w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4 mr-1.5 shrink-0" />
             Add Student
           </Button>
         </div>
@@ -410,7 +410,7 @@ export default function RosterPage() {
       <div className="space-y-4">
         {/* Search and Section Filters Bar */}
         {students && students.length > 0 && (
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-surface p-3 rounded-xl border border-border shadow-2xs">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-2xs">
             {/* Search Input */}
             <div className="relative w-full lg:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -429,7 +429,7 @@ export default function RosterPage() {
                     }
                   }
                 }}
-                className="pl-9 pr-8 h-9 text-sm rounded-lg"
+                className="pl-9 pr-8 h-10 sm:h-9 text-base sm:text-sm rounded-lg sm:rounded-xl"
                 aria-keyshortcuts="/"
               />
               {searchQuery ? (
@@ -439,7 +439,7 @@ export default function RosterPage() {
                     setSearchQuery("");
                     searchInputRef.current?.focus();
                   }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-full transition-colors"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 rounded-full transition-colors cursor-pointer"
                   aria-label="Clear search"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -457,7 +457,7 @@ export default function RosterPage() {
               {canScrollLeft && (
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-surface to-transparent z-10"
+                  className="pointer-events-none absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-surface dark:from-card to-transparent z-10"
                 />
               )}
 
@@ -466,7 +466,7 @@ export default function RosterPage() {
                 onScroll={updateScrollState}
                 role="group"
                 aria-label="Filter by class section"
-                className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none w-full"
+                className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none w-full touch-pan-x overscroll-x-contain"
               >
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1 shrink-0">
                   Section:
@@ -475,7 +475,7 @@ export default function RosterPage() {
                   type="button"
                   onClick={() => setSelectedSection("all")}
                   aria-pressed={selectedSection === "all"}
-                  className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2 after:content-[''] ${selectedSection === "all"
+                  className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-1 after:content-[''] ${selectedSection === "all"
                       ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-2xs"
                       : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
                     }`}
@@ -498,7 +498,7 @@ export default function RosterPage() {
                       type="button"
                       onClick={() => setSelectedSection(sec)}
                       aria-pressed={isSelected}
-                      className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2 after:content-[''] ${isSelected
+                      className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-1 after:content-[''] ${isSelected
                           ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-2xs"
                           : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
                         }`}
@@ -519,7 +519,7 @@ export default function RosterPage() {
               {canScrollRight && (
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-surface to-transparent z-10"
+                  className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-surface dark:from-card to-transparent z-10"
                 />
               )}
             </div>
@@ -537,246 +537,358 @@ export default function RosterPage() {
             <button
               type="button"
               onClick={handleResetFilters}
-              className="text-primary hover:underline font-medium"
+              className="text-primary hover:underline font-medium cursor-pointer"
             >
               Clear filters
             </button>
           </div>
         )}
 
-        {/* Table Card */}
-        <div className="bg-surface border border-border rounded-xl shadow-2xs overflow-hidden">
-          <div
-            role="region"
-            aria-label="Class roster table"
-          >
-            <Table>
-              <TableHeader className="bg-muted/40">
-                <TableRow className="border-b border-border hover:bg-transparent">
-                  {/* Select All Checkbox Column */}
-                  <TableHead className="w-10 px-3">
-                    <Checkbox
-                      checked={allFilteredSelected}
-                      indeterminate={someFilteredSelected}
-                      onCheckedChange={toggleSelectAll}
-                      aria-label="Select all students"
-                    />
-                  </TableHead>
+        {/* Loading state */}
+        {isLoading ? (
+          <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-12 flex flex-col items-center justify-center gap-2 text-muted-foreground shadow-2xs">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <span className="text-sm font-medium">Loading class roster...</span>
+          </div>
+        ) : students?.length === 0 ? (
+          /* Empty Roster State */
+          <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-2xs overflow-hidden">
+            <Empty className="py-14 border-0">
+              <EmptyMedia variant="icon" className="bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
+                <Users className="w-6 h-6" />
+              </EmptyMedia>
+              <EmptyHeader>
+                <EmptyTitle className="text-lg sm:text-xl">No students yet</EmptyTitle>
+                <EmptyDescription className="text-xs sm:text-sm max-w-sm mx-auto">
+                  Add your first student or bulk-paste an entire class list to start creating handwriting activities.
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 w-full sm:w-auto px-4 sm:px-0">
+                <Button
+                  onClick={handleOpenBulk}
+                  variant="outline"
+                  className="h-10 sm:h-9 w-full sm:w-auto font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl"
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Bulk Add
+                </Button>
+                <Button
+                  onClick={handleOpenNew}
+                  className="h-10 sm:h-9 w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Student
+                </Button>
+              </EmptyContent>
+            </Empty>
+          </div>
+        ) : filteredStudents.length === 0 ? (
+          /* Filter Empty State */
+          <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-2xs overflow-hidden">
+            <Empty className="py-12 border-0">
+              <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
+                <SearchX className="w-6 h-6" />
+              </EmptyMedia>
+              <EmptyHeader>
+                <EmptyTitle className="text-lg sm:text-xl">No matching students</EmptyTitle>
+                <EmptyDescription className="text-xs sm:text-sm">
+                  We couldn&apos;t find any students matching &ldquo;{searchQuery}&rdquo;
+                  {selectedSection !== "all" ? ` in ${selectedSection}` : ""}.
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button onClick={handleResetFilters} variant="outline" size="sm" className="rounded-lg sm:rounded-xl">
+                  Clear filters
+                </Button>
+              </EmptyContent>
+            </Empty>
+          </div>
+        ) : (
+          <>
+            {/* Desktop & Tablet Table View (md and up) */}
+            <div className="hidden md:block bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-2xs overflow-hidden">
+              <div role="region" aria-label="Class roster table" className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-muted/40">
+                    <TableRow className="border-b border-border hover:bg-transparent">
+                      {/* Select All Checkbox Column */}
+                      <TableHead className="w-10 px-3">
+                        <Checkbox
+                          checked={allFilteredSelected}
+                          indeterminate={someFilteredSelected}
+                          onCheckedChange={toggleSelectAll}
+                          aria-label="Select all students"
+                        />
+                      </TableHead>
 
-                  {/* Name Sort Column */}
-                  <TableHead
-                    aria-sort={sortField === "full_name" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
-                    className="p-0 font-heading"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleSort("full_name")}
-                      className="w-full h-full px-3 py-3 flex items-center gap-1.5 font-medium text-foreground hover:text-primary transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset select-none text-left"
-                      aria-label={`Sort by student name, currently ${sortField === "full_name" ? (sortDirection === "asc" ? "ascending" : "descending") : "unsorted"}`}
-                    >
-                      <span>Student Name</span>
-                      {sortField === "full_name" ? (
-                        sortDirection === "asc" ? (
-                          <ArrowUp className="w-3.5 h-3.5 text-primary shrink-0" />
-                        ) : (
-                          <ArrowDown className="w-3.5 h-3.5 text-primary shrink-0" />
-                        )
-                      ) : (
-                        <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
-                      )}
-                    </button>
-                  </TableHead>
-
-                  {/* Section Sort Column */}
-                  <TableHead
-                    aria-sort={sortField === "section" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
-                    className="p-0 font-heading"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleSort("section")}
-                      className="w-full h-full px-3 py-3 flex items-center gap-1.5 font-medium text-foreground hover:text-primary transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset select-none text-left"
-                      aria-label={`Sort by class section, currently ${sortField === "section" ? (sortDirection === "asc" ? "ascending" : "descending") : "unsorted"}`}
-                    >
-                      <span>Class Section</span>
-                      {sortField === "section" ? (
-                        sortDirection === "asc" ? (
-                          <ArrowUp className="w-3.5 h-3.5 text-primary shrink-0" />
-                        ) : (
-                          <ArrowDown className="w-3.5 h-3.5 text-primary shrink-0" />
-                        )
-                      ) : (
-                        <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
-                      )}
-                    </button>
-                  </TableHead>
-
-                  {/* Date Enrolled Column */}
-                  <TableHead
-                    aria-sort={sortField === "created_at" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
-                    className="p-0 font-heading"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleSort("created_at")}
-                      className="w-full h-full px-3 py-3 flex items-center gap-1.5 font-medium text-foreground hover:text-primary transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset select-none text-left"
-                      aria-label={`Sort by date enrolled, currently ${sortField === "created_at" ? (sortDirection === "asc" ? "ascending" : "descending") : "unsorted"}`}
-                    >
-                      <span>Date Enrolled</span>
-                      {sortField === "created_at" ? (
-                        sortDirection === "asc" ? (
-                          <ArrowUp className="w-3.5 h-3.5 text-primary shrink-0" />
-                        ) : (
-                          <ArrowDown className="w-3.5 h-3.5 text-primary shrink-0" />
-                        )
-                      ) : (
-                        <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
-                      )}
-                    </button>
-                  </TableHead>
-
-                  <TableHead className="text-right font-heading font-medium text-foreground">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-44 text-center">
-                      <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                        <span className="text-sm">Loading class roster...</span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : students?.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="p-0">
-                      <Empty className="py-14 border-0">
-                        <EmptyMedia variant="icon" className="bg-brand-100 text-brand-700">
-                          <Users className="w-6 h-6" />
-                        </EmptyMedia>
-                        <EmptyHeader>
-                          <EmptyTitle>No students yet</EmptyTitle>
-                          <EmptyDescription>
-                            Add your first student or bulk-paste an entire class list to start creating handwriting activities.
-                          </EmptyDescription>
-                        </EmptyHeader>
-                        <EmptyContent className="flex flex-row items-center justify-center gap-3">
-                          <Button
-                            onClick={handleOpenBulk}
-                            variant="outline"
-                            size="sm"
-                            className="font-medium"
-                          >
-                            <UserPlus className="w-4 h-4 mr-2" />
-                            Bulk Add
-                          </Button>
-                          <Button
-                            onClick={handleOpenNew}
-                            size="sm"
-                            className="bg-primary hover:bg-brand-700 text-primary-foreground font-medium"
-                          >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Add Student
-                          </Button>
-                        </EmptyContent>
-                      </Empty>
-                    </TableCell>
-                  </TableRow>
-                ) : filteredStudents.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="p-0">
-                      <Empty className="py-12 border-0">
-                        <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
-                          <SearchX className="w-6 h-6" />
-                        </EmptyMedia>
-                        <EmptyHeader>
-                          <EmptyTitle>No matching students</EmptyTitle>
-                          <EmptyDescription>
-                            We couldn&apos;t find any students matching &ldquo;{searchQuery}&rdquo;
-                            {selectedSection !== "all" ? ` in ${selectedSection}` : ""}.
-                          </EmptyDescription>
-                        </EmptyHeader>
-                        <EmptyContent>
-                          <Button onClick={handleResetFilters} variant="outline" size="sm">
-                            Clear filters
-                          </Button>
-                        </EmptyContent>
-                      </Empty>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredStudents.map((student) => {
-                    const isSelected = selectedStudentIds.has(student.id);
-                    return (
-                      <TableRow
-                        key={student.id}
-                        className={`border-b border-border/60 transition-colors group ${isSelected ? "bg-brand-50/70 dark:bg-brand-950/40" : "hover:bg-muted/30"
-                          }`}
+                      {/* Name Sort Column */}
+                      <TableHead
+                        aria-sort={sortField === "full_name" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                        className="p-0 font-heading"
                       >
-                        {/* Checkbox Column */}
-                        <TableCell className="w-10 px-3 py-3">
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() => toggleSelectStudent(student.id)}
-                            aria-label={`Select ${student.full_name}`}
-                          />
-                        </TableCell>
+                        <button
+                          type="button"
+                          onClick={() => handleSort("full_name")}
+                          className="w-full h-full px-3 py-3 flex items-center gap-1.5 font-medium text-foreground hover:text-primary transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset select-none text-left cursor-pointer"
+                          aria-label={`Sort by student name, currently ${sortField === "full_name" ? (sortDirection === "asc" ? "ascending" : "descending") : "unsorted"}`}
+                        >
+                          <span>Student Name</span>
+                          {sortField === "full_name" ? (
+                            sortDirection === "asc" ? (
+                              <ArrowUp className="w-3.5 h-3.5 text-primary shrink-0" />
+                            ) : (
+                              <ArrowDown className="w-3.5 h-3.5 text-primary shrink-0" />
+                            )
+                          ) : (
+                            <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                          )}
+                        </button>
+                      </TableHead>
 
-                        {/* Name + Avatar + Parent Email */}
-                        <TableCell className="text-foreground font-medium py-3">
-                          <div className="flex items-center gap-3">
-                            <Avatar size="sm" className={`border ${getAvatarColor(student.full_name)}`}>
-                              <AvatarFallback className="text-[11px] font-semibold bg-transparent">
-                                {getInitials(student.full_name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex flex-col min-w-0">
-                              <span className="font-medium text-foreground tracking-tight truncate">{student.full_name}</span>
+                      {/* Section Sort Column */}
+                      <TableHead
+                        aria-sort={sortField === "section" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                        className="p-0 font-heading"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleSort("section")}
+                          className="w-full h-full px-3 py-3 flex items-center gap-1.5 font-medium text-foreground hover:text-primary transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset select-none text-left cursor-pointer"
+                          aria-label={`Sort by class section, currently ${sortField === "section" ? (sortDirection === "asc" ? "ascending" : "descending") : "unsorted"}`}
+                        >
+                          <span>Class Section</span>
+                          {sortField === "section" ? (
+                            sortDirection === "asc" ? (
+                              <ArrowUp className="w-3.5 h-3.5 text-primary shrink-0" />
+                            ) : (
+                              <ArrowDown className="w-3.5 h-3.5 text-primary shrink-0" />
+                            )
+                          ) : (
+                            <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                          )}
+                        </button>
+                      </TableHead>
+
+                      {/* Date Enrolled Column */}
+                      <TableHead
+                        aria-sort={sortField === "created_at" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                        className="p-0 font-heading"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleSort("created_at")}
+                          className="w-full h-full px-3 py-3 flex items-center gap-1.5 font-medium text-foreground hover:text-primary transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset select-none text-left cursor-pointer"
+                          aria-label={`Sort by date enrolled, currently ${sortField === "created_at" ? (sortDirection === "asc" ? "ascending" : "descending") : "unsorted"}`}
+                        >
+                          <span>Date Enrolled</span>
+                          {sortField === "created_at" ? (
+                            sortDirection === "asc" ? (
+                              <ArrowUp className="w-3.5 h-3.5 text-primary shrink-0" />
+                            ) : (
+                              <ArrowDown className="w-3.5 h-3.5 text-primary shrink-0" />
+                            )
+                          ) : (
+                            <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                          )}
+                        </button>
+                      </TableHead>
+
+                      <TableHead className="text-right font-heading font-medium text-foreground">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredStudents.map((student) => {
+                      const isSelected = selectedStudentIds.has(student.id);
+                      return (
+                        <TableRow
+                          key={student.id}
+                          className={`border-b border-border/60 transition-colors group ${isSelected ? "bg-brand-50/70 dark:bg-brand-950/40" : "hover:bg-muted/30"
+                            }`}
+                        >
+                          {/* Checkbox Column */}
+                          <TableCell className="w-10 px-3 py-3">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleSelectStudent(student.id)}
+                              aria-label={`Select ${student.full_name}`}
+                            />
+                          </TableCell>
+
+                          {/* Name + Avatar + Parent Email */}
+                          <TableCell className="text-foreground font-medium py-3">
+                            <div className="flex items-center gap-3">
+                              <Avatar size="sm" className={`border ${getAvatarColor(student.full_name)}`}>
+                                <AvatarFallback className="text-[11px] font-semibold bg-transparent">
+                                  {getInitials(student.full_name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex flex-col min-w-0">
+                                <span className="font-medium text-foreground tracking-tight truncate">{student.full_name}</span>
+                                {student.parent_email ? (
+                                  <span className="text-xs text-muted-foreground flex items-center gap-1 truncate font-normal">
+                                    <Mail className="w-3 h-3 text-muted-foreground/70 shrink-0" />
+                                    {student.parent_email}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground italic font-normal">
+                                    No parent email linked
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+
+                          {/* Section Badge */}
+                          <TableCell className="text-muted-foreground py-3">
+                            <Badge variant="secondary" className="font-normal text-xs bg-brand-100/80 text-brand-800 border-brand-200/70 dark:bg-brand-950 dark:text-brand-300 dark:border-brand-900">
+                              {student.section}
+                            </Badge>
+                          </TableCell>
+
+                          {/* Date Enrolled */}
+                          <TableCell className="text-muted-foreground text-sm py-3">
+                            <time dateTime={student.created_at}>
+                              {new Date(student.created_at).toLocaleDateString(undefined, {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </time>
+                          </TableCell>
+
+                          {/* Row Actions */}
+                          <TableCell className="text-right py-3">
+                            <RowActions student={student} onEdit={() => handleEdit(student)} />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            {/* Mobile Card List View (< md) */}
+            <div className="block md:hidden space-y-2.5">
+              {/* Mobile Select All & Sort Bar */}
+              <div className="flex items-center justify-between px-3 py-2 bg-surface dark:bg-card border border-border rounded-xl text-xs">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={allFilteredSelected}
+                    indeterminate={someFilteredSelected}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Select all students"
+                  />
+                  <span className="font-medium text-foreground">
+                    {selectedStudentIds.size > 0
+                      ? `${selectedStudentIds.size} of ${filteredStudents.length} Selected`
+                      : "Select All"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <button
+                    type="button"
+                    onClick={() => handleSort("full_name")}
+                    className={`px-2 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                      sortField === "full_name"
+                        ? "bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300 font-semibold"
+                        : "hover:bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    Name {sortField === "full_name" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSort("section")}
+                    className={`px-2 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                      sortField === "section"
+                        ? "bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300 font-semibold"
+                        : "hover:bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    Section {sortField === "section" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
+                  </button>
+                </div>
+              </div>
+
+              {/* Mobile Student Cards */}
+              <div className="space-y-2">
+                {filteredStudents.map((student) => {
+                  const isSelected = selectedStudentIds.has(student.id);
+                  return (
+                    <div
+                      key={student.id}
+                      className={`p-3.5 rounded-xl border transition-all ${
+                        isSelected
+                          ? "bg-brand-50/80 dark:bg-brand-950/40 border-brand-300 dark:border-brand-700 shadow-2xs ring-1 ring-brand-500/20"
+                          : "bg-surface dark:bg-card border-border/80 hover:border-border shadow-2xs"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="p-1 -ml-1 flex items-center justify-center">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleSelectStudent(student.id)}
+                              aria-label={`Select ${student.full_name}`}
+                            />
+                          </div>
+
+                          <Avatar size="sm" className={`border ${getAvatarColor(student.full_name)} shrink-0`}>
+                            <AvatarFallback className="text-[11px] font-semibold bg-transparent">
+                              {getInitials(student.full_name)}
+                            </AvatarFallback>
+                          </Avatar>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-semibold text-foreground tracking-tight text-sm truncate">
+                                {student.full_name}
+                              </span>
+                              <Badge
+                                variant="secondary"
+                                className="font-normal text-[11px] px-2 py-0.2 bg-brand-100/80 text-brand-800 border-brand-200/70 dark:bg-brand-950 dark:text-brand-300 dark:border-brand-900 shrink-0"
+                              >
+                                {student.section}
+                              </Badge>
+                            </div>
+
+                            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                               {student.parent_email ? (
-                                <span className="text-xs text-muted-foreground flex items-center gap-1 truncate font-normal">
+                                <span className="flex items-center gap-1 truncate font-normal">
                                   <Mail className="w-3 h-3 text-muted-foreground/70 shrink-0" />
                                   {student.parent_email}
                                 </span>
                               ) : (
-                                <span className="text-xs text-muted-foreground italic font-normal">
-                                  No parent email linked
-                                </span>
+                                <span className="italic font-normal text-[11px]">No parent email linked</span>
                               )}
                             </div>
                           </div>
-                        </TableCell>
+                        </div>
 
-                        {/* Section Badge */}
-                        <TableCell className="text-muted-foreground py-3">
-                          <Badge variant="secondary" className="font-normal text-xs bg-brand-100/80 text-brand-800 border-brand-200/70 dark:bg-brand-950 dark:text-brand-300 dark:border-brand-900">
-                            {student.section}
-                          </Badge>
-                        </TableCell>
-
-                        {/* Date Enrolled */}
-                        <TableCell className="text-muted-foreground text-sm py-3">
-                          <time dateTime={student.created_at}>
-                            {new Date(student.created_at).toLocaleDateString(undefined, {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </time>
-                        </TableCell>
-
-                        {/* Row Actions */}
-                        <TableCell className="text-right py-3">
+                        <div className="shrink-0 -mr-1">
                           <RowActions student={student} onEdit={() => handleEdit(student)} />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-2.5 pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>Enrolled</span>
+                        <time dateTime={student.created_at} className="font-medium text-foreground/80">
+                          {new Date(student.created_at).toLocaleDateString(undefined, {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </time>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Floating Batch Actions Bar */}
@@ -816,22 +928,24 @@ export default function RosterPage() {
 
       {/* Batch Remove Confirmation Dialog */}
       <AlertDialog open={isBatchRemoveOpen} onOpenChange={setIsBatchRemoveOpen}>
-        <AlertDialogContent className="rounded-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="font-heading">
+        <AlertDialogContent className="w-[calc(100%-1.5rem)] max-w-md rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xl border border-border/80">
+          <AlertDialogHeader className="text-left">
+            <AlertDialogTitle className="font-heading text-lg sm:text-xl font-semibold">
               Remove {selectedStudentsList.length} Students?
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-xs sm:text-sm text-muted-foreground mt-1">
               This will unenroll the {selectedStudentsList.length} selected students from your roster. Their historical assessment data will not be deleted, but they will no longer appear in your active class list.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-lg" disabled={isBatchRemoving}>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="flex flex-col-reverse sm:flex-row gap-2 mt-4 pt-2 border-t border-border/60">
+            <AlertDialogCancel className="h-10 sm:h-9 rounded-lg sm:rounded-xl text-xs sm:text-sm" disabled={isBatchRemoving}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBatchRemoveConfirm}
               disabled={isBatchRemoving}
               variant="destructive"
-              className="rounded-lg bg-destructive hover:bg-destructive/90 text-white"
+              className="h-10 sm:h-9 rounded-lg sm:rounded-xl bg-destructive hover:bg-destructive/90 text-white text-xs sm:text-sm font-medium"
             >
               {isBatchRemoving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Remove {selectedStudentsList.length} Students
@@ -865,7 +979,7 @@ function RowActions({ student, onEdit }: { student: Student; onEdit: () => void 
             <Button
               variant="ghost"
               size="icon"
-              className="relative h-8 w-8 text-muted-foreground hover:text-foreground after:absolute after:-inset-1.5 after:content-['']"
+              className="relative h-9 w-9 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground after:absolute after:-inset-2 after:content-['']"
               aria-label={`Actions for ${student.full_name}`}
             />
           }
@@ -873,15 +987,15 @@ function RowActions({ student, onEdit }: { student: Student; onEdit: () => void 
           <span className="sr-only">Actions for {student.full_name}</span>
           <MoreHorizontal className="h-4 w-4" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="rounded-xl min-w-36">
-          <DropdownMenuItem onClick={onEdit} className="cursor-pointer">
+        <DropdownMenuContent align="end" className="rounded-xl min-w-36 p-1 shadow-lg">
+          <DropdownMenuItem onClick={onEdit} className="cursor-pointer py-2 px-2.5 text-sm">
             <Edit2 className="w-4 h-4 mr-2 text-muted-foreground" />
             Edit
           </DropdownMenuItem>
           <AlertDialogTrigger
             nativeButton={false}
             render={
-              <DropdownMenuItem variant="destructive" className="cursor-pointer text-destructive focus:text-destructive">
+              <DropdownMenuItem variant="destructive" className="cursor-pointer py-2 px-2.5 text-sm text-destructive focus:text-destructive">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Remove
               </DropdownMenuItem>
@@ -890,20 +1004,20 @@ function RowActions({ student, onEdit }: { student: Student; onEdit: () => void 
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <AlertDialogContent className="rounded-2xl">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="font-heading">Remove Student?</AlertDialogTitle>
-          <AlertDialogDescription>
+      <AlertDialogContent className="w-[calc(100%-1.5rem)] max-w-md rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xl border border-border/80">
+        <AlertDialogHeader className="text-left">
+          <AlertDialogTitle className="font-heading text-lg sm:text-xl font-semibold">Remove Student?</AlertDialogTitle>
+          <AlertDialogDescription className="text-xs sm:text-sm text-muted-foreground mt-1">
             This will unenroll <strong className="text-foreground">{student.full_name}</strong> from your roster. Their historical data will not be deleted, but they will no longer appear in your active class list.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel className="rounded-lg">Cancel</AlertDialogCancel>
+        <AlertDialogFooter className="flex flex-col-reverse sm:flex-row gap-2 mt-4 pt-2 border-t border-border/60">
+          <AlertDialogCancel className="h-10 sm:h-9 rounded-lg sm:rounded-xl text-xs sm:text-sm">Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleRemove}
             disabled={isPending}
             variant="destructive"
-            className="rounded-lg bg-destructive hover:bg-destructive/90 text-white"
+            className="h-10 sm:h-9 rounded-lg sm:rounded-xl bg-destructive hover:bg-destructive/90 text-white text-xs sm:text-sm font-medium"
           >
             {isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
             Remove

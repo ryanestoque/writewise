@@ -116,15 +116,15 @@ export function BatchMoveDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[460px] rounded-2xl">
-        <DialogHeader>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-brand-100 text-brand-700">
-              <ArrowRightLeft className="w-5 h-5" />
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[460px] max-h-[min(92dvh,calc(100vh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-xl border border-border/80 bg-surface dark:bg-card">
+        <DialogHeader className="pb-3 sm:pb-4 shrink-0 text-left">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
+              <ArrowRightLeft className="size-5" />
             </div>
-            <div>
-              <DialogTitle className="font-heading text-xl">Move to Section</DialogTitle>
-              <DialogDescription className="text-sm">
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">Move to Section</DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                 Change the class section for {selectedStudents.length}{" "}
                 {selectedStudents.length === 1 ? "student" : "selected students"}.
               </DialogDescription>
@@ -132,81 +132,86 @@ export function BatchMoveDialog({
           </div>
         </DialogHeader>
 
-        <div className="space-y-4 pt-2">
-          {/* Target Section */}
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="batch_target_section" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Destination Section <span className="text-destructive" aria-hidden="true">*</span>
-              </FieldLabel>
-              <FieldContent>
-                <Combobox 
-                  value={targetSection} 
-                  onValueChange={(val: string | null) => setTargetSection(val || "")}
-                >
-                  <ComboboxInput 
-                    id="batch_target_section"
-                    placeholder="e.g. Grade 3 - Rizal" 
-                    value={targetSection}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTargetSection(e.target.value)}
-                    disabled={isProcessing}
-                    aria-required="true"
-                    className="h-10"
-                  />
-                  {existingSections.length > 0 && (
-                    <ComboboxContent>
-                      <ComboboxList>
-                        {existingSections.map((sec) => (
-                          <ComboboxItem key={sec} value={sec}>
-                            {sec}
-                          </ComboboxItem>
-                        ))}
-                      </ComboboxList>
-                    </ComboboxContent>
-                  )}
-                </Combobox>
-              </FieldContent>
-            </Field>
-          </FieldGroup>
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden pt-1">
+          <div className="space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain px-1 py-1 flex-1 min-h-0">
+            {/* Target Section */}
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="batch_target_section" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Destination Section <span className="text-destructive" aria-hidden="true">*</span>
+                </FieldLabel>
+                <FieldContent>
+                  <Combobox 
+                    value={targetSection} 
+                    onValueChange={(val: string | null) => setTargetSection(val || "")}
+                  >
+                    <ComboboxInput 
+                      id="batch_target_section"
+                      placeholder="e.g. Grade 3 - Rizal" 
+                      value={targetSection}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTargetSection(e.target.value)}
+                      disabled={isProcessing}
+                      aria-required="true"
+                      autoCapitalize="words"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl"
+                    />
+                    {existingSections.length > 0 && (
+                      <ComboboxContent>
+                        <ComboboxList>
+                          {existingSections.map((sec) => (
+                            <ComboboxItem key={sec} value={sec} className="py-2.5 px-3">
+                              {sec}
+                            </ComboboxItem>
+                          ))}
+                        </ComboboxList>
+                      </ComboboxContent>
+                    )}
+                  </Combobox>
+                </FieldContent>
+              </Field>
+            </FieldGroup>
 
-          {/* Student Names Summary Preview */}
-          <div className="p-3 bg-muted/30 rounded-xl border border-border/70 max-h-32 overflow-y-auto text-xs space-y-1">
-            <span className="font-semibold text-foreground block mb-1">
-              Selected Students ({selectedStudents.length}):
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {selectedStudents.map((s) => (
-                <span
-                  key={s.id}
-                  className="bg-background px-2 py-0.5 rounded-md border border-border/80 text-muted-foreground"
-                >
-                  {s.full_name} <span className="text-[10px] text-muted-foreground/70">({s.section})</span>
-                </span>
-              ))}
+            {/* Student Names Summary Preview */}
+            <div className="p-3 bg-muted/30 dark:bg-muted/10 rounded-xl border border-border/70 max-h-36 overflow-y-auto text-xs space-y-1.5">
+              <span className="font-semibold text-foreground block">
+                Selected Students ({selectedStudents.length}):
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {selectedStudents.map((s) => (
+                  <span
+                    key={s.id}
+                    className="inline-flex items-center gap-1 bg-background px-2.5 py-1 rounded-md border border-border/80 text-foreground font-medium text-xs shadow-2xs"
+                  >
+                    {s.full_name} <span className="text-[10px] text-muted-foreground font-normal">({s.section})</span>
+                  </span>
+                ))}
+              </div>
             </div>
+
+            {/* Progress Indicator */}
+            {isProcessing && (
+              <div className="space-y-2 p-3 bg-muted/40 rounded-xl border border-border">
+                <div className="flex items-center justify-between text-xs font-medium">
+                  <span className="flex items-center gap-1.5 text-foreground">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                    Moving students to {targetSection}...
+                  </span>
+                  <span className="text-muted-foreground">{progress}%</span>
+                </div>
+                <Progress value={progress} className="h-2" />
+              </div>
+            )}
           </div>
 
-          {/* Progress Indicator */}
-          {isProcessing && (
-            <div className="space-y-2 p-3 bg-muted/40 rounded-xl border border-border">
-              <div className="flex items-center justify-between text-xs font-medium">
-                <span className="flex items-center gap-1.5 text-foreground">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
-                  Moving students to {targetSection}...
-                </span>
-                <span className="text-muted-foreground">{progress}%</span>
-              </div>
-              <Progress value={progress} className="h-2" />
-            </div>
-          )}
-
-          <div className="flex items-center justify-between gap-3 pt-4 border-t border-border">
+          <div className="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-2 pt-3.5 sm:pt-4 mt-2 border-t border-border shrink-0">
             <Button
               type="button"
               variant="ghost"
               disabled={isProcessing}
               onClick={() => handleOpenChange(false)}
-              className="text-muted-foreground hover:text-foreground"
+              className="h-10 sm:h-9 w-full sm:w-auto text-muted-foreground hover:text-foreground text-xs sm:text-sm rounded-lg sm:rounded-xl font-medium"
             >
               Cancel
             </Button>
@@ -215,7 +220,7 @@ export function BatchMoveDialog({
               type="button"
               disabled={isProcessing || !targetSection.trim()}
               onClick={handleMove}
-              className="bg-primary hover:bg-brand-700 text-primary-foreground font-medium shadow-xs"
+              className="h-10 sm:h-9 w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs"
             >
               {isProcessing ? (
                 <>

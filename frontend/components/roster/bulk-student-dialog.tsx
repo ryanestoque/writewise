@@ -145,125 +145,133 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[520px] rounded-2xl">
-        <DialogHeader>
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-brand-100 text-brand-700">
-              <Users className="w-5 h-5" />
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-xl sm:max-w-[520px] max-h-[min(92dvh,calc(100vh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-xl border border-border/80 bg-surface dark:bg-card">
+        <DialogHeader className="pb-3 sm:pb-4 shrink-0 text-left">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
+              <Users className="size-5" />
             </div>
-            <div>
-              <DialogTitle className="font-heading text-xl">Bulk Add Students</DialogTitle>
-              <DialogDescription className="text-sm">
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">Bulk Add Students</DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                 Paste student names from your class list or spreadsheet to enroll them all at once.
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="space-y-5 pt-2">
-          <FieldGroup className="space-y-4">
-            {/* Target Section */}
-            <Field>
-              <FieldLabel htmlFor="bulk_section" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Target Section <span className="text-destructive" aria-hidden="true">*</span>
-              </FieldLabel>
-              <FieldContent>
-                <Combobox 
-                  value={section} 
-                  onValueChange={(val: string | null) => setSection(val || "")}
-                >
-                  <ComboboxInput 
-                    id="bulk_section"
-                    placeholder="e.g. Grade 3 - Rizal" 
-                    value={section}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSection(e.target.value)}
-                    disabled={isProcessing}
-                    aria-required="true"
-                    className="h-10"
-                  />
-                  {existingSections.length > 0 && (
-                    <ComboboxContent>
-                      <ComboboxList>
-                        {existingSections.map((sec) => (
-                          <ComboboxItem key={sec} value={sec}>
-                            {sec}
-                          </ComboboxItem>
-                        ))}
-                      </ComboboxList>
-                    </ComboboxContent>
-                  )}
-                </Combobox>
-              </FieldContent>
-            </Field>
-
-            {/* Student Names Textarea */}
-            <Field>
-              <div className="flex items-center justify-between">
-                <FieldLabel htmlFor="bulk_names" className="inline-block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Student Names (One per line)<span className="text-destructive ml-1" aria-hidden="true">*</span>
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden pt-1">
+          <div className="space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain px-1 py-1 flex-1 min-h-0">
+            <FieldGroup className="space-y-4">
+              {/* Target Section */}
+              <Field>
+                <FieldLabel htmlFor="bulk_section" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Target Section <span className="text-destructive" aria-hidden="true">*</span>
                 </FieldLabel>
-                <span className="text-xs font-medium text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200/60">
-                  {parsedNames.length} {parsedNames.length === 1 ? "student" : "students"} detected
-                </span>
-              </div>
-              <FieldContent>
-                <Textarea
-                  id="bulk_names"
-                  value={rawText}
-                  onChange={(e) => setRawText(e.target.value)}
-                  disabled={isProcessing}
-                  placeholder="Juan Dela Cruz&#10;Maria Santos&#10;Jose Rizal&#10;Andres Bonifacio&#10;Gabriela Silang"
-                  rows={7}
-                  aria-required="true"
-                  aria-describedby="bulk_names_tip"
-                  className="font-mono text-sm leading-relaxed resize-none"
-                />
-              </FieldContent>
-              <p id="bulk_names_tip" className="text-xs text-muted-foreground">
-                Tip: Copy and paste directly from an Excel column or Word roster. Blank lines are ignored automatically.
-              </p>
-              {duplicateNames.length > 0 && !isProcessing && (
-                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-900 text-xs mt-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-                  <div>
-                    <span className="font-semibold">Notice:</span>{" "}
-                    {duplicateNames.length === 1 ? "1 student" : `${duplicateNames.length} students`} (
-                    {duplicateNames.slice(0, 3).join(", ")}
-                    {duplicateNames.length > 3 ? "..." : ""}) already enrolled in {section}. They will be added as additional entries.
-                  </div>
+                <FieldContent>
+                  <Combobox 
+                    value={section} 
+                    onValueChange={(val: string | null) => setSection(val || "")}
+                  >
+                    <ComboboxInput 
+                      id="bulk_section"
+                      placeholder="e.g. Grade 3 - Rizal" 
+                      value={section}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSection(e.target.value)}
+                      disabled={isProcessing}
+                      aria-required="true"
+                      autoCapitalize="words"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl"
+                    />
+                    {existingSections.length > 0 && (
+                      <ComboboxContent>
+                        <ComboboxList>
+                          {existingSections.map((sec) => (
+                            <ComboboxItem key={sec} value={sec} className="py-2.5 px-3">
+                              {sec}
+                            </ComboboxItem>
+                          ))}
+                        </ComboboxList>
+                      </ComboboxContent>
+                    )}
+                  </Combobox>
+                </FieldContent>
+              </Field>
+
+              {/* Student Names Textarea */}
+              <Field>
+                <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                  <FieldLabel htmlFor="bulk_names" className="inline-block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Student Names (One per line)<span className="text-destructive ml-1" aria-hidden="true">*</span>
+                  </FieldLabel>
+                  <span className="text-[11px] font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 px-2.5 py-0.5 rounded-full border border-brand-200/60 dark:border-brand-900">
+                    {parsedNames.length} {parsedNames.length === 1 ? "student" : "students"} detected
+                  </span>
                 </div>
-              )}
-            </Field>
-          </FieldGroup>
+                <FieldContent>
+                  <Textarea
+                    id="bulk_names"
+                    value={rawText}
+                    onChange={(e) => setRawText(e.target.value)}
+                    disabled={isProcessing}
+                    autoCapitalize="words"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    placeholder={"Juan Dela Cruz\nMaria Santos\nJose Rizal\nAndres Bonifacio\nGabriela Silang"}
+                    rows={5}
+                    aria-required="true"
+                    aria-describedby="bulk_names_tip"
+                    className="font-mono text-base sm:text-sm leading-relaxed resize-none rounded-lg sm:rounded-xl"
+                  />
+                </FieldContent>
+                <p id="bulk_names_tip" className="text-xs text-muted-foreground mt-1 leading-normal">
+                  Tip: Copy and paste directly from an Excel column or roster sheet. Blank lines are ignored automatically.
+                </p>
+                {duplicateNames.length > 0 && !isProcessing && (
+                  <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-900 text-xs mt-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                    <div>
+                      <span className="font-semibold">Notice:</span>{" "}
+                      {duplicateNames.length === 1 ? "1 student" : `${duplicateNames.length} students`} (
+                      {duplicateNames.slice(0, 3).join(", ")}
+                      {duplicateNames.length > 3 ? "..." : ""}) already enrolled in {section}. They will be added as additional entries.
+                    </div>
+                  </div>
+                )}
+              </Field>
+            </FieldGroup>
 
-          {/* Progress / Status feedback */}
-          {isProcessing && (
-            <div className="space-y-2 p-3 bg-muted/40 rounded-xl border border-border">
-              <div className="flex items-center justify-between text-xs font-medium">
-                <span className="flex items-center gap-1.5 text-foreground">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
-                  {statusMessage}
-                </span>
-                <span className="text-muted-foreground">{progress}%</span>
+            {/* Progress / Status feedback */}
+            {isProcessing && (
+              <div className="space-y-2 p-3 bg-muted/40 rounded-xl border border-border">
+                <div className="flex items-center justify-between text-xs font-medium">
+                  <span className="flex items-center gap-1.5 text-foreground">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                    {statusMessage}
+                  </span>
+                  <span className="text-muted-foreground">{progress}%</span>
+                </div>
+                <Progress value={progress} className="h-2" />
               </div>
-              <Progress value={progress} className="h-2" />
-            </div>
-          )}
+            )}
 
-          {!isProcessing && statusMessage && (
-            <div className="flex items-center gap-2 p-3 text-xs rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{statusMessage}</span>
-            </div>
-          )}
+            {!isProcessing && statusMessage && (
+              <div className="flex items-center gap-2 p-3 text-xs rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{statusMessage}</span>
+              </div>
+            )}
+          </div>
 
-          <div className="flex items-center justify-between gap-3 pt-4 border-t border-border">
+          <div className="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-2 pt-3.5 sm:pt-4 mt-2 border-t border-border shrink-0">
             <Button
               type="button"
               variant="ghost"
               disabled={isProcessing}
               onClick={() => handleOpenChange(false)}
-              className="text-muted-foreground hover:text-foreground"
+              className="h-10 sm:h-9 w-full sm:w-auto text-muted-foreground hover:text-foreground text-xs sm:text-sm rounded-lg sm:rounded-xl font-medium"
             >
               Cancel
             </Button>
@@ -272,7 +280,7 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
               type="button"
               disabled={isProcessing || parsedNames.length === 0 || !section.trim()}
               onClick={handleBulkSubmit}
-              className="bg-primary hover:bg-brand-700 text-primary-foreground font-medium"
+              className="h-10 sm:h-9 w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs"
             >
               {isProcessing ? (
                 <>
@@ -282,7 +290,7 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 mr-1.5" />
-                  Enroll {parsedNames.length > 0 ? `${parsedNames.length} Students` : "Students"}
+                  Enroll {parsedNames.length > 0 ? `${parsedNames.length} ${parsedNames.length === 1 ? "Student" : "Students"}` : "Students"}
                 </>
               )}
             </Button>
