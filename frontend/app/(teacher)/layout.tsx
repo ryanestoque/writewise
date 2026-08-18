@@ -19,12 +19,23 @@ export default async function TeacherLayout({
     redirect("/login");
   }
 
-  // Fetch teacher profile from public.teacher, falling back to metadata / email
-  const { data: teacherProfile } = await supabase
-    .from("teacher")
-    .select("full_name")
-    .eq("id", user.id)
-    .single();
+  // Fetch teacher profile and live counts in parallel
+  const [{ data: teacherProfile }, { count: studentCount }, { count: activityCount }] =
+    await Promise.all([
+      supabase
+        .from("teacher")
+        .select("full_name")
+        .eq("id", user.id)
+        .single(),
+      supabase
+        .from("teacher_student")
+        .select("*", { count: "exact", head: true })
+        .eq("teacher_id", user.id),
+      supabase
+        .from("activity")
+        .select("*", { count: "exact", head: true })
+        .eq("created_by", user.id),
+    ]);
 
   const fullName =
     teacherProfile?.full_name ||
@@ -35,7 +46,13 @@ export default async function TeacherLayout({
 
   return (
     <SidebarProvider>
-      <TeacherSidebar user={{ fullName, email }} />
+      <TeacherSidebar
+        user={{ fullName, email }}
+        badgeCounts={{
+          roster: studentCount ?? undefined,
+          activities: activityCount ?? undefined,
+        }}
+      />
       <SidebarInset>
         <TeacherHeader />
         <div className="flex-1 p-6">{children}</div>
