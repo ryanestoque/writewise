@@ -137,7 +137,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
             }}
             aria-haspopup="dialog"
             aria-expanded={uploadOpen}
-            className="flex items-center justify-center gap-2 w-full h-9.5 px-3 rounded-xl bg-sidebar-primary text-sidebar-primary-foreground font-medium text-xs shadow-xs hover:bg-sidebar-primary/90 transition-all cursor-pointer group/cta focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
+            className="flex items-center justify-center gap-2 w-full h-9.5 px-3 rounded-xl bg-sidebar-primary text-sidebar-primary-foreground font-medium text-xs shadow-xs hover:bg-sidebar-primary/90 transition-colors cursor-pointer group/cta focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
             id="quick-upload-worksheet"
           >
             <UploadCloudIcon className="size-4 shrink-0 transition-transform group-hover/cta:-translate-y-0.5" />
@@ -175,7 +175,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
 
         {/* Group 1: Classroom Navigation */}
         <SidebarGroup className="py-1">
-          <SidebarGroupLabel className="text-[11px] font-semibold tracking-wider text-muted-foreground/80 uppercase px-2">
+          <SidebarGroupLabel className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase px-2">
             Classroom
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -212,7 +212,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
 
         {/* Group 2: Assessment Navigation */}
         <SidebarGroup className="py-1">
-          <SidebarGroupLabel className="text-[11px] font-semibold tracking-wider text-muted-foreground/80 uppercase px-2">
+          <SidebarGroupLabel className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase px-2">
             Assessment
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -243,17 +243,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                   </SidebarMenuItem>
                 );
               })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
 
-        {/* Group 3: Reference & Tools (Visually differentiated modal reference tools) */}
-        <SidebarGroup className="py-1">
-          <SidebarGroupLabel className="text-[11px] font-semibold tracking-wider text-muted-foreground/80 uppercase px-2">
-            Reference & Tools
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
               {/* Rubric Guide Reference Modal Trigger */}
               <SidebarMenuItem>
                 <SidebarMenuButton
@@ -268,7 +258,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                   id="open-rubric-guide"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <BookOpenIcon className="size-4 shrink-0 text-primary/80 group-hover/rubric:text-primary transition-colors" />
+                    <BookOpenIcon className="size-4 shrink-0 text-primary group-hover/rubric:text-primary transition-colors" />
                     <span className="truncate font-normal group-hover/rubric:font-medium">Rubric Guide</span>
                   </div>
                 </SidebarMenuButton>
@@ -304,7 +294,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                     {user.email}
                   </span>
                 </div>
-                <ChevronsUpDownIcon className="ml-auto size-4 shrink-0 text-muted-foreground/80 group-data-[collapsible=icon]:hidden" />
+                <ChevronsUpDownIcon className="ml-auto size-4 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" />
               </DropdownMenuTrigger>
 
               <DropdownMenuContent
