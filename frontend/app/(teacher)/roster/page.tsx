@@ -282,7 +282,7 @@ export default function RosterPage() {
       return;
     }
     const targetList = hasActiveFilters ? filteredStudents : students;
-    const sectionTag = selectedSection !== "all" ? `-${selectedSection.replace(/\s+/g, "_")}` : "";
+    const sectionTag = selectedSection !== "all" ? `-${selectedSection.replace(/[^a-zA-Z0-9_-]/g, "_")}` : "";
     const filename = `writewise-roster${sectionTag}-${new Date().toISOString().split("T")[0]}`;
     exportStudentsToCSV(targetList, filename);
     toast.success(`Exported ${targetList.length} ${targetList.length === 1 ? "student" : "students"} to CSV.`);
@@ -854,7 +854,7 @@ export default function RosterPage() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="relative p-2 -ml-2 -my-1.5 flex items-center justify-center after:absolute after:-inset-2 after:content-['']">
+                          <div className="p-2 -ml-2 -my-1.5 flex items-center justify-center">
                             <Checkbox
                               checked={isSelected}
                               onCheckedChange={() => toggleSelectStudent(student.id)}

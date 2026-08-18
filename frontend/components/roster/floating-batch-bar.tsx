@@ -180,7 +180,7 @@ export const FloatingBatchBar = memo(function FloatingBatchBar({
               />
               <TooltipContent side="top" sideOffset={6} className="text-xs font-normal flex items-center gap-1.5">
                 <span>Clear selection</span>
-                <Kbd className="text-[10px] h-4.5 px-1.5 py-0 bg-background/25 text-background border border-background/30 font-mono">Esc</Kbd>
+                <Kbd className="text-[10px] h-4.5 px-1.5 py-0 bg-popover text-popover-foreground border border-border/80 font-mono shadow-2xs">Esc</Kbd>
               </TooltipContent>
             </Tooltip>
           </div>
