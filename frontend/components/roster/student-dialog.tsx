@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -71,6 +71,23 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
       parent_email: "",
     },
   });
+
+  const { isDirty } = form.formState;
+
+  const currentFullName = useWatch({ control: form.control, name: "full_name" });
+  const currentSection = useWatch({ control: form.control, name: "section" });
+  const currentParentEmail = useWatch({ control: form.control, name: "parent_email" });
+
+  const hasChanges = useMemo(() => {
+    if (!isEditing || !student) return true;
+    if (!isDirty) return false;
+
+    const nameChanged = (currentFullName || "").trim() !== (student.full_name || "").trim();
+    const sectionChanged = (currentSection || "").trim() !== (student.section || "").trim();
+    const emailChanged = (currentParentEmail || "").trim() !== (student.parent_email || "").trim();
+
+    return nameChanged || sectionChanged || emailChanged;
+  }, [isEditing, student, isDirty, currentFullName, currentSection, currentParentEmail]);
 
   useEffect(() => {
     if (open) {
@@ -150,6 +167,8 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
   };
 
   const onSubmit = (data: StudentFormValues, addAnother = false) => {
+    if (isEditing && !hasChanges) return;
+
     const isDuplicate = students?.some((s) => {
       if (isEditing && s.id === student.id) return false;
       return (
@@ -312,7 +331,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                 )}
                 <Button 
                   type="submit" 
-                  disabled={isPending}
+                  disabled={isPending || (isEditing && !hasChanges)}
                   className="h-10 sm:h-9 w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs"
                 >
                   {isPending ? (

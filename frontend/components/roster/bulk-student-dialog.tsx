@@ -17,7 +17,7 @@ import { useStudents } from "@/lib/hooks/use-students";
 import { createClient } from "@/lib/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { runConcurrentPool } from "@/lib/utils/concurrent-pool";
-import { Loader2, Users, AlertCircle, Sparkles } from "lucide-react";
+import { Loader2, Users, AlertCircle, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 interface BulkStudentDialogProps {
@@ -289,7 +289,7 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4 mr-1.5" />
+                  <UserPlus className="w-4 h-4 mr-1.5" />
                   Enroll {parsedNames.length > 0 ? `${parsedNames.length} ${parsedNames.length === 1 ? "Student" : "Students"}` : "Students"}
                 </>
               )}
