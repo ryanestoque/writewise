@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { TeacherSidebar } from "@/components/teacher-sidebar";
+import { TeacherHeader } from "@/components/teacher-header";
 
 export default async function TeacherLayout({
   children,
@@ -36,9 +37,7 @@ export default async function TeacherLayout({
     <SidebarProvider>
       <TeacherSidebar user={{ fullName, email }} />
       <SidebarInset>
-        <header className="flex h-14 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-        </header>
+        <TeacherHeader />
         <div className="flex-1 p-6">{children}</div>
       </SidebarInset>
     </SidebarProvider>
