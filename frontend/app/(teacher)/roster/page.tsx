@@ -52,7 +52,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
@@ -115,8 +114,10 @@ export default function RosterPage() {
     const el = sectionScrollRef.current;
     if (!el) return;
     const hasOverflow = el.scrollWidth > el.clientWidth + 1;
-    setCanScrollLeft(hasOverflow && el.scrollLeft > 2);
-    setCanScrollRight(hasOverflow && el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+    const nextLeft = hasOverflow && el.scrollLeft > 2;
+    const nextRight = hasOverflow && el.scrollLeft + el.clientWidth < el.scrollWidth - 2;
+    setCanScrollLeft((prev) => (prev !== nextLeft ? nextLeft : prev));
+    setCanScrollRight((prev) => (prev !== nextRight ? nextRight : prev));
   }, []);
 
   // Keyboard shortcut: Press "/" or "Cmd/Ctrl+K" to focus search; Escape to clear selection
@@ -439,7 +440,7 @@ export default function RosterPage() {
                     setSearchQuery("");
                     searchInputRef.current?.focus();
                   }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 rounded-full transition-colors cursor-pointer"
+                  className="relative absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 rounded-full transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2 after:content-['']"
                   aria-label="Clear search"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -537,7 +538,7 @@ export default function RosterPage() {
             <button
               type="button"
               onClick={handleResetFilters}
-              className="text-primary hover:underline font-medium cursor-pointer"
+              className="text-primary hover:underline font-medium cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1 py-0.5"
             >
               Clear filters
             </button>
@@ -790,24 +791,50 @@ export default function RosterPage() {
                   <button
                     type="button"
                     onClick={() => handleSort("full_name")}
-                    className={`px-2 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                    aria-pressed={sortField === "full_name"}
+                    aria-label={`Sort by student name, currently ${
                       sortField === "full_name"
-                        ? "bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300 font-semibold"
+                        ? sortDirection === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : "unsorted"
+                    }`}
+                    className={`relative px-2.5 py-1 min-h-[30px] rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-1 after:content-[''] ${
+                      sortField === "full_name"
+                        ? "bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300 font-semibold shadow-2xs"
                         : "hover:bg-muted text-muted-foreground"
                     }`}
                   >
-                    Name {sortField === "full_name" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
+                    <span>Name</span>
+                    {sortField === "full_name" && (
+                      <span aria-hidden="true" className="ml-1 font-bold">
+                        {sortDirection === "asc" ? "↑" : "↓"}
+                      </span>
+                    )}
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSort("section")}
-                    className={`px-2 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                    aria-pressed={sortField === "section"}
+                    aria-label={`Sort by class section, currently ${
                       sortField === "section"
-                        ? "bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300 font-semibold"
+                        ? sortDirection === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : "unsorted"
+                    }`}
+                    className={`relative px-2.5 py-1 min-h-[30px] rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-1 after:content-[''] ${
+                      sortField === "section"
+                        ? "bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300 font-semibold shadow-2xs"
                         : "hover:bg-muted text-muted-foreground"
                     }`}
                   >
-                    Section {sortField === "section" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
+                    <span>Section</span>
+                    {sortField === "section" && (
+                      <span aria-hidden="true" className="ml-1 font-bold">
+                        {sortDirection === "asc" ? "↑" : "↓"}
+                      </span>
+                    )}
                   </button>
                 </div>
               </div>
@@ -821,13 +848,13 @@ export default function RosterPage() {
                       key={student.id}
                       className={`p-3.5 rounded-xl border transition-all ${
                         isSelected
-                          ? "bg-brand-50/80 dark:bg-brand-950/40 border-brand-300 dark:border-brand-700 shadow-2xs ring-1 ring-brand-500/20"
+                          ? "bg-brand-50/80 dark:bg-brand-950/40 border-brand-300 dark:border-brand-700 shadow-2xs ring-1 ring-brand-500/30 dark:ring-brand-400/30"
                           : "bg-surface dark:bg-card border-border/80 hover:border-border shadow-2xs"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="p-1 -ml-1 flex items-center justify-center">
+                          <div className="relative p-2 -ml-2 -my-1.5 flex items-center justify-center after:absolute after:-inset-2 after:content-['']">
                             <Checkbox
                               checked={isSelected}
                               onCheckedChange={() => toggleSelectStudent(student.id)}
@@ -889,6 +916,13 @@ export default function RosterPage() {
             </div>
           </>
         )}
+      </div>
+
+      {/* Visually hidden persistent live region for selection announcements */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {selectedStudentIds.size > 0
+          ? `${selectedStudentIds.size} of ${filteredStudents.length} students selected.`
+          : ""}
       </div>
 
       {/* Floating Batch Actions Bar */}
@@ -964,12 +998,14 @@ export default function RosterPage() {
 }
 
 function RowActions({ student, onEdit }: { student: Student; onEdit: () => void }) {
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
   const { mutate: removeStudent, isPending } = useRemoveStudent();
 
   const handleRemove = () => {
     removeStudent(student.id, {
       onSuccess: () => {
         toast.success(`Removed ${student.full_name} from roster.`);
+        setIsAlertOpen(false);
       },
       onError: (err: Error) => {
         toast.error(err.message || "Failed to remove student");
@@ -978,7 +1014,7 @@ function RowActions({ student, onEdit }: { student: Student; onEdit: () => void 
   };
 
   return (
-    <AlertDialog>
+    <>
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
@@ -998,44 +1034,47 @@ function RowActions({ student, onEdit }: { student: Student; onEdit: () => void 
             <Edit2 className="w-4 h-4 mr-2 text-muted-foreground" />
             Edit
           </DropdownMenuItem>
-          <AlertDialogTrigger
-            nativeButton={false}
-            render={
-              <DropdownMenuItem variant="destructive" className="cursor-pointer py-2 px-2.5 text-sm text-destructive focus:text-destructive">
-                <Trash2 className="w-4 h-4 mr-2" />
-                Remove
-              </DropdownMenuItem>
-            }
-          />
+          <DropdownMenuItem
+            variant="destructive"
+            onClick={() => setIsAlertOpen(true)}
+            className="cursor-pointer py-2 px-2.5 text-sm text-destructive focus:text-destructive"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Remove
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Remove Student?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This will unenroll <strong className="font-semibold text-foreground">{student.full_name}</strong> from your roster. Their historical data will not be deleted, but they will no longer appear in your active class list.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleRemove}
-            disabled={isPending}
-            variant="destructive"
-            className="gap-2"
-          >
-            {isPending ? (
-              <>
-                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                <span>Removing...</span>
-              </>
-            ) : (
-              "Remove"
-            )}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Student?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will unenroll <strong className="font-semibold text-foreground">{student.full_name}</strong> from your roster. Their historical data will not be deleted, but they will no longer appear in your active class list.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending} onClick={() => setIsAlertOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRemove}
+              disabled={isPending}
+              variant="destructive"
+              className="gap-2"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  <span>Removing...</span>
+                </>
+              ) : (
+                "Remove"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

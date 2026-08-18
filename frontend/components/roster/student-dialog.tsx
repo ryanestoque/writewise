@@ -221,6 +221,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                       id="full_name" 
                       {...form.register("full_name")}
                       aria-invalid={!!form.formState.errors.full_name}
+                      aria-describedby={form.formState.errors.full_name ? "full_name-error" : undefined}
                       aria-required="true"
                       autoComplete="name"
                       autoCapitalize="words"
@@ -230,7 +231,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                       className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl"
                     />
                   </FieldContent>
-                  <FieldError errors={[form.formState.errors.full_name]} />
+                  <FieldError id="full_name-error" errors={[form.formState.errors.full_name]} />
                 </Field>
 
                 {/* Section (Combobox) */}
@@ -253,6 +254,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                             value={field.value}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(e.target.value)}
                             aria-invalid={!!form.formState.errors.section}
+                            aria-describedby={form.formState.errors.section ? "section-error" : undefined}
                             aria-required="true"
                             autoCapitalize="words"
                             autoCorrect="off"
@@ -274,7 +276,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                       )}
                     />
                   </FieldContent>
-                  <FieldError errors={[form.formState.errors.section]} />
+                  <FieldError id="section-error" errors={[form.formState.errors.section]} />
                 </Field>
 
                 {/* Parent Email */}
@@ -293,7 +295,11 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                       spellCheck={false}
                       {...form.register("parent_email")} 
                       aria-invalid={!!form.formState.errors.parent_email}
-                      aria-describedby="parent_email_hint"
+                      aria-describedby={
+                        form.formState.errors.parent_email
+                          ? "parent_email-error parent_email_hint"
+                          : "parent_email_hint"
+                      }
                       placeholder="parent@example.com"
                       className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl"
                     />
@@ -301,7 +307,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                   <p id="parent_email_hint" className="text-xs text-muted-foreground mt-1 leading-normal">
                     Parent will receive an invitation to access their child&apos;s handwriting progress portal.
                   </p>
-                  <FieldError errors={[form.formState.errors.parent_email]} />
+                  <FieldError id="parent_email-error" errors={[form.formState.errors.parent_email]} />
                 </Field>
               </FieldGroup>
             </div>

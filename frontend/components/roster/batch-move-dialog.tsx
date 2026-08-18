@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Field, FieldLabel, FieldGroup, FieldContent } from "@/components/ui/field";
+import { Field, FieldLabel, FieldGroup, FieldContent, FieldError } from "@/components/ui/field";
 import {
   Combobox,
   ComboboxInput,
@@ -36,6 +36,7 @@ export function BatchMoveDialog({
 }: BatchMoveDialogProps) {
   const queryClient = useQueryClient();
   const [targetSection, setTargetSection] = useState("");
+  const [sectionError, setSectionError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -50,6 +51,7 @@ export function BatchMoveDialog({
     if (isProcessing) return;
     if (!newOpen) {
       setTargetSection("");
+      setSectionError(null);
       setProgress(0);
     }
     onOpenChange(newOpen);
@@ -58,9 +60,11 @@ export function BatchMoveDialog({
   const handleMove = async () => {
     const trimmed = targetSection.trim();
     if (!trimmed) {
+      setSectionError("Please enter or select a destination class section.");
       toast.error("Please enter or select a destination class section.");
       return;
     }
+    setSectionError(null);
 
     if (selectedStudents.length === 0) return;
 
@@ -136,21 +140,29 @@ export function BatchMoveDialog({
           <div className="space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain px-1 py-1 flex-1 min-h-0">
             {/* Target Section */}
             <FieldGroup>
-              <Field>
+              <Field data-invalid={!!sectionError}>
                 <FieldLabel htmlFor="batch_target_section" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Destination Section <span className="text-destructive" aria-hidden="true">*</span>
                 </FieldLabel>
                 <FieldContent>
                   <Combobox 
                     value={targetSection} 
-                    onValueChange={(val: string | null) => setTargetSection(val || "")}
+                    onValueChange={(val: string | null) => {
+                      setTargetSection(val || "");
+                      if (sectionError) setSectionError(null);
+                    }}
                   >
                     <ComboboxInput 
                       id="batch_target_section"
                       placeholder="e.g. Grade 3 - Rizal" 
                       value={targetSection}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTargetSection(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setTargetSection(e.target.value);
+                        if (sectionError) setSectionError(null);
+                      }}
                       disabled={isProcessing}
+                      aria-invalid={!!sectionError}
+                      aria-describedby={sectionError ? "batch_target_section_error" : undefined}
                       aria-required="true"
                       autoCapitalize="words"
                       autoCorrect="off"
@@ -170,6 +182,7 @@ export function BatchMoveDialog({
                     )}
                   </Combobox>
                 </FieldContent>
+                {sectionError && <FieldError id="batch_target_section_error">{sectionError}</FieldError>}
               </Field>
             </FieldGroup>
 

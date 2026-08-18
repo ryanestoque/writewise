@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Field, FieldLabel, FieldGroup, FieldContent } from "@/components/ui/field";
+import { Field, FieldLabel, FieldGroup, FieldContent, FieldError } from "@/components/ui/field";
 import {
   Combobox,
   ComboboxInput,
@@ -32,6 +32,8 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
   
   const [section, setSection] = useState(defaultSection || "");
   const [rawText, setRawText] = useState("");
+  const [sectionError, setSectionError] = useState<string | null>(null);
+  const [namesError, setNamesError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -69,6 +71,8 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
     if (!newOpen) {
       // Reset state on close
       setRawText("");
+      setSectionError(null);
+      setNamesError(null);
       setProgress(0);
       setStatusMessage(null);
     }
@@ -77,15 +81,25 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
 
   const handleBulkSubmit = async () => {
     const trimmedSection = section.trim();
+    let hasError = false;
+
     if (!trimmedSection) {
+      setSectionError("Please enter or select a class section.");
       toast.error("Please enter or select a class section.");
-      return;
+      hasError = true;
+    } else {
+      setSectionError(null);
     }
 
     if (parsedNames.length === 0) {
+      setNamesError("Please enter at least one student name.");
       toast.error("Please enter at least one student name.");
-      return;
+      hasError = true;
+    } else {
+      setNamesError(null);
     }
+
+    if (hasError) return;
 
     setIsProcessing(true);
     setProgress(0);
@@ -164,21 +178,29 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
           <div className="space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain px-1 py-1 flex-1 min-h-0">
             <FieldGroup className="space-y-4">
               {/* Target Section */}
-              <Field>
+              <Field data-invalid={!!sectionError}>
                 <FieldLabel htmlFor="bulk_section" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Target Section <span className="text-destructive" aria-hidden="true">*</span>
                 </FieldLabel>
                 <FieldContent>
                   <Combobox 
                     value={section} 
-                    onValueChange={(val: string | null) => setSection(val || "")}
+                    onValueChange={(val: string | null) => {
+                      setSection(val || "");
+                      if (sectionError) setSectionError(null);
+                    }}
                   >
                     <ComboboxInput 
                       id="bulk_section"
                       placeholder="e.g. Grade 3 - Rizal" 
                       value={section}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSection(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setSection(e.target.value);
+                        if (sectionError) setSectionError(null);
+                      }}
                       disabled={isProcessing}
+                      aria-invalid={!!sectionError}
+                      aria-describedby={sectionError ? "bulk_section_error" : undefined}
                       aria-required="true"
                       autoCapitalize="words"
                       autoCorrect="off"
@@ -198,10 +220,11 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
                     )}
                   </Combobox>
                 </FieldContent>
+                {sectionError && <FieldError id="bulk_section_error">{sectionError}</FieldError>}
               </Field>
 
               {/* Student Names Textarea */}
-              <Field>
+              <Field data-invalid={!!namesError}>
                 <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
                   <FieldLabel htmlFor="bulk_names" className="inline-block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Student Names (One per line)<span className="text-destructive ml-1" aria-hidden="true">*</span>
@@ -214,18 +237,23 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
                   <Textarea
                     id="bulk_names"
                     value={rawText}
-                    onChange={(e) => setRawText(e.target.value)}
+                    onChange={(e) => {
+                      setRawText(e.target.value);
+                      if (namesError) setNamesError(null);
+                    }}
                     disabled={isProcessing}
                     autoCapitalize="words"
                     autoCorrect="off"
                     spellCheck={false}
                     placeholder={"Juan Dela Cruz\nMaria Santos\nJose Rizal\nAndres Bonifacio\nGabriela Silang"}
                     rows={5}
+                    aria-invalid={!!namesError}
                     aria-required="true"
-                    aria-describedby="bulk_names_tip"
+                    aria-describedby={namesError ? "bulk_names_error bulk_names_tip" : "bulk_names_tip"}
                     className="font-mono text-base sm:text-sm leading-relaxed resize-none rounded-lg sm:rounded-xl"
                   />
                 </FieldContent>
+                {namesError && <FieldError id="bulk_names_error">{namesError}</FieldError>}
                 <p id="bulk_names_tip" className="text-xs text-muted-foreground mt-1 leading-normal">
                   Tip: Copy and paste directly from an Excel column or roster sheet. Blank lines are ignored automatically.
                 </p>

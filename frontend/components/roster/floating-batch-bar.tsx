@@ -80,7 +80,7 @@ export const FloatingBatchBar = memo(function FloatingBatchBar({
               <button
                 type="button"
                 onClick={onSelectAll}
-                className="inline-flex items-center gap-1 text-[11px] text-primary hover:text-brand-700 dark:text-primary dark:hover:text-primary/80 font-medium ml-0.5 hover:underline underline-offset-2 transition-colors cursor-pointer shrink-0"
+                className="inline-flex items-center gap-1 text-[11px] text-primary hover:text-brand-700 dark:text-primary dark:hover:text-primary/80 font-medium ml-0.5 hover:underline underline-offset-2 transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1 py-0.5"
                 title={`Select all ${totalCount} students`}
               >
                 <CheckCheck className="w-3 h-3 text-primary shrink-0" />
@@ -180,7 +180,7 @@ export const FloatingBatchBar = memo(function FloatingBatchBar({
               />
               <TooltipContent side="top" sideOffset={6} className="text-xs font-normal flex items-center gap-1.5">
                 <span>Clear selection</span>
-                <Kbd className="text-[10px] h-4.5 px-1 py-0 bg-background/20 text-background">Esc</Kbd>
+                <Kbd className="text-[10px] h-4.5 px-1.5 py-0 bg-background/25 text-background border border-background/30 font-mono">Esc</Kbd>
               </TooltipContent>
             </Tooltip>
           </div>
