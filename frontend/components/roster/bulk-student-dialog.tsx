@@ -192,6 +192,7 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
                   >
                     <ComboboxInput 
                       id="bulk_section"
+                      aria-label="Target Class Section"
                       placeholder="e.g. Grade 3 - Rizal" 
                       value={section}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {

@@ -440,7 +440,7 @@ export default function RosterPage() {
                     setSearchQuery("");
                     searchInputRef.current?.focus();
                   }}
-                  className="relative absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 rounded-full transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2 after:content-['']"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 rounded-full transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2 after:content-['']"
                   aria-label="Clear search"
                 >
                   <X className="w-3.5 h-3.5" />

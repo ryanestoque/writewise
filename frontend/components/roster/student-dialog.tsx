@@ -250,6 +250,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                         >
                           <ComboboxInput 
                             id="section"
+                            aria-label="Class Section"
                             placeholder="e.g. Grade 3 - Rizal" 
                             value={field.value}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(e.target.value)}

@@ -154,6 +154,7 @@ export function BatchMoveDialog({
                   >
                     <ComboboxInput 
                       id="batch_target_section"
+                      aria-label="Destination Class Section"
                       placeholder="e.g. Grade 3 - Rizal" 
                       value={targetSection}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
