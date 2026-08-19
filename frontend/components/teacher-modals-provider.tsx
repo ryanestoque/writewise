@@ -22,7 +22,8 @@ import { Loader2Icon } from "lucide-react";
 interface TeacherModalsContextValue {
   uploadOpen: boolean;
   setUploadOpen: (open: boolean) => void;
-  openUpload: () => void;
+  openUpload: (opts?: { activityId?: string; studentId?: string }) => void;
+  uploadPrefill: { activityId?: string; studentId?: string };
 
   rubricOpen: boolean;
   setRubricOpen: (open: boolean) => void;
@@ -49,6 +50,10 @@ export function useTeacherModals() {
 
 export function TeacherModalsProvider({ children }: { children: React.ReactNode }) {
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadPrefill, setUploadPrefill] = useState<{
+    activityId?: string;
+    studentId?: string;
+  }>({});
   const [rubricOpen, setRubricOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
@@ -57,7 +62,13 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
   const router = useRouter();
   const supabase = createClient();
 
-  const openUpload = useCallback(() => setUploadOpen(true), []);
+  const openUpload = useCallback(
+    (opts?: { activityId?: string; studentId?: string }) => {
+      setUploadPrefill(opts ?? {});
+      setUploadOpen(true);
+    },
+    []
+  );
   const openRubric = useCallback(() => setRubricOpen(true), []);
   const openShortcuts = useCallback(() => setShortcutsOpen(true), []);
   const openSignOut = useCallback(() => setSignOutOpen(true), []);
@@ -121,6 +132,7 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
         uploadOpen,
         setUploadOpen,
         openUpload,
+        uploadPrefill,
         rubricOpen,
         setRubricOpen,
         openRubric,
@@ -135,7 +147,15 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
       {children}
 
       {/* Global Teacher Modals rendered once at layout root */}
-      <QuickUploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
+      <QuickUploadDialog
+        open={uploadOpen}
+        onOpenChange={(val) => {
+          setUploadOpen(val);
+          if (!val) setUploadPrefill({});
+        }}
+        prefilledActivityId={uploadPrefill.activityId}
+        prefilledStudentId={uploadPrefill.studentId}
+      />
       <RubricReferenceDialog open={rubricOpen} onOpenChange={setRubricOpen} />
       <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
 
