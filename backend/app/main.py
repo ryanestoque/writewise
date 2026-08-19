@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.activities import router as activities_router
 from app.api.students import router as students_router
+from app.api.submissions import router as submissions_router
 from app.core.config import settings
 
 app = FastAPI(title="WriteWise API")
@@ -43,3 +44,6 @@ def health_check():
 
 app.include_router(students_router, prefix="/api/students", tags=["students"])
 app.include_router(activities_router, prefix="/api/activities", tags=["activities"])
+app.include_router(
+    submissions_router, prefix="/api/submissions", tags=["submissions"]
+)
