@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Inter, Poppins } from "next/font/google";
+import { Inter, Poppins, Caveat } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Providers } from "@/components/providers";
 
@@ -10,6 +10,12 @@ const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
   variable: "--font-heading",
+});
+
+const caveat = Caveat({
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+  variable: "--font-cursive",
 });
 
 export const metadata: Metadata = {
@@ -25,7 +31,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", inter.variable, poppins.variable, "font-sans")}
+      className={cn(
+        "h-full",
+        "antialiased",
+        inter.variable,
+        poppins.variable,
+        caveat.variable,
+        "font-sans"
+      )}
     >
       <body className="flex min-h-full flex-col">
         <Providers>{children}</Providers>

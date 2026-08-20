@@ -39,13 +39,11 @@ import {
   ClipboardList,
   Home,
   CalendarDays,
-  FileText,
   MoreVertical,
   Edit3,
   Trash2,
   Inbox,
   CheckCircle2,
-  Clock,
   ArrowUpDown,
   Archive,
   ArchiveRestore,
@@ -410,22 +408,55 @@ export default function ActivitiesPage() {
               </div>
 
               {/* Sort Selector */}
-              <div className="relative inline-flex items-center">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/40 border border-border/50 rounded-lg px-2.5 py-1.5">
+              <DropdownMenu>
+                <DropdownMenuTrigger className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted/70 border border-border/50 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
                   <ArrowUpDown className="size-3 text-muted-foreground shrink-0" />
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as SortOption)}
-                    className="bg-transparent text-xs font-medium text-foreground outline-none cursor-pointer pr-1"
-                    aria-label="Sort activities by"
+                  <span className="font-medium text-foreground">
+                    {sortBy === "newest" && "Newest First"}
+                    {sortBy === "oldest" && "Oldest First"}
+                    {sortBy === "most_submissions" && "Most Submissions"}
+                    {sortBy === "least_submissions" && "Least Submissions"}
+                  </span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem
+                    onClick={() => setSortBy("newest")}
+                    className="cursor-pointer text-xs justify-between"
                   >
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                    <option value="most_submissions">Most Submissions</option>
-                    <option value="least_submissions">Least Submissions</option>
-                  </select>
-                </div>
-              </div>
+                    <span>Newest First</span>
+                    {sortBy === "newest" && (
+                      <span className="text-primary font-bold">✓</span>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setSortBy("oldest")}
+                    className="cursor-pointer text-xs justify-between"
+                  >
+                    <span>Oldest First</span>
+                    {sortBy === "oldest" && (
+                      <span className="text-primary font-bold">✓</span>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setSortBy("most_submissions")}
+                    className="cursor-pointer text-xs justify-between"
+                  >
+                    <span>Most Submissions</span>
+                    {sortBy === "most_submissions" && (
+                      <span className="text-primary font-bold">✓</span>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setSortBy("least_submissions")}
+                    className="cursor-pointer text-xs justify-between"
+                  >
+                    <span>Least Submissions</span>
+                    {sortBy === "least_submissions" && (
+                      <span className="text-primary font-bold">✓</span>
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -569,6 +600,7 @@ export default function ActivitiesPage() {
                 .length ?? 0;
 
             const wordCount = getWordCount(activity.target_text);
+            const isFullyCollected = totalStudents > 0 && submissionCount >= totalStudents;
 
             return (
               <div
@@ -580,12 +612,9 @@ export default function ActivitiesPage() {
                 }`}
               >
                 <div>
-                  {/* Card Header: Icon, Type Badge & Actions Menu */}
+                  {/* Card Header: Badges & Actions Menu */}
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <div className="flex size-8 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
-                        <FileText className="size-4" />
-                      </div>
                       {isArchived ? (
                         <Badge
                           variant="outline"
@@ -610,126 +639,115 @@ export default function ActivitiesPage() {
                           In-Class
                         </Badge>
                       )}
-                    </div>
 
-                    {/* Overflow Actions Menu & Quick Actions */}
-                    <div className="flex items-center gap-1">
-                      {/* Direct Upload Shortcut */}
-                      <button
-                        type="button"
-                        onClick={() => openUpload({ activityId: activity.id })}
-                        className="flex size-9 sm:size-8 items-center justify-center rounded-lg text-muted-foreground hover:text-brand-700 hover:bg-brand-50 dark:hover:bg-brand-950/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                        title="Upload student worksheet photo"
-                        aria-label="Upload worksheet for this activity"
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] font-medium px-2 py-0.5 bg-muted/30 text-muted-foreground border-border/60"
                       >
-                        <Upload className="size-4" />
-                      </button>
-
-                      {/* Dropdown Menu */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger
-                          className="flex size-9 sm:size-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                          aria-label="Activity actions"
-                        >
-                          <MoreVertical className="size-4" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-52">
-                          <DropdownMenuItem
-                            onClick={() =>
-                              openUpload({ activityId: activity.id })
-                            }
-                            className="cursor-pointer gap-2 text-xs"
-                          >
-                            <Upload className="size-3.5" />
-                            <span>Upload Worksheet</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setDuplicatingActivity(activity);
-                              setIsCreateOpen(true);
-                            }}
-                            className="cursor-pointer gap-2 text-xs"
-                          >
-                            <Copy className="size-3.5" />
-                            <span>Duplicate Activity</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setEditingActivity(activity)}
-                            className="cursor-pointer gap-2 text-xs"
-                          >
-                            <Edit3 className="size-3.5" />
-                            <span>Edit Target Text</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              router.push(`/activities/${activity.id}`)
-                            }
-                            className="cursor-pointer gap-2 text-xs"
-                          >
-                            <Inbox className="size-3.5" />
-                            <span>View Submissions</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleToggleArchive(activity.id)}
-                            className="cursor-pointer gap-2 text-xs"
-                          >
-                            {isArchived ? (
-                              <>
-                                <ArchiveRestore className="size-3.5" />
-                                <span>Unarchive Activity</span>
-                              </>
-                            ) : (
-                              <>
-                                <Archive className="size-3.5" />
-                                <span>Archive Activity</span>
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setDeletingActivity(activity)}
-                            className="cursor-pointer gap-2 text-xs text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="size-3.5" />
-                            <span>Delete Activity</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                        {wordCount} {wordCount === 1 ? "word" : "words"}
+                      </Badge>
                     </div>
+
+                    {/* Overflow Actions Menu */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                        aria-label="Activity actions"
+                      >
+                        <MoreVertical className="size-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-52">
+                        <DropdownMenuItem
+                          onClick={() =>
+                            openUpload({ activityId: activity.id })
+                          }
+                          className="cursor-pointer gap-2 text-xs"
+                        >
+                          <Upload className="size-3.5" />
+                          <span>Upload Worksheet</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setDuplicatingActivity(activity);
+                            setIsCreateOpen(true);
+                          }}
+                          className="cursor-pointer gap-2 text-xs"
+                        >
+                          <Copy className="size-3.5" />
+                          <span>Duplicate Activity</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setEditingActivity(activity)}
+                          className="cursor-pointer gap-2 text-xs"
+                        >
+                          <Edit3 className="size-3.5" />
+                          <span>Edit Target Text</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            router.push(`/activities/${activity.id}`)
+                          }
+                          className="cursor-pointer gap-2 text-xs"
+                        >
+                          <Inbox className="size-3.5" />
+                          <span>View Submissions</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => handleToggleArchive(activity.id)}
+                          className="cursor-pointer gap-2 text-xs"
+                        >
+                          {isArchived ? (
+                            <>
+                              <ArchiveRestore className="size-3.5" />
+                              <span>Unarchive Activity</span>
+                            </>
+                          ) : (
+                            <>
+                              <Archive className="size-3.5" />
+                              <span>Archive Activity</span>
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setDeletingActivity(activity)}
+                          className="cursor-pointer gap-2 text-xs text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="size-3.5" />
+                          <span>Delete Activity</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
 
-                  {/* Target Text Preview with Cursive Worksheet Accent */}
+                  {/* Target Text Preview with Cursive Worksheet Accent & 3-line Ruling */}
                   <Link
                     href={`/activities/${activity.id}`}
-                    className="block group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+                    className="block group-hover:opacity-90 transition-opacity focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
                   >
-                    <div className="relative p-3 rounded-lg bg-muted/30 border border-border/40 mb-3 overflow-hidden">
-                      {/* Subtle cursive ruling watermark lines */}
+                    <div className="relative p-3.5 sm:p-4 rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 mb-3.5 overflow-hidden shadow-2xs">
+                      {/* Subtle authentic 3-line ruling watermark */}
                       <div
-                        className="absolute inset-0 opacity-15 pointer-events-none bg-[linear-gradient(to_bottom,transparent_0px,transparent_11px,var(--border)_12px)] bg-[size:100%_12px]"
+                        className="absolute inset-0 pointer-events-none opacity-25 dark:opacity-15 bg-[linear-gradient(to_bottom,transparent_0px,transparent_15px,rgba(41,141,131,0.3)_16px,transparent_17px,transparent_31px,rgba(182,117,74,0.25)_32px,transparent_33px)] bg-[size:100%_32px]"
                         aria-hidden="true"
                       />
-                      <p className="relative text-sm font-medium text-foreground line-clamp-3 leading-relaxed">
+                      <p className="relative font-cursive text-xl sm:text-2xl text-foreground/90 font-medium line-clamp-3 leading-relaxed tracking-wide">
                         &ldquo;{activity.target_text}&rdquo;
                       </p>
                     </div>
                   </Link>
                 </div>
 
-                {/* Card Footer: Word Count, Submissions Status & Date */}
-                <div className="space-y-2.5 pt-1 border-t border-border/60">
-                  {/* Submission Status Indicator */}
+                {/* Card Footer: Submission Progress Gauge & Actions */}
+                <div className="space-y-2.5 pt-2 border-t border-border/60">
+                  {/* Status header with count and timestamp */}
                   <div className="flex items-center justify-between gap-2 text-xs">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="font-semibold text-foreground text-[11px] flex items-center gap-1">
                         <Inbox className="size-3 text-muted-foreground" />
-                        {submissionCount === 0 ? (
-                          <span className="text-muted-foreground font-normal">
-                            0 submissions
-                          </span>
-                        ) : totalStudents > 0 ? (
+                        {totalStudents > 0 ? (
                           <span>
-                            {submissionCount}/{totalStudents} submitted
+                            {submissionCount} of {totalStudents} collected
                           </span>
                         ) : (
                           <span>
@@ -741,53 +759,74 @@ export default function ActivitiesPage() {
                         )}
                       </span>
 
-                      {/* Status breakdown dots */}
-                      {submissionCount > 0 && (
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                          {completedCount > 0 && (
-                            <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-medium">
-                              <CheckCircle2 className="size-2.5" />
-                              {completedCount}
-                            </span>
-                          )}
-                          {processingCount > 0 && (
-                            <span className="inline-flex items-center gap-0.5 text-amber-600 dark:text-amber-400 font-medium">
-                              <Clock className="size-2.5" />
-                              {processingCount}
-                            </span>
-                          )}
-                          {rejectedCount > 0 && (
-                            <span className="inline-flex items-center gap-0.5 text-destructive font-medium">
-                              <AlertCircle className="size-2.5" />
-                              {rejectedCount}
-                            </span>
-                          )}
-                        </div>
+                      {isFullyCollected && (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded-md border border-emerald-200 dark:border-emerald-900">
+                          <CheckCircle2 className="size-2.5" />
+                          Complete
+                        </span>
                       )}
                     </div>
 
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] font-semibold px-2 py-0.5 bg-muted/40 text-muted-foreground border-border shrink-0"
-                    >
-                      {wordCount} {wordCount === 1 ? "wd" : "wds"}
-                    </Badge>
-                  </div>
-
-                  {/* Relative Timestamp & View Link */}
-                  <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-0.5">
-                    <span className="flex items-center gap-1">
-                      <CalendarDays className="w-3 h-3" />
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-1 shrink-0">
+                      <CalendarDays className="size-3" />
                       {getRelativeTime(activity.created_at)}
                     </span>
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/activities/${activity.id}`}
-                        className="text-primary hover:underline font-medium text-[11px] p-1 -m-1"
-                      >
-                        View &rarr;
-                      </Link>
+                  </div>
+
+                  {/* Visual Progress Bar (when totalStudents > 0) */}
+                  {totalStudents > 0 && (
+                    <div className="w-full bg-muted/60 dark:bg-muted/40 h-1.5 rounded-full overflow-hidden flex shadow-2xs">
+                      {completedCount > 0 && (
+                        <div
+                          className="bg-emerald-500 transition-all duration-300"
+                          style={{
+                            width: `${(completedCount / totalStudents) * 100}%`,
+                          }}
+                          title={`${completedCount} completed`}
+                        />
+                      )}
+                      {processingCount > 0 && (
+                        <div
+                          className="bg-amber-500 transition-all duration-300"
+                          style={{
+                            width: `${(processingCount / totalStudents) * 100}%`,
+                          }}
+                          title={`${processingCount} processing`}
+                        />
+                      )}
+                      {rejectedCount > 0 && (
+                        <div
+                          className="bg-destructive/80 transition-all duration-300"
+                          style={{
+                            width: `${(rejectedCount / totalStudents) * 100}%`,
+                          }}
+                          title={`${rejectedCount} rejected`}
+                        />
+                      )}
                     </div>
+                  )}
+
+                  {/* Action Buttons Row */}
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openUpload({ activityId: activity.id })}
+                      className="h-7 sm:h-8 px-2.5 text-xs font-medium border-border/80 hover:bg-brand-50 hover:text-brand-700 dark:hover:bg-brand-950/60 dark:hover:text-brand-300 rounded-lg cursor-pointer transition-colors"
+                    >
+                      <Upload className="size-3.5 mr-1 text-primary" />
+                      Upload
+                    </Button>
+
+                    <Link
+                      href={`/activities/${activity.id}`}
+                      className="inline-flex items-center text-xs font-semibold text-primary hover:text-brand-700 dark:hover:text-brand-300 py-1 px-1.5 -mr-1 rounded-md transition-colors group/link"
+                    >
+                      <span>View Submissions</span>
+                      <span className="ml-1 text-xs transition-transform group-hover/link:translate-x-0.5">
+                        &rarr;
+                      </span>
+                    </Link>
                   </div>
                 </div>
               </div>

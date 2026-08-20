@@ -228,22 +228,53 @@ export function CreateActivityDialog({
                   </div>
                 </div>
 
+                {/* Live Cursive Script Preview */}
+                {targetText && targetText.trim().length > 0 && (
+                  <div className="space-y-1.5 pt-2">
+                    <div className="flex items-center justify-between text-[11px] font-medium text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Sparkles className="size-3 text-brand-600 dark:text-brand-400" />
+                        <span>Cursive Worksheet Preview</span>
+                      </span>
+                      <span className="text-[10px] text-muted-foreground/80">
+                        3-line ruling
+                      </span>
+                    </div>
+                    <div className="relative p-3.5 rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-2xs">
+                      <div
+                        className="absolute inset-0 pointer-events-none opacity-25 dark:opacity-15 bg-[linear-gradient(to_bottom,transparent_0px,transparent_15px,rgba(41,141,131,0.3)_16px,transparent_17px,transparent_31px,rgba(182,117,74,0.25)_32px,transparent_33px)] bg-[size:100%_32px]"
+                        aria-hidden="true"
+                      />
+                      <p className="relative font-cursive text-xl sm:text-2xl text-foreground/90 font-medium leading-relaxed tracking-wide">
+                        &ldquo;{targetText}&rdquo;
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between mt-2">
                   <p
                     id="target_text_hint"
                     className="text-xs text-muted-foreground leading-normal"
                   >
-                    Recommended: 10–25 words for standard 3-line ruled
-                    worksheet.
+                    Recommended: 5–25 words for standard 3-line ruled cursive worksheets.
                   </p>
                 </div>
+
+                {wordCount > 0 && wordCount < 3 && (
+                  <div className="flex items-center gap-1.5 mt-1.5 p-2 rounded-lg bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-300">
+                    <AlertTriangle className="size-3.5 shrink-0" />
+                    <span>
+                      Short prompt ({wordCount} {wordCount === 1 ? "word" : "words"}): At least 3 words recommended for reliable spacing and slant assessment.
+                    </span>
+                  </div>
+                )}
 
                 {wordCount > 35 && (
                   <div className="flex items-center gap-1.5 mt-1.5 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-300">
                     <AlertTriangle className="size-3.5 shrink-0" />
                     <span>
-                      Long prompt ({wordCount} words) may exceed standard 3-line
-                      ruled worksheet lines.
+                      Long prompt ({wordCount} words) may exceed standard single-page 3-line ruled worksheets.
                     </span>
                   </div>
                 )}

@@ -9,6 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-heading: var(--font-heading);
+  --font-cursive: var(--font-cursive);
 
   /* Custom Brand Colors — full scale */
   --color-brand-50:  #f0f9f7;
