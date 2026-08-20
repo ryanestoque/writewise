@@ -10,6 +10,7 @@ export interface Activity {
   id: string;
   target_text: string;
   is_take_home: boolean;
+  is_archived: boolean;
   created_by: string;
   created_at: string;
   submissions?: ActivitySubmissionSummary[];
@@ -24,7 +25,7 @@ export function useActivities() {
       const { data, error } = await supabase
         .from("activity")
         .select(
-          "id, target_text, is_take_home, created_by, created_at, submissions:submission(id, status)"
+          "id, target_text, is_take_home, is_archived, created_by, created_at, submissions:submission(id, status)"
         )
         .order("created_at", { ascending: false });
 
@@ -45,7 +46,7 @@ export function useActivity(id: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("activity")
-        .select("id, target_text, is_take_home, created_by, created_at")
+        .select("id, target_text, is_take_home, is_archived, created_by, created_at")
         .eq("id", id)
         .single();
 
@@ -174,6 +175,76 @@ export function useDeleteActivity() {
       }
 
       return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+    },
+  });
+}
+
+export function useToggleArchive() {
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      if (!token) {
+        throw new Error("No active session");
+      }
+
+      const response = await fetch(`/api/activities/${id}/archive`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Backend returned error:", data.error);
+        throw data.error;
+      }
+
+      return data as { id: string; is_archived: boolean };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+    },
+  });
+}
+
+export function useBulkArchive() {
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { ids: string[]; archived: boolean }) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      if (!token) {
+        throw new Error("No active session");
+      }
+
+      const response = await fetch("/api/activities/bulk-archive", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Backend returned error:", data.error);
+        throw data.error;
+      }
+
+      return data as { updated: string[]; skipped: string[] };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["activities"] });
