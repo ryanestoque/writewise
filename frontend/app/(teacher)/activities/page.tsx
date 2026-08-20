@@ -3,7 +3,12 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type Activity, useActivities } from "@/lib/hooks/use-activities";
+import {
+  type Activity,
+  useActivities,
+  useToggleArchive,
+  useBulkArchive,
+} from "@/lib/hooks/use-activities";
 import { useStudents } from "@/lib/hooks/use-students";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import { CreateActivityDialog } from "@/components/activities/create-activity-dialog";
@@ -59,8 +64,6 @@ type SortOption =
   | "most_submissions"
   | "least_submissions";
 
-const ARCHIVE_STORAGE_KEY = "writewise_archived_activities";
-
 function getWordCount(text: string): number {
   const trimmed = text.trim();
   if (!trimmed) return 0;
@@ -103,42 +106,48 @@ export default function ActivitiesPage() {
   const [duplicatingActivity, setDuplicatingActivity] =
     useState<Activity | null>(null);
 
-  // Local storage backed archived activities state
-  const [archivedIds, setArchivedIds] = useState<Set<string>>(() => {
-    if (typeof window === "undefined") return new Set();
-    try {
-      const stored = localStorage.getItem(ARCHIVE_STORAGE_KEY);
-      if (stored) {
-        return new Set(JSON.parse(stored));
-      }
-    } catch {
-      // Ignore storage errors
-    }
-    return new Set();
-  });
+  const { mutate: toggleArchive } = useToggleArchive();
+  const { mutate: bulkArchive, isPending: isBulkPending } = useBulkArchive();
 
-  const handleToggleArchive = useCallback((activityId: string) => {
-    setArchivedIds((prev) => {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const isSelectMode = selectedIds.size > 0;
+
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
-      const wasArchived = next.has(activityId);
-      if (wasArchived) {
-        next.delete(activityId);
-        toast.success("Activity restored from archive.");
-      } else {
-        next.add(activityId);
-        toast.success("Activity moved to archive.");
-      }
-      try {
-        localStorage.setItem(
-          ARCHIVE_STORAGE_KEY,
-          JSON.stringify(Array.from(next))
-        );
-      } catch {
-        // Ignore storage errors
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }, []);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  const handleBulkArchive = useCallback(
+    (archived: boolean) => {
+      const ids = Array.from(selectedIds);
+      bulkArchive(
+        { ids, archived },
+        {
+          onSuccess: (result) => {
+            const count = result.updated.length;
+            toast.success(
+              archived
+                ? `${count} ${count === 1 ? "activity" : "activities"} archived.`
+                : `${count} ${count === 1 ? "activity" : "activities"} restored.`
+            );
+            setSelectedIds(new Set());
+          },
+          onError: () => {
+            toast.error("Failed to update activities. Please try again.");
+          },
+        }
+      );
+    },
+    [selectedIds, bulkArchive]
+  );
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<FilterType>("all");
@@ -182,8 +191,8 @@ export default function ActivitiesPage() {
   // Counts for filter pills
   const counts = useMemo(() => {
     if (!activities) return { all: 0, in_class: 0, take_home: 0, archived: 0 };
-    const archivedList = activities.filter((a) => archivedIds.has(a.id));
-    const activeList = activities.filter((a) => !archivedIds.has(a.id));
+    const archivedList = activities.filter((a) => a.is_archived);
+    const activeList = activities.filter((a) => !a.is_archived);
 
     return {
       all: activeList.length,
@@ -191,7 +200,7 @@ export default function ActivitiesPage() {
       take_home: activeList.filter((a) => a.is_take_home).length,
       archived: archivedList.length,
     };
-  }, [activities, archivedIds]);
+  }, [activities]);
 
   const filteredAndSortedActivities = useMemo(() => {
     if (!activities) return [];
@@ -199,9 +208,9 @@ export default function ActivitiesPage() {
     // 1. Lifecycle filter (Active vs Archived)
     let result = activities;
     if (filterType === "archived") {
-      result = result.filter((a) => archivedIds.has(a.id));
+      result = result.filter((a) => a.is_archived);
     } else {
-      result = result.filter((a) => !archivedIds.has(a.id));
+      result = result.filter((a) => !a.is_archived);
       if (filterType === "in_class") {
         result = result.filter((a) => !a.is_take_home);
       } else if (filterType === "take_home") {
@@ -241,7 +250,11 @@ export default function ActivitiesPage() {
       }
       return 0;
     });
-  }, [activities, archivedIds, searchQuery, filterType, sortBy]);
+  }, [activities, searchQuery, filterType, sortBy]);
+
+  const handleSelectAll = useCallback(() => {
+    setSelectedIds(new Set(filteredAndSortedActivities.map((a) => a.id)));
+  }, [filteredAndSortedActivities]);
 
   if (error) {
     return (
@@ -361,7 +374,10 @@ export default function ActivitiesPage() {
               <div className="inline-flex p-0.5 rounded-lg bg-muted/60 border border-border/50 text-xs overflow-x-auto max-w-full">
                 <button
                   type="button"
-                  onClick={() => setFilterType("all")}
+                  onClick={() => {
+                    setFilterType("all");
+                    setSelectedIds(new Set());
+                  }}
                   className={`px-2.5 py-1.5 sm:py-1 rounded-md font-medium transition-colors cursor-pointer shrink-0 ${
                     filterType === "all"
                       ? "bg-background text-foreground shadow-2xs font-semibold"
@@ -372,7 +388,10 @@ export default function ActivitiesPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFilterType("in_class")}
+                  onClick={() => {
+                    setFilterType("in_class");
+                    setSelectedIds(new Set());
+                  }}
                   className={`px-2.5 py-1.5 sm:py-1 rounded-md font-medium transition-colors cursor-pointer shrink-0 ${
                     filterType === "in_class"
                       ? "bg-background text-foreground shadow-2xs font-semibold"
@@ -383,7 +402,10 @@ export default function ActivitiesPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFilterType("take_home")}
+                  onClick={() => {
+                    setFilterType("take_home");
+                    setSelectedIds(new Set());
+                  }}
                   className={`px-2.5 py-1.5 sm:py-1 rounded-md font-medium transition-colors cursor-pointer shrink-0 ${
                     filterType === "take_home"
                       ? "bg-background text-foreground shadow-2xs font-semibold"
@@ -395,7 +417,10 @@ export default function ActivitiesPage() {
                 {counts.archived > 0 && (
                   <button
                     type="button"
-                    onClick={() => setFilterType("archived")}
+                    onClick={() => {
+                      setFilterType("archived");
+                      setSelectedIds(new Set());
+                    }}
                     className={`px-2.5 py-1.5 sm:py-1 rounded-md font-medium transition-colors cursor-pointer shrink-0 ${
                       filterType === "archived"
                         ? "bg-background text-foreground shadow-2xs font-semibold"
@@ -587,7 +612,7 @@ export default function ActivitiesPage() {
         /* Activity Card Grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredAndSortedActivities.map((activity) => {
-            const isArchived = archivedIds.has(activity.id);
+            const isArchived = activity.is_archived;
             const submissionCount = activity.submissions?.length ?? 0;
             const completedCount =
               activity.submissions?.filter((s) => s.status === "completed")
@@ -605,12 +630,32 @@ export default function ActivitiesPage() {
             return (
               <div
                 key={activity.id}
+                onClick={
+                  isSelectMode
+                    ? () => handleToggleSelect(activity.id)
+                    : undefined
+                }
                 className={`group relative flex flex-col justify-between bg-surface dark:bg-card border rounded-xl sm:rounded-2xl p-5 shadow-2xs hover:shadow-md transition-all duration-200 ${
                   isArchived
                     ? "border-dashed border-border/80 opacity-80 hover:opacity-100"
                     : "border-border hover:border-brand-300 dark:hover:border-brand-800"
                 }`}
               >
+                {/* Selection checkbox */}
+                <div
+                  className={`absolute top-3 left-3 z-10 transition-opacity ${
+                    isSelectMode ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(activity.id)}
+                    onChange={() => handleToggleSelect(activity.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={`Select "${activity.target_text.slice(0, 40)}"`}
+                    className="size-4 rounded border-border accent-primary cursor-pointer"
+                  />
+                </div>
                 <div>
                   {/* Card Header: Badges & Actions Menu */}
                   <div className="flex items-center justify-between gap-2 mb-3">
@@ -694,7 +739,20 @@ export default function ActivitiesPage() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          onClick={() => handleToggleArchive(activity.id)}
+                          onClick={() => {
+                            toggleArchive(activity.id, {
+                              onSuccess: (result) => {
+                                toast.success(
+                                  result.is_archived
+                                    ? "Activity moved to archive."
+                                    : "Activity restored from archive."
+                                );
+                              },
+                              onError: () => {
+                                toast.error("Failed to update archive state.");
+                              },
+                            });
+                          }}
                           className="cursor-pointer gap-2 text-xs"
                         >
                           {isArchived ? (
@@ -832,6 +890,64 @@ export default function ActivitiesPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Bulk action bar — visible while cards are selected */}
+      {isSelectMode && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-foreground text-background shadow-xl border border-border/20 animate-in slide-in-from-bottom-4 fade-in-0 duration-200"
+          role="toolbar"
+          aria-label="Bulk activity actions"
+        >
+          <span className="text-xs font-semibold tabular-nums pr-1 border-r border-background/20 mr-1">
+            {selectedIds.size} selected
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={handleSelectAll}
+            className="h-7 px-2.5 text-xs text-background/80 hover:text-background hover:bg-background/10"
+          >
+            Select All
+          </Button>
+          {filterType !== "archived" && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={isBulkPending}
+              onClick={() => handleBulkArchive(true)}
+              className="h-7 px-2.5 text-xs text-background/80 hover:text-background hover:bg-background/10 flex items-center gap-1.5"
+            >
+              <Archive className="size-3.5" />
+              Archive
+            </Button>
+          )}
+          {filterType === "archived" && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={isBulkPending}
+              onClick={() => handleBulkArchive(false)}
+              className="h-7 px-2.5 text-xs text-background/80 hover:text-background hover:bg-background/10 flex items-center gap-1.5"
+            >
+              <ArchiveRestore className="size-3.5" />
+              Unarchive
+            </Button>
+          )}
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={handleClearSelection}
+            className="h-7 w-7 p-0 text-background/70 hover:text-background hover:bg-background/10"
+            aria-label="Clear selection"
+          >
+            <X className="size-3.5" />
+          </Button>
         </div>
       )}
 
