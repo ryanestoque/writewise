@@ -1,7 +1,7 @@
 import pytest
 
 from app.cv.quality_gate import QualityGateRejection, QualityMetrics, run_quality_gate
-from tests.synthetic import make_sharp_worksheet, make_small_image
+from tests.synthetic import make_blurry_image, make_sharp_worksheet, make_small_image
 
 
 def test_quality_gate_rejection_carries_fields():
@@ -49,3 +49,9 @@ def test_sharp_worksheet_passes_resolution():
     array = np.frombuffer(make_sharp_worksheet(), dtype=np.uint8)
     image = cv2.imdecode(array, cv2.IMREAD_COLOR)
     assert _check_resolution(image) == 2000
+
+
+def test_blurry_image_rejected_on_blur():
+    with pytest.raises(QualityGateRejection) as exc_info:
+        run_quality_gate(make_blurry_image())
+    assert exc_info.value.code == "QUALITY_GATE_BLUR"

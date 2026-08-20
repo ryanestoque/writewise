@@ -50,6 +50,19 @@ def _check_resolution(image: np.ndarray) -> int:
     return short_side
 
 
+def _check_blur(gray: np.ndarray) -> float:
+    variance = cv2.Laplacian(gray, cv2.CV_64F).var()
+    if variance < BLUR_VARIANCE_MIN:
+        raise QualityGateRejection(
+            code="QUALITY_GATE_BLUR",
+            message="This photo is too blurry to analyze. "
+            "Hold the camera steady and try again.",
+            measured_value=float(variance),
+            threshold=float(BLUR_VARIANCE_MIN),
+        )
+    return float(variance)
+
+
 def run_quality_gate(image_bytes: bytes) -> QualityMetrics:
     """
     Run all four quality checks on a hardened JPEG image.
@@ -68,5 +81,8 @@ def run_quality_gate(image_bytes: bytes) -> QualityMetrics:
 
     short_side = _check_resolution(image)
 
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blur_variance = _check_blur(gray)
+
     # remaining checks added in later steps
-    raise NotImplementedError("blur/brightness/contrast checks not yet implemented")
+    raise NotImplementedError("brightness/contrast checks not yet implemented")
