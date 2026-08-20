@@ -63,6 +63,27 @@ def _check_blur(gray: np.ndarray) -> float:
     return float(variance)
 
 
+def _check_brightness(gray: np.ndarray) -> float:
+    mean = gray.mean()
+    if mean < BRIGHTNESS_MIN:
+        raise QualityGateRejection(
+            code="QUALITY_GATE_BRIGHTNESS",
+            message="This photo is too dark to analyze. "
+            "Retake it in better lighting.",
+            measured_value=float(mean),
+            threshold=float(BRIGHTNESS_MIN),
+        )
+    if mean > BRIGHTNESS_MAX:
+        raise QualityGateRejection(
+            code="QUALITY_GATE_BRIGHTNESS",
+            message="This photo is overexposed to analyze. "
+            "Retake it with less direct light or flash.",
+            measured_value=float(mean),
+            threshold=float(BRIGHTNESS_MAX),
+        )
+    return float(mean)
+
+
 def run_quality_gate(image_bytes: bytes) -> QualityMetrics:
     """
     Run all four quality checks on a hardened JPEG image.
@@ -83,6 +104,7 @@ def run_quality_gate(image_bytes: bytes) -> QualityMetrics:
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     blur_variance = _check_blur(gray)
+    brightness_mean = _check_brightness(gray)
 
-    # remaining checks added in later steps
-    raise NotImplementedError("brightness/contrast checks not yet implemented")
+    # contrast check added in next step
+    raise NotImplementedError("contrast check not yet implemented")

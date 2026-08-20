@@ -1,7 +1,13 @@
 import pytest
 
 from app.cv.quality_gate import QualityGateRejection, QualityMetrics, run_quality_gate
-from tests.synthetic import make_blurry_image, make_sharp_worksheet, make_small_image
+from tests.synthetic import (
+    make_blurry_image,
+    make_bright_image,
+    make_dark_image,
+    make_sharp_worksheet,
+    make_small_image,
+)
 
 
 def test_quality_gate_rejection_carries_fields():
@@ -55,3 +61,17 @@ def test_blurry_image_rejected_on_blur():
     with pytest.raises(QualityGateRejection) as exc_info:
         run_quality_gate(make_blurry_image())
     assert exc_info.value.code == "QUALITY_GATE_BLUR"
+
+
+def test_dark_image_rejected_on_brightness():
+    with pytest.raises(QualityGateRejection) as exc_info:
+        run_quality_gate(make_dark_image())
+    assert exc_info.value.code == "QUALITY_GATE_BRIGHTNESS"
+    assert exc_info.value.threshold == 50.0
+
+
+def test_bright_image_rejected_on_brightness():
+    with pytest.raises(QualityGateRejection) as exc_info:
+        run_quality_gate(make_bright_image())
+    assert exc_info.value.code == "QUALITY_GATE_BRIGHTNESS"
+    assert exc_info.value.threshold == 200.0
