@@ -62,3 +62,37 @@ def test_create_activity_empty_text_fails(client):
     payload = {"target_text": "   ", "is_take_home": False}
     response = client.post("/api/activities", json=payload)
     assert response.status_code == 422
+
+
+def test_update_activity(client, cleanup_activities):
+    # 1. Create
+    payload = {"target_text": "original text", "is_take_home": False}
+    create_res = client.post("/api/activities", json=payload)
+    assert create_res.status_code == 201
+    act_id = create_res.json()["id"]
+    cleanup_activities.append(act_id)
+
+    # 2. Update
+    update_payload = {"target_text": "updated cursive sentence", "is_take_home": True}
+    update_res = client.patch(f"/api/activities/{act_id}", json=update_payload)
+    assert update_res.status_code == 200
+    updated_data = update_res.json()
+    assert updated_data["target_text"] == "updated cursive sentence"
+    assert updated_data["is_take_home"] is True
+
+
+def test_delete_activity(client):
+    # 1. Create
+    payload = {"target_text": "temp to delete", "is_take_home": False}
+    create_res = client.post("/api/activities", json=payload)
+    assert create_res.status_code == 201
+    act_id = create_res.json()["id"]
+
+    # 2. Delete
+    del_res = client.delete(f"/api/activities/{act_id}")
+    assert del_res.status_code == 200
+    assert del_res.json()["deleted"] is True
+
+    # 3. Verify gone
+    del_res2 = client.delete(f"/api/activities/{act_id}")
+    assert del_res2.status_code == 404

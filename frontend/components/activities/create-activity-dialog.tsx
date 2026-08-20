@@ -22,7 +22,15 @@ import {
   FieldContent,
 } from "@/components/ui/field";
 import { useCreateActivity } from "@/lib/hooks/use-activities";
-import { Loader2, Plus, ClipboardList, Home } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  ClipboardList,
+  Home,
+  AlertTriangle,
+  Sparkles,
+  Copy,
+} from "lucide-react";
 import { toast } from "sonner";
 
 const activitySchema = z.object({
@@ -41,34 +49,63 @@ function getWordCount(text: string): number {
   return trimmed.split(/\s+/).filter(Boolean).length;
 }
 
+const PROMPT_SUGGESTIONS = [
+  {
+    label: "Classic Pangram",
+    text: "The quick brown fox jumps over the lazy dog.",
+  },
+  {
+    label: "Loop & Join Drill",
+    text: "Sphinx of black quartz, judge my vow.",
+  },
+  {
+    label: "Grade 3 Nature Practice",
+    text: "Warm breezes blow through the tall green trees.",
+  },
+  {
+    label: "Letter Formation Warm-up",
+    text: "Bright sunny mornings bring cheerful smiles to everyone.",
+  },
+];
+
 interface CreateActivityDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialValues?: {
+    target_text?: string;
+    is_take_home?: boolean;
+  };
+  isDuplicate?: boolean;
 }
 
 export function CreateActivityDialog({
   open,
   onOpenChange,
+  initialValues,
+  isDuplicate = false,
 }: CreateActivityDialogProps) {
   const { mutate: createActivity, isPending } = useCreateActivity();
 
   const form = useForm<ActivityFormValues>({
     resolver: zodResolver(activitySchema),
     defaultValues: {
-      target_text: "",
-      is_take_home: false,
+      target_text: initialValues?.target_text ?? "",
+      is_take_home: initialValues?.is_take_home ?? false,
     },
   });
 
   const targetText = useWatch({ control: form.control, name: "target_text" });
   const isTakeHome = useWatch({ control: form.control, name: "is_take_home" });
-  const wordCount = getWordCount(targetText);
+  const wordCount = getWordCount(targetText || "");
 
   useEffect(() => {
     if (open) {
-      form.reset({ target_text: "", is_take_home: false });
+      form.reset({
+        target_text: initialValues?.target_text ?? "",
+        is_take_home: initialValues?.is_take_home ?? false,
+      });
     }
-  }, [open, form]);
+  }, [open, initialValues, form]);
 
   const onSubmit = (data: ActivityFormValues) => {
     createActivity(
@@ -78,7 +115,11 @@ export function CreateActivityDialog({
       },
       {
         onSuccess: () => {
-          toast.success("Activity created successfully.");
+          toast.success(
+            isDuplicate
+              ? "Activity duplicated successfully."
+              : "Activity created successfully."
+          );
           onOpenChange(false);
         },
         onError: (error: Error) => {
@@ -88,20 +129,33 @@ export function CreateActivityDialog({
     );
   };
 
+  const handleApplySuggestion = (text: string) => {
+    form.setValue("target_text", text, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[520px] max-h-[min(92dvh,calc(100vh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-xl border border-border/80 bg-surface dark:bg-card">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[540px] max-h-[min(92dvh,calc(100vh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-xl border border-border/80 bg-surface dark:bg-card">
         <DialogHeader className="pb-3 sm:pb-4 shrink-0 text-left">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
-              <Plus className="size-5" />
+              {isDuplicate ? (
+                <Copy className="size-5" />
+              ) : (
+                <Plus className="size-5" />
+              )}
             </div>
             <div className="min-w-0 flex-1">
               <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">
-                Create Activity
+                {isDuplicate ? "Duplicate Activity" : "Create Activity"}
               </DialogTitle>
               <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                Define the target text students will copy in cursive.
+                {isDuplicate
+                  ? "Create a new handwriting activity using this prompt as a template."
+                  : "Define the target text students will copy in cursive on ruled paper."}
               </DialogDescription>
             </div>
           </div>
@@ -115,15 +169,27 @@ export function CreateActivityDialog({
             <FieldGroup className="space-y-4">
               {/* Target Text */}
               <Field data-invalid={!!form.formState.errors.target_text}>
-                <FieldLabel
-                  htmlFor="target_text"
-                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                >
-                  Target Text{" "}
-                  <span className="text-destructive" aria-hidden="true">
-                    *
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <FieldLabel
+                    htmlFor="target_text"
+                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
+                    Target Text{" "}
+                    <span className="text-destructive" aria-hidden="true">
+                      *
+                    </span>
+                  </FieldLabel>
+
+                  {/* Word count live indicator */}
+                  <span
+                    className="text-xs font-medium text-muted-foreground tabular-nums"
+                    aria-live="polite"
+                    aria-label={`${wordCount} ${wordCount === 1 ? "word" : "words"}`}
+                  >
+                    {wordCount} {wordCount === 1 ? "word" : "words"}
                   </span>
-                </FieldLabel>
+                </div>
+
                 <FieldContent>
                   <Textarea
                     id="target_text"
@@ -135,26 +201,52 @@ export function CreateActivityDialog({
                         : "target_text_hint"
                     }
                     aria-required="true"
-                    placeholder="e.g., the quick brown fox jumps over the lazy dog"
-                    className="min-h-24 text-base sm:text-sm rounded-lg sm:rounded-xl"
+                    placeholder="e.g., The quick brown fox jumps over the lazy dog."
+                    className="min-h-24 text-base sm:text-sm rounded-lg sm:rounded-xl focus-visible:ring-brand-500"
                     autoFocus
                   />
                 </FieldContent>
-                <div className="flex items-center justify-between mt-1.5">
+
+                {/* Suggestions / Prompt starters */}
+                <div className="mt-2 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+                    <Sparkles className="size-3 text-brand-600 dark:text-brand-400" />
+                    <span>Quick prompt suggestions:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {PROMPT_SUGGESTIONS.map((sug) => (
+                      <button
+                        key={sug.label}
+                        type="button"
+                        onClick={() => handleApplySuggestion(sug.text)}
+                        className="text-[11px] px-2.5 py-1 rounded-md bg-muted/60 hover:bg-brand-50 hover:text-brand-700 dark:hover:bg-brand-950/60 dark:hover:text-brand-300 border border-border/60 hover:border-brand-200 dark:hover:border-brand-800 transition-colors text-muted-foreground cursor-pointer text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                        title={sug.text}
+                      >
+                        {sug.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between mt-2">
                   <p
                     id="target_text_hint"
                     className="text-xs text-muted-foreground leading-normal"
                   >
-                    Students will copy this text in cursive handwriting.
+                    Recommended: 10–25 words for standard 3-line ruled
+                    worksheet.
                   </p>
-                  <span
-                    className="text-xs font-medium text-muted-foreground tabular-nums shrink-0 ml-2"
-                    aria-live="polite"
-                    aria-label={`${wordCount} ${wordCount === 1 ? "word" : "words"}`}
-                  >
-                    {wordCount} {wordCount === 1 ? "word" : "words"}
-                  </span>
                 </div>
+
+                {wordCount > 35 && (
+                  <div className="flex items-center gap-1.5 mt-1.5 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-300">
+                    <AlertTriangle className="size-3.5 shrink-0" />
+                    <span>
+                      Long prompt ({wordCount} words) may exceed standard 3-line
+                      ruled worksheet lines.
+                    </span>
+                  </div>
+                )}
                 <FieldError
                   id="target_text-error"
                   errors={[form.formState.errors.target_text]}
@@ -163,7 +255,7 @@ export function CreateActivityDialog({
 
               {/* Take-Home Toggle */}
               <Field>
-                <div className="flex items-center justify-between gap-4 p-3 rounded-xl bg-muted/40 border border-border/60">
+                <div className="flex items-center justify-between gap-4 p-3.5 rounded-xl bg-muted/40 border border-border/60">
                   <div className="flex items-start gap-3 min-w-0">
                     <div className="flex size-8 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0 mt-0.5">
                       <Home className="size-4" />
@@ -176,7 +268,8 @@ export function CreateActivityDialog({
                         Take-home activity
                       </FieldLabel>
                       <p className="text-xs text-muted-foreground mt-0.5 leading-normal">
-                        Allow parents to upload submissions for this activity.
+                        Allow parents to upload completed handwriting photos
+                        from home.
                       </p>
                     </div>
                   </div>
@@ -197,21 +290,23 @@ export function CreateActivityDialog({
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
-              className="h-10 sm:h-9 w-full sm:w-auto text-muted-foreground hover:text-foreground text-xs sm:text-sm rounded-lg sm:rounded-xl font-medium"
+              className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto text-muted-foreground hover:text-foreground text-xs sm:text-sm rounded-lg sm:rounded-xl font-medium cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isPending}
-              className="h-10 sm:h-9 w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs"
+              className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs cursor-pointer"
             >
               {isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : isDuplicate ? (
+                <Copy className="w-4 h-4 mr-1.5" />
               ) : (
                 <ClipboardList className="w-4 h-4 mr-1.5" />
               )}
-              Create Activity
+              {isDuplicate ? "Create Duplicated Activity" : "Create Activity"}
             </Button>
           </div>
         </form>
