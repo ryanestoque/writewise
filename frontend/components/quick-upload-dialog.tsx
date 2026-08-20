@@ -77,6 +77,11 @@ function errorMessageFor(error: UploadError): string {
       return "The activity or student wasn't found. It may have been removed.";
     case "VALIDATION_ERROR":
       return "Something's off with the selected activity or student. Please try again.";
+    case "QUALITY_GATE_RESOLUTION":
+    case "QUALITY_GATE_BLUR":
+    case "QUALITY_GATE_BRIGHTNESS":
+    case "QUALITY_GATE_CONTRAST":
+      return error.message;
     default:
       return "Upload failed. Please check your connection and try again.";
   }
