@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from app.api.deps import get_current_teacher
 from app.core.image_hardening import validate_and_harden_image
 from app.core.supabase import supabase_client
+from app.cv.quality_gate import QualityGateRejection, run_quality_gate
 
 router = APIRouter()
 
@@ -90,15 +91,26 @@ async def create_submission(
     # 5. Image hardening: magic-byte check, decompression-bomb cap, EXIF strip
     hardened_bytes = validate_and_harden_image(file_bytes)
 
+    # 6. Quality gate: cheap quality checks before expensive CV processing.
+    # Rejections are still persisted (status='rejected') to protect the
+    # Phase 1 calibration dataset, then surfaced as 422 (spec §5).
+    rejection = None
+    try:
+        run_quality_gate(hardened_bytes)
+    except QualityGateRejection as exc:
+        # Note: `as exc` is implicitly deleted after the except clause, so
+        # rebind to a persistent name here.
+        rejection = exc
+
     # --- Upload & Persist ---
 
-    # 6. Pre-generate submission UUID (need it for Storage path before DB insert)
+    # 7. Pre-generate submission UUID (need it for Storage path before DB insert)
     submission_id = str(uuid.uuid4())
 
-    # 7. Construct image path per DATABASE §7/§11 convention
+    # 8. Construct image path per DATABASE §7/§11 convention
     image_path = f"{student_id}/{submission_id}.jpg"
 
-    # 8. Upload to Supabase Storage (service-role key, bypasses RLS)
+    # 9. Upload to Supabase Storage (service-role key, bypasses RLS)
     storage_res = supabase_client.storage.from_("submission-images").upload(
         path=image_path,
         file=hardened_bytes,
@@ -115,7 +127,7 @@ async def create_submission(
             },
         )
 
-    # 9. Insert submission row
+    # 10. Insert submission row
     db_res = (
         supabase_client.table("submission")
         .insert(
@@ -124,7 +136,9 @@ async def create_submission(
                 "activity_id": activity_id,
                 "student_id": student_id,
                 "image_path": image_path,
-                "status": "processing",
+                "status": "rejected" if rejection else "processing",
+                "rejection_code": rejection.code if rejection else None,
+                "rejection_details": rejection.message if rejection else None,
                 "uploader_id": teacher_id,
                 "uploader_role": "teacher",
             }
@@ -144,7 +158,22 @@ async def create_submission(
 
     submission = db_res.data[0]
 
-    # 10. Return response
+    # 11. Rejected: return 422 with the standard error envelope (API_SPEC §3.3)
+    if rejection:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail={
+                "code": rejection.code,
+                "message": rejection.message,
+                "details": {
+                    "submission_id": submission_id,
+                    "measured_value": rejection.measured_value,
+                    "threshold": rejection.threshold,
+                },
+            },
+        )
+
+    # 12. Return response
     return {
         "submission_id": submission["id"],
         "status": submission["status"],

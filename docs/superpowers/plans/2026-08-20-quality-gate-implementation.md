@@ -27,9 +27,9 @@
 
 ## Plan Status
 
-- **Task 1 — Synthetic Image Generators:** ready to execute, fully specified below.
-- **Task 2 — Quality Gate Core Module:** ready to execute, fully specified below. Every generator/check pairing in this plan has been numerically verified end-to-end (not just reasoned about) — see the note at the end of Task 2.
-- **Task 3 — Submission Endpoint Integration:** **blocked.** The spec describes inserting new logic between "existing step 5" (image hardening) and "existing step 8" (Storage upload) of `create_submission` in `backend/app/api/submissions.py`, but that file's current content wasn't provided, so exact line numbers and the real names of the existing Storage-upload/DB-insert helpers aren't known. Writing this task without them would mean inventing function names that don't exist in your codebase — worse than not writing it at all. Share the current contents of `backend/app/api/submissions.py` and `backend/tests/api/test_submissions.py` and this section gets filled in with the same level of precision as Tasks 1–2.
+- **Task 1 — Synthetic Image Generators:** done.
+- **Task 2 — Quality Gate Core Module:** done. Every generator/check pairing in this plan has been numerically verified end-to-end (not just reasoned about) — see the note at the end of Task 2.
+- **Task 3 — Submission Endpoint Integration:** **unblocked and done 2026-08-20** — the section below was filled in with exact line anchors and helper names from the real files, plus three extra discoveries (existing success-path tests needed bigger images, schema already had the rejection columns, 422 constant name).
 
 ---
 
@@ -710,16 +710,183 @@ git commit -m "feat: add contrast check, complete quality gate orchestrator"
 
 ---
 
-### Task 3: Submission Endpoint Integration — blocked, needs your files
+### Task 3: Submission Endpoint Integration
 
-Per the spec (§5), this task modifies `backend/app/api/submissions.py`: inside `create_submission`, immediately after existing step 5 (image hardening) and before existing step 8 (Storage upload), call `run_quality_gate(hardened_bytes)`; on `QualityGateRejection`, still upload the hardened image to Storage and insert the submission row with `status='rejected'`, `rejection_code=exc.code`, `rejection_details=str(exc.message)`, then return `422` with the error envelope from the Global Constraints section above; on success, continue the existing flow unchanged. It also adds three integration tests to `backend/tests/api/test_submissions.py` per spec §7.2.
+> **Unblocked 2026-08-20** with the actual contents of `backend/app/api/submissions.py` and `backend/tests/api/test_submissions.py` in hand. Line anchors below reference the file exactly as it read when the plan was written: hardening ends at line 91 (`hardened_bytes = validate_and_harden_image(file_bytes)`), the Storage upload is lines 101-116, and the DB insert (status `'processing'`) is lines 118-133.
 
-To write this with the same precision as Tasks 1–2 (exact line anchors, the real names of your existing Storage-upload and DB-insert helpers, your existing test client/fixture setup) — rather than inventing names — share:
+**Files:**
+- Modify: `backend/app/api/submissions.py` — insert quality gate between step 5 (hardening) and the Upload & Persist section
+- Modify: `backend/tests/api/test_submissions.py` — update two existing success-path tests + add three rejection tests
+- Modify: `docs/superpowers/plans/2026-08-20-quality-gate-implementation.md` — this section itself (already done)
 
-- The current contents of `backend/app/api/submissions.py`
-- The current contents of `backend/tests/api/test_submissions.py` (or at least its fixtures/imports, so new tests match existing conventions)
+**Context discovered while unblocking (verified against the repo):**
 
-Once those are in hand, this section will be added to the plan with the same step-by-step TDD structure as Tasks 1 and 2.
+1. **Existing success-path tests will break** unless updated: `test_successful_upload` posts a 100×100 JPEG and `test_png_upload_converts_to_jpeg` posts a 50×50 PNG — both would now return `422 QUALITY_GATE_RESOLUTION` instead of `201`. They must switch to a quality-gate-passing image. Step 1 below handles this.
+2. **Schema needs no migration:** `submission.rejection_code text` and `submission.rejection_details jsonb` already exist (migration `0005_submission.sql`). `rejection_details` is `jsonb`, so a plain message string is stored as a JSON string value — matching the spec's `str(exc.message)`.
+3. **`rejection_details` insert value:** spec §5.1 says `rejection_details = str(exc.message)` — pass `rejection.message` directly; supabase-py serializes the string as a valid JSON value.
+4. **422 constant:** use `status.HTTP_422_UNPROCESSABLE_CONTENT` (the non-deprecated name in current starlette; `HTTP_422_UNPROCESSABLE_ENTITY` warns).
+5. **Error envelope conversion:** `app/main.py`'s `http_exception_handler` wraps any `HTTPException` whose `detail` dict contains `"code"` into `{"error": detail}` — so raise `HTTPException(status_code=422, detail={...})` with the rejection fields and it comes out shaped exactly per API_SPEC §3.3.
+
+- [ ] **Step 1: Update the two existing success-path tests to pass the quality gate**
+
+In `backend/tests/api/test_submissions.py`:
+
+1. Replace the `PIL`-based 100×100 helper with the shared synthetic generators (keep `_make_test_jpeg` for the file-type/large-file tests that never reach the gate, or delete it if unused after the edits — check with `ruff`/`grep`):
+   - `test_successful_upload`: post `make_sharp_worksheet()` instead of `_make_test_jpeg()`.
+   - `test_png_upload_converts_to_jpeg`: build a passing PNG by decoding `make_sharp_worksheet()` and re-encoding via `cv2.imencode(".png", ...)` (PNG is lossless, so the pixels — and thus gate results — are identical to the passing JPEG).
+
+- [ ] **Step 2: Run the file to confirm the two updated tests pass**
+
+Run: `uv run pytest tests/api/test_submissions.py::TestCreateSubmission::test_successful_upload tests/api/test_submissions.py::TestCreateSubmission::test_png_upload_converts_to_jpeg -v`
+Expected: 2 passed. (Requires `backend/.env` pointing at the hosted `writewise-dev` project — same as the existing suite.)
+
+- [ ] **Step 3: Write the failing rejection-flow tests**
+
+Append to `backend/tests/api/test_submissions.py` (per spec §7.2 — three cases):
+
+```python
+from tests.synthetic import make_blurry_image, make_sharp_worksheet
+
+
+def test_blurry_upload_rejected_with_422(self, client, test_activity, test_student):
+    response = client.post(
+        "/api/submissions",
+        data={
+            "activity_id": test_activity["id"],
+            "student_id": test_student["id"],
+        },
+        files={"image": ("blurry.jpg", io.BytesIO(make_blurry_image()), "image/jpeg")},
+    )
+    assert response.status_code == 422
+    error = response.json()["error"]
+    assert error["code"] == "QUALITY_GATE_BLUR"
+    assert "submission_id" in error["details"]
+    assert "measured_value" in error["details"]
+    assert "threshold" in error["details"]
+    return error["details"]["submission_id"]  # consumed by the next two tests
+
+
+def test_rejected_submission_persisted(
+    self, client, test_activity, test_student, cleanup_submissions
+):
+    response = client.post(...)  # same blurry upload
+    submission_id = response.json()["error"]["details"]["submission_id"]
+    cleanup_submissions.append({"id": submission_id, "image_path": f"{test_student['id']}/{submission_id}.jpg"})
+    db_res = (
+        supabase_client.table("submission")
+        .select("*")
+        .eq("id", submission_id)
+        .execute()
+    )
+    assert len(db_res.data) == 1
+    assert db_res.data[0]["status"] == "rejected"
+    assert db_res.data[0]["rejection_code"] == "QUALITY_GATE_BLUR"
+
+
+def test_rejected_image_persisted_in_storage(
+    self, client, test_activity, test_student, cleanup_submissions
+):
+    response = client.post(...)  # same blurry upload
+    submission_id = response.json()["error"]["details"]["submission_id"]
+    cleanup_submissions.append({"id": submission_id, "image_path": f"{test_student['id']}/{submission_id}.jpg"})
+    image_path = f"{test_student['id']}/{submission_id}.jpg"
+    file_bytes = supabase_client.storage.from_("submission-images").download(image_path)
+    assert file_bytes  # non-empty = file exists
+```
+
+Implementation note: the three tests re-post the blurry image independently (fixtures give each a fresh activity/student pair) rather than sharing one upload via a fixture — matches the existing test file's style. Import `io` already exists in the file; add `from tests.synthetic import make_blurry_image` and use the existing `make_sharp_worksheet` import for Steps 1.
+
+- [ ] **Step 4: Run tests to verify they fail**
+
+Run: `uv run pytest tests/api/test_submissions.py -v`
+Expected: the three new tests FAIL (server still returns `201` + `status='processing'`, no `rejection_code`), the two updated ones pass, and the rest stay green.
+
+- [ ] **Step 5: Integrate the quality gate into `create_submission`**
+
+In `backend/app/api/submissions.py`:
+
+1. Add the import at the top:
+```python
+from app.cv.quality_gate import QualityGateRejection, run_quality_gate
+```
+
+2. Immediately after the hardening line (`hardened_bytes = validate_and_harden_image(file_bytes)`), add the quality gate step:
+```python
+    # 6. Quality gate: cheap quality checks before expensive CV processing.
+    # Rejections are still persisted (status='rejected') to protect the
+    # Phase 1 calibration dataset, then surfaced as 422 (spec §5).
+    rejection = None
+    try:
+        run_quality_gate(hardened_bytes)
+    except QualityGateRejection as exc:
+        # Note: `as exc` is implicitly deleted after the except clause, so
+        # rebind to a persistent name here.
+        rejection = exc
+```
+   **GOTCHA FOUND DURING EXECUTION (deviated from the original snippet):** the first attempt used `except QualityGateRejection as rejection: pass` + `else: rejection = None` and hit `UnboundLocalError` on the rejection path — CPython implicitly deletes the `as`-target name when the except clause ends, so `rejection` was unbound by the DB-insert line. Initializing `rejection = None` before the try and rebinding to a different name in the except is the fix (verified by the three integration tests).
+
+3. Renumber the Upload & Persist comments 6→7, 7→8, 8→9, 9→10, 10→11 (cosmetic, keeps the flow legible).
+
+4. In the DB insert (now step 10), branch the status and rejection fields:
+```python
+    db_res = (
+        supabase_client.table("submission")
+        .insert(
+            {
+                "id": submission_id,
+                "activity_id": activity_id,
+                "student_id": student_id,
+                "image_path": image_path,
+                "status": "rejected" if rejection else "processing",
+                "rejection_code": rejection.code if rejection else None,
+                "rejection_details": rejection.message if rejection else None,
+                "uploader_id": teacher_id,
+                "uploader_role": "teacher",
+            }
+        )
+        .execute()
+    )
+```
+
+5. After the `db_res.data` guard and `submission = db_res.data[0]`, add the rejection branch before the existing success return:
+```python
+    # 11. Rejected: return 422 with the standard error envelope (API_SPEC §3.3)
+    if rejection:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail={
+                "code": rejection.code,
+                "message": rejection.message,
+                "details": {
+                    "submission_id": submission_id,
+                    "measured_value": rejection.measured_value,
+                    "threshold": rejection.threshold,
+                },
+            },
+        )
+```
+
+The success path (return 201) is untouched. `main.py`'s handler already wraps the `detail` dict into `{"error": ...}`.
+
+- [ ] **Step 6: Run the rejection tests to verify they pass**
+
+Run: `uv run pytest tests/api/test_submissions.py -v`
+Expected: all 8 tests in `TestCreateSubmission` pass, including the three new ones.
+
+- [ ] **Step 7: Lint**
+
+Run: `uv run ruff check .`
+Expected: no errors (watch for unused `_make_test_jpeg` if it becomes dead code — delete it).
+
+- [ ] **Step 8: Full suite + commit**
+
+Run: `uv run pytest -v` (against hosted `writewise-dev` per AGENTS.md §5's local reality — no supabase CLI/Docker in this workspace)
+Expected: all existing tests still pass, plus the new cv + synthetic + api tests.
+
+```bash
+git add backend/app/api/submissions.py backend/tests/api/test_submissions.py docs/superpowers/plans/2026-08-20-quality-gate-implementation.md
+git commit -m "feat: integrate quality gate into submission upload with rejection persistence"
+```
 
 ---
 
