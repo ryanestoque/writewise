@@ -96,3 +96,112 @@ def test_delete_activity(client):
     # 3. Verify gone
     del_res2 = client.delete(f"/api/activities/{act_id}")
     assert del_res2.status_code == 404
+
+
+def test_toggle_archive_activity(client, cleanup_activities):
+    # 1. Create
+    create_res = client.post(
+        "/api/activities", json={"target_text": "archive me", "is_take_home": False}
+    )
+    assert create_res.status_code == 201
+    act_id = create_res.json()["id"]
+    cleanup_activities.append(act_id)
+
+    # 2. Archive
+    arch_res = client.patch(f"/api/activities/{act_id}/archive")
+    assert arch_res.status_code == 200
+    assert arch_res.json() == {"id": act_id, "is_archived": True}
+
+    # 3. Verify in DB
+    res = (
+        supabase_client.table("activity")
+        .select("is_archived")
+        .eq("id", act_id)
+        .execute()
+    )
+    assert res.data[0]["is_archived"] is True
+
+    # 4. Unarchive
+    unarch_res = client.patch(f"/api/activities/{act_id}/archive")
+    assert unarch_res.status_code == 200
+    assert unarch_res.json() == {"id": act_id, "is_archived": False}
+
+    res = (
+        supabase_client.table("activity")
+        .select("is_archived")
+        .eq("id", act_id)
+        .execute()
+    )
+    assert res.data[0]["is_archived"] is False
+
+
+def test_toggle_archive_activity_not_found(client):
+    response = client.patch(
+        "/api/activities/99999999-9999-9999-9999-999999999999/archive"
+    )
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "NOT_FOUND"
+
+
+def test_bulk_archive_activities(client, cleanup_activities):
+    # 1. Create two activities
+    ids = []
+    for text in ["bulk one", "bulk two"]:
+        create_res = client.post("/api/activities", json={"target_text": text})
+        assert create_res.status_code == 201
+        ids.append(create_res.json()["id"])
+    cleanup_activities.extend(ids)
+
+    # 2. Bulk archive
+    bulk_res = client.post(
+        "/api/activities/bulk-archive", json={"ids": ids, "archived": True}
+    )
+    assert bulk_res.status_code == 200
+    body = bulk_res.json()
+    assert sorted(body["updated"]) == sorted(ids)
+    assert body["skipped"] == []
+
+    # 3. Verify in DB
+    res = (
+        supabase_client.table("activity")
+        .select("id, is_archived")
+        .in_("id", ids)
+        .execute()
+    )
+    assert all(row["is_archived"] is True for row in res.data)
+
+    # 4. Bulk unarchive
+    restore_res = client.post(
+        "/api/activities/bulk-archive", json={"ids": ids, "archived": False}
+    )
+    assert restore_res.status_code == 200
+    assert sorted(restore_res.json()["updated"]) == sorted(ids)
+
+
+def test_bulk_archive_skips_non_owned_ids(client, cleanup_activities):
+    # 1. Create one owned activity
+    create_res = client.post(
+        "/api/activities", json={"target_text": "owned activity"}
+    )
+    assert create_res.status_code == 201
+    owned_id = create_res.json()["id"]
+    cleanup_activities.append(owned_id)
+
+    # 2. Bulk archive with a non-existent (non-owned) id mixed in
+    foreign_id = "99999999-9999-9999-9999-999999999999"
+    bulk_res = client.post(
+        "/api/activities/bulk-archive",
+        json={"ids": [owned_id, foreign_id], "archived": True},
+    )
+    assert bulk_res.status_code == 200
+    body = bulk_res.json()
+    assert body["updated"] == [owned_id]
+    assert body["skipped"] == [foreign_id]
+
+
+def test_bulk_archive_empty_ids(client):
+    response = client.post(
+        "/api/activities/bulk-archive", json={"ids": [], "archived": True}
+    )
+    assert response.status_code == 200
+    assert response.json() == {"updated": [], "skipped": []}

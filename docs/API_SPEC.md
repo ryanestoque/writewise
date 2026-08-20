@@ -193,6 +193,52 @@ Response (`201 Created`):
 
 ---
 
+#### `PATCH /api/activities/{activity_id}/archive`
+
+**Caller:** Teacher only.
+
+Toggles the archive state of an activity owned by the caller. No request body — the response carries the new state.
+
+Response (`200 OK`):
+```json
+{
+  "id": "33333333-3333-3333-3333-333333333333",
+  "is_archived": true
+}
+```
+
+If the activity doesn't exist or isn't owned by the caller → `404 NOT_FOUND`.
+
+> **Archive is soft, delete is hard.** Archiving hides an activity from the active list but keeps its submissions and measurements queryable; `DELETE /api/activities/{activity_id}` remains the only destructive path (and is refused while submissions exist). The archive flag lives in the DB (`activity.is_archived`, migration `0012_activity_archive.sql`), not in client storage — it syncs across devices and sessions.
+
+---
+
+#### `POST /api/activities/bulk-archive`
+
+**Caller:** Teacher only.
+
+Sets `is_archived` for multiple activities in one call. IDs the caller doesn't own (or that don't exist) are skipped, not errored on — partial success is the contract, and the response reports exactly what happened.
+
+Request:
+```json
+{
+  "ids": ["33333333-3333-3333-3333-333333333333"],
+  "archived": true
+}
+```
+
+Response (`200 OK`):
+```json
+{
+  "updated": ["33333333-3333-3333-3333-333333333333"],
+  "skipped": []
+}
+```
+
+An empty `ids` array is a valid no-op (`updated: [], skipped: []`).
+
+---
+
 ### 3.3 Submissions
 
 #### `POST /api/submissions`
