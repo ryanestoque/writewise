@@ -1,6 +1,7 @@
 import pytest
 
-from app.cv.quality_gate import QualityGateRejection, QualityMetrics
+from app.cv.quality_gate import QualityGateRejection, QualityMetrics, run_quality_gate
+from tests.synthetic import make_sharp_worksheet, make_small_image
 
 
 def test_quality_gate_rejection_carries_fields():
@@ -27,3 +28,24 @@ def test_quality_metrics_carries_fields():
     )
     assert metrics.blur_variance == 300.0
     assert metrics.resolution_short_side == 2000
+
+
+def test_small_image_rejected_on_resolution():
+    with pytest.raises(QualityGateRejection) as exc_info:
+        run_quality_gate(make_small_image())
+    assert exc_info.value.code == "QUALITY_GATE_RESOLUTION"
+    assert exc_info.value.measured_value == 600.0
+    assert exc_info.value.threshold == 1500.0
+
+
+def test_sharp_worksheet_passes_resolution():
+    # Full end-to-end pass is tested once all four checks exist (Step 19).
+    # For now this only exercises resolution, so call the private helper
+    # directly rather than the not-yet-complete run_quality_gate.
+    from app.cv.quality_gate import _check_resolution
+    import cv2
+    import numpy as np
+
+    array = np.frombuffer(make_sharp_worksheet(), dtype=np.uint8)
+    image = cv2.imdecode(array, cv2.IMREAD_COLOR)
+    assert _check_resolution(image) == 2000
