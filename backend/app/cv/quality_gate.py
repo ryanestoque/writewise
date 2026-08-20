@@ -84,6 +84,19 @@ def _check_brightness(gray: np.ndarray) -> float:
     return float(mean)
 
 
+def _check_contrast(gray: np.ndarray) -> float:
+    std = gray.std()
+    if std < CONTRAST_STD_MIN:
+        raise QualityGateRejection(
+            code="QUALITY_GATE_CONTRAST",
+            message="This photo doesn't have enough contrast to analyze. "
+            "Retake it against a plain, well-lit background.",
+            measured_value=float(std),
+            threshold=float(CONTRAST_STD_MIN),
+        )
+    return float(std)
+
+
 def run_quality_gate(image_bytes: bytes) -> QualityMetrics:
     """
     Run all four quality checks on a hardened JPEG image.
@@ -105,6 +118,11 @@ def run_quality_gate(image_bytes: bytes) -> QualityMetrics:
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     blur_variance = _check_blur(gray)
     brightness_mean = _check_brightness(gray)
+    contrast_std = _check_contrast(gray)
 
-    # contrast check added in next step
-    raise NotImplementedError("contrast check not yet implemented")
+    return QualityMetrics(
+        blur_variance=blur_variance,
+        brightness_mean=brightness_mean,
+        contrast_std=contrast_std,
+        resolution_short_side=short_side,
+    )

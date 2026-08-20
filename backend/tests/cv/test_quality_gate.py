@@ -5,6 +5,7 @@ from tests.synthetic import (
     make_blurry_image,
     make_bright_image,
     make_dark_image,
+    make_low_contrast_image,
     make_sharp_worksheet,
     make_small_image,
 )
@@ -48,9 +49,10 @@ def test_sharp_worksheet_passes_resolution():
     # Full end-to-end pass is tested once all four checks exist (Step 19).
     # For now this only exercises resolution, so call the private helper
     # directly rather than the not-yet-complete run_quality_gate.
-    from app.cv.quality_gate import _check_resolution
     import cv2
     import numpy as np
+
+    from app.cv.quality_gate import _check_resolution
 
     array = np.frombuffer(make_sharp_worksheet(), dtype=np.uint8)
     image = cv2.imdecode(array, cv2.IMREAD_COLOR)
@@ -75,3 +77,37 @@ def test_bright_image_rejected_on_brightness():
         run_quality_gate(make_bright_image())
     assert exc_info.value.code == "QUALITY_GATE_BRIGHTNESS"
     assert exc_info.value.threshold == 200.0
+
+
+def test_low_contrast_image_rejected_on_contrast():
+    with pytest.raises(QualityGateRejection) as exc_info:
+        run_quality_gate(make_low_contrast_image())
+    assert exc_info.value.code == "QUALITY_GATE_CONTRAST"
+
+
+def test_sharp_worksheet_passes_end_to_end():
+    result = run_quality_gate(make_sharp_worksheet())
+    assert isinstance(result, QualityMetrics)
+    assert result.resolution_short_side >= 1500
+    assert result.blur_variance >= 100.0
+    assert 50 <= result.brightness_mean <= 200
+    assert result.contrast_std >= 20.0
+
+
+def test_fail_fast_checks_resolution_first():
+    # Combine multiple failure modes (small + dark + blurred); resolution
+    # is checked first, so that must be the reported failure regardless
+    # of what else is wrong with the image.
+    import cv2
+    import numpy as np
+
+    array = np.frombuffer(make_small_image(), dtype=np.uint8)
+    image = cv2.imdecode(array, cv2.IMREAD_COLOR)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    darkened = np.clip(gray.astype(int) - 100, 0, 255).astype("uint8")
+    blurred = cv2.GaussianBlur(darkened, (31, 31), 15)
+    _, buf = cv2.imencode(".jpg", blurred)
+
+    with pytest.raises(QualityGateRejection) as exc_info:
+        run_quality_gate(buf.tobytes())
+    assert exc_info.value.code == "QUALITY_GATE_RESOLUTION"
