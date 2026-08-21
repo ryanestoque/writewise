@@ -190,3 +190,20 @@
     @apply font-heading;
   }
 }
+
+@utility cursive-guidelines {
+  background-image:
+    linear-gradient(to right, rgba(41, 141, 131, 0.45) 50%, transparent 50%),
+    linear-gradient(to bottom, transparent 31px, rgba(182, 117, 74, 0.6) 32px, rgba(182, 117, 74, 0.6) 33px, transparent 33px),
+    linear-gradient(to bottom, rgba(156, 163, 175, 0.4) 0px, rgba(156, 163, 175, 0.4) 1px, transparent 1px);
+  background-size: 8px 1px, 100% 48px, 100% 48px;
+  background-position: 0px 16px, 0px 0px, 0px 0px;
+  background-repeat: repeat-x, repeat-y, repeat-y;
+}
+
+.dark .cursive-guidelines {
+  background-image:
+    linear-gradient(to right, rgba(87, 179, 166, 0.35) 50%, transparent 50%),
+    linear-gradient(to bottom, transparent 31px, rgba(228, 152, 117, 0.5) 32px, rgba(228, 152, 117, 0.5) 33px, transparent 33px),
+    linear-gradient(to bottom, rgba(156, 163, 175, 0.25) 0px, rgba(156, 163, 175, 0.25) 1px, transparent 1px);
+}

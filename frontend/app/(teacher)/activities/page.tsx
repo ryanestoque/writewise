@@ -20,6 +20,12 @@ import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -110,44 +116,8 @@ export default function ActivitiesPage() {
   const { mutate: bulkArchive, isPending: isBulkPending } = useBulkArchive();
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
   const isSelectMode = selectedIds.size > 0;
-
-  const handleToggleSelect = useCallback((id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  const handleClearSelection = useCallback(() => {
-    setSelectedIds(new Set());
-  }, []);
-
-  const handleBulkArchive = useCallback(
-    (archived: boolean) => {
-      const ids = Array.from(selectedIds);
-      bulkArchive(
-        { ids, archived },
-        {
-          onSuccess: (result) => {
-            const count = result.updated.length;
-            toast.success(
-              archived
-                ? `${count} ${count === 1 ? "activity" : "activities"} archived.`
-                : `${count} ${count === 1 ? "activity" : "activities"} restored.`
-            );
-            setSelectedIds(new Set());
-          },
-          onError: () => {
-            toast.error("Failed to update activities. Please try again.");
-          },
-        }
-      );
-    },
-    [selectedIds, bulkArchive]
-  );
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<FilterType>("all");
@@ -155,38 +125,6 @@ export default function ActivitiesPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const totalStudents = students?.length ?? 0;
-
-  // Keyboard shortcut: "/" or Cmd/Ctrl+K to focus search
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      const isTyping =
-        target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable);
-
-      if (
-        isCreateOpen ||
-        editingActivity ||
-        deletingActivity ||
-        duplicatingActivity
-      )
-        return;
-
-      if (
-        (e.key === "/" ||
-          ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k")) &&
-        !isTyping
-      ) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isCreateOpen, editingActivity, deletingActivity, duplicatingActivity]);
 
   // Counts for filter pills
   const counts = useMemo(() => {
@@ -252,9 +190,129 @@ export default function ActivitiesPage() {
     });
   }, [activities, searchQuery, filterType, sortBy]);
 
+  const handleToggleSelect = useCallback(
+    (id: string, isShiftKey = false) => {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+
+        if (isShiftKey && lastSelectedId && lastSelectedId !== id) {
+          const lastIdx = filteredAndSortedActivities.findIndex(
+            (a) => a.id === lastSelectedId
+          );
+          const currentIdx = filteredAndSortedActivities.findIndex(
+            (a) => a.id === id
+          );
+
+          if (lastIdx !== -1 && currentIdx !== -1) {
+            const start = Math.min(lastIdx, currentIdx);
+            const end = Math.max(lastIdx, currentIdx);
+            for (let i = start; i <= end; i++) {
+              next.add(filteredAndSortedActivities[i].id);
+            }
+            setLastSelectedId(id);
+            return next;
+          }
+        }
+
+        if (next.has(id)) {
+          next.delete(id);
+          setLastSelectedId(null);
+        } else {
+          next.add(id);
+          setLastSelectedId(id);
+        }
+        return next;
+      });
+    },
+    [lastSelectedId, filteredAndSortedActivities]
+  );
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+    setLastSelectedId(null);
+  }, []);
+
   const handleSelectAll = useCallback(() => {
     setSelectedIds(new Set(filteredAndSortedActivities.map((a) => a.id)));
   }, [filteredAndSortedActivities]);
+
+  const handleBulkArchive = useCallback(
+    (archived: boolean) => {
+      const ids = Array.from(selectedIds);
+      bulkArchive(
+        { ids, archived },
+        {
+          onSuccess: (result) => {
+            const count = result.updated.length;
+            toast.success(
+              archived
+                ? `${count} ${count === 1 ? "activity" : "activities"} archived.`
+                : `${count} ${count === 1 ? "activity" : "activities"} restored.`
+            );
+            setSelectedIds(new Set());
+            setLastSelectedId(null);
+          },
+          onError: () => {
+            toast.error("Failed to update activities. Please try again.");
+          },
+        }
+      );
+    },
+    [selectedIds, bulkArchive]
+  );
+
+  // Keyboard shortcut: "/" or Cmd/Ctrl+K to focus search, Escape to deselect
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isTyping =
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable);
+
+      if (
+        isCreateOpen ||
+        editingActivity ||
+        deletingActivity ||
+        duplicatingActivity
+      )
+        return;
+
+      if (e.key === "Escape" && !isTyping) {
+        if (selectedIds.size > 0) {
+          e.preventDefault();
+          setSelectedIds(new Set());
+          setLastSelectedId(null);
+          return;
+        }
+        if (searchQuery) {
+          e.preventDefault();
+          setSearchQuery("");
+          return;
+        }
+      }
+
+      if (
+        (e.key === "/" ||
+          ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k")) &&
+        !isTyping
+      ) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    isCreateOpen,
+    editingActivity,
+    deletingActivity,
+    duplicatingActivity,
+    selectedIds.size,
+    searchQuery,
+  ]);
 
   if (error) {
     return (
@@ -632,10 +690,12 @@ export default function ActivitiesPage() {
                 key={activity.id}
                 onClick={
                   isSelectMode
-                    ? () => handleToggleSelect(activity.id)
+                    ? (e) => handleToggleSelect(activity.id, e.shiftKey)
                     : undefined
                 }
                 className={`group relative flex flex-col justify-between bg-surface dark:bg-card border rounded-xl sm:rounded-2xl p-5 shadow-2xs hover:shadow-md transition-all duration-200 ${
+                  isSelectMode ? "cursor-pointer select-none" : ""
+                } ${
                   isArchived
                     ? "border-dashed border-border/80 opacity-80 hover:opacity-100"
                     : "border-border hover:border-brand-300 dark:hover:border-brand-800"
@@ -650,8 +710,11 @@ export default function ActivitiesPage() {
                   <input
                     type="checkbox"
                     checked={selectedIds.has(activity.id)}
-                    onChange={() => handleToggleSelect(activity.id)}
-                    onClick={(e) => e.stopPropagation()}
+                    onChange={() => {}}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleSelect(activity.id, e.shiftKey);
+                    }}
                     aria-label={`Select "${activity.target_text.slice(0, 40)}"`}
                     className="size-4 rounded border-border accent-primary cursor-pointer"
                   />
@@ -784,13 +847,13 @@ export default function ActivitiesPage() {
                     className="block group-hover:opacity-90 transition-opacity focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
                   >
                     <div className="relative p-3.5 sm:p-4 rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 mb-3.5 overflow-hidden shadow-2xs">
-                      {/* Subtle authentic 3-line ruling watermark */}
+                      {/* Authentic 3-line ruling aligned with Cedarville Cursive baseline */}
                       <div
-                        className="absolute inset-0 pointer-events-none opacity-25 dark:opacity-15 bg-[linear-gradient(to_bottom,transparent_0px,transparent_15px,rgba(41,141,131,0.3)_16px,transparent_17px,transparent_31px,rgba(182,117,74,0.25)_32px,transparent_33px)] bg-[size:100%_32px]"
+                        className="absolute inset-x-3.5 inset-y-3.5 sm:inset-x-4 sm:inset-y-4 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden"
                         aria-hidden="true"
                       />
-                      <p className="relative font-cursive text-xl sm:text-2xl text-foreground/90 font-medium line-clamp-3 leading-relaxed tracking-wide">
-                        &ldquo;{activity.target_text}&rdquo;
+                      <p className="relative font-cursive text-[32px] leading-[48px] text-foreground/90 font-normal line-clamp-3 tracking-wide">
+                        {activity.target_text}
                       </p>
                     </div>
                   </Link>
@@ -833,35 +896,90 @@ export default function ActivitiesPage() {
 
                   {/* Visual Progress Bar (when totalStudents > 0) */}
                   {totalStudents > 0 && (
-                    <div className="w-full bg-muted/60 dark:bg-muted/40 h-1.5 rounded-full overflow-hidden flex shadow-2xs">
-                      {completedCount > 0 && (
-                        <div
-                          className="bg-emerald-500 transition-all duration-300"
-                          style={{
-                            width: `${(completedCount / totalStudents) * 100}%`,
-                          }}
-                          title={`${completedCount} completed`}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <div
+                              tabIndex={0}
+                              role="progressbar"
+                              aria-valuenow={submissionCount}
+                              aria-valuemin={0}
+                              aria-valuemax={totalStudents}
+                              aria-label={`Submission progress: ${completedCount} completed, ${processingCount} processing, ${rejectedCount} rejected out of ${totalStudents} students`}
+                              className="w-full bg-muted/60 dark:bg-muted/40 h-2 rounded-full overflow-hidden flex shadow-2xs cursor-help focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              {completedCount > 0 && (
+                                <div
+                                  className="bg-emerald-500 transition-all duration-300"
+                                  style={{
+                                    width: `${(completedCount / totalStudents) * 100}%`,
+                                  }}
+                                />
+                              )}
+                              {processingCount > 0 && (
+                                <div
+                                  className="bg-amber-500 transition-all duration-300"
+                                  style={{
+                                    width: `${(processingCount / totalStudents) * 100}%`,
+                                  }}
+                                />
+                              )}
+                              {rejectedCount > 0 && (
+                                <div
+                                  className="bg-destructive/80 transition-all duration-300"
+                                  style={{
+                                    width: `${(rejectedCount / totalStudents) * 100}%`,
+                                  }}
+                                />
+                              )}
+                            </div>
+                          }
                         />
-                      )}
-                      {processingCount > 0 && (
-                        <div
-                          className="bg-amber-500 transition-all duration-300"
-                          style={{
-                            width: `${(processingCount / totalStudents) * 100}%`,
-                          }}
-                          title={`${processingCount} processing`}
-                        />
-                      )}
-                      {rejectedCount > 0 && (
-                        <div
-                          className="bg-destructive/80 transition-all duration-300"
-                          style={{
-                            width: `${(rejectedCount / totalStudents) * 100}%`,
-                          }}
-                          title={`${rejectedCount} rejected`}
-                        />
-                      )}
-                    </div>
+                        <TooltipContent side="top" className="text-xs p-2.5 space-y-1.5 min-w-[210px]">
+                          <div className="font-semibold text-background pb-1 border-b border-background/20 flex items-center justify-between">
+                            <span>Class Submissions</span>
+                            <span>{submissionCount}/{totalStudents}</span>
+                          </div>
+                          <div className="space-y-1 text-[11px]">
+                            <div className="flex items-center justify-between text-emerald-300">
+                              <span className="flex items-center gap-1.5">
+                                <span className="size-2 rounded-full bg-emerald-400 inline-block shrink-0" />
+                                Completed
+                              </span>
+                              <span className="font-semibold tabular-nums">{completedCount}</span>
+                            </div>
+                            {processingCount > 0 && (
+                              <div className="flex items-center justify-between text-amber-300">
+                                <span className="flex items-center gap-1.5">
+                                  <span className="size-2 rounded-full bg-amber-400 inline-block shrink-0" />
+                                  Processing
+                                </span>
+                                <span className="font-semibold tabular-nums">{processingCount}</span>
+                              </div>
+                            )}
+                            {rejectedCount > 0 && (
+                              <div className="flex items-center justify-between text-red-300">
+                                <span className="flex items-center gap-1.5">
+                                  <span className="size-2 rounded-full bg-red-400 inline-block shrink-0" />
+                                  Rejected (Needs Resubmission)
+                                </span>
+                                <span className="font-semibold tabular-nums">{rejectedCount}</span>
+                              </div>
+                            )}
+                            {totalStudents - submissionCount > 0 && (
+                              <div className="flex items-center justify-between text-background/70 pt-0.5 border-t border-background/10">
+                                <span className="flex items-center gap-1.5">
+                                  <span className="size-2 rounded-full bg-background/40 inline-block shrink-0" />
+                                  Unsubmitted
+                                </span>
+                                <span className="font-medium tabular-nums">{totalStudents - submissionCount}</span>
+                              </div>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
 
                   {/* Action Buttons Row */}
@@ -899,8 +1017,15 @@ export default function ActivitiesPage() {
           className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-foreground text-background shadow-xl border border-border/20 animate-in slide-in-from-bottom-4 fade-in-0 duration-200"
           role="toolbar"
           aria-label="Bulk activity actions"
+          aria-live="polite"
         >
-          <span className="text-xs font-semibold tabular-nums pr-1 border-r border-background/20 mr-1">
+          <span className="sr-only">
+            {selectedIds.size} {selectedIds.size === 1 ? "activity" : "activities"} selected. Bulk actions available. Press Escape to clear selection.
+          </span>
+          <span
+            className="text-xs font-semibold tabular-nums pr-1 border-r border-background/20 mr-1"
+            aria-hidden="true"
+          >
             {selectedIds.size} selected
           </span>
           <Button
@@ -908,7 +1033,7 @@ export default function ActivitiesPage() {
             size="sm"
             variant="ghost"
             onClick={handleSelectAll}
-            className="h-7 px-2.5 text-xs text-background/80 hover:text-background hover:bg-background/10"
+            className="h-7 px-2.5 text-xs text-background/80 hover:text-background hover:bg-background/10 cursor-pointer"
           >
             Select All
           </Button>
@@ -919,7 +1044,7 @@ export default function ActivitiesPage() {
               variant="ghost"
               disabled={isBulkPending}
               onClick={() => handleBulkArchive(true)}
-              className="h-7 px-2.5 text-xs text-background/80 hover:text-background hover:bg-background/10 flex items-center gap-1.5"
+              className="h-7 px-2.5 text-xs text-background/80 hover:text-background hover:bg-background/10 flex items-center gap-1.5 cursor-pointer"
             >
               <Archive className="size-3.5" />
               Archive
@@ -932,7 +1057,7 @@ export default function ActivitiesPage() {
               variant="ghost"
               disabled={isBulkPending}
               onClick={() => handleBulkArchive(false)}
-              className="h-7 px-2.5 text-xs text-background/80 hover:text-background hover:bg-background/10 flex items-center gap-1.5"
+              className="h-7 px-2.5 text-xs text-background/80 hover:text-background hover:bg-background/10 flex items-center gap-1.5 cursor-pointer"
             >
               <ArchiveRestore className="size-3.5" />
               Unarchive
@@ -943,8 +1068,9 @@ export default function ActivitiesPage() {
             size="sm"
             variant="ghost"
             onClick={handleClearSelection}
-            className="h-7 w-7 p-0 text-background/70 hover:text-background hover:bg-background/10"
-            aria-label="Clear selection"
+            className="h-7 w-7 p-0 text-background/70 hover:text-background hover:bg-background/10 cursor-pointer"
+            aria-label="Clear selection (Escape)"
+            title="Clear selection (Esc)"
           >
             <X className="size-3.5" />
           </Button>

@@ -162,13 +162,13 @@ export function EditActivityDialog({
                         3-line ruling
                       </span>
                     </div>
-                    <div className="relative p-3.5 rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-2xs">
+                    <div className="relative p-3.5 sm:p-4 rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-2xs">
                       <div
-                        className="absolute inset-0 pointer-events-none opacity-25 dark:opacity-15 bg-[linear-gradient(to_bottom,transparent_0px,transparent_15px,rgba(41,141,131,0.3)_16px,transparent_17px,transparent_31px,rgba(182,117,74,0.25)_32px,transparent_33px)] bg-[size:100%_32px]"
+                        className="absolute inset-x-3.5 inset-y-3.5 sm:inset-x-4 sm:inset-y-4 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden"
                         aria-hidden="true"
                       />
-                      <p className="relative font-cursive text-xl sm:text-2xl text-foreground/90 font-medium leading-relaxed tracking-wide">
-                        &ldquo;{targetText}&rdquo;
+                      <p className="relative font-cursive text-[32px] leading-[48px] text-foreground/90 font-normal tracking-wide">
+                        {targetText}
                       </p>
                     </div>
                   </div>

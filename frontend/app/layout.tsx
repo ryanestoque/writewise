@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Inter, Poppins, Caveat } from "next/font/google";
+import { Inter, Poppins, Cedarville_Cursive } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Providers } from "@/components/providers";
 
@@ -12,8 +12,8 @@ const poppins = Poppins({
   variable: "--font-heading",
 });
 
-const caveat = Caveat({
-  weight: ["400", "500", "600", "700"],
+const cedarvilleCursive = Cedarville_Cursive({
+  weight: "400",
   subsets: ["latin"],
   variable: "--font-cursive",
 });
@@ -36,7 +36,7 @@ export default function RootLayout({
         "antialiased",
         inter.variable,
         poppins.variable,
-        caveat.variable,
+        cedarvilleCursive.variable,
         "font-sans"
       )}
     >
