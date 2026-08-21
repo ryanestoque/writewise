@@ -247,7 +247,13 @@ export default function ActivitiesPage() {
             toast.success(
               archived
                 ? `${count} ${count === 1 ? "activity" : "activities"} archived.`
-                : `${count} ${count === 1 ? "activity" : "activities"} restored.`
+                : `${count} ${count === 1 ? "activity" : "activities"} restored.`,
+              {
+                action: {
+                  label: "Undo",
+                  onClick: () => bulkArchive({ ids, archived: !archived }),
+                },
+              }
             );
             setSelectedIds(new Set());
             setLastSelectedId(null);
@@ -260,6 +266,37 @@ export default function ActivitiesPage() {
     },
     [selectedIds, bulkArchive]
   );
+
+  // Keyboard navigation for WAI-ARIA tablist
+  const handleTabKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const availableTabs: FilterType[] = ["all", "in_class", "take_home"];
+    if (counts.archived > 0) availableTabs.push("archived");
+    const currentIndex = availableTabs.indexOf(filterType);
+    if (currentIndex === -1) return;
+
+    let nextIndex = currentIndex;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      e.preventDefault();
+      nextIndex = (currentIndex + 1) % availableTabs.length;
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      e.preventDefault();
+      nextIndex = (currentIndex - 1 + availableTabs.length) % availableTabs.length;
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      nextIndex = 0;
+    } else if (e.key === "End") {
+      e.preventDefault();
+      nextIndex = availableTabs.length - 1;
+    } else {
+      return;
+    }
+
+    const nextTab = availableTabs[nextIndex];
+    setFilterType(nextTab);
+    setSelectedIds(new Set());
+    const targetEl = document.getElementById(`filter-tab-${nextTab}`);
+    targetEl?.focus();
+  };
 
   // Keyboard shortcut: "/" or Cmd/Ctrl+K to focus search, Escape to deselect
   useEffect(() => {
@@ -428,15 +465,25 @@ export default function ActivitiesPage() {
 
             {/* Filter Tabs & Sort */}
             <div className="flex items-center justify-between md:justify-end gap-2 flex-wrap">
-              {/* Type & Archive Filter Buttons */}
-              <div className="inline-flex p-0.5 rounded-lg bg-muted/60 border border-border/50 text-xs overflow-x-auto max-w-full">
+              {/* Type & Archive Filter Buttons (WAI-ARIA compliant tablist with roving arrow navigation) */}
+              <div
+                role="tablist"
+                aria-label="Activity lifecycle filters"
+                onKeyDown={handleTabKeyDown}
+                className="inline-flex p-0.5 rounded-lg bg-muted/60 border border-border/50 text-xs overflow-x-auto max-w-full"
+              >
                 <button
                   type="button"
+                  id="filter-tab-all"
+                  role="tab"
+                  aria-selected={filterType === "all"}
+                  aria-controls="activities-grid"
+                  tabIndex={filterType === "all" ? 0 : -1}
                   onClick={() => {
                     setFilterType("all");
                     setSelectedIds(new Set());
                   }}
-                  className={`px-2.5 py-1.5 sm:py-1 rounded-md font-medium transition-colors cursor-pointer shrink-0 ${
+                  className={`px-3 py-2 sm:px-2.5 sm:py-1 min-h-[38px] sm:min-h-0 rounded-md font-medium transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
                     filterType === "all"
                       ? "bg-background text-foreground shadow-2xs font-semibold"
                       : "text-muted-foreground hover:text-foreground"
@@ -446,11 +493,16 @@ export default function ActivitiesPage() {
                 </button>
                 <button
                   type="button"
+                  id="filter-tab-in_class"
+                  role="tab"
+                  aria-selected={filterType === "in_class"}
+                  aria-controls="activities-grid"
+                  tabIndex={filterType === "in_class" ? 0 : -1}
                   onClick={() => {
                     setFilterType("in_class");
                     setSelectedIds(new Set());
                   }}
-                  className={`px-2.5 py-1.5 sm:py-1 rounded-md font-medium transition-colors cursor-pointer shrink-0 ${
+                  className={`px-3 py-2 sm:px-2.5 sm:py-1 min-h-[38px] sm:min-h-0 rounded-md font-medium transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
                     filterType === "in_class"
                       ? "bg-background text-foreground shadow-2xs font-semibold"
                       : "text-muted-foreground hover:text-foreground"
@@ -460,11 +512,16 @@ export default function ActivitiesPage() {
                 </button>
                 <button
                   type="button"
+                  id="filter-tab-take_home"
+                  role="tab"
+                  aria-selected={filterType === "take_home"}
+                  aria-controls="activities-grid"
+                  tabIndex={filterType === "take_home" ? 0 : -1}
                   onClick={() => {
                     setFilterType("take_home");
                     setSelectedIds(new Set());
                   }}
-                  className={`px-2.5 py-1.5 sm:py-1 rounded-md font-medium transition-colors cursor-pointer shrink-0 ${
+                  className={`px-3 py-2 sm:px-2.5 sm:py-1 min-h-[38px] sm:min-h-0 rounded-md font-medium transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
                     filterType === "take_home"
                       ? "bg-background text-foreground shadow-2xs font-semibold"
                       : "text-muted-foreground hover:text-foreground"
@@ -475,11 +532,16 @@ export default function ActivitiesPage() {
                 {counts.archived > 0 && (
                   <button
                     type="button"
+                    id="filter-tab-archived"
+                    role="tab"
+                    aria-selected={filterType === "archived"}
+                    aria-controls="activities-grid"
+                    tabIndex={filterType === "archived" ? 0 : -1}
                     onClick={() => {
                       setFilterType("archived");
                       setSelectedIds(new Set());
                     }}
-                    className={`px-2.5 py-1.5 sm:py-1 rounded-md font-medium transition-colors cursor-pointer shrink-0 ${
+                    className={`px-3 py-2 sm:px-2.5 sm:py-1 min-h-[38px] sm:min-h-0 rounded-md font-medium transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
                       filterType === "archived"
                         ? "bg-background text-foreground shadow-2xs font-semibold"
                         : "text-muted-foreground hover:text-foreground"
@@ -492,7 +554,7 @@ export default function ActivitiesPage() {
 
               {/* Sort Selector */}
               <DropdownMenu>
-                <DropdownMenuTrigger className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted/70 border border-border/50 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
+                <DropdownMenuTrigger className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted/70 border border-border/50 rounded-lg px-2.5 py-1.5 min-h-[38px] sm:min-h-0 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
                   <ArrowUpDown className="size-3 text-muted-foreground shrink-0" />
                   <span className="font-medium text-foreground">
                     {sortBy === "newest" && "Newest First"}
@@ -547,13 +609,19 @@ export default function ActivitiesPage() {
 
       {/* Filter results indicator */}
       {searchQuery && activities && activities.length > 0 && (
-        <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-center justify-between text-xs text-muted-foreground px-1"
+        >
           <span>
             Showing{" "}
             <strong className="text-foreground">
               {filteredAndSortedActivities.length}
             </strong>{" "}
-            of {activities.length} activities matching &ldquo;
+            of{" "}
+            <strong className="text-foreground">{activities.length}</strong>{" "}
+            activities matching &ldquo;
             <strong className="text-foreground">{searchQuery}</strong>
             &rdquo;
           </span>
@@ -668,7 +736,12 @@ export default function ActivitiesPage() {
         </div>
       ) : (
         /* Activity Card Grid */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div
+          id="activities-grid"
+          role="region"
+          aria-label="Activities list"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
           {filteredAndSortedActivities.map((activity) => {
             const isArchived = activity.is_archived;
             const submissionCount = activity.submissions?.length ?? 0;
@@ -701,28 +774,36 @@ export default function ActivitiesPage() {
                     : "border-border hover:border-brand-300 dark:hover:border-brand-800"
                 }`}
               >
-                {/* Selection checkbox */}
-                <div
-                  className={`absolute top-3 left-3 z-10 transition-opacity ${
-                    isSelectMode ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.has(activity.id)}
-                    onChange={() => {}}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleToggleSelect(activity.id, e.shiftKey);
-                    }}
-                    aria-label={`Select "${activity.target_text.slice(0, 40)}"`}
-                    className="size-4 rounded border-border accent-primary cursor-pointer"
-                  />
-                </div>
                 <div>
-                  {/* Card Header: Badges & Actions Menu */}
+                  {/* Card Header: Checkbox, Badges & Actions Menu */}
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                      {/* Selection checkbox */}
+                      <div
+                        className={`transition-all duration-150 ease-out flex items-center justify-center shrink-0 ${
+                          isSelectMode || selectedIds.has(activity.id)
+                            ? "w-6 opacity-100"
+                            : "w-6 opacity-100 sm:w-0 sm:opacity-0 sm:overflow-hidden sm:group-hover:w-6 sm:group-hover:opacity-100 sm:group-hover:overflow-visible sm:focus-within:w-6 sm:focus-within:opacity-100"
+                        }`}
+                      >
+                        <label
+                          className="flex size-7 sm:size-6 items-center justify-center rounded-md hover:bg-muted/70 cursor-pointer transition-colors relative after:absolute after:-inset-2 after:content-['']"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(activity.id)}
+                            onChange={() => {}}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleSelect(activity.id, e.shiftKey);
+                            }}
+                            aria-label={`Select activity: ${activity.target_text.slice(0, 40)}`}
+                            className="size-4 rounded border-border accent-primary cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                          />
+                        </label>
+                      </div>
+
                       {isArchived ? (
                         <Badge
                           variant="outline"
@@ -756,10 +837,10 @@ export default function ActivitiesPage() {
                       </Badge>
                     </div>
 
-                    {/* Overflow Actions Menu */}
+                    {/* Overflow Actions Menu with mobile-friendly hit target */}
                     <DropdownMenu>
                       <DropdownMenuTrigger
-                        className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                        className="relative flex size-8 sm:size-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-1.5 after:content-['']"
                         aria-label="Activity actions"
                       >
                         <MoreVertical className="size-4" />
@@ -808,7 +889,13 @@ export default function ActivitiesPage() {
                                 toast.success(
                                   result.is_archived
                                     ? "Activity moved to archive."
-                                    : "Activity restored from archive."
+                                    : "Activity restored from archive.",
+                                  {
+                                    action: {
+                                      label: "Undo",
+                                      onClick: () => toggleArchive(activity.id),
+                                    },
+                                  }
                                 );
                               },
                               onError: () => {
@@ -881,7 +968,7 @@ export default function ActivitiesPage() {
                       </span>
 
                       {isFullyCollected && (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded-md border border-emerald-200 dark:border-emerald-900">
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-900">
                           <CheckCircle2 className="size-2.5" />
                           Complete
                         </span>
@@ -911,7 +998,7 @@ export default function ActivitiesPage() {
                             >
                               {completedCount > 0 && (
                                 <div
-                                  className="bg-emerald-500 transition-all duration-300"
+                                  className="bg-emerald-500 transition-all duration-300 motion-reduce:transition-none"
                                   style={{
                                     width: `${(completedCount / totalStudents) * 100}%`,
                                   }}
@@ -919,7 +1006,7 @@ export default function ActivitiesPage() {
                               )}
                               {processingCount > 0 && (
                                 <div
-                                  className="bg-amber-500 transition-all duration-300"
+                                  className="bg-amber-500 transition-all duration-300 motion-reduce:transition-none"
                                   style={{
                                     width: `${(processingCount / totalStudents) * 100}%`,
                                   }}
@@ -927,7 +1014,7 @@ export default function ActivitiesPage() {
                               )}
                               {rejectedCount > 0 && (
                                 <div
-                                  className="bg-destructive/80 transition-all duration-300"
+                                  className="bg-destructive/80 transition-all duration-300 motion-reduce:transition-none"
                                   style={{
                                     width: `${(rejectedCount / totalStudents) * 100}%`,
                                   }}
@@ -941,34 +1028,34 @@ export default function ActivitiesPage() {
                             <span>Class Submissions</span>
                             <span>{submissionCount}/{totalStudents}</span>
                           </div>
-                          <div className="space-y-1 text-[11px]">
-                            <div className="flex items-center justify-between text-emerald-300">
-                              <span className="flex items-center gap-1.5">
+                          <div className="space-y-1 text-[11px] text-background">
+                            <div className="flex items-center justify-between">
+                              <span className="flex items-center gap-1.5 text-background/90">
                                 <span className="size-2 rounded-full bg-emerald-400 inline-block shrink-0" />
                                 Completed
                               </span>
-                              <span className="font-semibold tabular-nums">{completedCount}</span>
+                              <span className="font-semibold tabular-nums text-background">{completedCount}</span>
                             </div>
                             {processingCount > 0 && (
-                              <div className="flex items-center justify-between text-amber-300">
-                                <span className="flex items-center gap-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className="flex items-center gap-1.5 text-background/90">
                                   <span className="size-2 rounded-full bg-amber-400 inline-block shrink-0" />
                                   Processing
                                 </span>
-                                <span className="font-semibold tabular-nums">{processingCount}</span>
+                                <span className="font-semibold tabular-nums text-background">{processingCount}</span>
                               </div>
                             )}
                             {rejectedCount > 0 && (
-                              <div className="flex items-center justify-between text-red-300">
-                                <span className="flex items-center gap-1.5">
-                                  <span className="size-2 rounded-full bg-red-400 inline-block shrink-0" />
+                              <div className="flex items-center justify-between">
+                                <span className="flex items-center gap-1.5 text-background/90">
+                                  <span className="size-2 rounded-full bg-destructive inline-block shrink-0" />
                                   Rejected (Needs Resubmission)
                                 </span>
-                                <span className="font-semibold tabular-nums">{rejectedCount}</span>
+                                <span className="font-semibold tabular-nums text-background">{rejectedCount}</span>
                               </div>
                             )}
                             {totalStudents - submissionCount > 0 && (
-                              <div className="flex items-center justify-between text-background/70 pt-0.5 border-t border-background/10">
+                              <div className="flex items-center justify-between text-background/70 pt-0.5 border-t border-background/15">
                                 <span className="flex items-center gap-1.5">
                                   <span className="size-2 rounded-full bg-background/40 inline-block shrink-0" />
                                   Unsubmitted
@@ -988,7 +1075,7 @@ export default function ActivitiesPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => openUpload({ activityId: activity.id })}
-                      className="h-7 sm:h-8 px-2.5 text-xs font-medium border-border/80 hover:bg-brand-50 hover:text-brand-700 dark:hover:bg-brand-950/60 dark:hover:text-brand-300 rounded-lg cursor-pointer transition-colors"
+                      className="h-8 min-h-[36px] px-2.5 text-xs font-medium border-border/80 hover:bg-brand-50 hover:text-brand-700 dark:hover:bg-brand-950/60 dark:hover:text-brand-300 rounded-lg cursor-pointer transition-colors"
                     >
                       <Upload className="size-3.5 mr-1 text-primary" />
                       Upload
@@ -996,7 +1083,7 @@ export default function ActivitiesPage() {
 
                     <Link
                       href={`/activities/${activity.id}`}
-                      className="inline-flex items-center text-xs font-semibold text-primary hover:text-brand-700 dark:hover:text-brand-300 py-1 px-1.5 -mr-1 rounded-md transition-colors group/link"
+                      className="inline-flex items-center text-xs font-semibold text-primary hover:text-brand-700 dark:hover:text-brand-300 py-1.5 px-2 -mr-1 rounded-md transition-colors group/link min-h-[36px]"
                     >
                       <span>View Submissions</span>
                       <span className="ml-1 text-xs transition-transform group-hover/link:translate-x-0.5">
@@ -1014,7 +1101,7 @@ export default function ActivitiesPage() {
       {/* Bulk action bar — visible while cards are selected */}
       {isSelectMode && (
         <div
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-foreground text-background shadow-xl border border-border/20 animate-in slide-in-from-bottom-4 fade-in-0 duration-200"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-foreground text-background shadow-xl border border-border/20 animate-in slide-in-from-bottom-4 fade-in-0 duration-200 motion-reduce:animate-none"
           role="toolbar"
           aria-label="Bulk activity actions"
           aria-live="polite"
@@ -1033,7 +1120,7 @@ export default function ActivitiesPage() {
             size="sm"
             variant="ghost"
             onClick={handleSelectAll}
-            className="h-7 px-2.5 text-xs text-background/80 hover:text-background hover:bg-background/10 cursor-pointer"
+            className="h-8 sm:h-7 min-h-[36px] sm:min-h-0 px-2.5 text-xs text-background/90 hover:text-background hover:bg-background/10 cursor-pointer"
           >
             Select All
           </Button>
@@ -1044,7 +1131,7 @@ export default function ActivitiesPage() {
               variant="ghost"
               disabled={isBulkPending}
               onClick={() => handleBulkArchive(true)}
-              className="h-7 px-2.5 text-xs text-background/80 hover:text-background hover:bg-background/10 flex items-center gap-1.5 cursor-pointer"
+              className="h-8 sm:h-7 min-h-[36px] sm:min-h-0 px-2.5 text-xs text-background/90 hover:text-background hover:bg-background/10 flex items-center gap-1.5 cursor-pointer"
             >
               <Archive className="size-3.5" />
               Archive
@@ -1057,7 +1144,7 @@ export default function ActivitiesPage() {
               variant="ghost"
               disabled={isBulkPending}
               onClick={() => handleBulkArchive(false)}
-              className="h-7 px-2.5 text-xs text-background/80 hover:text-background hover:bg-background/10 flex items-center gap-1.5 cursor-pointer"
+              className="h-8 sm:h-7 min-h-[36px] sm:min-h-0 px-2.5 text-xs text-background/90 hover:text-background hover:bg-background/10 flex items-center gap-1.5 cursor-pointer"
             >
               <ArchiveRestore className="size-3.5" />
               Unarchive
@@ -1068,7 +1155,7 @@ export default function ActivitiesPage() {
             size="sm"
             variant="ghost"
             onClick={handleClearSelection}
-            className="h-7 w-7 p-0 text-background/70 hover:text-background hover:bg-background/10 cursor-pointer"
+            className="size-8 sm:size-7 p-0 flex items-center justify-center text-background/80 hover:text-background hover:bg-background/10 cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
             aria-label="Clear selection (Escape)"
             title="Clear selection (Esc)"
           >
