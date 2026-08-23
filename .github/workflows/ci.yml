@@ -56,7 +56,14 @@ jobs:
       run: uv run ruff check .
 
     - name: Start Ephemeral Supabase Stack
-      run: supabase start
+      run: |
+        supabase start
+        echo "SUPABASE_URL=$(supabase status -o json | jq -r '.API_URL')" >> $GITHUB_ENV
+        echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o json | jq -r '.SERVICE_ROLE_KEY')" >> $GITHUB_ENV
+        echo "SUPABASE_JWT_SECRET=$(supabase status -o json | jq -r '.JWT_SECRET')" >> $GITHUB_ENV
+        echo "SUPABASE_DB_URL=$(supabase status -o json | jq -r '.DB_URL')" >> $GITHUB_ENV
+        echo "MODEL_ARTIFACT_PATH=test/model.keras" >> $GITHUB_ENV
+        echo "CORS_ALLOWED_ORIGINS=http://localhost:3000" >> $GITHUB_ENV
       
     - name: Apply Migrations
       run: supabase db reset
