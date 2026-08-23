@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SearchInput } from "@/components/ui/search-input";
+import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
@@ -169,6 +170,20 @@ export default function RosterPage() {
       sectionCounts: counts,
     };
   }, [students]);
+
+  const sectionFilterItems = useMemo<FilterPillItem[]>(() => {
+    const allItem: FilterPillItem = {
+      id: "all",
+      label: "All",
+      count: students?.length ?? 0,
+    };
+    const dynamicItems: FilterPillItem[] = sections.map((sec) => ({
+      id: sec,
+      label: sec,
+      count: sectionCounts.get(sec) || 0,
+    }));
+    return [allItem, ...dynamicItems];
+  }, [students, sections, sectionCounts]);
 
 
   // Filtered & Sorted student list
@@ -357,7 +372,7 @@ export default function RosterPage() {
             <Button
               onClick={handleExportRoster}
               variant="outline"
-              className="h-10 sm:h-9 flex-1 sm:flex-none border-border text-foreground hover:bg-muted text-xs sm:text-sm font-medium shadow-2xs rounded-lg sm:rounded-xl"
+              className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] flex-1 sm:flex-none border-border text-foreground hover:bg-muted text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl"
             >
               <Download className="w-4 h-4 mr-1.5 text-muted-foreground shrink-0" />
               Export CSV
@@ -367,7 +382,7 @@ export default function RosterPage() {
           <Button
             onClick={handleOpenBulk}
             variant="outline"
-            className="h-10 sm:h-9 flex-1 sm:flex-none border-border text-foreground hover:bg-muted text-xs sm:text-sm font-medium shadow-2xs rounded-lg sm:rounded-xl"
+            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] flex-1 sm:flex-none border-border text-foreground hover:bg-muted text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl"
           >
             <UserPlus className="w-4 h-4 mr-1.5 text-muted-foreground shrink-0" />
             Bulk Add
@@ -375,7 +390,7 @@ export default function RosterPage() {
 
           <Button
             onClick={handleOpenNew}
-            className="h-10 sm:h-9 w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl"
+            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl"
           >
             <Plus className="w-4 h-4 mr-1.5 shrink-0" />
             Add Student
@@ -387,7 +402,7 @@ export default function RosterPage() {
       <div className="space-y-4">
         {/* Search and Section Filters Bar */}
         {students && students.length > 0 && (
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-2xs">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
             {/* Search Input */}
             <SearchInput
               ref={searchInputRef}
@@ -400,59 +415,14 @@ export default function RosterPage() {
             />
 
             {/* Section Filter Pills */}
-            <div className="relative min-w-0 flex-1 flex items-center lg:justify-end">
-              <div
-                role="group"
-                aria-label="Filter by class section"
-                className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none max-w-full touch-pan-x overscroll-x-contain"
-              >
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1 shrink-0">
-                  Section:
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedSection("all")}
-                  aria-pressed={selectedSection === "all"}
-                  className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-1 after:content-[''] ${selectedSection === "all"
-                      ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-2xs"
-                      : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
-                    }`}
-                >
-                  All
-                  <span
-                    className={`text-[10px] font-medium px-1.5 py-0.2 rounded-full ${selectedSection === "all" ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground" : "bg-muted text-foreground"
-                      }`}
-                  >
-                    {students.length}
-                  </span>
-                </button>
-
-                {sections.map((sec) => {
-                  const count = sectionCounts.get(sec) || 0;
-                  const isSelected = selectedSection === sec;
-                  return (
-                    <button
-                      key={sec}
-                      type="button"
-                      onClick={() => setSelectedSection(sec)}
-                      aria-pressed={isSelected}
-                      className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-1 after:content-[''] ${isSelected
-                          ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-2xs"
-                          : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
-                        }`}
-                    >
-                      {sec}
-                      <span
-                        className={`text-[10px] font-medium px-1.5 py-0.2 rounded-full ${isSelected ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground" : "bg-muted text-foreground"
-                          }`}
-                      >
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <FilterPills
+              items={sectionFilterItems}
+              value={selectedSection}
+              onChange={setSelectedSection}
+              label="Section:"
+              ariaLabel="Filter by class section"
+              containerClassName="lg:justify-end"
+            />
           </div>
         )}
 
@@ -476,13 +446,13 @@ export default function RosterPage() {
 
         {/* Loading state */}
         {isLoading ? (
-          <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-12 flex flex-col items-center justify-center gap-2 text-muted-foreground shadow-2xs">
+          <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-12 flex flex-col items-center justify-center gap-2 text-muted-foreground shadow-warm">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
             <span className="text-sm font-medium">Loading class roster...</span>
           </div>
         ) : students?.length === 0 ? (
           /* Empty Roster State */
-          <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-2xs overflow-hidden">
+          <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
             <Empty className="py-14 border-0">
               <EmptyMedia variant="icon" className="bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
                 <Users className="w-6 h-6" />
@@ -514,7 +484,7 @@ export default function RosterPage() {
           </div>
         ) : filteredStudents.length === 0 ? (
           /* Filter Empty State */
-          <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-2xs overflow-hidden">
+          <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
             <Empty className="py-12 border-0">
               <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
                 <SearchX className="w-6 h-6" />
@@ -536,7 +506,7 @@ export default function RosterPage() {
         ) : (
           <>
             {/* Desktop & Tablet Table View (md and up) */}
-            <div className="hidden md:block bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-2xs overflow-hidden">
+            <div className="hidden md:block bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
               <div role="region" aria-label="Class roster table" className="overflow-x-auto">
                 <Table>
                   <TableHeader className="bg-muted/40">
@@ -670,7 +640,7 @@ export default function RosterPage() {
 
                           {/* Section Badge */}
                           <TableCell className="text-muted-foreground py-3">
-                            <Badge variant="secondary" className="font-normal text-xs bg-brand-100/80 text-brand-800 border-brand-200/70 dark:bg-brand-950 dark:text-brand-300 dark:border-brand-900">
+                            <Badge variant="outline" className="font-semibold text-xs bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900">
                               {student.section}
                             </Badge>
                           </TableCell>
@@ -777,8 +747,8 @@ export default function RosterPage() {
                       key={student.id}
                       className={`p-3.5 rounded-xl border transition-all ${
                         isSelected
-                          ? "bg-brand-50/80 dark:bg-brand-950/40 border-brand-300 dark:border-brand-700 shadow-2xs ring-1 ring-brand-500/30 dark:ring-brand-400/30"
-                          : "bg-surface dark:bg-card border-border/80 hover:border-border shadow-2xs"
+                          ? "bg-brand-50/80 dark:bg-brand-950/40 border-brand-300 dark:border-brand-700 shadow-warm-sm ring-1 ring-brand-500/30 dark:ring-brand-400/30"
+                          : "bg-surface dark:bg-card border-border/80 hover:border-border shadow-warm-sm"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">

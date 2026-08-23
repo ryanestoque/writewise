@@ -18,6 +18,7 @@ import { FloatingActionBar } from "@/components/ui/floating-action-bar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SearchInput } from "@/components/ui/search-input";
+import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
@@ -137,6 +138,18 @@ export default function ActivitiesPage() {
       archived: archivedList.length,
     };
   }, [activities]);
+
+  const activityFilterItems = useMemo<FilterPillItem<FilterType>[]>(() => {
+    const items: FilterPillItem<FilterType>[] = [
+      { id: "all", label: "All", count: counts.all },
+      { id: "in_class", label: "In-Class", count: counts.in_class },
+      { id: "take_home", label: "Take-Home", count: counts.take_home },
+    ];
+    if (counts.archived > 0) {
+      items.push({ id: "archived", label: "Archived", count: counts.archived });
+    }
+    return items;
+  }, [counts]);
 
   const filteredAndSortedActivities = useMemo(() => {
     if (!activities) return [];
@@ -265,36 +278,11 @@ export default function ActivitiesPage() {
     [selectedIds, bulkArchive]
   );
 
-  // Keyboard navigation for WAI-ARIA tablist
-  const handleTabKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    const availableTabs: FilterType[] = ["all", "in_class", "take_home"];
-    if (counts.archived > 0) availableTabs.push("archived");
-    const currentIndex = availableTabs.indexOf(filterType);
-    if (currentIndex === -1) return;
-
-    let nextIndex = currentIndex;
-    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-      e.preventDefault();
-      nextIndex = (currentIndex + 1) % availableTabs.length;
-    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-      e.preventDefault();
-      nextIndex = (currentIndex - 1 + availableTabs.length) % availableTabs.length;
-    } else if (e.key === "Home") {
-      e.preventDefault();
-      nextIndex = 0;
-    } else if (e.key === "End") {
-      e.preventDefault();
-      nextIndex = availableTabs.length - 1;
-    } else {
-      return;
-    }
-
-    const nextTab = availableTabs[nextIndex];
-    setFilterType(nextTab);
+  const handleFilterChange = useCallback((newType: FilterType) => {
+    setFilterType(newType);
     setSelectedIds(new Set());
-    const targetEl = document.getElementById(`filter-tab-${nextTab}`);
-    targetEl?.focus();
-  };
+    setLastSelectedId(null);
+  }, []);
 
   // Keyboard shortcut: "/" or Cmd/Ctrl+K to focus search, Escape to deselect
   useEffect(() => {
@@ -417,159 +405,78 @@ export default function ActivitiesPage() {
 
       {/* Filter & Search Bar — only when activities exist */}
       {activities && activities.length > 0 && (
-        <div className="bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-2xs space-y-3">
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-            {/* Search Input */}
-            <SearchInput
-              ref={searchInputRef}
-              placeholder="Search activities..."
-              aria-label="Search activities by target text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onClear={() => setSearchQuery("")}
-              containerClassName="w-full md:w-72"
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
+          {/* Search Input */}
+          <SearchInput
+            ref={searchInputRef}
+            placeholder="Search activities..."
+            aria-label="Search activities by target text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onClear={() => setSearchQuery("")}
+            containerClassName="w-full lg:w-72"
+          />
+
+          {/* Filter Pills & Sort Controls */}
+          <div className="relative min-w-0 flex-1 flex items-center justify-between lg:justify-end gap-2 flex-wrap sm:flex-nowrap">
+            <FilterPills
+              items={activityFilterItems}
+              value={filterType}
+              onChange={handleFilterChange}
+              ariaLabel="Filter by activity type"
+              containerClassName="lg:justify-end flex-initial"
             />
 
-            {/* Filter Tabs & Sort */}
-            <div className="flex items-center justify-between md:justify-end gap-2 flex-wrap">
-              {/* Type & Archive Filter Buttons (WAI-ARIA compliant tablist with roving arrow navigation) */}
-              <div
-                role="tablist"
-                aria-label="Activity lifecycle filters"
-                onKeyDown={handleTabKeyDown}
-                className="inline-flex p-0.5 rounded-lg bg-muted/60 border border-border/50 text-xs overflow-x-auto max-w-full"
-              >
-                <button
-                  type="button"
-                  id="filter-tab-all"
-                  role="tab"
-                  aria-selected={filterType === "all"}
-                  aria-controls="activities-grid"
-                  tabIndex={filterType === "all" ? 0 : -1}
-                  onClick={() => {
-                    setFilterType("all");
-                    setSelectedIds(new Set());
-                  }}
-                  className={`px-3 py-2 sm:px-2.5 sm:py-1 min-h-[38px] sm:min-h-0 rounded-md font-medium transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
-                    filterType === "all"
-                      ? "bg-background text-foreground shadow-2xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
+            {/* Sort Selector */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-1 after:content-['']">
+                <ArrowUpDown className="size-3 text-muted-foreground shrink-0" />
+                <span className="font-medium text-foreground">
+                  {sortBy === "newest" && "Newest First"}
+                  {sortBy === "oldest" && "Oldest First"}
+                  {sortBy === "most_submissions" && "Most Submissions"}
+                  {sortBy === "least_submissions" && "Least Submissions"}
+                </span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem
+                  onClick={() => setSortBy("newest")}
+                  className="cursor-pointer text-xs justify-between"
                 >
-                  All ({counts.all})
-                </button>
-                <button
-                  type="button"
-                  id="filter-tab-in_class"
-                  role="tab"
-                  aria-selected={filterType === "in_class"}
-                  aria-controls="activities-grid"
-                  tabIndex={filterType === "in_class" ? 0 : -1}
-                  onClick={() => {
-                    setFilterType("in_class");
-                    setSelectedIds(new Set());
-                  }}
-                  className={`px-3 py-2 sm:px-2.5 sm:py-1 min-h-[38px] sm:min-h-0 rounded-md font-medium transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
-                    filterType === "in_class"
-                      ? "bg-background text-foreground shadow-2xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
+                  <span>Newest First</span>
+                  {sortBy === "newest" && (
+                    <span className="text-primary font-bold">✓</span>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setSortBy("oldest")}
+                  className="cursor-pointer text-xs justify-between"
                 >
-                  In-Class ({counts.in_class})
-                </button>
-                <button
-                  type="button"
-                  id="filter-tab-take_home"
-                  role="tab"
-                  aria-selected={filterType === "take_home"}
-                  aria-controls="activities-grid"
-                  tabIndex={filterType === "take_home" ? 0 : -1}
-                  onClick={() => {
-                    setFilterType("take_home");
-                    setSelectedIds(new Set());
-                  }}
-                  className={`px-3 py-2 sm:px-2.5 sm:py-1 min-h-[38px] sm:min-h-0 rounded-md font-medium transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
-                    filterType === "take_home"
-                      ? "bg-background text-foreground shadow-2xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
+                  <span>Oldest First</span>
+                  {sortBy === "oldest" && (
+                    <span className="text-primary font-bold">✓</span>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setSortBy("most_submissions")}
+                  className="cursor-pointer text-xs justify-between"
                 >
-                  Take-Home ({counts.take_home})
-                </button>
-                {counts.archived > 0 && (
-                  <button
-                    type="button"
-                    id="filter-tab-archived"
-                    role="tab"
-                    aria-selected={filterType === "archived"}
-                    aria-controls="activities-grid"
-                    tabIndex={filterType === "archived" ? 0 : -1}
-                    onClick={() => {
-                      setFilterType("archived");
-                      setSelectedIds(new Set());
-                    }}
-                    className={`px-3 py-2 sm:px-2.5 sm:py-1 min-h-[38px] sm:min-h-0 rounded-md font-medium transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
-                      filterType === "archived"
-                        ? "bg-background text-foreground shadow-2xs font-semibold"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Archived ({counts.archived})
-                  </button>
-                )}
-              </div>
-
-              {/* Sort Selector */}
-              <DropdownMenu>
-                <DropdownMenuTrigger className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted/70 border border-border/50 rounded-lg px-2.5 py-1.5 min-h-[38px] sm:min-h-0 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
-                  <ArrowUpDown className="size-3 text-muted-foreground shrink-0" />
-                  <span className="font-medium text-foreground">
-                    {sortBy === "newest" && "Newest First"}
-                    {sortBy === "oldest" && "Oldest First"}
-                    {sortBy === "most_submissions" && "Most Submissions"}
-                    {sortBy === "least_submissions" && "Least Submissions"}
-                  </span>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuItem
-                    onClick={() => setSortBy("newest")}
-                    className="cursor-pointer text-xs justify-between"
-                  >
-                    <span>Newest First</span>
-                    {sortBy === "newest" && (
-                      <span className="text-primary font-bold">✓</span>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setSortBy("oldest")}
-                    className="cursor-pointer text-xs justify-between"
-                  >
-                    <span>Oldest First</span>
-                    {sortBy === "oldest" && (
-                      <span className="text-primary font-bold">✓</span>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setSortBy("most_submissions")}
-                    className="cursor-pointer text-xs justify-between"
-                  >
-                    <span>Most Submissions</span>
-                    {sortBy === "most_submissions" && (
-                      <span className="text-primary font-bold">✓</span>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setSortBy("least_submissions")}
-                    className="cursor-pointer text-xs justify-between"
-                  >
-                    <span>Least Submissions</span>
-                    {sortBy === "least_submissions" && (
-                      <span className="text-primary font-bold">✓</span>
-                    )}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                  <span>Most Submissions</span>
+                  {sortBy === "most_submissions" && (
+                    <span className="text-primary font-bold">✓</span>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setSortBy("least_submissions")}
+                  className="cursor-pointer text-xs justify-between"
+                >
+                  <span>Least Submissions</span>
+                  {sortBy === "least_submissions" && (
+                    <span className="text-primary font-bold">✓</span>
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       )}
@@ -609,7 +516,7 @@ export default function ActivitiesPage() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-5 space-y-3 shadow-2xs"
+              className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-5 space-y-3 shadow-warm"
             >
               <Skeleton className="h-4 w-3/4" />
               <Skeleton className="h-4 w-1/2" />
@@ -622,7 +529,7 @@ export default function ActivitiesPage() {
         </div>
       ) : activities?.length === 0 ? (
         /* Empty State — No activities */
-        <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-2xs overflow-hidden">
+        <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
           <Empty className="py-14 border-0">
             <EmptyMedia
               variant="icon"
@@ -655,7 +562,7 @@ export default function ActivitiesPage() {
         </div>
       ) : filteredAndSortedActivities.length === 0 ? (
         /* Empty State — No search / filter results */
-        <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-2xs overflow-hidden">
+        <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
           <Empty className="py-12 border-0">
             <EmptyMedia
               variant="icon"
@@ -733,7 +640,7 @@ export default function ActivitiesPage() {
                     ? (e) => handleToggleSelect(activity.id, e.shiftKey)
                     : undefined
                 }
-                className={`group relative flex flex-col justify-between bg-surface dark:bg-card border rounded-xl sm:rounded-2xl p-5 shadow-2xs hover:shadow-md transition-all duration-200 ${
+                className={`group relative flex flex-col justify-between bg-surface dark:bg-card border rounded-xl sm:rounded-2xl p-5 shadow-warm hover:shadow-md transition-all duration-200 ${
                   isSelectMode ? "cursor-pointer select-none" : ""
                 } ${
                   isArchived

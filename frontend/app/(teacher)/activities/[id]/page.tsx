@@ -87,14 +87,14 @@ function SubmissionCard({ submission }: { submission: Submission }) {
     rejected: {
       label: "Rejected",
       className:
-        "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300 border-red-200 dark:border-red-900",
+        "bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive border-destructive/20 dark:border-destructive/30",
     },
   } as const;
 
   const config = statusConfig[submission.status];
 
   return (
-    <div className="bg-surface dark:bg-card border border-border rounded-xl shadow-2xs overflow-hidden">
+    <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
       {/* Photo Thumbnail */}
       <div className="aspect-4/3 bg-muted relative overflow-hidden">
         {imageUrl ? (
@@ -189,7 +189,7 @@ export default function ActivityDetailPage({
     return (
       <div className="max-w-4xl mx-auto space-y-6">
         <Skeleton className="h-4 w-32" />
-        <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-6 space-y-4 shadow-2xs">
+        <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-6 space-y-4 shadow-warm">
           <Skeleton className="h-6 w-2/3" />
           <Skeleton className="h-4 w-1/3" />
           <div className="flex gap-2 pt-2">
@@ -197,7 +197,7 @@ export default function ActivityDetailPage({
             <Skeleton className="h-5 w-16 rounded-full" />
           </div>
         </div>
-        <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-6 space-y-4 shadow-2xs">
+        <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-6 space-y-4 shadow-warm">
           <Skeleton className="h-5 w-32" />
           <Skeleton className="h-24 w-full" />
         </div>
@@ -217,7 +217,7 @@ export default function ActivityDetailPage({
             Back to Activities
           </Link>
         </div>
-        <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-2xs overflow-hidden">
+        <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
           <Empty className="py-14 border-0">
             <EmptyMedia
               variant="icon"
@@ -264,7 +264,7 @@ export default function ActivityDetailPage({
       </Link>
 
       {/* Activity Info Card */}
-      <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-2xs">
+      <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-warm">
         <div className="flex items-start gap-4">
           <div className="flex size-11 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
             <FileText className="size-5" />
@@ -326,7 +326,7 @@ export default function ActivityDetailPage({
           </div>
           <Button
             size="sm"
-            className="h-9 font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl gap-1.5"
+            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl gap-1.5"
             onClick={() => openUpload({ activityId: id })}
           >
             <Upload className="w-4 h-4" />
@@ -339,7 +339,7 @@ export default function ActivityDetailPage({
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="bg-surface dark:bg-card border border-border rounded-xl shadow-2xs overflow-hidden"
+                className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden"
               >
                 <Skeleton className="aspect-4/3 w-full rounded-none" />
                 <div className="p-3 space-y-2">
@@ -377,7 +377,7 @@ export default function ActivityDetailPage({
             ))}
           </div>
         ) : (
-          <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-2xs overflow-hidden">
+          <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
             <Empty className="py-12 border-0">
               <EmptyMedia
                 variant="icon"
@@ -396,7 +396,7 @@ export default function ActivityDetailPage({
               </EmptyHeader>
               <EmptyContent className="flex items-center justify-center w-full sm:w-auto px-4 sm:px-0">
                 <Button
-                  className="h-10 sm:h-9 w-full sm:w-auto font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl"
+                  className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl"
                   onClick={() => openUpload({ activityId: id })}
                 >
                   <Upload className="w-4 h-4 mr-2" />

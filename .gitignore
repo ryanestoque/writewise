@@ -53,3 +53,5 @@ supabase/.temp/
 
 # agent tooling artifacts
 .impeccable/
+.impeccable-live/
+.impeccable-live.json
