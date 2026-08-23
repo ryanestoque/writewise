@@ -17,8 +17,7 @@ import { DeleteActivityDialog } from "@/components/activities/delete-activity-di
 import { FloatingActionBar } from "@/components/ui/floating-action-bar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Kbd } from "@/components/ui/kbd";
+import { SearchInput } from "@/components/ui/search-input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
@@ -45,8 +44,6 @@ import {
   Plus,
   AlertCircle,
   RotateCcw,
-  Search,
-  X,
   SearchX,
   ClipboardList,
   Home,
@@ -423,46 +420,15 @@ export default function ActivitiesPage() {
         <div className="bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-2xs space-y-3">
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
             {/* Search Input */}
-            <div className="relative w-full md:w-80">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-              <Input
-                ref={searchInputRef}
-                placeholder="Search activities..."
-                aria-label="Search activities by target text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    if (searchQuery) {
-                      setSearchQuery("");
-                    } else {
-                      searchInputRef.current?.blur();
-                    }
-                  }
-                }}
-                className="pl-9 pr-8 h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] text-base sm:text-sm rounded-lg sm:rounded-xl"
-                aria-keyshortcuts="/"
-              />
-              {searchQuery ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery("");
-                    searchInputRef.current?.focus();
-                  }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1.5 rounded-full transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2 after:content-['']"
-                  aria-label="Clear search"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              ) : (
-                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center pointer-events-none">
-                  <Kbd className="text-[10px] h-5 px-1 bg-muted text-muted-foreground border-border">
-                    /
-                  </Kbd>
-                </div>
-              )}
-            </div>
+            <SearchInput
+              ref={searchInputRef}
+              placeholder="Search activities..."
+              aria-label="Search activities by target text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onClear={() => setSearchQuery("")}
+              containerClassName="w-full md:w-72"
+            />
 
             {/* Filter Tabs & Sort */}
             <div className="flex items-center justify-between md:justify-end gap-2 flex-wrap">
