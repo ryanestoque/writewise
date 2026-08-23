@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useStudents, useRemoveStudent, Student } from "@/lib/hooks/use-students";
 import { runConcurrentPool } from "@/lib/utils/concurrent-pool";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -105,20 +105,6 @@ export default function RosterPage() {
   const [isBatchRemoveOpen, setIsBatchRemoveOpen] = useState(false);
   const [isBatchRemoving, setIsBatchRemoving] = useState(false);
 
-  // Section horizontal scroll state for gradient overflow cues
-  const sectionScrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-
-  const updateScrollState = useCallback(() => {
-    const el = sectionScrollRef.current;
-    if (!el) return;
-    const hasOverflow = el.scrollWidth > el.clientWidth + 1;
-    const nextLeft = hasOverflow && el.scrollLeft > 2;
-    const nextRight = hasOverflow && el.scrollLeft + el.clientWidth < el.scrollWidth - 2;
-    setCanScrollLeft((prev) => (prev !== nextLeft ? nextLeft : prev));
-    setCanScrollRight((prev) => (prev !== nextRight ? nextRight : prev));
-  }, []);
 
   // Keyboard shortcut: Press "/" or "Cmd/Ctrl+K" to focus search; Escape to clear selection
   useEffect(() => {
@@ -187,13 +173,6 @@ export default function RosterPage() {
     };
   }, [students]);
 
-  // Keep scroll overflow indicators in sync with content and viewport changes
-  useEffect(() => {
-    updateScrollState();
-    const handleResize = () => updateScrollState();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [sections, students, updateScrollState]);
 
   // Filtered & Sorted student list
   const filteredStudents = useMemo(() => {
@@ -452,22 +431,12 @@ export default function RosterPage() {
               )}
             </div>
 
-            {/* Section Filter Pills with overflow affordance */}
-            <div className="relative min-w-0 flex-1 flex items-center">
-              {/* Left scroll fade indicator */}
-              {canScrollLeft && (
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-surface dark:from-card to-transparent z-10"
-                />
-              )}
-
+            {/* Section Filter Pills */}
+            <div className="relative min-w-0 flex-1 flex items-center lg:justify-end">
               <div
-                ref={sectionScrollRef}
-                onScroll={updateScrollState}
                 role="group"
                 aria-label="Filter by class section"
-                className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none w-full touch-pan-x overscroll-x-contain"
+                className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none max-w-full touch-pan-x overscroll-x-contain"
               >
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1 shrink-0">
                   Section:
@@ -515,14 +484,6 @@ export default function RosterPage() {
                   );
                 })}
               </div>
-
-              {/* Right scroll fade indicator */}
-              {canScrollRight && (
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-surface dark:from-card to-transparent z-10"
-                />
-              )}
             </div>
           </div>
         )}
