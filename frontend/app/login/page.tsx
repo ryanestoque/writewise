@@ -34,7 +34,6 @@ import {
   ArrowRightIcon,
   SchoolIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 function ForgotPasswordDialog() {
   return (
@@ -189,10 +188,7 @@ function LoginForm() {
               disabled={isLoading}
               aria-invalid={!!error}
               aria-describedby={error ? "login-error" : undefined}
-              className={cn(
-                "h-10 text-sm focus-visible:ring-primary",
-                error && "border-destructive focus-visible:ring-destructive/30"
-              )}
+              className="h-10 text-sm"
             />
           </div>
 
@@ -215,10 +211,7 @@ function LoginForm() {
                 disabled={isLoading}
                 aria-invalid={!!error}
                 aria-describedby={error ? "login-error" : undefined}
-                className={cn(
-                  "h-10 pr-10 text-sm focus-visible:ring-primary",
-                  error && "border-destructive focus-visible:ring-destructive/30"
-                )}
+                className="h-10 pr-10 text-sm"
               />
               <button
                 type="button"
