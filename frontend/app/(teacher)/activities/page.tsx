@@ -369,20 +369,9 @@ export default function ActivitiesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
-              Activities
-            </h1>
-            {activities && activities.length > 0 && (
-              <Badge
-                variant="outline"
-                className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900"
-              >
-                {counts.all} Active
-                {counts.archived > 0 ? ` · ${counts.archived} Archived` : ""}
-              </Badge>
-            )}
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
+            Activities
+          </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-normal max-w-lg text-pretty">
             Create and manage cursive handwriting exercises, track student
             submissions, and archive completed prompts.

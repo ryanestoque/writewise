@@ -354,14 +354,9 @@ export default function RosterPage() {
       {/* Header section with title and actions */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">Class Roster</h1>
-            {students && students.length > 0 && (
-              <Badge variant="outline" className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900">
-                {students.length} {students.length === 1 ? "Student" : "Students"}
-              </Badge>
-            )}
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
+            Class Roster
+          </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-normal">
             Manage student enrollment and class sections for handwriting assessment activities.
           </p>
