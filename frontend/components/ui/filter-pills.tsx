@@ -79,7 +79,7 @@ export function FilterPills<T extends string = string>({
               {item.count !== undefined && (
                 <span
                   className={cn(
-                    "text-[10px] font-medium px-1.5 py-0.2 rounded-full transition-colors",
+                    "text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors",
                     isSelected
                       ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
                       : "bg-muted text-foreground"

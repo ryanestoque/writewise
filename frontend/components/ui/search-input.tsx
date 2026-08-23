@@ -113,7 +113,7 @@ export function SearchInput({
           className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 hidden items-center sm:flex"
           aria-hidden="true"
         >
-          <Kbd className="h-5 border-border bg-muted px-1 text-[10px] text-muted-foreground">
+          <Kbd className="h-5 border-border bg-muted px-1.5 text-xs text-muted-foreground font-medium">
             {shortcutKey}
           </Kbd>
         </div>

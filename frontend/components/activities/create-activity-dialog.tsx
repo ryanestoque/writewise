@@ -209,8 +209,8 @@ export function CreateActivityDialog({
 
                 {/* Suggestions / Prompt starters */}
                 <div className="mt-2 space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-                    <Sparkles className="size-3 text-brand-600 dark:text-brand-400" />
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <Sparkles className="size-3.5 text-brand-600 dark:text-brand-400" />
                     <span>Quick prompt suggestions:</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
@@ -219,7 +219,7 @@ export function CreateActivityDialog({
                         key={sug.label}
                         type="button"
                         onClick={() => handleApplySuggestion(sug.text)}
-                        className="text-[11px] px-2.5 py-1 rounded-md bg-muted/60 hover:bg-brand-50 hover:text-brand-700 dark:hover:bg-brand-950/60 dark:hover:text-brand-300 border border-border/60 hover:border-brand-200 dark:hover:border-brand-800 transition-colors text-muted-foreground cursor-pointer text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                        className="text-xs px-2.5 py-1 rounded-md bg-muted/60 hover:bg-brand-50 hover:text-brand-700 dark:hover:bg-brand-950/60 dark:hover:text-brand-300 border border-border/60 hover:border-brand-200 dark:hover:border-brand-800 transition-colors text-muted-foreground cursor-pointer text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                         title={sug.text}
                       >
                         {sug.label}
@@ -231,12 +231,12 @@ export function CreateActivityDialog({
                 {/* Live Cursive Script Preview */}
                 {targetText && targetText.trim().length > 0 && (
                   <div className="space-y-1.5 pt-2">
-                    <div className="flex items-center justify-between text-[11px] font-medium text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Sparkles className="size-3 text-brand-600 dark:text-brand-400" />
+                    <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="size-3.5 text-brand-600 dark:text-brand-400" />
                         <span>Cursive Worksheet Preview</span>
                       </span>
-                      <span className="text-[11px] text-muted-foreground font-medium">
+                      <span className="text-xs text-muted-foreground font-medium">
                         3-line ruling
                       </span>
                     </div>

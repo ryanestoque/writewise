@@ -81,7 +81,7 @@ export const FloatingActionBar = memo(function FloatingActionBar({
             <Badge className="bg-brand-700 hover:bg-brand-800 dark:bg-primary dark:hover:bg-primary/90 text-white font-semibold text-xs px-2 sm:px-2.5 py-1 rounded-full shadow-2xs shrink-0 flex items-center gap-1 transition-colors">
               <span className="tabular-nums font-bold">{selectedCount}</span>
               <span className="hidden sm:inline">Selected</span>
-              <span className="sm:hidden text-[11px]">Sel.</span>
+              <span className="sm:hidden text-xs">Sel.</span>
             </Badge>
 
             {typeof totalCount === "number" && (
@@ -97,10 +97,10 @@ export const FloatingActionBar = memo(function FloatingActionBar({
                 <button
                   type="button"
                   onClick={onSelectAll}
-                  className="inline-flex items-center gap-1 text-[11px] text-primary hover:text-brand-700 dark:text-primary dark:hover:text-primary/80 font-medium ml-0.5 hover:underline underline-offset-2 transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1 py-0.5"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:text-brand-700 dark:text-primary dark:hover:text-primary/80 font-medium ml-0.5 hover:underline underline-offset-2 transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1 py-0.5"
                   title={`Select all ${totalCount} ${plural}`}
                 >
-                  <CheckCheck className="w-3 h-3 text-primary shrink-0" />
+                  <CheckCheck className="w-3.5 h-3.5 text-primary shrink-0" />
                   <span className="hidden sm:inline">
                     Select all ({totalCount})
                   </span>
@@ -141,7 +141,7 @@ export const FloatingActionBar = memo(function FloatingActionBar({
                 className="text-xs font-normal flex items-center gap-1.5"
               >
                 <span>Clear selection</span>
-                <Kbd className="text-[10px] h-4.5 px-1.5 py-0 bg-popover text-popover-foreground border border-border/80 font-mono shadow-2xs">
+                <Kbd className="text-xs h-5 px-1.5 py-0 bg-popover text-popover-foreground border border-border/80 font-mono shadow-2xs">
                   Esc
                 </Kbd>
               </TooltipContent>

@@ -119,11 +119,11 @@ function SubmissionCard({ submission }: { submission: Submission }) {
         <div className="flex items-center justify-between">
           <Badge
             variant="outline"
-            className={`text-[10px] font-semibold px-2 py-0.5 ${config.className}`}
+            className={`text-xs font-semibold px-2.5 py-0.5 ${config.className}`}
           >
             {config.label}
           </Badge>
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             {getRelativeTime(submission.created_at)}
           </span>
         </div>
@@ -318,7 +318,7 @@ export default function ActivityDetailPage({
             {submissions && submissions.length > 0 && (
               <Badge
                 variant="outline"
-                className="text-[10px] font-semibold px-2 py-0.5 bg-muted/50 text-muted-foreground border-border"
+                className="text-xs font-semibold px-2.5 py-0.5 bg-muted/50 text-muted-foreground border-border"
               >
                 {submissions.length}
               </Badge>

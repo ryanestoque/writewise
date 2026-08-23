@@ -166,7 +166,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
             </TooltipTrigger>
             <TooltipContent side="right" align="center" className="flex items-center gap-1.5">
               <span>Upload & Scan Worksheets</span>
-              <Kbd className="text-[10px] h-4 px-1 font-mono font-normal">⌘K</Kbd>
+              <Kbd className="text-xs h-4.5 px-1 font-mono font-normal">⌘K</Kbd>
             </TooltipContent>
           </Tooltip>
         </div>
@@ -175,7 +175,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
 
         {/* Group 1: Classroom Navigation */}
         <SidebarGroup className="py-1">
-          <SidebarGroupLabel className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase px-2">
+          <SidebarGroupLabel className="text-xs font-semibold tracking-wider text-muted-foreground uppercase px-2">
             Classroom
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -212,7 +212,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
 
         {/* Group 2: Assessment Navigation */}
         <SidebarGroup className="py-1">
-          <SidebarGroupLabel className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase px-2">
+          <SidebarGroupLabel className="text-xs font-semibold tracking-wider text-muted-foreground uppercase px-2">
             Assessment
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -290,7 +290,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                   <span className="truncate font-medium text-sidebar-foreground text-xs">
                     {user.fullName}
                   </span>
-                  <span className="truncate text-[11px] text-muted-foreground">
+                  <span className="truncate text-xs text-muted-foreground">
                     {user.email}
                   </span>
                 </div>
@@ -312,11 +312,11 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                       <span className="font-semibold text-xs text-foreground truncate">
                         {user.fullName}
                       </span>
-                      <span className="text-[11px] text-muted-foreground truncate">
+                      <span className="text-xs text-muted-foreground truncate">
                         {user.email}
                       </span>
-                      <span className="text-[10px] text-primary font-medium mt-0.5 flex items-center gap-1 truncate">
-                        <GraduationCapIcon className="size-3 shrink-0" />
+                      <span className="text-xs text-primary font-medium mt-0.5 flex items-center gap-1 truncate">
+                        <GraduationCapIcon className="size-3.5 shrink-0" />
                         Matina Aplaya Elementary
                       </span>
                     </div>

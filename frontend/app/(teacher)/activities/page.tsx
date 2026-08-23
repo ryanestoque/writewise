@@ -681,23 +681,23 @@ export default function ActivitiesPage() {
                       {isArchived ? (
                         <Badge
                           variant="outline"
-                          className="text-[10px] font-semibold px-2 py-0.5 bg-muted/60 text-muted-foreground border-border"
+                          className="text-xs font-semibold px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border"
                         >
-                          <Archive className="w-3 h-3 mr-1" />
+                          <Archive className="w-3.5 h-3.5 mr-1" />
                           Archived
                         </Badge>
                       ) : activity.is_take_home ? (
                         <Badge
                           variant="outline"
-                          className="text-[10px] font-semibold px-2 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900"
+                          className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900"
                         >
-                          <Home className="w-3 h-3 mr-1" />
+                          <Home className="w-3.5 h-3.5 mr-1" />
                           Take-home
                         </Badge>
                       ) : (
                         <Badge
                           variant="outline"
-                          className="text-[10px] font-semibold px-2 py-0.5 bg-muted/40 text-muted-foreground border-border"
+                          className="text-xs font-semibold px-2.5 py-0.5 bg-muted/40 text-muted-foreground border-border"
                         >
                           In-Class
                         </Badge>
@@ -705,7 +705,7 @@ export default function ActivitiesPage() {
 
                       <Badge
                         variant="outline"
-                        className="text-[10px] font-medium px-2 py-0.5 bg-muted/50 text-muted-foreground border-border/70"
+                        className="text-xs font-medium px-2.5 py-0.5 bg-muted/50 text-muted-foreground border-border/70"
                       >
                         {wordCount} {wordCount === 1 ? "word" : "words"}
                       </Badge>
@@ -825,8 +825,8 @@ export default function ActivitiesPage() {
                   {/* Status header with count and timestamp */}
                   <div className="flex items-center justify-between gap-2 text-xs">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-semibold text-foreground text-[11px] flex items-center gap-1">
-                        <Inbox className="size-3 text-muted-foreground" />
+                      <span className="font-semibold text-foreground text-xs flex items-center gap-1.5">
+                        <Inbox className="size-3.5 text-muted-foreground" />
                         {totalStudents > 0 ? (
                           <span>
                             {submissionCount} of {totalStudents} collected
@@ -842,15 +842,15 @@ export default function ActivitiesPage() {
                       </span>
 
                       {isFullyCollected && (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-900">
-                          <CheckCircle2 className="size-2.5" />
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-900">
+                          <CheckCircle2 className="size-3" />
                           Complete
                         </span>
                       )}
                     </div>
 
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-1 shrink-0">
-                      <CalendarDays className="size-3" />
+                    <span className="text-xs text-muted-foreground flex items-center gap-1.5 shrink-0">
+                      <CalendarDays className="size-3.5" />
                       {getRelativeTime(activity.created_at)}
                     </span>
                   </div>
@@ -902,7 +902,7 @@ export default function ActivitiesPage() {
                             <span>Class Submissions</span>
                             <span>{submissionCount}/{totalStudents}</span>
                           </div>
-                          <div className="space-y-1 text-[11px] text-background">
+                          <div className="space-y-1.5 text-xs text-background">
                             <div className="flex items-center justify-between">
                               <span className="flex items-center gap-1.5 text-background/90">
                                 <span className="size-2 rounded-full bg-emerald-400 inline-block shrink-0" />
