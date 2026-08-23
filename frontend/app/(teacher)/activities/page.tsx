@@ -365,7 +365,7 @@ export default function ActivitiesPage() {
   }
 
   return (
-    <div className="w-full space-y-5 sm:space-y-6 pb-20 sm:pb-16 px-1 sm:px-0">
+    <div className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
@@ -383,7 +383,7 @@ export default function ActivitiesPage() {
               </Badge>
             )}
           </div>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-normal">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-normal max-w-lg text-pretty">
             Create and manage cursive handwriting exercises, track student
             submissions, and archive completed prompts.
           </p>
@@ -405,7 +405,7 @@ export default function ActivitiesPage() {
 
       {/* Filter & Search Bar — only when activities exist */}
       {activities && activities.length > 0 && (
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
           {/* Search Input */}
           <SearchInput
             ref={searchInputRef}
@@ -414,22 +414,22 @@ export default function ActivitiesPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onClear={() => setSearchQuery("")}
-            containerClassName="w-full lg:w-72"
+            containerClassName="w-full xl:w-64 shrink-0"
           />
 
           {/* Filter Pills & Sort Controls */}
-          <div className="relative min-w-0 flex-1 flex items-center justify-between lg:justify-end gap-2 flex-wrap sm:flex-nowrap">
+          <div className="relative min-w-0 flex-1 flex items-center justify-between xl:justify-end gap-2 w-full xl:w-auto">
             <FilterPills
               items={activityFilterItems}
               value={filterType}
               onChange={handleFilterChange}
               ariaLabel="Filter by activity type"
-              containerClassName="lg:justify-end flex-initial"
+              containerClassName="min-w-0 flex-1 xl:flex-initial xl:justify-end"
             />
 
             {/* Sort Selector */}
             <DropdownMenu>
-              <DropdownMenuTrigger className="relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-1 after:content-['']">
+              <DropdownMenuTrigger className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
                 <ArrowUpDown className="size-3 text-muted-foreground shrink-0" />
                 <span className="font-medium text-foreground">
                   {sortBy === "newest" && "Newest First"}
@@ -661,7 +661,7 @@ export default function ActivitiesPage() {
                         }`}
                       >
                         <label
-                          className="flex size-7 sm:size-6 items-center justify-center rounded-md hover:bg-muted/70 cursor-pointer transition-colors relative after:absolute after:-inset-2 after:content-['']"
+                          className="flex size-7 sm:size-6 items-center justify-center rounded-md hover:bg-muted/70 cursor-pointer transition-colors"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <input
@@ -714,7 +714,7 @@ export default function ActivitiesPage() {
                     {/* Overflow Actions Menu with mobile-friendly hit target */}
                     <DropdownMenu>
                       <DropdownMenuTrigger
-                        className="relative flex size-8 sm:size-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-1.5 after:content-['']"
+                        className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                         aria-label="Activity actions"
                       >
                         <MoreVertical className="size-4" />
@@ -810,12 +810,14 @@ export default function ActivitiesPage() {
                     <div className="relative p-3.5 sm:p-4 rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 mb-3.5 overflow-hidden shadow-2xs">
                       {/* Authentic 3-line ruling aligned with Cedarville Cursive baseline */}
                       <div
-                        className="absolute inset-x-3.5 inset-y-3.5 sm:inset-x-4 sm:inset-y-4 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden"
+                        className="absolute inset-x-3.5 inset-y-3.5 sm:inset-x-4 sm:inset-y-4 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden z-0"
                         aria-hidden="true"
                       />
-                      <p className="relative font-cursive text-[32px] leading-[48px] text-foreground/90 font-normal line-clamp-3 tracking-wide">
+
+                      <p className="relative z-10 font-cursive text-[32px] leading-[48px] text-foreground/90 font-normal line-clamp-3 tracking-wide break-words">
                         {activity.target_text}
                       </p>
+
                     </div>
                   </Link>
                 </div>

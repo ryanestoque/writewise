@@ -113,8 +113,8 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
               <div className="flex aspect-square size-8.5 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shadow-xs border border-brand-200/80 dark:border-brand-900/80 shrink-0">
                 <BrandIcon className="size-4.5 text-primary" />
               </div>
-              <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="font-heading font-bold text-sidebar-foreground tracking-tight text-[15px]">
+              <div className="grid flex-1 min-w-0 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                <span className="font-heading font-bold text-sidebar-foreground tracking-tight text-[15px] truncate">
                   WriteWise
                 </span>
                 <span className="truncate text-xs text-muted-foreground font-medium">
@@ -286,11 +286,11 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-semibold text-xs shrink-0 border border-brand-200/60 dark:border-brand-900/60">
                   {getInitials(user.fullName)}
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                <div className="grid flex-1 min-w-0 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                   <span className="truncate font-medium text-sidebar-foreground text-xs">
                     {user.fullName}
                   </span>
-                  <span className="truncate text-xs text-muted-foreground">
+                  <span className="truncate text-xs text-muted-foreground" title={user.email}>
                     {user.email}
                   </span>
                 </div>
@@ -304,20 +304,20 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                 className="w-64 rounded-2xl p-1.5 shadow-xl border border-border/80 bg-popover"
               >
                 <div className="p-2">
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <div className="flex aspect-square size-9 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-semibold text-xs border border-brand-200/60 shrink-0">
                       {getInitials(user.fullName)}
                     </div>
-                    <div className="flex flex-col min-w-0">
+                    <div className="flex flex-col min-w-0 flex-1">
                       <span className="font-semibold text-xs text-foreground truncate">
                         {user.fullName}
                       </span>
-                      <span className="text-xs text-muted-foreground truncate">
+                      <span className="text-xs text-muted-foreground truncate" title={user.email}>
                         {user.email}
                       </span>
                       <span className="text-xs text-primary font-medium mt-0.5 flex items-center gap-1 truncate">
                         <GraduationCapIcon className="size-3.5 shrink-0" />
-                        Matina Aplaya Elementary
+                        <span className="truncate">Matina Aplaya Elementary</span>
                       </span>
                     </div>
                   </div>

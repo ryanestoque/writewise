@@ -41,7 +41,7 @@ export function FilterPills<T extends string = string>({
         role="group"
         aria-label={ariaLabel || label || "Filters"}
         className={cn(
-          "flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none max-w-full touch-pan-x overscroll-x-contain",
+          "flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 pr-1 scrollbar-none max-w-full touch-pan-x overscroll-x-contain",
           className
         )}
       >
@@ -64,7 +64,7 @@ export function FilterPills<T extends string = string>({
               onClick={() => onChange(item.id)}
               aria-pressed={isSelected}
               className={cn(
-                "relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer",
+                "relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer",
                 "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                 "after:absolute after:-inset-1 after:content-['']",
                 "disabled:pointer-events-none disabled:opacity-50",
