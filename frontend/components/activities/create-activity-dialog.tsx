@@ -236,7 +236,7 @@ export function CreateActivityDialog({
                         <Sparkles className="size-3 text-brand-600 dark:text-brand-400" />
                         <span>Cursive Worksheet Preview</span>
                       </span>
-                      <span className="text-[10px] text-muted-foreground/80">
+                      <span className="text-[11px] text-muted-foreground font-medium">
                         3-line ruling
                       </span>
                     </div>

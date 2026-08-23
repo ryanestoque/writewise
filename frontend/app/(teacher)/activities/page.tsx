@@ -14,6 +14,7 @@ import { useTeacherModals } from "@/components/teacher-modals-provider";
 import { CreateActivityDialog } from "@/components/activities/create-activity-dialog";
 import { EditActivityDialog } from "@/components/activities/edit-activity-dialog";
 import { DeleteActivityDialog } from "@/components/activities/delete-activity-dialog";
+import { FloatingActionBar } from "@/components/ui/floating-action-bar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -831,7 +832,7 @@ export default function ActivitiesPage() {
 
                       <Badge
                         variant="outline"
-                        className="text-[10px] font-medium px-2 py-0.5 bg-muted/30 text-muted-foreground border-border/60"
+                        className="text-[10px] font-medium px-2 py-0.5 bg-muted/50 text-muted-foreground border-border/70"
                       >
                         {wordCount} {wordCount === 1 ? "word" : "words"}
                       </Badge>
@@ -1098,71 +1099,79 @@ export default function ActivitiesPage() {
         </div>
       )}
 
-      {/* Bulk action bar — visible while cards are selected */}
-      {isSelectMode && (
-        <div
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-foreground text-background shadow-xl border border-border/20 animate-in slide-in-from-bottom-4 fade-in-0 duration-200 motion-reduce:animate-none"
-          role="toolbar"
-          aria-label="Bulk activity actions"
-          aria-live="polite"
-        >
-          <span className="sr-only">
-            {selectedIds.size} {selectedIds.size === 1 ? "activity" : "activities"} selected. Bulk actions available. Press Escape to clear selection.
-          </span>
-          <span
-            className="text-xs font-semibold tabular-nums pr-1 border-r border-background/20 mr-1"
-            aria-hidden="true"
-          >
-            {selectedIds.size} selected
-          </span>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={handleSelectAll}
-            className="h-8 sm:h-7 min-h-[36px] sm:min-h-0 px-2.5 text-xs text-background/90 hover:text-background hover:bg-background/10 cursor-pointer"
-          >
-            Select All
-          </Button>
-          {filterType !== "archived" && (
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={isBulkPending}
-              onClick={() => handleBulkArchive(true)}
-              className="h-8 sm:h-7 min-h-[36px] sm:min-h-0 px-2.5 text-xs text-background/90 hover:text-background hover:bg-background/10 flex items-center gap-1.5 cursor-pointer"
+      {/* Floating Batch Actions Bar */}
+      <FloatingActionBar
+        selectedCount={selectedIds.size}
+        totalCount={filteredAndSortedActivities.length}
+        allSelected={
+          selectedIds.size > 0 &&
+          selectedIds.size === filteredAndSortedActivities.length
+        }
+        itemLabel="activity"
+        onSelectAll={handleSelectAll}
+        onClearSelection={handleClearSelection}
+        ariaLabel="Batch activity actions"
+      >
+        {filterType !== "archived" ? (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isBulkPending}
+                  onClick={() => handleBulkArchive(true)}
+                  className="h-8 px-2 sm:px-3 text-xs font-medium border-border/80 hover:bg-muted/80 hover:text-foreground active:scale-[0.97] transition-all shrink-0 rounded-lg cursor-pointer"
+                  aria-label={`Archive ${selectedIds.size} selected ${
+                    selectedIds.size === 1 ? "activity" : "activities"
+                  }`}
+                >
+                  <Archive className="w-3.5 h-3.5 sm:mr-1.5 text-muted-foreground shrink-0" />
+                  <span className="hidden sm:inline">Archive</span>
+                  <span className="sm:hidden">Archive</span>
+                </Button>
+              }
+            />
+            <TooltipContent
+              side="top"
+              sideOffset={6}
+              className="text-xs font-normal"
             >
-              <Archive className="size-3.5" />
-              Archive
-            </Button>
-          )}
-          {filterType === "archived" && (
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={isBulkPending}
-              onClick={() => handleBulkArchive(false)}
-              className="h-8 sm:h-7 min-h-[36px] sm:min-h-0 px-2.5 text-xs text-background/90 hover:text-background hover:bg-background/10 flex items-center gap-1.5 cursor-pointer"
+              Archive {selectedIds.size} selected{" "}
+              {selectedIds.size === 1 ? "activity" : "activities"}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isBulkPending}
+                  onClick={() => handleBulkArchive(false)}
+                  className="h-8 px-2 sm:px-3 text-xs font-medium border-border/80 hover:bg-muted/80 hover:text-foreground active:scale-[0.97] transition-all shrink-0 rounded-lg cursor-pointer"
+                  aria-label={`Restore ${selectedIds.size} selected ${
+                    selectedIds.size === 1 ? "activity" : "activities"
+                  }`}
+                >
+                  <ArchiveRestore className="w-3.5 h-3.5 sm:mr-1.5 text-muted-foreground shrink-0" />
+                  <span className="hidden sm:inline">Restore</span>
+                  <span className="sm:hidden">Restore</span>
+                </Button>
+              }
+            />
+            <TooltipContent
+              side="top"
+              sideOffset={6}
+              className="text-xs font-normal"
             >
-              <ArchiveRestore className="size-3.5" />
-              Unarchive
-            </Button>
-          )}
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={handleClearSelection}
-            className="size-8 sm:size-7 p-0 flex items-center justify-center text-background/80 hover:text-background hover:bg-background/10 cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
-            aria-label="Clear selection (Escape)"
-            title="Clear selection (Esc)"
-          >
-            <X className="size-3.5" />
-          </Button>
-        </div>
-      )}
+              Restore {selectedIds.size} selected{" "}
+              {selectedIds.size === 1 ? "activity" : "activities"}
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </FloatingActionBar>
 
       {/* Create / Duplicate Activity Dialog */}
       <CreateActivityDialog

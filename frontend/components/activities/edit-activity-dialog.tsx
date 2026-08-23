@@ -158,7 +158,7 @@ export function EditActivityDialog({
                   <div className="space-y-1.5 pt-2">
                     <div className="flex items-center justify-between text-[11px] font-medium text-muted-foreground">
                       <span>Cursive Worksheet Preview</span>
-                      <span className="text-[10px] text-muted-foreground/80">
+                      <span className="text-[11px] text-muted-foreground font-medium">
                         3-line ruling
                       </span>
                     </div>
