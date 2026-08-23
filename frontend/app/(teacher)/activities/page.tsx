@@ -354,7 +354,7 @@ export default function ActivitiesPage() {
 
   if (error) {
     return (
-      <div className="max-w-6xl mx-auto">
+      <div className="w-full">
         <div
           role="alert"
           className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl border border-destructive/20 bg-destructive/10 text-destructive"
@@ -380,7 +380,7 @@ export default function ActivitiesPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6 pb-20 sm:pb-16 px-1 sm:px-0">
+    <div className="w-full space-y-5 sm:space-y-6 pb-20 sm:pb-16 px-1 sm:px-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
