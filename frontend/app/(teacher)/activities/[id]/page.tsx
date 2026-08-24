@@ -254,21 +254,17 @@ function StudentSubmissionCard({
   const hasMultipleAttempts = group.attemptCount > 1;
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onSelect(currentSubmission)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onSelect(currentSubmission);
-        }
-      }}
-      className="group relative flex flex-col justify-between bg-surface dark:bg-card border border-border hover:border-brand-300 dark:hover:border-brand-800 rounded-xl sm:rounded-2xl shadow-warm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring text-left"
-      aria-label={`View submission for ${group.studentName}`}
-    >
+    <article className="group relative flex flex-col justify-between bg-surface dark:bg-card border border-border hover:border-brand-300 dark:hover:border-brand-800 rounded-xl sm:rounded-2xl shadow-warm hover:shadow-md transition-all duration-200 overflow-hidden text-left">
+      {/* Primary Card Click Trigger / Accessible Target */}
+      <button
+        type="button"
+        onClick={() => onSelect(currentSubmission)}
+        className="absolute inset-0 z-0 size-full cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-xl sm:rounded-2xl text-left"
+        aria-label={`View diagnostic details for ${group.studentName}`}
+      />
+
       {/* Photo Thumbnail */}
-      <div className="aspect-4/3 bg-muted/60 relative overflow-hidden">
+      <div className="aspect-4/3 bg-muted/60 relative overflow-hidden pointer-events-none">
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -283,7 +279,7 @@ function StudentSubmissionCard({
         )}
 
         {/* Floating status pill */}
-        <div className="absolute top-2.5 right-2.5">
+        <div className="absolute top-2.5 right-2.5 pointer-events-auto relative z-10">
           <Badge
             variant="outline"
             className={`text-xs font-semibold px-2 py-0.5 shadow-xs backdrop-blur-xs ${config.className}`}
@@ -295,10 +291,7 @@ function StudentSubmissionCard({
 
         {/* Attempt indicator & history switcher if multiple attempts exist */}
         {hasMultipleAttempts && (
-          <div
-            className="absolute top-2.5 left-2.5 z-10"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="absolute top-2.5 left-2.5 z-10 pointer-events-auto">
             <DropdownMenu>
               <DropdownMenuTrigger
                 className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-background/90 text-foreground dark:bg-card/90 border border-border shadow-xs backdrop-blur-xs hover:bg-background transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
@@ -311,7 +304,7 @@ function StudentSubmissionCard({
                 </span>
                 <ChevronDown className="size-2.5 opacity-60" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuContent align="start" className="w-56 z-50">
                 <div className="text-xs text-muted-foreground font-medium px-2.5 py-1.5">
                   Submission History ({group.attemptCount} attempts)
                 </div>
@@ -354,7 +347,7 @@ function StudentSubmissionCard({
 
         {/* Uploader indicator (if parent) */}
         {currentSubmission.uploader_role === "parent" && (
-          <div className="absolute bottom-2.5 left-2.5">
+          <div className="absolute bottom-2.5 left-2.5 pointer-events-auto relative z-10">
             <Badge
               variant="outline"
               className="text-[10px] font-semibold px-2 py-0.5 bg-brand-50/90 text-brand-800 dark:bg-brand-950/90 dark:text-brand-300 border-brand-200/80 backdrop-blur-xs"
@@ -367,7 +360,7 @@ function StudentSubmissionCard({
       </div>
 
       {/* Card Info */}
-      <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between">
+      <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between pointer-events-none relative z-10">
         <div>
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-semibold text-foreground truncate group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors">
@@ -425,7 +418,7 @@ function StudentSubmissionCard({
                 e.stopPropagation();
                 onReupload(group.studentId);
               }}
-              className="text-xs font-semibold text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:underline inline-flex items-center gap-1 cursor-pointer"
+              className="text-xs font-semibold text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:underline inline-flex items-center gap-1 cursor-pointer pointer-events-auto focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
             >
               <Camera className="size-3" />
               Re-upload
@@ -437,7 +430,7 @@ function StudentSubmissionCard({
           )}
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -457,21 +450,17 @@ function FlatSubmissionCard({
   const rejection = getRejectionSummary(submission.rejection_code);
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onSelect}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onSelect();
-        }
-      }}
-      className="group relative flex flex-col justify-between bg-surface dark:bg-card border border-border hover:border-brand-300 dark:hover:border-brand-800 rounded-xl sm:rounded-2xl shadow-warm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring text-left"
-      aria-label={`View submission for ${submission.student?.full_name ?? "student"}`}
-    >
+    <article className="group relative flex flex-col justify-between bg-surface dark:bg-card border border-border hover:border-brand-300 dark:hover:border-brand-800 rounded-xl sm:rounded-2xl shadow-warm hover:shadow-md transition-all duration-200 overflow-hidden text-left">
+      {/* Primary Card Click Trigger / Accessible Target */}
+      <button
+        type="button"
+        onClick={onSelect}
+        className="absolute inset-0 z-0 size-full cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-xl sm:rounded-2xl text-left"
+        aria-label={`View diagnostic details for ${submission.student?.full_name ?? "student"}`}
+      />
+
       {/* Photo Thumbnail */}
-      <div className="aspect-4/3 bg-muted/60 relative overflow-hidden">
+      <div className="aspect-4/3 bg-muted/60 relative overflow-hidden pointer-events-none">
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -486,7 +475,7 @@ function FlatSubmissionCard({
         )}
 
         {/* Floating status pill */}
-        <div className="absolute top-2.5 right-2.5">
+        <div className="absolute top-2.5 right-2.5 pointer-events-auto relative z-10">
           <Badge
             variant="outline"
             className={`text-xs font-semibold px-2 py-0.5 shadow-xs backdrop-blur-xs ${config.className}`}
@@ -498,7 +487,7 @@ function FlatSubmissionCard({
 
         {/* Uploader indicator (if parent) */}
         {submission.uploader_role === "parent" && (
-          <div className="absolute bottom-2.5 left-2.5">
+          <div className="absolute bottom-2.5 left-2.5 pointer-events-auto relative z-10">
             <Badge
               variant="outline"
               className="text-[10px] font-semibold px-2 py-0.5 bg-brand-50/90 text-brand-800 dark:bg-brand-950/90 dark:text-brand-300 border-brand-200/80 backdrop-blur-xs"
@@ -511,7 +500,7 @@ function FlatSubmissionCard({
       </div>
 
       {/* Card Info */}
-      <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between">
+      <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between pointer-events-none relative z-10">
         <div>
           <p className="text-sm font-semibold text-foreground truncate group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors">
             {submission.student?.full_name ?? "Unknown Student"}
@@ -562,7 +551,7 @@ function FlatSubmissionCard({
                 e.stopPropagation();
                 onReupload();
               }}
-              className="text-xs font-semibold text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:underline inline-flex items-center gap-1 cursor-pointer"
+              className="text-xs font-semibold text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:underline inline-flex items-center gap-1 cursor-pointer pointer-events-auto focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
             >
               <Camera className="size-3" />
               Re-upload
@@ -574,7 +563,7 @@ function FlatSubmissionCard({
           )}
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -610,22 +599,29 @@ export default function ActivityDetailPage({
   const [sortBy, setSortBy] = useState<SubmissionSort>("newest");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Shortcut key listener for '/'
+  // Shortcut key listener for '/' and 'U'
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.key === "/" &&
-        !["INPUT", "TEXTAREA", "SELECT"].includes(
-          (e.target as HTMLElement)?.tagName
-        )
-      ) {
+      const targetTag = (e.target as HTMLElement)?.tagName;
+      const isInput = ["INPUT", "TEXTAREA", "SELECT"].includes(targetTag);
+      if (isInput) return;
+
+      if (e.key === "/") {
         e.preventDefault();
         searchInputRef.current?.focus();
+      } else if (
+        e.key.toLowerCase() === "u" &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey
+      ) {
+        e.preventDefault();
+        openUpload({ activityId: id });
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [id, openUpload]);
 
   // Hardened Roster Metrics: Unique enrolled students with submissions
   const submittedStudentIds = useMemo(() => {
@@ -954,13 +950,6 @@ export default function ActivityDetailPage({
 
   const wordCount = getWordCount(activity.target_text);
   const isArchived = activity.is_archived;
-  const promptLength = activity.target_text.length;
-  const promptTypographyClass =
-    promptLength < 25
-      ? "text-[28px] sm:text-[36px] leading-[48px]"
-      : promptLength < 60
-      ? "text-[23px] sm:text-[28px] leading-[48px]"
-      : "text-[19px] sm:text-[22px] leading-[48px]";
 
   const currentListLength =
     viewMode === "grouped"
@@ -1042,18 +1031,13 @@ export default function ActivityDetailPage({
                 </span>
               </div>
 
-              <div className="relative p-4 sm:p-5 min-h-[76px] rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-2xs">
-                {/* Decorative 3-line penmanship ruling */}
+              <div className="relative p-4 sm:p-5 pb-6 sm:pb-7 min-h-[76px] rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-2xs">
+                {/* Decorative 3-line penmanship ruling matching exact parent padding */}
                 <div
-                  className="absolute inset-x-4 inset-y-4 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden"
+                  className="absolute inset-4 sm:inset-5 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden"
                   aria-hidden="true"
                 />
-                <p
-                  className={cn(
-                    "relative font-cursive text-foreground/90 font-normal tracking-wide select-all break-words",
-                    promptTypographyClass
-                  )}
-                >
+                <p className="relative font-cursive text-foreground/90 font-normal tracking-wide select-all break-words text-[34px] leading-[48px]">
                   {activity.target_text}
                 </p>
               </div>
@@ -1112,7 +1096,10 @@ export default function ActivityDetailPage({
               onClick={() => openUpload({ activityId: id })}
             >
               <Upload className="w-4 h-4" />
-              Upload Submission
+              <span>Upload Submission</span>
+              <kbd className="hidden sm:inline-flex items-center justify-center ml-1 px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground/80 bg-white/20 dark:bg-white/10 rounded shadow-2xs">
+                U
+              </kbd>
             </Button>
 
             <DropdownMenu>
@@ -1234,7 +1221,7 @@ export default function ActivityDetailPage({
 
         {/* Filter & Search Bar — only when submissions exist */}
         {submissions && submissions.length > 0 && (
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
             {/* Search Student Input with '/' shortcut hint */}
             <SearchInput
               ref={searchInputRef}
@@ -1243,17 +1230,17 @@ export default function ActivityDetailPage({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onClear={() => setSearchQuery("")}
-              containerClassName="w-full xl:w-64 shrink-0"
+              containerClassName="w-full md:w-56 lg:w-64 shrink-0"
             />
 
             {/* Filter Pills & Sort Selector */}
-            <div className="relative min-w-0 flex-1 flex items-center justify-between xl:justify-end gap-2 w-full xl:w-auto">
+            <div className="flex flex-wrap sm:flex-nowrap items-center justify-between md:justify-end gap-2 w-full md:w-auto min-w-0">
               <FilterPills
                 items={submissionFilterItems}
                 value={statusFilter}
                 onChange={(newFilter) => setStatusFilter(newFilter)}
                 ariaLabel="Filter submissions by status"
-                containerClassName="min-w-0 flex-1 xl:flex-initial xl:justify-end"
+                containerClassName="min-w-0 flex-1 sm:flex-initial"
               />
 
               {/* Sort Selector */}
