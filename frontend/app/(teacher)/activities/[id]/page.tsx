@@ -24,6 +24,28 @@ import { Badge } from "@/components/ui/badge";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
 import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -65,6 +87,10 @@ import {
   History,
   ChevronDown,
   Layers,
+  HelpCircle,
+  TrendingUp,
+  Award,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -165,47 +191,71 @@ function getRejectionSummary(code: string | null): {
   }
 }
 
-function getScoreBandLabel(score: number | null | undefined): {
+interface ScoreBandInfo {
   label: string;
+  band: string;
   className: string;
   dotColor: string;
-} {
+  icon: typeof Sparkles;
+  description: string;
+}
+
+function getScoreBandLabel(score: number | null | undefined): ScoreBandInfo {
   if (score === null || score === undefined) {
     return {
       label: "Scored",
+      band: "Scored",
       className: "bg-muted/50 text-muted-foreground border-border",
       dotColor: "bg-muted-foreground",
+      icon: Sparkles,
+      description: "Diagnostic assessment recorded.",
     };
   }
   if (score >= 80) {
     return {
       label: `${Math.round(score)}% • Excellent`,
+      band: "Excellent",
       className:
         "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-900",
       dotColor: "bg-emerald-500",
+      icon: Award,
+      description:
+        "Consistent letter formation, steady slant, and precise baseline alignment.",
     };
   }
   if (score >= 60) {
     return {
       label: `${Math.round(score)}% • Satisfactory`,
+      band: "Satisfactory",
       className:
         "bg-[#eef4ec] text-[#3d6837] dark:bg-brand-950/80 dark:text-brand-300 border-[#7c9b6e]/30 dark:border-brand-900",
       dotColor: "bg-[#7c9b6e]",
+      icon: CheckCircle2,
+      description:
+        "Good penmanship foundation with minor variations in size or spacing.",
     };
   }
   if (score >= 40) {
     return {
       label: `${Math.round(score)}% • Developing`,
+      band: "Developing",
       className:
         "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200/80 dark:border-amber-900",
       dotColor: "bg-amber-500",
+      icon: TrendingUp,
+      description:
+        "Progress visible; focus on consistent slant angles and letter proportion.",
     };
   }
   return {
     label: `${Math.round(score)}% • Needs Impr.`,
+    band: "Needs Improvement",
     className:
       "bg-orange-50 text-orange-800 dark:bg-orange-950 dark:text-orange-300 border-orange-200/80 dark:border-orange-900",
     dotColor: "bg-orange-500",
+    icon: AlertCircle,
+    description:
+      "Struggling with line adherence or letter connections; review targeted practice.",
   };
 }
 
@@ -233,34 +283,56 @@ const statusConfig = {
   },
 } as const;
 
-function StudentSubmissionCard({
-  group,
+/**
+ * Unified Submission Card Component
+ * Supports both single submission view and grouped attempts switcher
+ */
+function SubmissionCard({
+  submission,
+  studentName,
+  attemptCount = 1,
+  allSubmissions = [],
   onSelect,
   onReupload,
+  onSelectAttempt,
 }: {
-  group: StudentSubmissionGroup;
-  onSelect: (submission: Submission) => void;
-  onReupload: (studentId: string) => void;
+  submission: Submission;
+  studentName: string;
+  attemptCount?: number;
+  allSubmissions?: Submission[];
+  onSelect: () => void;
+  onReupload: () => void;
+  onSelectAttempt?: (sub: Submission) => void;
 }) {
-  const [selectedAttemptIndex, setSelectedAttemptIndex] = useState(0);
-  const currentSubmission =
-    group.allSubmissions[selectedAttemptIndex] ?? group.latestSubmission;
-
-  const { data: imageUrl } = useSubmissionImageUrl(currentSubmission.image_path);
-  const config = statusConfig[currentSubmission.status];
-  const compositeScore = currentSubmission.measurement?.composite_score;
+  const { data: imageUrl } = useSubmissionImageUrl(submission.image_path);
+  const config = statusConfig[submission.status];
+  const compositeScore = submission.measurement?.composite_score;
   const scoreBand = getScoreBandLabel(compositeScore);
-  const rejection = getRejectionSummary(currentSubmission.rejection_code);
-  const hasMultipleAttempts = group.attemptCount > 1;
+  const rejection = getRejectionSummary(submission.rejection_code);
+  const hasMultipleAttempts = attemptCount > 1 && allSubmissions.length > 1;
+  const ScoreIcon = scoreBand.icon;
+
+  const accessibleLabel = useMemo(() => {
+    let text = `View diagnostic details for ${studentName}. Status: ${config.label}.`;
+    if (submission.status === "completed" && compositeScore !== undefined && compositeScore !== null) {
+      text += ` Diagnostic composite score: ${Math.round(compositeScore)} percent, rated ${scoreBand.band}.`;
+    } else if (submission.status === "rejected") {
+      text += ` Submission rejected: ${rejection.label}. ${rejection.detail}.`;
+    }
+    if (hasMultipleAttempts) {
+      text += ` ${attemptCount} total attempts.`;
+    }
+    return text;
+  }, [studentName, config.label, submission.status, compositeScore, scoreBand.band, rejection, hasMultipleAttempts, attemptCount]);
 
   return (
     <article className="group relative flex flex-col justify-between bg-surface dark:bg-card border border-border hover:border-brand-300 dark:hover:border-brand-800 rounded-xl sm:rounded-2xl shadow-warm hover:shadow-md transition-all duration-200 overflow-hidden text-left">
-      {/* Primary Card Click Trigger / Accessible Target */}
+      {/* Primary Accessible Focus / Click Overlay */}
       <button
         type="button"
-        onClick={() => onSelect(currentSubmission)}
+        onClick={onSelect}
         className="absolute inset-0 z-0 size-full cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-xl sm:rounded-2xl text-left"
-        aria-label={`View diagnostic details for ${group.studentName}`}
+        aria-label={accessibleLabel}
       />
 
       {/* Photo Thumbnail */}
@@ -269,7 +341,7 @@ function StudentSubmissionCard({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={imageUrl}
-            alt={`Handwriting by ${group.studentName}`}
+            alt={`Worksheet by ${studentName}`}
             className="size-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
@@ -289,36 +361,35 @@ function StudentSubmissionCard({
           </Badge>
         </div>
 
-        {/* Attempt indicator & history switcher if multiple attempts exist */}
+        {/* Attempt history switcher if multiple attempts exist */}
         {hasMultipleAttempts && (
           <div className="absolute top-2.5 left-2.5 z-10 pointer-events-auto">
             <DropdownMenu>
               <DropdownMenuTrigger
                 className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-background/90 text-foreground dark:bg-card/90 border border-border shadow-xs backdrop-blur-xs hover:bg-background transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label={`Switch attempt for ${group.studentName}. Currently showing attempt ${group.attemptCount - selectedAttemptIndex} of ${group.attemptCount}`}
+                aria-label={`Switch submission attempt for ${studentName}. Currently showing attempt.`}
               >
                 <History className="size-2.5 text-muted-foreground" />
                 <span>
-                  Attempt {group.attemptCount - selectedAttemptIndex}/
-                  {group.attemptCount}
+                  {attemptCount} Attempts
                 </span>
                 <ChevronDown className="size-2.5 opacity-60" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56 z-50">
                 <div className="text-xs text-muted-foreground font-medium px-2.5 py-1.5">
-                  Submission History ({group.attemptCount} attempts)
+                  Submission History ({attemptCount} attempts)
                 </div>
                 <DropdownMenuSeparator />
-                {group.allSubmissions.map((sub, idx) => {
-                  const attemptNum = group.attemptCount - idx;
-                  const isCurrent = idx === selectedAttemptIndex;
+                {allSubmissions.map((sub, idx) => {
+                  const attemptNum = attemptCount - idx;
+                  const isCurrent = sub.id === submission.id;
                   const isLatest = idx === 0;
                   const subConfig = statusConfig[sub.status];
 
                   return (
                     <DropdownMenuItem
                       key={sub.id}
-                      onClick={() => setSelectedAttemptIndex(idx)}
+                      onClick={() => onSelectAttempt?.(sub)}
                       className="cursor-pointer text-xs flex items-center justify-between gap-2"
                     >
                       <div className="flex items-center gap-1.5 min-w-0">
@@ -346,7 +417,7 @@ function StudentSubmissionCard({
         )}
 
         {/* Uploader indicator (if parent) */}
-        {currentSubmission.uploader_role === "parent" && (
+        {submission.uploader_role === "parent" && (
           <div className="absolute bottom-2.5 left-2.5 pointer-events-auto relative z-10">
             <Badge
               variant="outline"
@@ -364,160 +435,36 @@ function StudentSubmissionCard({
         <div>
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-semibold text-foreground truncate group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors">
-              {group.studentName}
+              {studentName}
             </p>
             {hasMultipleAttempts && (
               <span className="text-[10px] text-muted-foreground font-medium shrink-0">
-                {group.attemptCount} tries
+                {attemptCount} tries
               </span>
             )}
           </div>
 
           {/* Diagnostic score or Rejection note */}
-          {currentSubmission.status === "completed" && (
-            <div className="mt-1.5 flex items-center gap-1.5">
-              <Badge
-                variant="outline"
-                className={`text-[11px] font-semibold px-2 py-0.5 ${scoreBand.className}`}
-              >
-                <span
-                  className={`size-1.5 rounded-full mr-1 ${scoreBand.dotColor}`}
-                />
-                {scoreBand.label}
-              </Badge>
-            </div>
-          )}
-
-          {currentSubmission.status === "rejected" && (
-            <div className="mt-1 space-y-0.5">
-              <p className="text-xs text-destructive flex items-center gap-1 font-medium truncate">
-                <AlertCircle className="size-3 shrink-0" />
-                <span>{rejection.label}</span>
-              </p>
-              <p className="text-[11px] text-muted-foreground line-clamp-1">
-                {rejection.detail}
-              </p>
-            </div>
-          )}
-
-          {currentSubmission.status === "processing" && (
-            <p className="mt-1 text-xs text-amber-700 dark:text-amber-400 flex items-center gap-1 font-medium truncate">
-              <Clock className="size-3 shrink-0 animate-pulse" />
-              <span>Analyzing cursive strokes...</span>
-            </p>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs text-muted-foreground">
-          <span>{getRelativeTime(currentSubmission.created_at)}</span>
-
-          {currentSubmission.status === "rejected" ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onReupload(group.studentId);
-              }}
-              className="text-xs font-semibold text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:underline inline-flex items-center gap-1 cursor-pointer pointer-events-auto focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
-            >
-              <Camera className="size-3" />
-              Re-upload
-            </button>
-          ) : (
-            <span className="text-[11px] font-medium text-primary group-hover:underline">
-              Inspect details &rarr;
-            </span>
-          )}
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function FlatSubmissionCard({
-  submission,
-  onSelect,
-  onReupload,
-}: {
-  submission: Submission;
-  onSelect: () => void;
-  onReupload: () => void;
-}) {
-  const { data: imageUrl } = useSubmissionImageUrl(submission.image_path);
-  const config = statusConfig[submission.status];
-  const compositeScore = submission.measurement?.composite_score;
-  const scoreBand = getScoreBandLabel(compositeScore);
-  const rejection = getRejectionSummary(submission.rejection_code);
-
-  return (
-    <article className="group relative flex flex-col justify-between bg-surface dark:bg-card border border-border hover:border-brand-300 dark:hover:border-brand-800 rounded-xl sm:rounded-2xl shadow-warm hover:shadow-md transition-all duration-200 overflow-hidden text-left">
-      {/* Primary Card Click Trigger / Accessible Target */}
-      <button
-        type="button"
-        onClick={onSelect}
-        className="absolute inset-0 z-0 size-full cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-xl sm:rounded-2xl text-left"
-        aria-label={`View diagnostic details for ${submission.student?.full_name ?? "student"}`}
-      />
-
-      {/* Photo Thumbnail */}
-      <div className="aspect-4/3 bg-muted/60 relative overflow-hidden pointer-events-none">
-        {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={imageUrl}
-            alt={`Handwriting by ${submission.student?.full_name ?? "student"}`}
-            className="size-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="size-full flex items-center justify-center text-muted-foreground/60">
-            <FileText className="size-8" />
-          </div>
-        )}
-
-        {/* Floating status pill */}
-        <div className="absolute top-2.5 right-2.5 pointer-events-auto relative z-10">
-          <Badge
-            variant="outline"
-            className={`text-xs font-semibold px-2 py-0.5 shadow-xs backdrop-blur-xs ${config.className}`}
-          >
-            <span className={`size-1.5 rounded-full mr-1 ${config.dotClass}`} />
-            {config.label}
-          </Badge>
-        </div>
-
-        {/* Uploader indicator (if parent) */}
-        {submission.uploader_role === "parent" && (
-          <div className="absolute bottom-2.5 left-2.5 pointer-events-auto relative z-10">
-            <Badge
-              variant="outline"
-              className="text-[10px] font-semibold px-2 py-0.5 bg-brand-50/90 text-brand-800 dark:bg-brand-950/90 dark:text-brand-300 border-brand-200/80 backdrop-blur-xs"
-            >
-              <Home className="size-2.5 mr-1" />
-              Parent upload
-            </Badge>
-          </div>
-        )}
-      </div>
-
-      {/* Card Info */}
-      <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between pointer-events-none relative z-10">
-        <div>
-          <p className="text-sm font-semibold text-foreground truncate group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors">
-            {submission.student?.full_name ?? "Unknown Student"}
-          </p>
-
-          {/* Diagnostic score or Rejection note */}
           {submission.status === "completed" && (
             <div className="mt-1.5 flex items-center gap-1.5">
-              <Badge
-                variant="outline"
-                className={`text-[11px] font-semibold px-2 py-0.5 ${scoreBand.className}`}
-              >
-                <span
-                  className={`size-1.5 rounded-full mr-1 ${scoreBand.dotColor}`}
-                />
-                {scoreBand.label}
-              </Badge>
+              <TooltipProvider delay={200}>
+                <Tooltip>
+                  <TooltipTrigger
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md border shadow-2xs pointer-events-auto"
+                  >
+                    <span className={cn("inline-flex items-center gap-1", scoreBand.className, "px-1.5 py-0.5 rounded")}>
+                      <ScoreIcon className="size-3 shrink-0" aria-hidden="true" />
+                      <span>{scoreBand.label}</span>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs max-w-xs">
+                    <p className="font-semibold">{scoreBand.band} Penmanship</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {scoreBand.description}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           )}
 
@@ -551,19 +498,115 @@ function FlatSubmissionCard({
                 e.stopPropagation();
                 onReupload();
               }}
+              aria-label={`Re-upload worksheet for ${studentName}`}
               className="text-xs font-semibold text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:underline inline-flex items-center gap-1 cursor-pointer pointer-events-auto focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
             >
               <Camera className="size-3" />
               Re-upload
             </button>
           ) : (
-            <span className="text-[11px] font-medium text-primary group-hover:underline">
+            <span
+              aria-hidden="true"
+              className="text-[11px] font-medium text-primary group-hover:underline"
+            >
               Inspect details &rarr;
             </span>
           )}
         </div>
       </div>
     </article>
+  );
+}
+
+/**
+ * Diagnostic Rubric Guide Popover
+ * Scaffolding for teachers to understand WriteWise composite scoring
+ */
+function ScoringGuidePopover() {
+  return (
+    <Popover>
+      <PopoverTrigger
+        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring shrink-0"
+        aria-label="How WriteWise scores cursive handwriting"
+      >
+        <HelpCircle className="size-3.5 text-brand-600 dark:text-brand-400" />
+        <span className="hidden sm:inline">Score Guide</span>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 sm:w-96 p-4 z-50">
+        <PopoverHeader>
+          <div className="flex items-center gap-2">
+            <div className="size-7 rounded-lg bg-brand-50 dark:bg-brand-950 flex items-center justify-center text-brand-600 dark:text-brand-400">
+              <Sparkles className="size-4" />
+            </div>
+            <div>
+              <PopoverTitle className="text-sm font-semibold text-foreground">
+                Cursive Diagnostic Criteria
+              </PopoverTitle>
+              <PopoverDescription className="text-[11px]">
+                Composite score (0–100%) weighted across 5 penmanship markers:
+              </PopoverDescription>
+            </div>
+          </div>
+        </PopoverHeader>
+
+        <div className="space-y-2.5 text-xs pt-2 border-t border-border/60">
+          <div className="flex items-start gap-2">
+            <div className="size-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
+            <div>
+              <strong className="font-semibold text-foreground">1. Letter Formation:</strong>{" "}
+              <span className="text-muted-foreground">Stroke & loop curvature fidelity evaluated by CNN.</span>
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <div className="size-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
+            <div>
+              <strong className="font-semibold text-foreground">2. Size Consistency:</strong>{" "}
+              <span className="text-muted-foreground">Ascenders, descenders, and x-height proportion uniformity.</span>
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <div className="size-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
+            <div>
+              <strong className="font-semibold text-foreground">3. Spacing:</strong>{" "}
+              <span className="text-muted-foreground">Inter-character and word-boundary rhythm.</span>
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <div className="size-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
+            <div>
+              <strong className="font-semibold text-foreground">4. Slant Consistency:</strong>{" "}
+              <span className="text-muted-foreground">Angular deviation from target forward inclination.</span>
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <div className="size-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
+            <div>
+              <strong className="font-semibold text-foreground">5. Baseline Alignment:</strong>{" "}
+              <span className="text-muted-foreground">Adherence to primary bottom guideline across all words.</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-3 pt-2.5 border-t border-border/60 grid grid-cols-2 gap-1.5 text-[11px]">
+          <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300">
+            <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
+            <span>&ge; 80% &middot; Excellent</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[#3d6837] dark:text-brand-300">
+            <span className="size-2 rounded-full bg-[#7c9b6e] shrink-0" />
+            <span>60–79% &middot; Satisfactory</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300">
+            <span className="size-2 rounded-full bg-amber-500 shrink-0" />
+            <span>40–59% &middot; Developing</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-orange-800 dark:text-orange-300">
+            <span className="size-2 rounded-full bg-orange-500 shrink-0" />
+            <span>&lt; 40% &middot; Needs Impr.</span>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -598,6 +641,11 @@ export default function ActivityDetailPage({
   const [statusFilter, setStatusFilter] = useState<SubmissionFilter>("all");
   const [sortBy, setSortBy] = useState<SubmissionSort>("newest");
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Group attempt selection map (key: studentId, value: Submission)
+  const [attemptOverrides, setAttemptOverrides] = useState<Map<string, Submission>>(
+    new Map()
+  );
 
   // Shortcut key listener for '/' and 'U'
   useEffect(() => {
@@ -879,19 +927,25 @@ export default function ActivityDetailPage({
   if (isLoading) {
     return (
       <div className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
-        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-4 w-40" />
         <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-6 space-y-4 shadow-warm">
-          <Skeleton className="h-6 w-2/3" />
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-7 w-1/3 rounded-lg" />
+            <Skeleton className="h-9 w-28 rounded-lg" />
+          </div>
           <Skeleton className="h-20 w-full rounded-xl" />
           <div className="flex gap-2 pt-2">
-            <Skeleton className="h-5 w-20 rounded-full" />
+            <Skeleton className="h-5 w-24 rounded-full" />
             <Skeleton className="h-5 w-16 rounded-full" />
           </div>
         </div>
         <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-6 space-y-4 shadow-warm">
-          <Skeleton className="h-5 w-32" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
+          <div className="flex justify-between items-center">
+            <Skeleton className="h-6 w-36" />
+            <Skeleton className="h-8 w-44 rounded-lg" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="space-y-2">
                 <Skeleton className="aspect-4/3 w-full rounded-xl" />
                 <Skeleton className="h-4 w-1/2" />
@@ -958,218 +1012,248 @@ export default function ActivityDetailPage({
 
   return (
     <div className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
-      {/* Top Back Navigation Trail */}
-      <div className="flex items-center justify-between">
-        <Link
-          href="/activities"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium group"
-        >
-          <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
-          <span>Back to Activities</span>
-        </Link>
-      </div>
+      {/* Top Semantic Breadcrumb Navigation */}
+      <Breadcrumb aria-label="Activity Navigation Trail">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/activities" className="inline-flex items-center gap-1">
+              <ClipboardList className="size-3.5 text-muted-foreground" />
+              <span>Activities</span>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage className="max-w-[200px] sm:max-w-[320px] truncate font-medium text-foreground">
+              {activity.target_text}
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       {/* Activity Details Card with Authentic 3-Line Cursive Ruling */}
-      <div
-        className={`relative bg-surface dark:bg-card border rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-warm transition-all ${
+      <section
+        aria-labelledby="activity-header-heading"
+        className={cn(
+          "relative bg-surface dark:bg-card border rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-warm transition-all overflow-hidden",
           isArchived
-            ? "border-dashed border-border/80 opacity-90"
+            ? "border-muted-foreground/30 bg-muted/20 opacity-95"
             : "border-border"
-        }`}
+        )}
       >
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-          <div className="min-w-0 flex-1 space-y-3">
-            {/* Header: Type, Status, Metadata Badges */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {isArchived ? (
-                <Badge
-                  variant="outline"
-                  className="text-xs font-semibold px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border"
-                >
-                  <Archive className="w-3.5 h-3.5 mr-1" />
-                  Archived
-                </Badge>
-              ) : activity.is_take_home ? (
-                <Badge
-                  variant="outline"
-                  className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900"
-                >
-                  <Home className="w-3.5 h-3.5 mr-1" />
-                  Take-home Activity
-                </Badge>
-              ) : (
-                <Badge
-                  variant="outline"
-                  className="text-xs font-semibold px-2.5 py-0.5 bg-muted/40 text-muted-foreground border-border"
-                >
-                  In-Class Activity
-                </Badge>
-              )}
+        {/* Archived Top Warning Banner if Archived */}
+        {isArchived && (
+          <div className="mb-4 -mt-1 -mx-1 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2">
+            <Archive className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>
+              This activity is archived and hidden from student assignment pickers.
+            </span>
+          </div>
+        )}
 
-              <Badge
-                variant="outline"
-                className="text-xs font-medium px-2.5 py-0.5 bg-muted/50 text-muted-foreground border-border/70"
-              >
-                {wordCount} {wordCount === 1 ? "word" : "words"}
-              </Badge>
-
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <CalendarDays className="w-3.5 h-3.5" />
-                Created {formatDate(activity.created_at)}
-              </span>
-            </div>
-
-            {/* Target Text Prompt Preview on 3-Line Penmanship Ruling */}
-            <div className="space-y-1.5 pt-1">
-              <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <Sparkles className="size-3.5 text-brand-600 dark:text-brand-400" />
-                  <span>Target Handwriting Prompt</span>
-                </span>
-                <span className="text-[11px] text-muted-foreground/80 font-medium">
-                  3-line ruling preview
-                </span>
-              </div>
-
-              <div className="relative p-4 sm:p-5 pb-6 sm:pb-7 min-h-[76px] rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-2xs">
-                {/* Decorative 3-line penmanship ruling matching exact parent padding */}
-                <div
-                  className="absolute inset-4 sm:inset-5 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden"
-                  aria-hidden="true"
-                />
-                <p className="relative font-cursive text-foreground/90 font-normal tracking-wide select-all break-words text-[34px] leading-[48px]">
-                  {activity.target_text}
-                </p>
-              </div>
-            </div>
-
-            {/* Hardened Class Roster Completion Metric */}
-            <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2 flex-wrap">
-                <GraduationCap className="size-4 text-brand-600 dark:text-brand-400 shrink-0" />
-                <span>
-                  <strong className="text-foreground font-semibold">
-                    {uniqueStudentsCount}
-                  </strong>{" "}
-                  of{" "}
-                  <strong className="text-foreground font-semibold">
-                    {totalStudents}
-                  </strong>{" "}
-                  enrolled students submitted
-                  {totalScansCount > uniqueStudentsCount && (
-                    <span className="text-muted-foreground/80 font-normal">
-                      {" "}
-                      ({totalScansCount} total{" "}
-                      {totalScansCount === 1 ? "scan" : "scans"})
-                    </span>
-                  )}
-                </span>
-                {totalStudents > 0 && (
+        <div className="flex flex-col gap-4">
+          {/* Header row: H1 Title + Badges + Action Buttons */}
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+            <div className="space-y-2 min-w-0 flex-1">
+              {/* Badges Row */}
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                {isArchived ? (
                   <Badge
                     variant="outline"
-                    className="text-[11px] font-semibold px-2 py-0.5 bg-muted/60 text-foreground"
+                    className="text-xs font-semibold px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border"
                   >
-                    {completionRate}% complete
+                    <Archive className="w-3.5 h-3.5 mr-1" />
+                    Archived
+                  </Badge>
+                ) : activity.is_take_home ? (
+                  <Badge
+                    variant="outline"
+                    className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900"
+                  >
+                    <Home className="w-3.5 h-3.5 mr-1" />
+                    Take-home Activity
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="text-xs font-semibold px-2.5 py-0.5 bg-muted/40 text-muted-foreground border-border"
+                  >
+                    In-Class Activity
                   </Badge>
                 )}
+
+                <Badge
+                  variant="outline"
+                  className="text-xs font-medium px-2.5 py-0.5 bg-muted/50 text-muted-foreground border-border/70"
+                >
+                  {wordCount} {wordCount === 1 ? "word" : "words"}
+                </Badge>
+
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <CalendarDays className="w-3.5 h-3.5" />
+                  Created {formatDate(activity.created_at)}
+                </span>
               </div>
 
-              {/* Progress bar capped accurately at 100% */}
-              {totalStudents > 0 && (
-                <div className="w-full sm:w-44 h-2 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full bg-brand-600 dark:bg-brand-500 rounded-full transition-all duration-500 ease-out"
-                    style={{
-                      width: `${completionRate}%`,
+              {/* Explicit H1 Title */}
+              <h1
+                id="activity-header-heading"
+                className="text-xl sm:text-2xl font-heading font-bold text-foreground tracking-tight line-clamp-2"
+              >
+                {activity.target_text}
+              </h1>
+            </div>
+
+            {/* Activity Actions Menu & Fast CTAs */}
+            <div className="flex items-center gap-2 shrink-0 pt-1 sm:pt-0">
+              <Button
+                size="sm"
+                className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer"
+                onClick={() => openUpload({ activityId: id })}
+              >
+                <Upload className="w-4 h-4" />
+                <span>Upload Submission</span>
+                <kbd className="hidden sm:inline-flex items-center justify-center ml-1 px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground/80 bg-white/20 dark:bg-white/10 rounded shadow-2xs">
+                  U
+                </kbd>
+              </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className="flex size-10 sm:size-9 items-center justify-center rounded-lg sm:rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label="Activity options and actions"
+                >
+                  <MoreVertical className="size-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuItem
+                    onClick={() => setEditingActivity(activity)}
+                    className="cursor-pointer gap-2 text-xs"
+                  >
+                    <Edit3 className="size-3.5" />
+                    <span>Edit Target Text</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      navigator.clipboard.writeText(activity.target_text);
+                      toast.success("Target prompt copied to clipboard.");
                     }}
-                  />
-                </div>
-              )}
+                    className="cursor-pointer gap-2 text-xs"
+                  >
+                    <Copy className="size-3.5" />
+                    <span>Copy Target Prompt</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setIsDuplicateOpen(true)}
+                    className="cursor-pointer gap-2 text-xs"
+                  >
+                    <FileText className="size-3.5" />
+                    <span>Duplicate Activity</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleToggleArchive}
+                    className="cursor-pointer gap-2 text-xs"
+                  >
+                    {isArchived ? (
+                      <>
+                        <ArchiveRestore className="size-3.5" />
+                        <span>Unarchive Activity</span>
+                      </>
+                    ) : (
+                      <>
+                        <Archive className="size-3.5" />
+                        <span>Archive Activity</span>
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setDeletingActivity(activity)}
+                    className="cursor-pointer gap-2 text-xs text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="size-3.5" />
+                    <span>Delete Activity</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
-          {/* Activity Actions Menu & Fast CTAs */}
-          <div className="flex items-center gap-2 shrink-0 pt-2 md:pt-0">
-            <Button
-              size="sm"
-              className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer"
-              onClick={() => openUpload({ activityId: id })}
-            >
-              <Upload className="w-4 h-4" />
-              <span>Upload Submission</span>
-              <kbd className="hidden sm:inline-flex items-center justify-center ml-1 px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground/80 bg-white/20 dark:bg-white/10 rounded shadow-2xs">
-                U
-              </kbd>
-            </Button>
+          {/* Penmanship Prompt Preview on 3-Line Cursive Ruling */}
+          <div className="space-y-1.5 pt-1">
+            <div className="relative p-4 sm:p-5 pb-6 sm:pb-7 min-h-[84px] rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-2xs">
+              {/* Decorative 3-line penmanship ruling matching exact parent padding */}
+              <div
+                className="absolute inset-4 sm:inset-5 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden"
+                aria-hidden="true"
+              />
+              <p className="relative font-cursive text-foreground/90 font-normal tracking-wide select-all break-words text-[34px] sm:text-[38px] leading-[48px] sm:leading-[52px]">
+                {activity.target_text}
+              </p>
+            </div>
+          </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className="flex size-10 sm:size-9 items-center justify-center rounded-lg sm:rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label="Activity actions"
+          {/* Hardened Class Roster Completion Metric */}
+          <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-muted-foreground border-t border-border/50">
+            <div className="flex items-center gap-2 flex-wrap">
+              <GraduationCap className="size-4 text-brand-600 dark:text-brand-400 shrink-0" />
+              <span>
+                <strong className="text-foreground font-semibold">
+                  {uniqueStudentsCount}
+                </strong>{" "}
+                of{" "}
+                <strong className="text-foreground font-semibold">
+                  {totalStudents}
+                </strong>{" "}
+                enrolled students submitted
+                {totalScansCount > uniqueStudentsCount && (
+                  <span className="text-muted-foreground/80 font-normal">
+                    {" "}
+                    ({totalScansCount} total{" "}
+                    {totalScansCount === 1 ? "scan" : "scans"})
+                  </span>
+                )}
+              </span>
+              {totalStudents > 0 && (
+                <Badge
+                  variant="outline"
+                  className="text-[11px] font-semibold px-2 py-0.5 bg-muted/60 text-foreground"
+                >
+                  {completionRate}% complete
+                </Badge>
+              )}
+            </div>
+
+            {/* Progress bar capped accurately at 100% */}
+            {totalStudents > 0 && (
+              <div
+                className="w-full sm:w-48 h-2 rounded-full bg-muted overflow-hidden"
+                role="progressbar"
+                aria-valuenow={completionRate}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`Class completion rate: ${completionRate}%`}
               >
-                <MoreVertical className="size-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem
-                  onClick={() => setEditingActivity(activity)}
-                  className="cursor-pointer gap-2 text-xs"
-                >
-                  <Edit3 className="size-3.5" />
-                  <span>Edit Target Text</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    navigator.clipboard.writeText(activity.target_text);
-                    toast.success("Target prompt copied to clipboard.");
+                <div
+                  className="h-full bg-brand-600 dark:bg-brand-500 rounded-full transition-all duration-500 ease-out"
+                  style={{
+                    width: `${completionRate}%`,
                   }}
-                  className="cursor-pointer gap-2 text-xs"
-                >
-                  <Copy className="size-3.5" />
-                  <span>Copy Target Prompt</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setIsDuplicateOpen(true)}
-                  className="cursor-pointer gap-2 text-xs"
-                >
-                  <FileText className="size-3.5" />
-                  <span>Duplicate Activity</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleToggleArchive}
-                  className="cursor-pointer gap-2 text-xs"
-                >
-                  {isArchived ? (
-                    <>
-                      <ArchiveRestore className="size-3.5" />
-                      <span>Unarchive Activity</span>
-                    </>
-                  ) : (
-                    <>
-                      <Archive className="size-3.5" />
-                      <span>Archive Activity</span>
-                    </>
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setDeletingActivity(activity)}
-                  className="cursor-pointer gap-2 text-xs text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="size-3.5" />
-                  <span>Delete Activity</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                />
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Submissions Section */}
-      <div className="space-y-4">
+      <section aria-labelledby="submissions-heading" className="space-y-4">
         {/* Section Header with Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg sm:text-xl font-heading font-semibold text-foreground tracking-tight">
+            <h2
+              id="submissions-heading"
+              className="text-lg sm:text-xl font-heading font-semibold text-foreground tracking-tight"
+            >
               Student Submissions
             </h2>
             {submissions && (
@@ -1186,9 +1270,15 @@ export default function ActivityDetailPage({
 
           {/* View Mode Switcher (Grouped by Student vs All Scans) */}
           {submissions && submissions.length > 0 && (
-            <div className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-lg border border-border/60 self-start sm:self-auto">
+            <div
+              role="radiogroup"
+              aria-label="Submission display grouping"
+              className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-lg border border-border/60 self-start sm:self-auto"
+            >
               <button
                 type="button"
+                role="radio"
+                aria-checked={viewMode === "grouped"}
                 onClick={() => setViewMode("grouped")}
                 className={cn(
                   "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer",
@@ -1196,13 +1286,14 @@ export default function ActivityDetailPage({
                     ? "bg-background text-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
                 )}
-                aria-pressed={viewMode === "grouped"}
               >
                 <GraduationCap className="size-3.5" />
                 <span>By Student</span>
               </button>
               <button
                 type="button"
+                role="radio"
+                aria-checked={viewMode === "all"}
                 onClick={() => setViewMode("all")}
                 className={cn(
                   "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer",
@@ -1210,7 +1301,6 @@ export default function ActivityDetailPage({
                     ? "bg-background text-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
                 )}
-                aria-pressed={viewMode === "all"}
               >
                 <Layers className="size-3.5" />
                 <span>All Scans</span>
@@ -1233,7 +1323,7 @@ export default function ActivityDetailPage({
               containerClassName="w-full md:w-56 lg:w-64 shrink-0"
             />
 
-            {/* Filter Pills & Sort Selector */}
+            {/* Filter Pills, Score Guide & Sort Selector */}
             <div className="flex flex-wrap sm:flex-nowrap items-center justify-between md:justify-end gap-2 w-full md:w-auto min-w-0">
               <FilterPills
                 items={submissionFilterItems}
@@ -1243,9 +1333,15 @@ export default function ActivityDetailPage({
                 containerClassName="min-w-0 flex-1 sm:flex-initial"
               />
 
+              {/* Scoring Explainer Guide Trigger */}
+              <ScoringGuidePopover />
+
               {/* Sort Selector */}
               <DropdownMenu>
-                <DropdownMenuTrigger className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
+                <DropdownMenuTrigger
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label="Sort submissions list"
+                >
                   <ArrowUpDown className="size-3 text-muted-foreground shrink-0" />
                   <span className="font-medium text-foreground">
                     {sortBy === "newest" && "Newest First"}
@@ -1262,7 +1358,7 @@ export default function ActivityDetailPage({
                   >
                     <span>Newest First</span>
                     {sortBy === "newest" && (
-                      <span className="text-primary font-bold">✓</span>
+                      <Check className="size-3.5 text-primary" />
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -1271,7 +1367,7 @@ export default function ActivityDetailPage({
                   >
                     <span>Oldest First</span>
                     {sortBy === "oldest" && (
-                      <span className="text-primary font-bold">✓</span>
+                      <Check className="size-3.5 text-primary" />
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -1280,7 +1376,7 @@ export default function ActivityDetailPage({
                   >
                     <span>Student (A-Z)</span>
                     {sortBy === "name_asc" && (
-                      <span className="text-primary font-bold">✓</span>
+                      <Check className="size-3.5 text-primary" />
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -1289,7 +1385,7 @@ export default function ActivityDetailPage({
                   >
                     <span>Student (Z-A)</span>
                     {sortBy === "name_desc" && (
-                      <span className="text-primary font-bold">✓</span>
+                      <Check className="size-3.5 text-primary" />
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -1298,7 +1394,7 @@ export default function ActivityDetailPage({
                   >
                     <span>Highest Score</span>
                     {sortBy === "score_desc" && (
-                      <span className="text-primary font-bold">✓</span>
+                      <Check className="size-3.5 text-primary" />
                     )}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -1334,7 +1430,7 @@ export default function ActivityDetailPage({
         {/* Submissions Content Grid */}
         {submissionsLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
+            {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
                 className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden"
@@ -1393,7 +1489,7 @@ export default function ActivityDetailPage({
                   onClick={() => openUpload({ activityId: id })}
                 >
                   <Upload className="w-4 h-4 mr-2" />
-                  Upload Submission
+                  <span>Upload Submission</span>
                 </Button>
               </EmptyContent>
             </Empty>
@@ -1447,35 +1543,52 @@ export default function ActivityDetailPage({
             className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4"
           >
             {viewMode === "grouped"
-              ? filteredAndSortedGroups.map((group) => (
-                  <StudentSubmissionCard
-                    key={group.studentId}
-                    group={group}
-                    onSelect={(sub) => setSelectedSubmission(sub)}
-                    onReupload={(studentId) =>
-                      openUpload({
-                        activityId: id,
-                        studentId: studentId,
-                      })
-                    }
-                  />
-                ))
-              : filteredAndSortedSubmissions.map((submission) => (
-                  <FlatSubmissionCard
-                    key={submission.id}
-                    submission={submission}
-                    onSelect={() => setSelectedSubmission(submission)}
+              ? filteredAndSortedGroups.map((group) => {
+                  const activeSub =
+                    attemptOverrides.get(group.studentId) ??
+                    group.latestSubmission;
+
+                  return (
+                    <SubmissionCard
+                      key={group.studentId}
+                      submission={activeSub}
+                      studentName={group.studentName}
+                      attemptCount={group.attemptCount}
+                      allSubmissions={group.allSubmissions}
+                      onSelectAttempt={(sub) => {
+                        setAttemptOverrides((prev) => {
+                          const next = new Map(prev);
+                          next.set(group.studentId, sub);
+                          return next;
+                        });
+                      }}
+                      onSelect={() => setSelectedSubmission(activeSub)}
+                      onReupload={() =>
+                        openUpload({
+                          activityId: id,
+                          studentId: group.studentId,
+                        })
+                      }
+                    />
+                  );
+                })
+              : filteredAndSortedSubmissions.map((sub) => (
+                  <SubmissionCard
+                    key={sub.id}
+                    submission={sub}
+                    studentName={sub.student?.full_name ?? "Unknown Student"}
+                    onSelect={() => setSelectedSubmission(sub)}
                     onReupload={() =>
                       openUpload({
                         activityId: id,
-                        studentId: submission.student_id,
+                        studentId: sub.student_id,
                       })
                     }
                   />
                 ))}
           </div>
         )}
-      </div>
+      </section>
 
       {/* Edit Activity Dialog */}
       <EditActivityDialog
