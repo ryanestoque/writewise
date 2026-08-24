@@ -15,6 +15,21 @@ export interface Submission {
   student: {
     full_name: string;
   };
+  measurement?: {
+    composite_score: number | null;
+    letter_formation_score: number | null;
+    size_consistency_score: number | null;
+    spacing_score: number | null;
+    slant_score: number | null;
+    baseline_alignment_score: number | null;
+  } | null;
+  manual_score?: {
+    letter_formation_band: string;
+    size_consistency_band: string;
+    spacing_band: string;
+    slant_band: string;
+    baseline_alignment_band: string;
+  } | null;
 }
 
 export function useSubmissions(activityId: string) {
@@ -28,7 +43,9 @@ export function useSubmissions(activityId: string) {
         .select(
           `id, activity_id, student_id, image_path, status, uploader_id,
            uploader_role, rejection_code, created_at, updated_at,
-           student:student_id(full_name)`
+           student:student_id(full_name),
+           measurement(composite_score, letter_formation_score, size_consistency_score, spacing_score, slant_score, baseline_alignment_score),
+           manual_score(letter_formation_band, size_consistency_band, spacing_band, slant_band, baseline_alignment_band)`
         )
         .eq("activity_id", activityId)
         .order("created_at", { ascending: false });
@@ -37,7 +54,15 @@ export function useSubmissions(activityId: string) {
         throw new Error(error.message);
       }
 
-      return data as unknown as Submission[];
+      return (data || []).map((row: Record<string, unknown>) => ({
+        ...row,
+        measurement: Array.isArray(row.measurement)
+          ? row.measurement[0] ?? null
+          : (row.measurement ?? null),
+        manual_score: Array.isArray(row.manual_score)
+          ? row.manual_score[0] ?? null
+          : (row.manual_score ?? null),
+      })) as unknown as Submission[];
     },
     enabled: !!activityId,
   });

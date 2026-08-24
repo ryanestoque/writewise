@@ -41,6 +41,11 @@ import {
   AlertCircleIcon,
   RotateCcwIcon,
   CheckIcon,
+  Scan,
+  SunMedium,
+  Focus,
+  Layers,
+  Plus,
 } from "lucide-react";
 
 interface QuickUploadDialogProps {
@@ -52,7 +57,7 @@ interface QuickUploadDialogProps {
   prefilledStudentId?: string;
 }
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3 | 4 | 5;
 
 interface UploadError {
   code: string;
@@ -199,6 +204,10 @@ function UploadFlow({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadError, setUploadError] = useState<UploadError | null>(null);
+  const [uploadedCount, setUploadedCount] = useState(0);
+  const [lastSubmittedStudent, setLastSubmittedStudent] = useState<string | null>(
+    null
+  );
 
   const { data: activities } = useActivities();
   const { data: students } = useStudents();
@@ -276,6 +285,17 @@ function UploadFlow({
     if (cameraInputRef.current) cameraInputRef.current.value = "";
   };
 
+  const handleNextUpload = () => {
+    handleClearFile();
+    setUploadError(null);
+    // Clear student choice so teacher can select the next child
+    if (!prefilledStudentId) {
+      setStudentChoice(null);
+    }
+    // Return to Step 1 (or Step 2 if student was also hard prefilled)
+    setStep(prefilledStudentId ? 2 : 1);
+  };
+
   const handleFileChange = (file: File | undefined) => {
     if (!file) return;
 
@@ -318,8 +338,10 @@ function UploadFlow({
       },
       {
         onSuccess: () => {
+          setUploadedCount((prev) => prev + 1);
+          setLastSubmittedStudent(selectedStudent?.full_name ?? "Student");
           toast.success("Submission uploaded successfully.");
-          onClose();
+          setStep(5);
         },
         onError: (err) => {
           const error =
@@ -357,6 +379,8 @@ function UploadFlow({
         return uploadError
           ? "Upload failed. Please review the error."
           : "Step 4: Uploading worksheet submission";
+      case 5:
+        return "Step 5: Submission uploaded successfully";
     }
   }, [step, uploadError]);
 
@@ -638,34 +662,69 @@ function UploadFlow({
             {/* Step 2 — Capture photo */}
             {step === 2 && (
               <>
-                {/* Capture Best Practices */}
-                <div className="rounded-xl bg-muted/50 border border-border p-3.5 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <SparklesIcon className="size-4 text-primary shrink-0" />
-                    <span className="text-xs font-semibold text-foreground">
-                      Quality Guidelines for Accurate Assessment
+                {/* Capture Best Practices & OpenCV Quality Guidelines */}
+                <div className="rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/60 dark:border-border p-3.5 sm:p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <SparklesIcon className="size-4 text-primary shrink-0" />
+                      <span className="text-xs font-semibold text-foreground">
+                        Photography Tips for Instant AI Diagnostic Pass
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                      OpenCV Quality Gate
                     </span>
                   </div>
-                  <ul className="text-[11px] text-muted-foreground space-y-1.5 pl-1">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2Icon className="size-3.5 text-primary shrink-0" />
-                      <span>
-                        Keep paper flat under even, natural or overhead lighting.
-                      </span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2Icon className="size-3.5 text-primary shrink-0" />
-                      <span>
-                        Ensure guideline rules (top, mid, baseline) are clearly visible.
-                      </span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2Icon className="size-3.5 text-primary shrink-0" />
-                      <span>
-                        Avoid extreme perspective angles or shadows cast across words.
-                      </span>
-                    </li>
-                  </ul>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div className="flex items-start gap-2 p-2 rounded-lg bg-background/60 dark:bg-muted/30 border border-border/60">
+                      <Scan className="size-4 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-foreground text-[11.5px]">
+                          90° Overhead Angle
+                        </p>
+                        <p className="text-[10.5px] text-muted-foreground leading-tight mt-0.5">
+                          Hold phone flat directly above paper without tilting.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2 p-2 rounded-lg bg-background/60 dark:bg-muted/30 border border-border/60">
+                      <SunMedium className="size-4 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-foreground text-[11.5px]">
+                          Even, Diffused Light
+                        </p>
+                        <p className="text-[10.5px] text-muted-foreground leading-tight mt-0.5">
+                          Avoid flash reflection or shadows cast over words.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2 p-2 rounded-lg bg-background/60 dark:bg-muted/30 border border-border/60">
+                      <Layers className="size-4 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-foreground text-[11.5px]">
+                          Clear 3-Line Ruling
+                        </p>
+                        <p className="text-[10.5px] text-muted-foreground leading-tight mt-0.5">
+                          Keep headline, midline, and baseline unobstructed.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2 p-2 rounded-lg bg-background/60 dark:bg-muted/30 border border-border/60">
+                      <Focus className="size-4 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-foreground text-[11.5px]">
+                          Sharp Stroke Focus
+                        </p>
+                        <p className="text-[10.5px] text-muted-foreground leading-tight mt-0.5">
+                          Tap screen on cursive ink before snapping to avoid blur.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Standard File Picker Input (Desktop & Mobile Photo Library) */}
@@ -876,12 +935,68 @@ function UploadFlow({
                 </div>
               </div>
             )}
+
+            {/* Step 5 — Success & Continuous Class Upload Flow */}
+            {step === 5 && (
+              <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-900 shadow-warm">
+                  <CheckCircle2Icon className="size-8" />
+                </div>
+
+                <div className="space-y-1.5 max-w-sm">
+                  <h3 className="text-base font-semibold text-foreground">
+                    Worksheet Submitted!
+                  </h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Submission for{" "}
+                    <strong className="text-foreground">
+                      {lastSubmittedStudent ?? "Student"}
+                    </strong>{" "}
+                    on{" "}
+                    <strong className="text-foreground truncate max-w-xs inline-block align-bottom">
+                      {selectedActivity?.target_text ?? "Activity"}
+                    </strong>{" "}
+                    has been queued for AI diagnostic assessment.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className="text-[11px] font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900"
+                  >
+                    <Layers className="size-3 mr-1" />
+                    {uploadedCount} {uploadedCount === 1 ? "worksheet" : "worksheets"} uploaded this session
+                  </Badge>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-xs pt-2">
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={handleNextUpload}
+                    className="h-10 sm:h-9 text-xs font-medium gap-1.5 w-full shadow-warm bg-primary hover:bg-brand-700 text-primary-foreground cursor-pointer"
+                  >
+                    <Plus className="size-3.5" />
+                    Upload Next Student
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                    className="h-10 sm:h-9 text-xs font-medium w-full cursor-pointer"
+                  >
+                    Done / View Roster
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Footer actions */}
-      {!isUploading && (
+      {/* Footer actions for Steps 1–3 */}
+      {!isUploading && step <= 3 && (
         <div className="flex items-center justify-between p-3.5 sm:p-4 px-4 sm:px-6 border-t border-border bg-muted/20">
           {step === 1 && (
             <Button
@@ -915,7 +1030,6 @@ function UploadFlow({
               Retake
             </Button>
           )}
-          {step === 4 && <span />}
 
           {step === 1 && (
             <Button
