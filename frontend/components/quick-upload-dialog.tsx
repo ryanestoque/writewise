@@ -14,7 +14,6 @@ import { toast } from "sonner";
 import {
   Field,
   FieldContent,
-  FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
 import {
@@ -33,7 +32,7 @@ import {
   CameraIcon,
   FileImageIcon,
   CheckCircle2Icon,
-  SparklesIcon,
+  LightbulbIcon,
   ArrowRightIcon,
   ArrowLeftIcon,
   XIcon,
@@ -175,6 +174,7 @@ function UploadFlow({
 }) {
   const activityInputId = useId();
   const studentInputId = useId();
+  const photoTipsId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const previewUrlRef = useRef<string | null>(null);
@@ -419,7 +419,7 @@ function UploadFlow({
         </div>
 
         {/* 3-Step Interactive Progress Stepper (Anchored Across All Steps) */}
-        <nav aria-label="Upload progress" className="mt-4 pt-3 border-t border-border/60">
+        <nav aria-label="Upload progress" className="mt-4">
           <ol className="flex items-center justify-between gap-1.5 sm:gap-2">
             {STEPS.map((s) => {
               const isCompleted = step > s.step || step === 5;
@@ -429,14 +429,14 @@ function UploadFlow({
               return (
                 <li
                   key={s.step}
-                  className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0"
+                  className={`flex items-center gap-1.5 sm:gap-2 min-w-0 ${s.step < STEPS.length ? "flex-1" : ""}`}
                   aria-current={isCurrent ? "step" : undefined}
                 >
                   {canJump && !isCurrent ? (
                     <button
                       type="button"
                       onClick={() => setStep(s.step as Step)}
-                      aria-label={`Jump to Step ${s.step}: ${s.label}`}
+                      aria-label={`${s.label} — Step ${s.step}, completed`}
                       className="group flex items-center gap-1.5 sm:gap-2 min-w-0 p-1 -m-1 rounded-lg transition-colors hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary text-left"
                     >
                       <div
@@ -494,7 +494,7 @@ function UploadFlow({
         </nav>
       </DialogHeader>
 
-      <div className="p-4 sm:p-6 max-h-[min(75vh,80dvh)] overflow-y-auto">
+      <div className="px-4 sm:px-6 py-4 sm:py-5 max-h-[min(75vh,80dvh)] overflow-y-auto">
         {isUploading ? (
           /* Step 4 — Uploading state */
           <div
@@ -511,178 +511,176 @@ function UploadFlow({
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3.5">
             {/* Step 1 — Select student & activity */}
             {step === 1 && (
               <>
-                <FieldGroup>
-                  <Field>
-                    <FieldLabel
-                      htmlFor={activityInputId}
-                      className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between"
-                    >
-                      <span>
-                        Activity{" "}
-                        <span className="text-destructive" aria-hidden="true">
-                          *
-                        </span>
-                      </span>
-                      {uploadedCount > 0 && !prefilledActivityId && activityChoice && (
-                        <span className="text-[11px] font-normal text-primary flex items-center gap-1 normal-case tracking-normal">
-                          <CheckCircle2Icon className="size-3" />
-                          Retained from batch
-                        </span>
-                      )}
-                    </FieldLabel>
-                    <FieldContent>
-                      {prefilledActivityId ? (
-                        <div
-                          id={activityInputId}
-                          role="textbox"
-                          aria-readonly="true"
-                          tabIndex={0}
-                          className="flex items-center justify-between gap-2 h-10 sm:h-9 px-3.5 rounded-lg sm:rounded-xl border border-border bg-muted/40 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                          aria-label={`Pre-selected activity: ${
-                            selectedActivity?.target_text ?? "Loading activity..."
-                          }`}
-                        >
-                          <span className="truncate font-medium">
-                            {selectedActivity?.target_text ??
-                              "Loading activity\u2026"}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className="text-[11px] font-medium shrink-0 bg-background/60 border-border/80"
-                          >
-                            Pre-selected
-                          </Badge>
-                        </div>
-                      ) : (
-                        <Combobox
-                          value={activityChoice}
-                          onValueChange={setActivityChoice}
-                          itemToStringLabel={(c: Choice | null) => c?.label ?? ""}
-                          itemToStringValue={(c: Choice | null) => c?.value ?? ""}
-                          isItemEqualToValue={(a: Choice, b: Choice) =>
-                            a?.value === b?.value
-                          }
-                        >
-                          <ComboboxInput
-                            id={activityInputId}
-                            aria-required="true"
-                            placeholder="Search activities..."
-                            className="h-10 sm:h-9 text-base sm:text-sm rounded-lg sm:rounded-xl"
-                          />
-                          <ComboboxContent>
-                            <ComboboxList>
-                              <ComboboxEmpty>
-                                No activities found
-                              </ComboboxEmpty>
-                              {activityChoices.map((choice) => (
-                                <ComboboxItem
-                                  key={choice.value}
-                                  value={choice}
-                                  className="py-2.5 px-3"
-                                >
-                                  <span className="truncate">
-                                    {choice.label}
-                                  </span>
-                                </ComboboxItem>
-                              ))}
-                            </ComboboxList>
-                          </ComboboxContent>
-                        </Combobox>
-                      )}
-                    </FieldContent>
-                  </Field>
-                </FieldGroup>
-
-                <FieldGroup>
-                  <Field>
-                    <FieldLabel
-                      htmlFor={studentInputId}
-                      className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                    >
-                      Student{" "}
+                <Field className="gap-1.5">
+                  <FieldLabel
+                    htmlFor={activityInputId}
+                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between"
+                  >
+                    <span>
+                      Activity{" "}
                       <span className="text-destructive" aria-hidden="true">
                         *
                       </span>
-                    </FieldLabel>
-                    <FieldContent>
-                      {prefilledStudentId ? (
-                        <div
+                    </span>
+                    {uploadedCount > 0 && !prefilledActivityId && activityChoice && (
+                      <span className="text-[11px] font-normal text-primary flex items-center gap-1 normal-case tracking-normal">
+                        <CheckCircle2Icon className="size-3" />
+                        Retained from batch
+                      </span>
+                    )}
+                  </FieldLabel>
+                  <FieldContent>
+                    {prefilledActivityId ? (
+                      <div
+                        id={activityInputId}
+                        role="textbox"
+                        aria-readonly="true"
+                        tabIndex={0}
+                        className="flex items-center justify-between gap-2 h-10 sm:h-9 px-3.5 rounded-lg sm:rounded-xl border border-border bg-muted/40 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        aria-label={`Pre-selected activity: ${
+                          selectedActivity?.target_text ?? "Loading activity..."
+                        }`}
+                      >
+                        <span className="truncate font-medium">
+                          {selectedActivity?.target_text ??
+                            "Loading activity\u2026"}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className="text-[11px] font-medium shrink-0 bg-background/60 border-border/80"
+                        >
+                          Pre-selected
+                        </Badge>
+                      </div>
+                    ) : (
+                      <Combobox
+                        items={activityChoices}
+                        value={activityChoice}
+                        onValueChange={setActivityChoice}
+                        itemToStringLabel={(c: Choice | null) => c?.label ?? ""}
+                        itemToStringValue={(c: Choice | null) => c?.value ?? ""}
+                        isItemEqualToValue={(a: Choice, b: Choice) =>
+                          a?.value === b?.value
+                        }
+                      >
+                        <ComboboxInput
+                          id={activityInputId}
+                          aria-required="true"
+                          placeholder="Search activities..."
+                          className="h-10 sm:h-9 text-base sm:text-sm rounded-lg sm:rounded-xl"
+                        />
+                        <ComboboxContent>
+                          <ComboboxList>
+                            <ComboboxEmpty>
+                              No activities found
+                            </ComboboxEmpty>
+                            {activityChoices.map((choice) => (
+                              <ComboboxItem
+                                key={choice.value}
+                                value={choice}
+                                className="py-2.5 px-3"
+                              >
+                                <span className="truncate">
+                                  {choice.label}
+                                </span>
+                              </ComboboxItem>
+                            ))}
+                          </ComboboxList>
+                        </ComboboxContent>
+                      </Combobox>
+                    )}
+                  </FieldContent>
+                </Field>
+
+                <Field className="gap-1.5">
+                  <FieldLabel
+                    htmlFor={studentInputId}
+                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
+                    Student{" "}
+                    <span className="text-destructive" aria-hidden="true">
+                      *
+                    </span>
+                  </FieldLabel>
+                  <FieldContent>
+                    {prefilledStudentId ? (
+                      <div
+                        id={studentInputId}
+                        role="textbox"
+                        aria-readonly="true"
+                        tabIndex={0}
+                        className="flex items-center justify-between gap-2 h-10 sm:h-9 px-3.5 rounded-lg sm:rounded-xl border border-border bg-muted/40 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        aria-label={`Pre-selected student: ${
+                          selectedStudent?.full_name ?? "Loading student..."
+                        }`}
+                      >
+                        <span className="truncate font-medium">
+                          {selectedStudent?.full_name ??
+                            "Loading student\u2026"}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className="text-[11px] font-medium shrink-0 bg-background/60 border-border/80"
+                        >
+                          Pre-selected
+                        </Badge>
+                      </div>
+                    ) : (
+                      <Combobox
+                        items={studentChoices}
+                        value={studentChoice}
+                        onValueChange={setStudentChoice}
+                        itemToStringLabel={(c: Choice | null) => c?.label ?? ""}
+                        itemToStringValue={(c: Choice | null) => c?.value ?? ""}
+                        isItemEqualToValue={(a: Choice, b: Choice) =>
+                          a?.value === b?.value
+                        }
+                      >
+                        <ComboboxInput
                           id={studentInputId}
-                          role="textbox"
-                          aria-readonly="true"
-                          tabIndex={0}
-                          className="flex items-center justify-between gap-2 h-10 sm:h-9 px-3.5 rounded-lg sm:rounded-xl border border-border bg-muted/40 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                          aria-label={`Pre-selected student: ${
-                            selectedStudent?.full_name ?? "Loading student..."
-                          }`}
-                        >
-                          <span className="truncate font-medium">
-                            {selectedStudent?.full_name ??
-                              "Loading student\u2026"}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className="text-[11px] font-medium shrink-0 bg-background/60 border-border/80"
-                          >
-                            Pre-selected
-                          </Badge>
-                        </div>
-                      ) : (
-                        <Combobox
-                          value={studentChoice}
-                          onValueChange={setStudentChoice}
-                          itemToStringLabel={(c: Choice | null) => c?.label ?? ""}
-                          itemToStringValue={(c: Choice | null) => c?.value ?? ""}
-                          isItemEqualToValue={(a: Choice, b: Choice) =>
-                            a?.value === b?.value
-                          }
-                        >
-                          <ComboboxInput
-                            id={studentInputId}
-                            aria-required="true"
-                            placeholder="Search students..."
-                            className="h-10 sm:h-9 text-base sm:text-sm rounded-lg sm:rounded-xl"
-                          />
-                          <ComboboxContent>
-                            <ComboboxList>
-                              <ComboboxEmpty>
-                                No students found
-                              </ComboboxEmpty>
-                              {studentChoices.map((choice) => (
-                                <ComboboxItem
-                                  key={choice.value}
-                                  value={choice}
-                                  className="py-2.5 px-3"
-                                >
-                                  <span className="truncate">
-                                    {choice.label}
+                          aria-required="true"
+                          placeholder="Search students..."
+                          className="h-10 sm:h-9 text-base sm:text-sm rounded-lg sm:rounded-xl"
+                        />
+                        <ComboboxContent>
+                          <ComboboxList>
+                            <ComboboxEmpty>
+                              No students found
+                            </ComboboxEmpty>
+                            {studentChoices.map((choice) => (
+                              <ComboboxItem
+                                key={choice.value}
+                                value={choice}
+                                className="py-2.5 px-3"
+                              >
+                                <span className="truncate">
+                                  {choice.label}
+                                </span>
+                                {choice.sublabel && (
+                                  <span className="text-[11px] text-muted-foreground ml-auto shrink-0 font-medium">
+                                    {choice.sublabel}
                                   </span>
-                                  {choice.sublabel && (
-                                    <span className="text-[11px] text-muted-foreground ml-auto shrink-0 font-medium">
-                                      {choice.sublabel}
-                                    </span>
-                                  )}
-                                </ComboboxItem>
-                              ))}
-                            </ComboboxList>
-                          </ComboboxContent>
-                        </Combobox>
-                      )}
-                    </FieldContent>
-                  </Field>
-                </FieldGroup>
+                                )}
+                              </ComboboxItem>
+                            ))}
+                          </ComboboxList>
+                        </ComboboxContent>
+                      </Combobox>
+                    )}
+                  </FieldContent>
+                </Field>
 
                 {/* Duplicate Submission Warning Banner (Step 1) */}
                 {isDuplicateSubmission && (
                   <div
-                    role="status"
-                    className="flex items-start gap-2.5 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs animate-in fade-in duration-150"
+                    role="alert"
+                    className="flex items-start gap-2.5 p-3 rounded-xl border border-warning/30 bg-warning/10 text-warning-foreground text-xs animate-in fade-in duration-150 motion-reduce:animate-none"
                   >
-                    <AlertCircleIcon className="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <AlertCircleIcon className="size-4 text-warning shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
                       <p className="font-semibold text-foreground">
                         Worksheet already uploaded this session
@@ -761,7 +759,7 @@ function UploadFlow({
                   </p>
 
                   {/* Dual Action Triggers */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-xs mt-4">
+                  <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-2 w-full max-w-xs mt-4">
                     <Button
                       type="button"
                       variant="default"
@@ -802,9 +800,10 @@ function UploadFlow({
                     onClick={() => setShowTips((prev) => !prev)}
                     className="w-full flex items-center justify-between px-3.5 py-2 hover:bg-muted/50 transition-colors text-left font-medium text-foreground cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     aria-expanded={showTips}
+                    aria-controls={photoTipsId}
                   >
                     <div className="flex items-center gap-2">
-                      <SparklesIcon className="size-3.5 text-primary shrink-0" />
+                      <LightbulbIcon className="size-3.5 text-primary shrink-0" />
                       <span className="text-xs font-semibold">Photo quality tips</span>
                     </div>
                     <div className="flex items-center gap-1 text-muted-foreground text-xs font-normal">
@@ -817,7 +816,7 @@ function UploadFlow({
                     </div>
                   </button>
                   {showTips && (
-                    <div className="px-3.5 pb-3 pt-1 border-t border-border/40 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs animate-in fade-in-50 duration-150">
+                    <div id={photoTipsId} className="px-3.5 pb-3 pt-1 border-t border-border/40 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs animate-in fade-in-50 duration-150 motion-reduce:animate-none">
                       <div className="flex items-start gap-2 p-1.5 rounded-lg bg-background/60 dark:bg-muted/30">
                         <Scan className="size-4 text-primary shrink-0 mt-0.5" />
                         <div>
@@ -874,10 +873,10 @@ function UploadFlow({
                 {/* Duplicate Submission Advisory on Step 3 */}
                 {isDuplicateSubmission && (
                   <div
-                    role="status"
-                    className="flex items-start gap-2.5 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs animate-in fade-in duration-150"
+                    role="alert"
+                    className="flex items-start gap-2.5 p-3 rounded-xl border border-warning/30 bg-warning/10 text-warning-foreground text-xs animate-in fade-in duration-150 motion-reduce:animate-none"
                   >
-                    <AlertCircleIcon className="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <AlertCircleIcon className="size-4 text-warning shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
                       <p className="font-semibold text-foreground">
                         Worksheet already uploaded this session
@@ -888,23 +887,6 @@ function UploadFlow({
                     </div>
                   </div>
                 )}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50 text-xs">
-                  <div className="space-y-0.5 min-w-0 pr-2">
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                      Submitting for
-                    </p>
-                    <p className="font-semibold text-foreground text-sm truncate">
-                      {selectedStudent?.full_name ?? "Selected Student"}
-                    </p>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="text-xs font-medium border-border/80 bg-background max-w-[200px] truncate shrink-0"
-                    title={selectedActivity?.target_text ?? "Activity"}
-                  >
-                    {selectedActivity?.target_text ?? "Activity"}
-                  </Badge>
-                </div>
 
                 <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -973,7 +955,7 @@ function UploadFlow({
                     <>
                       <Button
                         variant="outline"
-                        onClick={() => setStep(3)}
+                        onClick={() => setStep(2)}
                         className="border-destructive/30 hover:bg-destructive/10 text-destructive shrink-0 h-10 sm:h-9 px-3.5 text-xs font-medium cursor-pointer"
                       >
                         Back to Capture
@@ -1016,8 +998,8 @@ function UploadFlow({
 
             {/* Step 5 — Success & Continuous Class Upload Flow */}
             {step === 5 && (
-              <div className="flex flex-col items-center justify-center py-6 text-center space-y-4 animate-in fade-in-50 zoom-in-95 duration-200">
-                <div className="flex size-14 sm:size-16 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-900 shadow-warm">
+              <div className="flex flex-col items-center justify-center py-6 text-center space-y-4 animate-in fade-in-50 zoom-in-95 duration-200 motion-reduce:animate-none">
+                <div className="flex size-14 sm:size-16 items-center justify-center rounded-2xl bg-success/10 text-success border border-success/20 shadow-warm">
                   <CheckCircle2Icon className="size-8 sm:size-9" />
                 </div>
 
@@ -1040,7 +1022,7 @@ function UploadFlow({
                 <div className="flex items-center gap-2">
                   <Badge
                     variant="outline"
-                    className="text-xs font-semibold px-2.5 py-0.5 bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-900"
+                    className="text-xs font-semibold px-2.5 py-0.5 bg-success/10 text-success border-success/30"
                   >
                     <Hash className="size-3 mr-1" />
                     {uploadedCount} {uploadedCount === 1 ? "worksheet" : "worksheets"} uploaded this session
@@ -1053,7 +1035,7 @@ function UploadFlow({
                     type="button"
                     variant="default"
                     onClick={handleNextUpload}
-                    className="h-10 sm:h-9 text-xs font-medium gap-1.5 w-full shadow-warm bg-primary hover:bg-brand-700 text-primary-foreground cursor-pointer"
+                    className="h-10 sm:h-9 text-xs font-medium gap-1.5 w-full shadow-warm bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
                   >
                     <Plus className="size-3.5" />
                     Upload Next Student
@@ -1121,7 +1103,7 @@ function UploadFlow({
               ref={submitButtonRef}
               disabled={uploadMutation.isPending}
               onClick={handleSubmit}
-              className="gap-2 h-10 sm:h-9 px-5 text-xs sm:text-sm font-semibold shadow-warm cursor-pointer bg-primary hover:bg-brand-700 text-primary-foreground"
+              className="gap-2 h-10 sm:h-9 px-5 text-xs sm:text-sm font-semibold shadow-warm cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               <CheckCircle2Icon className="size-4" />
               Submit

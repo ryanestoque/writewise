@@ -31,7 +31,7 @@ import {
   Camera,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
+  Eye,
   Info,
 } from "lucide-react";
 
@@ -465,7 +465,7 @@ export function SubmissionDetailDialog({
                 {/* Selected criterion overlay badge */}
                 {selectedCriterion && (
                   <div className="absolute top-2.5 left-2.5 bg-background/90 dark:bg-card/90 backdrop-blur-xs px-2.5 py-1 rounded-lg border border-brand-200 dark:border-brand-900 shadow-xs text-xs font-medium text-brand-700 dark:text-brand-300 flex items-center gap-1.5">
-                    <Sparkles className="size-3.5 text-brand-600" />
+                    <Eye className="size-3.5 text-brand-600" />
                     <span>Viewing: {selectedCriterion}</span>
                   </div>
                 )}
@@ -659,7 +659,7 @@ export function SubmissionDetailDialog({
                         {activeCriterionInfo.rubricGoal}
                       </p>
                       <div className="pt-1.5 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1.5 text-xs text-brand-800 dark:text-brand-300">
-                        <Sparkles className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" />
+                        <Eye className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" />
                         <span className="leading-normal">
                           <strong>Coaching tip:</strong> {activeCriterionInfo.coachingTip}
                         </span>

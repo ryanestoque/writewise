@@ -81,7 +81,6 @@ import {
   ArrowUpDown,
   CheckCircle2,
   Clock,
-  Sparkles,
   GraduationCap,
   Camera,
   History,
@@ -196,7 +195,7 @@ interface ScoreBandInfo {
   band: string;
   className: string;
   dotColor: string;
-  icon: typeof Sparkles;
+  icon: typeof CheckCircle2;
   description: string;
 }
 
@@ -207,7 +206,7 @@ function getScoreBandLabel(score: number | null | undefined): ScoreBandInfo {
       band: "Scored",
       className: "bg-muted/50 text-muted-foreground border-border",
       dotColor: "bg-muted-foreground",
-      icon: Sparkles,
+      icon: CheckCircle2,
       description: "Diagnostic assessment recorded.",
     };
   }
@@ -536,7 +535,7 @@ function ScoringGuidePopover() {
         <PopoverHeader>
           <div className="flex items-center gap-2">
             <div className="size-7 rounded-lg bg-brand-50 dark:bg-brand-950 flex items-center justify-center text-brand-600 dark:text-brand-400">
-              <Sparkles className="size-4" />
+              <HelpCircle className="size-4" />
             </div>
             <div>
               <PopoverTitle className="text-sm font-semibold text-foreground">

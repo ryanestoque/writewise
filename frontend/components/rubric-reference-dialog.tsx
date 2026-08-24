@@ -10,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  SparklesIcon,
+  PenToolIcon,
   CompassIcon,
   SpaceIcon,
   MoveVerticalIcon,
@@ -31,7 +31,7 @@ const criteria = [
     name: "Letter Formation",
     engine: "CNN",
     engineType: "neural",
-    icon: SparklesIcon,
+    icon: PenToolIcon,
     target: "Clear loops, proper cursive joins, legible character structure",
     description:
       "Assesses the stroke geometry, loop closure, and characteristic cursive joinery of individual characters against the CCC cursive benchmark dataset.",

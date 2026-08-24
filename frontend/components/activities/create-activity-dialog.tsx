@@ -28,7 +28,8 @@ import {
   ClipboardList,
   Home,
   AlertTriangle,
-  Sparkles,
+  Lightbulb,
+  Eye,
   Copy,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -210,7 +211,7 @@ export function CreateActivityDialog({
                 {/* Suggestions / Prompt starters */}
                 <div className="mt-2 space-y-1.5">
                   <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                    <Sparkles className="size-3.5 text-brand-600 dark:text-brand-400" />
+                    <Lightbulb className="size-3.5 text-brand-600 dark:text-brand-400" />
                     <span>Quick prompt suggestions:</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
@@ -233,7 +234,7 @@ export function CreateActivityDialog({
                   <div className="space-y-1.5 pt-2">
                     <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
                       <span className="flex items-center gap-1.5">
-                        <Sparkles className="size-3.5 text-brand-600 dark:text-brand-400" />
+                        <Eye className="size-3.5 text-brand-600 dark:text-brand-400" />
                         <span>Cursive Worksheet Preview</span>
                       </span>
                       <span className="text-xs text-muted-foreground font-medium">

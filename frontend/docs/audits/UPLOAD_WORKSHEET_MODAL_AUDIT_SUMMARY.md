@@ -80,13 +80,36 @@ Following the audit findings, full-stack remediations were implemented to resolv
 
 ---
 
+### G. Comprehensive Technical & Token Remediations (`/impeccable harden`, `colorize`, `adapt`, `clarify`, `polish`)
+1. **ARIA Controls & Panel Linkage (WCAG 4.1.2)**:
+   - Linked the photo quality tips button toggle (`aria-controls={photoTipsId}`) directly to the collapsible tips panel (`id={photoTipsId}`) generated via `useId()`.
+2. **Alert Live-Region Demarcation (WCAG 4.1.3)**:
+   - Switched duplicate submission advisory banners from `role="status"` to `role="alert"` to prevent live-region collisions with the persistent step progress announcer.
+3. **Semantic Design Token Alignment (`/impeccable colorize`)**:
+   - Added `--warning`, `--warning-foreground`, `--success`, and `--success-foreground` design tokens to `@theme inline`, `:root`, and `.dark` in `globals.css`.
+   - Replaced all hardcoded `amber-*` and `emerald-*` color literals with semantic token classes (`bg-warning/10`, `text-warning-foreground`, `text-warning`, `bg-success/10`, `text-success`, `border-success/20`, etc.).
+   - Standardized submit and action button hover states with `hover:bg-primary/90` for theme symmetry.
+4. **Mobile Camera Trigger Ergonomics (`/impeccable adapt`)**:
+   - Updated the Step 2 action button grid to transition at `min-[480px]:grid-cols-2` rather than `sm:` (640px), preventing cramped 1-column layouts on modern 400–500px mobile screens.
+5. **Dialog Close Focus Ring Hardening**:
+   - Added explicit `focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background` to `DialogContent`'s close trigger in `dialog.tsx`.
+6. **Stepper Accessible Name Simplification (`/impeccable clarify`)**:
+   - Streamlined completed step button `aria-label` to `${s.label} — Step ${s.step}, completed`.
+7. **Quality Gate Error Recovery Routing (`/impeccable harden`)**:
+   - Aligned the "Back to Capture" action button in Step 4 error states to route directly to `setStep(2)` (Capture) when an image quality rejection occurs.
+8. **Reduced Motion Hardening (`/impeccable polish`)**:
+   - Appended `motion-reduce:animate-none` across all inner animated subpanels (accordion, alert banners, and success state).
+
+---
+
 ## 4. Modified Files Reference
 
 | File | Type | Changes Made |
 |---|---|---|
-| [`frontend/components/ui/dialog.tsx`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/frontend/components/ui/dialog.tsx) | UI Primitive | Aligned border radius to `rounded-2xl`, applied `shadow-warm border border-border`, and ensured consistent responsive modal styling. |
-| [`frontend/components/quick-upload-dialog.tsx`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/frontend/components/quick-upload-dialog.tsx) | Upload Modal | Implemented batch session activity carry-forward, duplicate upload warnings, mobile-first dropzone ordering, collapsible tips, enhanced submit CTA, and friendly teacher copy. |
-| [`frontend/docs/audits/UPLOAD_WORKSHEET_MODAL_AUDIT_SUMMARY.md`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/frontend/docs/audits/UPLOAD_WORKSHEET_MODAL_AUDIT_SUMMARY.md) | Audit Documentation | Updated documentation of technical audit, design critique, and batch-upload UX remediations. |
+| [`frontend/app/globals.css`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/frontend/app/globals.css) | Global Tokens | Registered `--warning`, `--warning-foreground`, `--success`, and `--success-foreground` across `@theme inline`, `:root`, and `.dark`. |
+| [`frontend/components/ui/dialog.tsx`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/frontend/components/ui/dialog.tsx) | UI Primitive | Aligned border radius to `rounded-2xl`, added explicit high-contrast focus ring to close button. |
+| [`frontend/components/quick-upload-dialog.tsx`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/frontend/components/quick-upload-dialog.tsx) | Upload Modal | Implemented ARIA controls linkage, `role="alert"` semantics, semantic warning/success tokens, `min-[480px]` camera button grid, and simplified stepper labels. |
+| [`frontend/docs/audits/UPLOAD_WORKSHEET_MODAL_AUDIT_SUMMARY.md`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/frontend/docs/audits/UPLOAD_WORKSHEET_MODAL_AUDIT_SUMMARY.md) | Audit Documentation | Full documentation of technical audit, design critique, and batch-upload UX remediations. |
 
 ---
 
