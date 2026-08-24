@@ -149,8 +149,8 @@ export default function ActivityDetailPage({
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
+      <div className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
+        <div>
           <Link
             href="/activities"
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
@@ -187,7 +187,7 @@ export default function ActivityDetailPage({
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
         <Skeleton className="h-4 w-32" />
         <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-6 space-y-4 shadow-warm">
           <Skeleton className="h-6 w-2/3" />
@@ -207,8 +207,8 @@ export default function ActivityDetailPage({
 
   if (!activity) {
     return (
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
+      <div className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
+        <div>
           <Link
             href="/activities"
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
@@ -253,7 +253,7 @@ export default function ActivityDetailPage({
   const wordCount = getWordCount(activity.target_text);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-5 sm:space-y-6 pb-20 sm:pb-16 px-1 sm:px-0">
+    <div className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
       {/* Back Link */}
       <Link
         href="/activities"
@@ -335,7 +335,7 @@ export default function ActivityDetailPage({
         </div>
 
         {submissionsLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
@@ -371,7 +371,7 @@ export default function ActivityDetailPage({
             </Button>
           </div>
         ) : submissions && submissions.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
             {submissions.map((submission) => (
               <SubmissionCard key={submission.id} submission={submission} />
             ))}
