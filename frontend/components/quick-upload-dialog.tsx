@@ -409,10 +409,10 @@ function UploadFlow({
             <UploadCloudIcon className="size-5" />
           </div>
           <div>
-            <DialogTitle className="text-base font-semibold text-foreground">
+            <DialogTitle className="text-base sm:text-lg font-semibold text-foreground">
               Upload Student Worksheet
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+            <DialogDescription className="text-sm text-muted-foreground mt-0.5">
               Upload student cursive worksheets for automated assessment and feedback.
             </DialogDescription>
           </div>
@@ -448,7 +448,7 @@ function UploadFlow({
                       >
                         {isCompleted ? <CheckIcon className="size-3.5" /> : s.step}
                       </div>
-                      <span className="text-xs truncate font-medium text-foreground group-hover:text-primary transition-colors">
+                      <span className="text-xs sm:text-sm truncate font-medium text-foreground group-hover:text-primary transition-colors">
                         {s.label}
                       </span>
                     </button>
@@ -466,7 +466,7 @@ function UploadFlow({
                         {isCompleted ? <CheckIcon className="size-3.5" /> : s.step}
                       </div>
                       <span
-                        className={`text-xs truncate font-medium ${
+                        className={`text-xs sm:text-sm truncate font-medium ${
                           isCurrent
                             ? "text-foreground font-semibold"
                             : isCompleted
@@ -527,7 +527,7 @@ function UploadFlow({
                       </span>
                     </span>
                     {uploadedCount > 0 && !prefilledActivityId && activityChoice && (
-                      <span className="text-[11px] font-normal text-primary flex items-center gap-1 normal-case tracking-normal">
+                      <span className="text-xs font-normal text-primary flex items-center gap-1 normal-case tracking-normal">
                         <CheckCircle2Icon className="size-3" />
                         Retained from batch
                       </span>
@@ -551,7 +551,7 @@ function UploadFlow({
                         </span>
                         <Badge
                           variant="outline"
-                          className="text-[11px] font-medium shrink-0 bg-background/60 border-border/80"
+                          className="text-xs font-medium shrink-0 bg-background/60 border-border/80"
                         >
                           Pre-selected
                         </Badge>
@@ -624,7 +624,7 @@ function UploadFlow({
                         </span>
                         <Badge
                           variant="outline"
-                          className="text-[11px] font-medium shrink-0 bg-background/60 border-border/80"
+                          className="text-xs font-medium shrink-0 bg-background/60 border-border/80"
                         >
                           Pre-selected
                         </Badge>
@@ -661,7 +661,7 @@ function UploadFlow({
                                   {choice.label}
                                 </span>
                                 {choice.sublabel && (
-                                  <span className="text-[11px] text-muted-foreground ml-auto shrink-0 font-medium">
+                                  <span className="text-xs text-muted-foreground ml-auto shrink-0 font-medium">
                                     {choice.sublabel}
                                   </span>
                                 )}
@@ -682,10 +682,10 @@ function UploadFlow({
                   >
                     <AlertCircleIcon className="size-4 text-warning shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
-                      <p className="font-semibold text-foreground">
+                      <p className="font-semibold text-foreground text-xs sm:text-sm">
                         Worksheet already uploaded this session
                       </p>
-                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      <p className="text-xs text-muted-foreground leading-relaxed">
                         A submission for <strong className="text-foreground font-medium">{selectedStudent?.full_name ?? "this student"}</strong> was already recorded for this activity. Submitting again will add another submission attempt.
                       </p>
                     </div>
@@ -751,10 +751,10 @@ function UploadFlow({
                   <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-2.5">
                     <CameraIcon className="size-6" />
                   </div>
-                  <p className="text-xs font-semibold text-foreground">
+                  <p className="text-sm sm:text-base font-semibold text-foreground">
                     Upload or capture worksheet photo
                   </p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                     Supports JPEG or PNG (up to 15MB) &middot; Drag &amp; drop or press Enter
                   </p>
 
@@ -763,7 +763,7 @@ function UploadFlow({
                     <Button
                       type="button"
                       variant="default"
-                      className="h-10 sm:h-9 text-xs font-medium gap-1.5 w-full shadow-warm cursor-pointer"
+                      className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
                         cameraInputRef.current?.click();
@@ -775,7 +775,7 @@ function UploadFlow({
                     <Button
                       type="button"
                       variant="outline"
-                      className="h-10 sm:h-9 text-xs font-medium gap-1.5 w-full bg-background hover:bg-muted cursor-pointer"
+                      className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full bg-background hover:bg-muted cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
                         fileInputRef.current?.click();
@@ -788,8 +788,8 @@ function UploadFlow({
                 </div>
 
                 {/* Subtle Privacy Notice Footnote */}
-                <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground pt-0.5">
-                  <ShieldCheckIcon className="size-3.5 text-primary/70 shrink-0" />
+                <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground pt-0.5">
+                  <ShieldCheckIcon className="size-4 text-primary/70 shrink-0" />
                   <span>Location &amp; device metadata stripped automatically for student privacy</span>
                 </div>
 
@@ -798,15 +798,15 @@ function UploadFlow({
                   <button
                     type="button"
                     onClick={() => setShowTips((prev) => !prev)}
-                    className="w-full flex items-center justify-between px-3.5 py-2 hover:bg-muted/50 transition-colors text-left font-medium text-foreground cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-muted/50 transition-colors text-left font-medium text-foreground cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     aria-expanded={showTips}
                     aria-controls={photoTipsId}
                   >
                     <div className="flex items-center gap-2">
-                      <LightbulbIcon className="size-3.5 text-primary shrink-0" />
-                      <span className="text-xs font-semibold">Photo quality tips</span>
+                      <LightbulbIcon className="size-4 text-primary shrink-0" />
+                      <span className="text-xs sm:text-sm font-semibold">Photo quality tips</span>
                     </div>
-                    <div className="flex items-center gap-1 text-muted-foreground text-xs font-normal">
+                    <div className="flex items-center gap-1 text-muted-foreground text-xs font-medium">
                       <span>{showTips ? "Hide tips" : "Show tips"}</span>
                       <ChevronDownIcon
                         className={`size-3.5 transition-transform duration-200 ${
@@ -816,47 +816,47 @@ function UploadFlow({
                     </div>
                   </button>
                   {showTips && (
-                    <div id={photoTipsId} className="px-3.5 pb-3 pt-1 border-t border-border/40 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs animate-in fade-in-50 duration-150 motion-reduce:animate-none">
-                      <div className="flex items-start gap-2 p-1.5 rounded-lg bg-background/60 dark:bg-muted/30">
+                    <div id={photoTipsId} className="px-3.5 pb-3.5 pt-1.5 border-t border-border/40 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs animate-in fade-in-50 duration-150 motion-reduce:animate-none">
+                      <div className="flex items-start gap-2.5 p-2 rounded-lg bg-background/60 dark:bg-muted/30">
                         <Scan className="size-4 text-primary shrink-0 mt-0.5" />
                         <div>
-                          <p className="font-semibold text-foreground text-[11.5px]">
+                          <p className="font-semibold text-foreground text-xs sm:text-sm">
                             90° Overhead Angle
                           </p>
-                          <p className="text-[10.5px] text-muted-foreground leading-tight">
+                          <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
                             Hold camera flat directly above the paper.
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-start gap-2 p-1.5 rounded-lg bg-background/60 dark:bg-muted/30">
+                      <div className="flex items-start gap-2.5 p-2 rounded-lg bg-background/60 dark:bg-muted/30">
                         <SunMedium className="size-4 text-primary shrink-0 mt-0.5" />
                         <div>
-                          <p className="font-semibold text-foreground text-[11.5px]">
+                          <p className="font-semibold text-foreground text-xs sm:text-sm">
                             Even Light
                           </p>
-                          <p className="text-[10.5px] text-muted-foreground leading-tight">
+                          <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
                             Avoid shadows and strong glare on words.
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-start gap-2 p-1.5 rounded-lg bg-background/60 dark:bg-muted/30">
+                      <div className="flex items-start gap-2.5 p-2 rounded-lg bg-background/60 dark:bg-muted/30">
                         <AlignJustify className="size-4 text-primary shrink-0 mt-0.5" />
                         <div>
-                          <p className="font-semibold text-foreground text-[11.5px]">
+                          <p className="font-semibold text-foreground text-xs sm:text-sm">
                             Clear Ruling
                           </p>
-                          <p className="text-[10.5px] text-muted-foreground leading-tight">
+                          <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
                             Keep headline, midline &amp; baseline visible.
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-start gap-2 p-1.5 rounded-lg bg-background/60 dark:bg-muted/30">
+                      <div className="flex items-start gap-2.5 p-2 rounded-lg bg-background/60 dark:bg-muted/30">
                         <Focus className="size-4 text-primary shrink-0 mt-0.5" />
                         <div>
-                          <p className="font-semibold text-foreground text-[11.5px]">
+                          <p className="font-semibold text-foreground text-xs sm:text-sm">
                             Sharp Focus
                           </p>
-                          <p className="text-[10.5px] text-muted-foreground leading-tight">
+                          <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
                             Tap screen on cursive ink before snapping.
                           </p>
                         </div>
@@ -878,10 +878,10 @@ function UploadFlow({
                   >
                     <AlertCircleIcon className="size-4 text-warning shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
-                      <p className="font-semibold text-foreground">
+                      <p className="font-semibold text-foreground text-xs sm:text-sm">
                         Worksheet already uploaded this session
                       </p>
-                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      <p className="text-xs text-muted-foreground leading-relaxed">
                         A submission for <strong className="text-foreground font-medium">{selectedStudent?.full_name ?? "this student"}</strong> was already uploaded for this activity. Submitting again will add another submission attempt.
                       </p>
                     </div>
@@ -893,7 +893,7 @@ function UploadFlow({
                     <div className="flex items-center gap-2.5 min-w-0">
                       <FileImageIcon className="size-5 text-primary shrink-0" />
                       <div className="truncate">
-                        <p className="text-xs font-semibold truncate text-foreground">
+                        <p className="text-sm font-semibold truncate text-foreground">
                           {selectedFile.name}
                         </p>
                         <p className="text-xs text-muted-foreground font-mono tabular-nums">
@@ -939,7 +939,7 @@ function UploadFlow({
                 <div className="flex items-start gap-3">
                   <AlertCircleIcon className="size-5 shrink-0 mt-0.5" />
                   <div className="space-y-1 min-w-0">
-                    <p className="text-xs font-semibold text-destructive">
+                    <p className="text-sm font-semibold text-destructive">
                       {isQualityGateError(uploadError.code)
                         ? "Photo Quality Check"
                         : "Upload Failed"}
@@ -956,7 +956,7 @@ function UploadFlow({
                       <Button
                         variant="outline"
                         onClick={() => setStep(2)}
-                        className="border-destructive/30 hover:bg-destructive/10 text-destructive shrink-0 h-10 sm:h-9 px-3.5 text-xs font-medium cursor-pointer"
+                        className="border-destructive/30 hover:bg-destructive/10 text-destructive shrink-0 h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium cursor-pointer"
                       >
                         Back to Capture
                       </Button>
@@ -966,7 +966,7 @@ function UploadFlow({
                         onClick={() => {
                           handleClearFile();
                         }}
-                        className="shrink-0 h-10 sm:h-9 px-3.5 text-xs font-medium gap-1.5 cursor-pointer"
+                        className="shrink-0 h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
                       >
                         <CameraIcon className="size-3.5" />
                         Retake Photo
@@ -977,7 +977,7 @@ function UploadFlow({
                       <Button
                         variant="outline"
                         onClick={() => setStep(3)}
-                        className="border-destructive/30 hover:bg-destructive/10 text-destructive shrink-0 h-10 sm:h-9 px-3.5 text-xs font-medium cursor-pointer"
+                        className="border-destructive/30 hover:bg-destructive/10 text-destructive shrink-0 h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium cursor-pointer"
                       >
                         Back to Review
                       </Button>
@@ -985,7 +985,7 @@ function UploadFlow({
                         ref={retryButtonRef}
                         variant="destructive"
                         onClick={handleSubmit}
-                        className="shrink-0 h-10 sm:h-9 px-3.5 text-xs font-medium gap-1.5 cursor-pointer"
+                        className="shrink-0 h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
                       >
                         <RotateCcwIcon className="size-3.5" />
                         Retry Upload
@@ -1004,10 +1004,10 @@ function UploadFlow({
                 </div>
 
                 <div className="space-y-1.5 max-w-sm">
-                  <h3 className="text-base font-semibold text-foreground tracking-tight">
+                  <h3 className="text-base sm:text-lg font-semibold text-foreground tracking-tight">
                     Worksheet Submitted!
                   </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
                     <strong className="text-foreground font-medium">
                       {lastSubmittedStudent ?? "Student"}
                     </strong>
@@ -1035,7 +1035,7 @@ function UploadFlow({
                     type="button"
                     variant="default"
                     onClick={handleNextUpload}
-                    className="h-10 sm:h-9 text-xs font-medium gap-1.5 w-full shadow-warm bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
+                    className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
                   >
                     <Plus className="size-3.5" />
                     Upload Next Student
@@ -1044,7 +1044,7 @@ function UploadFlow({
                     type="button"
                     variant="outline"
                     onClick={onClose}
-                    className="h-10 sm:h-9 text-xs font-medium w-full cursor-pointer"
+                    className="h-10 sm:h-9 text-xs sm:text-sm font-medium w-full cursor-pointer"
                   >
                     Done / View Roster
                   </Button>
@@ -1062,7 +1062,7 @@ function UploadFlow({
             <Button
               variant="outline"
               onClick={onClose}
-              className="h-10 sm:h-9 px-4 text-xs font-medium cursor-pointer"
+              className="h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
             >
               Cancel
             </Button>
@@ -1071,7 +1071,7 @@ function UploadFlow({
             <Button
               variant="outline"
               onClick={() => setStep(1)}
-              className="gap-1.5 h-10 sm:h-9 px-4 text-xs font-medium cursor-pointer"
+              className="gap-1.5 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
             >
               <ArrowLeftIcon className="size-3.5" />
               Back
@@ -1081,7 +1081,7 @@ function UploadFlow({
             <Button
               variant="outline"
               onClick={handleClearFile}
-              className="gap-1.5 h-10 sm:h-9 px-4 text-xs font-medium cursor-pointer"
+              className="gap-1.5 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
             >
               <ArrowLeftIcon className="size-3.5" />
               Back
@@ -1092,7 +1092,7 @@ function UploadFlow({
             <Button
               disabled={!canProceed}
               onClick={() => setStep(2)}
-              className="gap-2 h-10 sm:h-9 px-4 text-xs font-medium cursor-pointer"
+              className="gap-2 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
             >
               <span>Next</span>
               <ArrowRightIcon className="size-3.5" />

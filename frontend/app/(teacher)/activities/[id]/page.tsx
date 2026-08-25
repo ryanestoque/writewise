@@ -90,6 +90,7 @@ import {
   TrendingUp,
   Award,
   Check,
+  BookOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -1058,7 +1059,7 @@ export default function ActivityDetailPage({
                 {isArchived ? (
                   <Badge
                     variant="outline"
-                    className="text-xs font-semibold px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border"
+                    className="text-xs font-semibold px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border/80"
                   >
                     <Archive className="w-3.5 h-3.5 mr-1" />
                     Archived
@@ -1068,24 +1069,22 @@ export default function ActivityDetailPage({
                     variant="outline"
                     className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900"
                   >
-                    <Home className="w-3.5 h-3.5 mr-1" />
+                    <Home className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400" />
                     Take-home Activity
                   </Badge>
                 ) : (
                   <Badge
                     variant="outline"
-                    className="text-xs font-semibold px-2.5 py-0.5 bg-muted/40 text-muted-foreground border-border"
+                    className="text-xs font-semibold px-2.5 py-0.5 bg-emerald-50/70 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/70 dark:border-emerald-900/60"
                   >
+                    <BookOpen className="w-3.5 h-3.5 mr-1 text-emerald-600 dark:text-emerald-400" />
                     In-Class Activity
                   </Badge>
                 )}
 
-                <Badge
-                  variant="outline"
-                  className="text-xs font-medium px-2.5 py-0.5 bg-muted/50 text-muted-foreground border-border/70"
-                >
+                <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-muted/40 dark:bg-muted/30 px-2 py-0.5 rounded-md border border-border/50 tabular-nums">
                   {wordCount} {wordCount === 1 ? "word" : "words"}
-                </Badge>
+                </span>
 
                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                   <CalendarDays className="w-3.5 h-3.5" />

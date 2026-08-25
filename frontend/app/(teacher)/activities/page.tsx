@@ -15,7 +15,8 @@ import { CreateActivityDialog } from "@/components/activities/create-activity-di
 import { EditActivityDialog } from "@/components/activities/edit-activity-dialog";
 import { DeleteActivityDialog } from "@/components/activities/delete-activity-dialog";
 import { FloatingActionBar } from "@/components/ui/floating-action-bar";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
@@ -59,6 +60,7 @@ import {
   ArchiveRestore,
   Copy,
   Upload,
+  BookOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -142,14 +144,29 @@ export default function ActivitiesPage() {
   const activityFilterItems = useMemo<FilterPillItem<FilterType>[]>(() => {
     const items: FilterPillItem<FilterType>[] = [
       { id: "all", label: "All", count: counts.all },
-      { id: "in_class", label: "In-Class", count: counts.in_class },
-      { id: "take_home", label: "Take-Home", count: counts.take_home },
+      {
+        id: "in_class",
+        label: "In-Class",
+        count: counts.in_class,
+        disabled: counts.in_class === 0 && filterType !== "in_class",
+      },
+      {
+        id: "take_home",
+        label: "Take-Home",
+        count: counts.take_home,
+        disabled: counts.take_home === 0 && filterType !== "take_home",
+      },
     ];
     if (counts.archived > 0) {
-      items.push({ id: "archived", label: "Archived", count: counts.archived });
+      items.push({
+        id: "archived",
+        label: "Archived",
+        count: counts.archived,
+        disabled: counts.archived === 0 && filterType !== "archived",
+      });
     }
     return items;
-  }, [counts]);
+  }, [counts, filterType]);
 
   const filteredAndSortedActivities = useMemo(() => {
     if (!activities) return [];
@@ -324,6 +341,28 @@ export default function ActivitiesPage() {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
+
+      if (
+        (e.key === "c" || e.key === "C") &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !isTyping
+      ) {
+        e.preventDefault();
+        setDuplicatingActivity(null);
+        setIsCreateOpen(true);
+      }
+
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.key.toLowerCase() === "a" &&
+        !isTyping &&
+        filteredAndSortedActivities.length > 0
+      ) {
+        e.preventDefault();
+        setSelectedIds(new Set(filteredAndSortedActivities.map((a) => a.id)));
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -335,6 +374,7 @@ export default function ActivitiesPage() {
     duplicatingActivity,
     selectedIds.size,
     searchQuery,
+    filteredAndSortedActivities,
   ]);
 
   if (error) {
@@ -387,7 +427,10 @@ export default function ActivitiesPage() {
             className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer"
           >
             <Plus className="w-4 h-4 mr-1.5 shrink-0" />
-            Create Activity
+            <span>Create Activity</span>
+            <kbd className="hidden sm:inline-flex items-center justify-center ml-2 px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground/90 bg-white/20 dark:bg-white/15 rounded border border-white/30 shadow-2xs font-mono">
+              C
+            </kbd>
           </Button>
         </div>
       </div>
@@ -656,10 +699,14 @@ export default function ActivitiesPage() {
                           <input
                             type="checkbox"
                             checked={selectedIds.has(activity.id)}
-                            onChange={() => {}}
+                            onChange={(e) => {
+                              handleToggleSelect(
+                                activity.id,
+                                (e.nativeEvent as MouseEvent).shiftKey
+                              );
+                            }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleToggleSelect(activity.id, e.shiftKey);
                             }}
                             aria-label={`Select activity: ${activity.target_text.slice(0, 40)}`}
                             className="size-4 rounded border-border accent-primary cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
@@ -670,7 +717,7 @@ export default function ActivitiesPage() {
                       {isArchived ? (
                         <Badge
                           variant="outline"
-                          className="text-xs font-semibold px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border"
+                          className="text-xs font-semibold px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border/80"
                         >
                           <Archive className="w-3.5 h-3.5 mr-1" />
                           Archived
@@ -680,24 +727,22 @@ export default function ActivitiesPage() {
                           variant="outline"
                           className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900"
                         >
-                          <Home className="w-3.5 h-3.5 mr-1" />
+                          <Home className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400" />
                           Take-home
                         </Badge>
                       ) : (
                         <Badge
                           variant="outline"
-                          className="text-xs font-semibold px-2.5 py-0.5 bg-muted/40 text-muted-foreground border-border"
+                          className="text-xs font-semibold px-2.5 py-0.5 bg-emerald-50/70 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/70 dark:border-emerald-900/60"
                         >
+                          <BookOpen className="w-3.5 h-3.5 mr-1 text-emerald-600 dark:text-emerald-400" />
                           In-Class
                         </Badge>
                       )}
 
-                      <Badge
-                        variant="outline"
-                        className="text-xs font-medium px-2.5 py-0.5 bg-muted/50 text-muted-foreground border-border/70"
-                      >
+                      <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-muted/40 dark:bg-muted/30 px-2 py-0.5 rounded-md border border-border/50 tabular-nums">
                         {wordCount} {wordCount === 1 ? "word" : "words"}
-                      </Badge>
+                      </span>
                     </div>
 
                     {/* Overflow Actions Menu with mobile-friendly hit target */}
@@ -794,6 +839,8 @@ export default function ActivitiesPage() {
                   {/* Target Text Preview with Cursive Worksheet Accent & 3-line Ruling */}
                   <Link
                     href={`/activities/${activity.id}`}
+                    title={`Open activity: ${activity.target_text}`}
+                    aria-label={`Open activity: ${activity.target_text}`}
                     className="block group-hover:opacity-90 transition-opacity focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
                   >
                     <div className="relative p-3.5 sm:p-4 pb-5 sm:pb-6 rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 mb-3.5 overflow-hidden shadow-2xs">
@@ -806,21 +853,22 @@ export default function ActivitiesPage() {
                       <p className="relative z-10 font-cursive text-[34px] leading-[48px] text-foreground/90 font-normal line-clamp-3 tracking-wide break-words">
                         {activity.target_text}
                       </p>
-
                     </div>
                   </Link>
                 </div>
 
                 {/* Card Footer: Submission Progress Gauge & Actions */}
-                <div className="space-y-2.5 pt-2 border-t border-border/60">
+                <div className="space-y-2.5 pt-2.5 border-t border-border/60">
                   {/* Status header with count and timestamp */}
                   <div className="flex items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-semibold text-foreground text-xs flex items-center gap-1.5">
-                        <Inbox className="size-3.5 text-muted-foreground" />
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="font-semibold text-foreground text-xs flex items-center gap-1.5 truncate">
+                        <Inbox className="size-3.5 text-muted-foreground shrink-0" />
                         {totalStudents > 0 ? (
                           <span>
-                            {submissionCount} of {totalStudents} collected
+                            {submissionCount > totalStudents
+                              ? `${submissionCount} collected · ${totalStudents} students`
+                              : `${submissionCount} of ${totalStudents} collected`}
                           </span>
                         ) : (
                           <span>
@@ -833,14 +881,14 @@ export default function ActivitiesPage() {
                       </span>
 
                       {isFullyCollected && (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-900">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 px-2 py-0.5 rounded-md border border-brand-200/80 dark:border-brand-900 shrink-0">
                           <CheckCircle2 className="size-3" />
                           Complete
                         </span>
                       )}
                     </div>
 
-                    <span className="text-xs text-muted-foreground flex items-center gap-1.5 shrink-0">
+                    <span className="text-xs text-muted-foreground flex items-center gap-1.5 shrink-0 tabular-nums">
                       <CalendarDays className="size-3.5" />
                       {getRelativeTime(activity.created_at)}
                     </span>
@@ -863,7 +911,7 @@ export default function ActivitiesPage() {
                             >
                               {completedCount > 0 && (
                                 <div
-                                  className="bg-emerald-500 transition-all duration-300 motion-reduce:transition-none"
+                                  className="bg-brand-500 transition-all duration-300 motion-reduce:transition-none"
                                   style={{
                                     width: `${(completedCount / totalStudents) * 100}%`,
                                   }}
@@ -896,7 +944,7 @@ export default function ActivitiesPage() {
                           <div className="space-y-1.5 text-xs text-background">
                             <div className="flex items-center justify-between">
                               <span className="flex items-center gap-1.5 text-background/90">
-                                <span className="size-2 rounded-full bg-emerald-400 inline-block shrink-0" />
+                                <span className="size-2 rounded-full bg-brand-400 inline-block shrink-0" />
                                 Completed
                               </span>
                               <span className="font-semibold tabular-nums text-background">{completedCount}</span>
@@ -934,24 +982,56 @@ export default function ActivitiesPage() {
                     </TooltipProvider>
                   )}
 
-                  {/* Action Buttons Row */}
+                  {/* Clean Assessment Status Subtext */}
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
+                    <span className="flex items-center gap-1.5 truncate">
+                      <span
+                        className={`size-1.5 rounded-full shrink-0 ${
+                          processingCount > 0
+                            ? "bg-amber-500 animate-pulse"
+                            : completedCount > 0
+                            ? "bg-brand-500"
+                            : "bg-muted-foreground/50"
+                        }`}
+                      />
+                      <span className="truncate">
+                        {completedCount > 0
+                          ? `${completedCount} ${completedCount === 1 ? "worksheet" : "worksheets"} scored`
+                          : processingCount > 0
+                          ? `${processingCount} ${processingCount === 1 ? "worksheet" : "worksheets"} processing analysis`
+                          : submissionCount > 0
+                          ? `${submissionCount} collected · Ready to evaluate`
+                          : "Awaiting worksheet submissions"}
+                      </span>
+                    </span>
+                  </div>
+
+                  {/* Standardized 2-Action Button Row */}
                   <div className="flex items-center justify-between gap-2 pt-1">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => openUpload({ activityId: activity.id })}
                       className="h-8 min-h-[36px] px-2.5 text-xs font-medium border-border/80 hover:bg-brand-50 hover:text-brand-700 dark:hover:bg-brand-950/60 dark:hover:text-brand-300 rounded-lg cursor-pointer transition-colors"
+                      title={isFullyCollected ? "Upload additional worksheet scans" : "Upload student worksheet scans"}
                     >
-                      <Upload className="size-3.5 mr-1 text-primary" />
-                      Upload
+                      <Upload className="size-3.5 mr-1.5 text-primary" />
+                      <span>{isFullyCollected ? "Upload More" : "Upload"}</span>
                     </Button>
 
                     <Link
                       href={`/activities/${activity.id}`}
-                      className="inline-flex items-center text-xs font-semibold text-primary hover:text-brand-700 dark:hover:text-brand-300 py-1.5 px-2 -mr-1 rounded-md transition-colors group/link min-h-[36px]"
+                      className={cn(
+                        buttonVariants({
+                          variant: isFullyCollected ? "default" : "secondary",
+                          size: "sm",
+                        }),
+                        "h-8 min-h-[36px] px-3 text-xs font-semibold rounded-lg shadow-2xs cursor-pointer group/btn"
+                      )}
                     >
-                      <span>View Submissions</span>
-                      <span className="ml-1 text-xs transition-transform group-hover/link:translate-x-0.5">
+                      <Inbox className="size-3.5 mr-1.5 shrink-0" />
+                      <span>{isFullyCollected ? "Review" : "View Submissions"}</span>
+                      <span className="ml-1 text-xs transition-transform group-hover/btn:translate-x-0.5">
                         &rarr;
                       </span>
                     </Link>
