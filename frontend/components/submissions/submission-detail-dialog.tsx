@@ -244,11 +244,11 @@ export function SubmissionDetailDialog({
 
   const rejectionInfo = submission.rejection_code
     ? REJECTION_GUIDE[submission.rejection_code] ?? {
-        title: "Worksheet Assessment Issue",
-        description: `Quality check returned code: ${submission.rejection_code}`,
-        advice:
-          "Please verify that the worksheet is well-lit, in focus, and written with a clear pen or pencil.",
-      }
+      title: "Worksheet Assessment Issue",
+      description: `Quality check returned code: ${submission.rejection_code}`,
+      advice:
+        "Please verify that the worksheet is well-lit, in focus, and written with a clear pen or pencil.",
+    }
     : null;
 
   const compositeScore = submission.measurement?.composite_score;
@@ -311,22 +311,20 @@ export function SubmissionDetailDialog({
                   </span>
                   <Badge
                     variant="outline"
-                    className={`text-xs font-semibold px-2.5 py-0.5 inline-flex items-center gap-1.5 ${
-                      submission.status === "completed"
+                    className={`text-xs font-semibold px-2.5 py-0.5 inline-flex items-center gap-1.5 ${submission.status === "completed"
                         ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200"
                         : submission.status === "processing"
                           ? "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200"
                           : "bg-destructive/10 text-destructive border-destructive/20"
-                    }`}
+                      }`}
                   >
                     <span
-                      className={`size-1.5 rounded-full ${
-                        submission.status === "completed"
+                      className={`size-1.5 rounded-full ${submission.status === "completed"
                           ? "bg-emerald-500"
                           : submission.status === "processing"
                             ? "bg-amber-500 motion-safe:animate-pulse"
                             : "bg-destructive"
-                      }`}
+                        }`}
                     />
                     {submission.status === "completed"
                       ? "Completed"
@@ -441,9 +439,8 @@ export function SubmissionDetailDialog({
               </div>
 
               <div
-                className={`relative rounded-xl sm:rounded-2xl border border-border bg-muted/40 overflow-hidden transition-all ${
-                  isZoomed ? "max-h-[520px]" : "aspect-4/3 sm:aspect-3/2"
-                } flex items-center justify-center`}
+                className={`relative rounded-xl sm:rounded-2xl border border-border bg-muted/40 overflow-hidden transition-all ${isZoomed ? "max-h-[520px]" : "aspect-4/3 sm:aspect-3/2"
+                  } flex items-center justify-center`}
               >
                 {isImageLoading ? (
                   <Skeleton className="size-full rounded-none" />
@@ -454,9 +451,8 @@ export function SubmissionDetailDialog({
                     alt={`Handwriting worksheet submitted for ${submission.student?.full_name ?? "student"}`}
                     loading="lazy"
                     decoding="async"
-                    className={`size-full object-contain ${
-                      isZoomed ? "cursor-zoom-out" : "cursor-zoom-in"
-                    }`}
+                    className={`size-full object-contain ${isZoomed ? "cursor-zoom-out" : "cursor-zoom-in"
+                      }`}
                     onClick={() => setIsZoomed((prev) => !prev)}
                   />
                 ) : (
@@ -597,11 +593,10 @@ export function SubmissionDetailDialog({
                                 prev === c.name ? null : c.name
                               )
                             }
-                            className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
-                              isSelected
+                            className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${isSelected
                                 ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs"
                                 : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
-                            }`}
+                              }`}
                           >
                             <div className="min-w-0 pr-2">
                               <div className="flex items-center gap-1.5">
