@@ -9,7 +9,7 @@ Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §
 | Phase | Done / Total |
 |---|---|
 | Phase 0 — Setup | 11 / 16 |
-| Phase 1 — Teacher Tooling & Raw CV Pipeline | 6 / 17 |
+| Phase 1 — Teacher Tooling & Raw CV Pipeline | 9 / 17 |
 | Between Phases — Calibration | 0 / 6 |
 | Phase 2 — Calibrated Scoring & Full System | 0 / 11 |
 
@@ -66,9 +66,9 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Quality gate (blur/brightness/contrast/resolution) | Done | | CV_PIPELINE §2 |
 | Preprocessing (grayscale, denoise, threshold) | Done | | CV_PIPELINE §3 |
 | Guide-line detection & deskew | Done | | CV_PIPELINE §4 |
-| Line segmentation | Not Started | | CV_PIPELINE §5.1 |
-| Word segmentation | Not Started | | CV_PIPELINE §5.2 |
-| Post-segmentation gate | Not Started | | CV_PIPELINE §5.3 |
+| Line segmentation | Done | | CV_PIPELINE §5.1 |
+| Word segmentation | Done | | CV_PIPELINE §5.2 |
+| Post-segmentation gate | Done | | CV_PIPELINE §5.3 |
 | Feature extraction — slant angle | Not Started | | CV_PIPELINE §6.1 |
 | Feature extraction — spacing | Not Started | | CV_PIPELINE §6.2 |
 | Feature extraction — baseline alignment | Not Started | | CV_PIPELINE §6.3 |

@@ -127,11 +127,63 @@ def make_3line_worksheet(width: int = 2000, height: int = 2600, angle_deg: float
         
         # Add some ink (using _SHARP_INK)
         cv2.rectangle(img, (300, top_y + 10), (350, base_y - 10), _SHARP_INK, thickness=-1)
-        
+
     if angle_deg != 0.0:
         center = (width // 2, height // 2)
         M = cv2.getRotationMatrix2D(center, angle_deg, 1.0)
         img = cv2.warpAffine(img, M, (width, height), borderValue=_SHARP_BG)
-        
+
     _, buf = cv2.imencode(".jpg", img)
     return buf.tobytes()
+
+
+def make_segmented_worksheet(
+    width: int = 2000,
+    height: int = 2600,
+    num_lines: int = 2,
+    words_per_line: int = 3,
+    letters_per_word: int = 4,
+    letter_width: int = 25,
+    letter_gap: int = 12,
+    word_gap: int = 70,
+) -> bytes:
+    """Generate a synthetic worksheet with known multi-word ruling for segmentation testing.
+
+    Each word consists of vertical strokes (simulating cursive letter stems)
+    separated by `letter_gap`. Words are separated by `word_gap`.
+    """
+    img = np.full((height, width), _SHARP_BG, dtype=np.uint8)
+
+    row_gap = 400
+    line_spacing = 60
+    start_y = 400
+
+    for line_idx in range(num_lines):
+        top_y = start_y + line_idx * row_gap
+        mid_y = top_y + line_spacing
+        base_y = mid_y + line_spacing
+
+        # Draw the 3 guide lines
+        cv2.line(img, (100, top_y), (width - 100, top_y), _SHARP_INK, thickness=2)
+        cv2.line(img, (100, mid_y), (width - 100, mid_y), _SHARP_INK, thickness=2)
+        cv2.line(img, (100, base_y), (width - 100, base_y), _SHARP_INK, thickness=2)
+
+        # Draw words
+        current_x = 250
+        for _ in range(words_per_line):
+            for letter_idx in range(letters_per_word):
+                # Draw letter stroke from near top to base
+                cv2.rectangle(
+                    img,
+                    (current_x, top_y + 8),
+                    (current_x + letter_width, base_y - 2),
+                    _SHARP_INK,
+                    thickness=-1,
+                )
+                current_x += letter_width
+                if letter_idx < letters_per_word - 1:
+                    current_x += letter_gap
+            current_x += word_gap
+
+    _, buf = cv2.imencode(".jpg", img)
+    return buf.tobytes()
