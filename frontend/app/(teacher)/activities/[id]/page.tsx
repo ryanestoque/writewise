@@ -91,6 +91,7 @@ import {
   Award,
   Check,
   BookOpen,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -305,12 +306,19 @@ function SubmissionCard({
   onSelectAttempt?: (sub: Submission) => void;
 }) {
   const { data: imageUrl } = useSubmissionImageUrl(submission.image_path);
+  const [imageError, setImageError] = useState(false);
   const config = statusConfig[submission.status];
   const compositeScore = submission.measurement?.composite_score;
   const scoreBand = getScoreBandLabel(compositeScore);
   const rejection = getRejectionSummary(submission.rejection_code);
   const hasMultipleAttempts = attemptCount > 1 && allSubmissions.length > 1;
   const ScoreIcon = scoreBand.icon;
+
+  const currentAttemptIndex = useMemo(() => {
+    if (!hasMultipleAttempts) return 1;
+    const idx = allSubmissions.findIndex((s) => s.id === submission.id);
+    return idx >= 0 ? attemptCount - idx : attemptCount;
+  }, [hasMultipleAttempts, allSubmissions, submission.id, attemptCount]);
 
   const accessibleLabel = useMemo(() => {
     let text = `View diagnostic details for ${studentName}. Status: ${config.label}.`;
@@ -320,10 +328,12 @@ function SubmissionCard({
       text += ` Submission rejected: ${rejection.label}. ${rejection.detail}.`;
     }
     if (hasMultipleAttempts) {
-      text += ` ${attemptCount} total attempts.`;
+      text += ` Attempt ${currentAttemptIndex} of ${attemptCount} total attempts.`;
     }
     return text;
-  }, [studentName, config.label, submission.status, compositeScore, scoreBand.band, rejection, hasMultipleAttempts, attemptCount]);
+  }, [studentName, config.label, submission.status, compositeScore, scoreBand.band, rejection, hasMultipleAttempts, currentAttemptIndex, attemptCount]);
+
+  const showImage = Boolean(imageUrl && !imageError);
 
   return (
     <article className="group relative flex flex-col justify-between bg-surface dark:bg-card border border-border hover:border-brand-300 dark:hover:border-brand-800 rounded-xl sm:rounded-2xl shadow-warm hover:shadow-md transition-all duration-200 overflow-hidden text-left">
@@ -337,16 +347,18 @@ function SubmissionCard({
 
       {/* Photo Thumbnail */}
       <div className="aspect-4/3 bg-muted/60 relative overflow-hidden pointer-events-none">
-        {imageUrl ? (
+        {showImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={imageUrl}
+            src={imageUrl ?? ""}
             alt={`Worksheet by ${studentName}`}
+            onError={() => setImageError(true)}
             className="size-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div className="size-full flex items-center justify-center text-muted-foreground/60">
-            <FileText className="size-8" />
+          <div className="size-full flex flex-col items-center justify-center gap-1.5 text-muted-foreground/60 p-4">
+            <FileText className="size-8 stroke-[1.5]" />
+            <span className="text-[11px] font-medium tracking-tight">Worksheet Preview</span>
           </div>
         )}
 
@@ -366,8 +378,8 @@ function SubmissionCard({
           <div className="absolute top-2.5 left-2.5 z-10 pointer-events-auto">
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-background/90 text-foreground dark:bg-card/90 border border-border shadow-xs backdrop-blur-xs hover:bg-background transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label={`Switch submission attempt for ${studentName}. Currently showing attempt.`}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 min-h-[28px] sm:min-h-[24px] rounded-full bg-background/90 text-foreground dark:bg-card/90 border border-border shadow-xs backdrop-blur-xs hover:bg-background transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`Switch submission attempt for ${studentName}. Currently showing attempt ${currentAttemptIndex} of ${attemptCount}.`}
               >
                 <History className="size-2.5 text-muted-foreground" />
                 <span>
@@ -437,11 +449,6 @@ function SubmissionCard({
             <p className="text-sm font-semibold text-foreground truncate group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors">
               {studentName}
             </p>
-            {hasMultipleAttempts && (
-              <span className="text-[10px] text-muted-foreground font-medium shrink-0">
-                {attemptCount} tries
-              </span>
-            )}
           </div>
 
           {/* Diagnostic score or Rejection note */}
@@ -507,9 +514,10 @@ function SubmissionCard({
           ) : (
             <span
               aria-hidden="true"
-              className="text-[11px] font-medium text-primary group-hover:underline"
+              className="text-[11px] font-medium text-primary group-hover:underline inline-flex items-center gap-1"
             >
-              Inspect details &rarr;
+              <span>Inspect details</span>
+              <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
             </span>
           )}
         </div>
@@ -526,11 +534,11 @@ function ScoringGuidePopover() {
   return (
     <Popover>
       <PopoverTrigger
-        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring shrink-0"
+        className="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 min-h-[40px] sm:min-h-[32px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring shrink-0"
         aria-label="How WriteWise scores cursive handwriting"
       >
-        <HelpCircle className="size-3.5 text-brand-600 dark:text-brand-400" />
-        <span className="hidden sm:inline">Score Guide</span>
+        <HelpCircle className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" />
+        <span className="inline">Score Guide</span>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 sm:w-96 p-4 z-50">
         <PopoverHeader>
@@ -1053,9 +1061,17 @@ export default function ActivityDetailPage({
         <div className="flex flex-col gap-4">
           {/* Header row: H1 Title + Badges + Action Buttons */}
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-            <div className="space-y-2 min-w-0 flex-1">
-              {/* Badges Row */}
-              <div className="flex items-center gap-2 flex-wrap text-xs">
+            <div className="space-y-2.5 min-w-0 flex-1">
+              {/* Explicit H1 Title first */}
+              <h1
+                id="activity-header-heading"
+                className="text-xl sm:text-2xl font-heading font-bold text-foreground tracking-tight line-clamp-2"
+              >
+                {activity.target_text}
+              </h1>
+
+              {/* Badges & Metadata Row */}
+              <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
                 {isArchived ? (
                   <Badge
                     variant="outline"
@@ -1091,26 +1107,31 @@ export default function ActivityDetailPage({
                   Created {formatDate(activity.created_at)}
                 </span>
               </div>
-
-              {/* Explicit H1 Title */}
-              <h1
-                id="activity-header-heading"
-                className="text-xl sm:text-2xl font-heading font-bold text-foreground tracking-tight line-clamp-2"
-              >
-                {activity.target_text}
-              </h1>
             </div>
 
             {/* Activity Actions Menu & Fast CTAs */}
             <div className="flex items-center gap-2 shrink-0 pt-1 sm:pt-0">
               <Button
                 size="sm"
-                className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer"
+                variant={submissions && submissions.length === 0 ? "outline" : "default"}
+                className={cn(
+                  "h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer",
+                  submissions && submissions.length === 0
+                    ? "text-muted-foreground hover:text-foreground border-border hover:bg-muted/60"
+                    : "bg-primary hover:bg-brand-700 text-primary-foreground"
+                )}
                 onClick={() => openUpload({ activityId: id })}
               >
                 <Upload className="w-4 h-4" />
                 <span>Upload Submission</span>
-                <kbd className="hidden sm:inline-flex items-center justify-center ml-1 px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground/80 bg-white/20 dark:bg-white/10 rounded shadow-2xs">
+                <kbd
+                  className={cn(
+                    "hidden sm:inline-flex items-center justify-center ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded shadow-2xs",
+                    submissions && submissions.length === 0
+                      ? "bg-muted text-muted-foreground"
+                      : "text-primary-foreground/80 bg-white/20 dark:bg-white/10"
+                  )}
+                >
                   U
                 </kbd>
               </Button>
@@ -1184,7 +1205,7 @@ export default function ActivityDetailPage({
                 className="absolute inset-4 sm:inset-5 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden"
                 aria-hidden="true"
               />
-              <p className="relative font-cursive text-foreground/90 font-normal tracking-wide select-all break-words text-[34px] sm:text-[38px] leading-[48px] sm:leading-[52px]">
+              <p className="relative font-cursive text-foreground/90 font-normal tracking-wide select-all break-words text-[32px] sm:text-[36px] leading-[48px]">
                 {activity.target_text}
               </p>
             </div>
@@ -1309,31 +1330,31 @@ export default function ActivityDetailPage({
 
         {/* Filter & Search Bar — only when submissions exist */}
         {submissions && submissions.length > 0 && (
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
-            {/* Search Student Input with '/' shortcut hint */}
-            <SearchInput
-              ref={searchInputRef}
-              placeholder="Search student name... (/)"
-              aria-label="Search submissions by student name"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onClear={() => setSearchQuery("")}
-              containerClassName="w-full md:w-56 lg:w-64 shrink-0"
-            />
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
+            {/* Primary controls: Search + Filter Pills */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 min-w-0 flex-1">
+              {/* Search Student Input with '/' shortcut hint */}
+              <SearchInput
+                ref={searchInputRef}
+                placeholder="Search student name... (/)"
+                aria-label="Search submissions by student name"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onClear={() => setSearchQuery("")}
+                containerClassName="w-full sm:w-56 lg:w-64 shrink-0"
+              />
 
-            {/* Filter Pills, Score Guide & Sort Selector */}
-            <div className="flex flex-wrap sm:flex-nowrap items-center justify-between md:justify-end gap-2 w-full md:w-auto min-w-0">
               <FilterPills
                 items={submissionFilterItems}
                 value={statusFilter}
                 onChange={(newFilter) => setStatusFilter(newFilter)}
                 ariaLabel="Filter submissions by status"
-                containerClassName="min-w-0 flex-1 sm:flex-initial"
+                containerClassName="min-w-0 flex-1"
               />
+            </div>
 
-              {/* Scoring Explainer Guide Trigger */}
-              <ScoringGuidePopover />
-
+            {/* Secondary controls: Sort Selector + Divider + Score Guide */}
+            <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-border/50">
               {/* Sort Selector */}
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -1397,6 +1418,11 @@ export default function ActivityDetailPage({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              <div className="h-4 w-px bg-border/60 shrink-0 hidden sm:block" aria-hidden="true" />
+
+              {/* Scoring Explainer Guide Trigger */}
+              <ScoringGuidePopover />
             </div>
           </div>
         )}
@@ -1449,7 +1475,7 @@ export default function ActivityDetailPage({
             <div className="flex items-center gap-3">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <span className="text-sm font-medium">
-                Failed to load submissions: {submissionsError.message}
+                Couldn&apos;t load submissions. Check your connection and try again.
               </span>
             </div>
             <Button
