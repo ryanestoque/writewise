@@ -412,10 +412,6 @@ export default function ActivitiesPage() {
           <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
             Activities
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-normal max-w-lg text-pretty">
-            Create and manage cursive handwriting exercises, track student
-            submissions, and archive completed prompts.
-          </p>
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -860,18 +856,18 @@ export default function ActivitiesPage() {
                 {/* Card Footer: Submission Progress Gauge & Actions */}
                 <div className="space-y-2.5 pt-2.5 border-t border-border/60">
                   {/* Status header with count and timestamp */}
-                  <div className="flex items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center justify-between gap-1.5 text-xs">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="font-semibold text-foreground text-xs flex items-center gap-1.5 truncate">
                         <Inbox className="size-3.5 text-muted-foreground shrink-0" />
                         {totalStudents > 0 ? (
-                          <span>
+                          <span className="truncate">
                             {submissionCount > totalStudents
-                              ? `${submissionCount} collected · ${totalStudents} students`
+                              ? `${submissionCount} collected`
                               : `${submissionCount} of ${totalStudents} collected`}
                           </span>
                         ) : (
-                          <span>
+                          <span className="truncate">
                             {submissionCount}{" "}
                             {submissionCount === 1
                               ? "submission"
@@ -881,14 +877,14 @@ export default function ActivitiesPage() {
                       </span>
 
                       {isFullyCollected && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 px-2 py-0.5 rounded-md border border-brand-200/80 dark:border-brand-900 shrink-0">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 px-1.5 py-0.5 rounded-md border border-brand-200/80 dark:border-brand-900 shrink-0">
                           <CheckCircle2 className="size-3" />
                           Complete
                         </span>
                       )}
                     </div>
 
-                    <span className="text-xs text-muted-foreground flex items-center gap-1.5 shrink-0 tabular-nums">
+                    <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0 tabular-nums">
                       <CalendarDays className="size-3.5" />
                       {getRelativeTime(activity.created_at)}
                     </span>
@@ -988,7 +984,7 @@ export default function ActivitiesPage() {
                       <span
                         className={`size-1.5 rounded-full shrink-0 ${
                           processingCount > 0
-                            ? "bg-amber-500 animate-pulse"
+                            ? "bg-amber-500 motion-safe:animate-pulse"
                             : completedCount > 0
                             ? "bg-brand-500"
                             : "bg-muted-foreground/50"
@@ -1006,17 +1002,17 @@ export default function ActivitiesPage() {
                     </span>
                   </div>
 
-                  {/* Standardized 2-Action Button Row */}
-                  <div className="flex items-center justify-between gap-2 pt-1">
+                  {/* Standardized 2-Action Button Row — Balanced 2-column grid */}
+                  <div className="grid grid-cols-2 gap-2 pt-1">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => openUpload({ activityId: activity.id })}
-                      className="h-8 min-h-[36px] px-2.5 text-xs font-medium border-border/80 hover:bg-brand-50 hover:text-brand-700 dark:hover:bg-brand-950/60 dark:hover:text-brand-300 rounded-lg cursor-pointer transition-colors"
+                      className="h-8 min-h-[36px] px-2 text-xs font-medium border-border/80 hover:bg-brand-50 hover:text-brand-700 dark:hover:bg-brand-950/60 dark:hover:text-brand-300 rounded-lg cursor-pointer transition-colors w-full justify-center"
                       title={isFullyCollected ? "Upload additional worksheet scans" : "Upload student worksheet scans"}
                     >
-                      <Upload className="size-3.5 mr-1.5 text-primary" />
-                      <span>{isFullyCollected ? "Upload More" : "Upload"}</span>
+                      <Upload className="size-3.5 mr-1.5 text-primary shrink-0" />
+                      <span className="truncate">{isFullyCollected ? "Upload More" : "Upload"}</span>
                     </Button>
 
                     <Link
@@ -1026,12 +1022,13 @@ export default function ActivitiesPage() {
                           variant: isFullyCollected ? "default" : "secondary",
                           size: "sm",
                         }),
-                        "h-8 min-h-[36px] px-3 text-xs font-semibold rounded-lg shadow-2xs cursor-pointer group/btn"
+                        "h-8 min-h-[36px] px-2 text-xs font-semibold rounded-lg shadow-2xs cursor-pointer group/btn w-full justify-center"
                       )}
+                      title={isFullyCollected ? "Review completed submissions" : "View submissions for this activity"}
                     >
                       <Inbox className="size-3.5 mr-1.5 shrink-0" />
-                      <span>{isFullyCollected ? "Review" : "View Submissions"}</span>
-                      <span className="ml-1 text-xs transition-transform group-hover/btn:translate-x-0.5">
+                      <span className="truncate">{isFullyCollected ? "Review" : "Submissions"}</span>
+                      <span className="ml-1 text-xs transition-transform group-hover/btn:translate-x-0.5 shrink-0">
                         &rarr;
                       </span>
                     </Link>

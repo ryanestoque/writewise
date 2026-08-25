@@ -357,9 +357,6 @@ export default function RosterPage() {
           <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
             Class Roster
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-normal">
-            Manage student enrollment and class sections for handwriting assessment activities.
-          </p>
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">

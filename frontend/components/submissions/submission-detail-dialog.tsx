@@ -21,18 +21,17 @@ import {
   Clock,
   AlertCircle,
   Upload,
-  CalendarDays,
   User,
   GraduationCap,
   Maximize2,
   Minimize2,
   FileText,
-  Lightbulb,
   Camera,
   ChevronLeft,
   ChevronRight,
   Eye,
   Info,
+  Award,
 } from "lucide-react";
 
 interface SubmissionDetailDialogProps {
@@ -154,8 +153,8 @@ function getScoreBand(score: number | null | undefined): {
     return {
       label: "Satisfactory",
       className:
-        "bg-[#eef4ec] text-[#3d6837] dark:bg-brand-950/80 dark:text-brand-300 border-[#7c9b6e]/30 dark:border-brand-900",
-      dotColor: "bg-[#7c9b6e]",
+        "bg-brand-50 text-brand-800 dark:bg-brand-950/80 dark:text-brand-300 border-brand-300/50 dark:border-brand-900",
+      dotColor: "bg-band-3",
     };
   }
   if (score >= 40) {
@@ -325,7 +324,7 @@ export function SubmissionDetailDialog({
                         submission.status === "completed"
                           ? "bg-emerald-500"
                           : submission.status === "processing"
-                            ? "bg-amber-500 animate-pulse"
+                            ? "bg-amber-500 motion-safe:animate-pulse"
                             : "bg-destructive"
                       }`}
                     />
@@ -343,20 +342,24 @@ export function SubmissionDetailDialog({
                     {submission.uploader_role === "parent" ? "Parent" : "Teacher"}
                   </span>
                   <span className="inline-flex items-center gap-1">
-                    <CalendarDays className="size-3" />
+                    <Clock className="size-3" />
                     {formatDateFull(submission.created_at)}
                   </span>
+                  {compositeScore !== undefined && compositeScore !== null && (
+                    <span className="inline-flex items-center gap-1">
+                      <Award className="size-3" />
+                      Composite score: {Math.round(compositeScore)}%
+                    </span>
+                  )}
                 </DialogDescription>
               </div>
             </div>
 
-            {/* Quick Actions & Student-to-Student Navigation */}
-            <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
-              {/* Sequential Student Navigation */}
+            {/* Header Right: Navigation between students */}
+            <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
               {hasMultipleSubmissions && submissions && onNavigate && (
-                <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-xl border border-border/70">
+                <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-xl border border-border">
                   <Button
-                    type="button"
                     variant="ghost"
                     size="sm"
                     disabled={!canGoPrev}
@@ -371,11 +374,10 @@ export function SubmissionDetailDialog({
                   >
                     <ChevronLeft className="size-4" />
                   </Button>
-                  <span className="text-[11px] font-medium text-muted-foreground tabular-nums px-1.5">
-                    {(currentIndex ?? 0) + 1} of {submissions.length}
+                  <span className="text-xs font-semibold px-2 text-foreground select-none">
+                    {(currentIndex ?? 0) + 1} / {submissions.length}
                   </span>
                   <Button
-                    type="button"
                     variant="ghost"
                     size="sm"
                     disabled={!canGoNext}
@@ -450,6 +452,8 @@ export function SubmissionDetailDialog({
                   <img
                     src={imageUrl}
                     alt={`Handwriting worksheet submitted for ${submission.student?.full_name ?? "student"}`}
+                    loading="lazy"
+                    decoding="async"
                     className={`size-full object-contain ${
                       isZoomed ? "cursor-zoom-out" : "cursor-zoom-in"
                     }`}
@@ -481,35 +485,35 @@ export function SubmissionDetailDialog({
               )}
             </div>
 
-            {/* Right: Assessment Feedback & Diagnostics */}
-            <div className="lg:col-span-6 flex flex-col space-y-4">
+            {/* Right: Diagnostic Assessment Details */}
+            <div className="lg:col-span-6 flex flex-col justify-between space-y-4">
               {/* REJECTED STATE */}
-              {submission.status === "rejected" && rejectionInfo && (
-                <div className="p-4 rounded-xl sm:rounded-2xl bg-destructive/10 border border-destructive/20 space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="flex size-9 items-center justify-center rounded-lg bg-destructive/20 text-destructive shrink-0 mt-0.5">
-                      <AlertCircle className="size-5" />
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="text-sm font-heading font-semibold text-destructive">
-                        {rejectionInfo.title}
-                      </h4>
-                      <p className="text-xs text-foreground/80 leading-relaxed">
-                        {rejectionInfo.description}
-                      </p>
-                    </div>
+              {submission.status === "rejected" && (
+                <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-destructive/10 border border-destructive/20 space-y-3">
+                  <div className="flex items-center gap-2 text-destructive font-semibold text-sm">
+                    <AlertCircle className="size-4 shrink-0" />
+                    <span>Submission Rejected by OpenCV Quality Gate</span>
                   </div>
-
-                  <div className="p-3 rounded-lg bg-surface dark:bg-card border border-destructive/20 space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                      <Lightbulb className="size-3.5 text-amber-600 dark:text-amber-400" />
-                      <span>Recommended action for re-upload</span>
+                  {rejectionInfo && (
+                    <div className="space-y-2 text-xs">
+                      <div>
+                        <strong className="text-foreground">Issue:</strong>{" "}
+                        <span className="text-muted-foreground">
+                          {rejectionInfo.title}
+                        </span>
+                      </div>
+                      <div>
+                        <strong className="text-foreground">Diagnostic Explanation:</strong>{" "}
+                        <span className="text-muted-foreground">
+                          {rejectionInfo.description}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-surface/80 dark:bg-card/80 border border-destructive/20 text-muted-foreground">
+                        <strong className="text-foreground">Teacher Action:</strong>{" "}
+                        {rejectionInfo.advice}
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {rejectionInfo.advice}
-                    </p>
-                  </div>
-
+                  )}
                   <Button
                     onClick={handleReupload}
                     className="w-full h-10 min-h-[40px] bg-primary hover:bg-brand-700 text-primary-foreground text-xs sm:text-sm font-medium rounded-lg sm:rounded-xl gap-2 shadow-xs cursor-pointer"
@@ -523,7 +527,7 @@ export function SubmissionDetailDialog({
               {/* PROCESSING STATE */}
               {submission.status === "processing" && (
                 <div className="p-5 rounded-xl sm:rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900 space-y-3 text-center">
-                  <div className="flex size-12 items-center justify-center rounded-2xl bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-300 mx-auto animate-pulse">
+                  <div className="flex size-12 items-center justify-center rounded-2xl bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-300 mx-auto motion-safe:animate-pulse">
                     <Clock className="size-6" />
                   </div>
                   <div className="space-y-1 max-w-sm mx-auto">

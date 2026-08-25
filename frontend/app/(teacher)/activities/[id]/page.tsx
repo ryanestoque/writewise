@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { use, useState, useMemo, useRef, useCallback, useEffect, memo } from "react";
 import Link from "next/link";
 import {
   type Activity,
@@ -23,14 +23,6 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import {
   Tooltip,
   TooltipContent,
@@ -131,6 +123,7 @@ function getRelativeTime(dateStr: string): string {
   const now = new Date();
   const date = new Date(dateStr);
   const diffMs = now.getTime() - date.getTime();
+  if (diffMs <= 0) return "Just now";
   const diffSecs = Math.floor(diffMs / 1000);
   const diffMins = Math.floor(diffSecs / 60);
   const diffHours = Math.floor(diffMins / 60);
@@ -229,8 +222,8 @@ function getScoreBandLabel(score: number | null | undefined): ScoreBandInfo {
       label: `${Math.round(score)}% • Satisfactory`,
       band: "Satisfactory",
       className:
-        "bg-[#eef4ec] text-[#3d6837] dark:bg-brand-950/80 dark:text-brand-300 border-[#7c9b6e]/30 dark:border-brand-900",
-      dotColor: "bg-[#7c9b6e]",
+        "bg-brand-50 text-brand-800 dark:bg-brand-950/80 dark:text-brand-300 border-brand-300/50 dark:border-brand-900",
+      dotColor: "bg-band-3",
       icon: CheckCircle2,
       description:
         "Good penmanship foundation with minor variations in size or spacing.",
@@ -266,7 +259,7 @@ const statusConfig = {
     icon: Clock,
     className:
       "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200 dark:border-amber-900",
-    dotClass: "bg-amber-500 animate-pulse",
+    dotClass: "bg-amber-500 motion-safe:animate-pulse",
   },
   completed: {
     label: "Completed",
@@ -288,7 +281,7 @@ const statusConfig = {
  * Unified Submission Card Component
  * Supports both single submission view and grouped attempts switcher
  */
-function SubmissionCard({
+const SubmissionCard = memo(function SubmissionCard({
   submission,
   studentName,
   attemptCount = 1,
@@ -301,9 +294,9 @@ function SubmissionCard({
   studentName: string;
   attemptCount?: number;
   allSubmissions?: Submission[];
-  onSelect: () => void;
-  onReupload: () => void;
-  onSelectAttempt?: (sub: Submission) => void;
+  onSelect: (sub: Submission) => void;
+  onReupload: (studentId?: string) => void;
+  onSelectAttempt?: (studentId: string, sub: Submission) => void;
 }) {
   const { data: imageUrl } = useSubmissionImageUrl(submission.image_path);
   const [imageError, setImageError] = useState(false);
@@ -336,15 +329,19 @@ function SubmissionCard({
   const showImage = Boolean(imageUrl && !imageError);
 
   return (
-    <article className="group relative flex flex-col justify-between bg-surface dark:bg-card border border-border hover:border-brand-300 dark:hover:border-brand-800 rounded-xl sm:rounded-2xl shadow-warm hover:shadow-md transition-all duration-200 overflow-hidden text-left">
-      {/* Primary Accessible Focus / Click Overlay */}
-      <button
-        type="button"
-        onClick={onSelect}
-        className="absolute inset-0 z-0 size-full cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-xl sm:rounded-2xl text-left"
-        aria-label={accessibleLabel}
-      />
-
+    <article
+      tabIndex={0}
+      role="button"
+      onClick={() => onSelect(submission)}
+      onKeyDown={(e) => {
+        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onSelect(submission);
+        }
+      }}
+      aria-label={accessibleLabel}
+      className="group relative flex flex-col justify-between bg-surface dark:bg-card border border-border hover:border-brand-300 dark:hover:border-brand-800 rounded-xl sm:rounded-2xl shadow-warm hover:shadow-md transition-all duration-200 overflow-hidden text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+    >
       {/* Photo Thumbnail */}
       <div className="aspect-4/3 bg-muted/60 relative overflow-hidden pointer-events-none">
         {showImage ? (
@@ -352,6 +349,8 @@ function SubmissionCard({
           <img
             src={imageUrl ?? ""}
             alt={`Worksheet by ${studentName}`}
+            loading="lazy"
+            decoding="async"
             onError={() => setImageError(true)}
             className="size-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -375,10 +374,14 @@ function SubmissionCard({
 
         {/* Attempt history switcher if multiple attempts exist */}
         {hasMultipleAttempts && (
-          <div className="absolute top-2.5 left-2.5 z-10 pointer-events-auto">
+          <div
+            className="absolute top-2.5 left-2.5 z-10 pointer-events-auto"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 min-h-[28px] sm:min-h-[24px] rounded-full bg-background/90 text-foreground dark:bg-card/90 border border-border shadow-xs backdrop-blur-xs hover:bg-background transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                className="relative inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 min-h-[28px] sm:min-h-[24px] rounded-full bg-background/90 text-foreground dark:bg-card/90 border border-border shadow-xs backdrop-blur-xs hover:bg-background transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring before:absolute before:-inset-2 before:content-[''] before:rounded-full"
                 aria-label={`Switch submission attempt for ${studentName}. Currently showing attempt ${currentAttemptIndex} of ${attemptCount}.`}
               >
                 <History className="size-2.5 text-muted-foreground" />
@@ -401,7 +404,7 @@ function SubmissionCard({
                   return (
                     <DropdownMenuItem
                       key={sub.id}
-                      onClick={() => onSelectAttempt?.(sub)}
+                      onClick={() => onSelectAttempt?.(submission.student_id, sub)}
                       className="cursor-pointer text-xs flex items-center justify-between gap-2"
                     >
                       <div className="flex items-center gap-1.5 min-w-0">
@@ -443,7 +446,7 @@ function SubmissionCard({
       </div>
 
       {/* Card Info */}
-      <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between pointer-events-none relative z-10">
+      <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between relative z-10">
         <div>
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-semibold text-foreground truncate group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors">
@@ -453,11 +456,15 @@ function SubmissionCard({
 
           {/* Diagnostic score or Rejection note */}
           {submission.status === "completed" && (
-            <div className="mt-1.5 flex items-center gap-1.5">
+            <div
+              className="mt-1.5 flex items-center gap-1.5"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
               <TooltipProvider delay={200}>
                 <Tooltip>
                   <TooltipTrigger
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md border shadow-2xs pointer-events-auto"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md border shadow-2xs"
                   >
                     <span className={cn("inline-flex items-center gap-1", scoreBand.className, "px-1.5 py-0.5 rounded")}>
                       <ScoreIcon className="size-3 shrink-0" aria-hidden="true" />
@@ -489,7 +496,7 @@ function SubmissionCard({
 
           {submission.status === "processing" && (
             <p className="mt-1 text-xs text-amber-700 dark:text-amber-400 flex items-center gap-1 font-medium truncate">
-              <Clock className="size-3 shrink-0 animate-pulse" />
+              <Clock className="size-3 shrink-0 motion-safe:animate-pulse" />
               <span>Analyzing cursive strokes...</span>
             </p>
           )}
@@ -503,10 +510,11 @@ function SubmissionCard({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onReupload();
+                onReupload(submission.student_id);
               }}
+              onKeyDown={(e) => e.stopPropagation()}
               aria-label={`Re-upload worksheet for ${studentName}`}
-              className="text-xs font-semibold text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:underline inline-flex items-center gap-1 cursor-pointer pointer-events-auto focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+              className="text-xs font-semibold text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:underline inline-flex items-center gap-1 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
             >
               <Camera className="size-3" />
               Re-upload
@@ -524,7 +532,7 @@ function SubmissionCard({
       </div>
     </article>
   );
-}
+});
 
 /**
  * Diagnostic Rubric Guide Popover
@@ -600,8 +608,8 @@ function ScoringGuidePopover() {
             <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
             <span>&ge; 80% &middot; Excellent</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[#3d6837] dark:text-brand-300">
-            <span className="size-2 rounded-full bg-[#7c9b6e] shrink-0" />
+          <div className="flex items-center gap-1.5 text-brand-800 dark:text-brand-300">
+            <span className="size-2 rounded-full bg-band-3 shrink-0" />
             <span>60–79% &middot; Satisfactory</span>
           </div>
           <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300">
@@ -893,6 +901,25 @@ export default function ActivityDetailPage({
     });
   }, [activity, toggleArchive]);
 
+  const handleSelectSubmission = useCallback((sub: Submission) => {
+    setSelectedSubmission(sub);
+  }, []);
+
+  const handleReupload = useCallback(
+    (studentId?: string) => {
+      openUpload({ activityId: id, studentId });
+    },
+    [id, openUpload]
+  );
+
+  const handleSelectAttempt = useCallback((studentId: string, sub: Submission) => {
+    setAttemptOverrides((prev) => {
+      const next = new Map(prev);
+      next.set(studentId, sub);
+      return next;
+    });
+  }, []);
+
   if (error) {
     return (
       <div className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
@@ -1020,23 +1047,16 @@ export default function ActivityDetailPage({
 
   return (
     <div className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
-      {/* Top Semantic Breadcrumb Navigation */}
-      <Breadcrumb aria-label="Activity Navigation Trail">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/activities" className="inline-flex items-center gap-1">
-              <ClipboardList className="size-3.5 text-muted-foreground" />
-              <span>Activities</span>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage className="max-w-[200px] sm:max-w-[320px] truncate font-medium text-foreground">
-              {activity.target_text}
-            </BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      {/* Top Back Navigation Trail */}
+      <div>
+        <Link
+          href="/activities"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1 py-0.5"
+        >
+          <ArrowLeft className="size-3.5 transition-transform group-hover:-translate-x-0.5" />
+          <span>Back to Activities</span>
+        </Link>
+      </div>
 
       {/* Activity Details Card with Authentic 3-Line Cursive Ruling */}
       <section
@@ -1113,6 +1133,7 @@ export default function ActivityDetailPage({
             <div className="flex items-center gap-2 shrink-0 pt-1 sm:pt-0">
               <Button
                 size="sm"
+                aria-keyshortcuts="u"
                 variant={submissions && submissions.length === 0 ? "outline" : "default"}
                 className={cn(
                   "h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer",
@@ -1292,7 +1313,7 @@ export default function ActivityDetailPage({
             <div
               role="radiogroup"
               aria-label="Submission display grouping"
-              className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-lg border border-border/60 self-start sm:self-auto"
+              className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-lg border border-border/60 self-start sm:self-auto shrink-0"
             >
               <button
                 type="button"
@@ -1330,7 +1351,7 @@ export default function ActivityDetailPage({
 
         {/* Filter & Search Bar — only when submissions exist */}
         {submissions && submissions.length > 0 && (
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
             {/* Primary controls: Search + Filter Pills */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 min-w-0 flex-1">
               {/* Search Student Input with '/' shortcut hint */}
@@ -1354,7 +1375,7 @@ export default function ActivityDetailPage({
             </div>
 
             {/* Secondary controls: Sort Selector + Divider + Score Guide */}
-            <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-border/50">
+            <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-border/50">
               {/* Sort Selector */}
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -1579,20 +1600,9 @@ export default function ActivityDetailPage({
                       studentName={group.studentName}
                       attemptCount={group.attemptCount}
                       allSubmissions={group.allSubmissions}
-                      onSelectAttempt={(sub) => {
-                        setAttemptOverrides((prev) => {
-                          const next = new Map(prev);
-                          next.set(group.studentId, sub);
-                          return next;
-                        });
-                      }}
-                      onSelect={() => setSelectedSubmission(activeSub)}
-                      onReupload={() =>
-                        openUpload({
-                          activityId: id,
-                          studentId: group.studentId,
-                        })
-                      }
+                      onSelectAttempt={handleSelectAttempt}
+                      onSelect={handleSelectSubmission}
+                      onReupload={handleReupload}
                     />
                   );
                 })
@@ -1601,13 +1611,8 @@ export default function ActivityDetailPage({
                     key={sub.id}
                     submission={sub}
                     studentName={sub.student?.full_name ?? "Unknown Student"}
-                    onSelect={() => setSelectedSubmission(sub)}
-                    onReupload={() =>
-                      openUpload({
-                        activityId: id,
-                        studentId: sub.student_id,
-                      })
-                    }
+                    onSelect={handleSelectSubmission}
+                    onReupload={handleReupload}
                   />
                 ))}
           </div>
