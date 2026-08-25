@@ -405,7 +405,8 @@ export default function ActivitiesPage() {
   }
 
   return (
-    <div className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
+    <TooltipProvider delay={150}>
+      <div className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
@@ -892,19 +893,25 @@ export default function ActivitiesPage() {
 
                   {/* Visual Progress Bar (when totalStudents > 0) */}
                   {totalStudents > 0 && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger
-                          render={
-                            <div
-                              tabIndex={0}
-                              role="progressbar"
-                              aria-valuenow={submissionCount}
-                              aria-valuemin={0}
-                              aria-valuemax={totalStudents}
-                              aria-label={`Submission progress: ${completedCount} completed, ${processingCount} processing, ${rejectedCount} rejected out of ${totalStudents} students`}
-                              className="w-full bg-muted/60 dark:bg-muted/40 h-2 rounded-full overflow-hidden flex shadow-2xs cursor-help focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                            >
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <div
+                            tabIndex={0}
+                            role="progressbar"
+                            aria-valuenow={submissionCount}
+                            aria-valuemin={0}
+                            aria-valuemax={totalStudents}
+                            aria-label={`Submission progress: ${completedCount} completed, ${processingCount} processing, ${rejectedCount} rejected out of ${totalStudents} students`}
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.stopPropagation();
+                              }
+                            }}
+                            className="group/progress w-full py-1.5 -my-1.5 cursor-help focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-full"
+                          >
+                            <div className="w-full bg-muted/60 dark:bg-muted/40 h-2 rounded-full overflow-hidden flex shadow-2xs group-hover/progress:brightness-95 transition-all">
                               {completedCount > 0 && (
                                 <div
                                   className="bg-brand-500 transition-all duration-300 motion-reduce:transition-none"
@@ -923,59 +930,66 @@ export default function ActivitiesPage() {
                               )}
                               {rejectedCount > 0 && (
                                 <div
-                                  className="bg-destructive/80 transition-all duration-300 motion-reduce:transition-none"
+                                  className="bg-destructive transition-all duration-300 motion-reduce:transition-none"
                                   style={{
                                     width: `${(rejectedCount / totalStudents) * 100}%`,
                                   }}
                                 />
                               )}
                             </div>
-                          }
-                        />
-                        <TooltipContent side="top" className="text-xs p-2.5 space-y-1.5 min-w-[210px]">
-                          <div className="font-semibold text-background pb-1 border-b border-background/20 flex items-center justify-between">
-                            <span>Class Submissions</span>
-                            <span>{submissionCount}/{totalStudents}</span>
                           </div>
-                          <div className="space-y-1.5 text-xs text-background">
+                        }
+                      />
+                      <TooltipContent
+                        side="top"
+                        sideOffset={6}
+                        arrowClassName="bg-popover fill-popover border-b border-r border-border"
+                        className="flex flex-col items-stretch bg-popover text-popover-foreground border border-border shadow-warm-md text-xs p-3 space-y-2 min-w-[220px] rounded-xl"
+                      >
+                        <div className="font-semibold text-foreground pb-2 border-b border-border flex items-center justify-between">
+                          <span className="text-[12px] font-heading font-medium">Class Submissions</span>
+                          <span className="tabular-nums text-muted-foreground font-medium text-[11px] bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded-md">
+                            {submissionCount}/{totalStudents}
+                          </span>
+                        </div>
+                        <div className="space-y-1.5 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="flex items-center gap-1.5 text-foreground/90 font-medium">
+                              <span className="size-2 rounded-full bg-brand-500 inline-block shrink-0 shadow-2xs" />
+                              Completed
+                            </span>
+                            <span className="font-semibold tabular-nums text-foreground">{completedCount}</span>
+                          </div>
+                          {processingCount > 0 && (
                             <div className="flex items-center justify-between">
-                              <span className="flex items-center gap-1.5 text-background/90">
-                                <span className="size-2 rounded-full bg-brand-400 inline-block shrink-0" />
-                                Completed
+                              <span className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 font-medium">
+                                <span className="size-2 rounded-full bg-amber-500 inline-block shrink-0 animate-pulse" />
+                                Processing
                               </span>
-                              <span className="font-semibold tabular-nums text-background">{completedCount}</span>
+                              <span className="font-semibold tabular-nums text-amber-700 dark:text-amber-300">{processingCount}</span>
                             </div>
-                            {processingCount > 0 && (
-                              <div className="flex items-center justify-between">
-                                <span className="flex items-center gap-1.5 text-background/90">
-                                  <span className="size-2 rounded-full bg-amber-400 inline-block shrink-0" />
-                                  Processing
-                                </span>
-                                <span className="font-semibold tabular-nums text-background">{processingCount}</span>
-                              </div>
-                            )}
-                            {rejectedCount > 0 && (
-                              <div className="flex items-center justify-between">
-                                <span className="flex items-center gap-1.5 text-background/90">
-                                  <span className="size-2 rounded-full bg-destructive inline-block shrink-0" />
-                                  Rejected (Needs Resubmission)
-                                </span>
-                                <span className="font-semibold tabular-nums text-background">{rejectedCount}</span>
-                              </div>
-                            )}
-                            {totalStudents - submissionCount > 0 && (
-                              <div className="flex items-center justify-between text-background/70 pt-0.5 border-t border-background/15">
-                                <span className="flex items-center gap-1.5">
-                                  <span className="size-2 rounded-full bg-background/40 inline-block shrink-0" />
-                                  Unsubmitted
-                                </span>
-                                <span className="font-medium tabular-nums">{totalStudents - submissionCount}</span>
-                              </div>
-                            )}
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                          )}
+                          {rejectedCount > 0 && (
+                            <div className="flex items-center justify-between">
+                              <span className="flex items-center gap-1.5 text-destructive font-medium">
+                                <span className="size-2 rounded-full bg-destructive inline-block shrink-0" />
+                                Rejected (Needs Re-scan)
+                              </span>
+                              <span className="font-semibold tabular-nums text-destructive">{rejectedCount}</span>
+                            </div>
+                          )}
+                          {totalStudents - submissionCount > 0 && (
+                            <div className="flex items-center justify-between text-muted-foreground pt-1.5 border-t border-border/50">
+                              <span className="flex items-center gap-1.5">
+                                <span className="size-2 rounded-full bg-muted-foreground/30 inline-block shrink-0" />
+                                Unsubmitted
+                              </span>
+                              <span className="font-medium tabular-nums">{totalStudents - submissionCount}</span>
+                            </div>
+                          )}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
                   )}
 
                   {/* Clean Assessment Status Subtext */}
@@ -1149,6 +1163,7 @@ export default function ActivitiesPage() {
           if (!open) setDeletingActivity(null);
         }}
       />
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
