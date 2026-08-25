@@ -2,14 +2,14 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-08-25
+**Last updated:** 2026-08-26
 
 ## Summary
 
 | Phase | Done / Total |
 |---|---|
 | Phase 0 — Setup | 11 / 16 |
-| Phase 1 — Teacher Tooling & Raw CV Pipeline | 9 / 17 |
+| Phase 1 — Teacher Tooling & Raw CV Pipeline | 14 / 17 |
 | Between Phases — Calibration | 0 / 6 |
 | Phase 2 — Calibrated Scoring & Full System | 0 / 11 |
 
@@ -69,11 +69,11 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Line segmentation | Done | | CV_PIPELINE §5.1 |
 | Word segmentation | Done | | CV_PIPELINE §5.2 |
 | Post-segmentation gate | Done | | CV_PIPELINE §5.3 |
-| Feature extraction — slant angle | Not Started | | CV_PIPELINE §6.1 |
-| Feature extraction — spacing | Not Started | | CV_PIPELINE §6.2 |
-| Feature extraction — baseline alignment | Not Started | | CV_PIPELINE §6.3 |
-| Feature extraction — size consistency | Not Started | | CV_PIPELINE §6.4 |
-| CNN handoff crop generation | Not Started | | CV_PIPELINE §7 |
+| Feature extraction — slant angle | Done | | CV_PIPELINE §6.1 |
+| Feature extraction — spacing | Done | | CV_PIPELINE §6.2 |
+| Feature extraction — baseline alignment | Done | | CV_PIPELINE §6.3 |
+| Feature extraction — size consistency | Done | | CV_PIPELINE §6.4 |
+| CNN handoff crop generation | Done | | CV_PIPELINE §7 |
 | Output schema persisted to `measurement` | Not Started | | CV_PIPELINE §8, DATABASE §8 |
 
 ---
