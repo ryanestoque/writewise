@@ -17,6 +17,12 @@ import {
   useSubmissionImageUrl,
   useSubmitManualScore,
 } from "@/lib/hooks/use-submissions";
+import {
+  RUBRIC_BANDS,
+  RUBRIC_CRITERIA,
+  getBandMeta,
+  getScoreBand,
+} from "@/lib/utils/scoring";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import {
   CheckCircle2,
@@ -137,50 +143,6 @@ const CRITERIA_GUIDE: Record<
   },
 };
 
-function getScoreBand(score: number | null | undefined): {
-  label: string;
-  className: string;
-  dotColor: string;
-} {
-  if (score === null || score === undefined) {
-    return {
-      label: "Pending",
-      className: "bg-muted/60 text-muted-foreground border-border",
-      dotColor: "bg-muted-foreground",
-    };
-  }
-
-  if (score >= 80) {
-    return {
-      label: "Excellent",
-      className:
-        "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-900",
-      dotColor: "bg-emerald-500",
-    };
-  }
-  if (score >= 60) {
-    return {
-      label: "Satisfactory",
-      className:
-        "bg-brand-50 text-brand-800 dark:bg-brand-950/80 dark:text-brand-300 border-brand-300/50 dark:border-brand-900",
-      dotColor: "bg-band-3",
-    };
-  }
-  if (score >= 40) {
-    return {
-      label: "Developing",
-      className:
-        "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200/80 dark:border-amber-900",
-      dotColor: "bg-amber-500",
-    };
-  }
-  return {
-    label: "Needs Improvement",
-    className:
-      "bg-orange-50 text-orange-800 dark:bg-orange-950 dark:text-orange-300 border-orange-200/80 dark:border-orange-900",
-    dotColor: "bg-orange-500",
-  };
-}
 
 function formatDateFull(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-US", {
@@ -214,111 +176,6 @@ function formatMetric(
   return `${formattedMean}${unit ? ` ${unit}` : ""}`;
 }
 
-const RUBRIC_BANDS: Array<{
-  band: ScoreBand;
-  label: string;
-  shortLabel: string;
-  score: string;
-  activeClass: string;
-  badgeClass: string;
-  dotColor: string;
-}> = [
-  {
-    band: "needs_improvement",
-    label: "Needs Improvement",
-    shortLabel: "Needs Imp.",
-    score: "12.5%",
-    activeClass:
-      "bg-orange-100 dark:bg-orange-950/80 text-orange-950 dark:text-orange-200 border-orange-400 dark:border-orange-600 ring-2 ring-orange-500/40 shadow-xs font-semibold",
-    badgeClass:
-      "bg-orange-50 text-orange-800 dark:bg-orange-950 dark:text-orange-300 border-orange-200",
-    dotColor: "bg-orange-500",
-  },
-  {
-    band: "developing",
-    label: "Developing",
-    shortLabel: "Developing",
-    score: "37.5%",
-    activeClass:
-      "bg-amber-100 dark:bg-amber-950/80 text-amber-950 dark:text-amber-200 border-amber-400 dark:border-amber-600 ring-2 ring-amber-500/40 shadow-xs font-semibold",
-    badgeClass:
-      "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200",
-    dotColor: "bg-amber-500",
-  },
-  {
-    band: "satisfactory",
-    label: "Satisfactory",
-    shortLabel: "Satisfactory",
-    score: "62.5%",
-    activeClass:
-      "bg-brand-100 dark:bg-brand-950/80 text-brand-950 dark:text-brand-200 border-brand-400 dark:border-brand-600 ring-2 ring-brand-500/40 shadow-xs font-semibold",
-    badgeClass:
-      "bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300",
-    dotColor: "bg-brand-500",
-  },
-  {
-    band: "excellent",
-    label: "Excellent",
-    shortLabel: "Excellent",
-    score: "87.5%",
-    activeClass:
-      "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-950 dark:text-emerald-200 border-emerald-400 dark:border-emerald-600 ring-2 ring-emerald-500/40 shadow-xs font-semibold",
-    badgeClass:
-      "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200",
-    dotColor: "bg-emerald-500",
-  },
-];
-
-const RUBRIC_CRITERIA: Array<{
-  key:
-    | "letter_formation_band"
-    | "size_consistency_band"
-    | "spacing_band"
-    | "slant_band"
-    | "baseline_alignment_band";
-  name: string;
-  hint: string;
-}> = [
-  {
-    key: "letter_formation_band",
-    name: "1. Letter Formation",
-    hint: "Proper cursive loops and complete stroke closures",
-  },
-  {
-    key: "size_consistency_band",
-    name: "2. Size Consistency",
-    hint: "Proportion and height across 3-line penmanship ruling",
-  },
-  {
-    key: "spacing_band",
-    name: "3. Spacing",
-    hint: "Inter-word rhythm and character separation spacing",
-  },
-  {
-    key: "slant_band",
-    name: "4. Slant Angle",
-    hint: "Uniform forward slant tilt (target 60°–68° angle)",
-  },
-  {
-    key: "baseline_alignment_band",
-    name: "5. Baseline Alignment",
-    hint: "Letters resting stably along bottom ruling baseline",
-  },
-];
-
-function getBandMeta(band?: ScoreBand | string | null) {
-  return (
-    RUBRIC_BANDS.find((b) => b.band === band) ?? {
-      band: "satisfactory" as ScoreBand,
-      label: band || "Unrated",
-      shortLabel: band || "Unrated",
-      score: "—",
-      activeClass: "",
-      badgeClass: "bg-muted/60 text-muted-foreground border-border",
-      dotColor: "bg-muted-foreground",
-    }
-  );
-}
 
 function ManualRubricEntryForm({ submissionId }: { submissionId: string }) {
   const { mutate: submitManualScore, isPending: isSubmittingScore } =
