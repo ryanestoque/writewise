@@ -313,7 +313,7 @@ function HandwritingGuidelineBackground() {
 
 export default function LoginPage() {
   return (
-    <main className="relative flex min-h-screen items-center justify-center bg-background px-4 py-8 antialiased">
+    <main className="relative flex min-h-dvh items-center justify-center bg-background px-4 py-8 antialiased">
       <HandwritingGuidelineBackground />
       <Suspense fallback={<Spinner className="size-8 text-primary" />}>
         <LoginForm />

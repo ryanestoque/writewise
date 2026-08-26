@@ -17,7 +17,7 @@ export default async function ParentLayout({
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-dvh flex-col">
       <main className="flex flex-1 items-center justify-center p-6">
         {children}
       </main>

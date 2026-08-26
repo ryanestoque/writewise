@@ -69,8 +69,8 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md p-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-4 border-b">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-md max-h-[min(90dvh,calc(100vh-2rem))] p-0 overflow-hidden flex flex-col shadow-warm">
+        <DialogHeader className="p-6 pb-4 border-b shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
               <KeyboardIcon className="size-4" />
@@ -86,7 +86,7 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
           </div>
         </DialogHeader>
 
-        <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+        <div className="p-6 space-y-5 flex-1 min-h-0 overflow-y-auto overscroll-contain">
           {categories.map((category) => (
             <div key={category} className="space-y-2.5">
               <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/90">

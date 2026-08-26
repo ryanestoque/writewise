@@ -221,7 +221,7 @@ export function RubricReferenceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[88vh] w-full p-0 overflow-hidden flex flex-col gap-0 shadow-warm">
+      <DialogContent className="w-[calc(100%-1.5rem)] sm:max-w-2xl max-h-[min(92dvh,calc(100vh-2rem))] p-0 overflow-hidden flex flex-col gap-0 shadow-warm">
         {/* Modal Header */}
         <DialogHeader className="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-border/80 bg-background/95 backdrop-blur-xs shrink-0 space-y-3">
           <div className="flex items-start gap-3.5 pr-8">
