@@ -1370,14 +1370,16 @@ export default function ActivityDetailPage({
           {/* Hero Penmanship Prompt on Authentic 3-Line Cursive Ruling */}
           <div className="space-y-1.5">
             <div className="relative p-4 sm:p-6 pb-6 sm:pb-8 min-h-[92px] rounded-xl bg-linear-to-b from-brand-50/25 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-2xs">
-              {/* Decorative 3-line penmanship ruling */}
-              <div
-                className="absolute inset-4 sm:inset-6 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden"
-                aria-hidden="true"
-              />
-              <p className="relative font-cursive text-foreground/90 font-normal tracking-wide select-all break-words text-[30px] sm:text-[36px] leading-[48px]">
-                {activity.target_text}
-              </p>
+              <div className="relative">
+                {/* Decorative 3-line penmanship ruling */}
+                <div
+                  className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden"
+                  aria-hidden="true"
+                />
+                <p className="relative font-cursive text-foreground/90 font-normal tracking-wide select-all break-words text-[30px] sm:text-[36px] leading-[48px]">
+                  {activity.target_text}
+                </p>
+              </div>
             </div>
           </div>
 

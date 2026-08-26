@@ -841,15 +841,17 @@ export default function ActivitiesPage() {
                     className="block group-hover:opacity-90 transition-opacity focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
                   >
                     <div className="relative p-3.5 sm:p-4 pb-5 sm:pb-6 rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 mb-3.5 overflow-hidden shadow-2xs">
-                      {/* Authentic 3-line ruling aligned with Cedarville Cursive baseline */}
-                      <div
-                        className="absolute inset-3.5 sm:inset-4 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden z-0"
-                        aria-hidden="true"
-                      />
+                      <div className="relative">
+                        {/* Authentic 3-line ruling aligned with Cedarville Cursive baseline */}
+                        <div
+                          className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden z-0"
+                          aria-hidden="true"
+                        />
 
-                      <p className="relative z-10 font-cursive text-[34px] leading-[48px] text-foreground/90 font-normal line-clamp-3 tracking-wide break-words">
-                        {activity.target_text}
-                      </p>
+                        <p className="relative z-10 font-cursive text-[34px] leading-[48px] text-foreground/90 font-normal tracking-wide break-words">
+                          {activity.target_text}
+                        </p>
+                      </div>
                     </div>
                   </Link>
                 </div>
