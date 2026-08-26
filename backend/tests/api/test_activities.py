@@ -26,12 +26,7 @@ def test_create_activity(client, cleanup_activities):
     cleanup_activities.append(data["id"])
 
     # Verify in DB
-    res = (
-        supabase_client.table("activity")
-        .select("*")
-        .eq("id", data["id"])
-        .execute()
-    )
+    res = supabase_client.table("activity").select("*").eq("id", data["id"]).execute()
     assert len(res.data) == 1
     assert res.data[0]["target_text"] == "the quick brown fox"
     assert res.data[0]["created_by"] == TEST_TEACHER_ID
@@ -113,12 +108,7 @@ def test_toggle_archive_activity(client, cleanup_activities):
     assert arch_res.json() == {"id": act_id, "is_archived": True}
 
     # 3. Verify in DB
-    res = (
-        supabase_client.table("activity")
-        .select("is_archived")
-        .eq("id", act_id)
-        .execute()
-    )
+    res = supabase_client.table("activity").select("is_archived").eq("id", act_id).execute()
     assert res.data[0]["is_archived"] is True
 
     # 4. Unarchive
@@ -126,19 +116,12 @@ def test_toggle_archive_activity(client, cleanup_activities):
     assert unarch_res.status_code == 200
     assert unarch_res.json() == {"id": act_id, "is_archived": False}
 
-    res = (
-        supabase_client.table("activity")
-        .select("is_archived")
-        .eq("id", act_id)
-        .execute()
-    )
+    res = supabase_client.table("activity").select("is_archived").eq("id", act_id).execute()
     assert res.data[0]["is_archived"] is False
 
 
 def test_toggle_archive_activity_not_found(client):
-    response = client.patch(
-        "/api/activities/99999999-9999-9999-9999-999999999999/archive"
-    )
+    response = client.patch("/api/activities/99999999-9999-9999-9999-999999999999/archive")
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "NOT_FOUND"
 
@@ -153,36 +136,25 @@ def test_bulk_archive_activities(client, cleanup_activities):
     cleanup_activities.extend(ids)
 
     # 2. Bulk archive
-    bulk_res = client.post(
-        "/api/activities/bulk-archive", json={"ids": ids, "archived": True}
-    )
+    bulk_res = client.post("/api/activities/bulk-archive", json={"ids": ids, "archived": True})
     assert bulk_res.status_code == 200
     body = bulk_res.json()
     assert sorted(body["updated"]) == sorted(ids)
     assert body["skipped"] == []
 
     # 3. Verify in DB
-    res = (
-        supabase_client.table("activity")
-        .select("id, is_archived")
-        .in_("id", ids)
-        .execute()
-    )
+    res = supabase_client.table("activity").select("id, is_archived").in_("id", ids).execute()
     assert all(row["is_archived"] is True for row in res.data)
 
     # 4. Bulk unarchive
-    restore_res = client.post(
-        "/api/activities/bulk-archive", json={"ids": ids, "archived": False}
-    )
+    restore_res = client.post("/api/activities/bulk-archive", json={"ids": ids, "archived": False})
     assert restore_res.status_code == 200
     assert sorted(restore_res.json()["updated"]) == sorted(ids)
 
 
 def test_bulk_archive_skips_non_owned_ids(client, cleanup_activities):
     # 1. Create one owned activity
-    create_res = client.post(
-        "/api/activities", json={"target_text": "owned activity"}
-    )
+    create_res = client.post("/api/activities", json={"target_text": "owned activity"})
     assert create_res.status_code == 201
     owned_id = create_res.json()["id"]
     cleanup_activities.append(owned_id)
@@ -200,8 +172,6 @@ def test_bulk_archive_skips_non_owned_ids(client, cleanup_activities):
 
 
 def test_bulk_archive_empty_ids(client):
-    response = client.post(
-        "/api/activities/bulk-archive", json={"ids": [], "archived": True}
-    )
+    response = client.post("/api/activities/bulk-archive", json={"ids": [], "archived": True})
     assert response.status_code == 200
     assert response.json() == {"updated": [], "skipped": []}

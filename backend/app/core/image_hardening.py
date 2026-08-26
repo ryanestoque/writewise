@@ -82,8 +82,7 @@ def validate_and_harden_image(file_bytes: bytes) -> bytes:
             detail={
                 "code": "UNSUPPORTED_FILE_TYPE",
                 "message": (
-                    "File could not be decoded as an image. "
-                    "Please upload a valid JPEG or PNG."
+                    "File could not be decoded as an image. Please upload a valid JPEG or PNG."
                 ),
                 "details": {},
             },

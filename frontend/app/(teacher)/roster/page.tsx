@@ -350,7 +350,7 @@ export default function RosterPage() {
   }
 
   return (
-    <div className="w-full space-y-5 sm:space-y-6 pb-20 sm:pb-16 px-1 sm:px-0">
+    <div className="w-full min-w-0 space-y-5 sm:space-y-6 pb-20 sm:pb-16">
       {/* Header section with title and actions */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
@@ -403,7 +403,7 @@ export default function RosterPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onClear={() => setSearchQuery("")}
-              containerClassName="w-full lg:w-72"
+              containerClassName="w-full lg:w-72 shrink-0"
             />
 
             {/* Section Filter Pills */}
@@ -413,7 +413,7 @@ export default function RosterPage() {
               onChange={setSelectedSection}
               label="Section:"
               ariaLabel="Filter by class section"
-              containerClassName="lg:justify-end"
+              containerClassName="min-w-0 flex-1 lg:justify-end"
             />
           </div>
         )}

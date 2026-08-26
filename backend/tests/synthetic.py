@@ -105,26 +105,26 @@ def make_small_image(width: int = 800, height: int = 600) -> bytes:
 
 def make_3line_worksheet(width: int = 2000, height: int = 2600, angle_deg: float = 0.0) -> bytes:
     """Generate a worksheet with 3-line ruling (topline, midline, baseline) and rotation.
-    
+
     Simulates Grade 3 paper where each writing row has 3 printed lines.
     """
     img = np.full((height, width), _SHARP_BG, dtype=np.uint8)
-    
+
     n_rows = 4
     row_gap = 400
     line_spacing = 60
-    
+
     start_y = 400
     for i in range(n_rows):
         top_y = start_y + i * row_gap
         mid_y = top_y + line_spacing
         base_y = mid_y + line_spacing
-        
+
         # Draw the 3 lines for this row
         cv2.line(img, (100, top_y), (width - 100, top_y), _SHARP_INK, thickness=3)
         cv2.line(img, (100, mid_y), (width - 100, mid_y), _SHARP_INK, thickness=3)
         cv2.line(img, (100, base_y), (width - 100, base_y), _SHARP_INK, thickness=3)
-        
+
         # Add some ink (using _SHARP_INK)
         cv2.rectangle(img, (300, top_y + 10), (350, base_y - 10), _SHARP_INK, thickness=-1)
 
@@ -186,4 +186,4 @@ def make_segmented_worksheet(
             current_x += word_gap
 
     _, buf = cv2.imencode(".jpg", img)
-    return buf.tobytes()
+    return buf.tobytes()

@@ -1128,7 +1128,7 @@ export default function ActivityDetailPage({
             <Skeleton className="h-6 w-36" />
             <Skeleton className="h-8 w-44 rounded-lg" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="space-y-2">
                 <Skeleton className="aspect-4/3 w-full rounded-xl" />
@@ -1195,7 +1195,7 @@ export default function ActivityDetailPage({
       : filteredAndSortedSubmissions.length;
 
   return (
-    <div className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
+    <div className="w-full min-w-0 space-y-5 sm:space-y-6 pb-28 sm:pb-24">
       {/* Top Back Navigation Trail */}
       <div>
         <Link
@@ -1233,11 +1233,11 @@ export default function ActivityDetailPage({
           </div>
         )}
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 min-w-0">
           {/* Top Row: Context Badges + Action Buttons */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
             {/* Badges & Metadata */}
-            <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground min-w-0">
               {isArchived ? (
                 <Badge
                   variant="outline"
@@ -1275,7 +1275,7 @@ export default function ActivityDetailPage({
             </div>
 
             {/* Fast Action CTAs */}
-            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
               <Button
                 size="sm"
                 aria-keyshortcuts="u"
@@ -1368,7 +1368,7 @@ export default function ActivityDetailPage({
           </div>
 
           {/* Hero Penmanship Prompt on Authentic 3-Line Cursive Ruling */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <div className="relative p-4 sm:p-6 pb-6 sm:pb-8 min-h-[92px] rounded-xl bg-linear-to-b from-brand-50/25 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-2xs">
               <div className="relative">
                 {/* Decorative 3-line penmanship ruling */}
@@ -1376,7 +1376,7 @@ export default function ActivityDetailPage({
                   className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden"
                   aria-hidden="true"
                 />
-                <p className="relative font-cursive text-foreground/90 font-normal tracking-wide select-all break-words text-[30px] sm:text-[36px] leading-[48px]">
+                <p className="relative font-cursive text-foreground/90 font-normal tracking-wide select-all break-words text-2xl sm:text-3xl lg:text-4xl leading-relaxed sm:leading-[48px]">
                   {activity.target_text}
                 </p>
               </div>
@@ -1690,7 +1690,7 @@ export default function ActivityDetailPage({
 
         {/* Filter & Search Bar */}
         {submissions && submissions.length > 0 && (
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
             {/* Primary controls: Search + Filter Pills */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 min-w-0 flex-1">
               {/* Search Student Input with '/' shortcut hint */}
@@ -1714,7 +1714,7 @@ export default function ActivityDetailPage({
             </div>
 
             {/* Secondary controls: Sort Selector + Rubric Guide Trigger */}
-            <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-border/50">
+            <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-border/50">
               {/* Sort Selector */}
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -1816,7 +1816,7 @@ export default function ActivityDetailPage({
 
         {/* Submissions Content Grid */}
         {submissionsLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
@@ -1928,7 +1928,7 @@ export default function ActivityDetailPage({
           <div
             role="region"
             aria-label="Student submissions list"
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4"
+            className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4"
           >
             {viewMode === "grouped"
               ? filteredAndSortedGroups.map((group) => {

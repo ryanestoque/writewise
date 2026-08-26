@@ -12,8 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  type ScoreBand,
   type Submission,
   useSubmissionImageUrl,
+  useSubmitManualScore,
 } from "@/lib/hooks/use-submissions";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import {
@@ -34,7 +36,12 @@ import {
   Award,
   Sparkles,
   Binary,
+  Check,
+  Loader2,
+  ShieldCheck,
+  CheckCheck,
 } from "lucide-react";
+
 
 interface SubmissionDetailDialogProps {
   submission: Submission | null;
@@ -207,6 +214,306 @@ function formatMetric(
   return `${formattedMean}${unit ? ` ${unit}` : ""}`;
 }
 
+const RUBRIC_BANDS: Array<{
+  band: ScoreBand;
+  label: string;
+  shortLabel: string;
+  score: string;
+  activeClass: string;
+  badgeClass: string;
+  dotColor: string;
+}> = [
+  {
+    band: "needs_improvement",
+    label: "Needs Improvement",
+    shortLabel: "Needs Imp.",
+    score: "12.5%",
+    activeClass:
+      "bg-orange-100 dark:bg-orange-950/80 text-orange-950 dark:text-orange-200 border-orange-400 dark:border-orange-600 ring-2 ring-orange-500/40 shadow-xs font-semibold",
+    badgeClass:
+      "bg-orange-50 text-orange-800 dark:bg-orange-950 dark:text-orange-300 border-orange-200",
+    dotColor: "bg-orange-500",
+  },
+  {
+    band: "developing",
+    label: "Developing",
+    shortLabel: "Developing",
+    score: "37.5%",
+    activeClass:
+      "bg-amber-100 dark:bg-amber-950/80 text-amber-950 dark:text-amber-200 border-amber-400 dark:border-amber-600 ring-2 ring-amber-500/40 shadow-xs font-semibold",
+    badgeClass:
+      "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200",
+    dotColor: "bg-amber-500",
+  },
+  {
+    band: "satisfactory",
+    label: "Satisfactory",
+    shortLabel: "Satisfactory",
+    score: "62.5%",
+    activeClass:
+      "bg-brand-100 dark:bg-brand-950/80 text-brand-950 dark:text-brand-200 border-brand-400 dark:border-brand-600 ring-2 ring-brand-500/40 shadow-xs font-semibold",
+    badgeClass:
+      "bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300",
+    dotColor: "bg-brand-500",
+  },
+  {
+    band: "excellent",
+    label: "Excellent",
+    shortLabel: "Excellent",
+    score: "87.5%",
+    activeClass:
+      "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-950 dark:text-emerald-200 border-emerald-400 dark:border-emerald-600 ring-2 ring-emerald-500/40 shadow-xs font-semibold",
+    badgeClass:
+      "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200",
+    dotColor: "bg-emerald-500",
+  },
+];
+
+const RUBRIC_CRITERIA: Array<{
+  key:
+    | "letter_formation_band"
+    | "size_consistency_band"
+    | "spacing_band"
+    | "slant_band"
+    | "baseline_alignment_band";
+  name: string;
+  hint: string;
+}> = [
+  {
+    key: "letter_formation_band",
+    name: "1. Letter Formation",
+    hint: "Proper cursive loops and complete stroke closures",
+  },
+  {
+    key: "size_consistency_band",
+    name: "2. Size Consistency",
+    hint: "Proportion and height across 3-line penmanship ruling",
+  },
+  {
+    key: "spacing_band",
+    name: "3. Spacing",
+    hint: "Inter-word rhythm and character separation spacing",
+  },
+  {
+    key: "slant_band",
+    name: "4. Slant Angle",
+    hint: "Uniform forward slant tilt (target 60°–68° angle)",
+  },
+  {
+    key: "baseline_alignment_band",
+    name: "5. Baseline Alignment",
+    hint: "Letters resting stably along bottom ruling baseline",
+  },
+];
+
+function getBandMeta(band?: ScoreBand | string | null) {
+  return (
+    RUBRIC_BANDS.find((b) => b.band === band) ?? {
+      band: "satisfactory" as ScoreBand,
+      label: band || "Unrated",
+      shortLabel: band || "Unrated",
+      score: "—",
+      activeClass: "",
+      badgeClass: "bg-muted/60 text-muted-foreground border-border",
+      dotColor: "bg-muted-foreground",
+    }
+  );
+}
+
+function ManualRubricEntryForm({ submissionId }: { submissionId: string }) {
+  const { mutate: submitManualScore, isPending: isSubmittingScore } =
+    useSubmitManualScore();
+
+  const [rubricScores, setRubricScores] = useState<{
+    letter_formation_band: ScoreBand | null;
+    size_consistency_band: ScoreBand | null;
+    spacing_band: ScoreBand | null;
+    slant_band: ScoreBand | null;
+    baseline_alignment_band: ScoreBand | null;
+  }>({
+    letter_formation_band: null,
+    size_consistency_band: null,
+    spacing_band: null,
+    slant_band: null,
+    baseline_alignment_band: null,
+  });
+
+  const [submitErrorMsg, setSubmitErrorMsg] = useState<string | null>(null);
+  const [submitSuccessNotice, setSubmitSuccessNotice] = useState(false);
+
+  const allBandsSelected =
+    rubricScores.letter_formation_band !== null &&
+    rubricScores.size_consistency_band !== null &&
+    rubricScores.spacing_band !== null &&
+    rubricScores.slant_band !== null &&
+    rubricScores.baseline_alignment_band !== null;
+
+  const selectedCount = Object.values(rubricScores).filter(Boolean).length;
+
+  const handleSubmitRubric = () => {
+    if (!allBandsSelected) return;
+    setSubmitErrorMsg(null);
+
+    submitManualScore(
+      {
+        submissionId,
+        scores: {
+          letter_formation_band: rubricScores.letter_formation_band!,
+          size_consistency_band: rubricScores.size_consistency_band!,
+          spacing_band: rubricScores.spacing_band!,
+          slant_band: rubricScores.slant_band!,
+          baseline_alignment_band: rubricScores.baseline_alignment_band!,
+        },
+      },
+      {
+        onSuccess: () => {
+          setSubmitSuccessNotice(true);
+        },
+        onError: (err: unknown) => {
+          const errorObj = err as { message?: string };
+          setSubmitErrorMsg(
+            errorObj?.message ||
+              "Failed to submit manual rubric score. Please try again."
+          );
+        },
+      }
+    );
+  };
+
+  return (
+    <div className="p-4 rounded-xl bg-surface dark:bg-card border border-border shadow-xs space-y-3.5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2 border-b border-border/60">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <Award className="size-4 text-brand-600 dark:text-brand-400" />
+            <h4 className="text-xs font-heading font-semibold text-foreground">
+              Teacher Rubric Assessment
+            </h4>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Select 1 band per criterion to contribute calibration data (DESIGN §7.9).
+          </p>
+        </div>
+        <Badge
+          variant="outline"
+          className={`text-[10px] font-semibold px-2 py-0.5 shrink-0 self-start sm:self-auto ${
+            allBandsSelected
+              ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300"
+              : "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300"
+          }`}
+        >
+          {selectedCount}/5 rated
+        </Badge>
+      </div>
+
+      {submitErrorMsg && (
+        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-start gap-2">
+          <AlertCircle className="size-4 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <span className="font-semibold block">Submission Error</span>
+            <span>{submitErrorMsg}</span>
+          </div>
+        </div>
+      )}
+
+      {submitSuccessNotice && (
+        <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
+          <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
+          <span>Rubric saved successfully! Recorded for calibration.</span>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {RUBRIC_CRITERIA.map((criterion) => {
+          const selectedBand = rubricScores[criterion.key];
+          return (
+            <div
+              key={criterion.key}
+              className="space-y-1.5 p-2.5 rounded-lg bg-muted/20 border border-border/50"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-foreground">
+                  {criterion.name}
+                </span>
+                {selectedBand && (
+                  <span className="text-[10px] font-mono text-muted-foreground">
+                    {getBandMeta(selectedBand).score}
+                  </span>
+                )}
+              </div>
+
+              {/* Segmented 4-Button Group */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                {RUBRIC_BANDS.map((option) => {
+                  const isChecked = selectedBand === option.band;
+                  return (
+                    <button
+                      key={option.band}
+                      type="button"
+                      disabled={isSubmittingScore}
+                      onClick={() =>
+                        setRubricScores((prev) => ({
+                          ...prev,
+                          [criterion.key]: option.band,
+                        }))
+                      }
+                      className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${
+                        isChecked
+                          ? option.activeClass
+                          : "bg-surface dark:bg-card border-border/70 text-muted-foreground hover:text-foreground hover:bg-muted/50 hover:border-border"
+                      }`}
+                    >
+                      <span className="text-[11px] leading-tight font-medium">
+                        {option.shortLabel}
+                      </span>
+                      <span className="text-[10px] opacity-70 mt-0.5">
+                        {option.score}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center justify-between pt-2 border-t border-border/60">
+        <div className="text-[11px] text-muted-foreground">
+          {allBandsSelected ? (
+            <span className="text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-1">
+              <Check className="size-3" />
+              All 5 criteria rated
+            </span>
+          ) : (
+            <span>Please rate all 5 criteria to submit</span>
+          )}
+        </div>
+
+        <Button
+          type="button"
+          size="sm"
+          disabled={!allBandsSelected || isSubmittingScore}
+          onClick={handleSubmitRubric}
+          className="h-8 min-h-[32px] px-3.5 bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-semibold rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed"
+        >
+          {isSubmittingScore ? (
+            <>
+              <Loader2 className="size-3.5 animate-spin" />
+              <span>Saving Rubric...</span>
+            </>
+          ) : (
+            <>
+              <CheckCheck className="size-3.5" />
+              <span>Submit Rubric Scores</span>
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function SubmissionDetailDialog({
   submission,
   submissions,
@@ -223,6 +530,8 @@ export function SubmissionDetailDialog({
   const { data: imageUrl, isLoading: isImageLoading } = useSubmissionImageUrl(
     submission?.image_path ?? null
   );
+
+
 
   // Keyboard navigation across submissions
   useEffect(() => {
@@ -502,13 +811,19 @@ export function SubmissionDetailDialog({
                       <Award className="size-3" />
                       Composite score: {Math.round(compositeScore)}%
                     </span>
+                  ) : submission.manual_score ? (
+                    <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300 font-medium">
+                      <ShieldCheck className="size-3" />
+                      Rubric Graded
+                    </span>
                   ) : submission.status === "completed" ? (
                     <span className="inline-flex items-center gap-1 text-brand-700 dark:text-brand-300 font-medium">
                       <Sparkles className="size-3" />
-                      Raw CV Metrics Available
+                      Raw CV Metrics Available · Rubric Needed
                     </span>
                   ) : null}
                 </DialogDescription>
+
               </div>
             </div>
 
@@ -900,8 +1215,73 @@ export function SubmissionDetailDialog({
                           })}
                         </div>
                       </div>
+
+                      {/* Phase 1: Teacher Rubric Assessment (Spearman's Rho Calibration Data) */}
+                      <div className="pt-2 border-t border-border/70 space-y-3">
+                        {submission.manual_score ? (
+                          /* READ-ONLY / CONFIRMED RUBRIC STATE */
+                          <div className="p-4 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/80 shadow-xs space-y-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 shrink-0">
+                                  <ShieldCheck className="size-4" />
+                                </div>
+                                <span className="text-xs font-semibold text-emerald-950 dark:text-emerald-200">
+                                  Independent Rubric Assessment (Submitted)
+                                </span>
+                              </div>
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] font-semibold px-2 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800"
+                              >
+                                Phase 1 Calibrated
+                              </Badge>
+                            </div>
+
+                            <p className="text-[11px] text-emerald-900/80 dark:text-emerald-300/80 leading-relaxed">
+                              Teacher rubric ratings are securely recorded as ground truth for offline Spearman&apos;s Rho calibration.
+                            </p>
+
+                            <div className="space-y-1.5 pt-1">
+                              {RUBRIC_CRITERIA.map((criterion) => {
+                                const bandValue = submission.manual_score?.[criterion.key];
+                                const bandMeta = getBandMeta(bandValue);
+                                return (
+                                  <div
+                                    key={criterion.key}
+                                    className="flex items-center justify-between p-2.5 rounded-lg bg-surface/90 dark:bg-card/90 border border-emerald-200/60 dark:border-emerald-900/60 text-xs"
+                                  >
+                                    <div className="min-w-0 pr-2">
+                                      <span className="font-semibold text-foreground truncate block">
+                                        {criterion.name}
+                                      </span>
+                                      <span className="text-[10px] text-muted-foreground truncate block">
+                                        {criterion.hint}
+                                      </span>
+                                    </div>
+                                    <Badge
+                                      variant="outline"
+                                      className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 inline-flex items-center gap-1.5 ${bandMeta.badgeClass}`}
+                                    >
+                                      <span className={`size-1.5 rounded-full ${bandMeta.dotColor}`} />
+                                      {bandMeta.label} ({bandMeta.score})
+                                    </Badge>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          <ManualRubricEntryForm
+                            key={submission.id}
+                            submissionId={submission.id}
+                          />
+                        )}
+                      </div>
                     </>
                   )}
+
+
 
                   {/* Focused Criterion Diagnostic Insight Card (Shared) */}
                   {selectedCriterion && activeCriterionInfo && (

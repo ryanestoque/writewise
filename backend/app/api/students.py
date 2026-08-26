@@ -52,11 +52,7 @@ def create_student(student_in: StudentCreate, teacher: dict = Depends(get_curren
     if student_in.parent_email and student_in.parent_email.strip():
         insert_data["parent_email"] = student_in.parent_email.strip()
 
-    res = (
-        supabase_client.table("student")
-        .insert(insert_data)
-        .execute()
-    )
+    res = supabase_client.table("student").insert(insert_data).execute()
 
     if not res.data:
         raise HTTPException(

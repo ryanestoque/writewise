@@ -17,8 +17,7 @@ from app.cv.guide_lines import DeskewResult
 
 @dataclass
 class PostSegmentationRejection(Exception):
-    """Raised when segmentation output fails the post-segmentation quality gate (CV_PIPELINE §5.3).
-    """
+    """Raised when segmentation fails the post-segmentation quality gate (CV_PIPELINE §5.3)."""
 
     code: str
     message: str
@@ -245,9 +244,7 @@ def segment_lines_and_words(
         current_word_runs = [ink_runs[0]]
         current_word_intra_gaps: List[int] = []
 
-        def _create_word_segment(
-            runs: List[Tuple[int, int]], intra_gaps: List[int]
-        ) -> WordSegment:
+        def _create_word_segment(runs: List[Tuple[int, int]], intra_gaps: List[int]) -> WordSegment:
             word_x1 = runs[0][0]
             word_x2 = runs[-1][1]
 

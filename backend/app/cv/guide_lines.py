@@ -57,27 +57,23 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
             angle = np.degrees(np.arctan2(y2 - y1, x2 - x1))
             if -15 < angle < 15:
                 angles.append(angle)
-        
+
         if angles:
             deskew_angle = float(np.median(angles))
 
     # 2. Deskew the images
     center = (w // 2, h // 2)
     M = cv2.getRotationMatrix2D(center, deskew_angle, 1.0)
-    
-    gray = cv2.warpAffine(
-        preprocessed.gray, M, (w, h), flags=cv2.INTER_LINEAR, borderValue=255
-    )
+
+    gray = cv2.warpAffine(preprocessed.gray, M, (w, h), flags=cv2.INTER_LINEAR, borderValue=255)
     denoised = cv2.warpAffine(
         preprocessed.denoised, M, (w, h), flags=cv2.INTER_LINEAR, borderValue=255
     )
-    binary = cv2.warpAffine(
-        preprocessed.binary, M, (w, h), flags=cv2.INTER_NEAREST, borderValue=0
-    )
+    binary = cv2.warpAffine(preprocessed.binary, M, (w, h), flags=cv2.INTER_NEAREST, borderValue=0)
 
     # 3. Find line Y-coordinates in deskewed image
     row_proj = np.sum(binary, axis=1) / 255.0  # number of ink pixels per row
-    
+
     # Find peaks (rows with many ink pixels)
     peak_threshold = w * 0.25  # 25% of width must be ink
     peaks = []
@@ -106,7 +102,7 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
     if peaks:
         groups = []
         current_group = [peaks[0]]
-        
+
         # Use a dynamic threshold based on median gap if possible, or a fixed reasonable one
         # Max distance between lines in a 3-line ruling is usually < 150px on a 2600px image
         for i in range(1, len(peaks)):
@@ -116,7 +112,7 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
                 groups.append(current_group)
                 current_group = [peaks[i]]
         groups.append(current_group)
-        
+
         for g in groups:
             if len(g) >= 3:
                 # Assuming top-down order (smallest Y to largest Y)
@@ -130,5 +126,5 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
         binary=binary,
         baseline_y=baseline_y,
         midline_y=midline_y,
-        topline_y=topline_y
+        topline_y=topline_y,
     )

@@ -9,7 +9,7 @@ Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §
 | Phase | Done / Total |
 |---|---|
 | Phase 0 — Setup | 11 / 16 |
-| Phase 1 — Teacher Tooling & Raw CV Pipeline | 16 / 17 |
+| Phase 1 — Teacher Tooling & Raw CV Pipeline | 17 / 17 |
 | Between Phases — Calibration | 0 / 6 |
 | Phase 2 — Calibrated Scoring & Full System | 0 / 11 |
 
@@ -57,7 +57,8 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Activity creation (freeform target text) | Done | | PRD §7.1, API_SPEC §3.2, DESIGN §6 screens 5–6 |
 | Submission upload (single photo per activity) | Done | | PRD §7.1, API_SPEC §3.3 |
 | Raw CV measurement display | Done | | PRD §7.1/§7.3, CV_PIPELINE §8, DESIGN §7.2 |
-| Manual rubric score entry | Not Started | | PRD §7.1, DATABASE §9, DESIGN §7.9 |
+| Manual rubric score entry | Done | | PRD §7.1, DATABASE §9, DESIGN §7.9 |
+
 
 ### CV Pipeline
 

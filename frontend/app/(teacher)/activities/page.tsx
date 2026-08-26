@@ -406,7 +406,7 @@ export default function ActivitiesPage() {
 
   return (
     <TooltipProvider delay={150}>
-      <div className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
+      <div className="w-full min-w-0 space-y-5 sm:space-y-6 pb-28 sm:pb-24">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
@@ -447,7 +447,7 @@ export default function ActivitiesPage() {
           />
 
           {/* Filter Pills & Sort Controls */}
-          <div className="relative min-w-0 flex-1 flex items-center justify-between xl:justify-end gap-2 w-full xl:w-auto">
+          <div className="relative min-w-0 flex-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-between xl:justify-end gap-2 w-full xl:w-auto">
             <FilterPills
               items={activityFilterItems}
               value={filterType}
@@ -541,7 +541,7 @@ export default function ActivitiesPage() {
       {/* Content Area */}
       {isLoading ? (
         /* Loading Skeleton */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
@@ -643,7 +643,7 @@ export default function ActivitiesPage() {
           id="activities-grid"
           role="region"
           aria-label="Activities list"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+          className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4"
         >
           {filteredAndSortedActivities.map((activity) => {
             const isArchived = activity.is_archived;

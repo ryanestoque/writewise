@@ -55,8 +55,7 @@ def _check_blur(gray: np.ndarray) -> float:
     if variance < BLUR_VARIANCE_MIN:
         raise QualityGateRejection(
             code="QUALITY_GATE_BLUR",
-            message="This photo is too blurry to analyze. "
-            "Hold the camera steady and try again.",
+            message="This photo is too blurry to analyze. Hold the camera steady and try again.",
             measured_value=float(variance),
             threshold=float(BLUR_VARIANCE_MIN),
         )
@@ -68,8 +67,7 @@ def _check_brightness(gray: np.ndarray) -> float:
     if mean < BRIGHTNESS_MIN:
         raise QualityGateRejection(
             code="QUALITY_GATE_BRIGHTNESS",
-            message="This photo is too dark to analyze. "
-            "Retake it in better lighting.",
+            message="This photo is too dark to analyze. Retake it in better lighting.",
             measured_value=float(mean),
             threshold=float(BRIGHTNESS_MIN),
         )

@@ -1,6 +1,4 @@
-"""Unit tests for CV Pipeline §4: Guide-Line Detection & Deskew.
-"""
-
+"""Unit tests for CV Pipeline §4: Guide-Line Detection & Deskew."""
 
 from app.cv.guide_lines import DeskewResult, detect_and_deskew
 from app.cv.preprocessing import preprocess
@@ -24,11 +22,11 @@ def test_deskew_corrects_angle():
     # Rotate by 5 degrees
     image_bytes = make_3line_worksheet(angle_deg=5.0)
     preprocessed = preprocess(image_bytes)
-    
+
     # Before deskew, lines are tilted.
     # After deskew, row projection should have sharp peaks (if it's flat).
     result = detect_and_deskew(preprocessed)
-    
+
     # If correctly deskewed, the y-coordinates should match the known generated spacing
     assert len(result.baseline_y) > 0
 
@@ -41,7 +39,7 @@ def test_extracts_correct_y_coordinates():
     result = detect_and_deskew(preprocessed)
 
     assert len(result.baseline_y) == 4  # Assuming default generator makes 4 rows
-    
+
     # For a horizontal image, distance between top/mid and mid/base should be roughly equal
     # based on the synthetic generator.
     for top, mid, base in zip(result.topline_y, result.midline_y, result.baseline_y):

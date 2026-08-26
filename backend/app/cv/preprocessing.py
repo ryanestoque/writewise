@@ -80,9 +80,7 @@ def preprocess(image_bytes: bytes) -> PreprocessResult:
     #    background = 0.  This is what cv2.findContours,
     #    cv2.HoughLinesP, and column projection profiles expect
     #    (white foreground on black background).
-    otsu_thresh, binary = cv2.threshold(
-        denoised, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
-    )
+    otsu_thresh, binary = cv2.threshold(denoised, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
     return PreprocessResult(
         gray=gray,

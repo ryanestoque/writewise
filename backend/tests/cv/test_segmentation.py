@@ -161,4 +161,3 @@ def test_validate_segmentation_edge_cases():
 
     with pytest.raises(PostSegmentationRejection):
         validate_segmentation(26, 10)
-

@@ -44,6 +44,4 @@ def health_check():
 
 app.include_router(students_router, prefix="/api/students", tags=["students"])
 app.include_router(activities_router, prefix="/api/activities", tags=["activities"])
-app.include_router(
-    submissions_router, prefix="/api/submissions", tags=["submissions"]
-)
+app.include_router(submissions_router, prefix="/api/submissions", tags=["submissions"])

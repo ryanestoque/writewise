@@ -119,12 +119,7 @@ def update_activity(
         update_data["is_take_home"] = activity_in.is_take_home
 
     if update_data:
-        res = (
-            supabase_client.table("activity")
-            .update(update_data)
-            .eq("id", activity_id)
-            .execute()
-        )
+        res = supabase_client.table("activity").update(update_data).eq("id", activity_id).execute()
         if not res.data:
             raise HTTPException(
                 status_code=500,
@@ -265,10 +260,7 @@ def delete_activity(
 
     # 2. Check if submissions exist for this activity
     sub_res = (
-        supabase_client.table("submission")
-        .select("id")
-        .eq("activity_id", activity_id)
-        .execute()
+        supabase_client.table("submission").select("id").eq("activity_id", activity_id).execute()
     )
     if sub_res.data and len(sub_res.data) > 0:
         raise HTTPException(
@@ -281,12 +273,7 @@ def delete_activity(
         )
 
     # 3. Delete activity
-    del_res = (
-        supabase_client.table("activity")
-        .delete()
-        .eq("id", activity_id)
-        .execute()
-    )
+    del_res = supabase_client.table("activity").delete().eq("id", activity_id).execute()
     if not del_res.data:
         raise HTTPException(
             status_code=500,

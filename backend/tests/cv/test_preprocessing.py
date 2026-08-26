@@ -15,6 +15,7 @@ from tests.synthetic import make_sharp_worksheet
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _encode_gray(gray: np.ndarray) -> bytes:
     """Encode a single-channel image as JPEG bytes for ``preprocess()``."""
     # preprocess() expects a color (BGR) input it can decode, so
@@ -48,12 +49,11 @@ def _make_bimodal_image(
 # Tests: PreprocessResult dataclass
 # ---------------------------------------------------------------------------
 
+
 def test_preprocess_result_fields():
     """Smoke-test that the dataclass carries all expected fields."""
     dummy = np.zeros((10, 10), dtype=np.uint8)
-    result = PreprocessResult(
-        gray=dummy, denoised=dummy, binary=dummy, otsu_threshold=127.0
-    )
+    result = PreprocessResult(gray=dummy, denoised=dummy, binary=dummy, otsu_threshold=127.0)
     assert result.otsu_threshold == 127.0
     assert result.gray is dummy
 
@@ -61,6 +61,7 @@ def test_preprocess_result_fields():
 # ---------------------------------------------------------------------------
 # Tests: Grayscale conversion
 # ---------------------------------------------------------------------------
+
 
 def test_grayscale_single_channel():
     """Output gray image must be single-channel with same HxW."""
@@ -88,6 +89,7 @@ def test_grayscale_preserves_dimensions():
 # Tests: Median blur (denoising)
 # ---------------------------------------------------------------------------
 
+
 def test_denoise_reduces_noise():
     """Median blur should reduce salt-and-pepper noise."""
     # Create a clean gray image, add noise, encode, preprocess
@@ -95,8 +97,8 @@ def test_denoise_reduces_noise():
     clean = np.full((2000, 2000), 180, dtype=np.uint8)
     # Add salt-and-pepper noise
     noise_mask = rng.random((2000, 2000))
-    clean[noise_mask < 0.02] = 0      # pepper
-    clean[noise_mask > 0.98] = 255    # salt
+    clean[noise_mask < 0.02] = 0  # pepper
+    clean[noise_mask > 0.98] = 255  # salt
 
     noisy_bytes = _encode_gray(clean)
     result = preprocess(noisy_bytes)
@@ -130,14 +132,13 @@ def test_denoise_preserves_edges():
     assert len(edge_cols) > 0, "Edge should still be detectable after denoise"
     # Edge should be within ±5px of column 1000 (median blur kernel is 3×3)
     edge_center = int(np.median(edge_cols))
-    assert abs(edge_center - 1000) <= 5, (
-        f"Edge shifted to column {edge_center}, expected near 1000"
-    )
+    assert abs(edge_center - 1000) <= 5, f"Edge shifted to column {edge_center}, expected near 1000"
 
 
 # ---------------------------------------------------------------------------
 # Tests: Otsu threshold (binarization)
 # ---------------------------------------------------------------------------
+
 
 def test_binary_only_contains_0_and_255():
     """Otsu output must be strictly binary — only 0 and 255."""
@@ -160,8 +161,7 @@ def test_otsu_threshold_between_peaks():
     # Threshold should be between the two peaks (with margin for JPEG
     # compression artifacts)
     assert ink < result.otsu_threshold < bg, (
-        f"Otsu threshold {result.otsu_threshold} should be between "
-        f"ink={ink} and bg={bg}"
+        f"Otsu threshold {result.otsu_threshold} should be between ink={ink} and bg={bg}"
     )
 
 
@@ -192,6 +192,7 @@ def test_binary_inv_ink_is_white():
 # ---------------------------------------------------------------------------
 # Tests: End-to-end
 # ---------------------------------------------------------------------------
+
 
 def test_preprocess_returns_result_type():
     """preprocess() must return a PreprocessResult."""

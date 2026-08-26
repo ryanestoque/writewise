@@ -58,12 +58,7 @@ def test_create_student_with_parent_email(client, cleanup_students):
     cleanup_students.append(student_id)
 
     # Verify directly in DB
-    res = (
-        supabase_client.table("student")
-        .select("parent_email")
-        .eq("id", student_id)
-        .execute()
-    )
+    res = supabase_client.table("student").select("parent_email").eq("id", student_id).execute()
     assert len(res.data) == 1
     assert res.data[0]["parent_email"] == "parent_test_student@example.com"
 
@@ -107,12 +102,7 @@ def test_update_student_parent_email(client, cleanup_students):
     assert data2["parent_email"] is None
 
     # Verify directly in DB
-    res = (
-        supabase_client.table("student")
-        .select("parent_email")
-        .eq("id", student_id)
-        .execute()
-    )
+    res = supabase_client.table("student").select("parent_email").eq("id", student_id).execute()
     assert len(res.data) == 1
     assert res.data[0]["parent_email"] is None
 

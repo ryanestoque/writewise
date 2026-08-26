@@ -1,6 +1,33 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "../supabase/client";
 
+export type ScoreBand =
+  | "needs_improvement"
+  | "developing"
+  | "satisfactory"
+  | "excellent";
+
+export interface ManualScore {
+  letter_formation_band: ScoreBand;
+  letter_formation_score?: number | null;
+  size_consistency_band: ScoreBand;
+  size_consistency_score?: number | null;
+  spacing_band: ScoreBand;
+  spacing_score?: number | null;
+  slant_band: ScoreBand;
+  slant_score?: number | null;
+  baseline_alignment_band: ScoreBand;
+  baseline_alignment_score?: number | null;
+}
+
+export interface ManualScorePayload {
+  letter_formation_band: ScoreBand;
+  size_consistency_band: ScoreBand;
+  spacing_band: ScoreBand;
+  slant_band: ScoreBand;
+  baseline_alignment_band: ScoreBand;
+}
+
 export interface Submission {
   id: string;
   activity_id: string;
@@ -36,13 +63,7 @@ export interface Submission {
     letter_formation_std: number | null;
     raw_output?: Record<string, unknown> | null;
   } | null;
-  manual_score?: {
-    letter_formation_band: string;
-    size_consistency_band: string;
-    spacing_band: string;
-    slant_band: string;
-    baseline_alignment_band: string;
-  } | null;
+  manual_score?: ManualScore | null;
 }
 
 export function useSubmissions(activityId: string) {
@@ -65,7 +86,13 @@ export function useSubmissions(activityId: string) {
              baseline_deviation_std, size_consistency_mean, size_consistency_std,
              letter_formation_mean, letter_formation_std, raw_output
            ),
-           manual_score(letter_formation_band, size_consistency_band, spacing_band, slant_band, baseline_alignment_band)`
+           manual_score(
+             letter_formation_band, letter_formation_score,
+             size_consistency_band, size_consistency_score,
+             spacing_band, spacing_score,
+             slant_band, slant_score,
+             baseline_alignment_band, baseline_alignment_score
+           )`
         )
         .eq("activity_id", activityId)
         .order("created_at", { ascending: false });
@@ -87,6 +114,7 @@ export function useSubmissions(activityId: string) {
     enabled: !!activityId,
   });
 }
+
 
 export function useUploadSubmission() {
   const supabase = createClient();
@@ -163,3 +191,47 @@ export function useSubmissionImageUrl(imagePath: string | null) {
     staleTime: 30 * 60 * 1000,
   });
 }
+
+export function useSubmitManualScore() {
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      submissionId,
+      scores,
+    }: {
+      submissionId: string;
+      scores: ManualScorePayload;
+    }) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      if (!token) {
+        throw new Error("No active session");
+      }
+
+      const response = await fetch(`/api/submissions/${submissionId}/manual-score`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(scores),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Backend returned error:", data.error);
+        throw data.error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["submissions"] });
+    },
+  });
+}
+

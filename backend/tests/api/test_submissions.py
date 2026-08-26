@@ -67,29 +67,25 @@ def test_student():
 
 @pytest.fixture
 def cleanup_submissions():
-    """Track and clean up submissions + measurement rows + Storage files after test."""
+    """Track and clean up submissions, measurement rows, manual_score rows, and Storage files."""
     submissions = []
     yield submissions
     for sub in submissions:
-        # Delete measurement first (FK: measurement.submission_id → submission.id, RESTRICT)
-        supabase_client.table("measurement").delete().eq(
-            "submission_id", sub["id"]
-        ).execute()
+        # Delete manual_score first (FK: manual_score.submission_id → submission.id, RESTRICT)
+        supabase_client.table("manual_score").delete().eq("submission_id", sub["id"]).execute()
+        # Delete measurement (FK: measurement.submission_id → submission.id, RESTRICT)
+        supabase_client.table("measurement").delete().eq("submission_id", sub["id"]).execute()
         # Delete submission row
         supabase_client.table("submission").delete().eq("id", sub["id"]).execute()
         # Delete Storage file
         try:
-            supabase_client.storage.from_("submission-images").remove(
-                [sub["image_path"]]
-            )
+            supabase_client.storage.from_("submission-images").remove([sub["image_path"]])
         except Exception:
             pass  # File may not exist if upload failed
 
 
 class TestCreateSubmission:
-    def test_successful_upload(
-        self, client, test_activity, test_student, cleanup_submissions
-    ):
+    def test_successful_upload(self, client, test_activity, test_student, cleanup_submissions):
         """Upload a valid worksheet image and verify the full pipeline runs:
         quality gate → CV pipeline → measurement persisted → status completed.
         """
@@ -236,9 +232,7 @@ class TestCreateSubmission:
         assert response.status_code == 404
         assert response.json()["error"]["code"] == "NOT_FOUND"
 
-    def test_png_upload_accepted(
-        self, client, test_activity, test_student, cleanup_submissions
-    ):
+    def test_png_upload_accepted(self, client, test_activity, test_student, cleanup_submissions):
         """PNG uploads should be accepted and processed through the pipeline."""
         array = np.frombuffer(make_segmented_worksheet(), dtype=np.uint8)
         image = cv2.imdecode(array, cv2.IMREAD_COLOR)
@@ -271,9 +265,7 @@ class TestCreateSubmission:
                 "activity_id": test_activity["id"],
                 "student_id": test_student["id"],
             },
-            files={
-                "image": ("blurry.jpg", io.BytesIO(make_blurry_image()), "image/jpeg")
-            },
+            files={"image": ("blurry.jpg", io.BytesIO(make_blurry_image()), "image/jpeg")},
         )
 
     def test_blurry_upload_rejected_with_422(
@@ -289,9 +281,7 @@ class TestCreateSubmission:
         cleanup_submissions.append(
             {
                 "id": error["details"]["submission_id"],
-                "image_path": (
-                    f"{test_student['id']}/{error['details']['submission_id']}.jpg"
-                ),
+                "image_path": (f"{test_student['id']}/{error['details']['submission_id']}.jpg"),
             }
         )
 
@@ -308,12 +298,7 @@ class TestCreateSubmission:
             }
         )
 
-        db_res = (
-            supabase_client.table("submission")
-            .select("*")
-            .eq("id", submission_id)
-            .execute()
-        )
+        db_res = supabase_client.table("submission").select("*").eq("id", submission_id).execute()
         assert len(db_res.data) == 1
         assert db_res.data[0]["status"] == "rejected"
         assert db_res.data[0]["rejection_code"] == "QUALITY_GATE_BLUR"
@@ -328,9 +313,7 @@ class TestCreateSubmission:
         image_path = f"{test_student['id']}/{submission_id}.jpg"
         cleanup_submissions.append({"id": submission_id, "image_path": image_path})
 
-        file_bytes = supabase_client.storage.from_("submission-images").download(
-            image_path
-        )
+        file_bytes = supabase_client.storage.from_("submission-images").download(image_path)
         assert file_bytes  # non-empty = file exists
 
     def test_rejected_submission_has_no_measurement(
@@ -354,3 +337,148 @@ class TestCreateSubmission:
             .execute()
         )
         assert len(meas_res.data) == 0
+
+
+class TestSubmitManualScore:
+    def _create_completed_submission(
+        self, client, test_activity, test_student, cleanup_submissions
+    ) -> str:
+        """Helper to create a completed submission and return its ID."""
+        jpeg_bytes = make_segmented_worksheet()
+        response = client.post(
+            "/api/submissions",
+            data={
+                "activity_id": test_activity["id"],
+                "student_id": test_student["id"],
+            },
+            files={"image": ("worksheet.jpg", jpeg_bytes, "image/jpeg")},
+        )
+        assert response.status_code == 201
+        sub_id = response.json()["submission_id"]
+        cleanup_submissions.append(
+            {"id": sub_id, "image_path": f"{test_student['id']}/{sub_id}.jpg"}
+        )
+        return sub_id
+
+    def test_successful_manual_score(
+        self, client, test_activity, test_student, cleanup_submissions
+    ):
+        """Submit all 5 bands and verify 200 OK + generated scores returned and persisted."""
+        sub_id = self._create_completed_submission(
+            client, test_activity, test_student, cleanup_submissions
+        )
+
+        payload = {
+            "letter_formation_band": "satisfactory",
+            "size_consistency_band": "developing",
+            "spacing_band": "satisfactory",
+            "slant_band": "excellent",
+            "baseline_alignment_band": "needs_improvement",
+        }
+
+        response = client.patch(f"/api/submissions/{sub_id}/manual-score", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+
+        assert data["submission_id"] == sub_id
+        assert data["graded_by"] == TEST_TEACHER_ID
+        assert data["created_at"] is not None
+
+        manual_score = data["manual_score"]
+        assert manual_score["letter_formation_band"] == "satisfactory"
+        assert manual_score["letter_formation_score"] == 62.5
+        assert manual_score["size_consistency_band"] == "developing"
+        assert manual_score["size_consistency_score"] == 37.5
+        assert manual_score["spacing_band"] == "satisfactory"
+        assert manual_score["spacing_score"] == 62.5
+        assert manual_score["slant_band"] == "excellent"
+        assert manual_score["slant_score"] == 87.5
+        assert manual_score["baseline_alignment_band"] == "needs_improvement"
+        assert manual_score["baseline_alignment_score"] == 12.5
+
+        # Verify in database directly
+        db_res = (
+            supabase_client.table("manual_score")
+            .select("*")
+            .eq("submission_id", sub_id)
+            .execute()
+        )
+        assert len(db_res.data) == 1
+        assert db_res.data[0]["letter_formation_band"] == "satisfactory"
+        assert float(db_res.data[0]["letter_formation_score"]) == 62.5
+
+    def test_duplicate_manual_score_returns_409(
+        self, client, test_activity, test_student, cleanup_submissions
+    ):
+        """Submitting manual score twice on same submission returns 409."""
+        sub_id = self._create_completed_submission(
+            client, test_activity, test_student, cleanup_submissions
+        )
+
+        payload = {
+            "letter_formation_band": "satisfactory",
+            "size_consistency_band": "satisfactory",
+            "spacing_band": "satisfactory",
+            "slant_band": "satisfactory",
+            "baseline_alignment_band": "satisfactory",
+        }
+
+        resp1 = client.patch(f"/api/submissions/{sub_id}/manual-score", json=payload)
+        assert resp1.status_code == 200
+
+        resp2 = client.patch(f"/api/submissions/{sub_id}/manual-score", json=payload)
+        assert resp2.status_code == 409
+        err = resp2.json()["error"]
+        assert err["code"] == "MANUAL_SCORE_ALREADY_EXISTS"
+
+    def test_manual_score_invalid_uuid(self, client):
+        """Non-UUID submission ID returns 400 VALIDATION_ERROR."""
+        payload = {
+            "letter_formation_band": "satisfactory",
+            "size_consistency_band": "satisfactory",
+            "spacing_band": "satisfactory",
+            "slant_band": "satisfactory",
+            "baseline_alignment_band": "satisfactory",
+        }
+        response = client.patch("/api/submissions/not-a-uuid/manual-score", json=payload)
+        assert response.status_code == 400
+        assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+    def test_manual_score_non_existent_submission(self, client):
+        """Non-existent submission returns 404 NOT_FOUND."""
+        random_id = str(uuid.uuid4())
+        payload = {
+            "letter_formation_band": "satisfactory",
+            "size_consistency_band": "satisfactory",
+            "spacing_band": "satisfactory",
+            "slant_band": "satisfactory",
+            "baseline_alignment_band": "satisfactory",
+        }
+        response = client.patch(f"/api/submissions/{random_id}/manual-score", json=payload)
+        assert response.status_code == 404
+        assert response.json()["error"]["code"] == "NOT_FOUND"
+
+    def test_manual_score_disabled_when_calibrated(
+        self, client, test_activity, test_student, cleanup_submissions, monkeypatch
+    ):
+        """When SCORING_ENGINE=calibrated, endpoint returns 403 MANUAL_SCORING_DISABLED."""
+        from app.core.config import settings
+
+        sub_id = self._create_completed_submission(
+            client, test_activity, test_student, cleanup_submissions
+        )
+
+        monkeypatch.setattr(settings, "SCORING_ENGINE", "calibrated")
+
+        payload = {
+            "letter_formation_band": "satisfactory",
+            "size_consistency_band": "satisfactory",
+            "spacing_band": "satisfactory",
+            "slant_band": "satisfactory",
+            "baseline_alignment_band": "satisfactory",
+        }
+
+        response = client.patch(f"/api/submissions/{sub_id}/manual-score", json=payload)
+        assert response.status_code == 403
+        assert response.json()["error"]["code"] == "MANUAL_SCORING_DISABLED"
+

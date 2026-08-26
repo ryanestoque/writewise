@@ -1,9 +1,12 @@
 import logging
 import uuid
+from enum import Enum
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from pydantic import BaseModel
 
 from app.api.deps import get_current_teacher
+from app.core.config import settings
 from app.core.image_hardening import validate_and_harden_image
 from app.core.supabase import supabase_client
 from app.cv.pipeline import run_cv_pipeline
@@ -15,6 +18,21 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 _MAX_FILE_SIZE = 15 * 1024 * 1024  # 15 MB
+
+
+class ScoreBandEnum(str, Enum):
+    NEEDS_IMPROVEMENT = "needs_improvement"
+    DEVELOPING = "developing"
+    SATISFACTORY = "satisfactory"
+    EXCELLENT = "excellent"
+
+
+class ManualScoreRequest(BaseModel):
+    letter_formation_band: ScoreBandEnum
+    size_consistency_band: ScoreBandEnum
+    spacing_band: ScoreBandEnum
+    slant_band: ScoreBandEnum
+    baseline_alignment_band: ScoreBandEnum
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -221,13 +239,9 @@ async def create_submission(
         "raw_output": raw_output,
     }
 
-    measurement_res = (
-        supabase_client.table("measurement").insert(measurement_row).execute()
-    )
+    measurement_res = supabase_client.table("measurement").insert(measurement_row).execute()
     if not measurement_res.data:
-        logger.error(
-            "Failed to insert measurement for submission_id=%s", submission_id
-        )
+        logger.error("Failed to insert measurement for submission_id=%s", submission_id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
@@ -278,4 +292,182 @@ async def create_submission(
             "raw_output": raw_output,
             "overlay": None,
         },
+    }
+
+
+@router.patch("/{submission_id}/manual-score")
+async def submit_manual_score(
+    submission_id: str,
+    body: ManualScoreRequest,
+    teacher: dict = Depends(get_current_teacher),
+):
+    """Enters the teacher's independent rubric grade (Phase 1 calibration input).
+
+    API_SPEC §3.3:
+    - Teacher only, owning the student on this submission.
+    - 403 MANUAL_SCORING_DISABLED when SCORING_ENGINE=calibrated.
+    - 409 MANUAL_SCORE_ALREADY_EXISTS if called twice on the same submission.
+    """
+    teacher_id = teacher.get("sub")
+
+    # 1. Check SCORING_ENGINE mode
+    if settings.SCORING_ENGINE != "manual":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "MANUAL_SCORING_DISABLED",
+                "message": "Manual scoring is only available in Phase 1 (SCORING_ENGINE=manual).",
+                "details": {},
+            },
+        )
+
+    # 2. Validate UUID
+    try:
+        uuid.UUID(submission_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "VALIDATION_ERROR",
+                "message": "submission_id must be a valid UUID.",
+                "details": {},
+            },
+        )
+
+    # 3. Verify submission exists
+    sub_res = (
+        supabase_client.table("submission")
+        .select("id, student_id, status")
+        .eq("id", submission_id)
+        .execute()
+    )
+    if not sub_res.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "NOT_FOUND",
+                "message": "Submission not found.",
+                "details": {},
+            },
+        )
+    submission = sub_res.data[0]
+
+    # 4. Verify student is on this teacher's roster
+    roster_res = (
+        supabase_client.table("teacher_student")
+        .select("student_id")
+        .eq("teacher_id", teacher_id)
+        .eq("student_id", submission["student_id"])
+        .execute()
+    )
+    if not roster_res.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "NOT_FOUND",
+                "message": "Submission not found on your roster.",
+                "details": {},
+            },
+        )
+
+    # 5. Check submission status is completed
+    if submission["status"] != "completed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "INVALID_SUBMISSION_STATUS",
+                "message": "Cannot score an uncompleted submission.",
+                "details": {"status": submission["status"]},
+            },
+        )
+
+    # 6. Check if manual_score already exists (prevent duplicates)
+    existing = (
+        supabase_client.table("manual_score")
+        .select("id")
+        .eq("submission_id", submission_id)
+        .execute()
+    )
+    if existing.data:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "MANUAL_SCORE_ALREADY_EXISTS",
+                "message": "A manual score has already been submitted for this worksheet.",
+                "details": {"submission_id": submission_id},
+            },
+        )
+
+    # 7. Insert manual_score record
+    insert_payload = {
+        "submission_id": submission_id,
+        "letter_formation_band": body.letter_formation_band.value,
+        "size_consistency_band": body.size_consistency_band.value,
+        "spacing_band": body.spacing_band.value,
+        "slant_band": body.slant_band.value,
+        "baseline_alignment_band": body.baseline_alignment_band.value,
+        "graded_by": teacher_id,
+    }
+
+    try:
+        insert_res = supabase_client.table("manual_score").insert(insert_payload).execute()
+    except Exception as exc:
+        err_msg = str(exc)
+        if "duplicate" in err_msg.lower() or "unique" in err_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "code": "MANUAL_SCORE_ALREADY_EXISTS",
+                    "message": "A manual score has already been submitted for this worksheet.",
+                    "details": {"submission_id": submission_id},
+                },
+            )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "code": "INTERNAL_ERROR",
+                "message": "Failed to save manual rubric score.",
+                "details": {"error": err_msg},
+            },
+        )
+
+    if not insert_res.data:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "code": "INTERNAL_ERROR",
+                "message": "Failed to save manual rubric score.",
+                "details": {},
+            },
+        )
+
+    row = insert_res.data[0]
+
+    # 8. Return response matching API_SPEC §3.3
+    return {
+        "submission_id": submission_id,
+        "manual_score": {
+            "letter_formation_band": row["letter_formation_band"],
+            "letter_formation_score": float(row["letter_formation_score"])
+            if row.get("letter_formation_score") is not None
+            else None,
+            "size_consistency_band": row["size_consistency_band"],
+            "size_consistency_score": float(row["size_consistency_score"])
+            if row.get("size_consistency_score") is not None
+            else None,
+            "spacing_band": row["spacing_band"],
+            "spacing_score": float(row["spacing_score"])
+            if row.get("spacing_score") is not None
+            else None,
+            "slant_band": row["slant_band"],
+            "slant_score": float(row["slant_score"])
+            if row.get("slant_score") is not None
+            else None,
+            "baseline_alignment_band": row["baseline_alignment_band"],
+            "baseline_alignment_score": float(row["baseline_alignment_score"])
+            if row.get("baseline_alignment_score") is not None
+            else None,
+        },
+        "graded_by": row["graded_by"],
+        "created_at": row["created_at"],
     }
