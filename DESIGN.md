@@ -217,6 +217,10 @@ Form geometry communicates interaction depth and intent:
 - **Style:** Background `#ffffff`, border 1px `#e3e6e4`, radius 8px (`rounded-lg`), height 36px (`h-9`).
 - **Focus:** Border `#1b6b63`, ring `3px rgba(27, 107, 99, 0.2)`.
 - **Invalid:** Border `#9c4a2f`, ring `3px rgba(156, 74, 47, 0.2)`.
+- **Form Field Rhythm:**
+  - **Label-to-Input Gap:** `6px` (`gap-1.5`) for tight Gestalt proximity between labels and input controls.
+  - **Input-to-Hint/Error Gap:** `4px` (`mt-1`) directly anchored below the input box.
+  - **Inter-Field Separation:** `20px` (`gap-5` in `FieldGroup`) for clear visual chunking between separate form questions.
 
 ### Navigation
 - **Desktop Sidebar:** 240px fixed width, background `#f7f8f7`, right border 1px `#e3e6e4`. Active nav links: background `#e4f1ef`, text `#145049`, font-medium with a 3px active indicator bar.

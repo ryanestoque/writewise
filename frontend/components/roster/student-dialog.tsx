@@ -30,9 +30,14 @@ import { Loader2, Plus, Check } from "lucide-react";
 import { toast } from "sonner";
 
 const studentSchema = z.object({
-  full_name: z.string().min(1, "Name is required"),
-  section: z.string().min(1, "Section is required"),
-  parent_email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  full_name: z.string().trim().min(1, "Name is required"),
+  section: z.string().trim().min(1, "Section is required"),
+  parent_email: z
+    .string()
+    .trim()
+    .email("Invalid email address")
+    .optional()
+    .or(z.literal("")),
 });
 
 type StudentFormValues = z.infer<typeof studentSchema>;
@@ -116,18 +121,22 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
   };
 
   const handleSave = (data: StudentFormValues, addAnother = false) => {
+    const trimmedName = data.full_name.trim();
+    const trimmedSection = data.section.trim();
+    const trimmedEmail = data.parent_email?.trim() || null;
+
     if (isEditing) {
       const payload = {
-        full_name: data.full_name,
-        section: data.section,
-        parent_email: data.parent_email?.trim() || null,
+        full_name: trimmedName,
+        section: trimmedSection,
+        parent_email: trimmedEmail,
       };
 
       updateStudent(
         { id: student.id, data: payload },
         {
           onSuccess: () => {
-            toast.success(`Updated ${data.full_name} successfully.`);
+            toast.success(`Updated ${trimmedName} successfully.`);
             onOpenChange(false);
           },
           onError: (error: Error) => {
@@ -137,19 +146,19 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
       );
     } else {
       const payload = {
-        full_name: data.full_name,
-        section: data.section,
-        parent_email: data.parent_email?.trim() || undefined,
+        full_name: trimmedName,
+        section: trimmedSection,
+        parent_email: trimmedEmail || undefined,
       };
 
       createStudent(payload, {
         onSuccess: () => {
-          toast.success(`Enrolled ${data.full_name} in ${data.section}.`);
+          toast.success(`Enrolled ${trimmedName} in ${trimmedSection}.`);
           if (addAnother) {
             // Keep section preserved, reset name & parent email
             form.reset({
               full_name: "",
-              section: data.section,
+              section: trimmedSection,
               parent_email: "",
             });
             setTimeout(() => {
@@ -169,16 +178,23 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
   const onSubmit = (data: StudentFormValues, addAnother = false) => {
     if (isEditing && !hasChanges) return;
 
+    const trimmedName = data.full_name.trim().toLowerCase();
+    const trimmedSection = data.section.trim().toLowerCase();
+
     const isDuplicate = students?.some((s) => {
       if (isEditing && s.id === student.id) return false;
       return (
-        s.full_name.trim().toLowerCase() === data.full_name.trim().toLowerCase() &&
-        s.section.trim().toLowerCase() === data.section.trim().toLowerCase()
+        s.full_name.trim().toLowerCase() === trimmedName &&
+        s.section.trim().toLowerCase() === trimmedSection
       );
     });
 
     if (isDuplicate) {
-      setDuplicateData(data);
+      setDuplicateData({
+        full_name: data.full_name.trim(),
+        section: data.section.trim(),
+        parent_email: data.parent_email?.trim() || "",
+      });
       setPendingAddAnother(addAnother);
       return;
     }
@@ -189,7 +205,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
   return (
     <>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[460px] max-h-[min(92dvh,calc(100vh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-xl border border-border/80 bg-surface dark:bg-card">
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[460px] max-h-[min(92dvh,calc(100vh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm border border-border/80 bg-surface dark:bg-card">
           <DialogHeader className="pb-3 sm:pb-4 shrink-0 text-left">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
@@ -208,9 +224,22 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
             </div>
           </DialogHeader>
           
-          <form onSubmit={form.handleSubmit((data) => onSubmit(data, false))} className="flex flex-col flex-1 min-h-0 overflow-hidden pt-1">
-            <div className="space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain px-1 py-1 flex-1 min-h-0">
-              <FieldGroup className="space-y-4">
+          <form 
+            onSubmit={form.handleSubmit((data) => onSubmit(data, false))} 
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                e.preventDefault();
+                if (!isEditing) {
+                  form.handleSubmit((data) => onSubmit(data, true))();
+                } else {
+                  form.handleSubmit((data) => onSubmit(data, false))();
+                }
+              }
+            }}
+            className="flex flex-col flex-1 min-h-0 overflow-hidden pt-1"
+          >
+            <div className="overflow-y-auto overflow-x-hidden overscroll-contain px-1 py-1 flex-1 min-h-0">
+              <FieldGroup>
                 {/* Full Name */}
                 <Field data-invalid={!!form.formState.errors.full_name}>
                   <FieldLabel htmlFor="full_name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -285,7 +314,9 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                                   {isCustomSection && (
                                     <ComboboxItem value={trimmedInput} className="py-2.5 px-3 text-primary font-medium">
                                       <Plus className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-                                      Create section &ldquo;{trimmedInput}&rdquo;
+                                      <span className="truncate max-w-full">
+                                        Create section &ldquo;{trimmedInput}&rdquo;
+                                      </span>
                                     </ComboboxItem>
                                   )}
                                 </ComboboxList>

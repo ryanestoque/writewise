@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   Dialog,
   DialogContent,
@@ -119,6 +126,26 @@ function errorMessageFor(error: UploadError): string {
   }
 }
 
+function subscribeTouch(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  const mql = window.matchMedia("(pointer: coarse)");
+  mql.addEventListener("change", callback);
+  return () => mql.removeEventListener("change", callback);
+}
+
+function getTouchSnapshot() {
+  if (typeof window === "undefined") return false;
+  return (
+    "ontouchstart" in window ||
+    navigator.maxTouchPoints > 0 ||
+    window.matchMedia("(pointer: coarse)").matches
+  );
+}
+
+function getTouchServerSnapshot() {
+  return false;
+}
+
 const STEPS = [
   { step: 1, label: "Details" },
   { step: 2, label: "Capture" },
@@ -203,6 +230,12 @@ function UploadFlow({
   const { data: activities } = useActivities();
   const { data: students } = useStudents();
   const uploadMutation = useUploadSubmission();
+
+  const isMobile = useSyncExternalStore(
+    subscribeTouch,
+    getTouchSnapshot,
+    getTouchServerSnapshot
+  );
 
   const isUploading = step === 4 && !uploadError && uploadMutation.isPending;
 
@@ -725,7 +758,11 @@ function UploadFlow({
                   ref={dropzoneRef}
                   role="button"
                   tabIndex={0}
-                  aria-label="Worksheet photo upload dropzone. Drop an image or press Enter or Space to choose a file."
+                  aria-label={
+                    isMobile
+                      ? "Worksheet photo upload dropzone. Take a photo or choose from library."
+                      : "Worksheet photo upload dropzone. Drop an image or press Enter or Space to choose a file."
+                  }
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
@@ -749,42 +786,67 @@ function UploadFlow({
                   }`}
                 >
                   <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-2.5">
-                    <CameraIcon className="size-6" />
+                    {isMobile ? (
+                      <CameraIcon className="size-6" />
+                    ) : (
+                      <UploadCloudIcon className="size-6" />
+                    )}
                   </div>
                   <p className="text-sm sm:text-base font-semibold text-foreground">
-                    Upload or capture worksheet photo
+                    {isMobile
+                      ? "Capture or upload worksheet photo"
+                      : "Upload worksheet photo"}
                   </p>
                   <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                    Supports JPEG or PNG (up to 15MB) &middot; Drag &amp; drop or press Enter
+                    {isMobile
+                      ? "Supports JPEG or PNG (up to 15MB) \u00B7 Take a photo or choose from library"
+                      : "Supports JPEG or PNG (up to 15MB) \u00B7 Drag & drop or press Enter"}
                   </p>
 
-                  {/* Dual Action Triggers */}
-                  <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-2 w-full max-w-xs mt-4">
-                    <Button
-                      type="button"
-                      variant="default"
-                      className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        cameraInputRef.current?.click();
-                      }}
-                    >
-                      <CameraIcon className="size-3.5" />
-                      Take Photo
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full bg-background hover:bg-muted cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        fileInputRef.current?.click();
-                      }}
-                    >
-                      <FileImageIcon className="size-3.5 text-muted-foreground" />
-                      Upload Photo
-                    </Button>
-                  </div>
+                  {/* Action Triggers */}
+                  {isMobile ? (
+                    <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-2 w-full max-w-xs mt-4">
+                      <Button
+                        type="button"
+                        variant="default"
+                        className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          cameraInputRef.current?.click();
+                        }}
+                      >
+                        <CameraIcon className="size-3.5" />
+                        Take Photo
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full bg-background hover:bg-muted cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fileInputRef.current?.click();
+                        }}
+                      >
+                        <FileImageIcon className="size-3.5 text-muted-foreground" />
+                        Photo Library
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="w-full max-w-xs mt-4">
+                      <Button
+                        type="button"
+                        variant="default"
+                        className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fileInputRef.current?.click();
+                        }}
+                      >
+                        <FileImageIcon className="size-3.5" />
+                        Browse Files
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Subtle Privacy Notice Footnote */}
