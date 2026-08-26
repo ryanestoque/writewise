@@ -22,6 +22,19 @@ export interface Submission {
     spacing_score: number | null;
     slant_score: number | null;
     baseline_alignment_score: number | null;
+    slant_mean: number | null;
+    slant_std: number | null;
+    word_spacing_mean: number | null;
+    word_spacing_std: number | null;
+    letter_spacing_mean: number | null;
+    letter_spacing_std: number | null;
+    baseline_deviation_mean: number | null;
+    baseline_deviation_std: number | null;
+    size_consistency_mean: number | null;
+    size_consistency_std: number | null;
+    letter_formation_mean: number | null;
+    letter_formation_std: number | null;
+    raw_output?: Record<string, unknown> | null;
   } | null;
   manual_score?: {
     letter_formation_band: string;
@@ -44,7 +57,14 @@ export function useSubmissions(activityId: string) {
           `id, activity_id, student_id, image_path, status, uploader_id,
            uploader_role, rejection_code, created_at, updated_at,
            student:student_id(full_name),
-           measurement(composite_score, letter_formation_score, size_consistency_score, spacing_score, slant_score, baseline_alignment_score),
+           measurement(
+             composite_score, letter_formation_score, size_consistency_score,
+             spacing_score, slant_score, baseline_alignment_score,
+             slant_mean, slant_std, word_spacing_mean, word_spacing_std,
+             letter_spacing_mean, letter_spacing_std, baseline_deviation_mean,
+             baseline_deviation_std, size_consistency_mean, size_consistency_std,
+             letter_formation_mean, letter_formation_std, raw_output
+           ),
            manual_score(letter_formation_band, size_consistency_band, spacing_band, slant_band, baseline_alignment_band)`
         )
         .eq("activity_id", activityId)
