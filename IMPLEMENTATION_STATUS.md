@@ -9,7 +9,7 @@ Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §
 | Phase | Done / Total |
 |---|---|
 | Phase 0 — Setup | 11 / 16 |
-| Phase 1 — Teacher Tooling & Raw CV Pipeline | 14 / 17 |
+| Phase 1 — Teacher Tooling & Raw CV Pipeline | 15 / 17 |
 | Between Phases — Calibration | 0 / 6 |
 | Phase 2 — Calibrated Scoring & Full System | 0 / 11 |
 
@@ -74,7 +74,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Feature extraction — baseline alignment | Done | | CV_PIPELINE §6.3 |
 | Feature extraction — size consistency | Done | | CV_PIPELINE §6.4 |
 | CNN handoff crop generation | Done | | CV_PIPELINE §7 |
-| Output schema persisted to `measurement` | Not Started | | CV_PIPELINE §8, DATABASE §8 |
+| Output schema persisted to `measurement` | Done | | CV_PIPELINE §8, DATABASE §8 |
 
 ---
 

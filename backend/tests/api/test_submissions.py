@@ -8,7 +8,7 @@ from PIL import Image
 
 from app.core.supabase import supabase_client
 from tests.conftest import TEST_TEACHER_ID
-from tests.synthetic import make_blurry_image, make_sharp_worksheet
+from tests.synthetic import make_blurry_image, make_segmented_worksheet
 
 
 def _make_test_jpeg(width: int = 100, height: int = 100) -> bytes:
@@ -21,12 +21,16 @@ def _make_test_jpeg(width: int = 100, height: int = 100) -> bytes:
 
 @pytest.fixture
 def test_activity():
-    """Create a temporary activity owned by the test teacher."""
+    """Create a temporary activity owned by the test teacher.
+
+    Target text has 6 words to match the default make_segmented_worksheet
+    output (2 lines × 3 words_per_line = 6 words).
+    """
     res = (
         supabase_client.table("activity")
         .insert(
             {
-                "target_text": "test submission upload",
+                "target_text": "one two three four five six",
                 "is_take_home": False,
                 "created_by": TEST_TEACHER_ID,
             }
@@ -63,11 +67,15 @@ def test_student():
 
 @pytest.fixture
 def cleanup_submissions():
-    """Track and clean up submissions + Storage files after test."""
+    """Track and clean up submissions + measurement rows + Storage files after test."""
     submissions = []
     yield submissions
     for sub in submissions:
-        # Delete submission row first
+        # Delete measurement first (FK: measurement.submission_id → submission.id, RESTRICT)
+        supabase_client.table("measurement").delete().eq(
+            "submission_id", sub["id"]
+        ).execute()
+        # Delete submission row
         supabase_client.table("submission").delete().eq("id", sub["id"]).execute()
         # Delete Storage file
         try:
@@ -82,7 +90,10 @@ class TestCreateSubmission:
     def test_successful_upload(
         self, client, test_activity, test_student, cleanup_submissions
     ):
-        jpeg_bytes = make_sharp_worksheet()
+        """Upload a valid worksheet image and verify the full pipeline runs:
+        quality gate → CV pipeline → measurement persisted → status completed.
+        """
+        jpeg_bytes = make_segmented_worksheet()
         response = client.post(
             "/api/submissions",
             data={
@@ -94,17 +105,57 @@ class TestCreateSubmission:
         assert response.status_code == 201
         data = response.json()
         assert "submission_id" in data
-        assert data["status"] == "processing"
-        assert data["student_id"] == test_student["id"]
-        assert data["activity_id"] == test_activity["id"]
-        assert "image_path" in data
-        assert "created_at" in data
+        assert data["status"] == "completed"
+
+        # API_SPEC §3.3 response shape
+        assert "measurement" in data
+        measurement = data["measurement"]
+        assert "aggregate" in measurement
+        assert "scores" in measurement
+        assert "raw_output" in measurement
+        assert measurement["overlay"] is None
+
+        # Aggregate contains all 6 metric groups
+        agg = measurement["aggregate"]
+        for key in (
+            "slant",
+            "word_spacing",
+            "letter_spacing",
+            "baseline_deviation",
+            "size_consistency",
+            "letter_formation",
+        ):
+            assert key in agg
+            assert "mean" in agg[key]
+            assert "std" in agg[key]
+
+        # letter_formation is NULL (CNN not built yet)
+        assert agg["letter_formation"]["mean"] is None
+        assert agg["letter_formation"]["std"] is None
+
+        # CV-produced aggregates have numeric values
+        assert isinstance(agg["slant"]["mean"], (int, float))
+
+        # Scores are all NULL in Phase 1
+        scores = measurement["scores"]
+        for key in (
+            "letter_formation_score",
+            "size_consistency_score",
+            "spacing_score",
+            "slant_score",
+            "baseline_alignment_score",
+            "composite_score",
+        ):
+            assert scores[key] is None
 
         cleanup_submissions.append(
-            {"id": data["submission_id"], "image_path": data["image_path"]}
+            {
+                "id": data["submission_id"],
+                "image_path": f"{test_student['id']}/{data['submission_id']}.jpg",
+            }
         )
 
-        # Verify DB row
+        # Verify DB: submission status is completed
         db_res = (
             supabase_client.table("submission")
             .select("*")
@@ -112,8 +163,23 @@ class TestCreateSubmission:
             .execute()
         )
         assert len(db_res.data) == 1
-        assert db_res.data[0]["status"] == "processing"
+        assert db_res.data[0]["status"] == "completed"
         assert db_res.data[0]["uploader_role"] == "teacher"
+
+        # Verify DB: measurement row exists with raw_output
+        meas_res = (
+            supabase_client.table("measurement")
+            .select("*")
+            .eq("submission_id", data["submission_id"])
+            .execute()
+        )
+        assert len(meas_res.data) == 1
+        meas = meas_res.data[0]
+        assert meas["raw_output"] is not None
+        assert meas["slant_mean"] is not None
+        # Score columns NULL in Phase 1
+        assert meas["letter_formation_score"] is None
+        assert meas["composite_score"] is None
 
     def test_non_image_file_rejected(self, client, test_activity, test_student):
         fake_file = b"This is plain text, not an image"
@@ -170,11 +236,11 @@ class TestCreateSubmission:
         assert response.status_code == 404
         assert response.json()["error"]["code"] == "NOT_FOUND"
 
-    def test_png_upload_converts_to_jpeg(
+    def test_png_upload_accepted(
         self, client, test_activity, test_student, cleanup_submissions
     ):
-        """PNG uploads should be accepted and stored as JPEG."""
-        array = np.frombuffer(make_sharp_worksheet(), dtype=np.uint8)
+        """PNG uploads should be accepted and processed through the pipeline."""
+        array = np.frombuffer(make_segmented_worksheet(), dtype=np.uint8)
         image = cv2.imdecode(array, cv2.IMREAD_COLOR)
         _, png_buf = cv2.imencode(".png", image)
         png_bytes = png_buf.tobytes()
@@ -189,11 +255,13 @@ class TestCreateSubmission:
         )
         assert response.status_code == 201
         data = response.json()
-        # Path should end with .jpg regardless of input format
-        assert data["image_path"].endswith(".jpg")
+        assert data["status"] == "completed"
 
         cleanup_submissions.append(
-            {"id": data["submission_id"], "image_path": data["image_path"]}
+            {
+                "id": data["submission_id"],
+                "image_path": f"{test_student['id']}/{data['submission_id']}.jpg",
+            }
         )
 
     def _post_blurry_upload(self, client, test_activity, test_student):
@@ -264,3 +332,25 @@ class TestCreateSubmission:
             image_path
         )
         assert file_bytes  # non-empty = file exists
+
+    def test_rejected_submission_has_no_measurement(
+        self, client, test_activity, test_student, cleanup_submissions
+    ):
+        """A rejected submission should NOT have a measurement row (DATABASE §8 lifecycle note)."""
+        response = self._post_blurry_upload(client, test_activity, test_student)
+        assert response.status_code == 422
+        submission_id = response.json()["error"]["details"]["submission_id"]
+        cleanup_submissions.append(
+            {
+                "id": submission_id,
+                "image_path": f"{test_student['id']}/{submission_id}.jpg",
+            }
+        )
+
+        meas_res = (
+            supabase_client.table("measurement")
+            .select("id")
+            .eq("submission_id", submission_id)
+            .execute()
+        )
+        assert len(meas_res.data) == 0
