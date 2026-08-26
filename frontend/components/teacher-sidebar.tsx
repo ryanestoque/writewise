@@ -254,12 +254,12 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                   aria-haspopup="dialog"
                   aria-expanded={rubricOpen}
                   tooltip="Rubric Guide Reference (5 Diagnostic Criteria Modal)"
-                  className="h-9.5 justify-between cursor-pointer text-muted-foreground hover:text-sidebar-foreground transition-colors group/rubric"
+                  className="h-9.5 cursor-pointer"
                   id="open-rubric-guide"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <BookOpenIcon className="size-4 shrink-0 text-primary group-hover/rubric:text-primary transition-colors" />
-                    <span className="truncate font-normal group-hover/rubric:font-medium">Rubric Guide</span>
+                    <BookOpenIcon className="size-4 shrink-0" />
+                    <span className="truncate">Rubric Guide</span>
                   </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>
