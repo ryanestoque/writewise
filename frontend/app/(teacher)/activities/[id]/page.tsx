@@ -84,6 +84,8 @@ import {
   Check,
   BookOpen,
   ArrowRight,
+  BarChart3,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -102,6 +104,21 @@ interface StudentSubmissionGroup {
   latestSubmission: Submission;
   allSubmissions: Submission[];
   attemptCount: number;
+}
+
+interface ClassDiagnosticSummary {
+  completedCount: number;
+  avgCompositeScore: number;
+  scoreBand: ScoreBandInfo;
+  criteriaAverages: {
+    letterFormation: number;
+    sizeConsistency: number;
+    spacing: number;
+    slant: number;
+    baselineAlignment: number;
+  };
+  strongestCriterion: { name: string; score: number } | null;
+  focusCriterion: { name: string; score: number } | null;
 }
 
 function getWordCount(text: string): number {
@@ -279,7 +296,7 @@ const statusConfig = {
 
 /**
  * Unified Submission Card Component
- * Supports both single submission view and grouped attempts switcher
+ * Accessible card with decoupled interactive regions
  */
 const SubmissionCard = memo(function SubmissionCard({
   submission,
@@ -315,7 +332,11 @@ const SubmissionCard = memo(function SubmissionCard({
 
   const accessibleLabel = useMemo(() => {
     let text = `View diagnostic details for ${studentName}. Status: ${config.label}.`;
-    if (submission.status === "completed" && compositeScore !== undefined && compositeScore !== null) {
+    if (
+      submission.status === "completed" &&
+      compositeScore !== undefined &&
+      compositeScore !== null
+    ) {
       text += ` Diagnostic composite score: ${Math.round(compositeScore)} percent, rated ${scoreBand.band}.`;
     } else if (submission.status === "rejected") {
       text += ` Submission rejected: ${rejection.label}. ${rejection.detail}.`;
@@ -324,45 +345,53 @@ const SubmissionCard = memo(function SubmissionCard({
       text += ` Attempt ${currentAttemptIndex} of ${attemptCount} total attempts.`;
     }
     return text;
-  }, [studentName, config.label, submission.status, compositeScore, scoreBand.band, rejection, hasMultipleAttempts, currentAttemptIndex, attemptCount]);
+  }, [
+    studentName,
+    config.label,
+    submission.status,
+    compositeScore,
+    scoreBand.band,
+    rejection,
+    hasMultipleAttempts,
+    currentAttemptIndex,
+    attemptCount,
+  ]);
 
   const showImage = Boolean(imageUrl && !imageError);
 
   return (
-    <article
-      tabIndex={0}
-      role="button"
-      onClick={() => onSelect(submission)}
-      onKeyDown={(e) => {
-        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
-          e.preventDefault();
-          onSelect(submission);
-        }
-      }}
-      aria-label={accessibleLabel}
-      className="group relative flex flex-col justify-between bg-surface dark:bg-card border border-border hover:border-brand-300 dark:hover:border-brand-800 rounded-xl sm:rounded-2xl shadow-warm hover:shadow-md transition-all duration-200 overflow-hidden text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      {/* Photo Thumbnail */}
-      <div className="aspect-4/3 bg-muted/60 relative overflow-hidden pointer-events-none">
-        {showImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={imageUrl ?? ""}
-            alt={`Worksheet by ${studentName}`}
-            loading="lazy"
-            decoding="async"
-            onError={() => setImageError(true)}
-            className="size-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="size-full flex flex-col items-center justify-center gap-1.5 text-muted-foreground/60 p-4">
-            <FileText className="size-8 stroke-[1.5]" />
-            <span className="text-[11px] font-medium tracking-tight">Worksheet Preview</span>
-          </div>
-        )}
+    <article className="group relative flex flex-col justify-between bg-surface dark:bg-card border border-border hover:border-brand-300 dark:hover:border-brand-800 rounded-xl sm:rounded-2xl shadow-warm hover:shadow-md transition-all duration-200 overflow-hidden text-left">
+      {/* Photo Thumbnail & Clickable Hero */}
+      <div className="aspect-4/3 bg-muted/60 relative overflow-hidden">
+        {/* Main Photo Click Target */}
+        <button
+          type="button"
+          onClick={() => onSelect(submission)}
+          aria-label={accessibleLabel}
+          className="absolute inset-0 size-full z-0 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+        >
+          {showImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={imageUrl ?? ""}
+              alt={`Worksheet by ${studentName}`}
+              loading="lazy"
+              decoding="async"
+              onError={() => setImageError(true)}
+              className="size-full object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none"
+            />
+          ) : (
+            <div className="size-full flex flex-col items-center justify-center gap-1.5 text-muted-foreground/60 p-4 pointer-events-none">
+              <FileText className="size-8 stroke-[1.5]" />
+              <span className="text-[11px] font-medium tracking-tight">
+                Worksheet Preview
+              </span>
+            </div>
+          )}
+        </button>
 
         {/* Floating status pill */}
-        <div className="absolute top-2.5 right-2.5 pointer-events-auto relative z-10">
+        <div className="absolute top-2.5 right-2.5 z-10 pointer-events-none">
           <Badge
             variant="outline"
             className={`text-xs font-semibold px-2 py-0.5 shadow-xs backdrop-blur-xs ${config.className}`}
@@ -374,21 +403,15 @@ const SubmissionCard = memo(function SubmissionCard({
 
         {/* Attempt history switcher if multiple attempts exist */}
         {hasMultipleAttempts && (
-          <div
-            className="absolute top-2.5 left-2.5 z-10 pointer-events-auto"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
-          >
+          <div className="absolute top-2.5 left-2.5 z-20">
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="relative inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 min-h-[28px] sm:min-h-[24px] rounded-full bg-background/90 text-foreground dark:bg-card/90 border border-border shadow-xs backdrop-blur-xs hover:bg-background transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring before:absolute before:-inset-2 before:content-[''] before:rounded-full"
+                className="relative inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 min-h-[36px] sm:min-h-[28px] rounded-full bg-background/95 text-foreground dark:bg-card/95 border border-border shadow-xs backdrop-blur-xs hover:bg-background transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label={`Switch submission attempt for ${studentName}. Currently showing attempt ${currentAttemptIndex} of ${attemptCount}.`}
               >
-                <History className="size-2.5 text-muted-foreground" />
-                <span>
-                  {attemptCount} Attempts
-                </span>
-                <ChevronDown className="size-2.5 opacity-60" />
+                <History className="size-3 text-muted-foreground" />
+                <span>{attemptCount} Attempts</span>
+                <ChevronDown className="size-3 opacity-60" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56 z-50">
                 <div className="text-xs text-muted-foreground font-medium px-2.5 py-1.5">
@@ -404,8 +427,10 @@ const SubmissionCard = memo(function SubmissionCard({
                   return (
                     <DropdownMenuItem
                       key={sub.id}
-                      onClick={() => onSelectAttempt?.(submission.student_id, sub)}
-                      className="cursor-pointer text-xs flex items-center justify-between gap-2"
+                      onClick={() =>
+                        onSelectAttempt?.(submission.student_id, sub)
+                      }
+                      className="cursor-pointer text-xs flex items-center justify-between gap-2 min-h-[36px]"
                     >
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span
@@ -433,7 +458,7 @@ const SubmissionCard = memo(function SubmissionCard({
 
         {/* Uploader indicator (if parent) */}
         {submission.uploader_role === "parent" && (
-          <div className="absolute bottom-2.5 left-2.5 pointer-events-auto relative z-10">
+          <div className="absolute bottom-2.5 left-2.5 z-10 pointer-events-none">
             <Badge
               variant="outline"
               className="text-[10px] font-semibold px-2 py-0.5 bg-brand-50/90 text-brand-800 dark:bg-brand-950/90 dark:text-brand-300 border-brand-200/80 backdrop-blur-xs"
@@ -448,31 +473,40 @@ const SubmissionCard = memo(function SubmissionCard({
       {/* Card Info */}
       <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between relative z-10">
         <div>
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-semibold text-foreground truncate group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors">
+          <button
+            type="button"
+            onClick={() => onSelect(submission)}
+            className="text-left w-full group/title cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+          >
+            <p className="text-sm font-semibold text-foreground truncate group-hover/title:text-brand-700 dark:group-hover/title:text-brand-300 transition-colors">
               {studentName}
             </p>
-          </div>
+          </button>
 
           {/* Diagnostic score or Rejection note */}
           {submission.status === "completed" && (
-            <div
-              className="mt-1.5 flex items-center gap-1.5"
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
-            >
+            <div className="mt-1.5 flex items-center gap-1.5">
               <TooltipProvider delay={200}>
                 <Tooltip>
-                  <TooltipTrigger
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md border shadow-2xs"
-                  >
-                    <span className={cn("inline-flex items-center gap-1", scoreBand.className, "px-1.5 py-0.5 rounded")}>
-                      <ScoreIcon className="size-3 shrink-0" aria-hidden="true" />
+                  <TooltipTrigger className="inline-flex items-center gap-1 text-[11px] font-semibold rounded-md border shadow-2xs cursor-help">
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1",
+                        scoreBand.className,
+                        "px-1.5 py-0.5 rounded"
+                      )}
+                    >
+                      <ScoreIcon
+                        className="size-3 shrink-0"
+                        aria-hidden="true"
+                      />
                       <span>{scoreBand.label}</span>
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs max-w-xs">
-                    <p className="font-semibold">{scoreBand.band} Penmanship</p>
+                    <p className="font-semibold">
+                      {scoreBand.band} Penmanship
+                    </p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
                       {scoreBand.description}
                     </p>
@@ -502,31 +536,32 @@ const SubmissionCard = memo(function SubmissionCard({
           )}
         </div>
 
+        {/* Action / Inspection Row */}
         <div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs text-muted-foreground">
           <span>{getRelativeTime(submission.created_at)}</span>
 
           {submission.status === "rejected" ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onReupload(submission.student_id);
-              }}
-              onKeyDown={(e) => e.stopPropagation()}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onReupload(submission.student_id)}
               aria-label={`Re-upload worksheet for ${studentName}`}
-              className="text-xs font-semibold text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:underline inline-flex items-center gap-1 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+              className="h-8 min-h-[32px] px-2 text-xs font-semibold text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:bg-brand-50/50 dark:hover:bg-brand-950/50 rounded-lg gap-1 cursor-pointer"
             >
               <Camera className="size-3" />
               Re-upload
-            </button>
+            </Button>
           ) : (
-            <span
-              aria-hidden="true"
-              className="text-[11px] font-medium text-primary group-hover:underline inline-flex items-center gap-1"
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onSelect(submission)}
+              aria-label={`Inspect diagnostic report for ${studentName}`}
+              className="h-8 min-h-[32px] px-2 text-xs font-medium text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:bg-brand-50/50 dark:hover:bg-brand-950/50 rounded-lg gap-1 group/btn cursor-pointer"
             >
               <span>Inspect details</span>
-              <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
-            </span>
+              <ArrowRight className="size-3 transition-transform group-hover/btn:translate-x-0.5" />
+            </Button>
           )}
         </div>
       </div>
@@ -541,12 +576,9 @@ const SubmissionCard = memo(function SubmissionCard({
 function ScoringGuidePopover() {
   return (
     <Popover>
-      <PopoverTrigger
-        className="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 min-h-[40px] sm:min-h-[32px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring shrink-0"
-        aria-label="How WriteWise scores cursive handwriting"
-      >
+      <PopoverTrigger className="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 min-h-[40px] sm:min-h-[36px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring shrink-0">
         <HelpCircle className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" />
-        <span className="inline">Score Guide</span>
+        <span className="inline">Rubric Guide</span>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 sm:w-96 p-4 z-50">
         <PopoverHeader>
@@ -569,36 +601,56 @@ function ScoringGuidePopover() {
           <div className="flex items-start gap-2">
             <div className="size-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
             <div>
-              <strong className="font-semibold text-foreground">1. Letter Formation:</strong>{" "}
-              <span className="text-muted-foreground">Stroke & loop curvature fidelity evaluated by CNN.</span>
+              <strong className="font-semibold text-foreground">
+                1. Letter Formation:
+              </strong>{" "}
+              <span className="text-muted-foreground">
+                Stroke & loop curvature fidelity evaluated by CNN.
+              </span>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <div className="size-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
             <div>
-              <strong className="font-semibold text-foreground">2. Size Consistency:</strong>{" "}
-              <span className="text-muted-foreground">Ascenders, descenders, and x-height proportion uniformity.</span>
+              <strong className="font-semibold text-foreground">
+                2. Size Consistency:
+              </strong>{" "}
+              <span className="text-muted-foreground">
+                Ascenders, descenders, and x-height proportion uniformity.
+              </span>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <div className="size-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
             <div>
-              <strong className="font-semibold text-foreground">3. Spacing:</strong>{" "}
-              <span className="text-muted-foreground">Inter-character and word-boundary rhythm.</span>
+              <strong className="font-semibold text-foreground">
+                3. Spacing:
+              </strong>{" "}
+              <span className="text-muted-foreground">
+                Inter-character and word-boundary rhythm.
+              </span>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <div className="size-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
             <div>
-              <strong className="font-semibold text-foreground">4. Slant Consistency:</strong>{" "}
-              <span className="text-muted-foreground">Angular deviation from target forward inclination.</span>
+              <strong className="font-semibold text-foreground">
+                4. Slant Consistency:
+              </strong>{" "}
+              <span className="text-muted-foreground">
+                Angular deviation from target forward inclination.
+              </span>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <div className="size-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
             <div>
-              <strong className="font-semibold text-foreground">5. Baseline Alignment:</strong>{" "}
-              <span className="text-muted-foreground">Adherence to primary bottom guideline across all words.</span>
+              <strong className="font-semibold text-foreground">
+                5. Baseline Alignment:
+              </strong>{" "}
+              <span className="text-muted-foreground">
+                Adherence to primary bottom guideline across all words.
+              </span>
             </div>
           </div>
         </div>
@@ -659,9 +711,9 @@ export default function ActivityDetailPage({
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Group attempt selection map (key: studentId, value: Submission)
-  const [attemptOverrides, setAttemptOverrides] = useState<Map<string, Submission>>(
-    new Map()
-  );
+  const [attemptOverrides, setAttemptOverrides] = useState<
+    Map<string, Submission>
+  >(new Map());
 
   // Shortcut key listener for '/' and 'U'
   useEffect(() => {
@@ -687,7 +739,7 @@ export default function ActivityDetailPage({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [id, openUpload]);
 
-  // Hardened Roster Metrics: Unique enrolled students with submissions
+  // Roster Metrics: Unique enrolled students with submissions
   const submittedStudentIds = useMemo(() => {
     if (!submissions) return new Set<string>();
     return new Set(submissions.map((s) => s.student_id).filter(Boolean));
@@ -700,6 +752,96 @@ export default function ActivityDetailPage({
     totalStudents > 0
       ? Math.min(100, Math.round((uniqueStudentsCount / totalStudents) * 100))
       : 0;
+
+  // Class Diagnostic Synthesis: Calculate class average and priority criteria
+  const classDiagnostics = useMemo<ClassDiagnosticSummary | null>(() => {
+    if (!submissions) return null;
+    const completed = submissions.filter(
+      (s) =>
+        s.status === "completed" && s.measurement?.composite_score != null
+    );
+    if (completed.length === 0) return null;
+
+    let totalComposite = 0;
+    let totalFormation = 0;
+    let totalSize = 0;
+    let totalSpacing = 0;
+    let totalSlant = 0;
+    let totalBaseline = 0;
+    let formationCount = 0;
+    let sizeCount = 0;
+    let spacingCount = 0;
+    let slantCount = 0;
+    let baselineCount = 0;
+
+    for (const sub of completed) {
+      const m = sub.measurement;
+      if (!m) continue;
+      if (m.composite_score != null) totalComposite += m.composite_score;
+      if (m.letter_formation_score != null) {
+        totalFormation += m.letter_formation_score;
+        formationCount++;
+      }
+      if (m.size_consistency_score != null) {
+        totalSize += m.size_consistency_score;
+        sizeCount++;
+      }
+      if (m.spacing_score != null) {
+        totalSpacing += m.spacing_score;
+        spacingCount++;
+      }
+      if (m.slant_score != null) {
+        totalSlant += m.slant_score;
+        slantCount++;
+      }
+      if (m.baseline_alignment_score != null) {
+        totalBaseline += m.baseline_alignment_score;
+        baselineCount++;
+      }
+    }
+
+    const avgComposite = Math.round(totalComposite / completed.length);
+    const avgFormation = formationCount
+      ? Math.round(totalFormation / formationCount)
+      : 0;
+    const avgSize = sizeCount ? Math.round(totalSize / sizeCount) : 0;
+    const avgSpacing = spacingCount
+      ? Math.round(totalSpacing / spacingCount)
+      : 0;
+    const avgSlant = slantCount ? Math.round(totalSlant / slantCount) : 0;
+    const avgBaseline = baselineCount
+      ? Math.round(totalBaseline / baselineCount)
+      : 0;
+
+    const criteriaList = [
+      { name: "Letter Formation", score: avgFormation },
+      { name: "Size Consistency", score: avgSize },
+      { name: "Spacing", score: avgSpacing },
+      { name: "Slant Consistency", score: avgSlant },
+      { name: "Baseline Alignment", score: avgBaseline },
+    ].filter((c) => c.score > 0);
+
+    criteriaList.sort((a, b) => b.score - a.score);
+
+    return {
+      completedCount: completed.length,
+      avgCompositeScore: avgComposite,
+      scoreBand: getScoreBandLabel(avgComposite),
+      criteriaAverages: {
+        letterFormation: avgFormation,
+        sizeConsistency: avgSize,
+        spacing: avgSpacing,
+        slant: avgSlant,
+        baselineAlignment: avgBaseline,
+      },
+      strongestCriterion:
+        criteriaList.length > 0 ? criteriaList[0] : null,
+      focusCriterion:
+        criteriaList.length > 1
+          ? criteriaList[criteriaList.length - 1]
+          : null,
+    };
+  }, [submissions]);
 
   // Student Grouping
   const studentGroups = useMemo<StudentSubmissionGroup[]>(() => {
@@ -715,7 +857,6 @@ export default function ActivityDetailPage({
 
     const groups: StudentSubmissionGroup[] = [];
     map.forEach((subs, key) => {
-      // sort attempts newest first
       const sortedSubs = [...subs].sort(
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -740,7 +881,8 @@ export default function ActivityDetailPage({
 
   // Counts for filter pills
   const counts = useMemo(() => {
-    if (!submissions) return { all: 0, completed: 0, processing: 0, rejected: 0 };
+    if (!submissions)
+      return { all: 0, completed: 0, processing: 0, rejected: 0 };
     if (viewMode === "grouped") {
       return {
         all: studentGroups.length,
@@ -763,7 +905,9 @@ export default function ActivityDetailPage({
     };
   }, [submissions, viewMode, studentGroups]);
 
-  const submissionFilterItems = useMemo<FilterPillItem<SubmissionFilter>[]>(() => {
+  const submissionFilterItems = useMemo<
+    FilterPillItem<SubmissionFilter>[]
+  >(() => {
     return [
       { id: "all", label: "All", count: counts.all },
       { id: "completed", label: "Completed", count: counts.completed },
@@ -809,8 +953,10 @@ export default function ActivityDetailPage({
         return b.studentName.localeCompare(a.studentName);
       }
       if (sortBy === "score_desc") {
-        const scoreA = a.latestSubmission.measurement?.composite_score ?? -1;
-        const scoreB = b.latestSubmission.measurement?.composite_score ?? -1;
+        const scoreA =
+          a.latestSubmission.measurement?.composite_score ?? -1;
+        const scoreB =
+          b.latestSubmission.measurement?.composite_score ?? -1;
         return scoreB - scoreA;
       }
       return 0;
@@ -912,13 +1058,16 @@ export default function ActivityDetailPage({
     [id, openUpload]
   );
 
-  const handleSelectAttempt = useCallback((studentId: string, sub: Submission) => {
-    setAttemptOverrides((prev) => {
-      const next = new Map(prev);
-      next.set(studentId, sub);
-      return next;
-    });
-  }, []);
+  const handleSelectAttempt = useCallback(
+    (studentId: string, sub: Submission) => {
+      setAttemptOverrides((prev) => {
+        const next = new Map(prev);
+        next.set(studentId, sub);
+        return next;
+      });
+    },
+    []
+  );
 
   if (error) {
     return (
@@ -1058,9 +1207,9 @@ export default function ActivityDetailPage({
         </Link>
       </div>
 
-      {/* Activity Details Card with Authentic 3-Line Cursive Ruling */}
+      {/* Streamlined Activity Hero Card with Authentic 3-Line Cursive Ruling */}
       <section
-        aria-labelledby="activity-header-heading"
+        aria-labelledby="activity-prompt-heading"
         className={cn(
           "relative bg-surface dark:bg-card border rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-warm transition-all overflow-hidden",
           isArchived
@@ -1068,75 +1217,75 @@ export default function ActivityDetailPage({
             : "border-border"
         )}
       >
+        {/* Screen Reader Semantic Heading */}
+        <h1 id="activity-prompt-heading" className="sr-only">
+          Activity: {activity.target_text}
+        </h1>
+
         {/* Archived Top Warning Banner if Archived */}
         {isArchived && (
           <div className="mb-4 -mt-1 -mx-1 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2">
             <Archive className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
             <span>
-              This activity is archived and hidden from student assignment pickers.
+              This activity is archived and hidden from student assignment
+              pickers.
             </span>
           </div>
         )}
 
         <div className="flex flex-col gap-4">
-          {/* Header row: H1 Title + Badges + Action Buttons */}
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-            <div className="space-y-2.5 min-w-0 flex-1">
-              {/* Explicit H1 Title first */}
-              <h1
-                id="activity-header-heading"
-                className="text-xl sm:text-2xl font-heading font-bold text-foreground tracking-tight line-clamp-2"
-              >
-                {activity.target_text}
-              </h1>
+          {/* Top Row: Context Badges + Action Buttons */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Badges & Metadata */}
+            <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+              {isArchived ? (
+                <Badge
+                  variant="outline"
+                  className="text-xs font-semibold px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border/80"
+                >
+                  <Archive className="w-3.5 h-3.5 mr-1" />
+                  Archived
+                </Badge>
+              ) : activity.is_take_home ? (
+                <Badge
+                  variant="outline"
+                  className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900"
+                >
+                  <Home className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400" />
+                  Take-home Activity
+                </Badge>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="text-xs font-semibold px-2.5 py-0.5 bg-emerald-50/70 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/70 dark:border-emerald-900/60"
+                >
+                  <BookOpen className="w-3.5 h-3.5 mr-1 text-emerald-600 dark:text-emerald-400" />
+                  In-Class Activity
+                </Badge>
+              )}
 
-              {/* Badges & Metadata Row */}
-              <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
-                {isArchived ? (
-                  <Badge
-                    variant="outline"
-                    className="text-xs font-semibold px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border/80"
-                  >
-                    <Archive className="w-3.5 h-3.5 mr-1" />
-                    Archived
-                  </Badge>
-                ) : activity.is_take_home ? (
-                  <Badge
-                    variant="outline"
-                    className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900"
-                  >
-                    <Home className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400" />
-                    Take-home Activity
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="outline"
-                    className="text-xs font-semibold px-2.5 py-0.5 bg-emerald-50/70 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/70 dark:border-emerald-900/60"
-                  >
-                    <BookOpen className="w-3.5 h-3.5 mr-1 text-emerald-600 dark:text-emerald-400" />
-                    In-Class Activity
-                  </Badge>
-                )}
+              <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-muted/40 dark:bg-muted/30 px-2 py-0.5 rounded-md border border-border/50 tabular-nums">
+                {wordCount} {wordCount === 1 ? "word" : "words"}
+              </span>
 
-                <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-muted/40 dark:bg-muted/30 px-2 py-0.5 rounded-md border border-border/50 tabular-nums">
-                  {wordCount} {wordCount === 1 ? "word" : "words"}
-                </span>
-
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <CalendarDays className="w-3.5 h-3.5" />
-                  Created {formatDate(activity.created_at)}
-                </span>
-              </div>
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <CalendarDays className="w-3.5 h-3.5" />
+                Created {formatDate(activity.created_at)}
+              </span>
             </div>
 
-            {/* Activity Actions Menu & Fast CTAs */}
-            <div className="flex items-center gap-2 shrink-0 pt-1 sm:pt-0">
+            {/* Fast Action CTAs */}
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
               <Button
                 size="sm"
                 aria-keyshortcuts="u"
-                variant={submissions && submissions.length === 0 ? "outline" : "default"}
+                variant={
+                  submissions && submissions.length === 0
+                    ? "outline"
+                    : "default"
+                }
                 className={cn(
-                  "h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer",
+                  "h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer",
                   submissions && submissions.length === 0
                     ? "text-muted-foreground hover:text-foreground border-border hover:bg-muted/60"
                     : "bg-primary hover:bg-brand-700 text-primary-foreground"
@@ -1159,7 +1308,7 @@ export default function ActivityDetailPage({
 
               <DropdownMenu>
                 <DropdownMenuTrigger
-                  className="flex size-10 sm:size-9 items-center justify-center rounded-lg sm:rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex size-10 sm:size-9 min-h-[40px] sm:min-h-[36px] items-center justify-center rounded-lg sm:rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label="Activity options and actions"
                 >
                   <MoreVertical className="size-4" />
@@ -1218,67 +1367,255 @@ export default function ActivityDetailPage({
             </div>
           </div>
 
-          {/* Penmanship Prompt Preview on 3-Line Cursive Ruling */}
-          <div className="space-y-1.5 pt-1">
-            <div className="relative p-4 sm:p-5 pb-6 sm:pb-7 min-h-[84px] rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-2xs">
-              {/* Decorative 3-line penmanship ruling matching exact parent padding */}
+          {/* Hero Penmanship Prompt on Authentic 3-Line Cursive Ruling */}
+          <div className="space-y-1.5">
+            <div className="relative p-4 sm:p-6 pb-6 sm:pb-8 min-h-[92px] rounded-xl bg-linear-to-b from-brand-50/25 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-2xs">
+              {/* Decorative 3-line penmanship ruling */}
               <div
-                className="absolute inset-4 sm:inset-5 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden"
+                className="absolute inset-4 sm:inset-6 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden"
                 aria-hidden="true"
               />
-              <p className="relative font-cursive text-foreground/90 font-normal tracking-wide select-all break-words text-[32px] sm:text-[36px] leading-[48px]">
+              <p className="relative font-cursive text-foreground/90 font-normal tracking-wide select-all break-words text-[30px] sm:text-[36px] leading-[48px]">
                 {activity.target_text}
               </p>
             </div>
           </div>
 
-          {/* Hardened Class Roster Completion Metric */}
-          <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-muted-foreground border-t border-border/50">
-            <div className="flex items-center gap-2 flex-wrap">
-              <GraduationCap className="size-4 text-brand-600 dark:text-brand-400 shrink-0" />
-              <span>
-                <strong className="text-foreground font-semibold">
-                  {uniqueStudentsCount}
-                </strong>{" "}
-                of{" "}
-                <strong className="text-foreground font-semibold">
-                  {totalStudents}
-                </strong>{" "}
-                enrolled students submitted
-                {totalScansCount > uniqueStudentsCount && (
-                  <span className="text-muted-foreground/80 font-normal">
-                    {" "}
-                    ({totalScansCount} total{" "}
-                    {totalScansCount === 1 ? "scan" : "scans"})
+          {/* Bottom Aggregate Bar: Class Roster Progress + Diagnostic Synthesis */}
+          <div className="pt-3 border-t border-border/50 grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+            {/* Left: Class Roster Completion */}
+            <div className="flex flex-col justify-center gap-2">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <GraduationCap className="size-4 text-brand-600 dark:text-brand-400 shrink-0" />
+                  <span>
+                    <strong className="text-foreground font-semibold">
+                      {uniqueStudentsCount}
+                    </strong>{" "}
+                    of{" "}
+                    <strong className="text-foreground font-semibold">
+                      {totalStudents}
+                    </strong>{" "}
+                    enrolled students submitted
+                    {totalScansCount > uniqueStudentsCount && (
+                      <span className="text-muted-foreground/80 font-normal">
+                        {" "}
+                        ({totalScansCount} total{" "}
+                        {totalScansCount === 1 ? "scan" : "scans"})
+                      </span>
+                    )}
                   </span>
+                </div>
+                {totalStudents > 0 && (
+                  <Badge
+                    variant="outline"
+                    className="text-[11px] font-semibold px-2 py-0.5 bg-muted/60 text-foreground shrink-0"
+                  >
+                    {completionRate}% complete
+                  </Badge>
                 )}
-              </span>
+              </div>
+
+              {/* Progress bar */}
               {totalStudents > 0 && (
-                <Badge
-                  variant="outline"
-                  className="text-[11px] font-semibold px-2 py-0.5 bg-muted/60 text-foreground"
+                <div
+                  className="w-full h-2 rounded-full bg-muted overflow-hidden"
+                  role="progressbar"
+                  aria-valuenow={completionRate}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`Class completion rate: ${completionRate}%`}
                 >
-                  {completionRate}% complete
-                </Badge>
+                  <div
+                    className="h-full bg-brand-600 dark:bg-brand-500 rounded-full transition-all duration-500 ease-out"
+                    style={{
+                      width: `${completionRate}%`,
+                    }}
+                  />
+                </div>
               )}
             </div>
 
-            {/* Progress bar capped accurately at 100% */}
-            {totalStudents > 0 && (
-              <div
-                className="w-full sm:w-48 h-2 rounded-full bg-muted overflow-hidden"
-                role="progressbar"
-                aria-valuenow={completionRate}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label={`Class completion rate: ${completionRate}%`}
-              >
-                <div
-                  className="h-full bg-brand-600 dark:bg-brand-500 rounded-full transition-all duration-500 ease-out"
-                  style={{
-                    width: `${completionRate}%`,
-                  }}
-                />
+            {/* Right: Class Diagnostic Synthesis (when completed scans exist) */}
+            {classDiagnostics ? (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between lg:justify-end gap-2.5 bg-muted/25 dark:bg-muted/15 p-2.5 rounded-xl border border-border/60 text-xs">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="size-4 text-brand-600 dark:text-brand-400 shrink-0" />
+                  <div>
+                    <span className="text-[11px] text-muted-foreground font-medium block">
+                      Class Performance ({classDiagnostics.completedCount}{" "}
+                      scored)
+                    </span>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-xs font-semibold px-2 py-0.5",
+                          classDiagnostics.scoreBand.className
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "size-1.5 rounded-full mr-1",
+                            classDiagnostics.scoreBand.dotColor
+                          )}
+                        />
+                        <span>{classDiagnostics.scoreBand.label}</span>
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <Popover>
+                    <PopoverTrigger className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer">
+                      <Sparkles className="size-3 text-brand-600 dark:text-brand-400" />
+                      <span>Class Breakdown</span>
+                      <ChevronDown className="size-2.5 opacity-60" />
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="end"
+                      className="w-72 p-3.5 space-y-3 z-50 text-xs"
+                    >
+                      <PopoverHeader>
+                        <PopoverTitle className="text-xs font-semibold text-foreground flex items-center justify-between">
+                          <span>5-Criterion Class Average</span>
+                          <span className="text-primary font-bold tabular-nums">
+                            {classDiagnostics.avgCompositeScore}%
+                          </span>
+                        </PopoverTitle>
+                      </PopoverHeader>
+
+                      <div className="space-y-2 pt-1">
+                        <div>
+                          <div className="flex justify-between text-[11px] mb-0.5 text-muted-foreground">
+                            <span>Letter Formation</span>
+                            <span className="font-medium tabular-nums text-foreground">
+                              {
+                                classDiagnostics.criteriaAverages
+                                  .letterFormation
+                              }
+                              %
+                            </span>
+                          </div>
+                          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-brand-500 rounded-full"
+                              style={{
+                                width: `${classDiagnostics.criteriaAverages.letterFormation}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between text-[11px] mb-0.5 text-muted-foreground">
+                            <span>Size Consistency</span>
+                            <span className="font-medium tabular-nums text-foreground">
+                              {
+                                classDiagnostics.criteriaAverages
+                                  .sizeConsistency
+                              }
+                              %
+                            </span>
+                          </div>
+                          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-brand-500 rounded-full"
+                              style={{
+                                width: `${classDiagnostics.criteriaAverages.sizeConsistency}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between text-[11px] mb-0.5 text-muted-foreground">
+                            <span>Spacing</span>
+                            <span className="font-medium tabular-nums text-foreground">
+                              {classDiagnostics.criteriaAverages.spacing}%
+                            </span>
+                          </div>
+                          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-brand-500 rounded-full"
+                              style={{
+                                width: `${classDiagnostics.criteriaAverages.spacing}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between text-[11px] mb-0.5 text-muted-foreground">
+                            <span>Slant Consistency</span>
+                            <span className="font-medium tabular-nums text-foreground">
+                              {classDiagnostics.criteriaAverages.slant}%
+                            </span>
+                          </div>
+                          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-brand-500 rounded-full"
+                              style={{
+                                width: `${classDiagnostics.criteriaAverages.slant}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between text-[11px] mb-0.5 text-muted-foreground">
+                            <span>Baseline Alignment</span>
+                            <span className="font-medium tabular-nums text-foreground">
+                              {
+                                classDiagnostics.criteriaAverages
+                                  .baselineAlignment
+                              }
+                              %
+                            </span>
+                          </div>
+                          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-brand-500 rounded-full"
+                              style={{
+                                width: `${classDiagnostics.criteriaAverages.baselineAlignment}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {classDiagnostics.strongestCriterion && (
+                        <div className="pt-2 border-t border-border/60 text-[11px] space-y-1 text-muted-foreground">
+                          <p>
+                            <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                              Strength:
+                            </span>{" "}
+                            {classDiagnostics.strongestCriterion.name} (
+                            {classDiagnostics.strongestCriterion.score}%)
+                          </p>
+                          {classDiagnostics.focusCriterion && (
+                            <p>
+                              <span className="font-semibold text-amber-700 dark:text-amber-400">
+                                Practice Focus:
+                              </span>{" "}
+                              {classDiagnostics.focusCriterion.name} (
+                              {classDiagnostics.focusCriterion.score}%)
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 p-2.5 rounded-xl border border-dashed border-border/80 text-xs text-muted-foreground bg-muted/10">
+                <BarChart3 className="size-4 text-muted-foreground/60 shrink-0" />
+                <span>
+                  Class diagnostic insights will unlock as student worksheets
+                  are scored.
+                </span>
               </div>
             )}
           </div>
@@ -1321,7 +1658,7 @@ export default function ActivityDetailPage({
                 aria-checked={viewMode === "grouped"}
                 onClick={() => setViewMode("grouped")}
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer",
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] sm:min-h-[28px] text-xs font-medium rounded-md transition-all cursor-pointer",
                   viewMode === "grouped"
                     ? "bg-background text-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -1336,7 +1673,7 @@ export default function ActivityDetailPage({
                 aria-checked={viewMode === "all"}
                 onClick={() => setViewMode("all")}
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer",
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] sm:min-h-[28px] text-xs font-medium rounded-md transition-all cursor-pointer",
                   viewMode === "all"
                     ? "bg-background text-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -1349,7 +1686,7 @@ export default function ActivityDetailPage({
           )}
         </div>
 
-        {/* Filter & Search Bar — only when submissions exist */}
+        {/* Filter & Search Bar */}
         {submissions && submissions.length > 0 && (
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
             {/* Primary controls: Search + Filter Pills */}
@@ -1374,12 +1711,12 @@ export default function ActivityDetailPage({
               />
             </div>
 
-            {/* Secondary controls: Sort Selector + Divider + Score Guide */}
+            {/* Secondary controls: Sort Selector + Rubric Guide Trigger */}
             <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-border/50">
               {/* Sort Selector */}
               <DropdownMenu>
                 <DropdownMenuTrigger
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 min-h-[40px] sm:min-h-[36px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label="Sort submissions list"
                 >
                   <ArrowUpDown className="size-3 text-muted-foreground shrink-0" />
@@ -1394,7 +1731,7 @@ export default function ActivityDetailPage({
                 <DropdownMenuContent align="end" className="w-44">
                   <DropdownMenuItem
                     onClick={() => setSortBy("newest")}
-                    className="cursor-pointer text-xs justify-between"
+                    className="cursor-pointer text-xs justify-between min-h-[36px]"
                   >
                     <span>Newest First</span>
                     {sortBy === "newest" && (
@@ -1403,7 +1740,7 @@ export default function ActivityDetailPage({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setSortBy("oldest")}
-                    className="cursor-pointer text-xs justify-between"
+                    className="cursor-pointer text-xs justify-between min-h-[36px]"
                   >
                     <span>Oldest First</span>
                     {sortBy === "oldest" && (
@@ -1412,7 +1749,7 @@ export default function ActivityDetailPage({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setSortBy("name_asc")}
-                    className="cursor-pointer text-xs justify-between"
+                    className="cursor-pointer text-xs justify-between min-h-[36px]"
                   >
                     <span>Student (A-Z)</span>
                     {sortBy === "name_asc" && (
@@ -1421,7 +1758,7 @@ export default function ActivityDetailPage({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setSortBy("name_desc")}
-                    className="cursor-pointer text-xs justify-between"
+                    className="cursor-pointer text-xs justify-between min-h-[36px]"
                   >
                     <span>Student (Z-A)</span>
                     {sortBy === "name_desc" && (
@@ -1430,7 +1767,7 @@ export default function ActivityDetailPage({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setSortBy("score_desc")}
-                    className="cursor-pointer text-xs justify-between"
+                    className="cursor-pointer text-xs justify-between min-h-[36px]"
                   >
                     <span>Highest Score</span>
                     {sortBy === "score_desc" && (
@@ -1440,7 +1777,10 @@ export default function ActivityDetailPage({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <div className="h-4 w-px bg-border/60 shrink-0 hidden sm:block" aria-hidden="true" />
+              <div
+                className="h-4 w-px bg-border/60 shrink-0 hidden sm:block"
+                aria-hidden="true"
+              />
 
               {/* Scoring Explainer Guide Trigger */}
               <ScoringGuidePopover />
@@ -1496,7 +1836,8 @@ export default function ActivityDetailPage({
             <div className="flex items-center gap-3">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <span className="text-sm font-medium">
-                Couldn&apos;t load submissions. Check your connection and try again.
+                Couldn&apos;t load submissions. Check your connection and try
+                again.
               </span>
             </div>
             <Button
