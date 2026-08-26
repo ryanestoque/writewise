@@ -108,7 +108,7 @@ Following the audit findings, full-stack remediations were implemented to resolv
 |---|---|---|
 | [`frontend/app/globals.css`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/frontend/app/globals.css) | Global Tokens | Registered `--warning`, `--warning-foreground`, `--success`, and `--success-foreground` across `@theme inline`, `:root`, and `.dark`. |
 | [`frontend/components/ui/dialog.tsx`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/frontend/components/ui/dialog.tsx) | UI Primitive | Aligned border radius to `rounded-2xl`, added explicit high-contrast focus ring to close button. |
-| [`frontend/components/quick-upload-dialog.tsx`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/frontend/components/quick-upload-dialog.tsx) | Upload Modal | Implemented ARIA controls linkage, `role="alert"` semantics, semantic warning/success tokens, `min-[480px]` camera button grid, and simplified stepper labels. |
+| [`frontend/components/quick-upload-dialog.tsx`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/frontend/components/quick-upload-dialog.tsx) | Upload Modal | Implemented ARIA controls linkage, `role="alert"` semantics, semantic warning/success tokens, `min-[480px]` camera button grid, Step 2/3 active student/activity context pill, dropzone click activation, and simplified stepper labels. |
 | [`frontend/docs/audits/UPLOAD_WORKSHEET_MODAL_AUDIT_SUMMARY.md`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/frontend/docs/audits/UPLOAD_WORKSHEET_MODAL_AUDIT_SUMMARY.md) | Audit Documentation | Full documentation of technical audit, design critique, and batch-upload UX remediations. |
 
 ---

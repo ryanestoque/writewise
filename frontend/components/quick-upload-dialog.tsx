@@ -173,7 +173,7 @@ export function QuickUploadDialog({
     >
       <DialogContent
         showCloseButton={!isUploading}
-        className="max-w-xl p-0 overflow-hidden"
+        className="max-w-xl p-0 gap-0 overflow-hidden flex flex-col"
       >
         {/* key remounts the flow on every open/close so state starts fresh */}
         <UploadFlow
@@ -436,7 +436,7 @@ function UploadFlow({
         {stepAnnouncement}
       </span>
 
-      <DialogHeader className="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-border pr-12">
+      <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-3.5 border-b border-border pr-12">
         <div className="flex items-center gap-2.5">
           <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
             <UploadCloudIcon className="size-5" />
@@ -452,7 +452,7 @@ function UploadFlow({
         </div>
 
         {/* 3-Step Interactive Progress Stepper (Anchored Across All Steps) */}
-        <nav aria-label="Upload progress" className="mt-4">
+        <nav aria-label="Upload progress" className="mt-3 sm:mt-3.5">
           <ol className="flex items-center justify-between gap-1.5 sm:gap-2">
             {STEPS.map((s) => {
               const isCompleted = step > s.step || step === 5;
@@ -527,13 +527,13 @@ function UploadFlow({
         </nav>
       </DialogHeader>
 
-      <div className="px-4 sm:px-6 py-4 sm:py-5 max-h-[min(75vh,80dvh)] overflow-y-auto">
+      <div className="px-4 sm:px-6 py-4 max-h-[min(75vh,80dvh)] overflow-y-auto">
         {isUploading ? (
           /* Step 4 — Uploading state */
           <div
             aria-busy="true"
             aria-live="polite"
-            className="flex flex-col items-center justify-center py-12 space-y-3"
+            className="flex flex-col items-center justify-center py-10 space-y-3"
           >
             <Loader2Icon className="size-8 animate-spin text-primary" />
             <p className="text-sm font-medium text-foreground">
@@ -544,7 +544,7 @@ function UploadFlow({
             </p>
           </div>
         ) : (
-          <div className="space-y-3.5">
+          <div className="space-y-4">
             {/* Step 1 — Select student & activity */}
             {step === 1 && (
               <>
@@ -730,6 +730,25 @@ function UploadFlow({
             {/* Step 2 — Capture photo */}
             {step === 2 && (
               <>
+                {/* Context Header: Active Student & Activity */}
+                <div className="flex items-center justify-between gap-2 p-2.5 px-3 rounded-xl bg-muted/40 border border-border/80 text-xs">
+                  <div className="flex items-center gap-1.5 min-w-0 truncate">
+                    <span className="font-semibold text-foreground truncate">
+                      {selectedStudent?.full_name ?? "Student"}
+                    </span>
+                    {selectedStudent?.section && (
+                      <span className="text-muted-foreground shrink-0">
+                        ({selectedStudent.section})
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 text-muted-foreground shrink-0 max-w-[50%] truncate font-medium">
+                    <span className="truncate">
+                      {selectedActivity?.target_text ?? "Activity"}
+                    </span>
+                  </div>
+                </div>
+
                 {/* Standard File Picker Input */}
                 <input
                   type="file"
@@ -763,6 +782,7 @@ function UploadFlow({
                       ? "Worksheet photo upload dropzone. Take a photo or choose from library."
                       : "Worksheet photo upload dropzone. Drop an image or press Enter or Space to choose a file."
                   }
+                  onClick={() => fileInputRef.current?.click()}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
@@ -932,6 +952,24 @@ function UploadFlow({
             {/* Step 3 — Preview + confirm */}
             {step === 3 && selectedFile && (
               <>
+                {/* Context Header: Active Student & Activity */}
+                <div className="flex items-center justify-between gap-2 p-2.5 px-3 rounded-xl bg-muted/40 border border-border/80 text-xs">
+                  <div className="flex items-center gap-1.5 min-w-0 truncate">
+                    <span className="font-semibold text-foreground truncate">
+                      {selectedStudent?.full_name ?? "Student"}
+                    </span>
+                    {selectedStudent?.section && (
+                      <span className="text-muted-foreground shrink-0">
+                        ({selectedStudent.section})
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 text-muted-foreground shrink-0 max-w-[50%] truncate font-medium">
+                    <span className="truncate">
+                      {selectedActivity?.target_text ?? "Activity"}
+                    </span>
+                  </div>
+                </div>
                 {/* Duplicate Submission Advisory on Step 3 */}
                 {isDuplicateSubmission && (
                   <div
@@ -1119,7 +1157,7 @@ function UploadFlow({
 
       {/* Footer actions for Steps 1–3 */}
       {!isUploading && step <= 3 && (
-        <div className="flex items-center justify-between p-3.5 sm:p-4 px-4 sm:px-6 border-t border-border bg-muted/20">
+        <div className="flex items-center justify-between p-3 sm:p-3.5 px-4 sm:px-6 border-t border-border bg-muted/20">
           {step === 1 && (
             <Button
               variant="outline"
