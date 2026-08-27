@@ -13,7 +13,6 @@ import { SubmissionDetailDialog } from "@/components/submissions/submission-deta
 import { Button } from "@/components/ui/button";
 import {
   RotateCcw,
-  BarChart3,
   AlertCircle,
   Download,
 } from "lucide-react";
@@ -88,41 +87,37 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border/80">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <BarChart3 className="size-6 text-brand-600 dark:text-brand-400" />
-            <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
-              Class Diagnostics & Analytics
-            </h1>
-          </div>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            Class-wide handwriting progress and diagnostic performance across all 5 assessment criteria.
-          </p>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
+            Dashboard
+          </h1>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
           <Button
             variant="outline"
-            size="sm"
             onClick={handleExportCSV}
             disabled={isLoading || !data?.students?.length}
-            className="h-9 px-3 rounded-xl text-xs font-semibold gap-1.5 shadow-xs cursor-pointer border-border hover:bg-muted"
+            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] flex-1 sm:flex-none border-border text-foreground hover:bg-muted text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer"
             title="Export class diagnostic assessment matrix as CSV"
           >
-            <Download className="size-3.5" />
+            <Download className="w-4 h-4 mr-1.5 text-muted-foreground shrink-0" />
             <span>Export CSV</span>
           </Button>
 
           <Button
             variant="outline"
-            size="sm"
             onClick={() => refetch()}
             disabled={isLoading || isRefetching}
-            className="h-9 px-3 rounded-xl text-xs font-semibold gap-1.5 shadow-xs cursor-pointer border-border hover:bg-muted"
+            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] flex-1 sm:flex-none border-border text-foreground hover:bg-muted text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer"
           >
-            <RotateCcw className={`size-3.5 ${isRefetching ? "animate-spin" : ""}`} />
+            <RotateCcw
+              className={`w-4 h-4 mr-1.5 text-muted-foreground shrink-0 ${
+                isRefetching ? "animate-spin" : ""
+              }`}
+            />
             <span>Refresh Data</span>
           </Button>
         </div>
