@@ -70,7 +70,7 @@ export function SummaryCards({
     return (
       <div
         className={cn(
-          "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4",
+          "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4",
           className
         )}
       >
@@ -98,7 +98,7 @@ export function SummaryCards({
   return (
     <div
       className={cn(
-        "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4",
+        "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4",
         className
       )}
     >
@@ -112,7 +112,7 @@ export function SummaryCards({
             className={cn(
               "p-3.5 sm:p-4 rounded-xl border border-border bg-card shadow-warm flex flex-col justify-between transition-all hover:border-brand-300/60 dark:hover:border-brand-800",
               card.isHeadline &&
-                "ring-1 ring-brand-500/20 bg-linear-to-b from-brand-50/30 to-card dark:from-brand-950/20 dark:to-card"
+                "ring-1 ring-brand-500/30 bg-gradient-to-b from-brand-50/40 via-card to-card dark:from-brand-950/30 dark:via-card dark:to-card border-brand-200/80 dark:border-brand-800"
             )}
           >
             {/* Header: Title + Icon */}

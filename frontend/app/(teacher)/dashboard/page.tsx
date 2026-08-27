@@ -15,6 +15,7 @@ import {
   RotateCcw,
   BarChart3,
   AlertCircle,
+  Download,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -46,6 +47,45 @@ export default function DashboardPage() {
     setIsSubmissionModalOpen(true);
   };
 
+  const handleExportCSV = () => {
+    if (!data?.students || data.students.length === 0) return;
+
+    const headers = [
+      "Student Name",
+      "Section",
+      "Letter Formation (%)",
+      "Size Consistency (%)",
+      "Spacing Regularity (%)",
+      "Slant Angle (%)",
+      "Baseline Alignment (%)",
+      "Overall Composite (%)",
+      "Status",
+    ];
+
+    const rows = data.students.map((s) => [
+      `"${s.fullName.replace(/"/g, '""')}"`,
+      `"${s.section.replace(/"/g, '""')}"`,
+      s.scores.letter_formation !== null ? s.scores.letter_formation.toFixed(1) : "",
+      s.scores.size_consistency !== null ? s.scores.size_consistency.toFixed(1) : "",
+      s.scores.spacing !== null ? s.scores.spacing.toFixed(1) : "",
+      s.scores.slant !== null ? s.scores.slant.toFixed(1) : "",
+      s.scores.baseline_alignment !== null ? s.scores.baseline_alignment.toFixed(1) : "",
+      s.scores.composite !== null ? s.scores.composite.toFixed(1) : "",
+      s.scores.composite !== null ? "Scored" : "Unrated",
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const today = new Date().toISOString().split("T")[0];
+    link.setAttribute("href", url);
+    link.setAttribute("download", `writewise_class_diagnostics_${today}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -63,6 +103,18 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCSV}
+            disabled={isLoading || !data?.students?.length}
+            className="h-9 px-3 rounded-xl text-xs font-semibold gap-1.5 shadow-xs cursor-pointer border-border hover:bg-muted"
+            title="Export class diagnostic assessment matrix as CSV"
+          >
+            <Download className="size-3.5" />
+            <span>Export CSV</span>
+          </Button>
+
           <Button
             variant="outline"
             size="sm"

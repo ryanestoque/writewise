@@ -47,12 +47,12 @@ function getInitials(name: string) {
 }
 
 const AVATAR_PALETTES = [
-  "bg-amber-100 text-amber-800 border-amber-200/60 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-900",
-  "bg-emerald-100 text-emerald-800 border-emerald-200/60 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-900",
-  "bg-blue-100 text-blue-800 border-blue-200/60 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-900",
-  "bg-purple-100 text-purple-800 border-purple-200/60 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-900",
-  "bg-brand-100 text-brand-800 border-brand-200/60 dark:bg-brand-950 dark:text-brand-300 dark:border-brand-900",
-  "bg-rose-100 text-rose-800 border-rose-200/60 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-900",
+  "bg-amber-100 text-amber-900 border-amber-300/70 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-800",
+  "bg-emerald-100 text-emerald-900 border-emerald-300/70 dark:bg-emerald-950/80 dark:text-emerald-200 dark:border-emerald-800",
+  "bg-blue-100 text-blue-900 border-blue-300/70 dark:bg-blue-950/80 dark:text-blue-200 dark:border-blue-800",
+  "bg-purple-100 text-purple-900 border-purple-300/70 dark:bg-purple-950/80 dark:text-purple-200 dark:border-purple-800",
+  "bg-brand-100 text-brand-900 border-brand-300/70 dark:bg-brand-950/80 dark:text-brand-200 dark:border-brand-800",
+  "bg-rose-100 text-rose-900 border-rose-300/70 dark:bg-rose-950/80 dark:text-rose-200 dark:border-rose-800",
 ];
 
 function getAvatarColor(name: string) {
@@ -91,27 +91,27 @@ export function StudentDrillDownDrawer({
       >
         {/* Drawer Header */}
         <SheetHeader className="p-5 sm:p-6 bg-card border-b border-border/80 shrink-0 space-y-3">
-          <div className="flex items-start justify-between gap-3 pr-8">
-            <div className="flex items-center gap-3.5 min-w-0">
-              <Avatar
-                className={cn(
-                  "size-11 border text-sm font-semibold shrink-0 shadow-xs",
-                  getAvatarColor(student.fullName)
-                )}
-              >
-                <AvatarFallback>{getInitials(student.fullName)}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <SheetTitle className="font-heading text-lg font-bold text-foreground truncate">
-                  {student.fullName}
-                </SheetTitle>
-                <SheetDescription className="text-xs text-muted-foreground truncate">
-                  {student.section}
+          <div className="flex items-start gap-3.5 pr-8">
+            <Avatar
+              className={cn(
+                "size-12 border text-sm font-semibold shrink-0 shadow-xs mt-0.5",
+                getAvatarColor(student.fullName)
+              )}
+            >
+              <AvatarFallback>{getInitials(student.fullName)}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0 space-y-1">
+              <SheetTitle className="font-heading text-lg sm:text-xl font-bold text-foreground leading-snug break-words">
+                {student.fullName}
+              </SheetTitle>
+              <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                <SheetDescription className="text-xs font-medium text-muted-foreground">
+                  Section: <span className="font-semibold text-foreground">{student.section}</span>
                 </SheetDescription>
+                <span className="text-border text-xs" aria-hidden="true">•</span>
+                <ScoreSourceIndicator source={scoreSource} compact />
               </div>
             </div>
-
-            <ScoreSourceIndicator source={scoreSource} />
           </div>
         </SheetHeader>
 

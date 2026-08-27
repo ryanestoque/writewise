@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   Table,
@@ -14,6 +14,12 @@ import { buttonVariants } from "@/components/ui/button";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import {
   Empty,
   EmptyContent,
@@ -62,12 +68,12 @@ function getInitials(name: string) {
 }
 
 const AVATAR_PALETTES = [
-  "bg-amber-100 text-amber-800 border-amber-200/60 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-900",
-  "bg-emerald-100 text-emerald-800 border-emerald-200/60 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-900",
-  "bg-blue-100 text-blue-800 border-blue-200/60 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-900",
-  "bg-purple-100 text-purple-800 border-purple-200/60 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-900",
-  "bg-brand-100 text-brand-800 border-brand-200/60 dark:bg-brand-950 dark:text-brand-300 dark:border-brand-900",
-  "bg-rose-100 text-rose-800 border-rose-200/60 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-900",
+  "bg-amber-100 text-amber-900 border-amber-300/70 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-800",
+  "bg-emerald-100 text-emerald-900 border-emerald-300/70 dark:bg-emerald-950/80 dark:text-emerald-200 dark:border-emerald-800",
+  "bg-blue-100 text-blue-900 border-blue-300/70 dark:bg-blue-950/80 dark:text-blue-200 dark:border-blue-800",
+  "bg-purple-100 text-purple-900 border-purple-300/70 dark:bg-purple-950/80 dark:text-purple-200 dark:border-purple-800",
+  "bg-brand-100 text-brand-900 border-brand-300/70 dark:bg-brand-950/80 dark:text-brand-200 dark:border-brand-800",
+  "bg-rose-100 text-rose-900 border-rose-300/70 dark:bg-rose-950/80 dark:text-rose-200 dark:border-rose-800",
 ];
 
 function getAvatarColor(name: string) {
@@ -79,20 +85,69 @@ function getAvatarColor(name: string) {
   return AVATAR_PALETTES[index];
 }
 
+export type BandFilter = "all" | "intervention" | "satisfactory" | "excellent" | "unrated";
+
 const COLUMNS: Array<{
   field: SortField;
   label: string;
   shortLabel: string;
   isNumeric?: boolean;
+  description?: string;
 }> = [
-  { field: "fullName", label: "Student Name", shortLabel: "Student" },
-  { field: "section", label: "Section", shortLabel: "Section" },
-  { field: "letter_formation", label: "Letter Formation", shortLabel: "Letter Form.", isNumeric: true },
-  { field: "size_consistency", label: "Size Consistency", shortLabel: "Size Cons.", isNumeric: true },
-  { field: "spacing", label: "Spacing", shortLabel: "Spacing", isNumeric: true },
-  { field: "slant", label: "Slant Angle", shortLabel: "Slant", isNumeric: true },
-  { field: "baseline_alignment", label: "Baseline Alignment", shortLabel: "Baseline", isNumeric: true },
-  { field: "composite", label: "Overall Composite", shortLabel: "Overall", isNumeric: true },
+  {
+    field: "fullName",
+    label: "Student Name",
+    shortLabel: "Student",
+    description: "Student full name and assigned section",
+  },
+  {
+    field: "section",
+    label: "Section",
+    shortLabel: "Section",
+    description: "Grade 3 class section roster",
+  },
+  {
+    field: "letter_formation",
+    label: "Letter Formation",
+    shortLabel: "Letter Form.",
+    isNumeric: true,
+    description: "Proper cursive loops and complete stroke closures (target 100%)",
+  },
+  {
+    field: "size_consistency",
+    label: "Size Consistency",
+    shortLabel: "Size Cons.",
+    isNumeric: true,
+    description: "Proportion and height across 3-line penmanship ruling",
+  },
+  {
+    field: "spacing",
+    label: "Spacing Regularity",
+    shortLabel: "Spacing",
+    isNumeric: true,
+    description: "Inter-word rhythm and character separation spacing",
+  },
+  {
+    field: "slant",
+    label: "Slant Angle",
+    shortLabel: "Slant",
+    isNumeric: true,
+    description: "Uniform forward slant tilt (target 60°–68° angle)",
+  },
+  {
+    field: "baseline_alignment",
+    label: "Baseline Alignment",
+    shortLabel: "Baseline",
+    isNumeric: true,
+    description: "Letters resting stably along bottom ruling baseline",
+  },
+  {
+    field: "composite",
+    label: "Overall Composite",
+    shortLabel: "Overall",
+    isNumeric: true,
+    description: "Equal-weighted average across all 5 diagnostic criteria",
+  },
 ];
 
 export function ClassTable({
@@ -103,9 +158,35 @@ export function ClassTable({
 }: ClassTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSection, setSelectedSection] = useState<string>("all");
+  const [selectedBand, setSelectedBand] = useState<BandFilter>("all");
   const [sortField, setSortField] = useState<SortField>("composite");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Global keyboard shortcut: press '/' or 'Cmd/Ctrl+K' to focus search input
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isInput =
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable ||
+          target.tagName === "SELECT");
+
+      if (
+        !isInput &&
+        (e.key === "/" ||
+          ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k"))
+      ) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
 
   // Available sections for FilterPills
   const sections = useMemo(() => {
@@ -127,6 +208,38 @@ export function ClassTable({
     ];
   }, [sections, students]);
 
+  // Band / Performance tier counts for FilterPills
+  const bandPills: FilterPillItem[] = useMemo(() => {
+    const counts = {
+      all: students.length,
+      intervention: 0,
+      satisfactory: 0,
+      excellent: 0,
+      unrated: 0,
+    };
+
+    students.forEach((s) => {
+      const score = s.scores.composite;
+      if (score === null || score === undefined) {
+        counts.unrated++;
+      } else if (score < 50) {
+        counts.intervention++;
+      } else if (score < 75) {
+        counts.satisfactory++;
+      } else {
+        counts.excellent++;
+      }
+    });
+
+    return [
+      { id: "all", label: "All Tiers", count: counts.all },
+      { id: "intervention", label: "Needs Support (<50%)", count: counts.intervention },
+      { id: "satisfactory", label: "Satisfactory (50–74%)", count: counts.satisfactory },
+      { id: "excellent", label: "Proficient (≥75%)", count: counts.excellent },
+      { id: "unrated", label: "Unrated", count: counts.unrated },
+    ];
+  }, [students]);
+
   // Filtering & Sorting
   const filteredAndSortedStudents = useMemo(() => {
     return students
@@ -139,7 +252,19 @@ export function ClassTable({
         const matchesSection =
           selectedSection === "all" || student.section === selectedSection;
 
-        return matchesSearch && matchesSection;
+        const score = student.scores.composite;
+        let matchesBand = true;
+        if (selectedBand === "unrated") {
+          matchesBand = score === null || score === undefined;
+        } else if (selectedBand === "intervention") {
+          matchesBand = score !== null && score !== undefined && score < 50;
+        } else if (selectedBand === "satisfactory") {
+          matchesBand = score !== null && score !== undefined && score >= 50 && score < 75;
+        } else if (selectedBand === "excellent") {
+          matchesBand = score !== null && score !== undefined && score >= 75;
+        }
+
+        return matchesSearch && matchesSection && matchesBand;
       })
       .sort((a, b) => {
         let valA: string | number | null = null;
@@ -174,7 +299,7 @@ export function ClassTable({
         const numB = Number(valB);
         return sortDirection === "asc" ? numA - numB : numB - numA;
       });
-  }, [students, searchQuery, selectedSection, sortField, sortDirection]);
+  }, [students, searchQuery, selectedSection, selectedBand, sortField, sortDirection]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -229,64 +354,102 @@ export function ClassTable({
   }
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-3.5", className)}>
       {/* Search and Filter Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="w-full sm:w-72">
-          <SearchInput
-            ref={searchInputRef}
-            placeholder="Search student or section..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onClear={() => setSearchQuery("")}
-            className="w-full"
-          />
-        </div>
-
-        {sections.length > 1 && (
-          <div className="overflow-x-auto pb-1 sm:pb-0">
-            <FilterPills
-              items={sectionPills}
-              value={selectedSection}
-              onChange={setSelectedSection}
+      <div className="space-y-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="w-full sm:w-72">
+            <SearchInput
+              ref={searchInputRef}
+              placeholder="Search student or section..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onClear={() => setSearchQuery("")}
+              className="w-full"
             />
           </div>
-        )}
+
+          {sections.length > 1 && (
+            <div className="overflow-x-auto pb-1 sm:pb-0">
+              <FilterPills
+                items={sectionPills}
+                value={selectedSection}
+                onChange={setSelectedSection}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Diagnostic Performance Tier Filter Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <span className="text-[11px] font-semibold text-muted-foreground shrink-0 uppercase tracking-wider hidden sm:inline">
+            Tier:
+          </span>
+          <FilterPills
+            items={bandPills}
+            value={selectedBand}
+            onChange={(val) => setSelectedBand(val as BandFilter)}
+          />
+        </div>
       </div>
 
       {/* Main Table (Desktop & Tablet) */}
-      <div className="rounded-xl border border-border bg-card shadow-warm overflow-hidden">
+      <div className="relative rounded-xl border border-border bg-card shadow-warm overflow-hidden">
+        {/* Mobile horizontal scroll hint gradient */}
+        <div
+          className="pointer-events-none absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-card/80 to-transparent sm:hidden z-10"
+          aria-hidden="true"
+        />
+
         <div className="overflow-x-auto">
-          <Table>
-            <TableHeader className="bg-muted/40">
-              <TableRow className="hover:bg-transparent border-b border-border/80">
-                {COLUMNS.map((col) => (
-                  <TableHead
-                    key={col.field}
-                    scope="col"
-                    onClick={() => handleSort(col.field)}
-                    className={cn(
-                      "text-xs font-semibold text-foreground py-3 cursor-pointer select-none transition-colors hover:text-brand-700 dark:hover:text-brand-300",
-                      col.isNumeric ? "text-right" : "text-left"
-                    )}
-                  >
-                    <div
+          <TooltipProvider delay={200}>
+            <Table>
+              <TableHeader className="bg-muted/40">
+                <TableRow className="hover:bg-transparent border-b border-border/80">
+                  {COLUMNS.map((col) => (
+                    <TableHead
+                      key={col.field}
+                      scope="col"
+                      aria-sort={
+                        sortField === col.field
+                          ? sortDirection === "asc"
+                            ? "ascending"
+                            : "descending"
+                          : "none"
+                      }
+                      onClick={() => handleSort(col.field)}
                       className={cn(
-                        "flex items-center gap-0.5",
-                        col.isNumeric ? "justify-end" : "justify-start"
+                        "text-xs font-semibold text-foreground py-3 cursor-pointer select-none transition-colors hover:text-brand-700 dark:hover:text-brand-300",
+                        col.isNumeric ? "text-right" : "text-left"
                       )}
                     >
-                      <span className="hidden sm:inline">{col.label}</span>
-                      <span className="sm:hidden">{col.shortLabel}</span>
-                      {getSortIcon(col.field)}
-                    </div>
+                      <Tooltip>
+                        <TooltipTrigger
+                          className={cn(
+                            "inline-flex items-center gap-0.5 cursor-pointer bg-transparent border-0 p-0 text-inherit font-inherit",
+                            col.isNumeric ? "justify-end" : "justify-start"
+                          )}
+                        >
+                          <span className="hidden sm:inline">{col.label}</span>
+                          <span className="sm:hidden">{col.shortLabel}</span>
+                          {getSortIcon(col.field)}
+                        </TooltipTrigger>
+                        {col.description && (
+                          <TooltipContent
+                            side="top"
+                            className="text-[11px] max-w-[200px] text-center font-normal"
+                          >
+                            {col.description}
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TableHead>
+                  ))}
+                  <TableHead className="w-10 py-3">
+                    <span className="sr-only">Actions</span>
                   </TableHead>
-                ))}
-                <TableHead className="w-10 py-3">
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
+                </TableRow>
+              </TableHeader>
 
             <TableBody>
               {isLoading ? (
@@ -309,10 +472,11 @@ export function ClassTable({
                         onClick={() => {
                           setSearchQuery("");
                           setSelectedSection("all");
+                          setSelectedBand("all");
                         }}
                         className={cn(
                           buttonVariants({ variant: "outline", size: "sm" }),
-                          "mt-2 rounded-lg text-xs"
+                          "mt-2 rounded-lg text-xs cursor-pointer"
                         )}
                       >
                         Reset filters
@@ -419,6 +583,7 @@ export function ClassTable({
               )}
             </TableBody>
           </Table>
+          </TooltipProvider>
         </div>
 
         {/* Table Footer Count */}
