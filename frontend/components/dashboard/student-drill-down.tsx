@@ -245,7 +245,7 @@ export function StudentDrillDownDrawer({
                             onOpenSubmission(item.submissionId, item.activityId);
                           }
                         }}
-                        className="group p-3 rounded-xl border border-border bg-card hover:bg-muted/40 transition-all flex items-center justify-between gap-3 cursor-pointer shadow-xs"
+                        className="group p-3 rounded-xl border border-border bg-card hover:bg-muted/40 transition-all flex items-center justify-between gap-3 cursor-pointer shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2">

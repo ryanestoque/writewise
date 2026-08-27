@@ -492,7 +492,7 @@ export function ClassTable({
                     <TableRow
                       key={student.studentId}
                       onClick={() => onSelectStudent(student)}
-                      className="group cursor-pointer hover:bg-muted/30 transition-colors border-b border-border/60"
+                      className="group cursor-pointer hover:bg-muted/30 transition-colors border-b border-border/60 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                       tabIndex={0}
                       role="button"
                       aria-label={`View handwriting drill-down diagnostics for ${student.fullName}`}
@@ -621,6 +621,7 @@ function ScoreCell({ score }: { score: number | null | undefined }) {
       <span className="font-sans text-xs font-medium tabular-nums text-foreground">
         {score.toFixed(1)}%
       </span>
+      <span className="sr-only">({meta.label})</span>
       <span
         className={cn("w-2 h-2 rounded-full shrink-0", meta.dotColor)}
         aria-hidden="true"

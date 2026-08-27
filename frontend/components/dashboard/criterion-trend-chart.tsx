@@ -153,8 +153,10 @@ export function CriterionTrendChart({
               key={c.key}
               type="button"
               onClick={() => toggleCriterion(c.key)}
+              aria-pressed={isSelected}
+              aria-label={`Toggle ${c.label} trend line`}
               className={cn(
-                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer border",
+                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer border focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                 isSelected
                   ? "bg-surface dark:bg-card border-border shadow-xs text-foreground font-semibold"
                   : "bg-muted/40 border-transparent text-muted-foreground hover:text-foreground opacity-60"
@@ -163,6 +165,7 @@ export function CriterionTrendChart({
               <span
                 className="w-2 h-2 rounded-full shrink-0"
                 style={{ backgroundColor: c.color }}
+                aria-hidden="true"
               />
               <span>{c.label}</span>
             </button>
