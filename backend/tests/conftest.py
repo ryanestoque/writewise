@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.deps import get_current_parent, get_current_teacher
+from app.api.deps import get_current_parent, get_current_teacher, get_current_user
 from app.core.supabase import supabase_client
 from app.main import app
 
@@ -28,8 +28,13 @@ def override_get_current_parent():
     return {"sub": "22222222-2222-2222-2222-222222222222", "role": "parent"}
 
 
+def override_get_current_user():
+    return {"sub": TEST_TEACHER_ID, "role": "teacher"}
+
+
 @pytest.fixture
 def client():
+    app.dependency_overrides[get_current_user] = override_get_current_user
     app.dependency_overrides[get_current_teacher] = override_get_current_teacher
     app.dependency_overrides[get_current_parent] = override_get_current_parent
     with TestClient(app) as test_client:

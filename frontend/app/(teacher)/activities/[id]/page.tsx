@@ -85,7 +85,6 @@ import {
   BookOpen,
   ArrowRight,
   BarChart3,
-  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -1471,7 +1470,7 @@ export default function ActivityDetailPage({
                 <div className="flex items-center gap-2 shrink-0">
                   <Popover>
                     <PopoverTrigger className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer">
-                      <Sparkles className="size-3 text-brand-600 dark:text-brand-400" />
+                      <BarChart3 className="size-3 text-brand-600 dark:text-brand-400" />
                       <span>Class Breakdown</span>
                       <ChevronDown className="size-2.5 opacity-60" />
                     </PopoverTrigger>

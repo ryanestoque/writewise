@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { ParentPortalProvider } from "@/components/parent-portal-provider";
 
 export default async function ParentLayout({
   children,
@@ -16,11 +17,23 @@ export default async function ParentLayout({
     redirect("/login");
   }
 
+  // Fetch parent profile name
+  const { data: parentProfile } = await supabase
+    .from("parent")
+    .select("full_name")
+    .eq("id", user.id)
+    .single();
+
+  const fullName =
+    parentProfile?.full_name ||
+    (user.user_metadata?.full_name as string) ||
+    user.email ||
+    "Parent";
+  const email = user.email || "";
+
   return (
-    <div className="flex min-h-dvh flex-col">
-      <main className="flex flex-1 items-center justify-center p-6">
-        {children}
-      </main>
-    </div>
+    <ParentPortalProvider user={{ fullName, email }}>
+      {children}
+    </ParentPortalProvider>
   );
 }

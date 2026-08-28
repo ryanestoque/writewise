@@ -20,7 +20,7 @@ import {
   EyeIcon,
   CheckCircle2Icon,
   BookOpenIcon,
-  SparklesIcon,
+  GraduationCapIcon,
   SearchIcon,
   XCircleIcon,
   LayersIcon,
@@ -301,7 +301,7 @@ export function RubricReferenceDialog({
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <SparklesIcon className="size-3.5" aria-hidden="true" />
+                <LayersIcon className="size-3.5" aria-hidden="true" />
                 <span>Bands (4)</span>
               </button>
             </div>
@@ -562,7 +562,7 @@ export function RubricReferenceDialog({
             {/* Calibration & Privacy Footnote */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11px] text-muted-foreground/80 pt-3 border-t border-border/60">
               <span className="flex items-center gap-1.5">
-                <SparklesIcon className="size-3 text-primary shrink-0" aria-hidden="true" />
+                <GraduationCapIcon className="size-3.5 text-primary shrink-0" aria-hidden="true" />
                 Calibrated against elementary cursive penmanship standards (CCC benchmark dataset)
               </span>
               <span className="font-mono text-[10px] text-muted-foreground/80">
