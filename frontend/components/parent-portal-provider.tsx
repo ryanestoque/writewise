@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { ParentNav } from "@/components/parent-nav";
+import { ParentUploadDialog } from "@/components/parent/parent-upload-dialog";
 import { useLinkedChildren, type LinkedChild } from "@/lib/hooks/use-parent-data";
 
 interface ParentPortalContextValue {
@@ -85,6 +86,20 @@ export function ParentPortalProvider({
           {pageChildren}
         </main>
       </div>
+
+      {/* Global Parent Upload Dialog */}
+      {selectedChildId && selectedChild && (
+        <ParentUploadDialog
+          open={uploadOpen}
+          onOpenChange={(open) => {
+            setUploadOpen(open);
+            if (!open) setPrefilledActivityId(undefined);
+          }}
+          childId={selectedChildId}
+          childName={selectedChild.fullName}
+          prefilledActivityId={prefilledActivityId}
+        />
+      )}
     </ParentPortalContext.Provider>
   );
 }
