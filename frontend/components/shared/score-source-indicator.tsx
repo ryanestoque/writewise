@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { UserCheck, Sparkles } from "lucide-react";
+import { UserCheck, Cpu } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -32,7 +32,7 @@ export function ScoreSourceIndicator({
           {isManual ? (
             <UserCheck className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" />
           ) : (
-            <Sparkles className="size-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <Cpu className="size-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
           )}
           {!compact && <span>{isManual ? "Teacher-assessed" : "Auto-calibrated"}</span>}
         </TooltipTrigger>

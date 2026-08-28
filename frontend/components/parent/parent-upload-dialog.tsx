@@ -30,7 +30,6 @@ import {
   ShieldCheckIcon,
   ChevronDownIcon,
   LightbulbIcon,
-  Sparkles,
   BookOpen,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -457,7 +456,7 @@ function ParentUploadFlow({
                     className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 shadow-warm cursor-pointer"
                     onClick={handleSubmit}
                   >
-                    <Sparkles className="size-4" />
+                    <UploadCloudIcon className="size-4" />
                     Submit Assessment
                   </Button>
                 </div>

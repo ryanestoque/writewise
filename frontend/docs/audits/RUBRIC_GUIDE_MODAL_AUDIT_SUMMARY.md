@@ -50,7 +50,7 @@ All identified issues across accessibility, theming, typography, primitive layou
    - Wrapped the 5 criteria in `<section aria-labelledby="diagnostic-criteria-heading">` and an `<ul role="list" aria-label="5 Diagnostic Assessment Criteria">` with each card as an `<li>`.
    - Wrapped scoring bands in `<section aria-labelledby="scoring-bands-heading">` and an `<ul role="list" aria-label="Qualitative Scoring Bands">` with each band as an `<li>`.
 2. **Decorative Icon Shielding (WCAG 1.1.1)**:
-   - Added `aria-hidden="true"` to all decorative icons (`PenToolIcon`, `CompassIcon`, `SpaceIcon`, `MoveVerticalIcon`, `ScalingIcon`, `CheckCircle2Icon`, `BookOpenIcon`, `SparklesIcon`).
+   - Added `aria-hidden="true"` to all decorative icons (`PenToolIcon`, `CompassIcon`, `SpaceIcon`, `MoveVerticalIcon`, `ScalingIcon`, `CheckCircle2Icon`, `BookOpenIcon`, `LayersIcon`, `GraduationCapIcon`).
 
 ---
 

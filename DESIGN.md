@@ -230,6 +230,18 @@ Form geometry communicates interaction depth and intent:
 - **Handwriting Overlay:** Low visual weight (1.5px stroke, 60% opacity) geometric bounding lines for slant, spacing, baseline drift, and letter formation. Tapping a criterion highlights its specific lines while dimming others.
 - **Cursive Guidelines Background:** Decorative 3-line penmanship guide (headline, dotted midline, baseline) in soft pine wash `#e4f1ef` to anchor cursive typography.
 
+### Iconography & Visual Semantics
+
+WriteWise avoids generic "AI magic" motifs in favor of grounded, domain-specific visual semantics:
+- **Auto-Calibrated Engine / CV Pipeline:** `Cpu`, `ScanLine`, `Activity`, `SlidersHorizontal` (signals algorithmic precision, signal processing, and objective machine measurement).
+- **Rubrics & Standards:** `Layers`, `Scale`, `GraduationCap`, `BookOpen` (signals structured criteria, pedagogical standards, and benchmark datasets).
+- **Classroom & Cohort Distributions:** `BarChart2`, `BarChart3`, `PieChart`, `Users` (signals aggregate analytics and longitudinal class trends).
+- **Geometric Stroke Diagnostics:** `Ruler`, `Compass`, `PenTool`, `MoveVertical`, `Scaling` (signals geometric spatial evaluation: baseline offset, letter height, slant angle, inter-word spacing).
+- **Actions & State:** `UploadCloud`, `Send`, `FileCheck`, `CheckCircle2`, `RotateCcw` (signals unambiguous, clean direct-manipulation workflows).
+
+### Named Rules
+**The Grounded Iconography Rule (No AI Glitter Tropes).** Generic "AI sparkle" icons (`Sparkles`, `Wand2`, `Sparkle`, "magic" stars) are strictly forbidden across WriteWise interfaces. Diagnostic and computational features must use grounded domain icons: `Cpu`/`ScanLine` for automated CV/CNN processing, `Layers`/`Scale` for rubrics and developmental bands, `BarChart3` for class distributions, and `Ruler`/`Compass` for geometric stroke measurements.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -238,6 +250,7 @@ Form geometry communicates interaction depth and intent:
 - **Do** frame all feedback notes in constructive, two-part sentences: objective observation + encouraging next step.
 - **Do** use tabular figures (`font-sans tabular-nums`) for all score tables and statistical metrics.
 - **Do** keep data tables flat with crisp 1px borders, reserving shadows for cards and modals.
+- **Do** use domain-grounded icons (`Cpu`, `ScanLine`, `Layers`, `BarChart3`, `Ruler`) representing technical and pedagogical concepts.
 
 ### Don't:
 - **Don't** use standard red (`#EF4444`) on student scores, progress charts, or handwriting feedback.
@@ -245,3 +258,5 @@ Form geometry communicates interaction depth and intent:
 - **Don't** clutter handwriting photos with heavy, opaque annotations that obscure the original handwriting.
 - **Don't** invent random spacing values outside the 4px scale steps.
 - **Don't** build custom camera viewports when native mobile capture inputs are more reliable.
+- **Don't** use generic AI "sparkle" or "magic" icons (`Sparkles`, `Wand2`, `Sparkle`). Use grounded domain icons representing real measurements and pedagogy.
+

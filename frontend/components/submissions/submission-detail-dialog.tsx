@@ -40,7 +40,7 @@ import {
   Eye,
   Info,
   Award,
-  Sparkles,
+  ScanLine,
   Binary,
   Check,
   Loader2,
@@ -675,7 +675,7 @@ export function SubmissionDetailDialog({
                     </span>
                   ) : submission.status === "completed" ? (
                     <span className="inline-flex items-center gap-1 text-brand-700 dark:text-brand-300 font-medium">
-                      <Sparkles className="size-3" />
+                      <ScanLine className="size-3" />
                       Raw CV Metrics Available · Rubric Needed
                     </span>
                   ) : null}
