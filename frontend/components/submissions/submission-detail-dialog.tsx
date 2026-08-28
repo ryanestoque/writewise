@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -46,8 +46,8 @@ import {
   Loader2,
   ShieldCheck,
   CheckCheck,
+  Edit3,
 } from "lucide-react";
-
 
 interface SubmissionDetailDialogProps {
   submission: Submission | null;
@@ -58,6 +58,14 @@ interface SubmissionDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+type RubricScoresRecord = {
+  letter_formation_band: ScoreBand | null;
+  size_consistency_band: ScoreBand | null;
+  spacing_band: ScoreBand | null;
+  slant_band: ScoreBand | null;
+  baseline_alignment_band: ScoreBand | null;
+};
 
 const REJECTION_GUIDE: Record<
   string,
@@ -143,7 +151,6 @@ const CRITERIA_GUIDE: Record<
   },
 };
 
-
 function formatDateFull(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-US", {
     weekday: "short",
@@ -176,27 +183,50 @@ function formatMetric(
   return `${formattedMean}${unit ? ` ${unit}` : ""}`;
 }
 
+interface ManualRubricEntryFormProps {
+  submissionId: string;
+  initialScores?: RubricScoresRecord;
+  onScoresChange?: (scores: RubricScoresRecord) => void;
+  onSaveSuccess?: () => void;
+  onCancelEdit?: () => void;
+  isEditMode?: boolean;
+}
 
-function ManualRubricEntryForm({ submissionId }: { submissionId: string }) {
+function ManualRubricEntryForm({
+  submissionId,
+  initialScores,
+  onScoresChange,
+  onSaveSuccess,
+  onCancelEdit,
+  isEditMode = false,
+}: ManualRubricEntryFormProps) {
   const { mutate: submitManualScore, isPending: isSubmittingScore } =
     useSubmitManualScore();
 
-  const [rubricScores, setRubricScores] = useState<{
-    letter_formation_band: ScoreBand | null;
-    size_consistency_band: ScoreBand | null;
-    spacing_band: ScoreBand | null;
-    slant_band: ScoreBand | null;
-    baseline_alignment_band: ScoreBand | null;
-  }>({
-    letter_formation_band: null,
-    size_consistency_band: null,
-    spacing_band: null,
-    slant_band: null,
-    baseline_alignment_band: null,
-  });
+  const [rubricScores, setRubricScores] = useState<RubricScoresRecord>(() => ({
+    letter_formation_band: initialScores?.letter_formation_band ?? null,
+    size_consistency_band: initialScores?.size_consistency_band ?? null,
+    spacing_band: initialScores?.spacing_band ?? null,
+    slant_band: initialScores?.slant_band ?? null,
+    baseline_alignment_band: initialScores?.baseline_alignment_band ?? null,
+  }));
 
   const [submitErrorMsg, setSubmitErrorMsg] = useState<string | null>(null);
   const [submitSuccessNotice, setSubmitSuccessNotice] = useState(false);
+
+  // Sync draft to parent
+  const handleBandSelect = useCallback(
+    (key: keyof RubricScoresRecord, band: ScoreBand) => {
+      setRubricScores((prev) => {
+        const next = { ...prev, [key]: band };
+        if (onScoresChange) {
+          onScoresChange(next);
+        }
+        return next;
+      });
+    },
+    [onScoresChange]
+  );
 
   const allBandsSelected =
     rubricScores.letter_formation_band !== null &&
@@ -225,6 +255,9 @@ function ManualRubricEntryForm({ submissionId }: { submissionId: string }) {
       {
         onSuccess: () => {
           setSubmitSuccessNotice(true);
+          if (onSaveSuccess) {
+            onSaveSuccess();
+          }
         },
         onError: (err: unknown) => {
           const errorObj = err as { message?: string };
@@ -244,11 +277,11 @@ function ManualRubricEntryForm({ submissionId }: { submissionId: string }) {
           <div className="flex items-center gap-2">
             <Award className="size-4 text-brand-600 dark:text-brand-400" />
             <h4 className="text-xs font-heading font-semibold text-foreground">
-              Teacher Rubric Assessment
+              {isEditMode ? "Edit Rubric Assessment" : "Teacher Rubric Assessment"}
             </h4>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            Select 1 band per criterion to contribute calibration data (DESIGN §7.9).
+            Select 1 developmental band per criterion to record benchmark assessment.
           </p>
         </div>
         <Badge
@@ -276,7 +309,7 @@ function ManualRubricEntryForm({ submissionId }: { submissionId: string }) {
       {submitSuccessNotice && (
         <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
           <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
-          <span>Rubric saved successfully! Recorded for calibration.</span>
+          <span>Rubric saved successfully! Benchmark recorded.</span>
         </div>
       )}
 
@@ -299,22 +332,43 @@ function ManualRubricEntryForm({ submissionId }: { submissionId: string }) {
                 )}
               </div>
 
-              {/* Segmented 4-Button Group */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+              {/* Accessible Segmented 4-Button Radiogroup */}
+              <div
+                role="radiogroup"
+                aria-label={criterion.name}
+                className="grid grid-cols-2 sm:grid-cols-4 gap-1.5"
+              >
                 {RUBRIC_BANDS.map((option) => {
                   const isChecked = selectedBand === option.band;
                   return (
                     <button
                       key={option.band}
                       type="button"
+                      role="radio"
+                      aria-checked={isChecked}
+                      tabIndex={isChecked ? 0 : -1}
                       disabled={isSubmittingScore}
-                      onClick={() =>
-                        setRubricScores((prev) => ({
-                          ...prev,
-                          [criterion.key]: option.band,
-                        }))
-                      }
-                      className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${
+                      onClick={() => handleBandSelect(criterion.key, option.band)}
+                      onKeyDown={(e) => {
+                        const bandIndex = RUBRIC_BANDS.findIndex(
+                          (b) => b.band === option.band
+                        );
+                        if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+                          e.preventDefault();
+                          const nextBand =
+                            RUBRIC_BANDS[(bandIndex + 1) % RUBRIC_BANDS.length].band;
+                          handleBandSelect(criterion.key, nextBand);
+                        } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+                          e.preventDefault();
+                          const prevBand =
+                            RUBRIC_BANDS[
+                              (bandIndex - 1 + RUBRIC_BANDS.length) %
+                                RUBRIC_BANDS.length
+                            ].band;
+                          handleBandSelect(criterion.key, prevBand);
+                        }
+                      }}
+                      className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed ${
                         isChecked
                           ? option.activeClass
                           : "bg-surface dark:bg-card border-border/70 text-muted-foreground hover:text-foreground hover:bg-muted/50 hover:border-border"
@@ -335,7 +389,7 @@ function ManualRubricEntryForm({ submissionId }: { submissionId: string }) {
         })}
       </div>
 
-      <div className="flex items-center justify-between pt-2 border-t border-border/60">
+      <div className="flex items-center justify-between pt-2 border-t border-border/60 gap-2">
         <div className="text-[11px] text-muted-foreground">
           {allBandsSelected ? (
             <span className="text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-1">
@@ -343,29 +397,44 @@ function ManualRubricEntryForm({ submissionId }: { submissionId: string }) {
               All 5 criteria rated
             </span>
           ) : (
-            <span>Please rate all 5 criteria to submit</span>
+            <span>Rate all 5 criteria to submit</span>
           )}
         </div>
 
-        <Button
-          type="button"
-          size="sm"
-          disabled={!allBandsSelected || isSubmittingScore}
-          onClick={handleSubmitRubric}
-          className="h-8 min-h-[32px] px-3.5 bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-semibold rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed"
-        >
-          {isSubmittingScore ? (
-            <>
-              <Loader2 className="size-3.5 animate-spin" />
-              <span>Saving Rubric...</span>
-            </>
-          ) : (
-            <>
-              <CheckCheck className="size-3.5" />
-              <span>Submit Rubric Scores</span>
-            </>
+        <div className="flex items-center gap-2">
+          {isEditMode && onCancelEdit && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onCancelEdit}
+              disabled={isSubmittingScore}
+              className="h-8 px-3 text-xs rounded-lg"
+            >
+              Cancel
+            </Button>
           )}
-        </Button>
+
+          <Button
+            type="button"
+            size="sm"
+            disabled={!allBandsSelected || isSubmittingScore}
+            onClick={handleSubmitRubric}
+            className="h-8 min-h-[32px] px-3.5 bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-semibold rounded-lg gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed"
+          >
+            {isSubmittingScore ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <CheckCheck className="size-3.5" />
+                <span>{isEditMode ? "Update Rubric" : "Submit Rubric"}</span>
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -383,12 +452,56 @@ export function SubmissionDetailDialog({
   const { openUpload } = useTeacherModals();
   const [isZoomed, setIsZoomed] = useState(false);
   const [selectedCriterion, setSelectedCriterion] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"rubric" | "metrics">("rubric");
+  const [editingSubmissionId, setEditingSubmissionId] = useState<string | null>(null);
+
+  const isEditingScore = Boolean(
+    submission && editingSubmissionId === submission.id
+  );
+
+  // Preserve unsaved drafts across student navigation in component state
+  const [draftScoresMap, setDraftScoresMap] = useState<
+    Record<string, RubricScoresRecord>
+  >({});
 
   const { data: imageUrl, isLoading: isImageLoading } = useSubmissionImageUrl(
     submission?.image_path ?? null
   );
 
-
+  // Retrieve preserved draft or initial manual score (placed before early returns)
+  const currentDraft = useMemo<RubricScoresRecord>(() => {
+    if (!submission) {
+      return {
+        letter_formation_band: null,
+        size_consistency_band: null,
+        spacing_band: null,
+        slant_band: null,
+        baseline_alignment_band: null,
+      };
+    }
+    if (draftScoresMap[submission.id]) {
+      return draftScoresMap[submission.id];
+    }
+    if (submission.manual_score) {
+      return {
+        letter_formation_band:
+          submission.manual_score.letter_formation_band ?? null,
+        size_consistency_band:
+          submission.manual_score.size_consistency_band ?? null,
+        spacing_band: submission.manual_score.spacing_band ?? null,
+        slant_band: submission.manual_score.slant_band ?? null,
+        baseline_alignment_band:
+          submission.manual_score.baseline_alignment_band ?? null,
+      };
+    }
+    return {
+      letter_formation_band: null,
+      size_consistency_band: null,
+      spacing_band: null,
+      slant_band: null,
+      baseline_alignment_band: null,
+    };
+  }, [draftScoresMap, submission]);
 
   // Keyboard navigation across submissions
   useEffect(() => {
@@ -433,11 +546,11 @@ export function SubmissionDetailDialog({
 
   const rejectionInfo = submission.rejection_code
     ? REJECTION_GUIDE[submission.rejection_code] ?? {
-      title: "Worksheet Assessment Issue",
-      description: `Quality check returned code: ${submission.rejection_code}`,
-      advice:
-        "Please verify that the worksheet is well-lit, in focus, and written with a clear pen or pencil.",
-    }
+        title: "Worksheet Assessment Issue",
+        description: `Quality check returned code: ${submission.rejection_code}`,
+        advice:
+          "Please verify that the worksheet is well-lit, in focus, and written with a clear pen or pencil.",
+      }
     : null;
 
   const measurement = submission.measurement;
@@ -492,7 +605,7 @@ export function SubmissionDetailDialog({
               measurement.letter_formation_std,
               "%"
             )
-          : "Awaiting CNN",
+          : "Awaiting Calibration",
       description:
         "Evaluates loop closures, ascender/descender balance, and cursive curvature.",
       subDetails: [
@@ -501,7 +614,7 @@ export function SubmissionDetailDialog({
           value:
             measurement?.letter_formation_mean != null
               ? "Extracted"
-              : "Pending Stage 1 Model",
+              : "Pending Baseline Model",
         },
       ],
     },
@@ -614,9 +727,11 @@ export function SubmissionDetailDialog({
     ? CRITERIA_GUIDE[selectedCriterion]
     : null;
 
+  const currentDraftRatedCount = Object.values(currentDraft).filter(Boolean).length;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-1.5rem)] sm:max-w-4xl max-w-4xl max-h-[min(94dvh,calc(100vh-2rem))] flex flex-col p-4 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-xl border border-border/80 bg-surface dark:bg-card">
+      <DialogContent className="w-[calc(100%-1.5rem)] sm:max-w-4xl max-w-4xl max-h-[min(94dvh,calc(100vh-2rem))] flex flex-col p-4 sm:p-6 rounded-2xl gap-0 overflow-hidden shadow-xl border border-border/80 bg-surface dark:bg-card">
         {/* Header */}
         <DialogHeader className="pb-3 sm:pb-4 border-b border-border/70 shrink-0 text-left">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
@@ -631,20 +746,22 @@ export function SubmissionDetailDialog({
                   </span>
                   <Badge
                     variant="outline"
-                    className={`text-xs font-semibold px-2.5 py-0.5 inline-flex items-center gap-1.5 ${submission.status === "completed"
+                    className={`text-xs font-semibold px-2.5 py-0.5 inline-flex items-center gap-1.5 ${
+                      submission.status === "completed"
                         ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200"
                         : submission.status === "processing"
                           ? "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200"
                           : "bg-destructive/10 text-destructive border-destructive/20"
-                      }`}
+                    }`}
                   >
                     <span
-                      className={`size-1.5 rounded-full ${submission.status === "completed"
+                      className={`size-1.5 rounded-full ${
+                        submission.status === "completed"
                           ? "bg-emerald-500"
                           : submission.status === "processing"
                             ? "bg-amber-500 motion-safe:animate-pulse"
                             : "bg-destructive"
-                        }`}
+                      }`}
                     />
                     {submission.status === "completed"
                       ? "Completed"
@@ -666,28 +783,27 @@ export function SubmissionDetailDialog({
                   {compositeScore !== undefined && compositeScore !== null ? (
                     <span className="inline-flex items-center gap-1">
                       <Award className="size-3" />
-                      Composite score: {Math.round(compositeScore)}%
+                      Composite: {Math.round(compositeScore)}%
                     </span>
                   ) : submission.manual_score ? (
                     <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300 font-medium">
                       <ShieldCheck className="size-3" />
-                      Rubric Graded
+                      Rubric Recorded
                     </span>
                   ) : submission.status === "completed" ? (
                     <span className="inline-flex items-center gap-1 text-brand-700 dark:text-brand-300 font-medium">
                       <ScanLine className="size-3" />
-                      Raw CV Metrics Available · Rubric Needed
+                      CV Metrics Extracted
                     </span>
                   ) : null}
                 </DialogDescription>
-
               </div>
             </div>
 
-            {/* Header Right: Navigation between students */}
+            {/* Header Right: Roster Navigation */}
             <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
               {hasMultipleSubmissions && submissions && onNavigate && (
-                <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-xl border border-border">
+                <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg border border-border">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -697,13 +813,13 @@ export function SubmissionDetailDialog({
                         onNavigate(submissions[currentIndex - 1]);
                       }
                     }}
-                    className="size-7 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
+                    className="size-7 p-0 rounded-md text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
                     aria-label="Previous student (Key: J or ←)"
                     title="Previous student (← / J)"
                   >
                     <ChevronLeft className="size-4" />
                   </Button>
-                  <span className="text-xs font-semibold px-2 text-foreground select-none">
+                  <span className="text-xs font-semibold px-2 text-foreground select-none tabular-nums">
                     {(currentIndex ?? 0) + 1} / {submissions.length}
                   </span>
                   <Button
@@ -715,7 +831,7 @@ export function SubmissionDetailDialog({
                         onNavigate(submissions[currentIndex + 1]);
                       }
                     }}
-                    className="size-7 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
+                    className="size-7 p-0 rounded-md text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
                     aria-label="Next student (Key: K or →)"
                     title="Next student (→ / K)"
                   >
@@ -729,7 +845,7 @@ export function SubmissionDetailDialog({
                 <Button
                   size="sm"
                   onClick={handleReupload}
-                  className="h-8 min-h-[32px] bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-medium rounded-lg sm:rounded-xl gap-1.5 shadow-xs shrink-0 cursor-pointer"
+                  className="h-8 min-h-[32px] bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-medium rounded-lg gap-1.5 shadow-xs shrink-0 cursor-pointer"
                 >
                   <Upload className="size-3.5" />
                   Re-upload
@@ -739,7 +855,7 @@ export function SubmissionDetailDialog({
           </div>
         </DialogHeader>
 
-        {/* Modal Body: Split view (Image + Diagnostic details) */}
+        {/* Modal Body: Split view */}
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain py-4 space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
             {/* Left: Worksheet Image Preview */}
@@ -753,7 +869,7 @@ export function SubmissionDetailDialog({
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsZoomed((prev) => !prev)}
-                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1 cursor-pointer"
+                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1 cursor-pointer rounded-lg"
                 >
                   {isZoomed ? (
                     <>
@@ -770,8 +886,9 @@ export function SubmissionDetailDialog({
               </div>
 
               <div
-                className={`relative rounded-xl sm:rounded-2xl border border-border bg-muted/40 overflow-hidden transition-all ${isZoomed ? "max-h-[520px]" : "aspect-4/3 sm:aspect-3/2"
-                  } flex items-center justify-center`}
+                className={`relative rounded-xl border border-border bg-muted/40 overflow-hidden transition-all ${
+                  isZoomed ? "max-h-[520px]" : "aspect-4/3 sm:aspect-3/2"
+                } flex items-center justify-center`}
               >
                 {isImageLoading ? (
                   <Skeleton className="size-full rounded-none" />
@@ -782,8 +899,9 @@ export function SubmissionDetailDialog({
                     alt={`Handwriting worksheet submitted for ${submission.student?.full_name ?? "student"}`}
                     loading="lazy"
                     decoding="async"
-                    className={`size-full object-contain ${isZoomed ? "cursor-zoom-out" : "cursor-zoom-in"
-                      }`}
+                    className={`size-full object-contain ${
+                      isZoomed ? "cursor-zoom-out" : "cursor-zoom-in"
+                    }`}
                     onClick={() => setIsZoomed((prev) => !prev)}
                   />
                 ) : (
@@ -793,11 +911,11 @@ export function SubmissionDetailDialog({
                   </div>
                 )}
 
-                {/* Selected criterion overlay badge */}
+                {/* Focused criterion overlay badge */}
                 {selectedCriterion && (
                   <div className="absolute top-2.5 left-2.5 bg-background/90 dark:bg-card/90 backdrop-blur-xs px-2.5 py-1 rounded-lg border border-brand-200 dark:border-brand-900 shadow-xs text-xs font-medium text-brand-700 dark:text-brand-300 flex items-center gap-1.5">
                     <Eye className="size-3.5 text-brand-600" />
-                    <span>Viewing: {selectedCriterion}</span>
+                    <span>Focusing: {selectedCriterion}</span>
                   </div>
                 )}
               </div>
@@ -816,7 +934,7 @@ export function SubmissionDetailDialog({
             <div className="lg:col-span-6 flex flex-col justify-between space-y-4">
               {/* REJECTED STATE */}
               {submission.status === "rejected" && (
-                <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-destructive/10 border border-destructive/20 space-y-3">
+                <div className="p-4 sm:p-5 rounded-xl bg-destructive/10 border border-destructive/20 space-y-3">
                   <div className="flex items-center gap-2 text-destructive font-semibold text-sm">
                     <AlertCircle className="size-4 shrink-0" />
                     <span>Submission Rejected by OpenCV Quality Gate</span>
@@ -843,7 +961,7 @@ export function SubmissionDetailDialog({
                   )}
                   <Button
                     onClick={handleReupload}
-                    className="w-full h-10 min-h-[40px] bg-primary hover:bg-brand-700 text-primary-foreground text-xs sm:text-sm font-medium rounded-lg sm:rounded-xl gap-2 shadow-xs cursor-pointer"
+                    className="w-full h-10 min-h-[40px] bg-primary hover:bg-brand-700 text-primary-foreground text-xs sm:text-sm font-medium rounded-lg gap-2 shadow-xs cursor-pointer"
                   >
                     <Camera className="size-4" />
                     Take & Re-upload New Photo
@@ -853,7 +971,7 @@ export function SubmissionDetailDialog({
 
               {/* PROCESSING STATE */}
               {submission.status === "processing" && (
-                <div className="p-5 rounded-xl sm:rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900 space-y-3 text-center">
+                <div className="p-5 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900 space-y-3 text-center">
                   <div className="flex size-12 items-center justify-center rounded-2xl bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-300 mx-auto motion-safe:animate-pulse">
                     <Clock className="size-6" />
                   </div>
@@ -862,118 +980,255 @@ export function SubmissionDetailDialog({
                       Analyzing Handwriting Worksheet
                     </h4>
                     <p className="text-xs text-amber-800/80 dark:text-amber-300/80 leading-relaxed">
-                      OpenCV quality verification passed. The CNN model is evaluating letter formation, spacing, and baseline stability.
+                      OpenCV quality verification passed. Stroke extraction and alignment measurements are in progress.
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* COMPLETED STATE: 5 Criteria Diagnostics & Raw CV Measurements */}
+              {/* COMPLETED STATE */}
               {submission.status === "completed" && (
                 <div className="space-y-3.5">
-                  {hasCalibratedScores ? (
-                    <>
-                      {/* Phase 2: Overall Composite Score Pill */}
-                      <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface dark:bg-card border border-border shadow-xs">
-                        <div className="space-y-0.5">
-                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                            Composite Assessment
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-2xl font-heading font-bold text-foreground tabular-nums">
-                              {compositeScore !== null && compositeScore !== undefined
-                                ? `${Math.round(compositeScore)}%`
-                                : "Scored"}
+                  {/* Segmented Tab Bar (Eliminates vertical scroll sprawl) */}
+                  <div className="flex items-center p-1 bg-muted/60 dark:bg-muted/30 rounded-xl border border-border/70 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("rubric")}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        activeTab === "rubric"
+                          ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/80"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Award className="size-3.5 text-brand-600 dark:text-brand-400" />
+                      <span>Rubric Assessment</span>
+                      {submission.manual_score ? (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] px-1.5 py-0 bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300"
+                        >
+                          Recorded
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] px-1.5 py-0 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300"
+                        >
+                          {currentDraftRatedCount}/5
+                        </Badge>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("metrics")}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        activeTab === "metrics"
+                          ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/80"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Binary className="size-3.5 text-brand-600 dark:text-brand-400" />
+                      <span>Physical Stroke CV</span>
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] px-1.5 py-0 bg-muted text-muted-foreground border-border"
+                      >
+                        5 Metrics
+                      </Badge>
+                    </button>
+                  </div>
+
+                  {/* TAB 1: RUBRIC ASSESSMENT */}
+                  {activeTab === "rubric" && (
+                    <div className="space-y-3 animate-in fade-in-50 duration-150">
+                      {hasCalibratedScores && (
+                        /* Calibrated Phase 2 Score Pill */
+                        <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface dark:bg-card border border-border shadow-xs">
+                          <div className="space-y-0.5">
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                              Composite Score
                             </span>
-                            <Badge
-                              variant="outline"
-                              className={`text-xs font-semibold px-2.5 py-0.5 inline-flex items-center gap-1.5 ${compositeBand.className}`}
-                            >
-                              <span
-                                className={`size-1.5 rounded-full ${compositeBand.dotColor}`}
-                              />
-                              {compositeBand.label}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl font-heading font-bold text-foreground tabular-nums">
+                                {compositeScore !== null && compositeScore !== undefined
+                                  ? `${Math.round(compositeScore)}%`
+                                  : "Scored"}
+                              </span>
+                              <Badge
+                                variant="outline"
+                                className={`text-xs font-semibold px-2.5 py-0.5 inline-flex items-center gap-1.5 ${compositeBand.className}`}
+                              >
+                                <span
+                                  className={`size-1.5 rounded-full ${compositeBand.dotColor}`}
+                                />
+                                {compositeBand.label}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                            <CheckCircle2 className="size-5" />
                           </div>
                         </div>
+                      )}
 
-                        <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                          <CheckCircle2 className="size-5" />
-                        </div>
-                      </div>
+                      {/* Manual Rubric: Confirmed Summary or Active Form */}
+                      {submission.manual_score && !isEditingScore ? (
+                        <div className="p-4 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/80 shadow-xs space-y-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 shrink-0">
+                                <ShieldCheck className="size-4" />
+                              </div>
+                              <div>
+                                <span className="text-xs font-semibold text-emerald-950 dark:text-emerald-200 block">
+                                  Teacher Assessment Recorded
+                                </span>
+                                <span className="text-[11px] text-emerald-900/80 dark:text-emerald-300/80">
+                                  Saved as benchmark data for scoring calibration.
+                                </span>
+                              </div>
+                            </div>
 
-                      {/* Phase 2: 5 Criteria breakdown */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                            5-Criterion Breakdown
-                          </span>
-                          <span className="text-[11px] text-muted-foreground">
-                            Tap a criterion for diagnostic tips
-                          </span>
-                        </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditingSubmissionId(submission.id)}
+                              className="h-7 px-2.5 text-xs bg-surface dark:bg-card border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-100/50 rounded-lg gap-1"
+                            >
+                              <Edit3 className="size-3" />
+                              <span>Edit</span>
+                            </Button>
+                          </div>
 
-                        <div className="space-y-1.5">
-                          {criteria.map((c) => {
-                            const band = getScoreBand(c.score);
-                            const isSelected = selectedCriterion === c.name;
-                            return (
-                              <button
-                                key={c.name}
-                                type="button"
-                                onClick={() =>
-                                  setSelectedCriterion((prev) =>
-                                    prev === c.name ? null : c.name
-                                  )
-                                }
-                                className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${isSelected
-                                    ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs"
-                                    : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
-                                  }`}
-                              >
-                                <div className="min-w-0 pr-2">
-                                  <div className="flex items-center gap-1.5">
-                                    <p className="font-semibold text-foreground truncate">
-                                      {c.name}
-                                    </p>
-                                    {isSelected && (
-                                      <Badge
-                                        variant="outline"
-                                        className="text-[10px] px-1.5 py-0 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300"
-                                      >
-                                        Focused
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <p className="text-[11px] text-muted-foreground truncate">
-                                    {c.description}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-2 shrink-0">
-                                  {c.score !== null && c.score !== undefined && (
-                                    <span className="font-semibold text-foreground tabular-nums">
-                                      {Math.round(c.score)}%
+                          <div className="space-y-1.5 pt-1">
+                            {RUBRIC_CRITERIA.map((criterion) => {
+                              const bandValue =
+                                submission.manual_score?.[criterion.key];
+                              const bandMeta = getBandMeta(bandValue);
+                              return (
+                                <div
+                                  key={criterion.key}
+                                  className="flex items-center justify-between p-2.5 rounded-lg bg-surface/90 dark:bg-card/90 border border-emerald-200/60 dark:border-emerald-900/60 text-xs"
+                                >
+                                  <div className="min-w-0 pr-2">
+                                    <span className="font-semibold text-foreground truncate block">
+                                      {criterion.name}
                                     </span>
-                                  )}
+                                    <span className="text-[10px] text-muted-foreground truncate block">
+                                      {criterion.hint}
+                                    </span>
+                                  </div>
                                   <Badge
                                     variant="outline"
-                                    className={`text-[11px] font-semibold px-2 py-0.5 ${band.className}`}
+                                    className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 inline-flex items-center gap-1.5 ${bandMeta.badgeClass}`}
                                   >
                                     <span
-                                      className={`size-1.5 rounded-full mr-1 ${band.dotColor}`}
+                                      className={`size-1.5 rounded-full ${bandMeta.dotColor}`}
                                     />
-                                    {band.label}
+                                    {bandMeta.label} ({bandMeta.score})
                                   </Badge>
                                 </div>
-                              </button>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      {/* Phase 1: Raw CV Measurement Header */}
+                      ) : (
+                        <ManualRubricEntryForm
+                          key={submission.id}
+                          submissionId={submission.id}
+                          initialScores={currentDraft}
+                          isEditMode={isEditingScore}
+                          onCancelEdit={() => setEditingSubmissionId(null)}
+                          onSaveSuccess={() => setEditingSubmissionId(null)}
+                          onScoresChange={(scores) => {
+                            setDraftScoresMap((prev) => ({
+                              ...prev,
+                              [submission.id]: scores,
+                            }));
+                          }}
+                        />
+                      )}
+
+                      {/* Calibrated 5-Criteria List (if available) */}
+                      {hasCalibratedScores && (
+                        <div className="space-y-2 pt-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                              Calibrated Breakdown
+                            </span>
+                            <span className="text-[11px] text-muted-foreground">
+                              Tap criterion for coaching notes
+                            </span>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            {criteria.map((c) => {
+                              const band = getScoreBand(c.score);
+                              const isSelected = selectedCriterion === c.name;
+                              return (
+                                <button
+                                  key={c.name}
+                                  type="button"
+                                  onClick={() =>
+                                    setSelectedCriterion((prev) =>
+                                      prev === c.name ? null : c.name
+                                    )
+                                  }
+                                  className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
+                                    isSelected
+                                      ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs"
+                                      : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
+                                  }`}
+                                >
+                                  <div className="min-w-0 pr-2">
+                                    <div className="flex items-center gap-1.5">
+                                      <p className="font-semibold text-foreground truncate">
+                                        {c.name}
+                                      </p>
+                                      {isSelected && (
+                                        <Badge
+                                          variant="outline"
+                                          className="text-[10px] px-1.5 py-0 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300"
+                                        >
+                                          Focused
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground truncate">
+                                      {c.description}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    {c.score !== null && c.score !== undefined && (
+                                      <span className="font-semibold text-foreground tabular-nums">
+                                        {Math.round(c.score)}%
+                                      </span>
+                                    )}
+                                    <Badge
+                                      variant="outline"
+                                      className={`text-[11px] font-semibold px-2 py-0.5 ${band.className}`}
+                                    >
+                                      <span
+                                        className={`size-1.5 rounded-full mr-1 ${band.dotColor}`}
+                                      />
+                                      {band.label}
+                                    </Badge>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* TAB 2: PHYSICAL CV TELEMETRY */}
+                  {activeTab === "metrics" && (
+                    <div className="space-y-3 animate-in fade-in-50 duration-150">
                       <div className="p-3.5 rounded-xl bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 shadow-xs space-y-1.5">
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
@@ -981,166 +1236,89 @@ export function SubmissionDetailDialog({
                               <Binary className="size-4" />
                             </div>
                             <span className="text-xs font-semibold text-brand-900 dark:text-brand-200">
-                              Raw Computer Vision Analysis
+                              Physical Stroke Measurements
                             </span>
                           </div>
                           <Badge
                             variant="outline"
-                            className="text-[10px] font-semibold px-2 py-0.5 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300 dark:border-brand-800"
+                            className="text-[10px] font-semibold px-2 py-0.5 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300"
                           >
-                            Phase 1 · Calibration Data
+                            OpenCV Pipeline
                           </Badge>
                         </div>
                         <p className="text-[11px] text-brand-800/80 dark:text-brand-300/80 leading-relaxed">
-                          Physical penmanship measurements extracted by the OpenCV feature pipeline. Scores will be calibrated during Phase 2.
+                          Objective geometric stroke telemetry extracted from 3-line penmanship ruling. (± indicates variation across strokes).
                         </p>
                       </div>
 
-                      {/* Phase 1: 5-Criterion Raw CV Metrics List */}
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                            5-Criterion Physical Measurements
-                          </span>
-                          <span className="text-[11px] text-muted-foreground">
-                            Tap to focus & view guide
-                          </span>
-                        </div>
-
-                        <div className="space-y-2">
-                          {rawCriteria.map((c) => {
-                            const isSelected = selectedCriterion === c.name;
-                            return (
-                              <button
-                                key={c.name}
-                                type="button"
-                                onClick={() =>
-                                  setSelectedCriterion((prev) =>
-                                    prev === c.name ? null : c.name
-                                  )
-                                }
-                                className={`w-full flex flex-col p-3 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
-                                  isSelected
-                                    ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/40"
-                                    : "bg-surface dark:bg-card border-border/70 hover:border-brand-300 dark:hover:border-brand-800 hover:bg-muted/30"
-                                }`}
-                              >
-                                <div className="w-full flex items-center justify-between gap-2">
-                                  <div className="flex items-center gap-1.5 min-w-0">
-                                    <p className="font-semibold text-foreground truncate">
-                                      {c.name}
-                                    </p>
-                                    {isSelected && (
-                                      <Badge
-                                        variant="outline"
-                                        className="text-[10px] px-1.5 py-0 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300"
-                                      >
-                                        Focused
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 shrink-0">
-                                    <span className="font-mono font-medium text-foreground tabular-nums text-xs px-2 py-0.5 rounded-md bg-muted/60 border border-border/60">
-                                      {c.primaryValue}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <p className="text-[11px] text-muted-foreground mt-1 leading-normal">
-                                  {c.description}
-                                </p>
-
-                                {c.subDetails && c.subDetails.length > 0 && (
-                                  <div className="mt-2 pt-2 border-t border-border/50 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                                    {c.subDetails.map((sub, idx) => (
-                                      <div
-                                        key={idx}
-                                        className="flex items-center justify-between gap-1 text-muted-foreground"
-                                      >
-                                        <span className="truncate">
-                                          {sub.label}:
-                                        </span>
-                                        <span className="font-mono font-medium text-foreground tabular-nums shrink-0">
-                                          {sub.value}
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Phase 1: Teacher Rubric Assessment (Spearman's Rho Calibration Data) */}
-                      <div className="pt-2 border-t border-border/70 space-y-3">
-                        {submission.manual_score ? (
-                          /* READ-ONLY / CONFIRMED RUBRIC STATE */
-                          <div className="p-4 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/80 shadow-xs space-y-3">
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 shrink-0">
-                                  <ShieldCheck className="size-4" />
-                                </div>
-                                <span className="text-xs font-semibold text-emerald-950 dark:text-emerald-200">
-                                  Independent Rubric Assessment (Submitted)
-                                </span>
-                              </div>
-                              <Badge
-                                variant="outline"
-                                className="text-[10px] font-semibold px-2 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800"
-                              >
-                                Phase 1 Calibrated
-                              </Badge>
-                            </div>
-
-                            <p className="text-[11px] text-emerald-900/80 dark:text-emerald-300/80 leading-relaxed">
-                              Teacher rubric ratings are securely recorded as ground truth for offline Spearman&apos;s Rho calibration.
-                            </p>
-
-                            <div className="space-y-1.5 pt-1">
-                              {RUBRIC_CRITERIA.map((criterion) => {
-                                const bandValue = submission.manual_score?.[criterion.key];
-                                const bandMeta = getBandMeta(bandValue);
-                                return (
-                                  <div
-                                    key={criterion.key}
-                                    className="flex items-center justify-between p-2.5 rounded-lg bg-surface/90 dark:bg-card/90 border border-emerald-200/60 dark:border-emerald-900/60 text-xs"
-                                  >
-                                    <div className="min-w-0 pr-2">
-                                      <span className="font-semibold text-foreground truncate block">
-                                        {criterion.name}
-                                      </span>
-                                      <span className="text-[10px] text-muted-foreground truncate block">
-                                        {criterion.hint}
-                                      </span>
-                                    </div>
+                        {rawCriteria.map((c) => {
+                          const isSelected = selectedCriterion === c.name;
+                          return (
+                            <button
+                              key={c.name}
+                              type="button"
+                              onClick={() =>
+                                setSelectedCriterion((prev) =>
+                                  prev === c.name ? null : c.name
+                                )
+                              }
+                              className={`w-full flex flex-col p-3 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
+                                isSelected
+                                  ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/40"
+                                  : "bg-surface dark:bg-card border-border/70 hover:border-brand-300 dark:hover:border-brand-800 hover:bg-muted/30"
+                              }`}
+                            >
+                              <div className="w-full flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <p className="font-semibold text-foreground truncate">
+                                    {c.name}
+                                  </p>
+                                  {isSelected && (
                                     <Badge
                                       variant="outline"
-                                      className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 inline-flex items-center gap-1.5 ${bandMeta.badgeClass}`}
+                                      className="text-[10px] px-1.5 py-0 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300"
                                     >
-                                      <span className={`size-1.5 rounded-full ${bandMeta.dotColor}`} />
-                                      {bandMeta.label} ({bandMeta.score})
+                                      Focused
                                     </Badge>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ) : (
-                          <ManualRubricEntryForm
-                            key={submission.id}
-                            submissionId={submission.id}
-                          />
-                        )}
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="font-mono font-medium text-foreground tabular-nums text-xs px-2 py-0.5 rounded-md bg-muted/60 border border-border/60">
+                                    {c.primaryValue}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <p className="text-[11px] text-muted-foreground mt-1 leading-normal">
+                                {c.description}
+                              </p>
+
+                              {c.subDetails && c.subDetails.length > 0 && (
+                                <div className="mt-2 pt-2 border-t border-border/50 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                                  {c.subDetails.map((sub, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="flex items-center justify-between gap-1 text-muted-foreground"
+                                    >
+                                      <span className="truncate">
+                                        {sub.label}:
+                                      </span>
+                                      <span className="font-mono font-medium text-foreground tabular-nums shrink-0">
+                                        {sub.value}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
-                    </>
+                    </div>
                   )}
 
-
-
-                  {/* Focused Criterion Diagnostic Insight Card (Shared) */}
+                  {/* Focused Criterion Diagnostic Insight Card */}
                   {selectedCriterion && activeCriterionInfo && (
                     <div className="p-3.5 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-2 animate-in fade-in-50 duration-200">
                       <div className="flex items-center justify-between text-xs font-semibold text-brand-900 dark:text-brand-200">
@@ -1177,14 +1355,16 @@ export function SubmissionDetailDialog({
         <div className="flex items-center justify-between pt-3 border-t border-border/70 shrink-0">
           <div className="text-xs text-muted-foreground hidden sm:block">
             {hasMultipleSubmissions && (
-              <span>Use <strong>← / →</strong> or <strong>J / K</strong> to cycle through student worksheets</span>
+              <span>
+                Use <strong>← / →</strong> or <strong>J / K</strong> to cycle through student worksheets
+              </span>
             )}
           </div>
           <Button
             type="button"
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="h-9 text-xs sm:text-sm font-medium rounded-lg sm:rounded-xl text-muted-foreground hover:text-foreground cursor-pointer"
+            className="h-9 text-xs sm:text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
           >
             Close
           </Button>
@@ -1193,4 +1373,3 @@ export function SubmissionDetailDialog({
     </Dialog>
   );
 }
-
