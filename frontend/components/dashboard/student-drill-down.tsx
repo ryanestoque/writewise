@@ -21,7 +21,6 @@ import {
 } from "@/lib/utils/scoring";
 import { BandBadge } from "@/components/shared/band-badge";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
-import { ScoreSourceIndicator } from "@/components/shared/score-source-indicator";
 import { CriterionTrendChart } from "./criterion-trend-chart";
 import {
   Calendar,
@@ -81,8 +80,6 @@ export function StudentDrillDownDrawer({
 
   if (!student) return null;
 
-  const scoreSource = student.scoreSource === "none" ? "manual" : student.scoreSource;
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -108,8 +105,6 @@ export function StudentDrillDownDrawer({
                 <SheetDescription className="text-xs font-medium text-muted-foreground">
                   Section: <span className="font-semibold text-foreground">{student.section}</span>
                 </SheetDescription>
-                <span className="text-border text-xs" aria-hidden="true">•</span>
-                <ScoreSourceIndicator source={scoreSource} compact />
               </div>
             </div>
           </div>

@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import type { ClassAverages } from "@/lib/hooks/use-dashboard";
 import { BandBadge } from "@/components/shared/band-badge";
-import { ScoreSourceIndicator } from "@/components/shared/score-source-indicator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -91,7 +90,6 @@ export function SummaryCards({
     );
   }
 
-  const scoreSource = averages?.scoreSource || "manual";
   const scoredCount = averages?.scoredStudentsCount ?? 0;
   const totalCount = averages?.totalStudentsCount ?? 0;
 
@@ -145,16 +143,13 @@ export function SummaryCards({
               </div>
             </div>
 
-            {/* Footer: Metadata / Source */}
+            {/* Footer: Metadata */}
             <div className="pt-2 mt-1 border-t border-border/50 flex items-center justify-between text-[10px] text-muted-foreground">
               <span>
                 {scoredCount > 0
                   ? `${scoredCount}/${totalCount} scored`
                   : "No submissions"}
               </span>
-              {score !== null && (
-                <ScoreSourceIndicator source={scoreSource} compact />
-              )}
             </div>
           </div>
         );

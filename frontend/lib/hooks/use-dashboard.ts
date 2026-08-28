@@ -305,6 +305,7 @@ export interface StudentScoreHistoryItem {
   activityId: string;
   targetText: string;
   isTakeHome: boolean;
+  imagePath?: string | null;
   scoreSource: "manual" | "calibrated";
   compositeScore: number | null;
   compositeBand: ScoreBand | null;
@@ -338,6 +339,7 @@ export function useStudentScoreHistory(studentId: string | null) {
           id,
           created_at,
           status,
+          image_path,
           activity:activity_id(
             id,
             target_text,
@@ -462,6 +464,7 @@ export function useStudentScoreHistory(studentId: string | null) {
           activityId: rawActivity?.id || "",
           targetText: rawActivity?.target_text || "Handwriting Activity",
           isTakeHome: Boolean(rawActivity?.is_take_home),
+          imagePath: (row.image_path as string) || null,
           scoreSource: isCalibrated ? "calibrated" : "manual",
           compositeScore: compScore,
           compositeBand: compBand,

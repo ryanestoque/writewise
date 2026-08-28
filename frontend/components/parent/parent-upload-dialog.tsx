@@ -16,7 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useTakeHomeActivities } from "@/lib/hooks/use-parent-data";
+import { useTakeHomeActivities, useChildSubmissionForActivity } from "@/lib/hooks/use-parent-data";
 import { useUploadSubmission } from "@/lib/hooks/use-submissions";
 import { toast } from "sonner";
 import {
@@ -175,6 +175,10 @@ function ParentUploadFlow({
 
   const { data: activities, isLoading: activitiesLoading } =
     useTakeHomeActivities(childId);
+  const { data: priorSubmission } = useChildSubmissionForActivity(
+    childId,
+    selectedActivityId ?? ""
+  );
   const uploadMutation = useUploadSubmission();
   const queryClient = useQueryClient();
 
@@ -404,6 +408,16 @@ function ParentUploadFlow({
                 </button>
               )}
             </div>
+
+            {/* Reassurance banner for completed activities */}
+            {priorSubmission?.status === "completed" && (
+              <div className="flex items-center gap-2 p-2.5 px-3 rounded-xl bg-brand-50/80 dark:bg-brand-950/40 border border-brand-200/70 dark:border-brand-800/50 text-[11px] sm:text-xs text-brand-900 dark:text-brand-200">
+                <CheckCircle2Icon className="size-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                <span>
+                  <strong>New attempt:</strong> Submitting a new photo records an updated assessment while keeping earlier scores safely archived in your child&apos;s history.
+                </span>
+              </div>
+            )}
 
             {/* Hidden File Inputs */}
             <input

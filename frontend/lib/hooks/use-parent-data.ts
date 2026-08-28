@@ -15,6 +15,7 @@ export interface ChildLatestScores {
   submissionId: string;
   submissionDate: string;
   activityText: string;
+  imagePath: string | null;
   scoreSource: "manual" | "calibrated" | "none";
   scores: {
     letter_formation: number | null;
@@ -86,6 +87,7 @@ export function useChildLatestScores(childId: string | null) {
           id,
           created_at,
           status,
+          image_path,
           activity:activity_id(
             id,
             target_text
@@ -182,6 +184,7 @@ export function useChildLatestScores(childId: string | null) {
           submissionId: row.id,
           submissionDate: row.created_at,
           activityText: (rawActivity as { target_text: string } | null)?.target_text || "Handwriting Activity",
+          imagePath: (row.image_path as string) || null,
           scoreSource: isCalibrated ? "calibrated" : "manual",
           scores,
           bands,
@@ -208,6 +211,7 @@ export function useChildScoreHistory(childId: string | null) {
           id,
           created_at,
           status,
+          image_path,
           activity:activity_id(
             id,
             target_text,
@@ -299,6 +303,7 @@ export function useChildScoreHistory(childId: string | null) {
           activityId: (rawActivity as { id: string } | null)?.id || "",
           targetText: (rawActivity as { target_text: string } | null)?.target_text || "Handwriting Activity",
           isTakeHome: Boolean((rawActivity as { is_take_home?: boolean } | null)?.is_take_home),
+          imagePath: (row.image_path as string) || null,
           scoreSource: isCalibrated ? "calibrated" : "manual",
           compositeScore: compScore,
           compositeBand: compBand,

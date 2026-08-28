@@ -102,34 +102,46 @@ function TakeHomeActivityCard({
             <span>Checking status...</span>
           </div>
         ) : submission ? (
-          <div className="flex items-center justify-between gap-2 w-full">
-            {submission.status === "completed" ? (
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 dark:text-brand-300">
-                  <CheckCircle2 className="size-4 shrink-0 text-brand-600 dark:text-brand-400" />
-                  Completed
-                </span>
-                {submission.compositeScore != null && (
-                  <BandBadge score={submission.compositeScore} size="sm" />
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 text-xs font-medium text-destructive">
-                <AlertCircle className="size-4 shrink-0" />
-                <span>Photo rejected</span>
-              </div>
-            )}
+          <div className="space-y-2 w-full">
+            <div className="flex items-center justify-between gap-2 w-full">
+              {submission.status === "completed" ? (
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 dark:text-brand-300">
+                    <CheckCircle2 className="size-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                    Completed
+                  </span>
+                  {submission.compositeScore != null && (
+                    <BandBadge score={submission.compositeScore} size="sm" />
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-xs font-medium text-destructive">
+                  <AlertCircle className="size-4 shrink-0" />
+                  <span>Photo rejected</span>
+                </div>
+              )}
 
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 text-xs font-medium gap-1 cursor-pointer shrink-0"
-              onClick={onUploadClick}
-              aria-label={`Upload another attempt for ${targetText}`}
-            >
-              <Upload className="size-3.5" />
-              {submission.status === "completed" ? "Re-upload" : "Retake"}
-            </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 text-xs font-medium gap-1.5 cursor-pointer shrink-0 border-border/80 hover:bg-muted/50"
+                onClick={onUploadClick}
+                aria-label={
+                  submission.status === "completed"
+                    ? `Submit another practice attempt for ${targetText}`
+                    : `Retake photo for ${targetText}`
+                }
+              >
+                <Upload className="size-3.5" />
+                <span>{submission.status === "completed" ? "New Attempt" : "Retake"}</span>
+              </Button>
+            </div>
+
+            {submission.status === "rejected" && (
+              <p className="text-[11px] text-muted-foreground bg-destructive/5 border border-destructive/20 p-2 rounded-md leading-normal">
+                <strong>Tip:</strong> Position the camera directly above the worksheet in bright light without shadows so cursive strokes are crisp.
+              </p>
+            )}
           </div>
         ) : (
           <Button
