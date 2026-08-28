@@ -5,7 +5,7 @@ from enum import Enum
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel
 
-from app.api.deps import get_current_teacher
+from app.api.deps import get_current_teacher, get_current_user
 from app.core.config import settings
 from app.core.image_hardening import validate_and_harden_image
 from app.core.supabase import supabase_client
@@ -40,9 +40,10 @@ async def create_submission(
     image: UploadFile = File(...),
     activity_id: str = Form(...),
     student_id: str = Form(...),
-    teacher: dict = Depends(get_current_teacher),
+    caller: dict = Depends(get_current_user),
 ):
-    teacher_id = teacher.get("sub")
+    caller_id = caller.get("sub")
+    caller_role = caller.get("role")
 
     # --- Validation ---
 
@@ -75,13 +76,11 @@ async def create_submission(
             },
         )
 
-    # 3. Verify activity exists and belongs to this teacher; fetch target_text
-    #    for the post-segmentation gate's expected word count.
+    # 3. Fetch activity details
     activity_res = (
         supabase_client.table("activity")
-        .select("id, target_text")
+        .select("id, target_text, is_take_home, created_by")
         .eq("id", activity_id)
-        .eq("created_by", teacher_id)
         .execute()
     )
     if not activity_res.data:
@@ -93,25 +92,72 @@ async def create_submission(
                 "details": {},
             },
         )
-    target_text: str = activity_res.data[0]["target_text"]
+    activity_row = activity_res.data[0]
+    target_text: str = activity_row["target_text"]
     expected_word_count = len(target_text.split())
 
-    # 4. Verify student is on this teacher's roster
-    roster_res = (
-        supabase_client.table("teacher_student")
-        .select("student_id")
-        .eq("teacher_id", teacher_id)
-        .eq("student_id", student_id)
-        .execute()
-    )
-    if not roster_res.data:
+    # 4. Role-conditional authorization
+    if caller_role == "teacher":
+        if activity_row["created_by"] != caller_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "NOT_FOUND", "message": "Activity not found.", "details": {}},
+            )
+        roster_res = (
+            supabase_client.table("teacher_student")
+            .select("student_id")
+            .eq("teacher_id", caller_id)
+            .eq("student_id", student_id)
+            .execute()
+        )
+        if not roster_res.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "code": "NOT_FOUND",
+                    "message": "Student not found on your roster.",
+                    "details": {},
+                },
+            )
+    elif caller_role == "parent":
+        # Check 1: Parent linked to student
+        parent_link_res = (
+            supabase_client.table("student_parent")
+            .select("student_id")
+            .eq("parent_id", caller_id)
+            .eq("student_id", student_id)
+            .execute()
+        )
+        if not parent_link_res.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "NOT_FOUND", "message": "Student not found.", "details": {}},
+            )
+
+        # Check 2: Activity must be take-home
+        if not activity_row.get("is_take_home"):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "NOT_FOUND", "message": "Activity not found.", "details": {}},
+            )
+
+        # Check 3: Activity creator teacher is linked to student
+        teacher_link_res = (
+            supabase_client.table("teacher_student")
+            .select("student_id")
+            .eq("teacher_id", activity_row["created_by"])
+            .eq("student_id", student_id)
+            .execute()
+        )
+        if not teacher_link_res.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "NOT_FOUND", "message": "Activity not found.", "details": {}},
+            )
+    else:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "code": "NOT_FOUND",
-                "message": "Student not found on your roster.",
-                "details": {},
-            },
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "FORBIDDEN", "message": "Invalid role.", "details": {}},
         )
 
     # 5. Image hardening: magic-byte check, decompression-bomb cap, EXIF strip
@@ -182,8 +228,8 @@ async def create_submission(
                 "status": "rejected" if rejection else "processing",
                 "rejection_code": rejection["code"] if rejection else None,
                 "rejection_details": rejection["message"] if rejection else None,
-                "uploader_id": teacher_id,
-                "uploader_role": "teacher",
+                "uploader_id": caller_id,
+                "uploader_role": caller_role,
             }
         )
         .execute()
