@@ -11,7 +11,7 @@ Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §
 | Phase 0 — Setup | 11 / 16 |
 | Phase 1 — Teacher Tooling & Raw CV Pipeline | 17 / 17 |
 | Between Phases — Calibration | 0 / 6 |
-| Phase 2 — Calibrated Scoring & Full System | 2 / 11 |
+| Phase 2 — Calibrated Scoring & Full System | 8 / 11 |
 
 *(Update this table whenever you check off an item below.)*
 
@@ -110,18 +110,18 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
-| Parent login & own-child-only view | Not Started | | PRD §7.2, DATABASE §10 |
-| Per-criterion trend chart + composite trend | Not Started | | PRD §7.2/§7.5, DESIGN §7.7 |
-| Latest diagnostic feedback view | Not Started | | PRD §7.2 |
-| Upload submission for teacher-assigned activity | Not Started | | PRD §7.2, API_SPEC §3.3 |
+| Parent login & own-child-only view | Done | | PRD §7.2, DATABASE §10 |
+| Per-criterion trend chart + composite trend | Done | | PRD §7.2/§7.5, DESIGN §7.7 |
+| Latest diagnostic feedback view | Done | | PRD §7.2 |
+| Upload submission for teacher-assigned activity | Done | | PRD §7.2, API_SPEC §3.3 |
 
 ### Diagnostic Engine
 
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
-| Numeric score → qualitative band conversion | Not Started | | PRD §7.4 |
+| Numeric score → qualitative band conversion | Done | | PRD §7.4 |
 | Visual overlay annotation generation | Not Started | | PRD §7.4, DESIGN §7.4 |
-| Criterion-by-criterion text explanation | Not Started | | PRD §7.4, DESIGN §8.2 |
+| Criterion-by-criterion text explanation | Done | | PRD §7.4, DESIGN §8.2 |
 
 ### Integration
 
