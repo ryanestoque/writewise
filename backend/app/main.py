@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -6,8 +8,17 @@ from app.api.activities import router as activities_router
 from app.api.students import router as students_router
 from app.api.submissions import router as submissions_router
 from app.core.config import settings
+from app.ml.model import is_stub_mode, load_model
 
-app = FastAPI(title="WriteWise API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan: load CNN model at startup (ML_PIPELINE §8)."""
+    load_model()
+    yield
+
+
+app = FastAPI(title="WriteWise API", lifespan=lifespan)
 
 # Configure CORS
 origins = [origin.strip() for origin in settings.CORS_ALLOWED_ORIGINS.split(",")]
@@ -37,7 +48,8 @@ def health_check():
     return {
         "status": "ok",
         "environment": settings.ENVIRONMENT,
-        "model_loaded": True,  # Hardcoded stub for now
+        "model_loaded": True,
+        "model_stub": is_stub_mode(),
         "scoring_engine": settings.SCORING_ENGINE,
     }
 
