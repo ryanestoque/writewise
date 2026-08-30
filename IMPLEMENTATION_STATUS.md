@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-08-26
+**Last updated:** 2026-08-30
 
 ## Summary
 
@@ -10,7 +10,7 @@ Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §
 |---|---|
 | Phase 0 — Setup | 11 / 16 |
 | Phase 1 — Teacher Tooling & Raw CV Pipeline | 17 / 17 |
-| Between Phases — Calibration | 0 / 6 |
+| Between Phases — Calibration | 3 / 6 |
 | Phase 2 — Calibrated Scoring & Full System | 8 / 11 |
 
 *(Update this table whenever you check off an item below.)*
@@ -86,11 +86,11 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
 | Threshold/correlation analysis (Spearman's Rho per criterion) | Not Started | | PRD §5, PRD §11 |
-| ML Stage 1 — CCC dataset prep (format conversion, split) | Not Started | | ML_PIPELINE §2 |
-| ML Stage 1 — fine-tuning (two-phase) | Not Started | | ML_PIPELINE §4 |
-| ML Stage 1 — evaluation (Accuracy/Precision/Recall/F1) | Not Started | | ML_PIPELINE §5 |
-| ML Stage 2 — regression-head training/calibration | Not Started | | ML_PIPELINE §6 |
-| Export combined inference artifact (`.keras`) | Not Started | | ML_PIPELINE §7 |
+| ML Stage 1 — CCC dataset prep (format conversion, split) | Done | | ML_PIPELINE §2 |
+| ML Stage 1 — fine-tuning (two-phase) | Done | | ML_PIPELINE §4 |
+| ML Stage 1 — evaluation (Accuracy/Precision/Recall/F1) | Done | | ML_PIPELINE §5 |
+| ML Stage 2 — regression-head training/calibration | Not Started | Blocked on Phase 1 paired data | ML_PIPELINE §6 |
+| Export combined inference artifact (`.keras`) | Not Started | Blocked on Stage 2 calibration | ML_PIPELINE §7 |
 
 ---
 
