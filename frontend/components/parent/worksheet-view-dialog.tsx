@@ -9,20 +9,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { BandBadge } from "@/components/shared/band-badge";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
 import { ScoreSourceIndicator } from "@/components/shared/score-source-indicator";
+import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
 import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import { RUBRIC_CRITERIA, type ScoreBand } from "@/lib/utils/scoring";
 import {
-  Maximize2,
-  Minimize2,
   FileImage,
   Calendar,
-  FileText,
-  Eye,
   User,
 } from "lucide-react";
 
@@ -119,70 +115,17 @@ export function WorksheetViewDialog({
         {/* Content Body: Split View */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            {/* Left: High-Resolution Worksheet Photo */}
-            <div className="lg:col-span-7 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                  <Eye className="size-3.5 text-brand-600 dark:text-brand-400" />
-                  <span>Handwritten Worksheet</span>
-                </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsZoomed((prev) => !prev)}
-                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1 cursor-pointer"
-                  aria-label={isZoomed ? "Fit image to frame" : "Expand image zoom"}
-                >
-                  {isZoomed ? (
-                    <>
-                      <Minimize2 className="size-3.5" />
-                      <span>Fit frame</span>
-                    </>
-                  ) : (
-                    <>
-                      <Maximize2 className="size-3.5" />
-                      <span>Expand photo</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              <div
-                className={`relative rounded-2xl border border-border/80 bg-black/5 dark:bg-black/20 overflow-hidden transition-all flex items-center justify-center shadow-warm ${
-                  isZoomed
-                    ? "max-h-[580px] cursor-zoom-out"
-                    : "aspect-4/3 sm:aspect-3/2 max-h-[420px] cursor-zoom-in"
-                }`}
-                onClick={() => setIsZoomed((prev) => !prev)}
-              >
-                {isImageLoading ? (
-                  <Skeleton className="size-full min-h-[260px] rounded-none" />
-                ) : imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={imageUrl}
-                    alt={`Handwriting worksheet submitted for ${childName}`}
-                    loading="lazy"
-                    decoding="async"
-                    className="size-full object-contain p-1"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground space-y-2">
-                    <FileText className="size-10 text-muted-foreground/60" />
-                    <p className="text-xs sm:text-sm font-medium text-foreground">
-                      Worksheet photo unavailable
-                    </p>
-                    <p className="text-xs text-muted-foreground max-w-xs">
-                      The image file could not be loaded from storage.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <p className="text-[11px] text-muted-foreground text-center pt-0.5">
-                Tip: Click the image to toggle full expansion.
-              </p>
+            {/* Left: High-Resolution Worksheet Photo Inspector */}
+            <div className="lg:col-span-7">
+              <WorksheetImageInspector
+                imageUrl={imageUrl}
+                altText={`Handwriting worksheet submitted for ${childName}`}
+                isLoading={isImageLoading}
+                headerLabel="Handwritten Worksheet"
+                isFrameExpanded={isZoomed}
+                onToggleFrameExpanded={() => setIsZoomed((prev) => !prev)}
+                allowFrameToggle={true}
+              />
             </div>
 
             {/* Right: Worksheet Details & Criterion Feedback */}
@@ -225,7 +168,9 @@ export function WorksheetViewDialog({
                     <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Criterion Diagnostics
                     </span>
-                    <span className="text-[11px] text-muted-foreground">5 criteria</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      5 criteria
+                    </span>
                   </div>
                   <div className="divide-y divide-border/50">
                     {PARENT_CRITERIA.map((criterion) => (

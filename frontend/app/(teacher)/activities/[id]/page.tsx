@@ -361,13 +361,13 @@ const SubmissionCard = memo(function SubmissionCard({
   return (
     <article className="group relative flex flex-col justify-between bg-surface dark:bg-card border border-border hover:border-brand-300 dark:hover:border-brand-800 rounded-xl sm:rounded-2xl shadow-warm hover:shadow-md transition-all duration-200 overflow-hidden text-left">
       {/* Photo Thumbnail & Clickable Hero */}
-      <div className="aspect-4/3 bg-muted/60 relative overflow-hidden">
+      <div className="aspect-4/3 bg-[#f2f4f2] dark:bg-muted/30 relative overflow-hidden p-2 flex items-center justify-center border-b border-border/40">
         {/* Main Photo Click Target */}
         <button
           type="button"
           onClick={() => onSelect(submission)}
           aria-label={accessibleLabel}
-          className="absolute inset-0 size-full z-0 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+          className="absolute inset-0 size-full z-0 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset flex items-center justify-center"
         >
           {showImage ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -377,7 +377,7 @@ const SubmissionCard = memo(function SubmissionCard({
               loading="lazy"
               decoding="async"
               onError={() => setImageError(true)}
-              className="size-full object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none"
+              className="size-full object-contain drop-shadow-2xs group-hover:scale-[1.02] transition-transform duration-200 pointer-events-none"
             />
           ) : (
             <div className="size-full flex flex-col items-center justify-center gap-1.5 text-muted-foreground/60 p-4 pointer-events-none">

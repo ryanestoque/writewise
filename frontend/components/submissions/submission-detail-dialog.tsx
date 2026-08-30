@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   type ScoreBand,
   type Submission,
@@ -18,6 +17,7 @@ import {
   useSubmitManualScore,
 } from "@/lib/hooks/use-submissions";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
+import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
 import {
   CheckCircle2,
   Clock,
@@ -34,7 +34,7 @@ import {
   Eye,
   Info,
   Award,
-  Sparkles,
+  ScanLine,
   Binary,
   Check,
   Loader2,
@@ -752,6 +752,7 @@ function SubmissionDetailDialogContent({
 }: SubmissionDetailDialogContentProps) {
   const { openUpload } = useTeacherModals();
   const [isZoomed, setIsZoomed] = useState(false);
+
   const [selectedCriterion, setSelectedCriterion] = useState<string | null>(
     "Letter Formation"
   );
@@ -762,10 +763,8 @@ function SubmissionDetailDialogContent({
     submission.image_path ?? null
   );
 
-  // Keyboard navigation across submissions (scoped so radiogroup arrow navigation is respected)
+  // Keyboard navigation for submission cycling
   useEffect(() => {
-    if (!submissions || submissions.length <= 1 || !onNavigate) return;
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
         e.target instanceof HTMLInputElement ||
@@ -777,13 +776,17 @@ function SubmissionDetailDialogContent({
         return;
       }
 
+      // Submission cycling
       if (e.key === "ArrowLeft" || e.key === "j" || e.key === "J") {
-        if (currentIndex !== undefined && currentIndex > 0) {
+        if (submissions && submissions.length > 1 && onNavigate && currentIndex !== undefined && currentIndex > 0) {
           e.preventDefault();
           onNavigate(submissions[currentIndex - 1]);
         }
       } else if (e.key === "ArrowRight" || e.key === "k" || e.key === "K") {
         if (
+          submissions &&
+          submissions.length > 1 &&
+          onNavigate &&
           currentIndex !== undefined &&
           currentIndex < submissions.length - 1
         ) {
@@ -795,7 +798,11 @@ function SubmissionDetailDialogContent({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [submissions, currentIndex, onNavigate]);
+  }, [
+    submissions,
+    currentIndex,
+    onNavigate,
+  ]);
 
   const hasMultipleSubmissions = Boolean(
     submissions && submissions.length > 1 && currentIndex !== undefined
@@ -1056,7 +1063,7 @@ function SubmissionDetailDialogContent({
                   </span>
                 ) : submission.status === "completed" ? (
                   <span className="inline-flex items-center gap-1 text-brand-700 dark:text-brand-300 font-medium">
-                    <Sparkles className="size-3" />
+                    <ScanLine className="size-3" />
                     Worksheet Processed · Rubric Evaluation Needed
                   </span>
                 ) : null}
@@ -1164,89 +1171,47 @@ function SubmissionDetailDialogContent({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          {/* Left: Worksheet Image Preview */}
+          {/* Left: Worksheet Image Preview with Interactive Stroke Inspector */}
           <div className="lg:col-span-6 flex flex-col space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Handwriting Worksheet
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsZoomed((prev) => !prev)}
-                className="min-h-[36px] sm:min-h-0 h-8 sm:h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground gap-1 cursor-pointer"
-              >
-                {isZoomed ? (
-                  <>
-                    <Minimize2 className="size-3.5" />
-                    <span>Fit view</span>
-                  </>
-                ) : (
-                  <>
-                    <Maximize2 className="size-3.5" />
-                    <span>Expand view</span>
-                  </>
-                )}
-              </Button>
-            </div>
-
-            <div
-              role="button"
-              tabIndex={0}
-              aria-label={
-                isZoomed
-                  ? "Fit worksheet image to container"
-                  : "Expand worksheet image"
-              }
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setIsZoomed((prev) => !prev);
-                }
-              }}
-              className={`relative rounded-xl sm:rounded-2xl border border-border bg-muted/40 overflow-hidden transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
-                isZoomed ? "max-h-[540px]" : "aspect-4/3 sm:aspect-3/2"
-              } flex items-center justify-center`}
+            <WorksheetImageInspector
+              imageUrl={imageUrl}
+              altText={`Handwriting worksheet submitted for ${submission.student?.full_name ?? "student"}`}
+              isLoading={isImageLoading}
+              headerLabel="Handwriting Worksheet"
+              isFrameExpanded={isZoomed}
+              onToggleFrameExpanded={() => setIsZoomed((prev) => !prev)}
+              allowFrameToggle={true}
+              aspectRatioClass="aspect-4/3 sm:aspect-3/2 max-h-[420px]"
+              expandedAspectRatioClass="min-h-[460px] max-h-[560px]"
             >
-              {isImageLoading ? (
-                <Skeleton className="size-full rounded-none" />
-              ) : imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={imageUrl}
-                  alt={`Handwriting worksheet submitted for ${submission.student?.full_name ?? "student"}`}
-                  loading="lazy"
-                  decoding="async"
-                  className={`size-full object-contain ${
-                    isZoomed ? "cursor-zoom-out" : "cursor-zoom-in"
-                  }`}
-                  onClick={() => setIsZoomed((prev) => !prev)}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center p-6 text-center text-muted-foreground space-y-2">
-                  <FileText className="size-10 text-muted-foreground/60" />
-                  <p className="text-xs font-medium">Worksheet image unavailable</p>
-                </div>
-              )}
-
               {/* Selected criterion overlay badge */}
               {selectedCriterion && (
-                <div className="absolute top-2.5 left-2.5 bg-background/90 dark:bg-card/90 backdrop-blur-xs px-2.5 py-1 rounded-lg border border-brand-200 dark:border-brand-900 shadow-xs text-xs font-medium text-brand-700 dark:text-brand-300 flex items-center gap-1.5">
+                <div className="absolute top-2.5 left-2.5 bg-background/90 dark:bg-card/90 backdrop-blur-xs px-2.5 py-1 rounded-lg border border-brand-200 dark:border-brand-900 shadow-xs text-xs font-medium text-brand-700 dark:text-brand-300 flex items-center gap-1.5 pointer-events-none z-10">
                   <Eye className="size-3.5 text-brand-600 dark:text-brand-400" />
                   <span>Focus: {selectedCriterion}</span>
                 </div>
               )}
-            </div>
+            </WorksheetImageInspector>
 
-            {activityTargetText && (
-              <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs text-muted-foreground">
-                <span className="font-semibold text-foreground mr-1">
-                  Target prompt:
-                </span>
-                &ldquo;{activityTargetText}&rdquo;
-              </div>
-            )}
+            {/* Target prompt & Keyboard legend */}
+            <div className="space-y-1.5">
+              {activityTargetText && (
+                <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs text-muted-foreground">
+                  <span className="font-semibold text-foreground mr-1">
+                    Target prompt:
+                  </span>
+                  &ldquo;{activityTargetText}&rdquo;
+                </div>
+              )}
+
+              {hasMultipleSubmissions && (
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
+                  <span>
+                    Navigate: <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">J</kbd>/<kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">&larr;</kbd> prev &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">K</kbd>/<kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">&rarr;</kbd> next
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right: Diagnostic Assessment Details */}
