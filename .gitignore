@@ -55,3 +55,9 @@ supabase/.temp/
 .impeccable/
 .impeccable-live/
 .impeccable-live.json
+
+# ML training data and artifacts (ML_PIPELINE §9)
+training/data/
+training/results/
+*.keras
+*.h5
