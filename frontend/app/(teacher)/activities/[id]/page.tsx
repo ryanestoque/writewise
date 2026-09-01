@@ -699,6 +699,7 @@ export default function ActivityDetailPage({
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [deletingActivity, setDeletingActivity] = useState<Activity | null>(null);
   const [isDuplicateOpen, setIsDuplicateOpen] = useState(false);
+  const [hasCopiedPrompt, setHasCopiedPrompt] = useState(false);
   const [selectedSubmission, setSelectedSubmission] =
     useState<Submission | null>(null);
 
@@ -1200,10 +1201,10 @@ export default function ActivityDetailPage({
   return (
     <div className="w-full min-w-0 space-y-5 sm:space-y-6 pb-28 sm:pb-24">
       {/* Top Back Navigation Trail */}
-      <nav aria-label="Breadcrumb navigation">
+      <nav aria-label="Breadcrumb navigation" className="print:hidden">
         <Link
           href="/activities"
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-2.5 py-2 min-h-[40px] sm:min-h-[36px] hover:bg-muted/50 -ml-1 sm:-ml-2"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-2.5 py-2 min-h-[44px] sm:min-h-[36px] hover:bg-muted/50 -ml-1 sm:-ml-2"
         >
           <ArrowLeft
             className="size-3.5 transition-transform group-hover:-translate-x-0.5"
@@ -1217,7 +1218,7 @@ export default function ActivityDetailPage({
       <section
         aria-labelledby="activity-prompt-heading"
         className={cn(
-          "relative bg-surface dark:bg-card border rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-warm transition-all overflow-hidden",
+          "relative bg-surface dark:bg-card border rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-warm transition-all overflow-hidden print:shadow-none print:border-black/30 print:p-4 print:bg-white",
           isArchived
             ? "border-muted-foreground/30 bg-muted/20 opacity-95"
             : "border-border"
@@ -1232,10 +1233,10 @@ export default function ActivityDetailPage({
         {isArchived && (
           <div
             role="status"
-            className="mb-4 -mt-1 -mx-1 px-3 py-1.5 rounded-lg bg-warning/10 border border-warning/25 text-warning-foreground dark:text-warning text-xs flex items-center gap-2"
+            className="mb-4 -mt-1 -mx-1 px-3 py-1.5 rounded-lg bg-warning/10 border border-warning/25 text-warning-foreground dark:text-warning text-xs flex items-center gap-2 print:border-black/30 print:bg-muted/10 print:text-black"
           >
             <Archive
-              className="size-3.5 shrink-0 text-warning"
+              className="size-3.5 shrink-0 text-warning print:text-black"
               aria-hidden="true"
             />
             <span>
@@ -1253,7 +1254,7 @@ export default function ActivityDetailPage({
               {isArchived ? (
                 <Badge
                   variant="outline"
-                  className="text-xs font-semibold px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border/80"
+                  className="text-xs font-semibold px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border/80 print:border-black/30 print:text-black"
                 >
                   <Archive className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
                   Archived
@@ -1261,10 +1262,10 @@ export default function ActivityDetailPage({
               ) : activity.is_take_home ? (
                 <Badge
                   variant="outline"
-                  className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900"
+                  className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900 print:border-black/30 print:text-black"
                 >
                   <Home
-                    className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400"
+                    className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400 print:text-black"
                     aria-hidden="true"
                   />
                   Take-home Activity
@@ -1272,23 +1273,23 @@ export default function ActivityDetailPage({
               ) : (
                 <Badge
                   variant="outline"
-                  className="text-xs font-semibold px-2.5 py-0.5 bg-brand-100/70 text-brand-800 dark:bg-brand-900/50 dark:text-brand-200 border-brand-200/70 dark:border-brand-800/80"
+                  className="text-xs font-semibold px-2.5 py-0.5 bg-brand-100/70 text-brand-800 dark:bg-brand-900/50 dark:text-brand-200 border-brand-200/70 dark:border-brand-800/80 print:border-black/30 print:text-black"
                 >
                   <BookOpen
-                    className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400"
+                    className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400 print:text-black"
                     aria-hidden="true"
                   />
                   In-Class Activity
                 </Badge>
               )}
 
-              <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-muted/40 dark:bg-muted/30 px-2 py-0.5 rounded-md border border-border/50 tabular-nums">
+              <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-muted/40 dark:bg-muted/30 px-2 py-0.5 rounded-md border border-border/50 tabular-nums print:border-black/30 print:text-black">
                 {wordCount} {wordCount === 1 ? "word" : "words"}
               </span>
 
               <time
                 dateTime={activity.created_at}
-                className="text-xs text-muted-foreground inline-flex items-center gap-1"
+                className="text-xs text-muted-foreground inline-flex items-center gap-1 print:text-black"
               >
                 <CalendarDays className="w-3.5 h-3.5" aria-hidden="true" />
                 Created {formatDate(activity.created_at)}
@@ -1296,18 +1297,18 @@ export default function ActivityDetailPage({
             </div>
 
             {/* Fast Action CTAs */}
-            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap print:hidden">
               <Button
                 size="sm"
                 aria-keyshortcuts="u"
                 variant="default"
-                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer bg-primary hover:bg-brand-700 text-primary-foreground"
+                className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                 onClick={() => openUpload({ activityId: id })}
               >
                 <Upload className="w-4 h-4" aria-hidden="true" />
                 <span>Upload Submission</span>
                 <kbd
-                  className="hidden sm:inline-flex items-center justify-center ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded shadow-2xs text-primary-foreground/80 bg-white/20 dark:bg-white/10"
+                  className="hidden sm:inline-flex items-center justify-center ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded shadow-2xs text-primary-foreground/80 bg-white/20 dark:bg-black/20"
                   aria-hidden="true"
                 >
                   U
@@ -1316,7 +1317,7 @@ export default function ActivityDetailPage({
 
               <DropdownMenu>
                 <DropdownMenuTrigger
-                  className="flex size-10 sm:size-9 min-h-[40px] sm:min-h-[36px] items-center justify-center rounded-lg sm:rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex size-11 sm:size-9 min-h-[44px] sm:min-h-[36px] items-center justify-center rounded-lg sm:rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label="Activity options and actions"
                 >
                   <MoreVertical className="size-4" aria-hidden="true" />
@@ -1340,7 +1341,9 @@ export default function ActivityDetailPage({
                       navigator.clipboard
                         .writeText(activity.target_text)
                         .then(() => {
+                          setHasCopiedPrompt(true);
                           toast.success("Target prompt copied to clipboard.");
+                          setTimeout(() => setHasCopiedPrompt(false), 2000);
                         })
                         .catch(() => {
                           toast.error("Failed to copy target prompt.");
@@ -1348,8 +1351,19 @@ export default function ActivityDetailPage({
                     }}
                     className="cursor-pointer gap-2 text-xs min-h-[36px]"
                   >
-                    <Copy className="size-3.5" aria-hidden="true" />
-                    <span>Copy Target Prompt</span>
+                    {hasCopiedPrompt ? (
+                      <>
+                        <Check className="size-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                        <span className="text-emerald-700 dark:text-emerald-300 font-medium">
+                          Prompt Copied!
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="size-3.5" aria-hidden="true" />
+                        <span>Copy Target Prompt</span>
+                      </>
+                    )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setIsDuplicateOpen(true)}
@@ -1388,17 +1402,20 @@ export default function ActivityDetailPage({
           </div>
 
           {/* Hero Penmanship Prompt on Authentic 3-Line Cursive Ruling */}
-          <div className="space-y-1.5 min-w-0">
-            <div className="relative p-4 sm:p-6 pb-6 sm:pb-8 min-h-[92px] rounded-xl bg-linear-to-b from-brand-50/25 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-warm-sm">
+          <div
+            className="space-y-1.5 min-w-0"
+            aria-labelledby="activity-prompt-heading"
+          >
+            <div className="relative p-4 sm:p-6 pb-6 sm:pb-8 min-h-[92px] rounded-xl bg-linear-to-b from-brand-50/25 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-warm-sm print:bg-white print:border-black/30 print:shadow-none print:p-4">
               <div className="relative">
                 {/* Decorative 3-line penmanship ruling */}
                 <div
-                  className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden"
+                  className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-20 print:opacity-60 cursive-guidelines overflow-hidden"
                   aria-hidden="true"
                 />
                 <p
                   className={cn(
-                    "relative tracking-wide select-all break-words",
+                    "relative tracking-wide select-all break-words print:text-black",
                     activity.target_text?.trim()
                       ? "font-cursive text-foreground/90 font-normal text-2xl sm:text-3xl lg:text-4xl leading-[48px]"
                       : "text-muted-foreground italic font-sans text-sm sm:text-base leading-normal py-3"
@@ -1517,7 +1534,7 @@ export default function ActivityDetailPage({
                 <div className="flex items-center gap-2 shrink-0">
                   <Popover>
                     <PopoverTrigger
-                      className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[40px] sm:min-h-[36px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] sm:min-h-[36px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                       aria-label="View class criteria breakdown"
                     >
                       <BarChart3
