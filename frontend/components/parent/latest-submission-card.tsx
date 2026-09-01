@@ -112,6 +112,7 @@ export function LatestSubmissionCard({
                 variant="outline"
                 size="sm"
                 onClick={() => setViewImageOpen(true)}
+                aria-haspopup="dialog"
                 className="w-full h-9 text-xs sm:text-sm font-medium gap-2 border-brand-200 dark:border-brand-900 bg-brand-50/50 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 hover:bg-brand-100/60 dark:hover:bg-brand-900/50 cursor-pointer shadow-xs"
               >
                 <Eye className="size-4 text-brand-600 dark:text-brand-400" />

@@ -23,6 +23,15 @@ export function BandPositionBar({
   return (
     <div className={cn("w-full flex items-center gap-2.5", className)}>
       <div
+        role="progressbar"
+        aria-valuenow={numericScore !== null ? Math.round(numericScore) : undefined}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={
+          numericScore !== null
+            ? `Diagnostic score position: ${Math.round(numericScore)}%`
+            : "Diagnostic score not yet available"
+        }
         className={cn(
           "relative flex-1 rounded-full overflow-hidden bg-muted/40 border border-border/50 grid grid-cols-4 p-0.5",
           height === "sm" ? "h-2.5" : "h-3.5"
@@ -37,7 +46,7 @@ export function BandPositionBar({
         {/* Marker indicator for current score */}
         {numericScore !== null && (
           <div
-            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transition-all duration-300 ease-out z-10"
+            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transition-all duration-300 ease-out z-10 motion-reduce:transition-none"
             style={{ left: `${numericScore}%` }}
           >
             <div
