@@ -121,14 +121,28 @@ export const ActivityCard = memo(function ActivityCard({
 
   return (
     <div
+      role={isSelectMode ? "checkbox" : undefined}
+      aria-checked={isSelectMode ? isSelected : undefined}
+      tabIndex={isSelectMode ? 0 : undefined}
+      aria-label={isSelectMode ? `Select activity: ${displayTargetText.slice(0, 40)}` : undefined}
       onClick={
         isSelectMode
           ? (e) => onToggleSelect(activity.id, e.shiftKey)
           : undefined
       }
+      onKeyDown={
+        isSelectMode
+          ? (e) => {
+              if (e.key === " " || e.key === "Enter") {
+                e.preventDefault();
+                onToggleSelect(activity.id, e.shiftKey);
+              }
+            }
+          : undefined
+      }
       className={cn(
         "group relative flex flex-col justify-between bg-surface dark:bg-card border rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-warm hover:shadow-md transition-all duration-200",
-        isSelectMode && "cursor-pointer select-none",
+        isSelectMode && "cursor-pointer select-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
         isSelected && "ring-2 ring-primary border-primary/60 bg-brand-50/20 dark:bg-brand-950/20",
         isArchived
           ? "border-dashed border-border/80 opacity-80 hover:opacity-100"
@@ -140,14 +154,7 @@ export const ActivityCard = memo(function ActivityCard({
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-1.5 flex-wrap min-w-0">
             {/* Selection Checkbox with Touch-Friendly Hit Target */}
-            <div
-              className={cn(
-                "transition-all duration-150 ease-out flex items-center justify-center shrink-0",
-                isSelectMode || isSelected
-                  ? "w-8 opacity-100"
-                  : "w-8 opacity-100 sm:w-0 sm:opacity-0 sm:overflow-hidden sm:group-hover:w-8 sm:group-hover:opacity-100 sm:group-hover:overflow-visible sm:focus-within:w-8 sm:focus-within:opacity-100"
-              )}
-            >
+            <div className="w-8 shrink-0 flex items-center justify-center">
               <label
                 className="flex size-10 sm:size-7 items-center justify-center rounded-md hover:bg-muted/70 cursor-pointer transition-colors"
                 onClick={(e) => e.stopPropagation()}
@@ -158,7 +165,7 @@ export const ActivityCard = memo(function ActivityCard({
                   onChange={(e) => {
                     onToggleSelect(
                       activity.id,
-                      (e.nativeEvent as MouseEvent).shiftKey
+                      Boolean((e.nativeEvent as MouseEvent)?.shiftKey)
                     );
                   }}
                   onClick={(e) => {
@@ -189,9 +196,9 @@ export const ActivityCard = memo(function ActivityCard({
             ) : (
               <Badge
                 variant="outline"
-                className="text-xs font-semibold px-2.5 py-0.5 bg-emerald-50/70 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/70 dark:border-emerald-900/60"
+                className="text-xs font-semibold px-2.5 py-0.5 bg-brand-100/70 text-brand-800 dark:bg-brand-900/50 dark:text-brand-200 border-brand-200/70 dark:border-brand-800/80"
               >
-                <BookOpen className="w-3.5 h-3.5 mr-1 text-emerald-600 dark:text-emerald-400" />
+                <BookOpen className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400" />
                 In-Class
               </Badge>
             )}
@@ -275,12 +282,14 @@ export const ActivityCard = memo(function ActivityCard({
           onClick={(e) => {
             if (isSelectMode) {
               e.preventDefault();
+              e.stopPropagation();
+              onToggleSelect(activity.id, e.shiftKey);
             }
           }}
-          className="block group-hover:opacity-90 transition-opacity focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
+          className="block group-hover:opacity-95 transition-opacity focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
         >
-          <div className="relative p-3.5 sm:p-4 pb-5 sm:pb-6 rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 mb-3.5 overflow-hidden shadow-2xs">
-            <div className="relative">
+          <div className="relative p-3.5 sm:p-4 pb-5 sm:pb-6 rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 mb-3.5 overflow-hidden shadow-warm-sm">
+            <div className="relative max-h-[148px] sm:max-h-[156px] overflow-hidden">
               {/* Authentic 3-line ruling aligned with Cedarville Cursive baseline */}
               <div
                 className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden z-0"
@@ -289,7 +298,7 @@ export const ActivityCard = memo(function ActivityCard({
 
               <p
                 className={cn(
-                  "relative z-10 font-cursive leading-snug sm:leading-[44px] md:leading-[48px] tracking-wide break-words",
+                  "relative z-10 font-cursive leading-snug sm:leading-[44px] md:leading-[48px] tracking-wide break-words line-clamp-3",
                   activity.target_text?.trim()
                     ? "text-2xl sm:text-[32px] md:text-[34px] text-foreground/90 font-normal"
                     : "text-base sm:text-lg text-muted-foreground/70 italic font-sans"
@@ -345,32 +354,28 @@ export const ActivityCard = memo(function ActivityCard({
                 <div
                   tabIndex={0}
                   role="progressbar"
-                  aria-valuenow={submissionCount}
+                  aria-valuenow={Math.min(submissionCount, totalStudents)}
                   aria-valuemin={0}
                   aria-valuemax={totalStudents}
+                  aria-valuetext={`${completedCount} completed, ${processingCount} processing, ${rejectedCount} rejected of ${totalStudents} students`}
                   aria-label={`Submission progress: ${completedCount} completed, ${processingCount} processing, ${rejectedCount} rejected out of ${totalStudents} students`}
                   onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.stopPropagation();
-                    }
-                  }}
                   className="group/progress w-full py-0.5 cursor-help focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-full"
                 >
-                  <div className="w-full bg-muted/60 dark:bg-muted/40 h-2 rounded-full overflow-hidden flex shadow-2xs group-hover/progress:brightness-95 transition-all">
+                  <div className="w-full bg-muted/60 dark:bg-muted/40 h-2 rounded-full overflow-hidden flex shadow-warm-sm group-hover/progress:brightness-95 transition-all">
                     {completedCount > 0 && (
                       <div
                         className="bg-brand-500 transition-all duration-300 motion-reduce:transition-none"
                         style={{
-                          width: `${(completedCount / totalStudents) * 100}%`,
+                          width: `${Math.min((completedCount / totalStudents) * 100, 100)}%`,
                         }}
                       />
                     )}
                     {processingCount > 0 && (
                       <div
-                        className="bg-amber-500 transition-all duration-300 motion-reduce:transition-none"
+                        className="bg-warning transition-all duration-300 motion-reduce:transition-none"
                         style={{
-                          width: `${(processingCount / totalStudents) * 100}%`,
+                          width: `${Math.min((processingCount / totalStudents) * 100, 100)}%`,
                         }}
                       />
                     )}
@@ -378,7 +383,7 @@ export const ActivityCard = memo(function ActivityCard({
                       <div
                         className="bg-destructive transition-all duration-300 motion-reduce:transition-none"
                         style={{
-                          width: `${(rejectedCount / totalStudents) * 100}%`,
+                          width: `${Math.min((rejectedCount / totalStudents) * 100, 100)}%`,
                         }}
                       />
                     )}
@@ -401,18 +406,18 @@ export const ActivityCard = memo(function ActivityCard({
               <div className="space-y-1.5 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-foreground/90 font-medium">
-                    <span className="size-2 rounded-full bg-brand-500 inline-block shrink-0 shadow-2xs" />
+                    <span className="size-2 rounded-full bg-brand-500 inline-block shrink-0 shadow-warm-sm" />
                     Completed
                   </span>
                   <span className="font-semibold tabular-nums text-foreground">{completedCount}</span>
                 </div>
                 {processingCount > 0 && (
                   <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 font-medium">
-                      <span className="size-2 rounded-full bg-amber-500 inline-block shrink-0 animate-pulse motion-reduce:animate-none" />
+                    <span className="flex items-center gap-1.5 text-warning-foreground dark:text-warning font-medium">
+                      <span className="size-2 rounded-full bg-warning inline-block shrink-0 animate-pulse motion-reduce:animate-none" />
                       Processing
                     </span>
-                    <span className="font-semibold tabular-nums text-amber-700 dark:text-amber-300">{processingCount}</span>
+                    <span className="font-semibold tabular-nums text-warning-foreground dark:text-warning">{processingCount}</span>
                   </div>
                 )}
                 {rejectedCount > 0 && (
@@ -445,7 +450,7 @@ export const ActivityCard = memo(function ActivityCard({
               className={cn(
                 "size-1.5 rounded-full shrink-0",
                 processingCount > 0
-                  ? "bg-amber-500 motion-safe:animate-pulse motion-reduce:animate-none"
+                  ? "bg-warning motion-safe:animate-pulse motion-reduce:animate-none"
                   : completedCount > 0
                   ? "bg-brand-500"
                   : "bg-muted-foreground/50"
@@ -496,7 +501,7 @@ export const ActivityCard = memo(function ActivityCard({
                 variant: isFullyCollected ? "default" : "secondary",
                 size: "sm",
               }),
-              "h-10 sm:h-8 min-h-[40px] sm:min-h-[36px] px-2 text-xs font-semibold rounded-lg shadow-2xs cursor-pointer group/btn w-full justify-center"
+              "h-10 sm:h-8 min-h-[40px] sm:min-h-[36px] px-2 text-xs font-semibold rounded-lg shadow-warm-sm cursor-pointer group/btn w-full justify-center"
             )}
             title={isFullyCollected ? "Review completed submissions" : "View submissions for this activity"}
             aria-label={
@@ -507,7 +512,7 @@ export const ActivityCard = memo(function ActivityCard({
           >
             <Inbox className="size-3.5 mr-1.5 shrink-0" />
             <span className="truncate">{isFullyCollected ? "Review" : "Submissions"}</span>
-            <span className="ml-1 text-xs transition-transform group-hover/btn:translate-x-0.5 shrink-0">
+            <span className="ml-1 text-xs transition-transform group-hover/btn:translate-x-0.5 motion-reduce:transform-none shrink-0">
               &rarr;
             </span>
           </Link>
@@ -516,3 +521,4 @@ export const ActivityCard = memo(function ActivityCard({
     </div>
   );
 });
+
