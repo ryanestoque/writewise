@@ -132,7 +132,7 @@ export function WorksheetImageInspector({
     setIsLoupeActive((prev) => {
       const next = !prev;
       setAccessibilityNotice(
-        next ? "Stroke magnifying loupe enabled" : "Stroke magnifying loupe disabled"
+        next ? "Stroke magnifier enabled" : "Stroke magnifier disabled"
       );
       return next;
     });
@@ -319,7 +319,7 @@ export function WorksheetImageInspector({
             <span className="hidden sm:inline">Ink Contrast</span>
           </Button>
 
-          {/* Stroke Magnifying Loupe Toggle */}
+          {/* Stroke Magnifying Tool Toggle */}
           <Button
             type="button"
             variant="ghost"
@@ -332,11 +332,11 @@ export function WorksheetImageInspector({
                 : "text-muted-foreground hover:text-foreground"
             )}
             aria-pressed={isLoupeActive}
-            aria-label="Toggle stroke magnifying loupe (Key: L)"
-            title="Hover magnifying loupe (L)"
+            aria-label="Toggle stroke magnify (Key: L)"
+            title="Hover to magnify handwriting strokes (L)"
           >
             <Search className="size-3.5" aria-hidden="true" />
-            <span className="hidden sm:inline">Loupe</span>
+            <span className="hidden sm:inline">Magnify</span>
           </Button>
         </div>
 
@@ -560,7 +560,7 @@ export function WorksheetImageInspector({
       {/* Desktop Keyboard Shortcuts Legend */}
       <div className="hidden sm:flex items-center justify-between text-[11px] text-muted-foreground px-1 flex-wrap gap-1">
         <span>
-          Shortcuts: <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">+</kbd>/<kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">-</kbd> zoom &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">L</kbd> loupe &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">C</kbd> contrast &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">0</kbd> reset
+          Shortcuts: <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">+</kbd> / <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">-</kbd> zoom &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">L</kbd> magnify &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">C</kbd> contrast &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">0</kbd> reset
         </span>
         {zoomScale > 1 && (
           <span className="font-medium text-brand-700 dark:text-brand-300 text-[11px]">

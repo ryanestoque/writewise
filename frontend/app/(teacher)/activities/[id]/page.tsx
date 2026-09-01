@@ -1021,17 +1021,26 @@ export default function ActivityDetailPage({
   // Dialog navigation flat list
   const activeDialogSubmissionsList = useMemo(() => {
     if (viewMode === "grouped") {
-      return filteredAndSortedGroups.map((g) => g.latestSubmission);
+      return filteredAndSortedGroups.map(
+        (g) => attemptOverrides.get(g.studentId) ?? g.latestSubmission
+      );
     }
     return filteredAndSortedSubmissions;
-  }, [viewMode, filteredAndSortedGroups, filteredAndSortedSubmissions]);
+  }, [viewMode, filteredAndSortedGroups, attemptOverrides, filteredAndSortedSubmissions]);
 
   const currentSubmissionIndex = useMemo(() => {
     if (!selectedSubmission) return -1;
-    return activeDialogSubmissionsList.findIndex(
+    const directIdx = activeDialogSubmissionsList.findIndex(
       (s) => s.id === selectedSubmission.id
     );
-  }, [activeDialogSubmissionsList, selectedSubmission]);
+    if (directIdx >= 0) return directIdx;
+    if (viewMode === "grouped") {
+      return filteredAndSortedGroups.findIndex(
+        (g) => g.studentId === selectedSubmission.student_id
+      );
+    }
+    return -1;
+  }, [activeDialogSubmissionsList, selectedSubmission, viewMode, filteredAndSortedGroups]);
 
   const handleToggleArchive = useCallback(() => {
     if (!activity) return;

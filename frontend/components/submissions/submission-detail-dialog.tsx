@@ -564,11 +564,11 @@ function ManualRubricEntryForm({
   ) => {
     let targetOptionIdx: number | null = null;
 
-    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+    if (e.key === "ArrowDown") {
       e.preventDefault();
       e.stopPropagation();
       targetOptionIdx = (currentOptionIdx + 1) % RUBRIC_BANDS.length;
-    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+    } else if (e.key === "ArrowUp") {
       e.preventDefault();
       e.stopPropagation();
       targetOptionIdx =
@@ -1137,12 +1137,12 @@ function SubmissionDetailDialogContent({
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
-        e.target instanceof HTMLSelectElement ||
-        (e.target instanceof HTMLElement &&
-          e.target.closest("[role='radiogroup']")) ||
-        (e.target instanceof HTMLElement &&
-          e.target.closest("[data-inspector-container]"))
+        e.target instanceof HTMLSelectElement
       ) {
+        return;
+      }
+
+      if (e.defaultPrevented) {
         return;
       }
 
