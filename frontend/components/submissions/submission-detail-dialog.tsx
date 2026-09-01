@@ -256,98 +256,98 @@ const RUBRIC_BANDS: Array<{
   badgeClass: string;
   dotColor: string;
 }> = [
-  {
-    band: "needs_improvement",
-    label: "Needs Improvement",
-    shortLabel: "Needs Imp.",
-    shortcutKey: "1",
-    score: "12.5%",
-    activeClass:
-      "bg-[#b6754a]/15 dark:bg-[#b6754a]/30 text-[#733512] dark:text-[#f3c8aa] border-[#b6754a] ring-2 ring-[#b6754a]/40 shadow-xs font-semibold",
-    badgeClass:
-      "bg-[#b6754a]/15 text-[#733512] dark:text-[#f3c8aa] border-[#b6754a]/40",
-    dotColor: "bg-[#b6754a]",
-  },
-  {
-    band: "developing",
-    label: "Developing",
-    shortLabel: "Developing",
-    shortcutKey: "2",
-    score: "37.5%",
-    activeClass:
-      "bg-[#c9a227]/15 dark:bg-[#c9a227]/30 text-[#6e4e00] dark:text-[#fae59a] border-[#c9a227] ring-2 ring-[#c9a227]/40 shadow-xs font-semibold",
-    badgeClass:
-      "bg-[#c9a227]/15 text-[#6e4e00] dark:text-[#fae59a] border-[#c9a227]/40",
-    dotColor: "bg-[#c9a227]",
-  },
-  {
-    band: "satisfactory",
-    label: "Satisfactory",
-    shortLabel: "Satisfactory",
-    shortcutKey: "3",
-    score: "62.5%",
-    activeClass:
-      "bg-[#7c9b6e]/15 dark:bg-[#7c9b6e]/30 text-[#2c4e22] dark:text-[#c4deba] border-[#7c9b6e] ring-2 ring-[#7c9b6e]/40 shadow-xs font-semibold",
-    badgeClass:
-      "bg-[#7c9b6e]/15 text-[#2c4e22] dark:text-[#c4deba] border-[#7c9b6e]/40",
-    dotColor: "bg-[#7c9b6e]",
-  },
-  {
-    band: "excellent",
-    label: "Excellent",
-    shortLabel: "Excellent",
-    shortcutKey: "4",
-    score: "87.5%",
-    activeClass:
-      "bg-brand-100 dark:bg-brand-950/80 text-brand-950 dark:text-brand-200 border-brand-500 dark:border-brand-400 ring-2 ring-brand-500/40 shadow-xs font-semibold",
-    badgeClass:
-      "bg-brand-50 text-brand-800 dark:bg-brand-950/80 dark:text-brand-300 border-brand-300/60",
-    dotColor: "bg-brand-600 dark:bg-brand-400",
-  },
-];
+    {
+      band: "needs_improvement",
+      label: "Needs Improvement",
+      shortLabel: "Needs Imp.",
+      shortcutKey: "1",
+      score: "12.5%",
+      activeClass:
+        "bg-[#b6754a]/15 dark:bg-[#b6754a]/30 text-[#733512] dark:text-[#f3c8aa] border-[#b6754a] ring-2 ring-[#b6754a]/40 shadow-xs font-semibold",
+      badgeClass:
+        "bg-[#b6754a]/15 text-[#733512] dark:text-[#f3c8aa] border-[#b6754a]/40",
+      dotColor: "bg-[#b6754a]",
+    },
+    {
+      band: "developing",
+      label: "Developing",
+      shortLabel: "Developing",
+      shortcutKey: "2",
+      score: "37.5%",
+      activeClass:
+        "bg-[#c9a227]/15 dark:bg-[#c9a227]/30 text-[#6e4e00] dark:text-[#fae59a] border-[#c9a227] ring-2 ring-[#c9a227]/40 shadow-xs font-semibold",
+      badgeClass:
+        "bg-[#c9a227]/15 text-[#6e4e00] dark:text-[#fae59a] border-[#c9a227]/40",
+      dotColor: "bg-[#c9a227]",
+    },
+    {
+      band: "satisfactory",
+      label: "Satisfactory",
+      shortLabel: "Satisfactory",
+      shortcutKey: "3",
+      score: "62.5%",
+      activeClass:
+        "bg-[#7c9b6e]/15 dark:bg-[#7c9b6e]/30 text-[#2c4e22] dark:text-[#c4deba] border-[#7c9b6e] ring-2 ring-[#7c9b6e]/40 shadow-xs font-semibold",
+      badgeClass:
+        "bg-[#7c9b6e]/15 text-[#2c4e22] dark:text-[#c4deba] border-[#7c9b6e]/40",
+      dotColor: "bg-[#7c9b6e]",
+    },
+    {
+      band: "excellent",
+      label: "Excellent",
+      shortLabel: "Excellent",
+      shortcutKey: "4",
+      score: "87.5%",
+      activeClass:
+        "bg-brand-100 dark:bg-brand-950/80 text-brand-950 dark:text-brand-200 border-brand-500 dark:border-brand-400 ring-2 ring-brand-500/40 shadow-xs font-semibold",
+      badgeClass:
+        "bg-brand-50 text-brand-800 dark:bg-brand-950/80 dark:text-brand-300 border-brand-300/60",
+      dotColor: "bg-brand-600 dark:bg-brand-400",
+    },
+  ];
 
 const RUBRIC_CRITERIA: Array<{
   key:
-    | "letter_formation_band"
-    | "size_consistency_band"
-    | "spacing_band"
-    | "slant_band"
-    | "baseline_alignment_band";
+  | "letter_formation_band"
+  | "size_consistency_band"
+  | "spacing_band"
+  | "slant_band"
+  | "baseline_alignment_band";
   name: string;
   shortName: string;
   hint: string;
 }> = [
-  {
-    key: "letter_formation_band",
-    name: "1. Letter Formation",
-    shortName: "Letter Formation",
-    hint: "Proper cursive loops and complete stroke closures",
-  },
-  {
-    key: "size_consistency_band",
-    name: "2. Size Consistency",
-    shortName: "Size Consistency",
-    hint: "Proportion and height across 3-line penmanship ruling",
-  },
-  {
-    key: "spacing_band",
-    name: "3. Spacing",
-    shortName: "Spacing",
-    hint: "Inter-word rhythm and character separation spacing",
-  },
-  {
-    key: "slant_band",
-    name: "4. Slant Angle",
-    shortName: "Slant Angle",
-    hint: "Uniform forward slant tilt (target 60°–68° angle)",
-  },
-  {
-    key: "baseline_alignment_band",
-    name: "5. Baseline Alignment",
-    shortName: "Baseline Alignment",
-    hint: "Letters resting stably along bottom ruling baseline",
-  },
-];
+    {
+      key: "letter_formation_band",
+      name: "1. Letter Formation",
+      shortName: "Letter Formation",
+      hint: "Proper cursive loops and complete stroke closures",
+    },
+    {
+      key: "size_consistency_band",
+      name: "2. Size Consistency",
+      shortName: "Size Consistency",
+      hint: "Proportion and height across 3-line penmanship ruling",
+    },
+    {
+      key: "spacing_band",
+      name: "3. Spacing",
+      shortName: "Spacing",
+      hint: "Inter-word rhythm and character separation spacing",
+    },
+    {
+      key: "slant_band",
+      name: "4. Slant Angle",
+      shortName: "Slant Angle",
+      hint: "Uniform forward slant tilt (target 60°–68° angle)",
+    },
+    {
+      key: "baseline_alignment_band",
+      name: "5. Baseline Alignment",
+      shortName: "Baseline Alignment",
+      hint: "Letters resting stably along bottom ruling baseline",
+    },
+  ];
 
 function getBandMeta(band?: ScoreBand | string | null) {
   return (
@@ -413,7 +413,7 @@ function ManualRubricEntryForm({
 
   const formRef = useRef<HTMLDivElement>(null);
   const activeCriterionIndexRef = useRef(activeCriterionIndex);
-  const handleSubmitRubricRef = useRef<() => void>(() => {});
+  const handleSubmitRubricRef = useRef<() => void>(() => { });
 
   useEffect(() => {
     activeCriterionIndexRef.current = activeCriterionIndex;
@@ -457,7 +457,7 @@ function ManualRubricEntryForm({
           const errorObj = err as { message?: string };
           setSubmitErrorMsg(
             errorObj?.message ||
-              "Failed to submit manual rubric score. Please try again."
+            "Failed to submit manual rubric score. Please try again."
           );
         },
       }
@@ -636,11 +636,10 @@ function ManualRubricEntryForm({
             <button
               type="button"
               onClick={() => setMobileLayoutMode("stepper")}
-              className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors cursor-pointer min-h-[36px] flex items-center gap-1 touch-manipulation ${
-                mobileLayoutMode === "stepper"
+              className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors cursor-pointer min-h-[36px] flex items-center gap-1 touch-manipulation ${mobileLayoutMode === "stepper"
                   ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
               aria-pressed={mobileLayoutMode === "stepper"}
               title="Focus Stepper Mode (1 criterion at a time)"
             >
@@ -650,11 +649,10 @@ function ManualRubricEntryForm({
             <button
               type="button"
               onClick={() => setMobileLayoutMode("list")}
-              className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors cursor-pointer min-h-[36px] flex items-center gap-1 touch-manipulation ${
-                mobileLayoutMode === "list"
+              className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors cursor-pointer min-h-[36px] flex items-center gap-1 touch-manipulation ${mobileLayoutMode === "list"
                   ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
               aria-pressed={mobileLayoutMode === "list"}
               title="List Mode (show all 5 criteria)"
             >
@@ -665,11 +663,10 @@ function ManualRubricEntryForm({
 
           <Badge
             variant="outline"
-            className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 ${
-              allBandsSelected
+            className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 ${allBandsSelected
                 ? "bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300"
                 : "bg-[#c9a227]/15 text-[#6e4e00] dark:bg-[#c9a227]/25 dark:text-[#fae59a] border-[#c9a227]/40"
-            }`}
+              }`}
           >
             {selectedCount}/5 rated
           </Badge>
@@ -725,13 +722,12 @@ function ManualRubricEntryForm({
                   key={criterion.key}
                   type="button"
                   onClick={() => handleSelectCriterion(idx)}
-                  className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg border text-center transition-all cursor-pointer min-h-[40px] touch-manipulation ${
-                    isStepActive
+                  className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg border text-center transition-all cursor-pointer min-h-[40px] touch-manipulation ${isStepActive
                       ? "bg-brand-100 dark:bg-brand-950 text-brand-950 dark:text-brand-200 border-brand-500 ring-2 ring-brand-400/40 font-bold"
                       : isRated
                         ? "bg-surface dark:bg-card border-brand-200/80 dark:border-brand-900/80 text-foreground"
                         : "bg-muted/30 border-border/60 text-muted-foreground hover:border-border"
-                  }`}
+                    }`}
                   aria-label={`Step ${idx + 1}: ${criterion.shortName}${isRated ? ` (Rated: ${bandMeta.label})` : ""}`}
                   aria-current={isStepActive ? "step" : undefined}
                 >
@@ -830,11 +826,10 @@ function ManualRubricEntryForm({
                             onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
                           }
                         }}
-                        className={`flex flex-col items-center justify-center p-2.5 rounded-lg border text-center transition-all cursor-pointer min-h-[46px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${
-                          isChecked
+                        className={`flex flex-col items-center justify-center p-2.5 rounded-lg border text-center transition-all cursor-pointer min-h-[46px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
                             ? option.activeClass
                             : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-1">
                           <span className="text-[11px] font-mono font-medium text-muted-foreground">
@@ -921,9 +916,8 @@ function ManualRubricEntryForm({
 
       {/* ---------------- 5 CRITERIA LIST (Desktop always / Mobile when in List mode) ---------------- */}
       <div
-        className={`space-y-2.5 ${
-          mobileLayoutMode === "stepper" ? "hidden sm:block sm:space-y-2.5" : "space-y-2.5"
-        }`}
+        className={`space-y-2.5 ${mobileLayoutMode === "stepper" ? "hidden sm:block sm:space-y-2.5" : "space-y-2.5"
+          }`}
         role="group"
         aria-label="5-Criterion Handwriting Rubric"
       >
@@ -937,11 +931,10 @@ function ManualRubricEntryForm({
               key={criterion.key}
               role="radiogroup"
               aria-labelledby={`criterion-label-${criterion.key}`}
-              className={`space-y-1.5 p-2.5 rounded-xl border transition-all ${
-                isFocused
+              className={`space-y-1.5 p-2.5 rounded-xl border transition-all ${isFocused
                   ? "bg-muted/30 border-brand-300/80 dark:border-brand-800/80 ring-1 ring-brand-400/30 shadow-xs"
                   : "bg-muted/15 border-border/60 hover:border-border"
-              }`}
+                }`}
               onClick={() => handleSelectCriterion(idx)}
             >
               <div className="flex items-center justify-between gap-2">
@@ -1000,11 +993,10 @@ function ManualRubricEntryForm({
                           `${criterion.shortName} rated ${option.label} (${option.score}).`
                         );
                       }}
-                      className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all cursor-pointer min-h-[44px] sm:min-h-[38px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${
-                        isChecked
+                      className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all cursor-pointer min-h-[44px] sm:min-h-[38px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
                           ? option.activeClass
                           : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-1">
                         <span className="text-[11px] font-mono font-medium text-muted-foreground">
@@ -1191,11 +1183,11 @@ function SubmissionDetailDialogContent({
 
   const rejectionInfo = submission.rejection_code
     ? REJECTION_GUIDE[submission.rejection_code] ?? {
-        title: "Worksheet Assessment Issue",
-        description: `Quality check returned code: ${submission.rejection_code}`,
-        advice:
-          "Please verify that the worksheet is well-lit, in focus, and written with a clear pen or pencil.",
-      }
+      title: "Worksheet Assessment Issue",
+      description: `Quality check returned code: ${submission.rejection_code}`,
+      advice:
+        "Please verify that the worksheet is well-lit, in focus, and written with a clear pen or pencil.",
+    }
     : null;
 
   const measurement = submission.measurement;
@@ -1204,12 +1196,12 @@ function SubmissionDetailDialogContent({
 
   const hasCalibratedScores = Boolean(
     measurement &&
-      (measurement.composite_score !== null ||
-        measurement.letter_formation_score !== null ||
-        measurement.size_consistency_score !== null ||
-        measurement.spacing_score !== null ||
-        measurement.slant_score !== null ||
-        measurement.baseline_alignment_score !== null)
+    (measurement.composite_score !== null ||
+      measurement.letter_formation_score !== null ||
+      measurement.size_consistency_score !== null ||
+      measurement.spacing_score !== null ||
+      measurement.slant_score !== null ||
+      measurement.baseline_alignment_score !== null)
   );
 
   // Memoize criteria lists to prevent re-computation on every render
@@ -1251,10 +1243,10 @@ function SubmissionDetailDialogContent({
         primaryValue:
           measurement?.letter_formation_mean != null
             ? formatMetric(
-                measurement.letter_formation_mean,
-                measurement.letter_formation_std,
-                "%"
-              )
+              measurement.letter_formation_mean,
+              measurement.letter_formation_std,
+              "%"
+            )
             : "Awaiting CNN",
         description:
           "Evaluates loop closures, ascender/descender balance, and cursive curvature.",
@@ -1318,11 +1310,10 @@ function SubmissionDetailDialogContent({
         name: "Slant Angle",
         primaryValue:
           measurement?.slant_mean != null
-            ? `${Number(measurement.slant_mean).toFixed(1)}°${
-                measurement.slant_std != null
-                  ? ` ± ${Number(measurement.slant_std).toFixed(1)}°`
-                  : ""
-              }`
+            ? `${Number(measurement.slant_mean).toFixed(1)}°${measurement.slant_std != null
+              ? ` ± ${Number(measurement.slant_std).toFixed(1)}°`
+              : ""
+            }`
             : "—",
         description:
           "Average stroke tilt relative to vertical guide perpendicular (Target: 60°–68° / ~22° tilt).",
@@ -1417,23 +1408,14 @@ function SubmissionDetailDialogContent({
                 </span>
                 <Badge
                   variant="outline"
-                  className={`text-xs font-semibold px-2.5 py-0.5 inline-flex items-center gap-1.5 ${
+                  className={`text-xs font-semibold px-2.5 py-0.5 inline-flex items-center ${
                     submission.status === "completed"
                       ? "bg-brand-50 text-brand-800 dark:bg-brand-950/80 dark:text-brand-300 border-brand-300/60"
                       : submission.status === "processing"
-                        ? "bg-[#c9a227]/15 text-[#6e4e00] dark:bg-[#c9a227]/25 dark:text-[#fae59a] border-[#c9a227]/40"
-                        : "bg-destructive/10 text-destructive border-destructive/20"
+                        ? "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200 dark:border-amber-900"
+                        : "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border-rose-200 dark:border-rose-900"
                   }`}
                 >
-                  <span
-                    className={`size-1.5 rounded-full ${
-                      submission.status === "completed"
-                        ? "bg-brand-600 dark:bg-brand-400"
-                        : submission.status === "processing"
-                          ? "bg-[#c9a227] motion-safe:animate-pulse"
-                          : "bg-destructive"
-                    }`}
-                  />
                   {submission.status === "completed"
                     ? "Completed"
                     : submission.status === "processing"
@@ -1698,11 +1680,10 @@ function SubmissionDetailDialogContent({
                                 onClick={() =>
                                   setSelectedCriterion(c.name)
                                 }
-                                className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 ${
-                                  isSelected
+                                className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 ${isSelected
                                     ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs"
                                     : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
-                                }`}
+                                  }`}
                               >
                                 <div className="min-w-0 pr-2">
                                   <div className="flex items-center gap-1.5">
@@ -1771,11 +1752,10 @@ function SubmissionDetailDialogContent({
                       <button
                         type="button"
                         onClick={() => setPhase1Tab("rubric")}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation ${
-                          phase1Tab === "rubric"
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation ${phase1Tab === "rubric"
                             ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                             : "text-muted-foreground hover:text-foreground"
-                        }`}
+                          }`}
                       >
                         <Award className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                         <span>Rubric Rating</span>
@@ -1794,11 +1774,10 @@ function SubmissionDetailDialogContent({
                       <button
                         type="button"
                         onClick={() => setPhase1Tab("metrics")}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation ${
-                          phase1Tab === "metrics"
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation ${phase1Tab === "metrics"
                             ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                             : "text-muted-foreground hover:text-foreground"
-                        }`}
+                          }`}
                       >
                         <Binary className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                         <span>CV Metrics</span>
@@ -1841,7 +1820,7 @@ function SubmissionDetailDialogContent({
                             <div className="space-y-1.5 pt-1">
                               {RUBRIC_CRITERIA.map((criterion) => {
                                 const bandValue =
-                                   submission.manual_score?.[criterion.key];
+                                  submission.manual_score?.[criterion.key];
                                 const bandMeta = getBandMeta(bandValue);
                                 return (
                                   <div
@@ -1914,11 +1893,10 @@ function SubmissionDetailDialogContent({
                                 key={c.name}
                                 type="button"
                                 onClick={() => setSelectedCriterion(c.name)}
-                                className={`w-full flex flex-col p-3 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 ${
-                                  isSelected
+                                className={`w-full flex flex-col p-3 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 ${isSelected
                                     ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/40"
                                     : "bg-surface dark:bg-card border-border/70 hover:border-brand-300 dark:hover:border-brand-800 hover:bg-muted/30"
-                                }`}
+                                  }`}
                               >
                                 <div className="w-full flex items-center justify-between gap-2">
                                   <div className="flex items-center gap-1.5 min-w-0">

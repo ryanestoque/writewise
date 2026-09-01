@@ -288,8 +288,8 @@ const statusConfig = {
     label: "Rejected",
     icon: AlertCircle,
     className:
-      "bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive border-destructive/20 dark:border-destructive/30",
-    dotClass: "bg-destructive",
+      "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border-rose-200 dark:border-rose-900",
+    dotClass: "bg-rose-500",
   },
 } as const;
 
@@ -392,17 +392,6 @@ const SubmissionCard = memo(function SubmissionCard({
             </div>
           )}
         </button>
-
-        {/* Floating status pill */}
-        <div className="absolute top-2.5 right-2.5 z-10 pointer-events-none" aria-hidden="true">
-          <Badge
-            variant="outline"
-            className={`text-xs font-semibold px-2 py-0.5 shadow-xs backdrop-blur-xs ${config.className}`}
-          >
-            <span className={`size-1.5 rounded-full mr-1 ${config.dotClass}`} />
-            {config.label}
-          </Badge>
-        </div>
 
         {/* Attempt history switcher if multiple attempts exist */}
         {hasMultipleAttempts && (

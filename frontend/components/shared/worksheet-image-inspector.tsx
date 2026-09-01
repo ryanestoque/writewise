@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Maximize2,
   Minimize2,
+  Eye,
   ZoomIn,
   ZoomOut,
   RotateCcw,
@@ -288,7 +289,7 @@ export function WorksheetImageInspector({
       {headerLabel && (
         <div className="flex items-center justify-between px-0.5">
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            {headerIcon}
+            {headerIcon ?? <Eye className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />}
             <span>{headerLabel}</span>
           </span>
         </div>
@@ -559,7 +560,7 @@ export function WorksheetImageInspector({
       {/* Desktop Keyboard Shortcuts Legend */}
       <div className="hidden sm:flex items-center justify-between text-[11px] text-muted-foreground px-1 flex-wrap gap-1">
         <span>
-          Shortcuts: <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">+</kbd>{" "}/{" "}<kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">-</kbd> zoom &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">L</kbd> loupe &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">C</kbd> contrast &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">0</kbd> reset
+          Shortcuts: <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">+</kbd>/<kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">-</kbd> zoom &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">L</kbd> loupe &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">C</kbd> contrast &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">0</kbd> reset
         </span>
         {zoomScale > 1 && (
           <span className="font-medium text-brand-700 dark:text-brand-300 text-[11px]">
