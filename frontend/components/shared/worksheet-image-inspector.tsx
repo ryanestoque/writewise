@@ -40,6 +40,10 @@ export interface WorksheetImageInspectorProps {
   onToggleFrameExpanded?: () => void;
   /** Whether to show the frame height expansion toggle button */
   allowFrameToggle?: boolean;
+  /** Whether an error occurred loading the image */
+  isError?: boolean;
+  /** Callback when user clicks retry after an image load failure */
+  onRetry?: () => void;
   /** Optional custom child overlay (e.g. focus badge, CV guidelines, bounding boxes) */
   children?: ReactNode;
   /** Additional container classes */
@@ -53,6 +57,8 @@ export function WorksheetImageInspector({
   imageUrl,
   altText = "Handwriting worksheet photo",
   isLoading = false,
+  isError = false,
+  onRetry,
   headerLabel = "Handwritten Worksheet",
   headerIcon,
   isFrameExpanded = false,
@@ -89,9 +95,14 @@ export function WorksheetImageInspector({
     visible: false,
   });
   const [accessibilityNotice, setAccessibilityNotice] = useState<string>("");
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
 
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const activePointerIdRef = useRef<number | null>(null);
+
+  const hasImageError = Boolean(
+    isError || (imageUrl && failedImageUrl === imageUrl)
+  );
 
   const handleZoomIn = useCallback(() => {
     setZoomScale((prev) => {
@@ -176,15 +187,19 @@ export function WorksheetImageInspector({
         const step = e.shiftKey ? 100 : 40;
         if (e.key === "ArrowUp") {
           e.preventDefault();
+          e.stopImmediatePropagation();
           handleKeyPan(0, step);
         } else if (e.key === "ArrowDown") {
           e.preventDefault();
+          e.stopImmediatePropagation();
           handleKeyPan(0, -step);
         } else if (e.key === "ArrowLeft") {
           e.preventDefault();
+          e.stopImmediatePropagation();
           handleKeyPan(step, 0);
         } else if (e.key === "ArrowRight") {
           e.preventDefault();
+          e.stopImmediatePropagation();
           handleKeyPan(-step, 0);
         }
       }
@@ -204,6 +219,10 @@ export function WorksheetImageInspector({
 
   // Pointer Events for Cross-Device Touch, Stylus, and Mouse Panning
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.target instanceof HTMLElement && e.target.closest("button")) {
+      return;
+    }
+
     if (zoomScale > 1) {
       setIsDragging(true);
       activePointerIdRef.current = e.pointerId;
@@ -260,7 +279,7 @@ export function WorksheetImageInspector({
   };
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div data-inspector-container="true" className={cn("space-y-2", className)}>
       {/* Screen reader live announcement */}
       <div className="sr-only" role="status" aria-live="polite">
         {accessibilityNotice}
@@ -417,7 +436,7 @@ export function WorksheetImageInspector({
       >
         {isLoading ? (
           <Skeleton className="size-full min-h-[260px] rounded-none" />
-        ) : imageUrl ? (
+        ) : imageUrl && !hasImageError && !isError ? (
           <div
             className="size-full flex items-center justify-center p-2"
             style={{
@@ -433,6 +452,9 @@ export function WorksheetImageInspector({
               alt={altText}
               loading="lazy"
               decoding="async"
+              onError={() => {
+                if (imageUrl) setFailedImageUrl(imageUrl);
+              }}
               style={{
                 filter: isHighContrast
                   ? "contrast(1.4) brightness(0.92) saturate(0.6)"
@@ -442,14 +464,33 @@ export function WorksheetImageInspector({
             />
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground space-y-2 pointer-events-none">
-            <FileText className="size-10 text-muted-foreground/60" />
-            <p className="text-xs sm:text-sm font-medium text-foreground">
-              Worksheet photo unavailable
-            </p>
-            <p className="text-xs text-muted-foreground max-w-xs">
-              The image file could not be loaded from storage.
-            </p>
+          <div className="flex flex-col items-center justify-center p-6 text-center text-muted-foreground space-y-3 pointer-events-auto">
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground/80 border border-border/80">
+              <FileText className="size-6 stroke-[1.5]" aria-hidden="true" />
+            </div>
+            <div className="space-y-1 max-w-xs">
+              <p className="text-xs sm:text-sm font-semibold text-foreground">
+                Worksheet photo unavailable
+              </p>
+              <p className="text-xs text-muted-foreground leading-normal">
+                The image could not be loaded or the secure session link expired.
+              </p>
+            </div>
+            {onRetry && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setFailedImageUrl(null);
+                  onRetry();
+                }}
+                className="min-h-[36px] h-8 px-3 text-xs gap-1.5 cursor-pointer rounded-lg border-border hover:bg-muted/80 text-foreground shadow-2xs"
+              >
+                <RotateCcw className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                <span>Retry loading photo</span>
+              </Button>
+            )}
           </div>
         )}
 
@@ -492,14 +533,16 @@ export function WorksheetImageInspector({
         {(zoomScale > 1 || panOffset.x !== 0 || panOffset.y !== 0) && (
           <button
             type="button"
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
               handleResetZoom();
             }}
-            className="absolute bottom-2.5 right-2.5 z-10 bg-background/95 dark:bg-card/95 text-foreground px-2.5 py-1 rounded-lg border border-border shadow-xs text-[11px] font-medium flex items-center gap-1 hover:bg-muted transition-colors cursor-pointer"
+            className="absolute bottom-2.5 right-2.5 z-10 bg-background/95 dark:bg-card/95 text-foreground px-2.5 py-1 rounded-lg border border-border shadow-xs text-[11px] font-medium flex items-center gap-1 hover:bg-muted transition-colors cursor-pointer min-h-[32px] touch-manipulation"
             title="Reset zoom & pan (Key: 0)"
           >
-            <RotateCcw className="size-3 text-muted-foreground" />
+            <RotateCcw className="size-3 text-muted-foreground" aria-hidden="true" />
             <span>Reset view</span>
           </button>
         )}

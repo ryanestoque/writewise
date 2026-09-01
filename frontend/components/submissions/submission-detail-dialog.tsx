@@ -44,6 +44,7 @@ import {
   Keyboard,
   HelpCircle,
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface SubmissionDetailDialogProps {
   submission: Submission | null;
@@ -349,6 +350,8 @@ interface ManualRubricEntryFormProps {
   } | null;
   onSuccess?: () => void;
   onFocusCriterion?: (criterionName: string | null) => void;
+  canGoNext?: boolean;
+  onAdvanceNext?: () => void;
 }
 
 function ManualRubricEntryForm({
@@ -356,6 +359,8 @@ function ManualRubricEntryForm({
   initialScores,
   onSuccess,
   onFocusCriterion,
+  canGoNext,
+  onAdvanceNext,
 }: ManualRubricEntryFormProps) {
   const { mutate: submitManualScore, isPending: isSubmittingScore } =
     useSubmitManualScore();
@@ -375,8 +380,10 @@ function ManualRubricEntryForm({
   });
 
   const [activeCriterionIndex, setActiveCriterionIndex] = useState<number>(0);
+  const [autoAdvance, setAutoAdvance] = useState<boolean>(true);
   const [submitErrorMsg, setSubmitErrorMsg] = useState<string | null>(null);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [accessibilityAnnouncement, setAccessibilityAnnouncement] = useState<string>("");
 
   const formRef = useRef<HTMLDivElement>(null);
   const activeCriterionIndexRef = useRef(activeCriterionIndex);
@@ -413,6 +420,12 @@ function ManualRubricEntryForm({
       {
         onSuccess: () => {
           onSuccess?.();
+          if (autoAdvance && canGoNext && onAdvanceNext) {
+            toast.success("Rubric recorded — advancing to next student");
+            onAdvanceNext();
+          } else {
+            toast.success("Rubric assessment recorded");
+          }
         },
         onError: (err: unknown) => {
           const errorObj = err as { message?: string };
@@ -423,7 +436,17 @@ function ManualRubricEntryForm({
         },
       }
     );
-  }, [allBandsSelected, isSubmittingScore, submissionId, rubricScores, submitManualScore, onSuccess]);
+  }, [
+    allBandsSelected,
+    isSubmittingScore,
+    submissionId,
+    rubricScores,
+    submitManualScore,
+    onSuccess,
+    autoAdvance,
+    canGoNext,
+    onAdvanceNext,
+  ]);
 
   useEffect(() => {
     handleSubmitRubricRef.current = handleSubmitRubric;
@@ -451,8 +474,8 @@ function ManualRubricEntryForm({
       // Keys 1 - 4 for fast rubric rating
       if (["1", "2", "3", "4"].includes(e.key)) {
         const bandIndex = parseInt(e.key, 10) - 1;
-        const targetBand = RUBRIC_BANDS[bandIndex]?.band;
-        if (!targetBand) return;
+        const targetOption = RUBRIC_BANDS[bandIndex];
+        if (!targetOption) return;
 
         const currentCriterion =
           RUBRIC_CRITERIA[activeCriterionIndexRef.current];
@@ -460,17 +483,35 @@ function ManualRubricEntryForm({
 
         e.preventDefault();
 
-        // Update score
+        // Update score & auto-clear stale submit error
         setRubricScores((prev) => ({
           ...prev,
-          [currentCriterion.key]: targetBand,
+          [currentCriterion.key]: targetOption.band,
         }));
+        setSubmitErrorMsg(null);
 
         // Auto-advance to the next criterion
         const nextIndex =
           (activeCriterionIndexRef.current + 1) % RUBRIC_CRITERIA.length;
         setActiveCriterionIndex(nextIndex);
         onFocusCriterion?.(RUBRIC_CRITERIA[nextIndex].shortName);
+
+        // Screen reader announcement for keyboard grading
+        setAccessibilityAnnouncement(
+          `${currentCriterion.shortName} rated ${targetOption.label} (${targetOption.score}). Active criterion: ${RUBRIC_CRITERIA[nextIndex].shortName}.`
+        );
+
+        // Programmatically shift focus to the next criterion's radio group
+        setTimeout(() => {
+          const nextBtn =
+            formRef.current?.querySelector<HTMLButtonElement>(
+              `button[data-criterion="${RUBRIC_CRITERIA[nextIndex].key}"][data-band="${targetOption.band}"]`
+            ) ??
+            formRef.current?.querySelector<HTMLButtonElement>(
+              `fieldset[aria-labelledby="criterion-label-${RUBRIC_CRITERIA[nextIndex].key}"] button[role="radio"][tabindex="0"]`
+            );
+          nextBtn?.focus();
+        }, 0);
       }
     };
 
@@ -509,12 +550,17 @@ function ManualRubricEntryForm({
     }
 
     if (targetOptionIdx !== null) {
-      const targetBand = RUBRIC_BANDS[targetOptionIdx].band;
+      const targetOption = RUBRIC_BANDS[targetOptionIdx];
+      const targetBand = targetOption.band;
       setRubricScores((prev) => ({
         ...prev,
         [criterionKey]: targetBand,
       }));
+      setSubmitErrorMsg(null);
       handleSelectCriterion(criterionIdx);
+      setAccessibilityAnnouncement(
+        `${RUBRIC_CRITERIA[criterionIdx].shortName} rated ${targetOption.label} (${targetOption.score}).`
+      );
 
       // Programmatically focus the newly selected radio button
       const nextBtn = formRef.current?.querySelector<HTMLButtonElement>(
@@ -529,22 +575,28 @@ function ManualRubricEntryForm({
       ref={formRef}
       className="p-3.5 sm:p-4 rounded-xl bg-surface dark:bg-card border border-border shadow-xs space-y-3"
     >
+      {/* Screen reader live announcement region */}
+      <div className="sr-only" role="status" aria-live="polite">
+        {accessibilityAnnouncement}
+      </div>
+
       {/* Header with status counter & keyboard hint toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2.5 border-b border-border/60">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2">
-            <Award className="size-4 text-brand-600 dark:text-brand-400" />
+            <Award className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
             <h4 className="text-xs font-heading font-semibold text-foreground">
               Teacher Rubric Assessment
             </h4>
             <button
               type="button"
               onClick={() => setShowKeyboardHelp((prev) => !prev)}
-              className="text-muted-foreground hover:text-foreground transition-colors p-1.5 sm:p-1 -m-1 sm:m-0 rounded-md cursor-pointer flex items-center justify-center min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0"
+              className="text-muted-foreground hover:text-foreground transition-colors p-2 sm:p-1 rounded-lg cursor-pointer flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-7 sm:min-w-7 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
               title="Toggle Keyboard Shortcuts"
               aria-label="Toggle Keyboard Shortcuts"
+              aria-expanded={showKeyboardHelp}
             >
-              <Keyboard className="size-3.5" />
+              <Keyboard className="size-4 sm:size-3.5" aria-hidden="true" />
             </button>
           </div>
           <p className="text-[11px] text-muted-foreground">
@@ -554,7 +606,7 @@ function ManualRubricEntryForm({
 
         <Badge
           variant="outline"
-          className={`text-[10px] font-semibold px-2 py-0.5 shrink-0 self-start sm:self-auto ${
+          className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 self-start sm:self-auto ${
             allBandsSelected
               ? "bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300"
               : "bg-[#c9a227]/15 text-[#6e4e00] dark:bg-[#c9a227]/25 dark:text-[#fae59a] border-[#c9a227]/40"
@@ -568,17 +620,17 @@ function ManualRubricEntryForm({
       {showKeyboardHelp && (
         <div className="p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-[11px] text-brand-900 dark:text-brand-200 space-y-1 animate-in fade-in-50 duration-150">
           <div className="flex items-center gap-1.5 font-semibold">
-            <Keyboard className="size-3.5 text-brand-600 dark:text-brand-400" />
+            <Keyboard className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
             <span>Fast Keyboard Grading</span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 text-[10px] text-brand-800 dark:text-brand-300">
-            <div><kbd className="px-1 py-0.5 rounded bg-background border border-brand-300 font-mono font-bold">1</kbd> Needs Imp.</div>
-            <div><kbd className="px-1 py-0.5 rounded bg-background border border-brand-300 font-mono font-bold">2</kbd> Developing</div>
-            <div><kbd className="px-1 py-0.5 rounded bg-background border border-brand-300 font-mono font-bold">3</kbd> Satisfactory</div>
-            <div><kbd className="px-1 py-0.5 rounded bg-background border border-brand-300 font-mono font-bold">4</kbd> Excellent</div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px] text-brand-800 dark:text-brand-300">
+            <div><kbd className="px-1.5 py-0.5 rounded bg-background border border-brand-300 font-mono font-bold text-[11px]">1</kbd> Needs Imp.</div>
+            <div><kbd className="px-1.5 py-0.5 rounded bg-background border border-brand-300 font-mono font-bold text-[11px]">2</kbd> Developing</div>
+            <div><kbd className="px-1.5 py-0.5 rounded bg-background border border-brand-300 font-mono font-bold text-[11px]">3</kbd> Satisfactory</div>
+            <div><kbd className="px-1.5 py-0.5 rounded bg-background border border-brand-300 font-mono font-bold text-[11px]">4</kbd> Excellent</div>
           </div>
-          <p className="text-[10px] text-muted-foreground pt-0.5">
-            Pressing a number rates the active criterion and automatically advances to the next. Press <kbd className="px-1 py-0.5 rounded bg-background border border-border font-mono">Ctrl+Enter</kbd> to submit.
+          <p className="text-[11px] text-muted-foreground pt-0.5">
+            Pressing a number rates the active criterion and automatically advances to the next. Press <kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono text-[11px]">Ctrl+Enter</kbd> to submit.
           </p>
         </div>
       )}
@@ -589,7 +641,7 @@ function ManualRubricEntryForm({
           aria-live="polite"
           className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-start gap-2"
         >
-          <AlertCircle className="size-4 shrink-0 mt-0.5" />
+          <AlertCircle className="size-4 shrink-0 mt-0.5" aria-hidden="true" />
           <div className="flex-1 min-w-0">
             <span className="font-semibold block">Submission Error</span>
             <span>{submitErrorMsg}</span>
@@ -622,13 +674,13 @@ function ManualRubricEntryForm({
                 >
                   <span>{criterion.name}</span>
                   {isFocused && (
-                    <span className="text-[10px] text-brand-600 dark:text-brand-400 font-medium font-sans">
+                    <span className="text-[11px] text-brand-600 dark:text-brand-400 font-medium font-sans">
                       (Active)
                     </span>
                   )}
                 </legend>
                 {selectedBand && (
-                  <span className="text-[10px] font-mono font-semibold text-muted-foreground">
+                  <span className="text-[11px] font-mono font-semibold text-muted-foreground">
                     {getBandMeta(selectedBand).score}
                   </span>
                 )}
@@ -666,22 +718,26 @@ function ManualRubricEntryForm({
                           ...prev,
                           [criterion.key]: option.band,
                         }));
+                        setSubmitErrorMsg(null);
+                        setAccessibilityAnnouncement(
+                          `${criterion.shortName} rated ${option.label} (${option.score}).`
+                        );
                       }}
-                      className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all cursor-pointer min-h-[44px] sm:min-h-[38px] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${
+                      className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all cursor-pointer min-h-[44px] sm:min-h-[38px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${
                         isChecked
                           ? option.activeClass
                           : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
                       }`}
                     >
                       <div className="flex items-center gap-1">
-                        <span className="text-[10px] font-mono font-medium text-muted-foreground">
+                        <span className="text-[11px] font-mono font-medium text-muted-foreground">
                           [{option.shortcutKey}]
                         </span>
                         <span className="text-[11px] leading-tight font-medium">
                           {option.shortLabel}
                         </span>
                       </div>
-                      <span className="text-[10px] font-semibold text-muted-foreground/90 mt-0.5">
+                      <span className="text-[11px] font-semibold text-muted-foreground/90 mt-0.5">
                         {option.score}
                       </span>
                     </button>
@@ -694,18 +750,30 @@ function ManualRubricEntryForm({
       </div>
 
       {/* Form Submit Footer */}
-      <div className="flex items-center justify-between pt-2 border-t border-border/60">
-        <div className="text-[11px] text-muted-foreground">
+      <div className="flex items-center justify-between pt-2 border-t border-border/60 gap-2 flex-wrap">
+        <div className="text-[11px] text-muted-foreground flex items-center gap-3">
           {allBandsSelected ? (
             <span className="text-brand-700 dark:text-brand-300 font-medium flex items-center gap-1">
-              <Check className="size-3" />
+              <Check className="size-3" aria-hidden="true" />
               All 5 criteria rated
             </span>
           ) : (
             <span className="flex items-center gap-1">
-              <HelpCircle className="size-3 text-muted-foreground" />
+              <HelpCircle className="size-3 text-muted-foreground" aria-hidden="true" />
               <span>Rate all 5 to submit</span>
             </span>
+          )}
+
+          {canGoNext && (
+            <label className="hidden sm:inline-flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={autoAdvance}
+                onChange={(e) => setAutoAdvance(e.target.checked)}
+                className="size-3.5 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary"
+              />
+              <span>Auto-advance</span>
+            </label>
           )}
         </div>
 
@@ -714,16 +782,21 @@ function ManualRubricEntryForm({
           size="sm"
           disabled={!allBandsSelected || isSubmittingScore}
           onClick={handleSubmitRubric}
-          className="h-9 sm:h-8 min-h-[36px] sm:min-h-[32px] px-4 bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-semibold rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed"
+          className="h-10 sm:h-8 min-h-[44px] sm:min-h-[32px] px-4 bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-semibold rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation"
         >
           {isSubmittingScore ? (
             <>
-              <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" />
+              <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
               <span>Saving...</span>
+            </>
+          ) : canGoNext && autoAdvance ? (
+            <>
+              <CheckCheck className="size-3.5" aria-hidden="true" />
+              <span>Submit & Next</span>
             </>
           ) : (
             <>
-              <CheckCheck className="size-3.5" />
+              <CheckCheck className="size-3.5" aria-hidden="true" />
               <span>Submit Rubric</span>
             </>
           )}
@@ -759,9 +832,12 @@ function SubmissionDetailDialogContent({
   const [phase1Tab, setPhase1Tab] = useState<"rubric" | "metrics">("rubric");
   const [isEditingRubric, setIsEditingRubric] = useState(false);
 
-  const { data: imageUrl, isLoading: isImageLoading } = useSubmissionImageUrl(
-    submission.image_path ?? null
-  );
+  const {
+    data: imageUrl,
+    isLoading: isImageLoading,
+    isError: isImageError,
+    refetch: refetchImage,
+  } = useSubmissionImageUrl(submission.image_path ?? null);
 
   // Keyboard navigation for submission cycling
   useEffect(() => {
@@ -771,7 +847,9 @@ function SubmissionDetailDialogContent({
         e.target instanceof HTMLTextAreaElement ||
         e.target instanceof HTMLSelectElement ||
         (e.target instanceof HTMLElement &&
-          e.target.closest("[role='radiogroup']"))
+          e.target.closest("[role='radiogroup']")) ||
+        (e.target instanceof HTMLElement &&
+          e.target.closest("[data-inspector-container]"))
       ) {
         return;
       }
@@ -1008,7 +1086,7 @@ function SubmissionDetailDialogContent({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex size-10 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
-              <GraduationCap className="size-5" />
+              <GraduationCap className="size-5" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground flex items-center gap-2 flex-wrap">
@@ -1043,27 +1121,33 @@ function SubmissionDetailDialogContent({
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-3 flex-wrap">
                 <span className="inline-flex items-center gap-1">
-                  <User className="size-3" />
+                  <User className="size-3" aria-hidden="true" />
                   Uploaded by{" "}
                   {submission.uploader_role === "parent" ? "Parent" : "Teacher"}
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <Clock className="size-3" />
-                  {formatDateFull(submission.created_at)}
+                  <Clock className="size-3" aria-hidden="true" />
+                  <time
+                    dateTime={submission.created_at}
+                    title={formatDateFull(submission.created_at)}
+                    className="tabular-nums"
+                  >
+                    {formatDateFull(submission.created_at)}
+                  </time>
                 </span>
                 {compositeScore !== undefined && compositeScore !== null ? (
                   <span className="inline-flex items-center gap-1">
-                    <Award className="size-3" />
-                    Composite score: {Math.round(compositeScore)}%
+                    <Award className="size-3" aria-hidden="true" />
+                    Composite score: <span className="tabular-nums font-semibold">{Math.round(compositeScore)}%</span>
                   </span>
                 ) : submission.manual_score ? (
                   <span className="inline-flex items-center gap-1 text-brand-700 dark:text-brand-300 font-medium">
-                    <ShieldCheck className="size-3" />
+                    <ShieldCheck className="size-3" aria-hidden="true" />
                     Rubric Graded
                   </span>
                 ) : submission.status === "completed" ? (
                   <span className="inline-flex items-center gap-1 text-brand-700 dark:text-brand-300 font-medium">
-                    <ScanLine className="size-3" />
+                    <ScanLine className="size-3" aria-hidden="true" />
                     Worksheet Processed · Rubric Evaluation Needed
                   </span>
                 ) : null}
@@ -1088,7 +1172,7 @@ function SubmissionDetailDialogContent({
                   aria-label="Previous student (Key: J or ←)"
                   title="Previous student (← / J)"
                 >
-                  <ChevronLeft className="size-4" />
+                  <ChevronLeft className="size-4" aria-hidden="true" />
                 </Button>
                 <span className="text-xs font-semibold px-2 text-foreground select-none">
                   {(currentIndex ?? 0) + 1} / {submissions.length}
@@ -1106,7 +1190,7 @@ function SubmissionDetailDialogContent({
                   aria-label="Next student (Key: K or →)"
                   title="Next student (→ / K)"
                 >
-                  <ChevronRight className="size-4" />
+                  <ChevronRight className="size-4" aria-hidden="true" />
                 </Button>
               </div>
             )}
@@ -1118,7 +1202,7 @@ function SubmissionDetailDialogContent({
                 onClick={handleReupload}
                 className="h-9 sm:h-8 min-h-[40px] sm:min-h-[32px] bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-medium rounded-lg sm:rounded-xl gap-1.5 shadow-xs shrink-0 cursor-pointer"
               >
-                <Upload className="size-3.5" />
+                <Upload className="size-3.5" aria-hidden="true" />
                 Re-upload
               </Button>
             )}
@@ -1136,13 +1220,13 @@ function SubmissionDetailDialogContent({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={imageUrl}
-                  alt="Thumbnail"
+                  alt={`Worksheet thumbnail preview for ${submission.student?.full_name ?? "student"}`}
                   width={28}
                   height={28}
                   className="size-full object-cover"
                 />
               ) : (
-                <FileText className="size-full p-1 text-muted-foreground" />
+                <FileText className="size-full p-1 text-muted-foreground" aria-hidden="true" />
               )}
             </div>
             <span className="text-xs font-medium text-foreground truncate">
@@ -1154,16 +1238,16 @@ function SubmissionDetailDialogContent({
             variant="outline"
             size="sm"
             onClick={() => setIsZoomed((prev) => !prev)}
-            className="min-h-[36px] sm:min-h-0 h-8 sm:h-7 px-2.5 text-xs gap-1 cursor-pointer shrink-0"
+            className="min-h-[40px] min-w-[68px] sm:min-h-0 h-9 sm:h-7 px-3 text-xs gap-1.5 cursor-pointer shrink-0 touch-manipulation"
           >
             {isZoomed ? (
               <>
-                <Minimize2 className="size-3" />
+                <Minimize2 className="size-3" aria-hidden="true" />
                 <span>Fit</span>
               </>
             ) : (
               <>
-                <Maximize2 className="size-3" />
+                <Maximize2 className="size-3" aria-hidden="true" />
                 <span>Zoom</span>
               </>
             )}
@@ -1177,40 +1261,46 @@ function SubmissionDetailDialogContent({
               imageUrl={imageUrl}
               altText={`Handwriting worksheet submitted for ${submission.student?.full_name ?? "student"}`}
               isLoading={isImageLoading}
+              isError={isImageError}
+              onRetry={() => {
+                refetchImage();
+              }}
               headerLabel="Handwriting Worksheet"
               isFrameExpanded={isZoomed}
               onToggleFrameExpanded={() => setIsZoomed((prev) => !prev)}
               allowFrameToggle={true}
-              aspectRatioClass="aspect-4/3 sm:aspect-3/2 max-h-[420px]"
-              expandedAspectRatioClass="min-h-[460px] max-h-[560px]"
+              aspectRatioClass="aspect-4/3 sm:aspect-3/2 max-h-[400px]"
+              expandedAspectRatioClass="min-h-[440px] max-h-[540px]"
             >
               {/* Selected criterion overlay badge */}
               {selectedCriterion && (
                 <div className="absolute top-2.5 left-2.5 bg-background/90 dark:bg-card/90 backdrop-blur-xs px-2.5 py-1 rounded-lg border border-brand-200 dark:border-brand-900 shadow-xs text-xs font-medium text-brand-700 dark:text-brand-300 flex items-center gap-1.5 pointer-events-none z-10">
-                  <Eye className="size-3.5 text-brand-600 dark:text-brand-400" />
+                  <Eye className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                   <span>Focus: {selectedCriterion}</span>
                 </div>
               )}
             </WorksheetImageInspector>
 
-            {/* Target prompt & Keyboard legend */}
-            <div className="space-y-1.5">
+            {/* Unified Captioned Sub-Bar: Target prompt & Keyboard Shortcuts */}
+            <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs space-y-1.5">
               {activityTargetText && (
-                <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs text-muted-foreground">
-                  <span className="font-semibold text-foreground mr-1">
-                    Target prompt:
+                <div className="flex items-center gap-1.5 text-muted-foreground flex-wrap">
+                  <span className="font-semibold text-foreground">Target prompt:</span>
+                  <span className="font-medium text-foreground bg-background/80 dark:bg-card/80 px-2 py-0.5 rounded-md border border-border/60">
+                    &ldquo;{activityTargetText}&rdquo;
                   </span>
-                  &ldquo;{activityTargetText}&rdquo;
                 </div>
               )}
 
-              {hasMultipleSubmissions && (
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5 flex-wrap gap-1">
+                {hasMultipleSubmissions ? (
                   <span>
-                    Navigate: <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">J</kbd>/<kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">&larr;</kbd> prev &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">K</kbd>/<kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">&rarr;</kbd> next
+                    Navigate students: <kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono text-[10px]">J</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono text-[10px]">&larr;</kbd> prev &middot; <kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono text-[10px]">K</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono text-[10px]">&rarr;</kbd> next
                   </span>
-                </div>
-              )}
+                ) : (
+                  <span>Single student submission review</span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1220,7 +1310,7 @@ function SubmissionDetailDialogContent({
             {submission.status === "rejected" && (
               <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-destructive/10 border border-destructive/20 space-y-3">
                 <div className="flex items-center gap-2 text-destructive font-semibold text-sm">
-                  <AlertCircle className="size-4 shrink-0" />
+                  <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
                   <span>Submission Rejected by OpenCV Quality Gate</span>
                 </div>
                 {rejectionInfo && (
@@ -1247,7 +1337,7 @@ function SubmissionDetailDialogContent({
                   onClick={handleReupload}
                   className="w-full h-10 min-h-[44px] sm:min-h-[40px] bg-primary hover:bg-brand-700 text-primary-foreground text-xs sm:text-sm font-medium rounded-lg sm:rounded-xl gap-2 shadow-xs cursor-pointer"
                 >
-                  <Camera className="size-4" />
+                  <Camera className="size-4" aria-hidden="true" />
                   Take & Re-upload New Photo
                 </Button>
               </div>
@@ -1257,7 +1347,7 @@ function SubmissionDetailDialogContent({
             {submission.status === "processing" && (
               <div className="p-5 rounded-xl sm:rounded-2xl bg-[#c9a227]/10 dark:bg-[#c9a227]/20 border border-[#c9a227]/30 space-y-3 text-center">
                 <div className="flex size-12 items-center justify-center rounded-2xl bg-[#c9a227]/20 text-[#6e4e00] dark:text-[#fae59a] mx-auto motion-safe:animate-pulse">
-                  <Clock className="size-6" />
+                  <Clock className="size-6" aria-hidden="true" />
                 </div>
                 <div className="space-y-1 max-w-sm mx-auto">
                   <h4 className="text-sm font-heading font-semibold text-foreground">
@@ -1300,7 +1390,7 @@ function SubmissionDetailDialogContent({
                       </div>
 
                       <div className="flex size-10 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
-                        <CheckCircle2 className="size-5" />
+                        <CheckCircle2 className="size-5" aria-hidden="true" />
                       </div>
                     </div>
 
@@ -1340,7 +1430,7 @@ function SubmissionDetailDialogContent({
                                   {isSelected && (
                                     <Badge
                                       variant="outline"
-                                      className="text-[10px] px-1.5 py-0 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300"
+                                      className="text-[11px] px-1.5 py-0 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300"
                                     >
                                       Active
                                     </Badge>
@@ -1379,18 +1469,18 @@ function SubmissionDetailDialogContent({
                       <button
                         type="button"
                         onClick={() => setPhase1Tab("rubric")}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[40px] sm:min-h-0 ${
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation ${
                           phase1Tab === "rubric"
                             ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                             : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        <Award className="size-3.5 text-brand-600 dark:text-brand-400" />
+                        <Award className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                         <span>Rubric Rating</span>
                         {submission.manual_score ? (
                           <Badge
                             variant="outline"
-                            className="text-[9px] px-1.5 py-0 bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300"
+                            className="text-[10px] px-1.5 py-0 bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300"
                           >
                             Graded
                           </Badge>
@@ -1402,17 +1492,17 @@ function SubmissionDetailDialogContent({
                       <button
                         type="button"
                         onClick={() => setPhase1Tab("metrics")}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[40px] sm:min-h-0 ${
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation ${
                           phase1Tab === "metrics"
                             ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                             : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        <Binary className="size-3.5 text-brand-600 dark:text-brand-400" />
+                        <Binary className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                         <span>CV Metrics</span>
                         <Badge
                           variant="outline"
-                          className="text-[9px] px-1.5 py-0 bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300"
+                          className="text-[10px] px-1.5 py-0 bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300"
                         >
                           Raw
                         </Badge>
@@ -1428,7 +1518,7 @@ function SubmissionDetailDialogContent({
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2">
                                 <div className="flex size-7 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 shrink-0">
-                                  <ShieldCheck className="size-4" />
+                                  <ShieldCheck className="size-4" aria-hidden="true" />
                                 </div>
                                 <span className="text-xs font-semibold text-brand-950 dark:text-brand-200">
                                   Rubric Assessment Recorded
@@ -1439,9 +1529,9 @@ function SubmissionDetailDialogContent({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setIsEditingRubric(true)}
-                                className="min-h-[36px] sm:min-h-0 h-8 sm:h-7 px-3 sm:px-2 text-xs text-brand-800 dark:text-brand-200 border-brand-300 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 gap-1 cursor-pointer"
+                                className="min-h-[40px] sm:min-h-0 h-9 sm:h-7 px-3 sm:px-2.5 text-xs text-brand-800 dark:text-brand-200 border-brand-300 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 gap-1.5 cursor-pointer touch-manipulation"
                               >
-                                <Edit3 className="size-3" />
+                                <Edit3 className="size-3" aria-hidden="true" />
                                 <span>Edit</span>
                               </Button>
                             </div>
@@ -1449,7 +1539,7 @@ function SubmissionDetailDialogContent({
                             <div className="space-y-1.5 pt-1">
                               {RUBRIC_CRITERIA.map((criterion) => {
                                 const bandValue =
-                                  submission.manual_score?.[criterion.key];
+                                   submission.manual_score?.[criterion.key];
                                 const bandMeta = getBandMeta(bandValue);
                                 return (
                                   <div
@@ -1460,7 +1550,7 @@ function SubmissionDetailDialogContent({
                                       <span className="font-semibold text-foreground truncate block">
                                         {criterion.name}
                                       </span>
-                                      <span className="text-[10px] text-muted-foreground truncate block">
+                                      <span className="text-[11px] text-muted-foreground truncate block">
                                         {criterion.hint}
                                       </span>
                                     </div>
@@ -1486,6 +1576,17 @@ function SubmissionDetailDialogContent({
                             initialScores={submission.manual_score}
                             onSuccess={() => setIsEditingRubric(false)}
                             onFocusCriterion={setSelectedCriterion}
+                            canGoNext={canGoNext}
+                            onAdvanceNext={() => {
+                              if (
+                                canGoNext &&
+                                currentIndex !== undefined &&
+                                submissions &&
+                                onNavigate
+                              ) {
+                                onNavigate(submissions[currentIndex + 1]);
+                              }
+                            }}
                           />
                         )}
                       </div>
@@ -1525,7 +1626,7 @@ function SubmissionDetailDialogContent({
                                     {isSelected && (
                                       <Badge
                                         variant="outline"
-                                        className="text-[10px] px-1.5 py-0 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300"
+                                        className="text-[11px] px-1.5 py-0 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300"
                                       >
                                         Active
                                       </Badge>
@@ -1570,13 +1671,13 @@ function SubmissionDetailDialogContent({
 
                 {/* Focused Criterion Diagnostic Insight Card (Shared) */}
                 {selectedCriterion && activeCriterionInfo && (
-                  <div className="p-3.5 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-2 animate-in fade-in-50 duration-200">
+                  <div className="p-3 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1.5 animate-in fade-in-50 duration-200">
                     <div className="flex items-center justify-between text-xs font-semibold text-brand-900 dark:text-brand-200">
                       <span className="flex items-center gap-1.5">
-                        <Info className="size-3.5 text-brand-600 dark:text-brand-400" />
+                        <Info className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                         <span>{selectedCriterion} Diagnostic Guide</span>
                       </span>
-                      <span className="text-[10px] text-brand-700 dark:text-brand-300 font-medium">
+                      <span className="text-[11px] text-brand-700 dark:text-brand-300 font-medium">
                         Criterion Guide
                       </span>
                     </div>
@@ -1584,7 +1685,7 @@ function SubmissionDetailDialogContent({
                       {activeCriterionInfo.rubricGoal}
                     </p>
                     <div className="pt-1.5 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1.5 text-xs text-brand-800 dark:text-brand-300">
-                      <Eye className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" />
+                      <Eye className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
                       <span className="leading-normal">
                         <strong>Coaching tip:</strong> {activeCriterionInfo.coachingTip}
                       </span>
@@ -1610,7 +1711,7 @@ function SubmissionDetailDialogContent({
           type="button"
           variant="ghost"
           onClick={() => onOpenChange(false)}
-          className="min-h-[40px] sm:min-h-[36px] h-9 text-xs sm:text-sm font-medium rounded-lg sm:rounded-xl text-muted-foreground hover:text-foreground cursor-pointer"
+          className="min-h-[44px] sm:min-h-[36px] h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium rounded-lg sm:rounded-xl text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
         >
           Close
         </Button>
