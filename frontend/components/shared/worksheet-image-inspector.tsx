@@ -13,7 +13,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Maximize2,
   Minimize2,
-  Eye,
   ZoomIn,
   ZoomOut,
   RotateCcw,
@@ -289,7 +288,7 @@ export function WorksheetImageInspector({
       {headerLabel && (
         <div className="flex items-center justify-between px-0.5">
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            {headerIcon ?? <Eye className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />}
+            {headerIcon}
             <span>{headerLabel}</span>
           </span>
         </div>

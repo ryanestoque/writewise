@@ -637,8 +637,8 @@ function ManualRubricEntryForm({
               type="button"
               onClick={() => setMobileLayoutMode("stepper")}
               className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors cursor-pointer min-h-[36px] flex items-center gap-1 touch-manipulation ${mobileLayoutMode === "stepper"
-                  ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
-                  : "text-muted-foreground hover:text-foreground"
+                ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
+                : "text-muted-foreground hover:text-foreground"
                 }`}
               aria-pressed={mobileLayoutMode === "stepper"}
               title="Focus Stepper Mode (1 criterion at a time)"
@@ -650,8 +650,8 @@ function ManualRubricEntryForm({
               type="button"
               onClick={() => setMobileLayoutMode("list")}
               className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors cursor-pointer min-h-[36px] flex items-center gap-1 touch-manipulation ${mobileLayoutMode === "list"
-                  ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
-                  : "text-muted-foreground hover:text-foreground"
+                ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
+                : "text-muted-foreground hover:text-foreground"
                 }`}
               aria-pressed={mobileLayoutMode === "list"}
               title="List Mode (show all 5 criteria)"
@@ -664,8 +664,8 @@ function ManualRubricEntryForm({
           <Badge
             variant="outline"
             className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 ${allBandsSelected
-                ? "bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300"
-                : "bg-[#c9a227]/15 text-[#6e4e00] dark:bg-[#c9a227]/25 dark:text-[#fae59a] border-[#c9a227]/40"
+              ? "bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300"
+              : "bg-[#c9a227]/15 text-[#6e4e00] dark:bg-[#c9a227]/25 dark:text-[#fae59a] border-[#c9a227]/40"
               }`}
           >
             {selectedCount}/5 rated
@@ -723,10 +723,10 @@ function ManualRubricEntryForm({
                   type="button"
                   onClick={() => handleSelectCriterion(idx)}
                   className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg border text-center transition-all cursor-pointer min-h-[40px] touch-manipulation ${isStepActive
-                      ? "bg-brand-100 dark:bg-brand-950 text-brand-950 dark:text-brand-200 border-brand-500 ring-2 ring-brand-400/40 font-bold"
-                      : isRated
-                        ? "bg-surface dark:bg-card border-brand-200/80 dark:border-brand-900/80 text-foreground"
-                        : "bg-muted/30 border-border/60 text-muted-foreground hover:border-border"
+                    ? "bg-brand-100 dark:bg-brand-950 text-brand-950 dark:text-brand-200 border-brand-500 ring-2 ring-brand-400/40 font-bold"
+                    : isRated
+                      ? "bg-surface dark:bg-card border-brand-200/80 dark:border-brand-900/80 text-foreground"
+                      : "bg-muted/30 border-border/60 text-muted-foreground hover:border-border"
                     }`}
                   aria-label={`Step ${idx + 1}: ${criterion.shortName}${isRated ? ` (Rated: ${bandMeta.label})` : ""}`}
                   aria-current={isStepActive ? "step" : undefined}
@@ -827,8 +827,8 @@ function ManualRubricEntryForm({
                           }
                         }}
                         className={`flex flex-col items-center justify-center p-2.5 rounded-lg border text-center transition-all cursor-pointer min-h-[46px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
-                            ? option.activeClass
-                            : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
+                          ? option.activeClass
+                          : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
                           }`}
                       >
                         <div className="flex items-center gap-1">
@@ -932,8 +932,8 @@ function ManualRubricEntryForm({
               role="radiogroup"
               aria-labelledby={`criterion-label-${criterion.key}`}
               className={`space-y-1.5 p-2.5 rounded-xl border transition-all ${isFocused
-                  ? "bg-muted/30 border-brand-300/80 dark:border-brand-800/80 ring-1 ring-brand-400/30 shadow-xs"
-                  : "bg-muted/15 border-border/60 hover:border-border"
+                ? "bg-muted/30 border-brand-300/80 dark:border-brand-800/80 ring-1 ring-brand-400/30 shadow-xs"
+                : "bg-muted/15 border-border/60 hover:border-border"
                 }`}
               onClick={() => handleSelectCriterion(idx)}
             >
@@ -994,8 +994,8 @@ function ManualRubricEntryForm({
                         );
                       }}
                       className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all cursor-pointer min-h-[44px] sm:min-h-[38px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
-                          ? option.activeClass
-                          : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
+                        ? option.activeClass
+                        : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
                         }`}
                     >
                       <div className="flex items-center gap-1">
@@ -1377,11 +1377,11 @@ function SubmissionDetailDialogContent({
     >
       {/* Header */}
       <DialogHeader className="pb-3 sm:pb-4 border-b border-border/70 shrink-0 text-left">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="flex flex-row items-center justify-between gap-2.5 sm:gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
             <div
               className={cn(
-                "flex size-10 items-center justify-center rounded-xl border text-sm font-bold shrink-0 select-none shadow-2xs",
+                "flex size-9 sm:size-10 items-center justify-center rounded-xl border text-sm font-bold shrink-0 select-none shadow-2xs",
                 submission.student?.full_name
                   ? getAvatarColor(submission.student.full_name)
                   : "bg-brand-100 text-brand-700 border-brand-200/60 dark:bg-brand-950 dark:text-brand-300 dark:border-brand-900"
@@ -1394,36 +1394,18 @@ function SubmissionDetailDialogContent({
               }
             >
               {submission.student?.full_name && getInitials(submission.student.full_name) ? (
-                <span aria-hidden="true" className="tracking-tight font-semibold">
+                <span aria-hidden="true" className="tracking-tight font-semibold text-xs sm:text-sm">
                   {getInitials(submission.student.full_name)}
                 </span>
               ) : (
-                <GraduationCap className="size-5" aria-hidden="true" />
+                <GraduationCap className="size-4 sm:size-5" aria-hidden="true" />
               )}
             </div>
-            <div className="min-w-0">
-              <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground flex items-center gap-2 flex-wrap">
-                <span className="truncate max-w-[200px] sm:max-w-xs">
-                  {submission.student?.full_name ?? "Student"}
-                </span>
-                <Badge
-                  variant="outline"
-                  className={`text-xs font-semibold px-2.5 py-0.5 inline-flex items-center ${
-                    submission.status === "completed"
-                      ? "bg-brand-50 text-brand-800 dark:bg-brand-950/80 dark:text-brand-300 border-brand-300/60"
-                      : submission.status === "processing"
-                        ? "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200 dark:border-amber-900"
-                        : "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border-rose-200 dark:border-rose-900"
-                  }`}
-                >
-                  {submission.status === "completed"
-                    ? "Completed"
-                    : submission.status === "processing"
-                      ? "Processing"
-                      : "Rejected"}
-                </Badge>
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="font-heading text-base sm:text-xl font-semibold tracking-tight text-foreground truncate">
+                {submission.student?.full_name ?? "Student"}
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-x-3 gap-y-1 flex-wrap">
+              <DialogDescription className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 flex items-center gap-x-2.5 sm:gap-x-3 gap-y-0.5 flex-wrap">
                 <span className="inline-flex items-center gap-1">
                   <User className="size-3" aria-hidden="true" />
                   Uploaded by{" "}
@@ -1444,9 +1426,9 @@ function SubmissionDetailDialogContent({
           </div>
 
           {/* Header Right: Navigation between students with matching height hitboxes */}
-          <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {hasMultipleSubmissions && submissions && onNavigate && (
-              <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-xl border border-border h-10 sm:h-9">
+              <div className="flex items-center gap-0.5 sm:gap-1 bg-muted/50 p-0.5 sm:p-1 rounded-xl border border-border h-8.5 sm:h-9">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1456,13 +1438,13 @@ function SubmissionDetailDialogContent({
                       onNavigate(submissions[currentIndex - 1]);
                     }
                   }}
-                  className="size-8 sm:size-7 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center"
+                  className="size-7 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
                   aria-label="Previous student (Key: J or ←)"
                   title="Previous student (← / J)"
                 >
                   <ChevronLeft className="size-4" aria-hidden="true" />
                 </Button>
-                <span className="text-xs font-semibold px-2 text-foreground select-none tabular-nums">
+                <span className="text-[11px] sm:text-xs font-semibold px-1.5 sm:px-2 text-foreground select-none tabular-nums">
                   {(currentIndex ?? 0) + 1} / {submissions.length}
                 </span>
                 <Button
@@ -1474,7 +1456,7 @@ function SubmissionDetailDialogContent({
                       onNavigate(submissions[currentIndex + 1]);
                     }
                   }}
-                  className="size-8 sm:size-7 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center"
+                  className="size-7 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
                   aria-label="Next student (Key: K or →)"
                   title="Next student (→ / K)"
                 >
@@ -1681,8 +1663,8 @@ function SubmissionDetailDialogContent({
                                   setSelectedCriterion(c.name)
                                 }
                                 className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 ${isSelected
-                                    ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs"
-                                    : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
+                                  ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs"
+                                  : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
                                   }`}
                               >
                                 <div className="min-w-0 pr-2">
@@ -1753,8 +1735,8 @@ function SubmissionDetailDialogContent({
                         type="button"
                         onClick={() => setPhase1Tab("rubric")}
                         className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation ${phase1Tab === "rubric"
-                            ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
-                            : "text-muted-foreground hover:text-foreground"
+                          ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
+                          : "text-muted-foreground hover:text-foreground"
                           }`}
                       >
                         <Award className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
@@ -1775,8 +1757,8 @@ function SubmissionDetailDialogContent({
                         type="button"
                         onClick={() => setPhase1Tab("metrics")}
                         className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation ${phase1Tab === "metrics"
-                            ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
-                            : "text-muted-foreground hover:text-foreground"
+                          ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
+                          : "text-muted-foreground hover:text-foreground"
                           }`}
                       >
                         <Binary className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
@@ -1894,8 +1876,8 @@ function SubmissionDetailDialogContent({
                                 type="button"
                                 onClick={() => setSelectedCriterion(c.name)}
                                 className={`w-full flex flex-col p-3 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 ${isSelected
-                                    ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/40"
-                                    : "bg-surface dark:bg-card border-border/70 hover:border-brand-300 dark:hover:border-brand-800 hover:bg-muted/30"
+                                  ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/40"
+                                  : "bg-surface dark:bg-card border-border/70 hover:border-brand-300 dark:hover:border-brand-800 hover:bg-muted/30"
                                   }`}
                               >
                                 <div className="w-full flex items-center justify-between gap-2">

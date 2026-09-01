@@ -1261,44 +1261,46 @@ export default function ActivityDetailPage({
 
         <div className="flex flex-col gap-4 min-w-0">
           {/* Top Row: Context Badges + Action Buttons */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
+          <div className="flex items-start justify-between gap-2.5 sm:gap-3 min-w-0">
             {/* Badges & Metadata */}
-            <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground min-w-0">
-              {isArchived ? (
-                <Badge
-                  variant="outline"
-                  className="text-xs font-semibold px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border/80 print:border-black/30 print:text-black"
-                >
-                  <Archive className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
-                  Archived
-                </Badge>
-              ) : activity.is_take_home ? (
-                <Badge
-                  variant="outline"
-                  className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900 print:border-black/30 print:text-black"
-                >
-                  <Home
-                    className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400 print:text-black"
-                    aria-hidden="true"
-                  />
-                  Take-home Activity
-                </Badge>
-              ) : (
-                <Badge
-                  variant="outline"
-                  className="text-xs font-semibold px-2.5 py-0.5 bg-brand-100/70 text-brand-800 dark:bg-brand-900/50 dark:text-brand-200 border-brand-200/70 dark:border-brand-800/80 print:border-black/30 print:text-black"
-                >
-                  <BookOpen
-                    className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400 print:text-black"
-                    aria-hidden="true"
-                  />
-                  In-Class Activity
-                </Badge>
-              )}
+            <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap text-xs text-muted-foreground min-w-0">
+                {isArchived ? (
+                  <Badge
+                    variant="outline"
+                    className="text-xs font-semibold px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border/80 print:border-black/30 print:text-black"
+                  >
+                    <Archive className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                    Archived
+                  </Badge>
+                ) : activity.is_take_home ? (
+                  <Badge
+                    variant="outline"
+                    className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900 print:border-black/30 print:text-black"
+                  >
+                    <Home
+                      className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400 print:text-black"
+                      aria-hidden="true"
+                    />
+                    Take-home Activity
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="text-xs font-semibold px-2.5 py-0.5 bg-brand-100/70 text-brand-800 dark:bg-brand-900/50 dark:text-brand-200 border-brand-200/70 dark:border-brand-800/80 print:border-black/30 print:text-black"
+                  >
+                    <BookOpen
+                      className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400 print:text-black"
+                      aria-hidden="true"
+                    />
+                    In-Class Activity
+                  </Badge>
+                )}
 
-              <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-muted/40 dark:bg-muted/30 px-2 py-0.5 rounded-md border border-border/50 tabular-nums print:border-black/30 print:text-black">
-                {wordCount} {wordCount === 1 ? "word" : "words"}
-              </span>
+                <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-muted/40 dark:bg-muted/30 px-2 py-0.5 rounded-md border border-border/50 tabular-nums print:border-black/30 print:text-black">
+                  {wordCount} {wordCount === 1 ? "word" : "words"}
+                </span>
+              </div>
 
               <time
                 dateTime={activity.created_at}
@@ -1310,16 +1312,19 @@ export default function ActivityDetailPage({
             </div>
 
             {/* Fast Action CTAs */}
-            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap print:hidden">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 self-start print:hidden">
               <Button
                 size="sm"
                 aria-keyshortcuts="u"
                 variant="default"
-                className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-3 sm:px-3.5 font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                 onClick={() => openUpload({ activityId: id })}
               >
-                <Upload className="w-4 h-4" aria-hidden="true" />
-                <span>Upload Submission</span>
+                <Upload className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>
+                  <span className="inline sm:hidden">Upload</span>
+                  <span className="hidden sm:inline">Upload Submission</span>
+                </span>
                 <kbd
                   className="hidden sm:inline-flex items-center justify-center ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded shadow-2xs text-primary-foreground/80 bg-white/20 dark:bg-black/20"
                   aria-hidden="true"
@@ -1330,7 +1335,7 @@ export default function ActivityDetailPage({
 
               <DropdownMenu>
                 <DropdownMenuTrigger
-                  className="flex size-11 sm:size-9 min-h-[44px] sm:min-h-[36px] items-center justify-center rounded-lg sm:rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex size-10 sm:size-9 min-h-[40px] sm:min-h-[36px] items-center justify-center rounded-lg sm:rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring shrink-0"
                   aria-label="Activity options and actions"
                 >
                   <MoreVertical className="size-4" aria-hidden="true" />
