@@ -717,8 +717,12 @@ export default function ActivityDetailPage({
   // Shortcut key listener for '/' and 'U'
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const targetTag = (e.target as HTMLElement)?.tagName;
-      const isInput = ["INPUT", "TEXTAREA", "SELECT"].includes(targetTag);
+      const target = e.target as HTMLElement | null;
+      const targetTag = target?.tagName;
+      const isContentEditable = Boolean(target?.isContentEditable);
+      const isInput =
+        ["INPUT", "TEXTAREA", "SELECT"].includes(targetTag || "") ||
+        isContentEditable;
       if (isInput) return;
 
       if (e.key === "/") {
@@ -1196,15 +1200,18 @@ export default function ActivityDetailPage({
   return (
     <div className="w-full min-w-0 space-y-5 sm:space-y-6 pb-28 sm:pb-24">
       {/* Top Back Navigation Trail */}
-      <div>
+      <nav aria-label="Breadcrumb navigation">
         <Link
           href="/activities"
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1 py-0.5"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-2.5 py-2 min-h-[40px] sm:min-h-[36px] hover:bg-muted/50 -ml-1 sm:-ml-2"
         >
-          <ArrowLeft className="size-3.5 transition-transform group-hover:-translate-x-0.5" />
+          <ArrowLeft
+            className="size-3.5 transition-transform group-hover:-translate-x-0.5"
+            aria-hidden="true"
+          />
           <span>Back to Activities</span>
         </Link>
-      </div>
+      </nav>
 
       {/* Streamlined Activity Hero Card with Authentic 3-Line Cursive Ruling */}
       <section
@@ -1218,13 +1225,19 @@ export default function ActivityDetailPage({
       >
         {/* Screen Reader Semantic Heading */}
         <h1 id="activity-prompt-heading" className="sr-only">
-          Activity: {activity.target_text}
+          Activity: {activity.target_text || "Untitled Activity"}
         </h1>
 
         {/* Archived Top Warning Banner if Archived */}
         {isArchived && (
-          <div className="mb-4 -mt-1 -mx-1 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2">
-            <Archive className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+          <div
+            role="status"
+            className="mb-4 -mt-1 -mx-1 px-3 py-1.5 rounded-lg bg-warning/10 border border-warning/25 text-warning-foreground dark:text-warning text-xs flex items-center gap-2"
+          >
+            <Archive
+              className="size-3.5 shrink-0 text-warning"
+              aria-hidden="true"
+            />
             <span>
               This activity is archived and hidden from student assignment
               pickers.
@@ -1242,7 +1255,7 @@ export default function ActivityDetailPage({
                   variant="outline"
                   className="text-xs font-semibold px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border/80"
                 >
-                  <Archive className="w-3.5 h-3.5 mr-1" />
+                  <Archive className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
                   Archived
                 </Badge>
               ) : activity.is_take_home ? (
@@ -1250,15 +1263,21 @@ export default function ActivityDetailPage({
                   variant="outline"
                   className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900"
                 >
-                  <Home className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400" />
+                  <Home
+                    className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400"
+                    aria-hidden="true"
+                  />
                   Take-home Activity
                 </Badge>
               ) : (
                 <Badge
                   variant="outline"
-                  className="text-xs font-semibold px-2.5 py-0.5 bg-emerald-50/70 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/70 dark:border-emerald-900/60"
+                  className="text-xs font-semibold px-2.5 py-0.5 bg-brand-100/70 text-brand-800 dark:bg-brand-900/50 dark:text-brand-200 border-brand-200/70 dark:border-brand-800/80"
                 >
-                  <BookOpen className="w-3.5 h-3.5 mr-1 text-emerald-600 dark:text-emerald-400" />
+                  <BookOpen
+                    className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400"
+                    aria-hidden="true"
+                  />
                   In-Class Activity
                 </Badge>
               )}
@@ -1267,10 +1286,13 @@ export default function ActivityDetailPage({
                 {wordCount} {wordCount === 1 ? "word" : "words"}
               </span>
 
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <CalendarDays className="w-3.5 h-3.5" />
+              <time
+                dateTime={activity.created_at}
+                className="text-xs text-muted-foreground inline-flex items-center gap-1"
+              >
+                <CalendarDays className="w-3.5 h-3.5" aria-hidden="true" />
                 Created {formatDate(activity.created_at)}
-              </span>
+              </time>
             </div>
 
             {/* Fast Action CTAs */}
@@ -1278,28 +1300,15 @@ export default function ActivityDetailPage({
               <Button
                 size="sm"
                 aria-keyshortcuts="u"
-                variant={
-                  submissions && submissions.length === 0
-                    ? "outline"
-                    : "default"
-                }
-                className={cn(
-                  "h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer",
-                  submissions && submissions.length === 0
-                    ? "text-muted-foreground hover:text-foreground border-border hover:bg-muted/60"
-                    : "bg-primary hover:bg-brand-700 text-primary-foreground"
-                )}
+                variant="default"
+                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer bg-primary hover:bg-brand-700 text-primary-foreground"
                 onClick={() => openUpload({ activityId: id })}
               >
-                <Upload className="w-4 h-4" />
+                <Upload className="w-4 h-4" aria-hidden="true" />
                 <span>Upload Submission</span>
                 <kbd
-                  className={cn(
-                    "hidden sm:inline-flex items-center justify-center ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded shadow-2xs",
-                    submissions && submissions.length === 0
-                      ? "bg-muted text-muted-foreground"
-                      : "text-primary-foreground/80 bg-white/20 dark:bg-white/10"
-                  )}
+                  className="hidden sm:inline-flex items-center justify-center ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded shadow-2xs text-primary-foreground/80 bg-white/20 dark:bg-white/10"
+                  aria-hidden="true"
                 >
                   U
                 </kbd>
@@ -1310,55 +1319,67 @@ export default function ActivityDetailPage({
                   className="flex size-10 sm:size-9 min-h-[40px] sm:min-h-[36px] items-center justify-center rounded-lg sm:rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label="Activity options and actions"
                 >
-                  <MoreVertical className="size-4" />
+                  <MoreVertical className="size-4" aria-hidden="true" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuItem
                     onClick={() => setEditingActivity(activity)}
-                    className="cursor-pointer gap-2 text-xs"
+                    className="cursor-pointer gap-2 text-xs min-h-[36px]"
                   >
-                    <Edit3 className="size-3.5" />
+                    <Edit3 className="size-3.5" aria-hidden="true" />
                     <span>Edit Target Text</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => {
-                      navigator.clipboard.writeText(activity.target_text);
-                      toast.success("Target prompt copied to clipboard.");
+                      if (!navigator.clipboard?.writeText) {
+                        toast.error(
+                          "Clipboard copy is not supported in this environment."
+                        );
+                        return;
+                      }
+                      navigator.clipboard
+                        .writeText(activity.target_text)
+                        .then(() => {
+                          toast.success("Target prompt copied to clipboard.");
+                        })
+                        .catch(() => {
+                          toast.error("Failed to copy target prompt.");
+                        });
                     }}
-                    className="cursor-pointer gap-2 text-xs"
+                    className="cursor-pointer gap-2 text-xs min-h-[36px]"
                   >
-                    <Copy className="size-3.5" />
+                    <Copy className="size-3.5" aria-hidden="true" />
                     <span>Copy Target Prompt</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setIsDuplicateOpen(true)}
-                    className="cursor-pointer gap-2 text-xs"
+                    className="cursor-pointer gap-2 text-xs min-h-[36px]"
                   >
-                    <FileText className="size-3.5" />
+                    <FileText className="size-3.5" aria-hidden="true" />
                     <span>Duplicate Activity</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleToggleArchive}
-                    className="cursor-pointer gap-2 text-xs"
+                    className="cursor-pointer gap-2 text-xs min-h-[36px]"
                   >
                     {isArchived ? (
                       <>
-                        <ArchiveRestore className="size-3.5" />
+                        <ArchiveRestore className="size-3.5" aria-hidden="true" />
                         <span>Unarchive Activity</span>
                       </>
                     ) : (
                       <>
-                        <Archive className="size-3.5" />
+                        <Archive className="size-3.5" aria-hidden="true" />
                         <span>Archive Activity</span>
                       </>
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setDeletingActivity(activity)}
-                    className="cursor-pointer gap-2 text-xs text-destructive focus:text-destructive"
+                    className="cursor-pointer gap-2 text-xs text-destructive focus:text-destructive focus:bg-destructive/10 min-h-[36px]"
                   >
-                    <Trash2 className="size-3.5" />
+                    <Trash2 className="size-3.5" aria-hidden="true" />
                     <span>Delete Activity</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -1368,15 +1389,22 @@ export default function ActivityDetailPage({
 
           {/* Hero Penmanship Prompt on Authentic 3-Line Cursive Ruling */}
           <div className="space-y-1.5 min-w-0">
-            <div className="relative p-4 sm:p-6 pb-6 sm:pb-8 min-h-[92px] rounded-xl bg-linear-to-b from-brand-50/25 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-2xs">
+            <div className="relative p-4 sm:p-6 pb-6 sm:pb-8 min-h-[92px] rounded-xl bg-linear-to-b from-brand-50/25 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-warm-sm">
               <div className="relative">
                 {/* Decorative 3-line penmanship ruling */}
                 <div
                   className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden"
                   aria-hidden="true"
                 />
-                <p className="relative font-cursive text-foreground/90 font-normal tracking-wide select-all break-words text-2xl sm:text-3xl lg:text-4xl leading-relaxed sm:leading-[48px]">
-                  {activity.target_text}
+                <p
+                  className={cn(
+                    "relative tracking-wide select-all break-words",
+                    activity.target_text?.trim()
+                      ? "font-cursive text-foreground/90 font-normal text-2xl sm:text-3xl lg:text-4xl leading-[48px]"
+                      : "text-muted-foreground italic font-sans text-sm sm:text-base leading-normal py-3"
+                  )}
+                >
+                  {activity.target_text?.trim() || "No target text specified"}
                 </p>
               </div>
             </div>
@@ -1388,13 +1416,16 @@ export default function ActivityDetailPage({
             <div className="flex flex-col justify-center gap-2">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <GraduationCap className="size-4 text-brand-600 dark:text-brand-400 shrink-0" />
+                  <GraduationCap
+                    className="size-4 text-brand-600 dark:text-brand-400 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span>
-                    <strong className="text-foreground font-semibold">
+                    <strong className="text-foreground font-semibold tabular-nums">
                       {uniqueStudentsCount}
                     </strong>{" "}
                     of{" "}
-                    <strong className="text-foreground font-semibold">
+                    <strong className="text-foreground font-semibold tabular-nums">
                       {totalStudents}
                     </strong>{" "}
                     enrolled students submitted
@@ -1410,29 +1441,41 @@ export default function ActivityDetailPage({
                 {totalStudents > 0 && (
                   <Badge
                     variant="outline"
-                    className="text-[11px] font-semibold px-2 py-0.5 bg-muted/60 text-foreground shrink-0"
+                    className="text-[11px] font-semibold px-2 py-0.5 bg-muted/60 text-foreground shrink-0 tabular-nums"
                   >
                     {completionRate}% complete
                   </Badge>
                 )}
               </div>
 
-              {/* Progress bar */}
-              {totalStudents > 0 && (
+              {/* Progress bar or Empty Roster Prompt */}
+              {totalStudents > 0 ? (
                 <div
                   className="w-full h-2 rounded-full bg-muted overflow-hidden"
                   role="progressbar"
                   aria-valuenow={completionRate}
                   aria-valuemin={0}
                   aria-valuemax={100}
+                  aria-valuetext={`${uniqueStudentsCount} of ${totalStudents} students submitted (${completionRate}%)`}
                   aria-label={`Class completion rate: ${completionRate}%`}
                 >
                   <div
-                    className="h-full bg-brand-600 dark:bg-brand-500 rounded-full transition-all duration-500 ease-out"
+                    className="h-full bg-brand-600 dark:bg-brand-500 rounded-full transition-all duration-500 ease-out motion-reduce:transition-none"
                     style={{
                       width: `${completionRate}%`,
                     }}
                   />
+                </div>
+              ) : (
+                <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/20 px-2.5 py-1.5 rounded-lg border border-dashed border-border">
+                  <span className="text-[11px]">No students enrolled yet</span>
+                  <Link
+                    href="/roster"
+                    className="text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 inline-flex items-center gap-1 group/link focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                  >
+                    <span>Manage Roster</span>
+                    <ArrowRight className="size-3 transition-transform group-hover/link:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" />
+                  </Link>
                 </div>
               )}
             </div>
@@ -1441,7 +1484,10 @@ export default function ActivityDetailPage({
             {classDiagnostics ? (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between lg:justify-end gap-2.5 bg-muted/25 dark:bg-muted/15 p-2.5 rounded-xl border border-border/60 text-xs">
                 <div className="flex items-center gap-2">
-                  <BarChart3 className="size-4 text-brand-600 dark:text-brand-400 shrink-0" />
+                  <BarChart3
+                    className="size-4 text-brand-600 dark:text-brand-400 shrink-0"
+                    aria-hidden="true"
+                  />
                   <div>
                     <span className="text-[11px] text-muted-foreground font-medium block">
                       Class Performance ({classDiagnostics.completedCount}{" "}
@@ -1460,6 +1506,7 @@ export default function ActivityDetailPage({
                             "size-1.5 rounded-full mr-1",
                             classDiagnostics.scoreBand.dotColor
                           )}
+                          aria-hidden="true"
                         />
                         <span>{classDiagnostics.scoreBand.label}</span>
                       </Badge>
@@ -1469,10 +1516,19 @@ export default function ActivityDetailPage({
 
                 <div className="flex items-center gap-2 shrink-0">
                   <Popover>
-                    <PopoverTrigger className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer">
-                      <BarChart3 className="size-3 text-brand-600 dark:text-brand-400" />
+                    <PopoverTrigger
+                      className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[40px] sm:min-h-[36px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-label="View class criteria breakdown"
+                    >
+                      <BarChart3
+                        className="size-3.5 text-brand-600 dark:text-brand-400"
+                        aria-hidden="true"
+                      />
                       <span>Class Breakdown</span>
-                      <ChevronDown className="size-2.5 opacity-60" />
+                      <ChevronDown
+                        className="size-3 opacity-60"
+                        aria-hidden="true"
+                      />
                     </PopoverTrigger>
                     <PopoverContent
                       align="end"
@@ -1485,6 +1541,9 @@ export default function ActivityDetailPage({
                             {classDiagnostics.avgCompositeScore}%
                           </span>
                         </PopoverTitle>
+                        <PopoverDescription className="sr-only">
+                          Aggregated class diagnostic scores across Letter Formation, Size Consistency, Spacing, Slant, and Baseline Alignment.
+                        </PopoverDescription>
                       </PopoverHeader>
 
                       <div className="space-y-2 pt-1">
@@ -1499,9 +1558,18 @@ export default function ActivityDetailPage({
                               %
                             </span>
                           </div>
-                          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-1.5 w-full bg-muted rounded-full overflow-hidden"
+                            role="progressbar"
+                            aria-valuenow={
+                              classDiagnostics.criteriaAverages.letterFormation
+                            }
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-label={`Letter Formation class average: ${classDiagnostics.criteriaAverages.letterFormation}%`}
+                          >
                             <div
-                              className="h-full bg-brand-500 rounded-full"
+                              className="h-full bg-brand-500 rounded-full transition-all duration-300 motion-reduce:transition-none"
                               style={{
                                 width: `${classDiagnostics.criteriaAverages.letterFormation}%`,
                               }}
@@ -1520,9 +1588,18 @@ export default function ActivityDetailPage({
                               %
                             </span>
                           </div>
-                          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-1.5 w-full bg-muted rounded-full overflow-hidden"
+                            role="progressbar"
+                            aria-valuenow={
+                              classDiagnostics.criteriaAverages.sizeConsistency
+                            }
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-label={`Size Consistency class average: ${classDiagnostics.criteriaAverages.sizeConsistency}%`}
+                          >
                             <div
-                              className="h-full bg-brand-500 rounded-full"
+                              className="h-full bg-brand-500 rounded-full transition-all duration-300 motion-reduce:transition-none"
                               style={{
                                 width: `${classDiagnostics.criteriaAverages.sizeConsistency}%`,
                               }}
@@ -1537,9 +1614,18 @@ export default function ActivityDetailPage({
                               {classDiagnostics.criteriaAverages.spacing}%
                             </span>
                           </div>
-                          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-1.5 w-full bg-muted rounded-full overflow-hidden"
+                            role="progressbar"
+                            aria-valuenow={
+                              classDiagnostics.criteriaAverages.spacing
+                            }
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-label={`Spacing class average: ${classDiagnostics.criteriaAverages.spacing}%`}
+                          >
                             <div
-                              className="h-full bg-brand-500 rounded-full"
+                              className="h-full bg-brand-500 rounded-full transition-all duration-300 motion-reduce:transition-none"
                               style={{
                                 width: `${classDiagnostics.criteriaAverages.spacing}%`,
                               }}
@@ -1554,9 +1640,18 @@ export default function ActivityDetailPage({
                               {classDiagnostics.criteriaAverages.slant}%
                             </span>
                           </div>
-                          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-1.5 w-full bg-muted rounded-full overflow-hidden"
+                            role="progressbar"
+                            aria-valuenow={
+                              classDiagnostics.criteriaAverages.slant
+                            }
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-label={`Slant Consistency class average: ${classDiagnostics.criteriaAverages.slant}%`}
+                          >
                             <div
-                              className="h-full bg-brand-500 rounded-full"
+                              className="h-full bg-brand-500 rounded-full transition-all duration-300 motion-reduce:transition-none"
                               style={{
                                 width: `${classDiagnostics.criteriaAverages.slant}%`,
                               }}
@@ -1575,9 +1670,19 @@ export default function ActivityDetailPage({
                               %
                             </span>
                           </div>
-                          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-1.5 w-full bg-muted rounded-full overflow-hidden"
+                            role="progressbar"
+                            aria-valuenow={
+                              classDiagnostics.criteriaAverages
+                                .baselineAlignment
+                            }
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-label={`Baseline Alignment class average: ${classDiagnostics.criteriaAverages.baselineAlignment}%`}
+                          >
                             <div
-                              className="h-full bg-brand-500 rounded-full"
+                              className="h-full bg-brand-500 rounded-full transition-all duration-300 motion-reduce:transition-none"
                               style={{
                                 width: `${classDiagnostics.criteriaAverages.baselineAlignment}%`,
                               }}
@@ -1593,15 +1698,21 @@ export default function ActivityDetailPage({
                               Strength:
                             </span>{" "}
                             {classDiagnostics.strongestCriterion.name} (
-                            {classDiagnostics.strongestCriterion.score}%)
+                            <span className="tabular-nums">
+                              {classDiagnostics.strongestCriterion.score}%
+                            </span>
+                            )
                           </p>
                           {classDiagnostics.focusCriterion && (
                             <p>
-                              <span className="font-semibold text-amber-700 dark:text-amber-400">
+                              <span className="font-semibold text-amber-800 dark:text-amber-400">
                                 Practice Focus:
                               </span>{" "}
                               {classDiagnostics.focusCriterion.name} (
-                              {classDiagnostics.focusCriterion.score}%)
+                              <span className="tabular-nums">
+                                {classDiagnostics.focusCriterion.score}%
+                              </span>
+                              )
                             </p>
                           )}
                         </div>
@@ -1612,7 +1723,10 @@ export default function ActivityDetailPage({
               </div>
             ) : (
               <div className="flex items-center gap-2 p-2.5 rounded-xl border border-dashed border-border/80 text-xs text-muted-foreground bg-muted/10">
-                <BarChart3 className="size-4 text-muted-foreground/60 shrink-0" />
+                <BarChart3
+                  className="size-4 text-muted-foreground/60 shrink-0"
+                  aria-hidden="true"
+                />
                 <span>
                   Class diagnostic insights will unlock as student worksheets
                   are scored.
