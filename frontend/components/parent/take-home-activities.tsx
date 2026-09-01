@@ -22,7 +22,7 @@ export function TakeHomeActivities({
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-8 gap-2">
-        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+        <Loader2 className="size-5 animate-spin motion-reduce:animate-none text-muted-foreground" />
         <span className="text-xs text-muted-foreground">Loading assigned activities...</span>
       </div>
     );
@@ -98,7 +98,7 @@ function TakeHomeActivityCard({
       <div className="pt-2 border-t border-border/50 flex flex-wrap items-center justify-between gap-2.5">
         {isLoading ? (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Loader2 className="size-3.5 animate-spin" />
+            <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" />
             <span>Checking status...</span>
           </div>
         ) : submission ? (
@@ -124,12 +124,12 @@ function TakeHomeActivityCard({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 text-xs font-medium gap-1.5 cursor-pointer shrink-0 border-border/80 hover:bg-muted/50"
+                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-medium gap-1.5 cursor-pointer shrink-0 border-border/80 hover:bg-muted/50"
                 onClick={onUploadClick}
                 aria-label={
                   submission.status === "completed"
-                    ? `Submit another practice attempt for ${targetText}`
-                    : `Retake photo for ${targetText}`
+                    ? `Submit another practice attempt for "${targetText}"`
+                    : `Retake photo for "${targetText}"`
                 }
               >
                 <Upload className="size-3.5" />
@@ -147,8 +147,9 @@ function TakeHomeActivityCard({
           <Button
             variant="default"
             size="sm"
-            className="h-10 sm:h-9 gap-1.5 shadow-warm w-full font-medium cursor-pointer"
+            className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 shadow-warm w-full font-medium cursor-pointer"
             onClick={onUploadClick}
+            aria-label={`Upload worksheet for "${targetText}"`}
           >
             <Upload className="size-4" />
             Upload Worksheet

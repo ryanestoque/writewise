@@ -50,21 +50,31 @@ def parse_args() -> argparse.Namespace:
 
 
 def load_test_data(test_dir: str) -> tuple[np.ndarray, np.ndarray, list[str]]:
-    """Load test .npy files and return (images, labels_encoded, class_names)."""
+    """Load test data (from combined images.npy/labels.npy or individual .npy files)."""
     test_path = Path(test_dir)
-    images = []
-    labels = []
+    images_file = test_path / "images.npy"
+    labels_file = test_path / "labels.npy"
 
-    for npy_file in sorted(test_path.glob("*.npy")):
-        img = np.load(npy_file)
-        label = npy_file.stem.split("_")[0]
-        images.append(img)
-        labels.append(label)
+    if images_file.exists() and labels_file.exists():
+        images_arr = np.load(images_file)
+        raw_labels = np.load(labels_file)
+        labels = [str(l) for l in raw_labels]
+    else:
+        images = []
+        labels = []
+        for npy_file in sorted(test_path.glob("*.npy")):
+            if npy_file.name in ("images.npy", "labels.npy"):
+                continue
+            img = np.load(npy_file)
+            label = npy_file.stem.split("_")[0]
+            images.append(img)
+            labels.append(label)
 
-    if not images:
-        return np.empty((0, 96, 96), dtype=np.uint8), np.empty(0, dtype=int), []
+        if not images:
+            return np.empty((0, 96, 96), dtype=np.uint8), np.empty(0, dtype=int), []
 
-    images_arr = np.array(images, dtype=np.uint8)
+        images_arr = np.array(images, dtype=np.uint8)
+
     class_names = sorted(set(labels))
     label_to_idx = {name: idx for idx, name in enumerate(class_names)}
     labels_encoded = np.array([label_to_idx[l] for l in labels])
