@@ -5,6 +5,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogFooter,
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
@@ -18,15 +19,13 @@ import {
 } from "@/lib/hooks/use-submissions";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
+import { cn } from "@/lib/utils";
 import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  Upload,
   User,
   GraduationCap,
-  Maximize2,
-  Minimize2,
   FileText,
   Camera,
   ChevronLeft,
@@ -34,7 +33,6 @@ import {
   Eye,
   Info,
   Award,
-  ScanLine,
   Binary,
   Check,
   Loader2,
@@ -43,6 +41,8 @@ import {
   Edit3,
   Keyboard,
   HelpCircle,
+  Layers,
+  LayoutList,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -187,6 +187,31 @@ function getScoreBand(score: number | null | undefined): {
       "bg-[#b6754a]/15 text-[#733512] dark:bg-[#b6754a]/20 dark:text-[#f3c8aa] border-[#b6754a]/40 dark:border-[#b6754a]/50",
     dotColor: "bg-[#b6754a]",
   };
+}
+
+function getInitials(name: string): string {
+  if (!name) return "";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+const AVATAR_PALETTES = [
+  "bg-amber-100 text-amber-900 border-amber-300/70 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-800",
+  "bg-emerald-100 text-emerald-900 border-emerald-300/70 dark:bg-emerald-950/80 dark:text-emerald-200 dark:border-emerald-800",
+  "bg-blue-100 text-blue-900 border-blue-300/70 dark:bg-blue-950/80 dark:text-blue-200 dark:border-blue-800",
+  "bg-purple-100 text-purple-900 border-purple-300/70 dark:bg-purple-950/80 dark:text-purple-200 dark:border-purple-800",
+  "bg-brand-100 text-brand-900 border-brand-300/70 dark:bg-brand-950/80 dark:text-brand-200 dark:border-brand-800",
+  "bg-rose-100 text-rose-900 border-rose-300/70 dark:bg-rose-950/80 dark:text-rose-200 dark:border-rose-800",
+];
+
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % AVATAR_PALETTES.length;
+  return AVATAR_PALETTES[index];
 }
 
 function formatDateFull(dateStr: string): string {
@@ -380,6 +405,7 @@ function ManualRubricEntryForm({
   });
 
   const [activeCriterionIndex, setActiveCriterionIndex] = useState<number>(0);
+  const [mobileLayoutMode, setMobileLayoutMode] = useState<"stepper" | "list">("stepper");
   const [autoAdvance, setAutoAdvance] = useState<boolean>(true);
   const [submitErrorMsg, setSubmitErrorMsg] = useState<string | null>(null);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
@@ -580,10 +606,10 @@ function ManualRubricEntryForm({
         {accessibilityAnnouncement}
       </div>
 
-      {/* Header with status counter & keyboard hint toggle */}
+      {/* Header with status counter, mobile view toggle, & keyboard hint toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2.5 border-b border-border/60">
         <div className="space-y-0.5">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Award className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
             <h4 className="text-xs font-heading font-semibold text-foreground">
               Teacher Rubric Assessment
@@ -591,12 +617,12 @@ function ManualRubricEntryForm({
             <button
               type="button"
               onClick={() => setShowKeyboardHelp((prev) => !prev)}
-              className="text-muted-foreground hover:text-foreground transition-colors p-2 sm:p-1 rounded-lg cursor-pointer flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-7 sm:min-w-7 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+              className="hidden sm:flex text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg cursor-pointer items-center justify-center min-h-7 min-w-7 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
               title="Toggle Keyboard Shortcuts"
               aria-label="Toggle Keyboard Shortcuts"
               aria-expanded={showKeyboardHelp}
             >
-              <Keyboard className="size-4 sm:size-3.5" aria-hidden="true" />
+              <Keyboard className="size-3.5" aria-hidden="true" />
             </button>
           </div>
           <p className="text-[11px] text-muted-foreground">
@@ -604,16 +630,50 @@ function ManualRubricEntryForm({
           </p>
         </div>
 
-        <Badge
-          variant="outline"
-          className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 self-start sm:self-auto ${
-            allBandsSelected
-              ? "bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300"
-              : "bg-[#c9a227]/15 text-[#6e4e00] dark:bg-[#c9a227]/25 dark:text-[#fae59a] border-[#c9a227]/40"
-          }`}
-        >
-          {selectedCount}/5 rated
-        </Badge>
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
+          {/* Mobile Layout Mode Switcher (Focus Stepper vs Full List) */}
+          <div className="flex items-center p-0.5 rounded-lg bg-muted/60 border border-border/80 sm:hidden">
+            <button
+              type="button"
+              onClick={() => setMobileLayoutMode("stepper")}
+              className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors cursor-pointer min-h-[36px] flex items-center gap-1 touch-manipulation ${
+                mobileLayoutMode === "stepper"
+                  ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              aria-pressed={mobileLayoutMode === "stepper"}
+              title="Focus Stepper Mode (1 criterion at a time)"
+            >
+              <Layers className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+              <span>Focus</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileLayoutMode("list")}
+              className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors cursor-pointer min-h-[36px] flex items-center gap-1 touch-manipulation ${
+                mobileLayoutMode === "list"
+                  ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              aria-pressed={mobileLayoutMode === "list"}
+              title="List Mode (show all 5 criteria)"
+            >
+              <LayoutList className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+              <span>All</span>
+            </button>
+          </div>
+
+          <Badge
+            variant="outline"
+            className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 ${
+              allBandsSelected
+                ? "bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300"
+                : "bg-[#c9a227]/15 text-[#6e4e00] dark:bg-[#c9a227]/25 dark:text-[#fae59a] border-[#c9a227]/40"
+            }`}
+          >
+            {selectedCount}/5 rated
+          </Badge>
+        </div>
       </div>
 
       {/* Keyboard Shortcuts Hint Bar */}
@@ -649,11 +709,228 @@ function ManualRubricEntryForm({
         </div>
       )}
 
-      {/* 5 Criteria Rating Groups with WAI-ARIA RadioGroup & Visual Active Highlighting */}
-      <div className="space-y-2.5" role="group" aria-label="5-Criterion Handwriting Rubric">
+      {/* ---------------- MOBILE STEPPER MODE (sm:hidden) ---------------- */}
+      {mobileLayoutMode === "stepper" && (
+        <div className="sm:hidden space-y-2.5">
+          {/* 5-Step Navigation Pills */}
+          <div className="grid grid-cols-5 gap-1 pt-0.5">
+            {RUBRIC_CRITERIA.map((criterion, idx) => {
+              const isStepActive = activeCriterionIndex === idx;
+              const stepBand = rubricScores[criterion.key];
+              const isRated = stepBand !== null;
+              const bandMeta = getBandMeta(stepBand);
+
+              return (
+                <button
+                  key={criterion.key}
+                  type="button"
+                  onClick={() => handleSelectCriterion(idx)}
+                  className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg border text-center transition-all cursor-pointer min-h-[40px] touch-manipulation ${
+                    isStepActive
+                      ? "bg-brand-100 dark:bg-brand-950 text-brand-950 dark:text-brand-200 border-brand-500 ring-2 ring-brand-400/40 font-bold"
+                      : isRated
+                        ? "bg-surface dark:bg-card border-brand-200/80 dark:border-brand-900/80 text-foreground"
+                        : "bg-muted/30 border-border/60 text-muted-foreground hover:border-border"
+                  }`}
+                  aria-label={`Step ${idx + 1}: ${criterion.shortName}${isRated ? ` (Rated: ${bandMeta.label})` : ""}`}
+                  aria-current={isStepActive ? "step" : undefined}
+                >
+                  <span className="text-[11px] font-mono leading-none font-semibold">
+                    {idx + 1}
+                  </span>
+                  <div className="flex items-center gap-0.5 mt-1">
+                    {isRated ? (
+                      <span
+                        className={`size-1.5 rounded-full ${bandMeta.dotColor}`}
+                        title={bandMeta.label}
+                      />
+                    ) : (
+                      <span className="size-1.5 rounded-full bg-muted-foreground/30" />
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Focused Active Criterion Card */}
+          {(() => {
+            const currentCriterion = RUBRIC_CRITERIA[activeCriterionIndex];
+            const selectedBand = rubricScores[currentCriterion.key];
+            const guide = CRITERIA_GUIDE[currentCriterion.shortName];
+
+            return (
+              <fieldset
+                role="radiogroup"
+                aria-labelledby={`stepper-criterion-label-${currentCriterion.key}`}
+                className="space-y-2 p-3 rounded-xl border bg-muted/20 border-brand-300/80 dark:border-brand-800/80 ring-1 ring-brand-400/30 shadow-xs"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <legend
+                      id={`stepper-criterion-label-${currentCriterion.key}`}
+                      className="text-xs font-semibold text-foreground flex items-center gap-1.5"
+                    >
+                      <span>{currentCriterion.name}</span>
+                      <span className="text-[10px] text-brand-600 dark:text-brand-400 font-medium font-sans">
+                        ({activeCriterionIndex + 1} of 5)
+                      </span>
+                    </legend>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {currentCriterion.hint}
+                    </p>
+                  </div>
+                  {selectedBand && (
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] font-semibold px-2 py-0.5 shrink-0 ${getBandMeta(selectedBand).badgeClass}`}
+                    >
+                      {getBandMeta(selectedBand).label} ({getBandMeta(selectedBand).score})
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Segmented 4-Radio Buttons with Touch Hitboxes */}
+                <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+                  {RUBRIC_BANDS.map((option, optIdx) => {
+                    const isChecked = selectedBand === option.band;
+                    const isTabTarget = isChecked || (!selectedBand && optIdx === 0);
+
+                    return (
+                      <button
+                        key={option.band}
+                        type="button"
+                        role="radio"
+                        data-criterion={currentCriterion.key}
+                        data-band={option.band}
+                        tabIndex={isTabTarget ? 0 : -1}
+                        aria-checked={isChecked}
+                        aria-label={`${currentCriterion.shortName}: ${option.label} (${option.score})`}
+                        disabled={isSubmittingScore}
+                        onKeyDown={(e) =>
+                          handleCriterionKeyDown(
+                            e,
+                            currentCriterion.key,
+                            activeCriterionIndex,
+                            optIdx
+                          )
+                        }
+                        onClick={() => {
+                          setRubricScores((prev) => ({
+                            ...prev,
+                            [currentCriterion.key]: option.band,
+                          }));
+                          setSubmitErrorMsg(null);
+                          setAccessibilityAnnouncement(
+                            `${currentCriterion.shortName} rated ${option.label} (${option.score}).`
+                          );
+                          if (autoAdvance && activeCriterionIndex < RUBRIC_CRITERIA.length - 1) {
+                            const nextIdx = activeCriterionIndex + 1;
+                            setActiveCriterionIndex(nextIdx);
+                            onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
+                          }
+                        }}
+                        className={`flex flex-col items-center justify-center p-2.5 rounded-lg border text-center transition-all cursor-pointer min-h-[46px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${
+                          isChecked
+                            ? option.activeClass
+                            : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1">
+                          <span className="text-[11px] font-mono font-medium text-muted-foreground">
+                            [{option.shortcutKey}]
+                          </span>
+                          <span className="text-xs leading-tight font-semibold">
+                            {option.label}
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-semibold text-muted-foreground/90 mt-0.5">
+                          {option.score}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Inline Pedagogical Coaching Guidance */}
+                {guide && (
+                  <div className="mt-2 p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1">
+                    <div className="flex items-center gap-1 text-[11px] font-semibold text-brand-800 dark:text-brand-300">
+                      <Info className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                      <span>Diagnostic Goal:</span>
+                    </div>
+                    <p className="text-[11px] text-foreground/80 leading-relaxed">
+                      {guide.rubricGoal}
+                    </p>
+                    <div className="pt-1 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1 text-[11px] text-brand-800 dark:text-brand-300">
+                      <Eye className="size-3 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
+                      <span className="leading-normal">
+                        <strong>Tip:</strong> {guide.coachingTip}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Stepper Navigation: Previous / Next Criterion */}
+                <div className="flex items-center justify-between pt-1 border-t border-border/50">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={activeCriterionIndex === 0}
+                    onClick={() => {
+                      if (activeCriterionIndex > 0) {
+                        const prevIdx = activeCriterionIndex - 1;
+                        setActiveCriterionIndex(prevIdx);
+                        onFocusCriterion?.(RUBRIC_CRITERIA[prevIdx].shortName);
+                      }
+                    }}
+                    className="h-8 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-30 touch-manipulation"
+                  >
+                    <ChevronLeft className="size-3.5" aria-hidden="true" />
+                    <span>Prev</span>
+                  </Button>
+
+                  <span className="text-[11px] text-muted-foreground font-medium">
+                    Criterion {activeCriterionIndex + 1} of {RUBRIC_CRITERIA.length}
+                  </span>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={activeCriterionIndex === RUBRIC_CRITERIA.length - 1}
+                    onClick={() => {
+                      if (activeCriterionIndex < RUBRIC_CRITERIA.length - 1) {
+                        const nextIdx = activeCriterionIndex + 1;
+                        setActiveCriterionIndex(nextIdx);
+                        onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
+                      }
+                    }}
+                    className="h-8 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-30 touch-manipulation"
+                  >
+                    <span>Next</span>
+                    <ChevronRight className="size-3.5" aria-hidden="true" />
+                  </Button>
+                </div>
+              </fieldset>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* ---------------- 5 CRITERIA LIST (Desktop always / Mobile when in List mode) ---------------- */}
+      <div
+        className={`space-y-2.5 ${
+          mobileLayoutMode === "stepper" ? "hidden sm:block sm:space-y-2.5" : "space-y-2.5"
+        }`}
+        role="group"
+        aria-label="5-Criterion Handwriting Rubric"
+      >
         {RUBRIC_CRITERIA.map((criterion, idx) => {
           const selectedBand = rubricScores[criterion.key];
           const isFocused = activeCriterionIndex === idx;
+          const guide = CRITERIA_GUIDE[criterion.shortName];
 
           return (
             <fieldset
@@ -744,14 +1021,29 @@ function ManualRubricEntryForm({
                   );
                 })}
               </div>
+
+              {/* Inline Mobile Coaching Tip when criterion is focused in List mode (sm:hidden) */}
+              {isFocused && guide && (
+                <div className="sm:hidden mt-2 p-2 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-[11px] text-brand-900 dark:text-brand-200 flex items-start gap-1.5 animate-in fade-in-50 duration-150">
+                  <Info className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="font-semibold block text-brand-800 dark:text-brand-300">
+                      {guide.rubricGoal}
+                    </span>
+                    <span className="text-foreground/80 block">
+                      <strong>Tip:</strong> {guide.coachingTip}
+                    </span>
+                  </div>
+                </div>
+              )}
             </fieldset>
           );
         })}
       </div>
 
       {/* Form Submit Footer */}
-      <div className="flex items-center justify-between pt-2 border-t border-border/60 gap-2 flex-wrap">
-        <div className="text-[11px] text-muted-foreground flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-2 border-t border-border/60 gap-2.5">
+        <div className="text-[11px] text-muted-foreground flex items-center justify-between sm:justify-start gap-3">
           {allBandsSelected ? (
             <span className="text-brand-700 dark:text-brand-300 font-medium flex items-center gap-1">
               <Check className="size-3" aria-hidden="true" />
@@ -765,7 +1057,7 @@ function ManualRubricEntryForm({
           )}
 
           {canGoNext && (
-            <label className="hidden sm:inline-flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none">
+            <label className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none touch-manipulation py-1">
               <input
                 type="checkbox"
                 checked={autoAdvance}
@@ -782,7 +1074,7 @@ function ManualRubricEntryForm({
           size="sm"
           disabled={!allBandsSelected || isSubmittingScore}
           onClick={handleSubmitRubric}
-          className="h-10 sm:h-8 min-h-[44px] sm:min-h-[32px] px-4 bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-semibold rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation"
+          className="w-full sm:w-auto h-10 sm:h-8 min-h-[44px] sm:min-h-[32px] px-4 bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-semibold rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation"
         >
           {isSubmittingScore ? (
             <>
@@ -825,12 +1117,20 @@ function SubmissionDetailDialogContent({
 }: SubmissionDetailDialogContentProps) {
   const { openUpload } = useTeacherModals();
   const [isZoomed, setIsZoomed] = useState(false);
+  const [isScrolledPastInspector, setIsScrolledPastInspector] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const [selectedCriterion, setSelectedCriterion] = useState<string | null>(
     "Letter Formation"
   );
   const [phase1Tab, setPhase1Tab] = useState<"rubric" | "metrics">("rubric");
   const [isEditingRubric, setIsEditingRubric] = useState(false);
+
+  const handleScroll = useCallback(() => {
+    if (!scrollContainerRef.current) return;
+    const scrollTop = scrollContainerRef.current.scrollTop;
+    setIsScrolledPastInspector(scrollTop > 140);
+  }, []);
 
   const {
     data: imageUrl,
@@ -1080,13 +1380,35 @@ function SubmissionDetailDialogContent({
     : null;
 
   return (
-    <DialogContent className="w-[calc(100%-1.5rem)] sm:max-w-4xl max-w-4xl max-h-[min(94dvh,calc(100vh-2rem))] flex flex-col p-4 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-xl border border-border/80 bg-surface dark:bg-card">
+    <DialogContent
+      showCloseButton={false}
+      className="w-[calc(100%-1.5rem)] sm:max-w-4xl max-w-4xl max-h-[min(94dvh,calc(100vh-2rem))] flex flex-col p-4 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-xl border border-border/80 bg-surface dark:bg-card"
+    >
       {/* Header */}
       <DialogHeader className="pb-3 sm:pb-4 border-b border-border/70 shrink-0 text-left">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
-              <GraduationCap className="size-5" aria-hidden="true" />
+            <div
+              className={cn(
+                "flex size-10 items-center justify-center rounded-xl border text-sm font-bold shrink-0 select-none shadow-2xs",
+                submission.student?.full_name
+                  ? getAvatarColor(submission.student.full_name)
+                  : "bg-brand-100 text-brand-700 border-brand-200/60 dark:bg-brand-950 dark:text-brand-300 dark:border-brand-900"
+              )}
+              role="img"
+              aria-label={
+                submission.student?.full_name
+                  ? `${submission.student.full_name}'s avatar`
+                  : "Student avatar"
+              }
+            >
+              {submission.student?.full_name && getInitials(submission.student.full_name) ? (
+                <span aria-hidden="true" className="tracking-tight font-semibold">
+                  {getInitials(submission.student.full_name)}
+                </span>
+              ) : (
+                <GraduationCap className="size-5" aria-hidden="true" />
+              )}
             </div>
             <div className="min-w-0">
               <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground flex items-center gap-2 flex-wrap">
@@ -1119,7 +1441,7 @@ function SubmissionDetailDialogContent({
                       : "Rejected"}
                 </Badge>
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-3 flex-wrap">
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-x-3 gap-y-1 flex-wrap">
                 <span className="inline-flex items-center gap-1">
                   <User className="size-3" aria-hidden="true" />
                   Uploaded by{" "}
@@ -1135,30 +1457,14 @@ function SubmissionDetailDialogContent({
                     {formatDateFull(submission.created_at)}
                   </time>
                 </span>
-                {compositeScore !== undefined && compositeScore !== null ? (
-                  <span className="inline-flex items-center gap-1">
-                    <Award className="size-3" aria-hidden="true" />
-                    Composite score: <span className="tabular-nums font-semibold">{Math.round(compositeScore)}%</span>
-                  </span>
-                ) : submission.manual_score ? (
-                  <span className="inline-flex items-center gap-1 text-brand-700 dark:text-brand-300 font-medium">
-                    <ShieldCheck className="size-3" aria-hidden="true" />
-                    Rubric Graded
-                  </span>
-                ) : submission.status === "completed" ? (
-                  <span className="inline-flex items-center gap-1 text-brand-700 dark:text-brand-300 font-medium">
-                    <ScanLine className="size-3" aria-hidden="true" />
-                    Worksheet Processed · Rubric Evaluation Needed
-                  </span>
-                ) : null}
               </DialogDescription>
             </div>
           </div>
 
-          {/* Header Right: Navigation between students with 44px mobile touch hitboxes */}
+          {/* Header Right: Navigation between students with matching height hitboxes */}
           <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
             {hasMultipleSubmissions && submissions && onNavigate && (
-              <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-xl border border-border">
+              <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-xl border border-border h-10 sm:h-9">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1168,13 +1474,13 @@ function SubmissionDetailDialogContent({
                       onNavigate(submissions[currentIndex - 1]);
                     }
                   }}
-                  className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 size-8 sm:size-7 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
+                  className="size-8 sm:size-7 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center"
                   aria-label="Previous student (Key: J or ←)"
                   title="Previous student (← / J)"
                 >
                   <ChevronLeft className="size-4" aria-hidden="true" />
                 </Button>
-                <span className="text-xs font-semibold px-2 text-foreground select-none">
+                <span className="text-xs font-semibold px-2 text-foreground select-none tabular-nums">
                   {(currentIndex ?? 0) + 1} / {submissions.length}
                 </span>
                 <Button
@@ -1186,7 +1492,7 @@ function SubmissionDetailDialogContent({
                       onNavigate(submissions[currentIndex + 1]);
                     }
                   }}
-                  className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 size-8 sm:size-7 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
+                  className="size-8 sm:size-7 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center"
                   aria-label="Next student (Key: K or →)"
                   title="Next student (→ / K)"
                 >
@@ -1194,65 +1500,62 @@ function SubmissionDetailDialogContent({
                 </Button>
               </div>
             )}
-
-            {/* Quick Re-upload for rejected */}
-            {submission.status === "rejected" && (
-              <Button
-                size="sm"
-                onClick={handleReupload}
-                className="h-9 sm:h-8 min-h-[40px] sm:min-h-[32px] bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-medium rounded-lg sm:rounded-xl gap-1.5 shadow-xs shrink-0 cursor-pointer"
-              >
-                <Upload className="size-3.5" aria-hidden="true" />
-                Re-upload
-              </Button>
-            )}
           </div>
         </div>
       </DialogHeader>
 
       {/* Modal Body: Split view (Image + Diagnostic details) */}
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain py-4 space-y-4">
-        {/* Mobile Sticky Preview Pill (< lg screens) */}
-        <div className="lg:hidden sticky -top-4 z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-surface/95 dark:bg-card/95 backdrop-blur-md border-b border-border/70 flex items-center justify-between gap-2 shadow-xs">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="size-7 rounded-md bg-muted overflow-hidden border border-border shrink-0">
-              {imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={imageUrl}
-                  alt={`Worksheet thumbnail preview for ${submission.student?.full_name ?? "student"}`}
-                  width={28}
-                  height={28}
-                  className="size-full object-cover"
-                />
-              ) : (
-                <FileText className="size-full p-1 text-muted-foreground" aria-hidden="true" />
-              )}
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain py-3 sm:py-4 space-y-4"
+      >
+        {/* Mobile Sticky Preview Pill (< lg screens, active only when scrolled past main image) */}
+        {isScrolledPastInspector && (
+          <div className="lg:hidden sticky -top-3 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-surface/95 dark:bg-card/95 backdrop-blur-md border-b border-border/80 flex items-center justify-between gap-2 shadow-xs animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="size-7 rounded-md bg-muted overflow-hidden border border-border shrink-0">
+                {imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={imageUrl}
+                    alt={`Worksheet preview for ${submission.student?.full_name ?? "student"}`}
+                    width={28}
+                    height={28}
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  <FileText className="size-full p-1 text-muted-foreground" aria-hidden="true" />
+                )}
+              </div>
+              <div className="min-w-0 flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-foreground truncate">
+                  {submission.student?.full_name ?? "Student"}
+                </span>
+                {selectedCriterion && (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] px-1.5 py-0 bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300 truncate"
+                  >
+                    {selectedCriterion}
+                  </Badge>
+                )}
+              </div>
             </div>
-            <span className="text-xs font-medium text-foreground truncate">
-              {submission.student?.full_name ?? "Student"} Worksheet
-            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="min-h-[36px] h-8 px-2.5 text-xs gap-1 cursor-pointer shrink-0 touch-manipulation font-medium text-brand-800 dark:text-brand-300 border-brand-300 dark:border-brand-800 hover:bg-brand-50 dark:hover:bg-brand-950/60"
+            >
+              <Eye className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+              <span>View Image</span>
+            </Button>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setIsZoomed((prev) => !prev)}
-            className="min-h-[40px] min-w-[68px] sm:min-h-0 h-9 sm:h-7 px-3 text-xs gap-1.5 cursor-pointer shrink-0 touch-manipulation"
-          >
-            {isZoomed ? (
-              <>
-                <Minimize2 className="size-3" aria-hidden="true" />
-                <span>Fit</span>
-              </>
-            ) : (
-              <>
-                <Maximize2 className="size-3" aria-hidden="true" />
-                <span>Zoom</span>
-              </>
-            )}
-          </Button>
-        </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Left: Worksheet Image Preview with Interactive Stroke Inspector */}
@@ -1265,43 +1568,22 @@ function SubmissionDetailDialogContent({
               onRetry={() => {
                 refetchImage();
               }}
-              headerLabel="Handwriting Worksheet"
               isFrameExpanded={isZoomed}
               onToggleFrameExpanded={() => setIsZoomed((prev) => !prev)}
               allowFrameToggle={true}
-              aspectRatioClass="aspect-4/3 sm:aspect-3/2 max-h-[400px]"
-              expandedAspectRatioClass="min-h-[440px] max-h-[540px]"
-            >
-              {/* Selected criterion overlay badge */}
-              {selectedCriterion && (
-                <div className="absolute top-2.5 left-2.5 bg-background/90 dark:bg-card/90 backdrop-blur-xs px-2.5 py-1 rounded-lg border border-brand-200 dark:border-brand-900 shadow-xs text-xs font-medium text-brand-700 dark:text-brand-300 flex items-center gap-1.5 pointer-events-none z-10">
-                  <Eye className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                  <span>Focus: {selectedCriterion}</span>
-                </div>
-              )}
-            </WorksheetImageInspector>
+              aspectRatioClass="aspect-4/3 sm:aspect-3/2 max-h-[260px] sm:max-h-[400px]"
+              expandedAspectRatioClass="min-h-[400px] max-h-[540px]"
+            />
 
-            {/* Unified Captioned Sub-Bar: Target prompt & Keyboard Shortcuts */}
-            <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs space-y-1.5">
-              {activityTargetText && (
-                <div className="flex items-center gap-1.5 text-muted-foreground flex-wrap">
-                  <span className="font-semibold text-foreground">Target prompt:</span>
-                  <span className="font-medium text-foreground bg-background/80 dark:bg-card/80 px-2 py-0.5 rounded-md border border-border/60">
-                    &ldquo;{activityTargetText}&rdquo;
-                  </span>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5 flex-wrap gap-1">
-                {hasMultipleSubmissions ? (
-                  <span>
-                    Navigate students: <kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono text-[10px]">J</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono text-[10px]">&larr;</kbd> prev &middot; <kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono text-[10px]">K</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono text-[10px]">&rarr;</kbd> next
-                  </span>
-                ) : (
-                  <span>Single student submission review</span>
-                )}
+            {/* Target prompt bar */}
+            {activityTargetText && (
+              <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs flex items-center gap-1.5 text-muted-foreground flex-wrap">
+                <span className="font-semibold text-foreground">Target prompt:</span>
+                <span className="font-medium text-foreground bg-background/80 dark:bg-card/80 px-2 py-0.5 rounded-md border border-border/60">
+                  &ldquo;{activityTargetText}&rdquo;
+                </span>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Right: Diagnostic Assessment Details */}
@@ -1410,53 +1692,73 @@ function SubmissionDetailDialogContent({
                           const band = getScoreBand(c.score);
                           const isSelected = selectedCriterion === c.name;
                           return (
-                            <button
-                              key={c.name}
-                              type="button"
-                              onClick={() =>
-                                setSelectedCriterion(c.name)
-                              }
-                              className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 ${
-                                isSelected
-                                  ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs"
-                                  : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
-                              }`}
-                            >
-                              <div className="min-w-0 pr-2">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-semibold text-foreground truncate block">
-                                    {c.name}
+                            <div key={c.name} className="space-y-1.5">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSelectedCriterion(c.name)
+                                }
+                                className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 ${
+                                  isSelected
+                                    ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs"
+                                    : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
+                                }`}
+                              >
+                                <div className="min-w-0 pr-2">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-semibold text-foreground truncate block">
+                                      {c.name}
+                                    </span>
+                                    {isSelected && (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-[11px] px-1.5 py-0 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300"
+                                      >
+                                        Active
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <span className="text-[11px] text-muted-foreground truncate block">
+                                    {c.description}
                                   </span>
-                                  {isSelected && (
-                                    <Badge
-                                      variant="outline"
-                                      className="text-[11px] px-1.5 py-0 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300"
-                                    >
-                                      Active
-                                    </Badge>
-                                  )}
                                 </div>
-                                <span className="text-[11px] text-muted-foreground truncate block">
-                                  {c.description}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 shrink-0">
-                                {c.score !== null && c.score !== undefined && (
-                                  <span className="font-semibold text-foreground tabular-nums">
-                                    {Math.round(c.score)}%
-                                  </span>
-                                )}
-                                <Badge
-                                  variant="outline"
-                                  className={`text-[11px] font-semibold px-2 py-0.5 ${band.className}`}
-                                >
-                                  <span
-                                    className={`size-1.5 rounded-full mr-1 ${band.dotColor}`}
-                                  />
-                                  {band.label}
-                                </Badge>
-                              </div>
-                            </button>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  {c.score !== null && c.score !== undefined && (
+                                    <span className="font-semibold text-foreground tabular-nums">
+                                      {Math.round(c.score)}%
+                                    </span>
+                                  )}
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-[11px] font-semibold px-2 py-0.5 ${band.className}`}
+                                  >
+                                    <span
+                                      className={`size-1.5 rounded-full mr-1 ${band.dotColor}`}
+                                    />
+                                    {band.label}
+                                  </Badge>
+                                </div>
+                              </button>
+
+                              {/* Inline Mobile Coaching Tip when selected (sm:hidden) */}
+                              {isSelected && activeCriterionInfo && (
+                                <div className="sm:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150">
+                                  <div className="flex items-center gap-1 text-[11px] font-semibold text-brand-800 dark:text-brand-300">
+                                    <Info className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                                    <span>Diagnostic Goal:</span>
+                                  </div>
+                                  <p className="text-[11px] text-foreground/80 leading-relaxed">
+                                    {activeCriterionInfo.rubricGoal}
+                                  </p>
+                                  <div className="pt-1 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1 text-[11px] text-brand-800 dark:text-brand-300">
+                                    <Eye className="size-3 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
+                                    <span className="leading-normal">
+                                      <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           );
                         })}
                       </div>
@@ -1669,9 +1971,9 @@ function SubmissionDetailDialogContent({
                   </>
                 )}
 
-                {/* Focused Criterion Diagnostic Insight Card (Shared) */}
+                {/* Focused Criterion Diagnostic Insight Card (Desktop/tablet view; mobile handled inline) */}
                 {selectedCriterion && activeCriterionInfo && (
-                  <div className="p-3 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1.5 animate-in fade-in-50 duration-200">
+                  <div className="hidden sm:block p-3 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1.5 animate-in fade-in-50 duration-200">
                     <div className="flex items-center justify-between text-xs font-semibold text-brand-900 dark:text-brand-200">
                       <span className="flex items-center gap-1.5">
                         <Info className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
@@ -1698,24 +2000,40 @@ function SubmissionDetailDialogContent({
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="flex items-center justify-between pt-3 border-t border-border/70 shrink-0">
-        <div className="text-xs text-muted-foreground hidden sm:flex items-center gap-2">
-          {hasMultipleSubmissions ? (
-            <span>Use <strong>← / →</strong> or <strong>J / K</strong> to cycle students</span>
-          ) : (
-            <span>Handwriting assessment review</span>
+      {/* Modal Footer */}
+      <DialogFooter className="pt-3 sm:pt-3.5 border-t border-border/70 shrink-0 flex flex-row items-center justify-between">
+        <div className="text-[11px] text-muted-foreground hidden sm:inline-flex items-center gap-2.5 select-none">
+          {hasMultipleSubmissions && (
+            <>
+              <span className="inline-flex items-center gap-1">
+                <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-muted border border-border rounded-md">
+                  ←
+                </kbd>
+                <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-muted border border-border rounded-md">
+                  →
+                </kbd>
+                <span>Navigate (or J / K)</span>
+              </span>
+              <span className="text-border">·</span>
+            </>
           )}
+          <span className="inline-flex items-center gap-1">
+            <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-muted border border-border rounded-md">
+              Esc
+            </kbd>
+            <span>Close</span>
+          </span>
         </div>
         <Button
           type="button"
-          variant="ghost"
+          variant="outline"
+          size="sm"
           onClick={() => onOpenChange(false)}
-          className="min-h-[44px] sm:min-h-[36px] h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium rounded-lg sm:rounded-xl text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+          className="h-9 px-4 text-xs font-medium cursor-pointer ml-auto touch-manipulation"
         >
           Close
         </Button>
-      </div>
+      </DialogFooter>
     </DialogContent>
   );
 }

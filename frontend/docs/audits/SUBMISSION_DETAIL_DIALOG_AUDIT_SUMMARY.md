@@ -36,9 +36,13 @@ Following the audit, all recommended polish items were implemented and verified.
 2. **Context-Rich Thumbnail Alt Text (WCAG 1.1.1)**:
    - Enhanced the mobile sticky thumbnail preview alt text to `alt={`Worksheet thumbnail preview for ${submission.student?.full_name ?? "student"}`}`.
 3. **Decorative Icon Shielding (WCAG 1.1.1)**:
-   - Added explicit `aria-hidden="true"` to all decorative iconography (`GraduationCap`, `User`, `Clock`, `Award`, `ShieldCheck`, `ScanLine`, `ChevronLeft`, `ChevronRight`, `Upload`, `FileText`, `Minimize2`, `Maximize2`, `Eye`, `AlertCircle`, `Camera`, `CheckCircle2`, `Binary`, `Edit3`, `Info`, `Keyboard`, `Check`, `HelpCircle`, `Loader2`, `CheckCheck`).
+   - Added explicit `aria-hidden="true"` to all decorative iconography (`GraduationCap`, `User`, `Clock`, `Award`, `ShieldCheck`, `ScanLine`, `ChevronLeft`, `ChevronRight`, `Upload`, `FileText`, `Minimize2`, `Maximize2`, `Eye`, `AlertCircle`, `Camera`, `CheckCircle2`, `Binary`, `Edit3`, `Info`, `Keyboard`, `Check`, `HelpCircle`, `Loader2`, `CheckCheck`, `Contrast`, `Search`, `ZoomIn`, `ZoomOut`, `RotateCcw`).
 4. **Tabular Numerals on Metrics (The Tabular Precision Rule)**:
    - Enforced `tabular-nums font-semibold` on composite scores, percentages, and measurement outputs for alignment across viewports.
+5. **Mobile Touch Ergonomics & Toolbar Sizing (WCAG 2.5.8)**:
+   - Upgraded `WorksheetImageInspector` toolbar buttons (`Contrast`, `Loupe`, `ZoomIn`, `ZoomOut`, `Reset`, `FrameToggle`) with `min-h-[36px]` hitboxes and `touch-manipulation` to eliminate mobile tap latency.
+   - Enforced full-width mobile primary submission button (`w-full sm:w-auto min-h-[44px]`) in the rubric assessment footer.
+   - Preserved touch-friendly `Auto-advance` checkbox access across all mobile viewports.
 
 ---
 
@@ -54,6 +58,6 @@ npm run lint
 # Result: 0 errors, 0 warnings (Exit code 0)
 
 # 3. Impeccable Mechanical Design & A11y Detector
-node .agent/skills/impeccable/scripts/detect.mjs --json frontend/components/submissions/submission-detail-dialog.tsx
+node .agent/skills/impeccable/scripts/detect.mjs --json frontend/components/submissions/submission-detail-dialog.tsx frontend/components/shared/worksheet-image-inspector.tsx
 # Result: [] (0 violations detected)
 ```
