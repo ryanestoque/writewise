@@ -12,6 +12,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+} from "@/components/ui/alert";
+import {
   type ScoreBand,
   type Submission,
   useSubmissionImageUrl,
@@ -43,6 +48,9 @@ import {
   HelpCircle,
   Layers,
   LayoutList,
+  RotateCcw,
+  SunMedium,
+  ScanLine,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -56,52 +64,105 @@ interface SubmissionDetailDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const REJECTION_GUIDE: Record<
-  string,
-  { title: string; description: string; advice: string }
-> = {
+interface RejectionDetail {
+  title: string;
+  description: string;
+  advice: string;
+}
+
+const DEFAULT_REJECTION_INFO: RejectionDetail = {
+  title: "Worksheet Photo Needs Re-capture",
+  description:
+    "The quality verification check could not extract clear cursive strokes from this image.",
+  advice:
+    "Retake the worksheet photo flat from directly above under even, bright lighting.",
+};
+
+const REJECTION_GUIDE: Record<string, RejectionDetail> = {
   QUALITY_GATE_BLUR: {
     title: "Blurry or Out-of-Focus Photo",
     description:
-      "The OpenCV quality gate detected motion blur or soft focus that prevents accurate cursive stroke extraction.",
+      "The photo is too blurry to extract cursive letter strokes and baseline coordinates accurately.",
     advice:
-      "Hold the camera steady, tap to focus on the handwriting, and ensure adequate lighting before snapping.",
+      "Hold the camera steady, tap the screen to focus on the handwriting, and retake in clear light.",
   },
-  QUALITY_GATE_LIGHTING: {
-    title: "Poor or Uneven Lighting",
+  QUALITY_GATE_BRIGHTNESS: {
+    title: "Lighting Too Dark or Overexposed",
     description:
-      "Heavy shadows or strong glare obscured the 3-line penmanship ruling.",
+      "Heavy shadows or strong glare obscured the 3-line penmanship ruling and handwriting strokes.",
     advice:
-      "Position the worksheet in bright, indirect natural or classroom light without direct overhead flash glare.",
+      "Position the worksheet in bright, indirect natural or classroom light without overhead flash glare.",
   },
-  QUALITY_GATE_SKEW: {
-    title: "Excessive Worksheet Skew",
+  QUALITY_GATE_CONTRAST: {
+    title: "Low Contrast or Faint Pencil Strokes",
     description:
-      "The page was captured at too steep an angle for automated perspective correction.",
+      "The handwriting strokes were too faint against the paper background for reliable contour analysis.",
     advice:
-      "Hold the camera parallel directly above the paper to capture a flat, rectangular top-down view.",
+      "Ensure the student writes with a dark #2 pencil or pen, and adjust lighting to eliminate washed-out areas.",
   },
-  QUALITY_GATE_OCCLUDED: {
-    title: "Worksheet Corners or Text Occluded",
+  QUALITY_GATE_RESOLUTION: {
+    title: "Image Resolution Too Low",
     description:
-      "Fingers, shadows, or page curl covered the alignment ruling or student writing.",
+      "The captured photo does not meet the minimum 1500px resolution needed for detailed stroke evaluation.",
     advice:
-      "Ensure all four corners and the entire target prompt area are clearly visible within the camera frame.",
-  },
-  QUALITY_GATE_NO_TEXT: {
-    title: "No Handwriting Detected",
-    description:
-      "The system could not detect student handwriting strokes on the ruling lines.",
-    advice:
-      "Verify the student has written with a high-contrast dark pencil or pen, and the writing area is in frame.",
+      "Move the camera closer to fill the frame with the worksheet page before taking the photo.",
   },
   SEGMENTATION_COUNT_MISMATCH: {
     title: "Word Count Mismatch",
     description:
-      "The number of segmented words does not match the expected prompt text.",
+      "The number of cursive words detected on the paper does not match the assigned prompt text.",
     advice:
-      "Check that the student wrote the complete prompt on the worksheet without skipping words or adding extra lines.",
+      "Check that the student wrote the complete sentence without skipping words or adding extra lines.",
   },
+  PIPELINE_ERROR: {
+    title: "Diagnostic Processing Issue",
+    description:
+      "An unexpected processing issue occurred while segmenting cursive strokes.",
+    advice:
+      "Please retake the photo with the worksheet flat and all four corners clearly visible.",
+  },
+  // Legacy / fallback mappings for dev database backwards compatibility
+  QUALITY_GATE_LIGHTING: {
+    title: "Lighting Too Dark or Glare Present",
+    description:
+      "Heavy shadows or strong glare obscured the 3-line penmanship guidelines.",
+    advice:
+      "Position the worksheet in bright, indirect light without direct flash glare.",
+  },
+  QUALITY_GATE_SKEW: {
+    title: "Worksheet Captured at an Angle",
+    description:
+      "The page was tilted too steeply for automated perspective correction.",
+    advice:
+      "Hold the camera parallel and directly above the paper for a flat, top-down view.",
+  },
+  QUALITY_GATE_OCCLUDED: {
+    title: "Worksheet Lines or Text Covered",
+    description:
+      "Fingers, shadows, or folded edges covered the penmanship ruling lines.",
+    advice:
+      "Ensure all four corners and all written text remain completely unobstructed.",
+  },
+  QUALITY_GATE_NO_TEXT: {
+    title: "No Handwriting Strokes Detected",
+    description:
+      "The system could not detect student handwriting marks on the ruling lines.",
+    advice:
+      "Verify the student used a dark pencil or pen and that the writing area is in frame.",
+  },
+};
+
+const REJECTION_BADGE_LABELS: Record<string, string> = {
+  QUALITY_GATE_BLUR: "Blur Detected",
+  QUALITY_GATE_BRIGHTNESS: "Lighting / Glare",
+  QUALITY_GATE_CONTRAST: "Low Contrast",
+  QUALITY_GATE_RESOLUTION: "Low Resolution",
+  SEGMENTATION_COUNT_MISMATCH: "Word Count Mismatch",
+  PIPELINE_ERROR: "Processing Issue",
+  QUALITY_GATE_LIGHTING: "Lighting / Glare",
+  QUALITY_GATE_SKEW: "Tilted Angle",
+  QUALITY_GATE_OCCLUDED: "Guidelines Covered",
+  QUALITY_GATE_NO_TEXT: "No Handwriting Found",
 };
 
 const CRITERIA_GUIDE: Record<
@@ -1181,14 +1242,35 @@ function SubmissionDetailDialogContent({
   const canGoNext =
     hasMultipleSubmissions && (currentIndex ?? 0) < (submissions?.length ?? 0) - 1;
 
-  const rejectionInfo = submission.rejection_code
-    ? REJECTION_GUIDE[submission.rejection_code] ?? {
-      title: "Worksheet Assessment Issue",
-      description: `Quality check returned code: ${submission.rejection_code}`,
-      advice:
-        "Please verify that the worksheet is well-lit, in focus, and written with a clear pen or pencil.",
-    }
-    : null;
+  const rejectionInfo = useMemo(() => {
+    if (submission.status !== "rejected") return null;
+
+    const baseInfo = submission.rejection_code
+      ? REJECTION_GUIDE[submission.rejection_code] ?? {
+          title: "Worksheet Photo Needs Re-capture",
+          description: `The quality verification check encountered an issue (${submission.rejection_code.replace(/_/g, " ").toLowerCase()}).`,
+          advice:
+            "Please verify that the worksheet is flat, well-lit, in focus, and written with a clear pen or pencil.",
+        }
+      : DEFAULT_REJECTION_INFO;
+
+    const isParentUpload = submission.uploader_role === "parent";
+    const actionLabel = isParentUpload ? "Parent Upload Follow-up" : "Teacher Action";
+    const actionAdvice = isParentUpload
+      ? `This worksheet was uploaded by the student's parent. ${baseInfo.advice} You can take a new photo in class now or advise the parent to re-scan.`
+      : baseInfo.advice;
+
+    const badgeLabel = submission.rejection_code
+      ? REJECTION_BADGE_LABELS[submission.rejection_code] ?? "Needs Re-scan"
+      : "Needs Re-scan";
+
+    return {
+      ...baseInfo,
+      actionLabel,
+      actionAdvice,
+      badgeLabel,
+    };
+  }, [submission.status, submission.rejection_code, submission.uploader_role]);
 
   const measurement = submission.measurement;
   const compositeScore = measurement?.composite_score;
@@ -1206,156 +1288,162 @@ function SubmissionDetailDialogContent({
 
   // Memoize criteria lists to prevent re-computation on every render
   const criteria = useMemo(
-    () => [
-      {
-        name: "Letter Formation",
-        score: measurement?.letter_formation_score,
-        description: "Proper cursive loop closures and proportion",
-      },
-      {
-        name: "Size Consistency",
-        score: measurement?.size_consistency_score,
-        description: "Uniform letter height within 3-line ruling",
-      },
-      {
-        name: "Spacing",
-        score: measurement?.spacing_score,
-        description: "Consistent word and inter-letter spacing",
-      },
-      {
-        name: "Slant Angle",
-        score: measurement?.slant_score,
-        description: "Consistent forward cursive slant angle",
-      },
-      {
-        name: "Baseline Alignment",
-        score: measurement?.baseline_alignment_score,
-        description: "Stable letter resting along the ruled baseline",
-      },
-    ],
-    [measurement]
+    () => {
+      if (submission.status === "rejected") return [];
+      return [
+        {
+          name: "Letter Formation",
+          score: measurement?.letter_formation_score,
+          description: "Proper cursive loop closures and proportion",
+        },
+        {
+          name: "Size Consistency",
+          score: measurement?.size_consistency_score,
+          description: "Uniform letter height within 3-line ruling",
+        },
+        {
+          name: "Spacing",
+          score: measurement?.spacing_score,
+          description: "Consistent word and inter-letter spacing",
+        },
+        {
+          name: "Slant Angle",
+          score: measurement?.slant_score,
+          description: "Consistent forward cursive slant angle",
+        },
+        {
+          name: "Baseline Alignment",
+          score: measurement?.baseline_alignment_score,
+          description: "Stable letter resting along the ruled baseline",
+        },
+      ];
+    },
+    [measurement, submission.status]
   );
 
   const rawCriteria = useMemo(
-    () => [
-      {
-        name: "Letter Formation",
-        primaryValue:
-          measurement?.letter_formation_mean != null
-            ? formatMetric(
-              measurement.letter_formation_mean,
-              measurement.letter_formation_std,
-              "%"
-            )
-            : "Awaiting CNN",
-        description:
-          "Evaluates loop closures, ascender/descender balance, and cursive curvature.",
-        subDetails: [
-          {
-            label: "Inference state",
-            value:
-              measurement?.letter_formation_mean != null
-                ? "Extracted"
-                : "Pending Stage 1 Model",
-          },
-        ],
-      },
-      {
-        name: "Size Consistency",
-        primaryValue: formatMetric(
-          measurement?.size_consistency_mean,
-          measurement?.size_consistency_std,
-          "ratio"
-        ),
-        description:
-          "Proportion of core lowercase x-height relative to printed guideline spacing.",
-        subDetails: [
-          {
-            label: "Core height ratio",
-            value: formatMetric(measurement?.size_consistency_mean),
-          },
-          {
-            label: "Height variation (std)",
-            value: formatMetric(measurement?.size_consistency_std),
-          },
-        ],
-      },
-      {
-        name: "Spacing",
-        primaryValue: formatMetric(
-          measurement?.word_spacing_mean,
-          measurement?.word_spacing_std,
-          "word gap"
-        ),
-        description:
-          "Inter-word gap widths and candidate inter-letter stroke rhythm normalized to ruling.",
-        subDetails: [
-          {
-            label: "Word-to-word gap",
-            value: formatMetric(
-              measurement?.word_spacing_mean,
-              measurement?.word_spacing_std
-            ),
-          },
-          {
-            label: "Letter-to-letter gap",
-            value: formatMetric(
-              measurement?.letter_spacing_mean,
-              measurement?.letter_spacing_std
-            ),
-          },
-        ],
-      },
-      {
-        name: "Slant Angle",
-        primaryValue:
-          measurement?.slant_mean != null
-            ? `${Number(measurement.slant_mean).toFixed(1)}°${measurement.slant_std != null
-              ? ` ± ${Number(measurement.slant_std).toFixed(1)}°`
-              : ""
-            }`
-            : "—",
-        description:
-          "Average stroke tilt relative to vertical guide perpendicular (Target: 60°–68° / ~22° tilt).",
-        subDetails: [
-          {
-            label: "Mean slant tilt",
-            value:
-              measurement?.slant_mean != null
-                ? `${Number(measurement.slant_mean).toFixed(1)}°`
-                : "—",
-          },
-          {
-            label: "Slant std dev",
-            value:
-              measurement?.slant_std != null
-                ? `±${Number(measurement.slant_std).toFixed(1)}°`
-                : "—",
-          },
-        ],
-      },
-      {
-        name: "Baseline Alignment",
-        primaryValue: formatMetric(
-          measurement?.baseline_deviation_mean,
-          measurement?.baseline_deviation_std,
-          "drift"
-        ),
-        description:
-          "Vertical distance ratio from word bottom ink boundary to detected ruling baseline.",
-        subDetails: [
-          {
-            label: "Mean baseline drift",
-            value: formatMetric(measurement?.baseline_deviation_mean),
-          },
-          {
-            label: "Drift variation (std)",
-            value: formatMetric(measurement?.baseline_deviation_std),
-          },
-        ],
-      },
-    ],
-    [measurement]
+    () => {
+      if (submission.status === "rejected") return [];
+      return [
+        {
+          name: "Letter Formation",
+          primaryValue:
+            measurement?.letter_formation_mean != null
+              ? formatMetric(
+                measurement.letter_formation_mean,
+                measurement.letter_formation_std,
+                "%"
+              )
+              : "Awaiting CNN",
+          description:
+            "Evaluates loop closures, ascender/descender balance, and cursive curvature.",
+          subDetails: [
+            {
+              label: "Inference state",
+              value:
+                measurement?.letter_formation_mean != null
+                  ? "Extracted"
+                  : "Pending Stage 1 Model",
+            },
+          ],
+        },
+        {
+          name: "Size Consistency",
+          primaryValue: formatMetric(
+            measurement?.size_consistency_mean,
+            measurement?.size_consistency_std,
+            "ratio"
+          ),
+          description:
+            "Proportion of core lowercase x-height relative to printed guideline spacing.",
+          subDetails: [
+            {
+              label: "Core height ratio",
+              value: formatMetric(measurement?.size_consistency_mean),
+            },
+            {
+              label: "Height variation (std)",
+              value: formatMetric(measurement?.size_consistency_std),
+            },
+          ],
+        },
+        {
+          name: "Spacing",
+          primaryValue: formatMetric(
+            measurement?.word_spacing_mean,
+            measurement?.word_spacing_std,
+            "word gap"
+          ),
+          description:
+            "Inter-word gap widths and candidate inter-letter stroke rhythm normalized to ruling.",
+          subDetails: [
+            {
+              label: "Word-to-word gap",
+              value: formatMetric(
+                measurement?.word_spacing_mean,
+                measurement?.word_spacing_std
+              ),
+            },
+            {
+              label: "Letter-to-letter gap",
+              value: formatMetric(
+                measurement?.letter_spacing_mean,
+                measurement?.letter_spacing_std
+              ),
+            },
+          ],
+        },
+        {
+          name: "Slant Angle",
+          primaryValue:
+            measurement?.slant_mean != null
+              ? `${Number(measurement.slant_mean).toFixed(1)}°${measurement.slant_std != null
+                ? ` ± ${Number(measurement.slant_std).toFixed(1)}°`
+                : ""
+              }`
+              : "—",
+          description:
+            "Average stroke tilt relative to vertical guide perpendicular (Target: 60°–68° / ~22° tilt).",
+          subDetails: [
+            {
+              label: "Mean slant tilt",
+              value:
+                measurement?.slant_mean != null
+                  ? `${Number(measurement.slant_mean).toFixed(1)}°`
+                  : "—",
+            },
+            {
+              label: "Slant std dev",
+              value:
+                measurement?.slant_std != null
+                  ? `±${Number(measurement.slant_std).toFixed(1)}°`
+                  : "—",
+            },
+          ],
+        },
+        {
+          name: "Baseline Alignment",
+          primaryValue: formatMetric(
+            measurement?.baseline_deviation_mean,
+            measurement?.baseline_deviation_std,
+            "drift"
+          ),
+          description:
+            "Vertical distance ratio from word bottom ink boundary to detected ruling baseline.",
+          subDetails: [
+            {
+              label: "Mean baseline drift",
+              value: formatMetric(measurement?.baseline_deviation_mean),
+            },
+            {
+              label: "Drift variation (std)",
+              value: formatMetric(measurement?.baseline_deviation_std),
+            },
+          ],
+        },
+      ];
+    },
+    [measurement, submission.status]
   );
 
   const handleReupload = () => {
@@ -1402,9 +1490,11 @@ function SubmissionDetailDialogContent({
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <DialogTitle className="font-heading text-base sm:text-xl font-semibold tracking-tight text-foreground truncate">
-                {submission.student?.full_name ?? "Student"}
-              </DialogTitle>
+              <div className="flex items-center gap-2 flex-wrap">
+                <DialogTitle className="font-heading text-base sm:text-xl font-semibold tracking-tight text-foreground truncate">
+                  {submission.student?.full_name ?? "Student"}
+                </DialogTitle>
+              </div>
               <DialogDescription className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 flex items-center gap-x-2.5 sm:gap-x-3 gap-y-0.5 flex-wrap">
                 <span className="inline-flex items-center gap-1">
                   <User className="size-3" aria-hidden="true" />
@@ -1496,14 +1586,21 @@ function SubmissionDetailDialogContent({
                 <span className="text-xs font-semibold text-foreground truncate">
                   {submission.student?.full_name ?? "Student"}
                 </span>
-                {selectedCriterion && (
+                {submission.status === "rejected" ? (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] px-2 py-0.5 bg-background dark:bg-card text-destructive border-destructive/40 shrink-0 font-semibold shadow-2xs"
+                  >
+                    Photo Rejected
+                  </Badge>
+                ) : selectedCriterion ? (
                   <Badge
                     variant="outline"
                     className="text-[10px] px-1.5 py-0 bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300 truncate"
                   >
                     {selectedCriterion}
                   </Badge>
-                )}
+                ) : null}
               </div>
             </div>
             <Button
@@ -1524,11 +1621,35 @@ function SubmissionDetailDialogContent({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Left: Worksheet Image Preview with Interactive Stroke Inspector */}
           <div className="lg:col-span-6 flex flex-col space-y-2">
+            {/* Mobile quick rejection callout banner (< lg viewports) */}
+            {submission.status === "rejected" && rejectionInfo && (
+              <div className="lg:hidden p-3 rounded-xl bg-destructive/10 border border-destructive/25 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 text-xs shadow-2xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <AlertCircle className="size-4 text-destructive shrink-0" aria-hidden="true" />
+                  <span className="font-semibold text-destructive leading-snug">
+                    Photo rejected: {rejectionInfo.badgeLabel}
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReupload}
+                  aria-label={`Quick re-upload worksheet photo for ${submission.student?.full_name ?? "student"}`}
+                  className="min-h-11 px-3 py-1.5 rounded-lg bg-background dark:bg-card border-destructive/30 text-destructive hover:bg-destructive/10 text-xs font-semibold shrink-0 cursor-pointer touch-manipulation transition-colors flex items-center gap-1.5 shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <Camera className="size-3.5" aria-hidden="true" />
+                  <span>Re-upload</span>
+                </Button>
+              </div>
+            )}
+
             <WorksheetImageInspector
               imageUrl={imageUrl}
               altText={`Handwriting worksheet submitted for ${submission.student?.full_name ?? "student"}`}
               isLoading={isImageLoading}
               isError={isImageError}
+              headerLabel="Handwritten Worksheet"
               onRetry={() => {
                 refetchImage();
               }}
@@ -1553,39 +1674,87 @@ function SubmissionDetailDialogContent({
           {/* Right: Diagnostic Assessment Details */}
           <div className="lg:col-span-6 flex flex-col justify-between space-y-3.5">
             {/* REJECTED STATE */}
-            {submission.status === "rejected" && (
-              <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-destructive/10 border border-destructive/20 space-y-3">
-                <div className="flex items-center gap-2 text-destructive font-semibold text-sm">
-                  <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
-                  <span>Submission Rejected by OpenCV Quality Gate</span>
-                </div>
-                {rejectionInfo && (
-                  <div className="space-y-2 text-xs">
-                    <div>
-                      <strong className="text-foreground">Issue:</strong>{" "}
-                      <span className="text-muted-foreground">
-                        {rejectionInfo.title}
-                      </span>
-                    </div>
-                    <div>
-                      <strong className="text-foreground">Diagnostic Explanation:</strong>{" "}
-                      <span className="text-muted-foreground">
-                        {rejectionInfo.description}
-                      </span>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-surface/80 dark:bg-card/80 border border-destructive/20 text-muted-foreground">
-                      <strong className="text-foreground">Teacher Action:</strong>{" "}
-                      {rejectionInfo.advice}
+            {submission.status === "rejected" && rejectionInfo && (
+              <div className="space-y-3.5">
+                <Alert
+                  variant="destructive"
+                  role="region"
+                  aria-labelledby="rejection-heading"
+                  className="rounded-xl sm:rounded-2xl border-destructive/25 bg-destructive/10 p-4 sm:p-5 shadow-xs space-y-3 block [&_svg]:translate-y-0"
+                >
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <AlertCircle className="size-4.5 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
+                    <div className="min-w-0 flex-1">
+                      <AlertTitle className="font-heading text-sm sm:text-base font-semibold text-destructive tracking-tight leading-snug">
+                        <h3 id="rejection-heading" className="text-balance break-words font-inherit">
+                          {rejectionInfo.title}
+                        </h3>
+                      </AlertTitle>
                     </div>
                   </div>
-                )}
-                <Button
-                  onClick={handleReupload}
-                  className="w-full h-10 min-h-[44px] sm:min-h-[40px] bg-primary hover:bg-brand-700 text-primary-foreground text-xs sm:text-sm font-medium rounded-lg sm:rounded-xl gap-2 shadow-xs cursor-pointer"
-                >
-                  <Camera className="size-4" aria-hidden="true" />
-                  Take & Re-upload New Photo
-                </Button>
+
+                  <AlertDescription className="!text-foreground/90 text-xs sm:text-sm leading-relaxed font-sans">
+                    {rejectionInfo.description}
+                  </AlertDescription>
+
+                  <div className="rounded-lg sm:rounded-xl bg-background/95 dark:bg-card/90 border border-destructive/20 p-3 space-y-1.5 shadow-2xs">
+                    <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <RotateCcw className="size-3.5 !text-brand-600 dark:!text-brand-400 shrink-0" aria-hidden="true" />
+                      {rejectionInfo.actionLabel}
+                    </span>
+                    <p
+                      id="rejection-advice"
+                      className="text-xs text-foreground/80 leading-relaxed"
+                    >
+                      {rejectionInfo.actionAdvice}
+                    </p>
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={handleReupload}
+                    aria-describedby="rejection-advice"
+                    aria-label={`Take and re-upload new worksheet photo for ${submission.student?.full_name ?? "student"}`}
+                    className="w-full min-h-11 bg-primary hover:bg-brand-700 text-primary-foreground dark:hover:bg-brand-200 dark:hover:text-brand-950 text-xs sm:text-sm font-semibold rounded-xl gap-2 shadow-xs cursor-pointer touch-manipulation transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <Camera className="size-4" aria-hidden="true" />
+                    Take & Re-upload New Photo
+                  </Button>
+                </Alert>
+
+                {/* Photo Quality Guidelines for Reliable Scoring */}
+                <div className="p-3.5 sm:p-4 rounded-xl border border-border/80 bg-muted/30 dark:bg-muted/15 space-y-3">
+                  <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <Info className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+                    Photo Quality Guidelines for Reliable Scoring
+                  </h4>
+                  <ul className="space-y-2.5 text-xs text-muted-foreground">
+                    <li className="flex items-start gap-2.5">
+                      <div className="size-6 rounded-md bg-brand-100 dark:bg-brand-950/80 text-brand-700 dark:text-brand-300 flex items-center justify-center shrink-0 mt-0.5 border border-brand-200/50 dark:border-brand-900/50">
+                        <SunMedium className="size-3.5" aria-hidden="true" />
+                      </div>
+                      <span className="leading-relaxed">
+                        <strong className="text-foreground font-medium">Bright, Indirect Lighting:</strong> Avoid heavy phone shadows and direct overhead fluorescent glare on the paper.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <div className="size-6 rounded-md bg-brand-100 dark:bg-brand-950/80 text-brand-700 dark:text-brand-300 flex items-center justify-center shrink-0 mt-0.5 border border-brand-200/50 dark:border-brand-900/50">
+                        <ScanLine className="size-3.5" aria-hidden="true" />
+                      </div>
+                      <span className="leading-relaxed">
+                        <strong className="text-foreground font-medium">Flat Top-Down Framing:</strong> Hold the camera parallel directly above the page so 3-line penmanship ruling remains straight.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <div className="size-6 rounded-md bg-brand-100 dark:bg-brand-950/80 text-brand-700 dark:text-brand-300 flex items-center justify-center shrink-0 mt-0.5 border border-brand-200/50 dark:border-brand-900/50">
+                        <Camera className="size-3.5" aria-hidden="true" />
+                      </div>
+                      <span className="leading-relaxed">
+                        <strong className="text-foreground font-medium">Tap to Focus:</strong> Ensure pencil strokes and midlines are crisp and sharp before pressing capture.
+                      </span>
+                    </li>
+                  </ul>
+                </div>
               </div>
             )}
 
