@@ -190,9 +190,16 @@ export default function DashboardPage() {
       {/* Submission Detail Dialog */}
       <SubmissionDetailDialog
         submission={activeSubmission}
+        submissions={activitySubmissions}
+        currentIndex={
+          activeSubmission && activitySubmissions
+            ? activitySubmissions.findIndex((s) => s.id === activeSubmission.id)
+            : undefined
+        }
+        onNavigate={(s) => setSelectedSubmissionId(s.id)}
         open={isSubmissionModalOpen}
         onOpenChange={setIsSubmissionModalOpen}
-        activityTargetText={activeSubmission?.activity_id}
+        activityTargetText={activeSubmission?.activity?.target_text}
       />
     </div>
   );

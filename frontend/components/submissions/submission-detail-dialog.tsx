@@ -438,6 +438,7 @@ interface ManualRubricEntryFormProps {
   onFocusCriterion?: (criterionName: string | null) => void;
   canGoNext?: boolean;
   onAdvanceNext?: () => void;
+  onNavigateBack?: () => void;
 }
 
 function ManualRubricEntryForm({
@@ -447,6 +448,7 @@ function ManualRubricEntryForm({
   onFocusCriterion,
   canGoNext,
   onAdvanceNext,
+  onNavigateBack,
 }: ManualRubricEntryFormProps) {
   const { mutate: submitManualScore, isPending: isSubmittingScore } =
     useSubmitManualScore();
@@ -466,7 +468,7 @@ function ManualRubricEntryForm({
   });
 
   const [activeCriterionIndex, setActiveCriterionIndex] = useState<number>(0);
-  const [mobileLayoutMode, setMobileLayoutMode] = useState<"stepper" | "list">("stepper");
+  const [layoutMode, setLayoutMode] = useState<"stepper" | "list">("stepper");
   const [autoAdvance, setAutoAdvance] = useState<boolean>(true);
   const [submitErrorMsg, setSubmitErrorMsg] = useState<string | null>(null);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
@@ -508,7 +510,17 @@ function ManualRubricEntryForm({
         onSuccess: () => {
           onSuccess?.();
           if (autoAdvance && canGoNext && onAdvanceNext) {
-            toast.success("Rubric recorded — advancing to next student");
+            toast.success("Rubric recorded — advancing to next student", {
+              action: onNavigateBack
+                ? {
+                    label: "Undo",
+                    onClick: () => {
+                      onNavigateBack();
+                    },
+                  }
+                : undefined,
+              duration: 6000,
+            });
             onAdvanceNext();
           } else {
             toast.success("Rubric assessment recorded");
@@ -533,6 +545,7 @@ function ManualRubricEntryForm({
     autoAdvance,
     canGoNext,
     onAdvanceNext,
+    onNavigateBack,
   ]);
 
   useEffect(() => {
@@ -692,16 +705,16 @@ function ManualRubricEntryForm({
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
-          {/* Mobile Layout Mode Switcher (Focus Stepper vs Full List) */}
-          <div className="flex items-center p-0.5 rounded-lg bg-muted/60 border border-border/80 sm:hidden">
+          {/* Layout Mode Switcher (Focus Stepper vs Full List for all viewports) */}
+          <div className="flex items-center p-0.5 rounded-lg bg-muted/60 border border-border/80">
             <button
               type="button"
-              onClick={() => setMobileLayoutMode("stepper")}
-              className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors cursor-pointer min-h-[36px] flex items-center gap-1 touch-manipulation ${mobileLayoutMode === "stepper"
+              onClick={() => setLayoutMode("stepper")}
+              className={`px-2 py-1 rounded-md text-[10px] sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-[36px] sm:min-h-[28px] flex items-center gap-1 touch-manipulation ${layoutMode === "stepper"
                 ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                 : "text-muted-foreground hover:text-foreground"
                 }`}
-              aria-pressed={mobileLayoutMode === "stepper"}
+              aria-pressed={layoutMode === "stepper"}
               title="Focus Stepper Mode (1 criterion at a time)"
             >
               <Layers className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
@@ -709,16 +722,16 @@ function ManualRubricEntryForm({
             </button>
             <button
               type="button"
-              onClick={() => setMobileLayoutMode("list")}
-              className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors cursor-pointer min-h-[36px] flex items-center gap-1 touch-manipulation ${mobileLayoutMode === "list"
+              onClick={() => setLayoutMode("list")}
+              className={`px-2 py-1 rounded-md text-[10px] sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-[36px] sm:min-h-[28px] flex items-center gap-1 touch-manipulation ${layoutMode === "list"
                 ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                 : "text-muted-foreground hover:text-foreground"
                 }`}
-              aria-pressed={mobileLayoutMode === "list"}
+              aria-pressed={layoutMode === "list"}
               title="List Mode (show all 5 criteria)"
             >
               <LayoutList className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-              <span>All</span>
+              <span>All (5)</span>
             </button>
           </div>
 
@@ -767,9 +780,9 @@ function ManualRubricEntryForm({
         </div>
       )}
 
-      {/* ---------------- MOBILE STEPPER MODE (sm:hidden) ---------------- */}
-      {mobileLayoutMode === "stepper" && (
-        <div className="sm:hidden space-y-2.5">
+      {/* ---------------- FOCUS STEPPER MODE (Unified across all viewports) ---------------- */}
+      {layoutMode === "stepper" && (
+        <div className="space-y-2.5">
           {/* 5-Step Navigation Pills */}
           <div className="grid grid-cols-5 gap-1 pt-0.5">
             {RUBRIC_CRITERIA.map((criterion, idx) => {
@@ -820,7 +833,7 @@ function ManualRubricEntryForm({
               <fieldset
                 role="radiogroup"
                 aria-labelledby={`stepper-criterion-label-${currentCriterion.key}`}
-                className="space-y-2 p-3 rounded-xl border bg-muted/20 border-brand-300/80 dark:border-brand-800/80 ring-1 ring-brand-400/30 shadow-xs"
+                className="space-y-2 p-3 sm:p-3.5 rounded-xl border bg-muted/20 border-brand-300/80 dark:border-brand-800/80 ring-1 ring-brand-400/30 shadow-xs"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
@@ -847,8 +860,8 @@ function ManualRubricEntryForm({
                   )}
                 </div>
 
-                {/* Segmented 4-Radio Buttons with Touch Hitboxes */}
-                <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+                {/* Segmented 4-Radio Buttons with Responsive Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-0.5">
                   {RUBRIC_BANDS.map((option, optIdx) => {
                     const isChecked = selectedBand === option.band;
                     const isTabTarget = isChecked || (!selectedBand && optIdx === 0);
@@ -887,7 +900,7 @@ function ManualRubricEntryForm({
                             onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
                           }
                         }}
-                        className={`flex flex-col items-center justify-center p-2.5 rounded-lg border text-center transition-all cursor-pointer min-h-[46px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
+                        className={`flex flex-col items-center justify-center p-2.5 rounded-lg border text-center transition-all cursor-pointer min-h-[46px] sm:min-h-[40px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
                           ? option.activeClass
                           : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
                           }`}
@@ -975,10 +988,9 @@ function ManualRubricEntryForm({
         </div>
       )}
 
-      {/* ---------------- 5 CRITERIA LIST (Desktop always / Mobile when in List mode) ---------------- */}
+      {/* ---------------- 5 CRITERIA LIST (All Mode) ---------------- */}
       <div
-        className={`space-y-2.5 ${mobileLayoutMode === "stepper" ? "hidden sm:block sm:space-y-2.5" : "space-y-2.5"
-          }`}
+        className={`space-y-2.5 ${layoutMode === "stepper" ? "hidden" : "block"}`}
         role="group"
         aria-label="5-Criterion Handwriting Rubric"
       >
@@ -1286,6 +1298,27 @@ function SubmissionDetailDialogContent({
       measurement.baseline_alignment_score !== null)
   );
 
+  const isUuid = (text?: string | null): boolean =>
+    Boolean(
+      text &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          text.trim()
+        )
+    );
+
+  const resolvedTargetText = useMemo(() => {
+    if (activityTargetText && !isUuid(activityTargetText)) {
+      return activityTargetText.trim();
+    }
+    if (
+      submission.activity?.target_text &&
+      !isUuid(submission.activity.target_text)
+    ) {
+      return submission.activity.target_text.trim();
+    }
+    return null;
+  }, [activityTargetText, submission.activity?.target_text]);
+
   // Memoize criteria lists to prevent re-computation on every render
   const criteria = useMemo(
     () => {
@@ -1334,16 +1367,20 @@ function SubmissionDetailDialogContent({
                 measurement.letter_formation_std,
                 "%"
               )
-              : "Awaiting CNN",
+              : "Awaiting Analysis",
           description:
-            "Evaluates loop closures, ascender/descender balance, and cursive curvature.",
+            "OpenCV curvature and CNN stroke loop analysis across ascenders (b, d, h, k, l) and descenders (g, j, p, q, y, z).",
           subDetails: [
             {
-              label: "Inference state",
+              label: "Status",
               value:
                 measurement?.letter_formation_mean != null
-                  ? "Extracted"
-                  : "Pending Stage 1 Model",
+                  ? "Feature Extracted"
+                  : "Awaiting Analysis",
+            },
+            {
+              label: "Stroke curvature",
+              value: formatMetric(measurement?.letter_formation_mean, null, "%"),
             },
           ],
         },
@@ -1355,11 +1392,15 @@ function SubmissionDetailDialogContent({
             "ratio"
           ),
           description:
-            "Proportion of core lowercase x-height relative to printed guideline spacing.",
+            "Proportion of lowercase x-height relative to printed 3-line guidelines (Headline, Midline, Baseline).",
           subDetails: [
             {
-              label: "Core height ratio",
+              label: "Core x-height ratio",
               value: formatMetric(measurement?.size_consistency_mean),
+            },
+            {
+              label: "Target guideline ratio",
+              value: "0.50 (at midline)",
             },
             {
               label: "Height variation (std)",
@@ -1372,10 +1413,10 @@ function SubmissionDetailDialogContent({
           primaryValue: formatMetric(
             measurement?.word_spacing_mean,
             measurement?.word_spacing_std,
-            "word gap"
+            "gap"
           ),
           description:
-            "Inter-word gap widths and candidate inter-letter stroke rhythm normalized to ruling.",
+            "Word separation rhythm and inter-letter connector spacing normalized to ruling guidelines.",
           subDetails: [
             {
               label: "Word-to-word gap",
@@ -1391,6 +1432,10 @@ function SubmissionDetailDialogContent({
                 measurement?.letter_spacing_std
               ),
             },
+            {
+              label: "Target benchmark",
+              value: "~1 lowercase 'o'",
+            },
           ],
         },
         {
@@ -1403,17 +1448,21 @@ function SubmissionDetailDialogContent({
               }`
               : "—",
           description:
-            "Average stroke tilt relative to vertical guide perpendicular (Target: 60°–68° / ~22° tilt).",
+            "Average forward cursive stroke angle relative to baseline perpendicular (Target standard: 60°–68°).",
           subDetails: [
             {
-              label: "Mean slant tilt",
+              label: "Mean slant angle",
               value:
                 measurement?.slant_mean != null
                   ? `${Number(measurement.slant_mean).toFixed(1)}°`
                   : "—",
             },
             {
-              label: "Slant std dev",
+              label: "Target slant range",
+              value: "60.0° – 68.0°",
+            },
+            {
+              label: "Slant consistency (std)",
               value:
                 measurement?.slant_std != null
                   ? `±${Number(measurement.slant_std).toFixed(1)}°`
@@ -1429,11 +1478,15 @@ function SubmissionDetailDialogContent({
             "drift"
           ),
           description:
-            "Vertical distance ratio from word bottom ink boundary to detected ruling baseline.",
+            "Vertical distance of letter bases from the ruled penmanship baseline guideline across each word.",
           subDetails: [
             {
               label: "Mean baseline drift",
               value: formatMetric(measurement?.baseline_deviation_mean),
+            },
+            {
+              label: "Target alignment",
+              value: "< 0.05 drift ratio",
             },
             {
               label: "Drift variation (std)",
@@ -1460,11 +1513,11 @@ function SubmissionDetailDialogContent({
 
   return (
     <DialogContent
-      showCloseButton={false}
+      showCloseButton={true}
       className="w-[calc(100%-1.5rem)] sm:max-w-4xl max-w-4xl max-h-[min(94dvh,calc(100vh-2rem))] flex flex-col p-4 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-xl border border-border/80 bg-surface dark:bg-card"
     >
       {/* Header */}
-      <DialogHeader className="pb-3 sm:pb-4 border-b border-border/70 shrink-0 text-left">
+      <DialogHeader className="pb-3 sm:pb-4 border-b border-border/70 shrink-0 text-left pr-10 sm:pr-12">
         <div className="flex flex-row items-center justify-between gap-2.5 sm:gap-3">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
             <div
@@ -1618,32 +1671,9 @@ function SubmissionDetailDialogContent({
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:items-center">
           {/* Left: Worksheet Image Preview with Interactive Stroke Inspector */}
-          <div className="lg:col-span-6 flex flex-col space-y-2">
-            {/* Mobile quick rejection callout banner (< lg viewports) */}
-            {submission.status === "rejected" && rejectionInfo && (
-              <div className="lg:hidden p-3 rounded-xl bg-destructive/10 border border-destructive/25 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 text-xs shadow-2xs">
-                <div className="flex items-center gap-2 min-w-0">
-                  <AlertCircle className="size-4 text-destructive shrink-0" aria-hidden="true" />
-                  <span className="font-semibold text-destructive leading-snug">
-                    Photo rejected: {rejectionInfo.badgeLabel}
-                  </span>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleReupload}
-                  aria-label={`Quick re-upload worksheet photo for ${submission.student?.full_name ?? "student"}`}
-                  className="min-h-11 px-3 py-1.5 rounded-lg bg-background dark:bg-card border-destructive/30 text-destructive hover:bg-destructive/10 text-xs font-semibold shrink-0 cursor-pointer touch-manipulation transition-colors flex items-center gap-1.5 shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  <Camera className="size-3.5" aria-hidden="true" />
-                  <span>Re-upload</span>
-                </Button>
-              </div>
-            )}
-
+          <div className="lg:col-span-6 flex flex-col justify-center space-y-2 w-full">
             <WorksheetImageInspector
               imageUrl={imageUrl}
               altText={`Handwriting worksheet submitted for ${submission.student?.full_name ?? "student"}`}
@@ -1661,14 +1691,12 @@ function SubmissionDetailDialogContent({
             />
 
             {/* Target prompt bar */}
-            {activityTargetText && (
-              <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs flex items-center gap-1.5 text-muted-foreground flex-wrap">
-                <span className="font-semibold text-foreground">Target prompt:</span>
-                <span className="font-medium text-foreground bg-background/80 dark:bg-card/80 px-2 py-0.5 rounded-md border border-border/60">
-                  &ldquo;{activityTargetText}&rdquo;
-                </span>
-              </div>
-            )}
+            <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs flex items-center gap-1.5 text-muted-foreground flex-wrap">
+              <span className="font-semibold text-foreground shrink-0">Target prompt:</span>
+              <span className="font-medium text-foreground bg-background/80 dark:bg-card/80 px-2 py-0.5 rounded-md border border-border/60">
+                {resolvedTargetText ? `“${resolvedTargetText}”` : "Cursive Penmanship Practice"}
+              </span>
+            </div>
           </div>
 
           {/* Right: Diagnostic Assessment Details */}
@@ -1982,7 +2010,7 @@ function SubmissionDetailDialogContent({
                                       <span className="font-semibold text-foreground truncate block">
                                         {criterion.name}
                                       </span>
-                                      <span className="text-[11px] text-muted-foreground truncate block">
+                                      <span className="text-[11px] text-muted-foreground leading-normal block">
                                         {criterion.hint}
                                       </span>
                                     </div>
@@ -2019,6 +2047,12 @@ function SubmissionDetailDialogContent({
                                 onNavigate(submissions[currentIndex + 1]);
                               }
                             }}
+                            onNavigateBack={() => {
+                              if (onNavigate) {
+                                onNavigate(submission);
+                                setIsEditingRubric(true);
+                              }
+                            }}
                           />
                         )}
                       </div>
@@ -2044,7 +2078,7 @@ function SubmissionDetailDialogContent({
                                 key={c.name}
                                 type="button"
                                 onClick={() => setSelectedCriterion(c.name)}
-                                className={`w-full flex flex-col p-3 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 ${isSelected
+                                className={`w-full flex flex-col p-2.5 sm:p-3 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 ${isSelected
                                   ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/40"
                                   : "bg-surface dark:bg-card border-border/70 hover:border-brand-300 dark:hover:border-brand-800 hover:bg-muted/30"
                                   }`}
@@ -2057,7 +2091,7 @@ function SubmissionDetailDialogContent({
                                     {isSelected && (
                                       <Badge
                                         variant="outline"
-                                        className="text-[11px] px-1.5 py-0 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300"
+                                        className="text-[10px] px-1.5 py-0 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300"
                                       >
                                         Active
                                       </Badge>
@@ -2070,21 +2104,21 @@ function SubmissionDetailDialogContent({
                                   </div>
                                 </div>
 
-                                <span className="text-[11px] text-muted-foreground mt-1 leading-normal block">
+                                <span className="text-[11px] text-muted-foreground mt-0.5 leading-snug block line-clamp-2">
                                   {c.description}
                                 </span>
 
                                 {c.subDetails && c.subDetails.length > 0 && (
-                                  <div className="mt-2 pt-2 border-t border-border/50 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] w-full">
+                                  <div className="mt-1.5 pt-1.5 border-t border-border/50 grid grid-cols-1 sm:grid-cols-2 gap-x-3.5 gap-y-1 text-[11px] w-full">
                                     {c.subDetails.map((sub, sIdx) => (
                                       <div
                                         key={sIdx}
-                                        className="flex items-center justify-between gap-1 text-muted-foreground"
+                                        className="flex items-baseline justify-between gap-1.5 text-muted-foreground min-w-0"
                                       >
-                                        <span className="truncate">
+                                        <span className="shrink-0 font-medium text-muted-foreground/90">
                                           {sub.label}:
                                         </span>
-                                        <span className="font-mono font-semibold text-foreground tabular-nums shrink-0">
+                                        <span className="font-mono font-semibold text-foreground tabular-nums text-right truncate">
                                           {sub.value}
                                         </span>
                                       </div>

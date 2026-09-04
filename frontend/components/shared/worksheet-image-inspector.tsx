@@ -278,7 +278,7 @@ export function WorksheetImageInspector({
   };
 
   return (
-    <div data-inspector-container="true" className={cn("space-y-2", className)}>
+    <div data-inspector-container="true" className={cn("w-full space-y-2", className)}>
       {/* Screen reader live announcement */}
       <div className="sr-only" role="status" aria-live="polite">
         {accessibilityNotice}
@@ -430,7 +430,7 @@ export function WorksheetImageInspector({
           setLoupeState((prev) => ({ ...prev, visible: false }));
         }}
         className={cn(
-          "relative rounded-xl sm:rounded-2xl border border-border/80 bg-muted/30 dark:bg-muted/20 overflow-hidden transition-all flex items-center justify-center shadow-warm select-none touch-none",
+          "relative w-full mx-auto rounded-xl sm:rounded-2xl border border-border/80 bg-muted/30 dark:bg-muted/20 overflow-hidden transition-all flex items-center justify-center shadow-warm select-none touch-none",
           "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           isFrameExpanded ? expandedAspectRatioClass : aspectRatioClass,
           isLoupeActive
@@ -569,11 +569,11 @@ export function WorksheetImageInspector({
       </div>
 
       {/* Mobile Touch Guidance */}
-      <div className="sm:hidden flex items-center justify-between text-[11px] text-muted-foreground px-1">
+      <div className="sm:hidden flex items-center justify-center text-[11px] text-muted-foreground px-1 text-center">
         <span>Pinch or use toolbar to zoom</span>
         {zoomScale > 1 && (
-          <span className="font-medium text-brand-700 dark:text-brand-300">
-            Drag to pan image
+          <span className="font-medium text-brand-700 dark:text-brand-300 ml-1.5">
+            &middot; Drag to pan
           </span>
         )}
       </div>

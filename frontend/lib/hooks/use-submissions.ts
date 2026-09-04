@@ -42,6 +42,9 @@ export interface Submission {
   student: {
     full_name: string;
   };
+  activity?: {
+    target_text?: string;
+  } | null;
   measurement?: {
     composite_score: number | null;
     letter_formation_score: number | null;
@@ -78,6 +81,7 @@ export function useSubmissions(activityId: string) {
           `id, activity_id, student_id, image_path, status, uploader_id,
            uploader_role, rejection_code, created_at, updated_at,
            student:student_id(full_name),
+           activity:activity_id(target_text),
            measurement(
              composite_score, letter_formation_score, size_consistency_score,
              spacing_score, slant_score, baseline_alignment_score,
@@ -103,6 +107,9 @@ export function useSubmissions(activityId: string) {
 
       return (data || []).map((row: Record<string, unknown>) => ({
         ...row,
+        activity: Array.isArray(row.activity)
+          ? row.activity[0] ?? null
+          : (row.activity ?? null),
         measurement: Array.isArray(row.measurement)
           ? row.measurement[0] ?? null
           : (row.measurement ?? null),
