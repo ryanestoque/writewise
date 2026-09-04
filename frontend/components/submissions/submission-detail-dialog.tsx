@@ -1181,7 +1181,6 @@ function SubmissionDetailDialogContent({
   onOpenChange,
 }: SubmissionDetailDialogContentProps) {
   const { openUpload } = useTeacherModals();
-  const [isZoomed, setIsZoomed] = useState(false);
   const [isScrolledPastInspector, setIsScrolledPastInspector] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -1513,11 +1512,11 @@ function SubmissionDetailDialogContent({
 
   return (
     <DialogContent
-      showCloseButton={true}
-      className="w-[calc(100%-1.5rem)] sm:max-w-4xl max-w-4xl max-h-[min(94dvh,calc(100vh-2rem))] flex flex-col p-4 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-xl border border-border/80 bg-surface dark:bg-card"
+      showCloseButton={false}
+      className="w-[calc(100%-1.5rem)] sm:max-w-4xl lg:max-w-5xl max-h-[min(94dvh,calc(100vh-2rem))] flex flex-col p-4 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-xl border border-border/80 bg-surface dark:bg-card"
     >
       {/* Header */}
-      <DialogHeader className="pb-3 sm:pb-4 border-b border-border/70 shrink-0 text-left pr-10 sm:pr-12">
+      <DialogHeader className="pb-3 sm:pb-4 border-b border-border/70 shrink-0 text-left">
         <div className="flex flex-row items-center justify-between gap-2.5 sm:gap-3">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
             <div
@@ -1671,9 +1670,9 @@ function SubmissionDetailDialogContent({
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:items-stretch">
           {/* Left: Worksheet Image Preview with Interactive Stroke Inspector */}
-          <div className="lg:col-span-6 flex flex-col justify-center space-y-2 w-full">
+          <div className="lg:col-span-6 flex flex-col justify-between gap-2.5 w-full h-full min-h-0">
             <WorksheetImageInspector
               imageUrl={imageUrl}
               altText={`Handwriting worksheet submitted for ${submission.student?.full_name ?? "student"}`}
@@ -1683,15 +1682,12 @@ function SubmissionDetailDialogContent({
               onRetry={() => {
                 refetchImage();
               }}
-              isFrameExpanded={isZoomed}
-              onToggleFrameExpanded={() => setIsZoomed((prev) => !prev)}
-              allowFrameToggle={true}
-              aspectRatioClass="aspect-4/3 sm:aspect-3/2 max-h-[260px] sm:max-h-[400px]"
-              expandedAspectRatioClass="min-h-[400px] max-h-[540px]"
+              className="flex-1 flex flex-col min-h-0"
+              aspectRatioClass="aspect-4/3 sm:aspect-3/2 lg:aspect-auto lg:flex-1 min-h-[260px] sm:min-h-[300px] lg:min-h-0"
             />
 
             {/* Target prompt bar */}
-            <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs flex items-center gap-1.5 text-muted-foreground flex-wrap">
+            <div className="shrink-0 p-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs flex items-center gap-1.5 text-muted-foreground flex-wrap">
               <span className="font-semibold text-foreground shrink-0">Target prompt:</span>
               <span className="font-medium text-foreground bg-background/80 dark:bg-card/80 px-2 py-0.5 rounded-md border border-border/60">
                 {resolvedTargetText ? `“${resolvedTargetText}”` : "Cursive Penmanship Practice"}

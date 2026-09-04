@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -66,7 +65,6 @@ export function WorksheetViewDialog({
   scores,
   bands,
 }: WorksheetViewDialogProps) {
-  const [isZoomed, setIsZoomed] = useState(false);
   const { data: imageUrl, isLoading: isImageLoading } =
     useSubmissionImageUrl(imagePath);
 
@@ -122,9 +120,6 @@ export function WorksheetViewDialog({
                 altText={`Handwriting worksheet submitted for ${childName}`}
                 isLoading={isImageLoading}
                 headerLabel="Handwritten Worksheet"
-                isFrameExpanded={isZoomed}
-                onToggleFrameExpanded={() => setIsZoomed((prev) => !prev)}
-                allowFrameToggle={true}
               />
             </div>
 

@@ -11,8 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Maximize2,
-  Minimize2,
   ZoomIn,
   ZoomOut,
   RotateCcw,
@@ -33,12 +31,6 @@ export interface WorksheetImageInspectorProps {
   headerLabel?: string;
   /** Header icon element */
   headerIcon?: ReactNode;
-  /** Whether the container frame height is expanded */
-  isFrameExpanded?: boolean;
-  /** Callback when frame height expansion is toggled */
-  onToggleFrameExpanded?: () => void;
-  /** Whether to show the frame height expansion toggle button */
-  allowFrameToggle?: boolean;
   /** Whether an error occurred loading the image */
   isError?: boolean;
   /** Callback when user clicks retry after an image load failure */
@@ -47,9 +39,8 @@ export interface WorksheetImageInspectorProps {
   children?: ReactNode;
   /** Additional container classes */
   className?: string;
-  /** Custom aspect ratio / height classes for normal and expanded modes */
+  /** Custom aspect ratio / height classes */
   aspectRatioClass?: string;
-  expandedAspectRatioClass?: string;
 }
 
 export function WorksheetImageInspector({
@@ -60,13 +51,9 @@ export function WorksheetImageInspector({
   onRetry,
   headerLabel = "Handwritten Worksheet",
   headerIcon,
-  isFrameExpanded = false,
-  onToggleFrameExpanded,
-  allowFrameToggle = true,
   children,
   className,
   aspectRatioClass = "aspect-4/3 sm:aspect-3/2 max-h-[420px]",
-  expandedAspectRatioClass = "min-h-[460px] max-h-[580px]",
 }: WorksheetImageInspectorProps) {
   const [zoomScale, setZoomScale] = useState<number>(1);
   const [isLoupeActive, setIsLoupeActive] = useState<boolean>(false);
@@ -278,7 +265,7 @@ export function WorksheetImageInspector({
   };
 
   return (
-    <div data-inspector-container="true" className={cn("w-full space-y-2", className)}>
+    <div data-inspector-container="true" className={cn("w-full flex flex-col gap-2", className)}>
       {/* Screen reader live announcement */}
       <div className="sr-only" role="status" aria-live="polite">
         {accessibilityNotice}
@@ -286,7 +273,7 @@ export function WorksheetImageInspector({
 
       {/* Header Label (if present) */}
       {headerLabel && (
-        <div className="flex items-center justify-between px-0.5">
+        <div className="flex items-center justify-between px-0.5 shrink-0">
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
             {headerIcon}
             <span>{headerLabel}</span>
@@ -295,7 +282,7 @@ export function WorksheetImageInspector({
       )}
 
       {/* Full-width Inspector Action Controls */}
-      <div className="w-full flex items-center justify-between gap-1 bg-muted/50 p-1 rounded-xl border border-border/80 text-xs shadow-2xs">
+      <div className="w-full flex items-center justify-between gap-1 bg-muted/50 p-1 rounded-xl border border-border/80 text-xs shadow-2xs shrink-0">
         {/* Left tools: Contrast & Loupe */}
         <div className="flex items-center gap-1">
           {/* High-Contrast Ink Filter Toggle */}
@@ -379,28 +366,6 @@ export function WorksheetImageInspector({
           >
             <ZoomIn className="size-3.5" aria-hidden="true" />
           </Button>
-
-          {/* Frame Height Toggle (if supported) */}
-          {allowFrameToggle && onToggleFrameExpanded && (
-            <>
-              <div className="h-4 sm:h-3.5 w-px bg-border/80 mx-0.5" />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={onToggleFrameExpanded}
-                className="size-9 sm:size-7 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
-                aria-label={isFrameExpanded ? "Fit frame height" : "Expand frame height"}
-                title={isFrameExpanded ? "Fit frame" : "Expand frame"}
-              >
-                {isFrameExpanded ? (
-                  <Minimize2 className="size-3.5" aria-hidden="true" />
-                ) : (
-                  <Maximize2 className="size-3.5" aria-hidden="true" />
-                )}
-              </Button>
-            </>
-          )}
         </div>
       </div>
 
@@ -432,7 +397,7 @@ export function WorksheetImageInspector({
         className={cn(
           "relative w-full mx-auto rounded-xl sm:rounded-2xl border border-border/80 bg-muted/30 dark:bg-muted/20 overflow-hidden transition-all flex items-center justify-center shadow-warm select-none touch-none",
           "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-          isFrameExpanded ? expandedAspectRatioClass : aspectRatioClass,
+          aspectRatioClass,
           isLoupeActive
             ? "cursor-crosshair"
             : zoomScale > 1
@@ -557,7 +522,7 @@ export function WorksheetImageInspector({
       </div>
 
       {/* Desktop Keyboard Shortcuts Legend */}
-      <div className="hidden sm:flex items-center justify-between text-[11px] text-muted-foreground px-1 flex-wrap gap-1">
+      <div className="hidden sm:flex items-center justify-between text-[11px] text-muted-foreground px-1 flex-wrap gap-1 shrink-0">
         <span>
           Shortcuts: <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">+</kbd> / <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">-</kbd> zoom &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">L</kbd> magnify &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">C</kbd> contrast &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">0</kbd> reset
         </span>
@@ -569,7 +534,7 @@ export function WorksheetImageInspector({
       </div>
 
       {/* Mobile Touch Guidance */}
-      <div className="sm:hidden flex items-center justify-center text-[11px] text-muted-foreground px-1 text-center">
+      <div className="sm:hidden flex items-center justify-center text-[11px] text-muted-foreground px-1 text-center shrink-0">
         <span>Pinch or use toolbar to zoom</span>
         {zoomScale > 1 && (
           <span className="font-medium text-brand-700 dark:text-brand-300 ml-1.5">
