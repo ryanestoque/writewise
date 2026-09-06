@@ -5,8 +5,8 @@ import type { Submission } from "@/lib/hooks/use-submissions";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import {
   statusConfig,
-  getScoreBandLabel,
   getRejectionSummary,
+  resolveSubmissionScore,
 } from "@/lib/utils/submission-status";
 import { formatDate, getRelativeTime } from "@/lib/utils/formatters";
 import { Badge } from "@/components/ui/badge";
@@ -63,8 +63,12 @@ export const SubmissionCard = memo(function SubmissionCard({
   const { data: imageUrl } = useSubmissionImageUrl(submission.image_path);
   const [imageError, setImageError] = useState(false);
   const config = statusConfig[submission.status];
-  const compositeScore = submission.measurement?.composite_score;
-  const scoreBand = getScoreBandLabel(compositeScore);
+  const resolvedScore = useMemo(
+    () => resolveSubmissionScore(submission),
+    [submission]
+  );
+  const compositeScore = resolvedScore.compositeScore;
+  const scoreBand = resolvedScore.scoreBand;
   const rejection = getRejectionSummary(submission.rejection_code);
   const hasMultipleAttempts = attemptCount > 1 && allSubmissions.length > 1;
   const ScoreIcon = scoreBand.icon;
@@ -77,12 +81,14 @@ export const SubmissionCard = memo(function SubmissionCard({
 
   const accessibleLabel = useMemo(() => {
     let text = `View diagnostic details for ${studentName}. Status: ${config.label}.`;
-    if (
-      submission.status === "completed" &&
-      compositeScore !== undefined &&
-      compositeScore !== null
-    ) {
-      text += ` Diagnostic composite score: ${Math.round(compositeScore)} percent, rated ${scoreBand.band}.`;
+    if (submission.status === "completed") {
+      if (resolvedScore.isScored && compositeScore !== null) {
+        const sourceLabel =
+          resolvedScore.source === "manual" ? "manual teacher rubric" : "calibrated";
+        text += ` Diagnostic composite score: ${Math.round(compositeScore)} percent (${sourceLabel}), rated ${scoreBand.band}.`;
+      } else {
+        text += ` Worksheet processed. Pending teacher rubric scoring.`;
+      }
     } else if (submission.status === "rejected") {
       text += ` Submission rejected: ${rejection.label}. ${rejection.detail}.`;
     }
@@ -94,6 +100,8 @@ export const SubmissionCard = memo(function SubmissionCard({
     studentName,
     config.label,
     submission.status,
+    resolvedScore.isScored,
+    resolvedScore.source,
     compositeScore,
     scoreBand.band,
     rejection,
@@ -246,7 +254,8 @@ export const SubmissionCard = memo(function SubmissionCard({
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs max-w-xs">
                     <p className="font-semibold">
-                      {scoreBand.band} Penmanship
+                      {scoreBand.band} Penmanship{" "}
+                      {resolvedScore.source === "manual" && "(Teacher Rubric)"}
                     </p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
                       {scoreBand.description}
@@ -308,7 +317,9 @@ export const SubmissionCard = memo(function SubmissionCard({
               aria-hidden="true"
               className="h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-3 sm:px-2 text-xs font-medium text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:bg-brand-50/50 dark:hover:bg-brand-950/50 rounded-lg gap-1.5 group/btn cursor-pointer"
             >
-              <span>Inspect details</span>
+              <span>
+                {resolvedScore.isScored ? "Inspect details" : "Score rubric"}
+              </span>
               <ArrowRight className="size-3.5 sm:size-3 transition-transform group-hover/btn:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" />
             </Button>
           )}

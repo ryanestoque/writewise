@@ -75,13 +75,13 @@ export function ProgressPageContent() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
           {historyCount > 1 && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => setHistoryOpen(true)}
-              className="h-9 gap-1.5 text-xs font-medium border-border/80 hover:bg-muted/50 cursor-pointer"
+              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 text-xs font-medium border-border/80 hover:bg-muted/50 cursor-pointer"
             >
               <History className="size-3.5 text-brand-600 dark:text-brand-400" />
               <span>All Worksheets ({historyCount})</span>
@@ -92,7 +92,7 @@ export function ProgressPageContent() {
             variant="outline"
             size="sm"
             onClick={() => setRubricOpen(true)}
-            className="h-9 gap-1.5 text-xs font-medium border-border/80 hover:bg-muted/50 cursor-pointer"
+            className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 text-xs font-medium border-border/80 hover:bg-muted/50 cursor-pointer"
           >
             <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400" />
             <span>Understanding Rubrics</span>

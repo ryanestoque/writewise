@@ -52,7 +52,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { getWordCount } from "@/lib/utils/formatters";
-import { getScoreBandLabel } from "@/lib/utils/submission-status";
+import {
+  getScoreBandLabel,
+  resolveSubmissionScore,
+} from "@/lib/utils/submission-status";
 import {
   ActivityDetailHero,
   type ClassDiagnosticSummary,
@@ -160,11 +163,12 @@ export default function ActivityDetailPage({
   // Class Diagnostic Synthesis: Calculate class average and priority criteria
   const classDiagnostics = useMemo<ClassDiagnosticSummary | null>(() => {
     if (!submissions) return null;
-    const completed = submissions.filter(
-      (s) =>
-        s.status === "completed" && s.measurement?.composite_score != null
-    );
-    if (completed.length === 0) return null;
+    const scoredSubmissions = submissions
+      .map((s) => ({ submission: s, resolved: resolveSubmissionScore(s) }))
+      .filter(
+        (item) => item.submission.status === "completed" && item.resolved.isScored
+      );
+    if (scoredSubmissions.length === 0) return null;
 
     let totalComposite = 0;
     let totalFormation = 0;
@@ -178,33 +182,33 @@ export default function ActivityDetailPage({
     let slantCount = 0;
     let baselineCount = 0;
 
-    for (const sub of completed) {
-      const m = sub.measurement;
-      if (!m) continue;
-      if (m.composite_score != null) totalComposite += m.composite_score;
-      if (m.letter_formation_score != null) {
-        totalFormation += m.letter_formation_score;
+    for (const { resolved } of scoredSubmissions) {
+      if (resolved.compositeScore != null) {
+        totalComposite += resolved.compositeScore;
+      }
+      if (resolved.criteriaScores.letterFormation != null) {
+        totalFormation += resolved.criteriaScores.letterFormation;
         formationCount++;
       }
-      if (m.size_consistency_score != null) {
-        totalSize += m.size_consistency_score;
+      if (resolved.criteriaScores.sizeConsistency != null) {
+        totalSize += resolved.criteriaScores.sizeConsistency;
         sizeCount++;
       }
-      if (m.spacing_score != null) {
-        totalSpacing += m.spacing_score;
+      if (resolved.criteriaScores.spacing != null) {
+        totalSpacing += resolved.criteriaScores.spacing;
         spacingCount++;
       }
-      if (m.slant_score != null) {
-        totalSlant += m.slant_score;
+      if (resolved.criteriaScores.slant != null) {
+        totalSlant += resolved.criteriaScores.slant;
         slantCount++;
       }
-      if (m.baseline_alignment_score != null) {
-        totalBaseline += m.baseline_alignment_score;
+      if (resolved.criteriaScores.baselineAlignment != null) {
+        totalBaseline += resolved.criteriaScores.baselineAlignment;
         baselineCount++;
       }
     }
 
-    const avgComposite = Math.round(totalComposite / completed.length);
+    const avgComposite = Math.round(totalComposite / scoredSubmissions.length);
     const avgFormation = formationCount
       ? Math.round(totalFormation / formationCount)
       : 0;
@@ -228,7 +232,7 @@ export default function ActivityDetailPage({
     criteriaList.sort((a, b) => b.score - a.score);
 
     return {
-      completedCount: completed.length,
+      completedCount: scoredSubmissions.length,
       avgCompositeScore: avgComposite,
       scoreBand: getScoreBandLabel(avgComposite),
       criteriaAverages: {
@@ -358,9 +362,9 @@ export default function ActivityDetailPage({
       }
       if (sortBy === "score_desc") {
         const scoreA =
-          a.latestSubmission.measurement?.composite_score ?? -1;
+          resolveSubmissionScore(a.latestSubmission).compositeScore ?? -1;
         const scoreB =
-          b.latestSubmission.measurement?.composite_score ?? -1;
+          resolveSubmissionScore(b.latestSubmission).compositeScore ?? -1;
         return scoreB - scoreA;
       }
       return 0;
@@ -406,8 +410,8 @@ export default function ActivityDetailPage({
         );
       }
       if (sortBy === "score_desc") {
-        const scoreA = a.measurement?.composite_score ?? -1;
-        const scoreB = b.measurement?.composite_score ?? -1;
+        const scoreA = resolveSubmissionScore(a).compositeScore ?? -1;
+        const scoreB = resolveSubmissionScore(b).compositeScore ?? -1;
         return scoreB - scoreA;
       }
       return 0;

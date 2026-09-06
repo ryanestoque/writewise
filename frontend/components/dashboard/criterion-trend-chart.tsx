@@ -26,44 +26,44 @@ const CRITERION_CONFIG = [
   {
     key: "composite",
     label: "Overall Score",
-    color: "var(--color-brand-600, #1b6b63)",
+    color: "#1b6b63", // Primary Brand Teal
     strokeWidth: 3,
     strokeDasharray: undefined,
   },
   {
     key: "letter_formation",
     label: "Letter Shapes",
-    color: "#298d83",
+    color: "#475569", // Slate Gray
     strokeWidth: 2,
-    strokeDasharray: "4 2",
+    strokeDasharray: "6 3",
   },
   {
     key: "size_consistency",
     label: "Size & Proportions",
-    color: "#c9a227",
+    color: "#0e7490", // Deep Cyan / Cool Teal
     strokeWidth: 2,
     strokeDasharray: "4 2",
   },
   {
     key: "spacing",
     label: "Spacing",
-    color: "#7c9b6e",
+    color: "#4338ca", // Indigo Slate
     strokeWidth: 2,
-    strokeDasharray: "4 2",
+    strokeDasharray: "3 3",
   },
   {
     key: "slant",
     label: "Slant & Tilt",
-    color: "#b6754a",
+    color: "#92400e", // Warm Bronze / Sepia
     strokeWidth: 2,
-    strokeDasharray: "4 2",
+    strokeDasharray: "8 3 2 3",
   },
   {
     key: "baseline_alignment",
     label: "Line Alignment",
-    color: "#4a8b5c",
+    color: "#15803d", // Deep Pine
     strokeWidth: 2,
-    strokeDasharray: "4 2",
+    strokeDasharray: "2 2",
   },
 ];
 

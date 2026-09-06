@@ -76,6 +76,12 @@ function errorMessageFor(error: UploadError): string {
       return "You don't have permission to upload for this activity.";
     case "MODEL_INFERENCE_ERROR":
       return "The assessment system encountered an issue. Please try submitting again shortly.";
+    case "QUALITY_GATE_LIGHTING":
+      return "The lighting has glare or harsh shadows. Move to a space with diffuse, even light.";
+    case "QUALITY_GATE_SKEW":
+      return "The worksheet is tilted or angled. Place the paper flat on a table and point the camera directly above it.";
+    case "PIPELINE_ERROR":
+      return "An unexpected issue occurred while processing the worksheet. Please retake the photo ensuring the entire page is flat and visible.";
     default:
       return error.message || "Upload failed. Please check your connection and try again.";
   }
@@ -366,7 +372,7 @@ function ParentUploadFlow({
                       setSelectedActivityId(act.id);
                       setStep("capture");
                     }}
-                    className="flex flex-col text-left p-3.5 rounded-xl border border-border/80 bg-card hover:border-primary hover:bg-primary/5 transition-all text-xs sm:text-sm cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="flex flex-col text-left p-3.5 rounded-xl border border-border/80 bg-card hover:border-primary hover:bg-primary/5 transition-all text-xs sm:text-sm cursor-pointer shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <span className="font-semibold text-foreground line-clamp-2">
                       &ldquo;{act.targetText}&rdquo;
@@ -503,7 +509,7 @@ function ParentUploadFlow({
                     setIsDragging(false);
                     handleFileChange(e.dataTransfer.files?.[0]);
                   }}
-                  className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-all text-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 shadow-warm ${
+                  className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-all text-center cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 shadow-warm ${
                     isDragging
                       ? "border-primary bg-primary/5 scale-[0.99]"
                       : "border-border bg-card hover:border-primary/60 hover:bg-muted/10"
@@ -568,7 +574,7 @@ function ParentUploadFlow({
                   <button
                     type="button"
                     onClick={() => setShowTips((prev) => !prev)}
-                    className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-muted/50 transition-colors text-left font-medium text-foreground cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-muted/50 transition-colors text-left font-medium text-foreground cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                     aria-expanded={showTips}
                     aria-controls={photoTipsId}
                   >

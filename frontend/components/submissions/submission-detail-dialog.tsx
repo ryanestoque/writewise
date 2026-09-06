@@ -42,6 +42,7 @@ import {
 } from "./manual-rubric-entry-form";
 import { SubmissionRejectionCard } from "./submission-rejection-card";
 import { RawMeasurementsTable } from "./raw-measurements-table";
+import { getScoreBandLabel } from "@/lib/utils/submission-status";
 
 interface SubmissionDetailDialogProps {
   submission: Submission | null;
@@ -53,55 +54,6 @@ interface SubmissionDetailDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function getScoreBand(score: number | null | undefined): {
-  label: string;
-  className: string;
-  dotColor: string;
-} {
-  if (score === null || score === undefined) {
-    return {
-      label: "Pending",
-      className: "bg-muted/60 text-muted-foreground border-border",
-      dotColor: "bg-muted-foreground",
-    };
-  }
-
-  // Band 4 (80-100%): Deep Pine / Excellent
-  if (score >= 80) {
-    return {
-      label: "Excellent",
-      className:
-        "bg-brand-50 text-brand-800 dark:bg-brand-950/80 dark:text-brand-300 border-brand-200/80 dark:border-brand-900",
-      dotColor: "bg-brand-600 dark:bg-brand-400",
-    };
-  }
-  // Band 3 (60-79%): Soft Olive / Satisfactory
-  if (score >= 60) {
-    return {
-      label: "Satisfactory",
-      className:
-        "bg-[#7c9b6e]/15 text-[#2c4e22] dark:bg-[#7c9b6e]/20 dark:text-[#c4deba] border-[#7c9b6e]/40 dark:border-[#7c9b6e]/50",
-      dotColor: "bg-[#7c9b6e]",
-    };
-  }
-  // Band 2 (40-59%): Ochre Gold / Developing
-  if (score >= 40) {
-    return {
-      label: "Developing",
-      className:
-        "bg-[#c9a227]/15 text-[#6e4e00] dark:bg-[#c9a227]/20 dark:text-[#fae59a] border-[#c9a227]/40 dark:border-[#c9a227]/50",
-      dotColor: "bg-[#c9a227]",
-    };
-  }
-  // Band 1 (0-39%): Clay Coral / Needs Improvement
-  return {
-    label: "Needs Improvement",
-    className:
-      "bg-[#b6754a]/15 text-[#733512] dark:bg-[#b6754a]/20 dark:text-[#f3c8aa] border-[#b6754a]/40 dark:border-[#b6754a]/50",
-    dotColor: "bg-[#b6754a]",
-  };
-}
-
 function getInitials(name: string): string {
   if (!name) return "";
   const parts = name.trim().split(/\s+/);
@@ -110,12 +62,12 @@ function getInitials(name: string): string {
 }
 
 const AVATAR_PALETTES = [
-  "bg-amber-100 text-amber-900 border-amber-300/70 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-800",
-  "bg-emerald-100 text-emerald-900 border-emerald-300/70 dark:bg-emerald-950/80 dark:text-emerald-200 dark:border-emerald-800",
-  "bg-blue-100 text-blue-900 border-blue-300/70 dark:bg-blue-950/80 dark:text-blue-200 dark:border-blue-800",
-  "bg-purple-100 text-purple-900 border-purple-300/70 dark:bg-purple-950/80 dark:text-purple-200 dark:border-purple-800",
   "bg-brand-100 text-brand-900 border-brand-300/70 dark:bg-brand-950/80 dark:text-brand-200 dark:border-brand-800",
-  "bg-rose-100 text-rose-900 border-rose-300/70 dark:bg-rose-950/80 dark:text-rose-200 dark:border-rose-800",
+  "bg-emerald-100 text-emerald-900 border-emerald-300/70 dark:bg-emerald-950/80 dark:text-emerald-200 dark:border-emerald-800",
+  "bg-amber-100 text-amber-900 border-amber-300/70 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-800",
+  "bg-teal-100 text-teal-900 border-teal-300/70 dark:bg-teal-950/80 dark:text-teal-200 dark:border-teal-800",
+  "bg-slate-100 text-slate-800 border-slate-300/70 dark:bg-slate-850 dark:text-slate-200 dark:border-slate-700",
+  "bg-stone-100 text-stone-800 border-stone-300/70 dark:bg-stone-850 dark:text-stone-200 dark:border-stone-700",
 ];
 
 function getAvatarColor(name: string): string {
@@ -232,7 +184,7 @@ function SubmissionDetailDialogContent({
 
   const measurement = submission.measurement;
   const compositeScore = measurement?.composite_score;
-  const compositeBand = getScoreBand(compositeScore);
+  const compositeBand = getScoreBandLabel(compositeScore);
 
   const hasCalibratedScores = Boolean(
     measurement &&
@@ -506,8 +458,8 @@ function SubmissionDetailDialogContent({
 
             {/* PROCESSING STATE */}
             {submission.status === "processing" && (
-              <div className="p-5 rounded-xl sm:rounded-2xl bg-[#c9a227]/10 dark:bg-[#c9a227]/20 border border-[#c9a227]/30 space-y-3 text-center">
-                <div className="flex size-12 items-center justify-center rounded-2xl bg-[#c9a227]/20 text-[#6e4e00] dark:text-[#fae59a] mx-auto motion-safe:animate-pulse">
+              <div className="p-5 rounded-xl sm:rounded-2xl bg-warning/10 border border-warning/30 space-y-3 text-center">
+                <div className="flex size-12 items-center justify-center rounded-2xl bg-warning/20 text-warning-foreground mx-auto motion-safe:animate-pulse">
                   <Clock className="size-6" aria-hidden="true" />
                 </div>
                 <div className="space-y-1 max-w-sm mx-auto">
@@ -568,7 +520,7 @@ function SubmissionDetailDialogContent({
 
                       <div className="space-y-1.5">
                         {criteria.map((c) => {
-                          const band = getScoreBand(c.score);
+                          const band = getScoreBandLabel(c.score);
                           const isSelected = selectedCriterion === c.name;
                           return (
                             <div key={c.name} className="space-y-1.5">

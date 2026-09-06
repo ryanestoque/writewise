@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import type { StudentScoreSummary } from "@/lib/hooks/use-dashboard";
 import { BandBadge } from "@/components/shared/band-badge";
-import { getBandMeta } from "@/lib/utils/scoring";
+import { getBandFromScore, getBandMeta } from "@/lib/utils/scoring";
 import { cn } from "@/lib/utils";
 
 export type SortField =
@@ -68,12 +68,12 @@ function getInitials(name: string) {
 }
 
 const AVATAR_PALETTES = [
-  "bg-amber-100 text-amber-900 border-amber-300/70 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-800",
-  "bg-emerald-100 text-emerald-900 border-emerald-300/70 dark:bg-emerald-950/80 dark:text-emerald-200 dark:border-emerald-800",
-  "bg-blue-100 text-blue-900 border-blue-300/70 dark:bg-blue-950/80 dark:text-blue-200 dark:border-blue-800",
-  "bg-purple-100 text-purple-900 border-purple-300/70 dark:bg-purple-950/80 dark:text-purple-200 dark:border-purple-800",
   "bg-brand-100 text-brand-900 border-brand-300/70 dark:bg-brand-950/80 dark:text-brand-200 dark:border-brand-800",
-  "bg-rose-100 text-rose-900 border-rose-300/70 dark:bg-rose-950/80 dark:text-rose-200 dark:border-rose-800",
+  "bg-emerald-100 text-emerald-900 border-emerald-300/70 dark:bg-emerald-950/80 dark:text-emerald-200 dark:border-emerald-800",
+  "bg-amber-100 text-amber-900 border-amber-300/70 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-800",
+  "bg-teal-100 text-teal-900 border-teal-300/70 dark:bg-teal-950/80 dark:text-teal-200 dark:border-teal-800",
+  "bg-slate-100 text-slate-800 border-slate-300/70 dark:bg-slate-850 dark:text-slate-200 dark:border-slate-700",
+  "bg-stone-100 text-stone-800 border-stone-300/70 dark:bg-stone-850 dark:text-stone-200 dark:border-stone-700",
 ];
 
 function getAvatarColor(name: string) {
@@ -85,7 +85,13 @@ function getAvatarColor(name: string) {
   return AVATAR_PALETTES[index];
 }
 
-export type BandFilter = "all" | "intervention" | "satisfactory" | "excellent" | "unrated";
+export type BandFilter =
+  | "all"
+  | "needs_improvement"
+  | "developing"
+  | "satisfactory"
+  | "excellent"
+  | "unrated";
 
 const COLUMNS: Array<{
   field: SortField;
@@ -210,9 +216,10 @@ export function ClassTable({
 
   // Band / Performance tier counts for FilterPills
   const bandPills: FilterPillItem[] = useMemo(() => {
-    const counts = {
+    const counts: Record<BandFilter, number> = {
       all: students.length,
-      intervention: 0,
+      needs_improvement: 0,
+      developing: 0,
       satisfactory: 0,
       excellent: 0,
       unrated: 0,
@@ -222,18 +229,20 @@ export function ClassTable({
       const score = s.scores.composite;
       if (score === null || score === undefined) {
         counts.unrated++;
-      } else if (score < 50) {
-        counts.intervention++;
-      } else if (score < 75) {
-        counts.satisfactory++;
       } else {
-        counts.excellent++;
+        const band = getBandFromScore(score);
+        if (band) {
+          counts[band]++;
+        } else {
+          counts.unrated++;
+        }
       }
     });
 
     return [
       { id: "all", label: "All Tiers", count: counts.all },
-      { id: "intervention", label: "Needs Support (<50%)", count: counts.intervention },
+      { id: "needs_improvement", label: "Needs Improvement (<25%)", count: counts.needs_improvement },
+      { id: "developing", label: "Developing (25–49%)", count: counts.developing },
       { id: "satisfactory", label: "Satisfactory (50–74%)", count: counts.satisfactory },
       { id: "excellent", label: "Excellent (≥75%)", count: counts.excellent },
       { id: "unrated", label: "Unrated", count: counts.unrated },
@@ -256,12 +265,9 @@ export function ClassTable({
         let matchesBand = true;
         if (selectedBand === "unrated") {
           matchesBand = score === null || score === undefined;
-        } else if (selectedBand === "intervention") {
-          matchesBand = score !== null && score !== undefined && score < 50;
-        } else if (selectedBand === "satisfactory") {
-          matchesBand = score !== null && score !== undefined && score >= 50 && score < 75;
-        } else if (selectedBand === "excellent") {
-          matchesBand = score !== null && score !== undefined && score >= 75;
+        } else if (selectedBand !== "all") {
+          const band = getBandFromScore(score);
+          matchesBand = band === selectedBand;
         }
 
         return matchesSearch && matchesSection && matchesBand;

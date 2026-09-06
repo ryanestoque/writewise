@@ -7,6 +7,7 @@ import {
 import { BandBadge } from "@/components/shared/band-badge";
 import { Button } from "@/components/ui/button";
 import { Upload, ClipboardList, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { getRejectionSummary } from "@/lib/utils/submission-status";
 
 interface TakeHomeActivitiesProps {
   childId: string | null;
@@ -47,9 +48,9 @@ export function TakeHomeActivities({
   }
 
   return (
-    <div className="grid gap-3.5 sm:grid-cols-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {activities.map((activity) => (
-        <TakeHomeActivityCard
+        <ActivityCard
           key={activity.id}
           activityId={activity.id}
           targetText={activity.targetText}
@@ -62,7 +63,7 @@ export function TakeHomeActivities({
   );
 }
 
-function TakeHomeActivityCard({
+function ActivityCard({
   activityId,
   targetText,
   createdAt,
@@ -83,8 +84,11 @@ function TakeHomeActivityCard({
   const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    year: "numeric",
   });
+
+  const isProcessing = submission?.status === "processing";
+  const isCompleted = submission?.status === "completed";
+  const isRejected = submission?.status === "rejected";
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-warm p-4 sm:p-5 flex flex-col justify-between gap-3.5 transition-shadow hover:shadow-md">
@@ -104,7 +108,7 @@ function TakeHomeActivityCard({
         ) : submission ? (
           <div className="space-y-2 w-full">
             <div className="flex items-center justify-between gap-2 w-full">
-              {submission.status === "completed" ? (
+              {isCompleted ? (
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 dark:text-brand-300">
                     <CheckCircle2 className="size-4 shrink-0 text-brand-600 dark:text-brand-400" />
@@ -113,6 +117,13 @@ function TakeHomeActivityCard({
                   {submission.compositeScore != null && (
                     <BandBadge score={submission.compositeScore} size="sm" />
                   )}
+                </div>
+              ) : isProcessing ? (
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
+                    <Loader2 className="size-3.5 shrink-0 animate-spin text-amber-600 dark:text-amber-400 motion-reduce:animate-none" />
+                    Analyzing photo…
+                  </span>
                 </div>
               ) : (
                 <div className="flex items-center gap-1.5 text-xs font-medium text-destructive">
@@ -126,22 +137,44 @@ function TakeHomeActivityCard({
                 size="sm"
                 className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-medium gap-1.5 cursor-pointer shrink-0 border-border/80 hover:bg-muted/50"
                 onClick={onUploadClick}
+                disabled={isProcessing}
                 aria-label={
-                  submission.status === "completed"
+                  isCompleted
                     ? `Submit another practice attempt for "${targetText}"`
-                    : `Retake photo for "${targetText}"`
+                    : isProcessing
+                      ? `Worksheet "${targetText}" is currently being analyzed`
+                      : `Retake photo for "${targetText}"`
                 }
               >
-                <Upload className="size-3.5" />
-                <span>{submission.status === "completed" ? "New Attempt" : "Retake"}</span>
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" />
+                    <span>In Progress</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="size-3.5" />
+                    <span>{isCompleted ? "New Attempt" : "Retake"}</span>
+                  </>
+                )}
               </Button>
             </div>
 
-            {submission.status === "rejected" && (
-              <p className="text-[11px] text-muted-foreground bg-destructive/5 border border-destructive/20 p-2 rounded-md leading-normal">
-                <strong>Tip:</strong> Position the camera directly above the worksheet in bright light without shadows so cursive strokes are crisp.
+            {isProcessing && (
+              <p className="text-[11px] text-muted-foreground bg-muted/40 border border-border/60 p-2 rounded-md leading-normal">
+                AI penmanship assessment is in progress. Check back shortly to view updated scores.
               </p>
             )}
+
+            {isRejected && (() => {
+              const rejection = getRejectionSummary(submission.rejectionCode);
+              return (
+                <p className="text-[11px] text-muted-foreground bg-destructive/5 border border-destructive/20 p-2 rounded-md leading-normal">
+                  <strong className="text-foreground font-medium">{rejection.label}:</strong>{" "}
+                  {rejection.detail}
+                </p>
+              );
+            })()}
           </div>
         ) : (
           <Button

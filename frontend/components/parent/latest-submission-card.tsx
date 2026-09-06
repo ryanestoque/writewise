@@ -113,7 +113,7 @@ export function LatestSubmissionCard({
                 size="sm"
                 onClick={() => setViewImageOpen(true)}
                 aria-haspopup="dialog"
-                className="w-full h-9 text-xs sm:text-sm font-medium gap-2 border-brand-200 dark:border-brand-900 bg-brand-50/50 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 hover:bg-brand-100/60 dark:hover:bg-brand-900/50 cursor-pointer shadow-xs"
+                className="w-full h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium gap-2 border-brand-200 dark:border-brand-900 bg-brand-50/50 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 hover:bg-brand-100/60 dark:hover:bg-brand-900/50 cursor-pointer shadow-xs"
               >
                 <Eye className="size-4 text-brand-600 dark:text-brand-400" />
                 <span>View Scored Worksheet Photo</span>
@@ -148,7 +148,7 @@ export function LatestSubmissionCard({
                 variant="outline"
                 size="sm"
                 onClick={onViewHistoryClick}
-                className="h-8 text-xs font-medium gap-1.5 border-border/80 hover:bg-muted/60 cursor-pointer"
+                className="w-full sm:w-auto h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] text-xs font-medium gap-1.5 border-border/80 hover:bg-muted/60 cursor-pointer"
               >
                 <History className="size-3.5 text-brand-600 dark:text-brand-400" />
                 <span>View Past Worksheets ({historyCount})</span>
