@@ -25,3 +25,18 @@ def test_health_check_in_test_env():
     data = response.json()
     assert data["model_loaded"] is True
     assert data["model_stub"] is True
+
+
+def test_validation_error_envelope(client):
+    """Request validation errors are normalized to the API_SPEC envelope."""
+    # Send invalid POST to /api/activities which requires target_text: str
+    response = client.post(
+        "/api/activities",
+        json={"not_target_text": 123},
+    )
+    assert response.status_code == 422
+    data = response.json()
+    assert "error" in data
+    assert data["error"]["code"] == "VALIDATION_ERROR"
+    assert "message" in data["error"]
+    assert "details" in data["error"]

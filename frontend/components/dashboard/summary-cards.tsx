@@ -133,7 +133,7 @@ export function SummaryCards({
             {/* Score Metric */}
             <div className="space-y-1.5 my-1">
               <div className="flex items-baseline gap-1">
-                <span className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-foreground tabular-nums">
+                <span className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground tabular-nums">
                   {score !== null ? `${score.toFixed(1)}%` : "—"}
                 </span>
               </div>

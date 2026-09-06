@@ -267,7 +267,7 @@ export function StudentDrillDownDrawer({
 
                         <div className="flex items-center gap-2.5 shrink-0">
                           <div className="text-right">
-                            <span className="font-heading text-xs font-bold tabular-nums text-foreground block">
+                            <span className="font-sans text-xs font-semibold tabular-nums text-foreground block">
                               {item.compositeScore?.toFixed(1)}%
                             </span>
                             <BandBadge score={item.compositeScore} size="sm" showDot={false} />

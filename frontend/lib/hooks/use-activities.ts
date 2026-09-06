@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "../supabase/client";
+import { handleApiResponse } from "../utils/api-error";
 
 export interface ActivitySubmissionSummary {
   id: string;
@@ -85,14 +86,7 @@ export function useCreateActivity() {
         body: JSON.stringify(activityData),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Backend returned error:", data.error);
-        throw data.error;
-      }
-
-      return data;
+      return handleApiResponse(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["activities"] });
@@ -131,14 +125,7 @@ export function useUpdateActivity() {
         body: JSON.stringify(updateData),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Backend returned error:", data.error);
-        throw data.error;
-      }
-
-      return data;
+      return handleApiResponse(response);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["activities"] });
@@ -167,14 +154,7 @@ export function useDeleteActivity() {
         },
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Backend returned error:", data.error);
-        throw data.error;
-      }
-
-      return data;
+      return handleApiResponse(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["activities"] });
@@ -200,14 +180,7 @@ export function useToggleArchive() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Backend returned error:", data.error);
-        throw data.error;
-      }
-
-      return data as { id: string; is_archived: boolean };
+      return handleApiResponse<{ id: string; is_archived: boolean }>(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["activities"] });
@@ -237,14 +210,7 @@ export function useBulkArchive() {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Backend returned error:", data.error);
-        throw data.error;
-      }
-
-      return data as { updated: string[]; skipped: string[] };
+      return handleApiResponse<{ updated: string[]; skipped: string[] }>(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["activities"] });

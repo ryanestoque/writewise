@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "../supabase/client";
+import { handleApiResponse } from "../utils/api-error";
 
 export type ScoreBand =
   | "needs_improvement"
@@ -159,14 +160,7 @@ export function useUploadSubmission() {
         body: formData,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Backend returned error:", data.error);
-        throw data.error;
-      }
-
-      return data;
+      return handleApiResponse(response);
     },
     onSuccess: () => {
       // Invalidate all submission lists so any visible list refreshes
@@ -227,14 +221,7 @@ export function useSubmitManualScore() {
         body: JSON.stringify(scores),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Backend returned error:", data.error);
-        throw data.error;
-      }
-
-      return data;
+      return handleApiResponse(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["submissions"] });

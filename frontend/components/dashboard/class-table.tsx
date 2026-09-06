@@ -235,7 +235,7 @@ export function ClassTable({
       { id: "all", label: "All Tiers", count: counts.all },
       { id: "intervention", label: "Needs Support (<50%)", count: counts.intervention },
       { id: "satisfactory", label: "Satisfactory (50–74%)", count: counts.satisfactory },
-      { id: "excellent", label: "Proficient (≥75%)", count: counts.excellent },
+      { id: "excellent", label: "Excellent (≥75%)", count: counts.excellent },
       { id: "unrated", label: "Unrated", count: counts.unrated },
     ];
   }, [students]);
@@ -559,7 +559,7 @@ export function ClassTable({
                       <TableCell className="py-3 px-4 text-right">
                         {hasScores ? (
                           <div className="flex items-center justify-end gap-2">
-                            <span className="font-heading text-xs font-bold tabular-nums text-foreground">
+                            <span className="font-sans text-xs font-semibold tabular-nums text-foreground">
                               {student.scores.composite?.toFixed(1)}%
                             </span>
                             <BandBadge

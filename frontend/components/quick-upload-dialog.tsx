@@ -83,6 +83,21 @@ interface Choice {
 const ACCEPTED_MIME_TYPES = ["image/jpeg", "image/png"];
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
 
+const PROCESSING_STAGES = [
+  {
+    title: "Checking image quality…",
+    detail: "Verifying lighting, focus, and guideline alignment.",
+  },
+  {
+    title: "Analyzing cursive handwriting…",
+    detail: "Segmenting words and measuring letter stroke geometry.",
+  },
+  {
+    title: "Calculating diagnostic scores…",
+    detail: "Evaluating consistency, slant, spacing, and baseline.",
+  },
+] as const;
+
 function isQualityGateError(code: string): boolean {
   return [
     "QUALITY_GATE_RESOLUTION",
@@ -238,11 +253,26 @@ function UploadFlow({
   );
 
   const isUploading = step === 4 && !uploadError && uploadMutation.isPending;
+  const [processingStageIndex, setProcessingStageIndex] = useState(0);
 
   // Propagate uploading state to parent dialog to control close guards
   useEffect(() => {
     onUploadingChange?.(isUploading);
   }, [isUploading, onUploadingChange]);
+
+  // Calibrated staged progress sequence while uploading (DESIGN.md §7.2)
+  useEffect(() => {
+    if (!isUploading) return;
+    const interval = setInterval(() => {
+      setProcessingStageIndex((prev) =>
+        prev < PROCESSING_STAGES.length - 1 ? prev + 1 : prev
+      );
+    }, 2000);
+    return () => {
+      clearInterval(interval);
+      setProcessingStageIndex(0);
+    };
+  }, [isUploading]);
 
   // Programmatic focus steering upon step transitions
   useEffect(() => {
@@ -529,19 +559,36 @@ function UploadFlow({
 
       <div className="px-4 sm:px-6 py-4 max-h-[min(72dvh,calc(100vh-10rem))] overflow-y-auto overscroll-contain">
         {isUploading ? (
-          /* Step 4 — Uploading state */
+          /* Step 4 — Uploading state (DESIGN.md §7.2 staged progress) */
           <div
             aria-busy="true"
             aria-live="polite"
-            className="flex flex-col items-center justify-center py-10 space-y-3"
+            aria-atomic="true"
+            className="flex flex-col items-center justify-center py-10 space-y-3.5 text-center min-h-[160px]"
           >
             <Loader2Icon className="size-8 animate-spin text-primary" />
-            <p className="text-sm font-medium text-foreground">
-              Analyzing worksheet&hellip;
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Checking image clarity and handwriting alignment.
-            </p>
+            <div className="space-y-1 transition-all duration-200">
+              <p className="text-sm font-semibold text-foreground tracking-tight">
+                {PROCESSING_STAGES[processingStageIndex].title}
+              </p>
+              <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                {PROCESSING_STAGES[processingStageIndex].detail}
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 pt-2" aria-hidden="true">
+              {PROCESSING_STAGES.map((_, idx) => (
+                <span
+                  key={idx}
+                  className={`size-1.5 rounded-full transition-all duration-300 ${
+                    idx === processingStageIndex
+                      ? "bg-primary w-4"
+                      : idx < processingStageIndex
+                      ? "bg-primary/50"
+                      : "bg-muted-foreground/30"
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         ) : (
           <div className="space-y-4">

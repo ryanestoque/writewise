@@ -388,7 +388,7 @@ export default function ActivitiesPage() {
           <div className="flex items-center gap-3">
             <AlertCircle className="w-5 h-5 shrink-0" />
             <span className="text-sm font-medium">
-              Failed to load activities: {error.message}
+              Unable to load activities. Please check your connection and try again.
             </span>
           </div>
           <Button

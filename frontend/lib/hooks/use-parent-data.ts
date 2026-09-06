@@ -340,6 +340,7 @@ export function useTakeHomeActivities(childId: string | null) {
         .from("activity")
         .select("id, target_text, created_at")
         .eq("is_take_home", true)
+        .eq("is_archived", false)
         .order("created_at", { ascending: false });
 
       if (error) throw new Error(error.message);

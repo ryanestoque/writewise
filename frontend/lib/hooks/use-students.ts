@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "../supabase/client";
+import { handleApiResponse } from "../utils/api-error";
 
 // Define the basic types based on the schema and API specs
 export interface Student {
@@ -63,15 +64,7 @@ export function useCreateStudent() {
         body: JSON.stringify(studentData),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Standardized error envelope: { error: { code, message, details } }
-        console.error("Backend returned error:", data.error);
-        throw data.error; 
-      }
-
-      return data;
+      return handleApiResponse(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["students"] });
