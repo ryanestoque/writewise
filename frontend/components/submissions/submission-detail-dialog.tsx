@@ -557,19 +557,9 @@ function SubmissionDetailDialogContent({
                                 }`}
                               >
                                 <div className="min-w-0 pr-2">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="font-semibold text-foreground truncate block">
-                                      {c.name}
-                                    </span>
-                                    {isSelected && (
-                                      <Badge
-                                        variant="outline"
-                                        className="text-[11px] px-1.5 py-0 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300"
-                                      >
-                                        Active
-                                      </Badge>
-                                    )}
-                                  </div>
+                                  <span className="font-semibold text-foreground truncate block">
+                                    {c.name}
+                                  </span>
                                   <span className="text-[11px] text-muted-foreground line-clamp-2 block">
                                     {c.description}
                                   </span>
@@ -744,19 +734,9 @@ function SubmissionDetailDialogContent({
                                       )}
                                     >
                                       <div className="min-w-0 pr-2">
-                                        <div className="flex items-center gap-1.5">
-                                          <span className="font-semibold text-foreground truncate block">
-                                            {criterion.name}
-                                          </span>
-                                          {isSelected && (
-                                            <Badge
-                                              variant="outline"
-                                              className="text-[11px] px-1.5 py-0 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300"
-                                            >
-                                              Active
-                                            </Badge>
-                                          )}
-                                        </div>
+                                        <span className="font-semibold text-foreground truncate block">
+                                          {criterion.name}
+                                        </span>
                                         <span className="text-[11px] text-muted-foreground line-clamp-2 block">
                                           {criterion.hint}
                                         </span>

@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import type { Submission } from "@/lib/hooks/use-submissions";
-import { Badge } from "@/components/ui/badge";
 
 export function formatMetric(
   mean: number | null | undefined,
@@ -205,18 +204,10 @@ export function RawMeasurementsTable({
               }`}
             >
               <div className="w-full flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 min-w-0">
+                <div className="min-w-0">
                   <span className="font-semibold text-foreground truncate block">
                     {c.name}
                   </span>
-                  {isSelected && (
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] px-1.5 py-0 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300"
-                    >
-                      Active
-                    </Badge>
-                  )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="font-mono font-semibold text-foreground tabular-nums text-xs px-2 py-0.5 rounded-md bg-muted/60 border border-border/60">
