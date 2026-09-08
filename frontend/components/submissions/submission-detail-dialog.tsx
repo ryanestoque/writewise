@@ -150,9 +150,59 @@ function SubmissionDetailDialogContent({
     refetch: refetchImage,
   } = useSubmissionImageUrl(submission.image_path ?? null);
 
+  // Resolve current submission index with robust fallback to array matching
+  const effectiveIndex = useMemo(() => {
+    if (currentIndex !== undefined && currentIndex >= 0) {
+      return currentIndex;
+    }
+    if (submissions && submission) {
+      const idx = submissions.findIndex((s) => s.id === submission.id);
+      if (idx >= 0) return idx;
+      const studentIdx = submissions.findIndex(
+        (s) => s.student_id && s.student_id === submission.student_id
+      );
+      if (studentIdx >= 0) return studentIdx;
+    }
+    return 0;
+  }, [currentIndex, submissions, submission]);
+
+  const hasMultipleSubmissions = Boolean(
+    submissions && submissions.length > 1
+  );
+  const canGoPrev = hasMultipleSubmissions && effectiveIndex > 0;
+  const canGoNext =
+    hasMultipleSubmissions && effectiveIndex < (submissions?.length ?? 0) - 1;
+
+  const prevButtonRef = useRef<HTMLButtonElement>(null);
+  const nextButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Preserve focus when navigation button becomes disabled at boundary
+  useEffect(() => {
+    if (!canGoPrev && document.activeElement === prevButtonRef.current) {
+      nextButtonRef.current?.focus();
+    } else if (!canGoNext && document.activeElement === nextButtonRef.current) {
+      prevButtonRef.current?.focus();
+    }
+  }, [canGoPrev, canGoNext]);
+
   // Keyboard navigation for submission cycling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const isPrev =
+        e.key === "ArrowLeft" ||
+        e.key === "Left" ||
+        e.key === "j" ||
+        e.key === "J";
+      const isNext =
+        e.key === "ArrowRight" ||
+        e.key === "Right" ||
+        e.key === "k" ||
+        e.key === "K";
+
+      if (!isPrev && !isNext) return;
+
+      if (e.defaultPrevented) return;
+
       const target = e.target as HTMLElement | null;
       if (
         target instanceof HTMLInputElement ||
@@ -161,51 +211,34 @@ function SubmissionDetailDialogContent({
         target?.isContentEditable ||
         target?.getAttribute?.("role") === "radio" ||
         target?.closest?.('fieldset[role="radiogroup"]') ||
-        target?.closest?.('[data-radix-focus-guard]')
+        target?.getAttribute?.("role") === "tab" ||
+        target?.closest?.('[role="tablist"]') ||
+        target?.closest?.('[data-radix-focus-guard]') ||
+        target?.closest?.('[data-inspector-container="true"][data-zoomed="true"]')
       ) {
         return;
       }
 
-      if (e.defaultPrevented) {
-        return;
-      }
-
       // Submission cycling
-      if (e.key === "ArrowLeft" || e.key === "j" || e.key === "J") {
-        if (
-          submissions &&
-          submissions.length > 1 &&
-          onNavigate &&
-          currentIndex !== undefined &&
-          currentIndex > 0
-        ) {
+      if (isPrev) {
+        if (canGoPrev && submissions && onNavigate) {
           e.preventDefault();
-          onNavigate(submissions[currentIndex - 1]);
+          e.stopPropagation();
+          onNavigate(submissions[effectiveIndex - 1]);
         }
-      } else if (e.key === "ArrowRight" || e.key === "k" || e.key === "K") {
-        if (
-          submissions &&
-          submissions.length > 1 &&
-          onNavigate &&
-          currentIndex !== undefined &&
-          currentIndex < submissions.length - 1
-        ) {
+      } else if (isNext) {
+        if (canGoNext && submissions && onNavigate) {
           e.preventDefault();
-          onNavigate(submissions[currentIndex + 1]);
+          e.stopPropagation();
+          onNavigate(submissions[effectiveIndex + 1]);
         }
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [submissions, currentIndex, onNavigate]);
-
-  const hasMultipleSubmissions = Boolean(
-    submissions && submissions.length > 1 && currentIndex !== undefined
-  );
-  const canGoPrev = hasMultipleSubmissions && (currentIndex ?? 0) > 0;
-  const canGoNext =
-    hasMultipleSubmissions && (currentIndex ?? 0) < (submissions?.length ?? 0) - 1;
+    // Use capture phase so Base UI's internal composite-key stopPropagation does not swallow arrow keys
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, [submissions, effectiveIndex, canGoPrev, canGoNext, onNavigate]);
 
   const measurement = submission.measurement;
   const compositeScore = measurement?.composite_score;
@@ -353,12 +386,13 @@ function SubmissionDetailDialogContent({
             {hasMultipleSubmissions && submissions && onNavigate && (
               <div className="flex items-center gap-0.5 sm:gap-1 bg-muted/50 p-0.5 sm:p-1 rounded-xl border border-border h-8.5 sm:h-9">
                 <Button
+                  ref={prevButtonRef}
                   variant="ghost"
                   size="sm"
                   disabled={!canGoPrev}
                   onClick={() => {
-                    if (canGoPrev && currentIndex !== undefined) {
-                      onNavigate(submissions[currentIndex - 1]);
+                    if (canGoPrev && submissions) {
+                      onNavigate(submissions[effectiveIndex - 1]);
                     }
                   }}
                   className="size-10 sm:size-7 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
@@ -368,15 +402,16 @@ function SubmissionDetailDialogContent({
                   <ChevronLeft className="size-4" aria-hidden="true" />
                 </Button>
                 <span className="text-[11px] sm:text-xs font-semibold px-1.5 sm:px-2 text-foreground select-none tabular-nums">
-                  {(currentIndex ?? 0) + 1} / {submissions.length}
+                  {effectiveIndex + 1} / {submissions.length}
                 </span>
                 <Button
+                  ref={nextButtonRef}
                   variant="ghost"
                   size="sm"
                   disabled={!canGoNext}
                   onClick={() => {
-                    if (canGoNext && currentIndex !== undefined) {
-                      onNavigate(submissions[currentIndex + 1]);
+                    if (canGoNext && submissions) {
+                      onNavigate(submissions[effectiveIndex + 1]);
                     }
                   }}
                   className="size-10 sm:size-7 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
@@ -877,11 +912,10 @@ function SubmissionDetailDialogContent({
                             onAdvanceNext={() => {
                               if (
                                 canGoNext &&
-                                currentIndex !== undefined &&
                                 submissions &&
                                 onNavigate
                               ) {
-                                onNavigate(submissions[currentIndex + 1]);
+                                onNavigate(submissions[effectiveIndex + 1]);
                               }
                             }}
                             onNavigateBack={() => {

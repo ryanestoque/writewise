@@ -196,7 +196,12 @@ export default function DashboardPage() {
             ? activitySubmissions.findIndex((s) => s.id === activeSubmission.id)
             : undefined
         }
-        onNavigate={(s) => setSelectedSubmissionId(s.id)}
+        onNavigate={(s) => {
+          setSelectedSubmissionId(s.id);
+          if (s.activity_id && s.activity_id !== selectedActivityId) {
+            setSelectedActivityId(s.activity_id);
+          }
+        }}
         open={isSubmissionModalOpen}
         onOpenChange={setIsSubmissionModalOpen}
         activityTargetText={activeSubmission?.activity?.target_text}

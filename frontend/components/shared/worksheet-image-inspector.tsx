@@ -191,8 +191,9 @@ export function WorksheetImageInspector({
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    // Use capture phase so Base UI dialog does not swallow arrow keys when zoomed in
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [
     zoomScale,
     handleZoomIn,
@@ -265,7 +266,11 @@ export function WorksheetImageInspector({
   };
 
   return (
-    <div data-inspector-container="true" className={cn("w-full flex flex-col gap-2", className)}>
+    <div
+      data-inspector-container="true"
+      data-zoomed={zoomScale > 1 ? "true" : undefined}
+      className={cn("w-full flex flex-col gap-2", className)}
+    >
       {/* Screen reader live announcement */}
       <div className="sr-only" role="status" aria-live="polite">
         {accessibilityNotice}
