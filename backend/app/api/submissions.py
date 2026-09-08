@@ -347,12 +347,11 @@ async def submit_manual_score(
     body: ManualScoreRequest,
     teacher: dict = Depends(get_current_teacher),
 ):
-    """Enters the teacher's independent rubric grade (Phase 1 calibration input).
+    """Enters or updates the teacher's independent rubric grade (Phase 1 calibration input).
 
     API_SPEC §3.3:
     - Teacher only, owning the student on this submission.
     - 403 MANUAL_SCORING_DISABLED when SCORING_ENGINE=calibrated.
-    - 409 MANUAL_SCORE_ALREADY_EXISTS if called twice on the same submission.
     """
     teacher_id = teacher.get("sub")
 
@@ -427,26 +426,16 @@ async def submit_manual_score(
             },
         )
 
-    # 6. Check if manual_score already exists (prevent duplicates)
+    # 6. Check if manual_score already exists
     existing = (
         supabase_client.table("manual_score")
         .select("id")
         .eq("submission_id", submission_id)
         .execute()
     )
-    if existing.data:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={
-                "code": "MANUAL_SCORE_ALREADY_EXISTS",
-                "message": "A manual score has already been submitted for this worksheet.",
-                "details": {"submission_id": submission_id},
-            },
-        )
 
-    # 7. Insert manual_score record
-    insert_payload = {
-        "submission_id": submission_id,
+    # 7. Upsert / update or insert manual_score record
+    score_payload = {
         "letter_formation_band": body.letter_formation_band.value,
         "size_consistency_band": body.size_consistency_band.value,
         "spacing_band": body.spacing_band.value,
@@ -456,18 +445,22 @@ async def submit_manual_score(
     }
 
     try:
-        insert_res = supabase_client.table("manual_score").insert(insert_payload).execute()
+        if existing.data:
+            save_res = (
+                supabase_client.table("manual_score")
+                .update(score_payload)
+                .eq("submission_id", submission_id)
+                .execute()
+            )
+        else:
+            score_payload["submission_id"] = submission_id
+            save_res = (
+                supabase_client.table("manual_score")
+                .insert(score_payload)
+                .execute()
+            )
     except Exception as exc:
         err_msg = str(exc)
-        if "duplicate" in err_msg.lower() or "unique" in err_msg.lower():
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={
-                    "code": "MANUAL_SCORE_ALREADY_EXISTS",
-                    "message": "A manual score has already been submitted for this worksheet.",
-                    "details": {"submission_id": submission_id},
-                },
-            )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
@@ -477,7 +470,7 @@ async def submit_manual_score(
             },
         )
 
-    if not insert_res.data:
+    if not save_res.data:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
@@ -487,7 +480,7 @@ async def submit_manual_score(
             },
         )
 
-    row = insert_res.data[0]
+    row = save_res.data[0]
 
     # 8. Return response matching API_SPEC §3.3
     return {

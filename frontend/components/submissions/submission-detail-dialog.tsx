@@ -503,11 +503,8 @@ function SubmissionDetailDialogContent({
                           </span>
                           <Badge
                             variant="outline"
-                            className={`text-xs font-semibold px-2.5 py-0.5 inline-flex items-center gap-1.5 ${compositeBand.className}`}
+                            className={`text-xs font-semibold px-2.5 py-0.5 inline-flex items-center ${compositeBand.className}`}
                           >
-                            <span
-                              className={`size-1.5 rounded-full ${compositeBand.dotColor}`}
-                            />
                             {compositeBand.band}
                           </Badge>
                         </div>
@@ -574,9 +571,6 @@ function SubmissionDetailDialogContent({
                                     variant="outline"
                                     className={`text-[11px] font-semibold px-2 py-0.5 ${band.className}`}
                                   >
-                                    <span
-                                      className={`size-1.5 rounded-full mr-1 ${band.dotColor}`}
-                                    />
                                     {band.band}
                                   </Badge>
                                 </div>
@@ -675,12 +669,8 @@ function SubmissionDetailDialogContent({
                                         {recordedComposite && (
                                           <Badge
                                             variant="outline"
-                                            className={`text-[10.5px] font-semibold px-2 py-0 inline-flex items-center gap-1 font-sans tabular-nums ${recordedComposite.overallBandMeta.badgeClass}`}
+                                            className={`text-[10.5px] font-semibold px-2 py-0 inline-flex items-center font-sans tabular-nums ${recordedComposite.overallBandMeta.badgeClass}`}
                                           >
-                                            <span
-                                              className={`size-1.5 rounded-full ${recordedComposite.overallBandMeta.dotColor}`}
-                                              aria-hidden="true"
-                                            />
                                             <span>
                                               {recordedComposite.totalPoints}/20 pts ({recordedComposite.avgPercentage}%) • {recordedComposite.overallBandMeta.label}
                                             </span>
@@ -743,11 +733,8 @@ function SubmissionDetailDialogContent({
                                       </div>
                                       <Badge
                                         variant="outline"
-                                        className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 inline-flex items-center gap-1.5 ${bandMeta.badgeClass}`}
+                                        className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 inline-flex items-center ${bandMeta.badgeClass}`}
                                       >
-                                        <span
-                                          className={`size-1.5 rounded-full ${bandMeta.dotColor}`}
-                                        />
                                         {bandMeta.label} ({bandMeta.score})
                                       </Badge>
                                     </button>

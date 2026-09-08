@@ -407,15 +407,15 @@ class TestSubmitManualScore:
         assert db_res.data[0]["letter_formation_band"] == "satisfactory"
         assert float(db_res.data[0]["letter_formation_score"]) == 62.5
 
-    def test_duplicate_manual_score_returns_409(
+    def test_manual_score_update_replaces_existing(
         self, client, test_activity, test_student, cleanup_submissions
     ):
-        """Submitting manual score twice on same submission returns 409."""
+        """Submitting manual score again on same submission updates existing record with 200 OK."""
         sub_id = self._create_completed_submission(
             client, test_activity, test_student, cleanup_submissions
         )
 
-        payload = {
+        initial_payload = {
             "letter_formation_band": "satisfactory",
             "size_consistency_band": "satisfactory",
             "spacing_band": "satisfactory",
@@ -423,13 +423,38 @@ class TestSubmitManualScore:
             "baseline_alignment_band": "satisfactory",
         }
 
-        resp1 = client.patch(f"/api/submissions/{sub_id}/manual-score", json=payload)
+        resp1 = client.patch(f"/api/submissions/{sub_id}/manual-score", json=initial_payload)
         assert resp1.status_code == 200
+        assert resp1.json()["manual_score"]["letter_formation_band"] == "satisfactory"
+        assert resp1.json()["manual_score"]["letter_formation_score"] == 62.5
 
-        resp2 = client.patch(f"/api/submissions/{sub_id}/manual-score", json=payload)
-        assert resp2.status_code == 409
-        err = resp2.json()["error"]
-        assert err["code"] == "MANUAL_SCORE_ALREADY_EXISTS"
+        updated_payload = {
+            "letter_formation_band": "excellent",
+            "size_consistency_band": "developing",
+            "spacing_band": "satisfactory",
+            "slant_band": "excellent",
+            "baseline_alignment_band": "needs_improvement",
+        }
+
+        resp2 = client.patch(f"/api/submissions/{sub_id}/manual-score", json=updated_payload)
+        assert resp2.status_code == 200
+        data2 = resp2.json()
+        assert data2["submission_id"] == sub_id
+        assert data2["manual_score"]["letter_formation_band"] == "excellent"
+        assert data2["manual_score"]["letter_formation_score"] == 87.5
+        assert data2["manual_score"]["size_consistency_band"] == "developing"
+        assert data2["manual_score"]["size_consistency_score"] == 37.5
+
+        # Verify only 1 manual_score record exists and it has the updated values
+        db_res = (
+            supabase_client.table("manual_score")
+            .select("*")
+            .eq("submission_id", sub_id)
+            .execute()
+        )
+        assert len(db_res.data) == 1
+        assert db_res.data[0]["letter_formation_band"] == "excellent"
+        assert float(db_res.data[0]["letter_formation_score"]) == 87.5
 
     def test_manual_score_invalid_uuid(self, client):
         """Non-UUID submission ID returns 400 VALIDATION_ERROR."""

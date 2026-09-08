@@ -352,8 +352,10 @@ Response (`200 OK`):
 ```
 Numeric `*_score` fields are DATABASE §9's generated columns (12.5 / 37.5 / 62.5 / 87.5 band anchors) — read back, never sent by the client.
 
+**Behavior on existing score:**
+- **Called for a previously scored submission** → Idempotent update: updates the teacher's rubric bands in the existing `manual_score` row, automatically recalculating generated numeric scores, and returns `200 OK`.
+
 **Failure modes specific to this endpoint:**
-- **Called twice for the same submission** → `409 MANUAL_SCORE_ALREADY_EXISTS`. `manual_score.submission_id` is `unique` (DATABASE §9); this endpoint does not support re-grading or overwriting — no re-grade flow exists anywhere in the product, and silently allowing overwrites on data feeding the Spearman's Rho study is the wrong default.
 - **Called while `SCORING_ENGINE=calibrated`** → `403 MANUAL_SCORING_DISABLED`. PRD §5 states the manual-entry step is *removed* from the live product once calibration ships, not merely optional. The route stays in the codebase (useful for debugging/backfill) but is unreachable in Phase 2.
 
 ---

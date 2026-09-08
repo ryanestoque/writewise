@@ -573,22 +573,16 @@ export function ManualRubricEntryForm({
 
           <Badge
             variant="outline"
-            className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 font-sans tabular-nums inline-flex items-center gap-1.5 ${
+            className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 font-sans tabular-nums inline-flex items-center ${
               allBandsSelected && compositeRubric
                 ? compositeRubric.overallBandMeta.badgeClass
                 : "bg-band-2/15 text-amber-900 dark:bg-band-2/25 dark:text-amber-200 border-band-2/40"
             }`}
           >
             {allBandsSelected && compositeRubric ? (
-              <>
-                <span
-                  className={`size-1.5 rounded-full ${compositeRubric.overallBandMeta.dotColor}`}
-                  aria-hidden="true"
-                />
-                <span>
-                  {compositeRubric.totalPoints}/20 pts ({compositeRubric.avgPercentage}%) • {compositeRubric.overallBandMeta.label}
-                </span>
-              </>
+              <span>
+                {compositeRubric.totalPoints}/20 pts ({compositeRubric.avgPercentage}%) • {compositeRubric.overallBandMeta.label}
+              </span>
             ) : (
               <span>{selectedCount}/5 rated</span>
             )}

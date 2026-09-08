@@ -225,6 +225,8 @@ export function useSubmitManualScore() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-scores"] });
+      queryClient.invalidateQueries({ queryKey: ["student-trend"] });
     },
   });
 }

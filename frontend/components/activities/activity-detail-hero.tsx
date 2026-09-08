@@ -367,13 +367,6 @@ export function ActivityDetailHero({
                       classDiagnostics.scoreBand.className
                     )}
                   >
-                    <span
-                      className={cn(
-                        "size-1.5 rounded-full mr-1",
-                        classDiagnostics.scoreBand.dotColor
-                      )}
-                      aria-hidden="true"
-                    />
                     <span>{classDiagnostics.scoreBand.label}</span>
                   </Badge>
                 </div>
