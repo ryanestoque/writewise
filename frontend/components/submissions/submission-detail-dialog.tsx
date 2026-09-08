@@ -511,9 +511,9 @@ function SubmissionDetailDialogContent({
                     {/* Phase 2: Overall Composite Score Card */}
                     <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface dark:bg-card border border-border shadow-xs">
                       <div className="space-y-0.5">
-                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                           Composite Assessment
-                        </span>
+                        </h3>
                         <div className="flex items-center gap-2">
                           <span className="text-2xl font-sans font-bold text-foreground tabular-nums">
                             {compositeScore !== null && compositeScore !== undefined
@@ -537,9 +537,9 @@ function SubmissionDetailDialogContent({
                     {/* Phase 2: 5 Criteria breakdown */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                           5-Criterion Breakdown
-                        </span>
+                        </h3>
                         <span className="text-[11px] text-muted-foreground">
                           Tap to focus coaching tip
                         </span>
@@ -549,6 +549,7 @@ function SubmissionDetailDialogContent({
                         {criteria.map((c) => {
                           const band = getScoreBandLabel(c.score);
                           const isSelected = selectedCriterion === c.name;
+                          const inlineId = `phase2-criterion-guide-inline-${c.name.toLowerCase().replace(/\s+/g, "-")}`;
                           return (
                             <div key={c.name} className="space-y-1.5">
                               <button
@@ -559,14 +560,18 @@ function SubmissionDetailDialogContent({
                                     `${c.name} selected. Diagnostic guide and coaching tips updated.`
                                   );
                                 }}
-                                aria-pressed={isSelected}
-                                aria-controls="criterion-diagnostic-guide"
+                                aria-expanded={isSelected}
+                                aria-controls={
+                                  isSelected
+                                    ? `${inlineId} criterion-diagnostic-guide`
+                                    : undefined
+                                }
                                 aria-label={`${c.name}: ${
                                   c.score !== null && c.score !== undefined
                                     ? `${Math.round(c.score)}%`
                                     : "Unrated"
                                 } (${band.band}). Tap to focus coaching tip.`}
-                                className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 ${
+                                className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 touch-manipulation ${
                                   isSelected
                                     ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
                                     : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
@@ -597,10 +602,15 @@ function SubmissionDetailDialogContent({
 
                               {/* Inline Mobile & Tablet Coaching Tip when selected (lg:hidden) */}
                               {isSelected && activeCriterionInfo && (
-                                <div className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150">
+                                <div
+                                  id={inlineId}
+                                  role="region"
+                                  aria-label={`${c.name} coaching tip`}
+                                  className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150"
+                                >
                                   <div className="flex items-center gap-1 text-[11px] font-semibold text-brand-800 dark:text-brand-300">
                                     <Info className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                                    <span>Diagnostic Goal:</span>
+                                    <h4 className="font-semibold text-brand-800 dark:text-brand-300">Diagnostic Goal:</h4>
                                   </div>
                                   <p className="text-[11px] text-foreground/80 leading-relaxed">
                                     {activeCriterionInfo.rubricGoal}
@@ -879,7 +889,12 @@ function SubmissionDetailDialogContent({
                         <RawMeasurementsTable
                           measurement={measurement}
                           selectedCriterion={selectedCriterion}
-                          onSelectCriterion={setSelectedCriterion}
+                          onSelectCriterion={(criterionName) => {
+                            setSelectedCriterion(criterionName);
+                            setCriterionAnnouncement(
+                              `${criterionName} selected. Diagnostic guide and coaching tips updated.`
+                            );
+                          }}
                         />
                       </div>
                     )}

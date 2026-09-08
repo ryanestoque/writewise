@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import type { Submission } from "@/lib/hooks/use-submissions";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertCircle,
   RotateCcw,
@@ -167,12 +168,20 @@ export function SubmissionRejectionCard({
           />
           <div className="min-w-0 flex-1">
             <AlertTitle className="font-heading text-sm sm:text-base font-semibold text-destructive tracking-tight leading-snug">
-              <h3
-                id="rejection-heading"
-                className="text-balance break-words font-inherit"
-              >
-                {rejectionInfo.title}
-              </h3>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h3
+                  id="rejection-heading"
+                  className="text-balance break-words font-inherit"
+                >
+                  {rejectionInfo.title}
+                </h3>
+                <Badge
+                  variant="outline"
+                  className="text-[10px] font-semibold px-2 py-0.5 bg-destructive/15 text-destructive border-destructive/30 shrink-0"
+                >
+                  {rejectionInfo.badgeLabel}
+                </Badge>
+              </div>
             </AlertTitle>
           </div>
         </div>
@@ -182,13 +191,13 @@ export function SubmissionRejectionCard({
         </AlertDescription>
 
         <div className="rounded-lg sm:rounded-xl bg-background/95 dark:bg-card/90 border border-destructive/20 p-3 space-y-1.5 shadow-2xs">
-          <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+          <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
             <RotateCcw
               className="size-3.5 !text-brand-600 dark:!text-brand-400 shrink-0"
               aria-hidden="true"
             />
             {rejectionInfo.actionLabel}
-          </span>
+          </h4>
           <p
             id="rejection-advice"
             className="text-xs text-foreground/80 leading-relaxed"
@@ -202,7 +211,7 @@ export function SubmissionRejectionCard({
           onClick={onReupload}
           aria-describedby="rejection-advice"
           aria-label={`Take and re-upload new worksheet photo for ${submission.student?.full_name ?? "student"}`}
-          className="w-full min-h-11 bg-primary hover:bg-brand-700 text-primary-foreground dark:hover:bg-brand-200 dark:hover:text-brand-950 text-xs sm:text-sm font-semibold rounded-xl gap-2 shadow-xs cursor-pointer touch-manipulation transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="w-full min-h-11 h-11 bg-primary hover:bg-brand-700 text-primary-foreground dark:hover:bg-brand-500 text-xs sm:text-sm font-semibold rounded-xl gap-2 shadow-xs cursor-pointer touch-manipulation transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <Camera className="size-4" aria-hidden="true" />
           Take & Re-upload New Photo
