@@ -68,6 +68,7 @@ export const RUBRIC_BANDS: Array<{
   shortLabel: string;
   shortcutKey: string;
   score: string;
+  points: number;
   activeClass: string;
   badgeClass: string;
   dotColor: string;
@@ -78,10 +79,11 @@ export const RUBRIC_BANDS: Array<{
     shortLabel: "Needs Imp.",
     shortcutKey: "1",
     score: "12.5%",
+    points: 1,
     activeClass:
-      "bg-band-1/15 dark:bg-band-1/30 text-band-1 dark:text-[#f3c8aa] border-band-1 ring-2 ring-band-1/40 shadow-xs font-semibold",
+      "bg-band-1/15 dark:bg-band-1/30 text-band-1-text dark:text-orange-200 border-band-1 ring-2 ring-band-1/40 shadow-xs font-semibold",
     badgeClass:
-      "bg-band-1/15 text-band-1 dark:text-[#f3c8aa] border-band-1/40",
+      "bg-band-1/15 text-band-1-text dark:text-orange-200 border-band-1/40",
     dotColor: "bg-band-1",
   },
   {
@@ -90,10 +92,11 @@ export const RUBRIC_BANDS: Array<{
     shortLabel: "Developing",
     shortcutKey: "2",
     score: "37.5%",
+    points: 2,
     activeClass:
-      "bg-band-2/15 dark:bg-band-2/30 text-amber-900 dark:text-[#fae59a] border-band-2 ring-2 ring-band-2/40 shadow-xs font-semibold",
+      "bg-band-2/15 dark:bg-band-2/30 text-amber-900 dark:text-amber-200 border-band-2 ring-2 ring-band-2/40 shadow-xs font-semibold",
     badgeClass:
-      "bg-band-2/15 text-amber-900 dark:text-[#fae59a] border-band-2/40",
+      "bg-band-2/15 text-amber-900 dark:text-amber-200 border-band-2/40",
     dotColor: "bg-band-2",
   },
   {
@@ -102,10 +105,11 @@ export const RUBRIC_BANDS: Array<{
     shortLabel: "Satisfactory",
     shortcutKey: "3",
     score: "62.5%",
+    points: 3,
     activeClass:
-      "bg-band-3/15 dark:bg-band-3/30 text-emerald-950 dark:text-[#c4deba] border-band-3 ring-2 ring-band-3/40 shadow-xs font-semibold",
+      "bg-band-3/15 dark:bg-band-3/30 text-emerald-950 dark:text-emerald-200 border-band-3 ring-2 ring-band-3/40 shadow-xs font-semibold",
     badgeClass:
-      "bg-band-3/15 text-emerald-950 dark:text-[#c4deba] border-band-3/40",
+      "bg-band-3/15 text-emerald-950 dark:text-emerald-200 border-band-3/40",
     dotColor: "bg-band-3",
   },
   {
@@ -114,6 +118,7 @@ export const RUBRIC_BANDS: Array<{
     shortLabel: "Excellent",
     shortcutKey: "4",
     score: "87.5%",
+    points: 4,
     activeClass:
       "bg-brand-100 dark:bg-brand-950/80 text-brand-950 dark:text-brand-200 border-brand-500 dark:border-brand-400 ring-2 ring-brand-500/40 shadow-xs font-semibold",
     badgeClass:
@@ -146,7 +151,8 @@ export function calculateCompositeRubric(
   if (validBands.length === 0) return null;
 
   const totalPoints = validBands.reduce((acc, b) => acc + BAND_POINTS[b], 0);
-  const maxPoints = 20; // 5 criteria * 4 max points
+  const isComplete = validBands.length === 5;
+  const maxPoints = isComplete ? 20 : validBands.length * 4;
   const avgPercentage = Math.round(
     validBands.reduce((acc, b) => acc + BAND_NUMERIC_SCORES[b], 0) / validBands.length
   );
@@ -165,9 +171,10 @@ export function calculateCompositeRubric(
   return {
     totalPoints,
     maxPoints,
+    ratedCount: validBands.length,
     avgPercentage,
     overallBandMeta,
-    isComplete: validBands.length === 5,
+    isComplete,
   };
 }
 
@@ -222,6 +229,7 @@ export function getBandMeta(band?: ScoreBand | string | null) {
       shortLabel: band || "Unrated",
       shortcutKey: "",
       score: "—",
+      points: 0,
       activeClass: "",
       badgeClass: "bg-muted/60 text-muted-foreground border-border",
       dotColor: "bg-muted-foreground",
@@ -239,6 +247,7 @@ export interface ManualRubricEntryFormProps {
     baseline_alignment_band?: ScoreBand | null;
   } | null;
   onSuccess?: () => void;
+  onCancel?: () => void;
   onFocusCriterion?: (criterionName: string | null) => void;
   canGoNext?: boolean;
   onAdvanceNext?: () => void;
@@ -249,6 +258,7 @@ export function ManualRubricEntryForm({
   submissionId,
   initialScores,
   onSuccess,
+  onCancel,
   onFocusCriterion,
   canGoNext,
   onAdvanceNext,
@@ -391,6 +401,14 @@ export function ManualRubricEntryForm({
         return;
       }
 
+      // Cancel edit shortcut: Escape key reverts to recorded state
+      if (e.key === "Escape" && onCancel) {
+        e.preventDefault();
+        e.stopPropagation();
+        onCancel();
+        return;
+      }
+
       // Submit shortcut: Ctrl+Enter or Cmd+Enter
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault();
@@ -456,7 +474,7 @@ export function ManualRubricEntryForm({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onFocusCriterion, handleApplyPreset]);
+  }, [onFocusCriterion, handleApplyPreset, onCancel]);
 
   // WAI-ARIA roving tabindex and arrow key navigation within criterion radio group
   const handleCriterionKeyDown = (
@@ -600,7 +618,7 @@ export function ManualRubricEntryForm({
           <button
             type="button"
             onClick={() => handleApplyPreset("satisfactory")}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-band-3/15 text-emerald-950 dark:text-[#c4deba] border border-band-3/35 hover:bg-band-3/25 transition-colors cursor-pointer min-h-[28px] touch-manipulation"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-band-3/15 text-emerald-950 dark:text-emerald-200 border border-band-3/35 hover:bg-band-3/25 transition-colors cursor-pointer min-h-[28px] touch-manipulation"
             title="Rate all 5 criteria as Satisfactory (Alt+3)"
           >
             <span className="size-1.5 rounded-full bg-band-3" aria-hidden="true" />
@@ -620,7 +638,7 @@ export function ManualRubricEntryForm({
           <button
             type="button"
             onClick={() => handleApplyPreset("developing")}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-band-2/15 text-amber-900 dark:text-[#fae59a] border border-band-2/35 hover:bg-band-2/25 transition-colors cursor-pointer min-h-[28px] touch-manipulation"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-band-2/15 text-amber-900 dark:text-amber-200 border border-band-2/35 hover:bg-band-2/25 transition-colors cursor-pointer min-h-[28px] touch-manipulation"
             title="Rate all 5 criteria as Developing (Alt+2)"
           >
             <span className="size-1.5 rounded-full bg-band-2" aria-hidden="true" />
@@ -1033,30 +1051,44 @@ export function ManualRubricEntryForm({
           )}
         </div>
 
-        <Button
-          type="button"
-          size="sm"
-          disabled={!allBandsSelected || isSubmittingScore}
-          onClick={handleSubmitRubric}
-          className="w-full sm:w-auto h-10 sm:h-8 min-h-[44px] sm:min-h-[32px] px-4 bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-semibold rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation"
-        >
-          {isSubmittingScore ? (
-            <>
-              <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-              <span>Saving...</span>
-            </>
-          ) : canGoNext && autoAdvance ? (
-            <>
-              <CheckCheck className="size-3.5" aria-hidden="true" />
-              <span>Submit & Next</span>
-            </>
-          ) : (
-            <>
-              <CheckCheck className="size-3.5" aria-hidden="true" />
-              <span>Submit Rubric</span>
-            </>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {onCancel && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onCancel}
+              className="flex-1 sm:flex-initial h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-3.5 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+            >
+              Cancel
+            </Button>
           )}
-        </Button>
+
+          <Button
+            type="button"
+            size="sm"
+            disabled={!allBandsSelected || isSubmittingScore}
+            onClick={handleSubmitRubric}
+            className="flex-1 sm:flex-initial w-full sm:w-auto h-10 sm:h-8 min-h-[44px] sm:min-h-[32px] px-4 bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-semibold rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation"
+          >
+            {isSubmittingScore ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                <span>Saving...</span>
+              </>
+            ) : canGoNext && autoAdvance ? (
+              <>
+                <CheckCheck className="size-3.5" aria-hidden="true" />
+                <span>Submit & Next</span>
+              </>
+            ) : (
+              <>
+                <CheckCheck className="size-3.5" aria-hidden="true" />
+                <span>Submit Rubric</span>
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );

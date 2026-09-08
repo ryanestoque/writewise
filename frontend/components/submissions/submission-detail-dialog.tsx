@@ -117,6 +117,25 @@ function SubmissionDetailDialogContent({
   const [phase1Tab, setPhase1Tab] = useState<"rubric" | "metrics">("rubric");
   const [isEditingRubric, setIsEditingRubric] = useState(false);
   const [criterionAnnouncement, setCriterionAnnouncement] = useState<string>("");
+  const editButtonRef = useRef<HTMLButtonElement>(null);
+
+  const handleCancelEditingRubric = useCallback(() => {
+    setIsEditingRubric(false);
+    setTimeout(() => {
+      editButtonRef.current?.focus();
+    }, 50);
+  }, []);
+
+  const handleSuccessEditingRubric = useCallback(() => {
+    setIsEditingRubric(false);
+    setTimeout(() => {
+      editButtonRef.current?.focus();
+    }, 50);
+  }, []);
+
+  const recordedComposite = useMemo(() => {
+    return calculateCompositeRubric(submission.manual_score);
+  }, [submission.manual_score]);
 
   const handleScroll = useCallback(() => {
     if (!scrollContainerRef.current) return;
@@ -603,11 +622,26 @@ function SubmissionDetailDialogContent({
                 ) : (
                   <>
                     {/* Phase 1 Segmented Tab Controls: Rubric vs. CV Metrics */}
-                    <div className="flex items-center p-1 rounded-xl bg-muted/60 border border-border/80 gap-1">
+                    <div
+                      role="tablist"
+                      aria-label="Phase 1 assessment view"
+                      className="flex items-center p-1 rounded-xl bg-muted/60 border border-border/80 gap-1"
+                    >
                       <button
                         type="button"
+                        role="tab"
+                        id="phase1-tab-rubric"
+                        aria-selected={phase1Tab === "rubric"}
+                        aria-controls="phase1-tabpanel-rubric"
+                        tabIndex={phase1Tab === "rubric" ? 0 : -1}
                         onClick={() => setPhase1Tab("rubric")}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation ${
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                            e.preventDefault();
+                            setPhase1Tab(phase1Tab === "rubric" ? "metrics" : "rubric");
+                          }
+                        }}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
                           phase1Tab === "rubric"
                             ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                             : "text-muted-foreground hover:text-foreground"
@@ -623,14 +657,25 @@ function SubmissionDetailDialogContent({
                             Graded
                           </Badge>
                         ) : (
-                          <span className="size-1.5 rounded-full bg-[#c9a227]" />
+                          <span className="size-1.5 rounded-full bg-band-2" />
                         )}
                       </button>
 
                       <button
                         type="button"
+                        role="tab"
+                        id="phase1-tab-metrics"
+                        aria-selected={phase1Tab === "metrics"}
+                        aria-controls="phase1-tabpanel-metrics"
+                        tabIndex={phase1Tab === "metrics" ? 0 : -1}
                         onClick={() => setPhase1Tab("metrics")}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation ${
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                            e.preventDefault();
+                            setPhase1Tab(phase1Tab === "rubric" ? "metrics" : "rubric");
+                          }
+                        }}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
                           phase1Tab === "metrics"
                             ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                             : "text-muted-foreground hover:text-foreground"
@@ -649,60 +694,82 @@ function SubmissionDetailDialogContent({
 
                     {/* TAB 1: TEACHER RUBRIC ASSESSMENT */}
                     {phase1Tab === "rubric" && (
-                      <div className="space-y-3">
+                      <div
+                        id="phase1-tabpanel-rubric"
+                        role="tabpanel"
+                        aria-labelledby="phase1-tab-rubric"
+                        className="space-y-3"
+                      >
                         {submission.manual_score && !isEditingRubric ? (
                           /* READ-ONLY / CONFIRMED RUBRIC STATE */
                           <div className="p-4 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900/80 shadow-xs space-y-3">
-                            {(() => {
-                              const recordedComposite = calculateCompositeRubric(submission.manual_score);
-                              return (
-                                <div className="flex items-center justify-between gap-2 flex-wrap">
-                                  <div className="flex items-center gap-2.5 min-w-0">
-                                    <div className="flex size-7 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 shrink-0">
-                                      <ShieldCheck className="size-4" aria-hidden="true" />
-                                    </div>
-                                    <div className="space-y-0.5 min-w-0">
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-xs font-semibold text-brand-950 dark:text-brand-200">
-                                          Rubric Assessment Recorded
-                                        </span>
-                                        {recordedComposite && (
-                                          <Badge
-                                            variant="outline"
-                                            className={`text-[10.5px] font-semibold px-2 py-0 inline-flex items-center font-sans tabular-nums ${recordedComposite.overallBandMeta.badgeClass}`}
-                                          >
-                                            <span>
-                                              {recordedComposite.totalPoints}/20 pts ({recordedComposite.avgPercentage}%) • {recordedComposite.overallBandMeta.label}
-                                            </span>
-                                          </Badge>
-                                        )}
-                                      </div>
-                                      <p className="text-[11px] text-muted-foreground">
-                                        Phase 1 teacher calibration benchmark saved for this worksheet.
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setIsEditingRubric(true)}
-                                    className="min-h-[36px] sm:min-h-0 h-8 sm:h-7 px-3 sm:px-2.5 text-xs text-brand-800 dark:text-brand-200 border-brand-300 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 gap-1.5 cursor-pointer touch-manipulation"
-                                  >
-                                    <Edit3 className="size-3" aria-hidden="true" />
-                                    <span>Edit</span>
-                                  </Button>
+                            <div className="flex items-start justify-between gap-2.5">
+                              <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                                <div className="flex size-8 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 shrink-0 mt-0.5">
+                                  <ShieldCheck className="size-4.5 sm:size-4" aria-hidden="true" />
                                 </div>
-                              );
-                            })()}
+                                <div className="space-y-0.5 min-w-0 flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className="text-xs font-semibold text-brand-950 dark:text-brand-200">
+                                      Rubric Assessment Recorded
+                                    </h3>
+                                    {recordedComposite && (
+                                      <Badge
+                                        variant="outline"
+                                        className={cn(
+                                          "text-[11px] font-semibold px-2.5 py-0.5 inline-flex items-center gap-1.5 font-sans tabular-nums",
+                                          recordedComposite.overallBandMeta.badgeClass
+                                        )}
+                                      >
+                                        <span
+                                          className={cn(
+                                            "size-1.5 rounded-full shrink-0",
+                                            recordedComposite.overallBandMeta.dotColor
+                                          )}
+                                          aria-hidden="true"
+                                        />
+                                        <span>
+                                          {recordedComposite.isComplete
+                                            ? `${recordedComposite.totalPoints}/20 pts (${recordedComposite.avgPercentage}%) • ${recordedComposite.overallBandMeta.label}`
+                                            : `${recordedComposite.totalPoints}/${recordedComposite.maxPoints} pts (${recordedComposite.ratedCount}/5 rated)`}
+                                        </span>
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-[11px] text-muted-foreground">
+                                    Phase 1 teacher calibration benchmark saved for this worksheet.
+                                  </p>
+                                </div>
+                              </div>
+                              <Button
+                                ref={editButtonRef}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setIsEditingRubric(true)}
+                                className="min-h-[40px] h-9 sm:h-7 sm:min-h-0 px-3 sm:px-2.5 text-xs text-brand-800 dark:text-brand-200 border-brand-300 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 gap-1.5 cursor-pointer touch-manipulation self-start shrink-0 font-medium"
+                                aria-label="Edit recorded rubric scores"
+                              >
+                                <Edit3 className="size-3.5 sm:size-3" aria-hidden="true" />
+                                <span>Edit</span>
+                              </Button>
+                            </div>
 
-                            <div className="space-y-1.5 pt-1">
+                            <div className="space-y-1.5 pt-1" role="group" aria-label="Recorded criterion breakdown">
                               {RUBRIC_CRITERIA.map((criterion) => {
                                 const bandValue =
                                   submission.manual_score?.[criterion.key];
                                 const bandMeta = getBandMeta(bandValue);
                                 const isSelected =
                                   selectedCriterion === criterion.shortName;
+                                const hasPoints =
+                                  typeof bandMeta.points === "number" && bandMeta.points > 0;
+                                const pointsText = hasPoints
+                                  ? `${bandMeta.points}/4 pts`
+                                  : null;
+                                const badgeLabel = pointsText
+                                  ? `${bandMeta.label} (${pointsText})`
+                                  : bandMeta.label;
                                 return (
                                   <div key={criterion.key} className="space-y-1.5">
                                     <button
@@ -713,9 +780,9 @@ function SubmissionDetailDialogContent({
                                           `${criterion.shortName} selected. Diagnostic guide and coaching tips updated.`
                                         );
                                       }}
-                                      aria-pressed={isSelected}
-                                      aria-controls="criterion-diagnostic-guide"
-                                      aria-label={`${criterion.shortName}: ${bandMeta.label} (${bandMeta.score}). Tap to focus coaching tip.`}
+                                      aria-expanded={isSelected}
+                                      aria-controls={isSelected ? `criterion-guide-inline-${criterion.key} criterion-diagnostic-guide` : undefined}
+                                      aria-label={`${criterion.shortName}: ${badgeLabel}. Tap to focus coaching tip.`}
                                       className={cn(
                                         "w-full flex items-center justify-between p-2.5 rounded-lg border text-xs text-left cursor-pointer transition-all min-h-[44px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                                         isSelected
@@ -733,18 +800,27 @@ function SubmissionDetailDialogContent({
                                       </div>
                                       <Badge
                                         variant="outline"
-                                        className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 inline-flex items-center ${bandMeta.badgeClass}`}
+                                        className={cn(
+                                          "text-[11px] font-semibold px-2.5 py-0.5 shrink-0 inline-flex items-center gap-1.5",
+                                          bandMeta.badgeClass
+                                        )}
                                       >
-                                        {bandMeta.label} ({bandMeta.score})
+                                        <span className={cn("size-1.5 rounded-full shrink-0", bandMeta.dotColor)} aria-hidden="true" />
+                                        <span>{badgeLabel}</span>
                                       </Badge>
                                     </button>
 
                                     {/* Inline Mobile & Tablet Coaching Tip for read-only rubric mode (lg:hidden) */}
                                     {isSelected && activeCriterionInfo && (
-                                      <div className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150">
+                                      <div
+                                        id={`criterion-guide-inline-${criterion.key}`}
+                                        role="region"
+                                        aria-label={`${criterion.shortName} coaching tip`}
+                                        className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150"
+                                      >
                                         <div className="flex items-center gap-1 text-[11px] font-semibold text-brand-800 dark:text-brand-300">
                                           <Info className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                                          <span>Diagnostic Goal:</span>
+                                          <h4 className="font-semibold text-brand-800 dark:text-brand-300">Diagnostic Goal:</h4>
                                         </div>
                                         <p className="text-[11px] text-foreground/80 leading-relaxed">
                                           {activeCriterionInfo.rubricGoal}
@@ -768,7 +844,8 @@ function SubmissionDetailDialogContent({
                             key={submission.id}
                             submissionId={submission.id}
                             initialScores={submission.manual_score}
-                            onSuccess={() => setIsEditingRubric(false)}
+                            onSuccess={handleSuccessEditingRubric}
+                            onCancel={handleCancelEditingRubric}
                             onFocusCriterion={setSelectedCriterion}
                             canGoNext={canGoNext}
                             onAdvanceNext={() => {
@@ -794,11 +871,17 @@ function SubmissionDetailDialogContent({
 
                     {/* TAB 2: PHYSICAL RAW CV MEASUREMENTS */}
                     {phase1Tab === "metrics" && (
-                      <RawMeasurementsTable
-                        measurement={measurement}
-                        selectedCriterion={selectedCriterion}
-                        onSelectCriterion={setSelectedCriterion}
-                      />
+                      <div
+                        id="phase1-tabpanel-metrics"
+                        role="tabpanel"
+                        aria-labelledby="phase1-tab-metrics"
+                      >
+                        <RawMeasurementsTable
+                          measurement={measurement}
+                          selectedCriterion={selectedCriterion}
+                          onSelectCriterion={setSelectedCriterion}
+                        />
+                      </div>
                     )}
                   </>
                 )}
@@ -810,10 +893,10 @@ function SubmissionDetailDialogContent({
                     className="hidden lg:block p-3 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1.5 animate-in fade-in-50 duration-200"
                   >
                     <div className="flex items-center justify-between text-xs font-semibold text-brand-900 dark:text-brand-200">
-                      <span className="flex items-center gap-1.5">
+                      <h4 className="flex items-center gap-1.5 font-semibold text-brand-900 dark:text-brand-200">
                         <Info className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                         <span>{selectedCriterion} Diagnostic Guide</span>
-                      </span>
+                      </h4>
                       <span className="text-[11px] text-brand-700 dark:text-brand-300 font-medium">
                         Criterion Guide
                       </span>
