@@ -29,7 +29,7 @@ import {
   Eye,
   Info,
   Award,
-  Binary,
+  SlidersHorizontal,
   ShieldCheck,
   Edit3,
 } from "lucide-react";
@@ -361,7 +361,7 @@ function SubmissionDetailDialogContent({
                       onNavigate(submissions[currentIndex - 1]);
                     }
                   }}
-                  className="size-7 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
+                  className="size-10 sm:size-7 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
                   aria-label="Previous student (Key: J or ←)"
                   title="Previous student (← / J)"
                 >
@@ -379,7 +379,7 @@ function SubmissionDetailDialogContent({
                       onNavigate(submissions[currentIndex + 1]);
                     }
                   }}
-                  className="size-7 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
+                  className="size-10 sm:size-7 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
                   aria-label="Next student (Key: K or →)"
                   title="Next student (→ / K)"
                 >
@@ -443,7 +443,7 @@ function SubmissionDetailDialogContent({
               onClick={() => {
                 scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
               }}
-              className="min-h-[36px] h-8 px-2.5 text-xs gap-1 cursor-pointer shrink-0 touch-manipulation font-medium text-brand-800 dark:text-brand-300 border-brand-300 dark:border-brand-800 hover:bg-brand-50 dark:hover:bg-brand-950/60"
+              className="min-h-[40px] h-10 sm:h-8 px-3 text-xs gap-1.5 cursor-pointer shrink-0 touch-manipulation font-medium text-brand-800 dark:text-brand-300 border-brand-300 dark:border-brand-800 hover:bg-brand-50 dark:hover:bg-brand-950/60"
             >
               <Eye className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
               <span>View Image</span>
@@ -646,9 +646,14 @@ function SubmissionDetailDialogContent({
                         tabIndex={phase1Tab === "rubric" ? 0 : -1}
                         onClick={() => setPhase1Tab("rubric")}
                         onKeyDown={(e) => {
-                          if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                          if (e.key === "ArrowRight" || e.key === "ArrowLeft" || e.key === "End") {
                             e.preventDefault();
-                            setPhase1Tab(phase1Tab === "rubric" ? "metrics" : "rubric");
+                            setPhase1Tab("metrics");
+                            document.getElementById("phase1-tab-metrics")?.focus();
+                          } else if (e.key === "Home") {
+                            e.preventDefault();
+                            setPhase1Tab("rubric");
+                            document.getElementById("phase1-tab-rubric")?.focus();
                           }
                         }}
                         className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
@@ -667,7 +672,13 @@ function SubmissionDetailDialogContent({
                             Graded
                           </Badge>
                         ) : (
-                          <span className="size-1.5 rounded-full bg-band-2" />
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] px-1.5 py-0 bg-amber-50 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border-amber-300/70 inline-flex items-center gap-1"
+                          >
+                            <span className="size-1.5 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
+                            <span>Unrated</span>
+                          </Badge>
                         )}
                       </button>
 
@@ -680,9 +691,14 @@ function SubmissionDetailDialogContent({
                         tabIndex={phase1Tab === "metrics" ? 0 : -1}
                         onClick={() => setPhase1Tab("metrics")}
                         onKeyDown={(e) => {
-                          if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                          if (e.key === "ArrowRight" || e.key === "ArrowLeft" || e.key === "Home") {
                             e.preventDefault();
-                            setPhase1Tab(phase1Tab === "rubric" ? "metrics" : "rubric");
+                            setPhase1Tab("rubric");
+                            document.getElementById("phase1-tab-rubric")?.focus();
+                          } else if (e.key === "End") {
+                            e.preventDefault();
+                            setPhase1Tab("metrics");
+                            document.getElementById("phase1-tab-metrics")?.focus();
                           }
                         }}
                         className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
@@ -691,7 +707,7 @@ function SubmissionDetailDialogContent({
                             : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        <Binary className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                        <SlidersHorizontal className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                         <span>CV Metrics</span>
                         <Badge
                           variant="outline"
@@ -905,7 +921,7 @@ function SubmissionDetailDialogContent({
                 {selectedCriterion && activeCriterionInfo && (hasCalibratedScores || phase1Tab === "metrics" || (phase1Tab === "rubric" && submission.manual_score && !isEditingRubric)) && (
                   <div
                     id="criterion-diagnostic-guide"
-                    className="hidden lg:block p-3 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1.5 animate-in fade-in-50 duration-200"
+                    className="hidden lg:block p-3 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1.5 animate-in fade-in-50 duration-200 motion-reduce:animate-none"
                   >
                     <div className="flex items-center justify-between text-xs font-semibold text-brand-900 dark:text-brand-200">
                       <h4 className="flex items-center gap-1.5 font-semibold text-brand-900 dark:text-brand-200">

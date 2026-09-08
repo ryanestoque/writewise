@@ -12,18 +12,34 @@ export function formatMetric(
 ): string {
   if (mean === null || mean === undefined) return "—";
   const numMean = Number(mean);
+  if (Number.isNaN(numMean)) return "—";
   const formattedMean = Number.isInteger(numMean)
     ? numMean.toString()
     : numMean.toFixed(2);
 
   if (std !== null && std !== undefined) {
     const numStd = Number(std);
-    const formattedStd = Number.isInteger(numStd)
-      ? numStd.toString()
-      : numStd.toFixed(2);
-    return `${formattedMean} ± ${formattedStd}${unit ? ` ${unit}` : ""}`;
+    if (!Number.isNaN(numStd)) {
+      const formattedStd = Number.isInteger(numStd)
+        ? numStd.toString()
+        : numStd.toFixed(2);
+      return `${formattedMean} ± ${formattedStd}${unit ? ` ${unit}` : ""}`;
+    }
   }
   return `${formattedMean}${unit ? ` ${unit}` : ""}`;
+}
+
+export function formatStd(
+  std: number | null | undefined,
+  unit: string = ""
+): string {
+  if (std === null || std === undefined) return "—";
+  const numStd = Number(std);
+  if (Number.isNaN(numStd)) return "—";
+  const formattedStd = Number.isInteger(numStd)
+    ? numStd.toString()
+    : numStd.toFixed(2);
+  return `±${formattedStd}${unit ? ` ${unit}` : ""}`;
 }
 
 export interface RawMeasurementsTableProps {
@@ -48,20 +64,23 @@ export function RawMeasurementsTable({
                 measurement.letter_formation_std,
                 "%"
               )
-            : "Awaiting Analysis",
+            : "Phase 1 Rubric",
         description:
-          "OpenCV curvature and CNN stroke loop analysis across ascenders (b, d, h, k, l) and descenders (g, j, p, q, y, z).",
+          "Cursive stroke aesthetics and loop closures evaluated via Teacher Rubric in Phase 1 (automated via fine-tuned CNN in Phase 2).",
         subDetails: [
           {
-            label: "Status",
+            label: "Evaluation model",
             value:
               measurement?.letter_formation_mean != null
-                ? "Feature Extracted"
-                : "Awaiting Analysis",
+                ? "CNN Calibrated (Phase 2)"
+                : "Teacher Rubric (Phase 1)",
           },
           {
-            label: "Stroke curvature",
-            value: formatMetric(measurement?.letter_formation_mean, null, "%"),
+            label: "Formation quality",
+            value:
+              measurement?.letter_formation_mean != null
+                ? formatMetric(measurement.letter_formation_mean, null, "%")
+                : "Qualitative Rubric",
           },
         ],
       },
@@ -73,7 +92,7 @@ export function RawMeasurementsTable({
           "ratio"
         ),
         description:
-          "Proportion of lowercase x-height relative to printed 3-line guidelines (Headline, Midline, Baseline).",
+          "Proportion of lowercase core x-height relative to baseline-to-midline ruling distance (1.00 = full midline height).",
         subDetails: [
           {
             label: "Core x-height ratio",
@@ -81,11 +100,11 @@ export function RawMeasurementsTable({
           },
           {
             label: "Target guideline ratio",
-            value: "0.50 (at midline)",
+            value: "0.85 – 1.00 (at midline)",
           },
           {
             label: "Height variation (std)",
-            value: formatMetric(measurement?.size_consistency_std),
+            value: formatStd(measurement?.size_consistency_std),
           },
         ],
       },
@@ -94,59 +113,65 @@ export function RawMeasurementsTable({
         primaryValue: formatMetric(
           measurement?.word_spacing_mean,
           measurement?.word_spacing_std,
-          "gap"
+          "x guideline"
         ),
         description:
-          "Word separation rhythm and inter-letter connector spacing normalized to ruling guidelines.",
+          "Word separation rhythm and inter-letter connector spacing normalized to ruling guideline height.",
         subDetails: [
           {
             label: "Word-to-word gap",
             value: formatMetric(
               measurement?.word_spacing_mean,
-              measurement?.word_spacing_std
+              measurement?.word_spacing_std,
+              "x"
             ),
           },
           {
             label: "Letter-to-letter gap",
             value: formatMetric(
               measurement?.letter_spacing_mean,
-              measurement?.letter_spacing_std
+              measurement?.letter_spacing_std,
+              "x"
             ),
           },
           {
-            label: "Target benchmark",
-            value: "~1 lowercase 'o'",
+            label: "Word gap target",
+            value: "~1.5 – 2.5x (finger space)",
+          },
+          {
+            label: "Letter gap target",
+            value: "~0.3 – 0.5x (~1 letter 'o')",
           },
         ],
       },
       {
         name: "Slant Angle",
         primaryValue:
-          measurement?.slant_mean != null
+          measurement?.slant_mean != null && !Number.isNaN(Number(measurement.slant_mean))
             ? `${Number(measurement.slant_mean).toFixed(1)}°${
-                measurement.slant_std != null
+                measurement.slant_std != null && !Number.isNaN(Number(measurement.slant_std))
                   ? ` ± ${Number(measurement.slant_std).toFixed(1)}°`
                   : ""
               }`
             : "—",
         description:
-          "Average forward cursive stroke angle relative to baseline perpendicular (Target standard: 60°–68°).",
+          "Average forward cursive stroke lean relative to vertical guideline perpendicular (Standard cursive lean: 6.0° – 15.0°).",
         subDetails: [
           {
-            label: "Mean slant angle",
+            label: "Mean forward slant",
             value:
-              measurement?.slant_mean != null
+              measurement?.slant_mean != null && !Number.isNaN(Number(measurement.slant_mean))
                 ? `${Number(measurement.slant_mean).toFixed(1)}°`
                 : "—",
           },
           {
-            label: "Target slant range",
-            value: "60.0° – 68.0°",
+            label: "Target forward lean",
+            value: "6.0° – 15.0° (from vertical)",
           },
           {
-            label: "Slant consistency (std)",
+            label: "Slant variation (std)",
             value:
-              measurement?.slant_std != null
+              measurement?.slant_std != null && !Number.isNaN(Number(measurement.slant_std))
                 ? `±${Number(measurement.slant_std).toFixed(1)}°`
                 : "—",
           },
@@ -157,7 +182,7 @@ export function RawMeasurementsTable({
         primaryValue: formatMetric(
           measurement?.baseline_deviation_mean,
           measurement?.baseline_deviation_std,
-          "drift"
+          "drift ratio"
         ),
         description:
           "Vertical distance of letter bases from the ruled penmanship baseline guideline across each word.",
@@ -172,7 +197,7 @@ export function RawMeasurementsTable({
           },
           {
             label: "Drift variation (std)",
-            value: formatMetric(measurement?.baseline_deviation_std),
+            value: formatStd(measurement?.baseline_deviation_std),
           },
         ],
       },
@@ -185,26 +210,40 @@ export function RawMeasurementsTable({
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           5 Physical Penmanship Features
         </h3>
-        <span className="text-[11px] text-muted-foreground">Tap to inspect</span>
+        <span className="text-[11px] text-muted-foreground">Select a criterion to view guide</span>
       </div>
+
+      {!measurement && (
+        <div className="p-2.5 rounded-xl bg-muted/40 border border-border/70 text-xs text-muted-foreground flex items-center gap-2">
+          <Info className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+          <span>Physical geometric measurements are pending computer vision feature extraction.</span>
+        </div>
+      )}
 
       <div className="space-y-2">
         {rawCriteria.map((c) => {
           const isSelected = selectedCriterion === c.name;
           const activeCriterionInfo = CRITERIA_GUIDE[c.name] ?? null;
-          const inlineId = `raw-criterion-guide-inline-${c.name.toLowerCase().replace(/\s+/g, "-")}`;
+          const safeName = c.name.toLowerCase().replace(/\s+/g, "-");
+          const inlineId = `raw-criterion-guide-inline-${safeName}`;
+          const titleId = `raw-metric-title-${safeName}`;
+          const valueId = `raw-metric-value-${safeName}`;
+          const descId = `raw-metric-desc-${safeName}`;
+          const detailsId = `raw-metric-details-${safeName}`;
+
           return (
             <div key={c.name} className="space-y-1.5">
               <button
                 type="button"
                 onClick={() => onSelectCriterion(c.name)}
                 aria-expanded={isSelected}
+                aria-labelledby={`${titleId} ${valueId}`}
+                aria-describedby={`${descId} ${detailsId}`}
                 aria-controls={
                   isSelected
                     ? `${inlineId} criterion-diagnostic-guide`
                     : undefined
                 }
-                aria-label={`${c.name}: ${c.primaryValue}. Tap to inspect.`}
                 className={`w-full flex flex-col p-2.5 sm:p-3 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 touch-manipulation ${
                   isSelected
                     ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/40"
@@ -213,32 +252,32 @@ export function RawMeasurementsTable({
               >
                 <div className="w-full flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <span className="font-semibold text-foreground truncate block">
+                    <span id={titleId} className="font-semibold text-foreground truncate block">
                       {c.name}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="font-sans font-semibold text-foreground tabular-nums text-xs px-2 py-0.5 rounded-md bg-muted/60 border border-border/60">
+                    <span id={valueId} className="font-sans font-semibold text-foreground tabular-nums text-xs px-2 py-0.5 rounded-md bg-muted/60 border border-border/60">
                       {c.primaryValue}
                     </span>
                   </div>
                 </div>
 
-                <span className="text-[11px] text-muted-foreground mt-0.5 leading-snug block line-clamp-2">
+                <span id={descId} className="text-[11px] text-muted-foreground mt-0.5 leading-snug block line-clamp-2">
                   {c.description}
                 </span>
 
                 {c.subDetails && c.subDetails.length > 0 && (
-                  <div className="mt-1.5 pt-1.5 border-t border-border/50 grid grid-cols-1 sm:grid-cols-2 gap-x-3.5 gap-y-1 text-[11px] w-full">
+                  <div id={detailsId} className="mt-1.5 pt-1.5 border-t border-border/50 grid grid-cols-1 sm:grid-cols-2 gap-x-3.5 gap-y-1 text-[11px] w-full">
                     {c.subDetails.map((sub, sIdx) => (
                       <div
                         key={sIdx}
                         className="flex items-baseline justify-between gap-1.5 text-muted-foreground min-w-0"
                       >
-                        <span className="shrink-0 font-medium text-muted-foreground/90">
+                        <span className="shrink-0 font-medium text-muted-foreground">
                           {sub.label}:
                         </span>
-                        <span className="font-sans font-semibold text-foreground tabular-nums text-right truncate">
+                        <span className="font-sans font-semibold text-foreground tabular-nums text-right break-words sm:whitespace-normal">
                           {sub.value}
                         </span>
                       </div>
@@ -253,7 +292,7 @@ export function RawMeasurementsTable({
                   id={inlineId}
                   role="region"
                   aria-label={`${c.name} coaching tip`}
-                  className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150 text-left"
+                  className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none text-left"
                 >
                   <div className="flex items-center gap-1 text-[11px] font-semibold text-brand-800 dark:text-brand-300">
                     <Info

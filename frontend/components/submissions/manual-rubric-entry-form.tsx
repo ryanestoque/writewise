@@ -32,7 +32,7 @@ export const CRITERIA_GUIDE: Record<
 > = {
   "Letter Formation": {
     rubricGoal:
-      "OpenCV stroke curvature analysis evaluates ascender loop closures (b, d, h, k, l) and descender loops (g, j, p, q, y, z).",
+      "Evaluates ascender loop closures (b, d, h, k, l) and descender loops (g, j, p, q, y, z) via Teacher Rubric in Phase 1 (automated via fine-tuned CNN in Phase 2).",
     coachingTip:
       "Guide the student to connect cursive loops smoothly without disjointed strokes or incomplete oval closures.",
   },
@@ -50,7 +50,7 @@ export const CRITERIA_GUIDE: Record<
   },
   "Slant Angle": {
     rubricGoal:
-      "Measures cursive stroke tilt consistency against the standard 60°–68° forward slant angle.",
+      "Measures cursive stroke tilt consistency against the standard 6.0°–15.0° forward slant angle relative to vertical guideline perpendicular (75.0°–84.0° from horizontal baseline).",
     coachingTip:
       "Encourage the student to keep paper angled at 30°–45° on their desk to maintain parallel, uniform forward slant.",
   },
