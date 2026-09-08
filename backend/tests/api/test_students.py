@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 
 from app.core.supabase import supabase_client
@@ -12,6 +14,37 @@ def cleanup_students():
     for sid in student_ids:
         # Delete student, which cascades to teacher_student
         supabase_client.table("student").delete().eq("id", sid).execute()
+
+
+@pytest.fixture
+def confirmed_parent():
+    """Create a temporary confirmed parent user in auth for testing existing parent links."""
+    test_email = f"confirmed_parent_{uuid.uuid4().hex[:8]}@example.com"
+    user_res = supabase_client.auth.admin.create_user(
+        {
+            "email": test_email,
+            "email_confirm": True,
+            "user_metadata": {
+                "role": "parent",
+                "full_name": "Confirmed Test Parent",
+            },
+        }
+    )
+    user_id = str(user_res.user.id)
+    # Ensure profile row exists in public.parent
+    supabase_client.table("parent").upsert(
+        {"id": user_id, "full_name": "Confirmed Test Parent", "email": test_email}
+    ).execute()
+
+    yield {"id": user_id, "email": test_email}
+
+    # Cleanup
+    supabase_client.table("student_parent").delete().eq("parent_id", user_id).execute()
+    supabase_client.table("parent").delete().eq("id", user_id).execute()
+    try:
+        supabase_client.auth.admin.delete_user(user_id)
+    except Exception:
+        pass
 
 
 def test_create_student(client, cleanup_students):
@@ -142,12 +175,11 @@ def test_remove_student_link(client, cleanup_students):
     assert response2.status_code == 404
 
 
-def test_create_student_with_existing_parent_email(client, cleanup_students):
-    # stephen@warriors.com is an existing confirmed parent in dev DB
+def test_create_student_with_existing_parent_email(client, cleanup_students, confirmed_parent):
     payload = {
         "full_name": "Sibling of Stephen",
         "section": "Grade 3 - Sibling",
-        "parent_email": "stephen@warriors.com",
+        "parent_email": confirmed_parent["email"],
     }
     response = client.post("/api/students", json=payload)
     assert response.status_code == 200
@@ -167,14 +199,15 @@ def test_create_student_with_existing_parent_email(client, cleanup_students):
         .execute()
     )
     assert len(sp_res.data) == 1
+    assert sp_res.data[0]["parent_id"] == confirmed_parent["id"]
 
 
-def test_resend_parent_invite(client, cleanup_students):
+def test_resend_parent_invite(client, cleanup_students, confirmed_parent):
     # 1. Create student with parent email
     payload = {
         "full_name": "Resend Test Student",
         "section": "Grade 3 - Resend",
-        "parent_email": "stephen@warriors.com",
+        "parent_email": confirmed_parent["email"],
     }
     create_res = client.post("/api/students", json=payload)
     student_id = create_res.json()["id"]

@@ -29,7 +29,7 @@ def _invite_parent(email: str, student_id: str, student_name: str):
     redirect_url = f"{frontend_origin}/auth/callback"
 
     try:
-        supabase_client.auth.admin.invite_user_by_email(
+        user_res = supabase_client.auth.admin.invite_user_by_email(
             email=email,
             options={
                 "redirect_to": redirect_url,
@@ -40,6 +40,28 @@ def _invite_parent(email: str, student_id: str, student_name: str):
                 },
             },
         )
+        u = getattr(user_res, "user", None) or user_res
+        parent_id = str(u.id) if getattr(u, "id", None) else None
+        if parent_id:
+            supabase_client.table("parent").upsert(
+                {
+                    "id": parent_id,
+                    "full_name": (getattr(u, "user_metadata", None) or {}).get("full_name")
+                    or f"{student_name}'s Parent",
+                    "email": email,
+                }
+            ).execute()
+            supabase_client.table("student_parent").upsert(
+                {"student_id": student_id, "parent_id": parent_id},
+                on_conflict="student_id,parent_id",
+            ).execute()
+            is_confirmed = bool(
+                getattr(u, "confirmed_at", None) or getattr(u, "email_confirmed_at", None)
+            )
+            status = "active" if is_confirmed else "pending"
+            supabase_client.table("student").update({"parent_status": status}).eq(
+                "id", student_id
+            ).execute()
         return True, None
     except Exception as e:
         error_msg = str(e)
@@ -109,6 +131,7 @@ def create_student(student_in: StudentCreate, teacher: dict = Depends(get_curren
     }
     if student_in.parent_email and student_in.parent_email.strip():
         insert_data["parent_email"] = student_in.parent_email.strip()
+        insert_data["parent_status"] = "pending"
 
     res = supabase_client.table("student").insert(insert_data).execute()
 
@@ -188,6 +211,8 @@ def update_student(
         update_data["parent_email"] = cleaned_email if cleaned_email else None
         if not cleaned_email:
             update_data["parent_status"] = None
+        else:
+            update_data["parent_status"] = "pending"
 
     student = None
     if update_data:
@@ -308,7 +333,9 @@ def resend_parent_invite(student_id: str, teacher: dict = Depends(get_current_te
     refreshed = (
         supabase_client.table("student").select("id, parent_status").eq("id", student_id).execute()
     )
-    current_status = refreshed.data[0].get("parent_status") if refreshed.data else "pending"
+    current_status = (
+        (refreshed.data[0].get("parent_status") if refreshed.data else None) or "pending"
+    )
 
     return {
         "success": True,
