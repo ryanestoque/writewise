@@ -116,6 +116,7 @@ function SubmissionDetailDialogContent({
   );
   const [phase1Tab, setPhase1Tab] = useState<"rubric" | "metrics">("rubric");
   const [isEditingRubric, setIsEditingRubric] = useState(false);
+  const [criterionAnnouncement, setCriterionAnnouncement] = useState<string>("");
 
   const handleScroll = useCallback(() => {
     if (!scrollContainerRef.current) return;
@@ -133,10 +134,15 @@ function SubmissionDetailDialogContent({
   // Keyboard navigation for submission cycling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
       if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        e.target instanceof HTMLSelectElement
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target?.isContentEditable ||
+        target?.getAttribute?.("role") === "radio" ||
+        target?.closest?.('fieldset[role="radiogroup"]') ||
+        target?.closest?.('[data-radix-focus-guard]')
       ) {
         return;
       }
@@ -266,6 +272,11 @@ function SubmissionDetailDialogContent({
       showCloseButton={false}
       className="w-[calc(100%-1.5rem)] sm:max-w-4xl lg:max-w-5xl max-h-[min(94dvh,calc(100vh-2rem))] flex flex-col p-4 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-xl border border-border/80 bg-surface dark:bg-card"
     >
+      {/* Screen reader live announcement region for criterion selection */}
+      <div className="sr-only" role="status" aria-live="polite">
+        {criterionAnnouncement}
+      </div>
+
       {/* Header */}
       <DialogHeader className="pb-3 sm:pb-4 border-b border-border/70 shrink-0 text-left">
         <div className="flex flex-row items-center justify-between gap-2.5 sm:gap-3">
@@ -497,7 +508,7 @@ function SubmissionDetailDialogContent({
                             <span
                               className={`size-1.5 rounded-full ${compositeBand.dotColor}`}
                             />
-                            {compositeBand.label}
+                            {compositeBand.band}
                           </Badge>
                         </div>
                       </div>
@@ -526,12 +537,22 @@ function SubmissionDetailDialogContent({
                             <div key={c.name} className="space-y-1.5">
                               <button
                                 type="button"
-                                onClick={() =>
-                                  setSelectedCriterion(c.name)
-                                }
+                                onClick={() => {
+                                  setSelectedCriterion(c.name);
+                                  setCriterionAnnouncement(
+                                    `${c.name} selected. Diagnostic guide and coaching tips updated.`
+                                  );
+                                }}
+                                aria-pressed={isSelected}
+                                aria-controls="criterion-diagnostic-guide"
+                                aria-label={`${c.name}: ${
+                                  c.score !== null && c.score !== undefined
+                                    ? `${Math.round(c.score)}%`
+                                    : "Unrated"
+                                } (${band.band}). Tap to focus coaching tip.`}
                                 className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 ${
                                   isSelected
-                                    ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs"
+                                    ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
                                     : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
                                 }`}
                               >
@@ -549,7 +570,7 @@ function SubmissionDetailDialogContent({
                                       </Badge>
                                     )}
                                   </div>
-                                  <span className="text-[11px] text-muted-foreground truncate block">
+                                  <span className="text-[11px] text-muted-foreground line-clamp-2 block">
                                     {c.description}
                                   </span>
                                 </div>
@@ -566,14 +587,14 @@ function SubmissionDetailDialogContent({
                                     <span
                                       className={`size-1.5 rounded-full mr-1 ${band.dotColor}`}
                                     />
-                                    {band.label}
+                                    {band.band}
                                   </Badge>
                                 </div>
                               </button>
 
-                              {/* Inline Mobile Coaching Tip when selected (sm:hidden) */}
+                              {/* Inline Mobile & Tablet Coaching Tip when selected (lg:hidden) */}
                               {isSelected && activeCriterionInfo && (
-                                <div className="sm:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150">
+                                <div className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150">
                                   <div className="flex items-center gap-1 text-[11px] font-semibold text-brand-800 dark:text-brand-300">
                                     <Info className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                                     <span>Diagnostic Goal:</span>
@@ -700,28 +721,75 @@ function SubmissionDetailDialogContent({
                                 const bandValue =
                                   submission.manual_score?.[criterion.key];
                                 const bandMeta = getBandMeta(bandValue);
+                                const isSelected =
+                                  selectedCriterion === criterion.shortName;
                                 return (
-                                  <div
-                                    key={criterion.key}
-                                    className="flex items-center justify-between p-2.5 rounded-lg bg-surface/90 dark:bg-card/90 border border-brand-200/60 dark:border-brand-900/60 text-xs"
-                                  >
-                                    <div className="min-w-0 pr-2">
-                                      <span className="font-semibold text-foreground truncate block">
-                                        {criterion.name}
-                                      </span>
-                                      <span className="text-[11px] text-muted-foreground leading-normal block">
-                                        {criterion.hint}
-                                      </span>
-                                    </div>
-                                    <Badge
-                                      variant="outline"
-                                      className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 inline-flex items-center gap-1.5 ${bandMeta.badgeClass}`}
+                                  <div key={criterion.key} className="space-y-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedCriterion(criterion.shortName);
+                                        setCriterionAnnouncement(
+                                          `${criterion.shortName} selected. Diagnostic guide and coaching tips updated.`
+                                        );
+                                      }}
+                                      aria-pressed={isSelected}
+                                      aria-controls="criterion-diagnostic-guide"
+                                      aria-label={`${criterion.shortName}: ${bandMeta.label} (${bandMeta.score}). Tap to focus coaching tip.`}
+                                      className={cn(
+                                        "w-full flex items-center justify-between p-2.5 rounded-lg border text-xs text-left cursor-pointer transition-all min-h-[44px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                                        isSelected
+                                          ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
+                                          : "bg-surface/90 dark:bg-card/90 border-brand-200/60 dark:border-brand-900/60 hover:bg-muted/30"
+                                      )}
                                     >
-                                      <span
-                                        className={`size-1.5 rounded-full ${bandMeta.dotColor}`}
-                                      />
-                                      {bandMeta.label} ({bandMeta.score})
-                                    </Badge>
+                                      <div className="min-w-0 pr-2">
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="font-semibold text-foreground truncate block">
+                                            {criterion.name}
+                                          </span>
+                                          {isSelected && (
+                                            <Badge
+                                              variant="outline"
+                                              className="text-[11px] px-1.5 py-0 bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200 border-brand-300"
+                                            >
+                                              Active
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        <span className="text-[11px] text-muted-foreground line-clamp-2 block">
+                                          {criterion.hint}
+                                        </span>
+                                      </div>
+                                      <Badge
+                                        variant="outline"
+                                        className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 inline-flex items-center gap-1.5 ${bandMeta.badgeClass}`}
+                                      >
+                                        <span
+                                          className={`size-1.5 rounded-full ${bandMeta.dotColor}`}
+                                        />
+                                        {bandMeta.label} ({bandMeta.score})
+                                      </Badge>
+                                    </button>
+
+                                    {/* Inline Mobile & Tablet Coaching Tip for read-only rubric mode (lg:hidden) */}
+                                    {isSelected && activeCriterionInfo && (
+                                      <div className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150">
+                                        <div className="flex items-center gap-1 text-[11px] font-semibold text-brand-800 dark:text-brand-300">
+                                          <Info className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                                          <span>Diagnostic Goal:</span>
+                                        </div>
+                                        <p className="text-[11px] text-foreground/80 leading-relaxed">
+                                          {activeCriterionInfo.rubricGoal}
+                                        </p>
+                                        <div className="pt-1 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1 text-[11px] text-brand-800 dark:text-brand-300">
+                                          <Eye className="size-3 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
+                                          <span className="leading-normal">
+                                            <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
@@ -768,9 +836,12 @@ function SubmissionDetailDialogContent({
                   </>
                 )}
 
-                {/* Focused Criterion Diagnostic Insight Card (Desktop/tablet view; mobile handled inline) */}
+                {/* Focused Criterion Diagnostic Insight Card (Desktop view >=lg; mobile/tablet handled inline) */}
                 {selectedCriterion && activeCriterionInfo && (hasCalibratedScores || phase1Tab === "metrics" || (phase1Tab === "rubric" && submission.manual_score && !isEditingRubric)) && (
-                  <div className="hidden sm:block p-3 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1.5 animate-in fade-in-50 duration-200">
+                  <div
+                    id="criterion-diagnostic-guide"
+                    className="hidden lg:block p-3 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1.5 animate-in fade-in-50 duration-200"
+                  >
                     <div className="flex items-center justify-between text-xs font-semibold text-brand-900 dark:text-brand-200">
                       <span className="flex items-center gap-1.5">
                         <Info className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />

@@ -195,6 +195,9 @@ export function RawMeasurementsTable({
               key={c.name}
               type="button"
               onClick={() => onSelectCriterion(c.name)}
+              aria-pressed={isSelected}
+              aria-controls="criterion-diagnostic-guide"
+              aria-label={`${c.name}: ${c.primaryValue}. Tap to inspect.`}
               className={`w-full flex flex-col p-2.5 sm:p-3 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 ${
                 isSelected
                   ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/40"

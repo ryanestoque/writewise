@@ -79,10 +79,10 @@ export const RUBRIC_BANDS: Array<{
     shortcutKey: "1",
     score: "12.5%",
     activeClass:
-      "bg-[#b6754a]/15 dark:bg-[#b6754a]/30 text-[#733512] dark:text-[#f3c8aa] border-[#b6754a] ring-2 ring-[#b6754a]/40 shadow-xs font-semibold",
+      "bg-band-1/15 dark:bg-band-1/30 text-band-1 dark:text-[#f3c8aa] border-band-1 ring-2 ring-band-1/40 shadow-xs font-semibold",
     badgeClass:
-      "bg-[#b6754a]/15 text-[#733512] dark:text-[#f3c8aa] border-[#b6754a]/40",
-    dotColor: "bg-[#b6754a]",
+      "bg-band-1/15 text-band-1 dark:text-[#f3c8aa] border-band-1/40",
+    dotColor: "bg-band-1",
   },
   {
     band: "developing",
@@ -91,10 +91,10 @@ export const RUBRIC_BANDS: Array<{
     shortcutKey: "2",
     score: "37.5%",
     activeClass:
-      "bg-[#c9a227]/15 dark:bg-[#c9a227]/30 text-[#6e4e00] dark:text-[#fae59a] border-[#c9a227] ring-2 ring-[#c9a227]/40 shadow-xs font-semibold",
+      "bg-band-2/15 dark:bg-band-2/30 text-amber-900 dark:text-[#fae59a] border-band-2 ring-2 ring-band-2/40 shadow-xs font-semibold",
     badgeClass:
-      "bg-[#c9a227]/15 text-[#6e4e00] dark:text-[#fae59a] border-[#c9a227]/40",
-    dotColor: "bg-[#c9a227]",
+      "bg-band-2/15 text-amber-900 dark:text-[#fae59a] border-band-2/40",
+    dotColor: "bg-band-2",
   },
   {
     band: "satisfactory",
@@ -103,10 +103,10 @@ export const RUBRIC_BANDS: Array<{
     shortcutKey: "3",
     score: "62.5%",
     activeClass:
-      "bg-[#7c9b6e]/15 dark:bg-[#7c9b6e]/30 text-[#2c4e22] dark:text-[#c4deba] border-[#7c9b6e] ring-2 ring-[#7c9b6e]/40 shadow-xs font-semibold",
+      "bg-band-3/15 dark:bg-band-3/30 text-emerald-950 dark:text-[#c4deba] border-band-3 ring-2 ring-band-3/40 shadow-xs font-semibold",
     badgeClass:
-      "bg-[#7c9b6e]/15 text-[#2c4e22] dark:text-[#c4deba] border-[#7c9b6e]/40",
-    dotColor: "bg-[#7c9b6e]",
+      "bg-band-3/15 text-emerald-950 dark:text-[#c4deba] border-band-3/40",
+    dotColor: "bg-band-3",
   },
   {
     band: "excellent",
@@ -184,31 +184,31 @@ export const RUBRIC_CRITERIA: Array<{
 }> = [
   {
     key: "letter_formation_band",
-    name: "1. Letter Formation",
+    name: "Letter Formation",
     shortName: "Letter Formation",
     hint: "Proper cursive loops and complete stroke closures",
   },
   {
     key: "size_consistency_band",
-    name: "2. Size Consistency",
+    name: "Size Consistency",
     shortName: "Size Consistency",
     hint: "Proportion and height across 3-line penmanship ruling",
   },
   {
     key: "spacing_band",
-    name: "3. Spacing",
+    name: "Spacing",
     shortName: "Spacing",
     hint: "Inter-word rhythm and character separation spacing",
   },
   {
     key: "slant_band",
-    name: "4. Slant Angle",
+    name: "Slant Angle",
     shortName: "Slant Angle",
     hint: "Uniform forward slant tilt (target 60°–68° angle)",
   },
   {
     key: "baseline_alignment_band",
-    name: "5. Baseline Alignment",
+    name: "Baseline Alignment",
     shortName: "Baseline Alignment",
     hint: "Letters resting stably along bottom ruling baseline",
   },
@@ -472,11 +472,11 @@ export function ManualRubricEntryForm({
   ) => {
     let targetOptionIdx: number | null = null;
 
-    if (e.key === "ArrowDown") {
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") {
       e.preventDefault();
       e.stopPropagation();
       targetOptionIdx = (currentOptionIdx + 1) % RUBRIC_BANDS.length;
-    } else if (e.key === "ArrowUp") {
+    } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
       e.preventDefault();
       e.stopPropagation();
       targetOptionIdx =
@@ -576,7 +576,7 @@ export function ManualRubricEntryForm({
             className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 font-sans tabular-nums inline-flex items-center gap-1.5 ${
               allBandsSelected && compositeRubric
                 ? compositeRubric.overallBandMeta.badgeClass
-                : "bg-[#c9a227]/15 text-[#6e4e00] dark:bg-[#c9a227]/25 dark:text-[#fae59a] border-[#c9a227]/40"
+                : "bg-band-2/15 text-amber-900 dark:bg-band-2/25 dark:text-amber-200 border-band-2/40"
             }`}
           >
             {allBandsSelected && compositeRubric ? (
@@ -606,10 +606,10 @@ export function ManualRubricEntryForm({
           <button
             type="button"
             onClick={() => handleApplyPreset("satisfactory")}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#7c9b6e]/15 text-[#2c4e22] dark:text-[#c4deba] border border-[#7c9b6e]/35 hover:bg-[#7c9b6e]/25 transition-colors cursor-pointer min-h-[28px] touch-manipulation"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-band-3/15 text-emerald-950 dark:text-[#c4deba] border border-band-3/35 hover:bg-band-3/25 transition-colors cursor-pointer min-h-[28px] touch-manipulation"
             title="Rate all 5 criteria as Satisfactory (Alt+3)"
           >
-            <span className="size-1.5 rounded-full bg-[#7c9b6e]" aria-hidden="true" />
+            <span className="size-1.5 rounded-full bg-band-3" aria-hidden="true" />
             <span>All Satisfactory</span>
             <kbd className="text-[9px] font-mono opacity-70 ml-0.5 hidden sm:inline">Alt+3</kbd>
           </button>
@@ -626,10 +626,10 @@ export function ManualRubricEntryForm({
           <button
             type="button"
             onClick={() => handleApplyPreset("developing")}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#c9a227]/15 text-[#6e4e00] dark:text-[#fae59a] border border-[#c9a227]/35 hover:bg-[#c9a227]/25 transition-colors cursor-pointer min-h-[28px] touch-manipulation"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-band-2/15 text-amber-900 dark:text-[#fae59a] border border-band-2/35 hover:bg-band-2/25 transition-colors cursor-pointer min-h-[28px] touch-manipulation"
             title="Rate all 5 criteria as Developing (Alt+2)"
           >
-            <span className="size-1.5 rounded-full bg-[#c9a227]" aria-hidden="true" />
+            <span className="size-1.5 rounded-full bg-band-2" aria-hidden="true" />
             <span>All Developing</span>
             <kbd className="text-[9px] font-mono opacity-70 ml-0.5 hidden sm:inline">Alt+2</kbd>
           </button>
@@ -919,7 +919,7 @@ export function ManualRubricEntryForm({
                   id={`criterion-label-${criterion.key}`}
                   className="text-xs font-semibold text-foreground flex items-center gap-1.5 cursor-pointer"
                 >
-                  <span>{criterion.name}</span>
+                  <span>{idx + 1}. {criterion.name}</span>
                   {isFocused && (
                     <span className="text-[11px] text-brand-600 dark:text-brand-400 font-medium font-sans">
                       (Active)
