@@ -140,3 +140,66 @@ def test_remove_student_link(client, cleanup_students):
     # 4. Try deleting it again -> should be 404
     response2 = client.delete(f"/api/students/{student_id}/teacher-link")
     assert response2.status_code == 404
+
+
+def test_create_student_with_existing_parent_email(client, cleanup_students):
+    # stephen@warriors.com is an existing confirmed parent in dev DB
+    payload = {
+        "full_name": "Sibling of Stephen",
+        "section": "Grade 3 - Sibling",
+        "parent_email": "stephen@warriors.com",
+    }
+    response = client.post("/api/students", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    student_id = data["id"]
+    cleanup_students.append(student_id)
+
+    assert data["parent_invited"] is True
+    assert data["parent_invite_error"] is None
+    assert data["parent_status"] == "active"
+
+    # Verify student_parent link in DB
+    sp_res = (
+        supabase_client.table("student_parent")
+        .select("*")
+        .eq("student_id", student_id)
+        .execute()
+    )
+    assert len(sp_res.data) == 1
+
+
+def test_resend_parent_invite(client, cleanup_students):
+    # 1. Create student with parent email
+    payload = {
+        "full_name": "Resend Test Student",
+        "section": "Grade 3 - Resend",
+        "parent_email": "stephen@warriors.com",
+    }
+    create_res = client.post("/api/students", json=payload)
+    student_id = create_res.json()["id"]
+    cleanup_students.append(student_id)
+
+    # 2. Resend invite
+    resend_res = client.post(f"/api/students/{student_id}/resend-invite")
+    assert resend_res.status_code == 200
+    resend_data = resend_res.json()
+    assert resend_data["success"] is True
+    assert resend_data["student_id"] == student_id
+    assert resend_data["parent_status"] == "active"
+
+    # 3. Resend for student without parent email -> 400
+    no_email_payload = {"full_name": "No Email Student", "section": "Grade 3 - X"}
+    no_email_res = client.post("/api/students", json=no_email_payload)
+    no_email_id = no_email_res.json()["id"]
+    cleanup_students.append(no_email_id)
+
+    resend_fail_res = client.post(f"/api/students/{no_email_id}/resend-invite")
+    assert resend_fail_res.status_code == 400
+    assert resend_fail_res.json()["error"]["code"] == "BAD_REQUEST"
+
+    # 4. Resend for non-existent student -> 404
+    fake_id = "00000000-0000-0000-0000-000000000000"
+    resend_404_res = client.post(f"/api/students/{fake_id}/resend-invite")
+    assert resend_404_res.status_code == 404
+    assert resend_404_res.json()["error"]["code"] == "NOT_FOUND"

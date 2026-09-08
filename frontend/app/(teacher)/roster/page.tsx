@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useStudents, useRemoveStudent, Student } from "@/lib/hooks/use-students";
+import { useStudents, useRemoveStudent, useResendParentInvite, Student } from "@/lib/hooks/use-students";
 import { runConcurrentPool } from "@/lib/utils/concurrent-pool";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -26,6 +27,7 @@ import {
   UserPlus,
   SearchX,
   Mail,
+  Send,
   Download,
 } from "lucide-react";
 import { StudentDialog } from "@/components/roster/student-dialog";
@@ -102,6 +104,29 @@ export default function RosterPage() {
   const [isBatchMoveOpen, setIsBatchMoveOpen] = useState(false);
   const [isBatchRemoveOpen, setIsBatchRemoveOpen] = useState(false);
   const [isBatchRemoving, setIsBatchRemoving] = useState(false);
+
+  // Resend Parent Invite state & mutation
+  const { mutate: resendInvite } = useResendParentInvite();
+  const [resendingStudentId, setResendingStudentId] = useState<string | null>(null);
+
+  const handleResendInvite = (student: Student) => {
+    if (!student.parent_email) return;
+    setResendingStudentId(student.id);
+    resendInvite(student.id, {
+      onSuccess: () => {
+        toast.success(`Invitation resent to ${student.parent_email}.`);
+        setResendingStudentId(null);
+      },
+      onError: (err: unknown) => {
+        let message = err instanceof Error ? err.message : "Failed to resend invitation.";
+        if (message.toLowerCase().includes("rate limit")) {
+          message = "Email rate limit reached. Please wait a few minutes before resending.";
+        }
+        toast.error(message);
+        setResendingStudentId(null);
+      },
+    });
+  };
 
 
   // Keyboard shortcut: Press "/" or "Cmd/Ctrl+K" to focus search; Escape to clear selection
@@ -617,10 +642,37 @@ export default function RosterPage() {
                               <div className="flex flex-col min-w-0">
                                 <span className="font-medium text-foreground tracking-tight truncate">{student.full_name}</span>
                                 {student.parent_email ? (
-                                  <span className="text-xs text-muted-foreground flex items-center gap-1 truncate font-normal">
-                                    <Mail className="w-3 h-3 text-muted-foreground/70 shrink-0" />
-                                    {student.parent_email}
-                                  </span>
+                                  <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1 truncate font-normal">
+                                      <Mail className="w-3 h-3 text-muted-foreground/70 shrink-0" />
+                                      {student.parent_email}
+                                    </span>
+                                    {student.parent_status === "active" ? (
+                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200/80">
+                                        Active
+                                      </Badge>
+                                    ) : (
+                                      <div className="inline-flex items-center gap-1">
+                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border-amber-200/80">
+                                          Pending
+                                        </Badge>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleResendInvite(student)}
+                                          disabled={resendingStudentId === student.id}
+                                          title="Resend invitation email"
+                                          className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline hover:text-primary/80 disabled:opacity-50 transition-colors cursor-pointer"
+                                        >
+                                          {resendingStudentId === student.id ? (
+                                            <Spinner className="size-3" />
+                                          ) : (
+                                            <Send className="size-2.5" />
+                                          )}
+                                          <span>Resend</span>
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
                                 ) : (
                                   <span className="text-xs text-muted-foreground italic font-normal">
                                     No parent email linked
@@ -774,10 +826,37 @@ export default function RosterPage() {
 
                             <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                               {student.parent_email ? (
-                                <span className="flex items-center gap-1 truncate font-normal">
-                                  <Mail className="w-3 h-3 text-muted-foreground/70 shrink-0" />
-                                  {student.parent_email}
-                                </span>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="flex items-center gap-1 truncate font-normal">
+                                    <Mail className="w-3 h-3 text-muted-foreground/70 shrink-0" />
+                                    {student.parent_email}
+                                  </span>
+                                  {student.parent_status === "active" ? (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200/80">
+                                      Active
+                                    </Badge>
+                                  ) : (
+                                    <div className="inline-flex items-center gap-1">
+                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border-amber-200/80">
+                                        Pending
+                                      </Badge>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleResendInvite(student)}
+                                        disabled={resendingStudentId === student.id}
+                                        title="Resend invitation email"
+                                        className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline hover:text-primary/80 disabled:opacity-50 transition-colors cursor-pointer"
+                                      >
+                                        {resendingStudentId === student.id ? (
+                                          <Spinner className="size-3" />
+                                        ) : (
+                                          <Send className="size-2.5" />
+                                        )}
+                                        <span>Resend</span>
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               ) : (
                                 <span className="italic font-normal text-[11px]">No parent email linked</span>
                               )}

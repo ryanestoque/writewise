@@ -135,8 +135,15 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
       updateStudent(
         { id: student.id, data: payload },
         {
-          onSuccess: () => {
-            toast.success(`Updated ${trimmedName} successfully.`);
+          onSuccess: (data: unknown) => {
+            const res = data as { parent_invited?: boolean; parent_invite_error?: string | null };
+            if (trimmedEmail && res?.parent_invited === false && res?.parent_invite_error) {
+              toast.warning(
+                `Updated ${trimmedName}, but parent invite could not be sent: ${res.parent_invite_error}`
+              );
+            } else {
+              toast.success(`Updated ${trimmedName} successfully.`);
+            }
             onOpenChange(false);
           },
           onError: (error: Error) => {
@@ -152,8 +159,15 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
       };
 
       createStudent(payload, {
-        onSuccess: () => {
-          toast.success(`Enrolled ${trimmedName} in ${trimmedSection}.`);
+        onSuccess: (data: unknown) => {
+          const res = data as { parent_invited?: boolean; parent_invite_error?: string | null };
+          if (trimmedEmail && res?.parent_invited === false && res?.parent_invite_error) {
+            toast.warning(
+              `Enrolled ${trimmedName}, but parent invite could not be sent: ${res.parent_invite_error}`
+            );
+          } else {
+            toast.success(`Enrolled ${trimmedName} in ${trimmedSection}.`);
+          }
           if (addAnother) {
             // Keep section preserved, reset name & parent email
             form.reset({

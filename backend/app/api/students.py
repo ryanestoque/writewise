@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict
 
 from app.api.deps import get_current_teacher
+from app.core.config import settings
 from app.core.supabase import supabase_client
 
 router = APIRouter()
@@ -24,20 +25,77 @@ class StudentUpdate(BaseModel):
 
 
 def _invite_parent(email: str, student_id: str, student_name: str):
+    frontend_origin = settings.CORS_ALLOWED_ORIGINS.split(",")[0].strip()
+    redirect_url = f"{frontend_origin}/auth/callback"
+
     try:
         supabase_client.auth.admin.invite_user_by_email(
             email=email,
             options={
+                "redirect_to": redirect_url,
                 "data": {
                     "role": "parent",
-                    "full_name": f"{student_name}'s Parent",  # default name or derived
+                    "full_name": f"{student_name}'s Parent",
                     "student_id": student_id,
-                }
+                },
             },
         )
         return True, None
     except Exception as e:
-        return False, str(e)
+        error_msg = str(e)
+        # Sibling / Existing parent handling: If user already exists in auth
+        if "already been registered" in error_msg or "already exists" in error_msg.lower():
+            parent_id = None
+            parent_res = supabase_client.table("parent").select("id").eq("email", email).execute()
+            if parent_res.data:
+                parent_id = parent_res.data[0]["id"]
+            else:
+                users = supabase_client.auth.admin.list_users()
+                for u in users:
+                    if u.email and u.email.lower() == email.lower():
+                        parent_id = str(u.id)
+                        supabase_client.table("parent").upsert(
+                            {
+                                "id": parent_id,
+                                "full_name": (u.user_metadata or {}).get("full_name")
+                                or f"{student_name}'s Parent",
+                                "email": email,
+                            }
+                        ).execute()
+                        break
+
+            if parent_id:
+                # Link student to parent
+                supabase_client.table("student_parent").upsert(
+                    {"student_id": student_id, "parent_id": parent_id},
+                    on_conflict="student_id,parent_id",
+                ).execute()
+
+                # Determine confirmation status
+                is_confirmed = False
+                try:
+                    user_obj = supabase_client.auth.admin.get_user_by_id(parent_id)
+                    u = getattr(user_obj, "user", None) or user_obj
+                    is_confirmed = bool(
+                        getattr(u, "confirmed_at", None) or getattr(u, "email_confirmed_at", None)
+                    )
+                except Exception:
+                    pass
+
+                status = "active" if is_confirmed else "pending"
+                supabase_client.table("student").update({"parent_status": status}).eq(
+                    "id", student_id
+                ).execute()
+                return True, None
+
+        if "rate limit" in error_msg.lower():
+            return (
+                False,
+                "Email rate limit exceeded. Please wait a few minutes before resending, "
+                "or configure Custom SMTP in Supabase.",
+            )
+
+        return False, error_msg
 
 
 @router.post("")
@@ -78,11 +136,17 @@ def create_student(student_in: StudentCreate, teacher: dict = Depends(get_curren
             student_name=student_in.full_name,
         )
 
+    # Re-fetch student to get up-to-date parent_status
+    refreshed = supabase_client.table("student").select("*").eq("id", student_id).execute()
+    if refreshed.data:
+        student = refreshed.data[0]
+
     return {
         "id": student_id,
         "full_name": student["full_name"],
         "section": student["section"],
         "parent_email": student.get("parent_email"),
+        "parent_status": student.get("parent_status"),
         "parent_invited": parent_invited,
         "parent_invite_error": parent_invite_error,
         "created_at": student["created_at"],
@@ -122,6 +186,8 @@ def update_student(
     if student_in.parent_email is not None:
         cleaned_email = student_in.parent_email.strip()
         update_data["parent_email"] = cleaned_email if cleaned_email else None
+        if not cleaned_email:
+            update_data["parent_status"] = None
 
     student = None
     if update_data:
@@ -144,14 +210,112 @@ def update_student(
             student_name=student["full_name"],
         )
 
+    # Re-fetch student to get up-to-date parent_status
+    refreshed = supabase_client.table("student").select("*").eq("id", student_id).execute()
+    if refreshed.data:
+        student = refreshed.data[0]
+
     return {
         "id": student_id,
         "full_name": student["full_name"],
         "section": student["section"],
         "parent_email": student.get("parent_email"),
+        "parent_status": student.get("parent_status"),
         "parent_invited": parent_invited,
         "parent_invite_error": parent_invite_error,
         "created_at": student["created_at"],
+    }
+
+
+@router.post("/{student_id}/resend-invite")
+def resend_parent_invite(student_id: str, teacher: dict = Depends(get_current_teacher)):
+    teacher_id = teacher.get("sub")
+
+    # 1. Verify ownership
+    link_res = (
+        supabase_client.table("teacher_student")
+        .select("*")
+        .eq("teacher_id", teacher_id)
+        .eq("student_id", student_id)
+        .execute()
+    )
+    if not link_res.data:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "NOT_FOUND",
+                "message": "Student not found on your roster",
+                "details": {},
+            },
+        )
+
+    # 2. Verify student has parent email
+    student_res = (
+        supabase_client.table("student")
+        .select("id, full_name, parent_email, parent_status")
+        .eq("id", student_id)
+        .execute()
+    )
+    if not student_res.data:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "NOT_FOUND",
+                "message": "Student not found",
+                "details": {},
+            },
+        )
+
+    student = student_res.data[0]
+    email = student.get("parent_email")
+    if not email or not email.strip():
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "BAD_REQUEST",
+                "message": "Student does not have a parent email linked",
+                "details": {},
+            },
+        )
+
+    # 3. Trigger invite
+    parent_invited, parent_invite_error = _invite_parent(
+        email=email.strip(),
+        student_id=student_id,
+        student_name=student["full_name"],
+    )
+
+    if not parent_invited:
+        if "rate limit" in (parent_invite_error or "").lower():
+            raise HTTPException(
+                status_code=429,
+                detail={
+                    "code": "RATE_LIMIT_EXCEEDED",
+                    "message": parent_invite_error,
+                    "details": {},
+                },
+            )
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "INVITE_FAILED",
+                "message": parent_invite_error or "Failed to send parent invite",
+                "details": {},
+            },
+        )
+
+    # Refresh student
+    refreshed = (
+        supabase_client.table("student").select("id, parent_status").eq("id", student_id).execute()
+    )
+    current_status = refreshed.data[0].get("parent_status") if refreshed.data else "pending"
+
+    return {
+        "success": True,
+        "student_id": student_id,
+        "parent_email": email,
+        "parent_status": current_status,
+        "message": "Parent invitation sent successfully",
     }
 
 

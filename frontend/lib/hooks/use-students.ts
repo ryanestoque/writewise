@@ -9,6 +9,7 @@ export interface Student {
   section: string;
   created_at: string;
   parent_email?: string | null;
+  parent_status?: "pending" | "active" | null;
   status?: string; // from parent invitation status if joined
 }
 
@@ -27,6 +28,7 @@ export function useStudents() {
           full_name,
           section,
           parent_email,
+          parent_status,
           created_at
         `)
         .order("full_name");
@@ -134,6 +136,35 @@ export function useRemoveStudent() {
       }
 
       return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+    },
+  });
+}
+
+export function useResendParentInvite() {
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (studentId: string) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      if (!token) {
+        throw new Error("No active session");
+      }
+
+      const response = await fetch(`/api/students/${studentId}/resend-invite`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      return handleApiResponse(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["students"] });
