@@ -24,6 +24,9 @@ import {
   ArrowRightIcon,
   LockIcon,
   CheckCircle2Icon,
+  ClockAlertIcon,
+  LogInIcon,
+  MailQuestionIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -82,12 +85,19 @@ function AcceptInviteForm() {
         }
       });
 
-      // Fallback timeout if no session detected within 3 seconds
+      // Determine grace period: allow 6 seconds if URL hash token is present, else 3.5 seconds
+      const hasHashToken =
+        typeof window !== "undefined" &&
+        (window.location.hash.includes("access_token") ||
+          window.location.hash.includes("refresh_token") ||
+          window.location.search.includes("code="));
+      const timeoutMs = hasHashToken ? 6000 : 3500;
+
       const timer = setTimeout(() => {
         if (isMounted && !hasValidSession) {
           setIsVerifyingSession(false);
         }
-      }, 3000);
+      }, timeoutMs);
 
       return () => {
         subscription.unsubscribe();
@@ -155,41 +165,87 @@ function AcceptInviteForm() {
 
   if (!hasValidSession) {
     return (
-      <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs">
-        <CardHeader className="space-y-3 text-center pb-4">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-destructive/10 text-destructive ring-4 ring-destructive/20">
-            <CircleAlertIcon className="size-6" />
+      <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs transition-all duration-200" role="region" aria-label="Invitation Status">
+        <CardHeader className="space-y-2.5 text-center pb-3">
+          <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-warm-sm ring-4 ring-brand-100/70">
+            <BrandIcon className="size-6" />
           </div>
           <div>
             <h1 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-              Invitation Expired or Invalid
+              Invitation Link Expired
             </h1>
-            <CardDescription className="mt-1 text-xs text-muted-foreground">
-              This parent invitation link has expired or has already been used.
+            <CardDescription className="mt-1 text-sm text-muted-foreground">
+              This parent portal invitation link is no longer active.
             </CardDescription>
+          </div>
+          <div
+            className="inline-flex items-center justify-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-950/60 px-3 py-1 text-xs font-medium text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-900 mx-auto"
+            role="status"
+          >
+            <ClockAlertIcon className="size-3.5 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
+            <span>Link inactive or already used</span>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3.5">
           {formError && (
-            <Alert variant="destructive">
-              <CircleAlertIcon className="size-4" />
-              <AlertDescription className="text-xs">{formError}</AlertDescription>
+            <Alert variant="destructive" className="[&>svg]:translate-y-0 text-left">
+              <CircleAlertIcon className="size-4" aria-hidden="true" />
+              <AlertDescription className="text-xs sm:text-sm leading-normal">{formError}</AlertDescription>
             </Alert>
           )}
 
-          <div className="rounded-xl border border-border/80 bg-muted/30 p-4 text-xs text-muted-foreground space-y-2">
-            <p className="font-medium text-foreground">What you can do:</p>
-            <ul className="list-disc list-inside space-y-1 pl-1">
-              <li>If you already set your password, sign in directly below.</li>
-              <li>Ask your child&apos;s teacher to resend the parent invite from their class roster.</li>
-            </ul>
+          <div className="space-y-3 text-left">
+            {/* Contextual Path 1: Already registered - Interactive Action Card */}
+            <button
+              type="button"
+              onClick={() => router.push("/login")}
+              className="group w-full rounded-xl border border-border/80 bg-card p-4 text-left transition-all hover:border-primary/50 hover:bg-brand-50/40 dark:hover:bg-brand-950/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring flex items-start gap-3.5 cursor-pointer"
+            >
+              <div className="size-8 rounded-lg bg-brand-50 dark:bg-brand-950/70 text-brand-700 dark:text-brand-300 flex items-center justify-center shrink-0 mt-0.5 border border-brand-200/60 dark:border-brand-900/60 group-hover:scale-105 transition-transform">
+                <LogInIcon className="size-4" aria-hidden="true" />
+              </div>
+              <div className="space-y-1 text-sm flex-1">
+                <div className="flex items-center justify-between">
+                  <p className="font-semibold text-foreground">Already activated your account?</p>
+                  <ArrowRightIcon className="size-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" aria-hidden="true" />
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  If you previously created your password, your account is ready. Sign in directly to view your child&apos;s cursive progress.
+                </p>
+              </div>
+            </button>
+
+            {/* Contextual Path 2: First-time parent needing new invite */}
+            <div className="rounded-xl border border-border/70 bg-muted/30 p-4 text-left flex items-start gap-3.5">
+              <div className="size-8 rounded-lg bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 mt-0.5 border border-amber-200/60 dark:border-amber-900/60">
+                <MailQuestionIcon className="size-4" aria-hidden="true" />
+              </div>
+              <div className="space-y-1 text-sm flex-1">
+                <p className="font-semibold text-foreground">Need a fresh invitation link?</p>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  For your child&apos;s privacy and security, invitation links expire after 48 hours. Please ask your child&apos;s teacher to send a new invite to your email.
+                </p>
+              </div>
+            </div>
           </div>
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-2 border-t border-border/60 bg-muted/20 px-6 py-4">
-          <Button onClick={() => router.push("/login")} className="w-full">
-            Return to Sign In
+        <CardFooter className="flex flex-col gap-2.5 border-t border-border/60 bg-muted/20 px-6 py-4">
+          <Button
+            onClick={() => router.push("/login")}
+            className="w-full h-10 font-medium text-sm"
+          >
+            <LogInIcon className="size-4 mr-2" aria-hidden="true" />
+            Sign In to Parent Portal
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => router.push("/")}
+            className="w-full h-10 font-medium text-sm text-muted-foreground hover:text-foreground"
+          >
+            Return to Homepage
           </Button>
         </CardFooter>
       </Card>
