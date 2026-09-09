@@ -9,10 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Dialog,
@@ -268,25 +265,29 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
   };
 
   return (
-    <Card className="rounded-xl border bg-card text-card-foreground shadow-warm">
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+    <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-[280px_1fr] lg:grid-cols-[320px_1fr]">
+      {/* Left Section Header */}
+      <div>
+        <div className="flex items-start gap-3 md:flex-col md:gap-3">
+          <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
             <KeyRound className="size-5" aria-hidden="true" />
           </div>
           <div>
-            <CardTitle className="font-heading text-lg font-semibold">
+            <h2 className="font-heading text-lg font-semibold text-foreground">
               Password & Security
-            </CardTitle>
-            <CardDescription className="text-sm text-muted-foreground">
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
               Update your password to keep your classroom account protected.
-            </CardDescription>
+            </p>
           </div>
         </div>
-      </CardHeader>
+      </div>
 
-      <form onSubmit={handlePasswordUpdate} aria-busy={isSubmitting}>
-        <CardContent className="flex flex-col gap-4 pt-2">
+      {/* Right Form Card */}
+      <div>
+        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-warm gap-0 pb-0 overflow-hidden">
+          <form onSubmit={handlePasswordUpdate} aria-busy={isSubmitting}>
+            <CardContent className="flex flex-col gap-5 pt-6 pb-6">
           {/* Current Password */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
@@ -311,7 +312,7 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
                   }
                 }}
                 placeholder="Enter current password"
-                className={`h-10 rounded-lg pr-12 transition-colors ${
+                className={`h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl pr-12 transition-colors ${
                   currentPasswordError
                     ? "border-destructive focus-visible:ring-destructive"
                     : ""
@@ -362,7 +363,7 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter new password"
-                className="h-10 rounded-lg pr-12 transition-colors"
+                className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl pr-12 transition-colors"
                 aria-describedby="password-requirements"
                 aria-invalid={newPassword.length > 0 && !allCriteriaMet}
               />
@@ -478,7 +479,7 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Re-enter new password"
-                className="h-10 rounded-lg pr-12 transition-colors"
+                className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl pr-12 transition-colors"
                 aria-describedby={
                   confirmPassword.length > 0 ? "confirm-password-status" : undefined
                 }
@@ -522,26 +523,28 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-end pt-4 border-t bg-muted/20 px-6 py-4 rounded-b-xl">
+        <CardFooter className="flex justify-end border-t border-border bg-muted/20 px-6 py-3.5">
           <Button
             type="submit"
             disabled={!canSubmit}
-            className="min-h-[40px] h-10 rounded-lg px-5 font-medium transition-all"
+            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 sm:px-5 text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl bg-primary hover:bg-brand-700 text-primary-foreground transition-all cursor-pointer disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <>
-                <Loader2 data-icon="inline-start" className="mr-2 size-4 animate-spin" aria-hidden="true" />
+                <Loader2 data-icon="inline-start" className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
                 Updating...
               </>
             ) : (
               <>
-                <ShieldCheck data-icon="inline-start" className="mr-2 size-4" aria-hidden="true" />
+                <ShieldCheck data-icon="inline-start" className="mr-1.5 size-4" aria-hidden="true" />
                 Update Password
               </>
             )}
           </Button>
         </CardFooter>
-      </form>
-    </Card>
+          </form>
+        </Card>
+      </div>
+    </div>
   );
 }

@@ -9,10 +9,7 @@ import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { User, Lock, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
@@ -95,25 +92,29 @@ export function ProfileSettingsCard({
   };
 
   return (
-    <Card className="rounded-xl border bg-card text-card-foreground shadow-warm">
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+    <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-[280px_1fr] lg:grid-cols-[320px_1fr]">
+      {/* Left Section Header */}
+      <div>
+        <div className="flex items-start gap-3 md:flex-col md:gap-3">
+          <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
             <User className="size-5" aria-hidden="true" />
           </div>
           <div>
-            <CardTitle className="font-heading text-lg font-semibold">
+            <h2 className="font-heading text-lg font-semibold text-foreground">
               Personal Information
-            </CardTitle>
-            <CardDescription className="text-sm text-muted-foreground">
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
               Update your display name and school affiliation across your classroom.
-            </CardDescription>
+            </p>
           </div>
         </div>
-      </CardHeader>
+      </div>
 
-      <form onSubmit={handleSave} aria-busy={isSaving}>
-        <CardContent className="flex flex-col gap-4 pt-2">
+      {/* Right Form Card */}
+      <div>
+        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-warm gap-0 pb-0 overflow-hidden">
+          <form onSubmit={handleSave} aria-busy={isSaving}>
+            <CardContent className="flex flex-col gap-5 pt-6 pb-6">
           {/* Full Name */}
           <div className="flex flex-col gap-1.5">
             <Label
@@ -134,7 +135,7 @@ export function ProfileSettingsCard({
                 }
               }}
               placeholder="e.g. Maria Santos"
-              className={`h-10 rounded-lg transition-colors ${
+              className={`h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl transition-colors ${
                 nameError
                   ? "border-destructive focus-visible:ring-destructive"
                   : ""
@@ -169,7 +170,7 @@ export function ProfileSettingsCard({
               value={schoolName}
               onChange={(e) => setSchoolName(e.target.value)}
               placeholder="e.g. Holy Cross of Davao College"
-              className="h-10 rounded-lg transition-colors"
+              className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl transition-colors"
               aria-describedby="school-name-hint"
             />
             <p id="school-name-hint" className="text-xs text-muted-foreground">
@@ -197,7 +198,7 @@ export function ProfileSettingsCard({
               value={email}
               readOnly
               aria-readonly="true"
-              className="h-10 rounded-lg bg-muted/60 text-muted-foreground cursor-default border-dashed select-all focus-visible:ring-1 focus-visible:ring-ring/40"
+              className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl bg-muted/60 text-muted-foreground cursor-default border-dashed select-all focus-visible:ring-1 focus-visible:ring-ring/40"
               aria-describedby="email-display-hint"
             />
             <p id="email-display-hint" className="text-xs text-muted-foreground">
@@ -208,26 +209,28 @@ export function ProfileSettingsCard({
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-end pt-4 border-t bg-muted/20 px-6 py-4 rounded-b-xl">
+        <CardFooter className="flex justify-end border-t border-border bg-muted/20 px-6 py-3.5">
           <Button
             type="submit"
             disabled={!isDirty || isSaving}
-            className="min-h-[40px] h-10 rounded-lg px-5 font-medium transition-all"
+            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 sm:px-5 text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl bg-primary hover:bg-brand-700 text-primary-foreground transition-all cursor-pointer disabled:cursor-not-allowed"
           >
             {isSaving ? (
               <>
-                <Loader2 data-icon="inline-start" className="mr-2 size-4 animate-spin" aria-hidden="true" />
+                <Loader2 data-icon="inline-start" className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
                 Saving...
               </>
             ) : (
               <>
-                <Check data-icon="inline-start" className="mr-2 size-4" aria-hidden="true" />
+                <Check data-icon="inline-start" className="mr-1.5 size-4" aria-hidden="true" />
                 Save Changes
               </>
             )}
           </Button>
         </CardFooter>
-      </form>
-    </Card>
+          </form>
+        </Card>
+      </div>
+    </div>
   );
 }

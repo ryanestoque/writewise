@@ -36,25 +36,25 @@ export default async function SettingsPage() {
   const email = user.email || teacherProfile?.email || "";
 
   return (
-    <div className="max-w-3xl mx-auto flex flex-col gap-8 py-2 pb-12">
+    <div className="w-full min-w-0 space-y-10 pb-20 sm:pb-16">
       {/* Page Header */}
-      <div>
-        <h1 className="font-heading text-2xl font-bold tracking-tight">
+      <div className="border-b border-border pb-6">
+        <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
           Account Settings
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage your teacher profile information and account security credentials.
-        </p>
       </div>
 
-      {/* Profile Card */}
+      {/* Profile Section */}
       <ProfileSettingsCard
         initialFullName={fullName}
         initialSchoolName={schoolName}
         email={email}
       />
 
-      {/* Password & Security Card */}
+      {/* Section Divider */}
+      <div className="border-t border-border" />
+
+      {/* Password & Security Section */}
       <SecuritySettingsCard email={email} />
     </div>
   );

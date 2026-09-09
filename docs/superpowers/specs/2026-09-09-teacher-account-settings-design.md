@@ -12,7 +12,7 @@ Implement the dedicated **Teacher Account Settings** screen at `/settings`, repl
 
 ### Key Decisions
 
-1. **Dedicated Stacked-Card Layout:** Uses a centered, max-width layout (`max-w-3xl space-y-8`) featuring two visually distinct cards: **Profile Information** and **Password & Security**. Avoids premature tab-switching complexity.
+1. **Dedicated 2-Column Split Section Layout:** Uses a full-width 2-column split section layout (`w-full space-y-10`) with fixed-width section headings/context on the left (`md:w-[280px] lg:w-[320px]`) and responsive, full-width form cards on the right (`1fr`) separated by horizontal dividers. Matches the full-width workspace of the Teacher Dashboard and Activities screens while gracefully stacking on mobile. Avoids premature tab-switching complexity.
 2. **Postgres & Auth Metadata Synchronization:** The `school_name` attribute is formalized in Postgres (`public.teacher.school_name`) and mirrored in Supabase Auth user metadata (`user.user_metadata.school_name`). Profile updates save to both layers.
 3. **Sidebar & Layout Auto-Sync:** Invoking Next.js `router.refresh()` upon profile save re-runs `app/(teacher)/layout.tsx`, updating the sidebar's teacher name, initials avatar (`getInitials`), and school badge immediately without a full page reload.
 4. **Mandatory Current Password Re-Authentication:** To guard against unauthorized credential takeover on shared or unattended classroom computers, changing the password requires verifying the teacher's current password (`supabase.auth.signInWithPassword`) before applying `supabase.auth.updateUser({ password })`.
