@@ -23,7 +23,7 @@ export default async function TeacherLayout({
   // Fetch teacher profile
   const { data: teacherProfile } = await supabase
     .from("teacher")
-    .select("full_name")
+    .select("full_name, school_name")
     .eq("id", user.id)
     .single();
 
@@ -33,7 +33,10 @@ export default async function TeacherLayout({
     user.email ||
     "Teacher";
   const email = user.email || "";
-  const schoolName = (user.user_metadata?.school_name as string) || undefined;
+  const schoolName =
+    teacherProfile?.school_name ||
+    (user.user_metadata?.school_name as string) ||
+    undefined;
 
   return (
     <TeacherModalsProvider>
