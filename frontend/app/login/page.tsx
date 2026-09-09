@@ -47,9 +47,7 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
   function handleOpenChange(isOpen: boolean) {
     setOpen(isOpen);
     if (isOpen) {
-      if (initialEmail && !resetEmail) {
-        setResetEmail(initialEmail);
-      }
+      setResetEmail(initialEmail || "");
       setSendError(null);
       setIsSent(false);
     }
@@ -72,7 +70,10 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
       );
 
       if (error) {
-        if (error.message.toLowerCase().includes("rate limit")) {
+        const status = (error as { status?: number }).status;
+        const code = (error as { code?: string }).code;
+
+        if (status === 429 || code === "over_email_send_rate_limit" || code === "rate_limit_exceeded") {
           setSendError(
             "Too many requests. Please wait a few moments before trying again."
           );
@@ -97,7 +98,7 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
         render={
           <button
             type="button"
-            className="inline-flex items-center -my-2 min-h-[36px] px-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md"
+            className="inline-flex items-center -my-1 min-h-[40px] sm:min-h-[36px] px-2 text-xs font-medium text-primary hover:text-primary/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md"
           >
             Forgot password?
           </button>
@@ -106,67 +107,122 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-base font-semibold text-foreground font-heading">
-            Reset Password
+            {isSent ? "Check Your Email" : "Reset Password"}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
-            Enter your registered email address to receive a password reset link.
+            {isSent
+              ? "We've sent recovery instructions to your registered email address."
+              : "Enter your registered email address to receive a password reset link."}
           </DialogDescription>
         </DialogHeader>
 
         {isSent ? (
-          <div className="space-y-4 py-2">
+          <div className="space-y-4 py-1">
             <Alert className="border-brand-200 bg-brand-50/70 text-brand-900 dark:border-brand-900 dark:bg-brand-950/50 dark:text-brand-300">
               <CheckCircle2Icon className="size-4 text-brand-600 dark:text-brand-400" />
               <AlertDescription className="text-xs leading-relaxed">
                 If an account exists for <span className="font-semibold">{resetEmail}</span>, a password reset link has been sent. Please check your inbox and spam folder.
               </AlertDescription>
             </Alert>
-            <DialogFooter showCloseButton={false}>
-              <Button
+
+            <div className="text-center pt-1">
+              <button
                 type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setOpen(false)}
-                className="w-full sm:w-auto"
+                onClick={() => setIsSent(false)}
+                className="text-xs font-medium text-primary hover:text-primary/80 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
               >
-                Done
-              </Button>
+                Entered the wrong email? Try again
+              </button>
+            </div>
+
+            <DialogFooter showCloseButton={false} className="pt-2">
+              <DialogClose
+                render={
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    autoFocus
+                    className="w-full sm:w-auto"
+                  >
+                    Done
+                  </Button>
+                }
+              />
             </DialogFooter>
           </div>
         ) : (
-          <>
-            <form onSubmit={handleSendReset} className="space-y-3 pt-1">
-              {sendError && (
-                <Alert variant="destructive">
-                  <CircleAlertIcon className="size-4" />
-                  <AlertDescription className="text-xs">{sendError}</AlertDescription>
-                </Alert>
-              )}
+          <form onSubmit={handleSendReset} className="space-y-4 pt-1">
+            {sendError && (
+              <Alert variant="destructive">
+                <CircleAlertIcon className="size-4" />
+                <AlertDescription id="reset-email-error" className="text-xs">
+                  {sendError}
+                </AlertDescription>
+              </Alert>
+            )}
 
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="reset-email"
-                  className="text-xs font-semibold text-foreground"
-                >
-                  Email address
-                </Label>
-                <Input
-                  id="reset-email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                  placeholder="you@school.edu"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  disabled={isSending}
-                  className="h-9 text-xs"
-                />
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="reset-email"
+                className="text-xs font-semibold text-foreground"
+              >
+                Email address
+              </Label>
+              <Input
+                id="reset-email"
+                type="email"
+                required
+                autoComplete="email"
+                placeholder="you@school.edu"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                disabled={isSending}
+                aria-invalid={!!sendError}
+                aria-describedby={sendError ? "reset-email-error" : undefined}
+                className="h-9 text-xs"
+              />
+            </div>
+
+            <div className="space-y-2 rounded-xl border border-border/80 bg-muted/40 p-3 text-xs text-foreground">
+              <div className="flex items-start gap-2">
+                <SchoolIcon className="size-3.5 text-primary shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="font-medium text-foreground text-xs">Teachers & Staff:</p>
+                  <p className="text-muted-foreground text-xs leading-normal">
+                    You can also contact your department head or school admin for direct credential assistance.
+                  </p>
+                </div>
               </div>
+              <div className="border-t border-border/60 pt-2 flex items-start gap-2">
+                <HelpCircleIcon className="size-3.5 text-primary shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="font-medium text-foreground text-xs">Parents:</p>
+                  <p className="text-muted-foreground text-xs leading-normal">
+                    Reach out to your child&apos;s class adviser or coordinator to verify your registered email.
+                  </p>
+                </div>
+              </div>
+            </div>
 
+            <DialogFooter showCloseButton={false}>
+              <DialogClose
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isSending}
+                    className="w-full sm:w-auto"
+                  >
+                    Cancel
+                  </Button>
+                }
+              />
               <Button
                 type="submit"
                 size="sm"
-                className="w-full"
+                className="w-full sm:w-auto"
                 disabled={isSending || !resetEmail.trim()}
               >
                 {isSending ? (
@@ -178,33 +234,8 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
                   "Send Reset Link"
                 )}
               </Button>
-            </form>
-
-            <div className="space-y-2 rounded-xl border border-border/80 bg-muted/40 p-3 text-xs text-foreground mt-2">
-              <div className="flex items-start gap-2">
-                <SchoolIcon className="size-3.5 text-primary shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <p className="font-medium text-foreground text-[11px]">Teachers & Staff:</p>
-                  <p className="text-muted-foreground text-[11px] leading-normal">
-                    You can also contact your department head or school admin for direct credential assistance.
-                  </p>
-                </div>
-              </div>
-              <div className="border-t border-border/60 pt-2 flex items-start gap-2">
-                <HelpCircleIcon className="size-3.5 text-primary shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <p className="font-medium text-foreground text-[11px]">Parents:</p>
-                  <p className="text-muted-foreground text-[11px] leading-normal">
-                    Reach out to your child&apos;s class adviser or coordinator to verify your registered email.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter showCloseButton={false}>
-              <DialogClose render={<Button variant="outline" size="sm" className="w-full sm:w-auto">Cancel</Button>} />
             </DialogFooter>
-          </>
+          </form>
         )}
       </DialogContent>
     </Dialog>
