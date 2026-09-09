@@ -2,14 +2,14 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-08-30
+**Last updated:** 2026-09-09
 
 ## Summary
 
 | Phase | Done / Total |
 |---|---|
 | Phase 0 — Setup | 11 / 16 |
-| Phase 1 — Teacher Tooling & Raw CV Pipeline | 17 / 17 |
+| Phase 1 — Teacher Tooling & Raw CV Pipeline | 18 / 18 |
 | Between Phases — Calibration | 3 / 6 |
 | Phase 2 — Calibrated Scoring & Full System | 8 / 11 |
 
@@ -58,6 +58,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Submission upload (single photo per activity) | Done | | PRD §7.1, API_SPEC §3.3 |
 | Raw CV measurement display | Done | | PRD §7.1/§7.3, CV_PIPELINE §8, DESIGN §7.2 |
 | Manual rubric score entry | Done | | PRD §7.1, DATABASE §9, DESIGN §7.9 |
+| Teacher account settings (profile & in-session password update) | Done | | PRD §7.1, DESIGN §6 screen 3, DATABASE §4 |
 
 
 ### CV Pipeline
