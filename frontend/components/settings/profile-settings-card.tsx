@@ -46,6 +46,7 @@ export function ProfileSettingsCard({
 
     if (!trimmedName) {
       setNameError("Full name is required.");
+      document.getElementById("full-name")?.focus();
       return;
     }
     setNameError(null);
@@ -94,11 +95,11 @@ export function ProfileSettingsCard({
   };
 
   return (
-    <Card className="rounded-2xl border bg-card text-card-foreground shadow-warm">
+    <Card className="rounded-xl border bg-card text-card-foreground shadow-warm">
       <CardHeader className="pb-4">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <User className="size-5" />
+          <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <User className="size-5" aria-hidden="true" />
           </div>
           <div>
             <CardTitle className="font-heading text-lg font-semibold">
@@ -111,7 +112,7 @@ export function ProfileSettingsCard({
         </div>
       </CardHeader>
 
-      <form onSubmit={handleSave}>
+      <form onSubmit={handleSave} aria-busy={isSaving}>
         <CardContent className="flex flex-col gap-4 pt-2">
           {/* Full Name */}
           <div className="flex flex-col gap-1.5">
@@ -124,6 +125,7 @@ export function ProfileSettingsCard({
             <Input
               id="full-name"
               type="text"
+              autoComplete="name"
               value={fullName}
               onChange={(e) => {
                 setFullName(e.target.value);
@@ -132,7 +134,7 @@ export function ProfileSettingsCard({
                 }
               }}
               placeholder="e.g. Maria Santos"
-              className={`h-10 rounded-xl transition-colors ${
+              className={`h-10 rounded-lg transition-colors ${
                 nameError
                   ? "border-destructive focus-visible:ring-destructive"
                   : ""
@@ -143,6 +145,8 @@ export function ProfileSettingsCard({
             {nameError ? (
               <p
                 id="name-error"
+                role="alert"
+                aria-live="polite"
                 className="text-xs text-destructive font-medium mt-0.5"
               >
                 {nameError}
@@ -161,12 +165,14 @@ export function ProfileSettingsCard({
             <Input
               id="school-name"
               type="text"
+              autoComplete="organization"
               value={schoolName}
               onChange={(e) => setSchoolName(e.target.value)}
               placeholder="e.g. Holy Cross of Davao College"
-              className="h-10 rounded-xl transition-colors"
+              className="h-10 rounded-lg transition-colors"
+              aria-describedby="school-name-hint"
             />
-            <p className="text-xs text-muted-foreground">
+            <p id="school-name-hint" className="text-xs text-muted-foreground">
               Appears alongside your name in the portal sidebar and class reports.
             </p>
           </div>
@@ -181,17 +187,20 @@ export function ProfileSettingsCard({
                 Email Address
               </Label>
               <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
-                <Lock className="size-3" /> Verified Login
+                <Lock className="size-3" aria-hidden="true" /> Verified Login
               </span>
             </div>
             <Input
               id="email-display"
               type="email"
+              autoComplete="email"
               value={email}
-              disabled
-              className="h-10 rounded-xl bg-muted/60 text-muted-foreground cursor-not-allowed border-dashed"
+              readOnly
+              aria-readonly="true"
+              className="h-10 rounded-lg bg-muted/60 text-muted-foreground cursor-default border-dashed select-all focus-visible:ring-1 focus-visible:ring-ring/40"
+              aria-describedby="email-display-hint"
             />
-            <p className="text-xs text-muted-foreground">
+            <p id="email-display-hint" className="text-xs text-muted-foreground">
               Your email is your authenticated login identifier and cannot be
               changed here. Contact an administrator if your email address has
               changed.
@@ -199,20 +208,20 @@ export function ProfileSettingsCard({
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-end pt-4 border-t bg-muted/20 px-6 py-4 rounded-b-2xl">
+        <CardFooter className="flex justify-end pt-4 border-t bg-muted/20 px-6 py-4 rounded-b-xl">
           <Button
             type="submit"
             disabled={!isDirty || isSaving}
-            className="h-10 rounded-xl px-5 font-medium transition-all"
+            className="min-h-[40px] h-10 rounded-lg px-5 font-medium transition-all"
           >
             {isSaving ? (
               <>
-                <Loader2 data-icon="inline-start" className="mr-2 size-4 animate-spin" />
+                <Loader2 data-icon="inline-start" className="mr-2 size-4 animate-spin" aria-hidden="true" />
                 Saving...
               </>
             ) : (
               <>
-                <Check data-icon="inline-start" className="mr-2 size-4" />
+                <Check data-icon="inline-start" className="mr-2 size-4" aria-hidden="true" />
                 Save Changes
               </>
             )}
