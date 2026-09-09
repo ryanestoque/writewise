@@ -33,11 +33,12 @@ export default async function TeacherLayout({
     user.email ||
     "Teacher";
   const email = user.email || "";
+  const schoolName = (user.user_metadata?.school_name as string) || undefined;
 
   return (
     <TeacherModalsProvider>
       <SidebarProvider>
-        <TeacherSidebar user={{ fullName, email }} />
+        <TeacherSidebar user={{ fullName, email, schoolName }} />
         <SidebarInset>
           <TeacherHeader />
           <div className="flex-1 min-w-0 w-full px-4 sm:px-6 py-6 space-y-6">

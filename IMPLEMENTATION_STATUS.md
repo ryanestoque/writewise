@@ -120,7 +120,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
 | Numeric score → qualitative band conversion | Done | | PRD §7.4 |
-| Visual overlay annotation generation | Not Started | | PRD §7.4, DESIGN §7.4 |
+| Visual overlay annotation generation | In Progress | CV reference line overlay built & interactive in Teacher/Parent portals; per-word CNN highlights awaiting model weights | PRD §7.4, DESIGN §7.4 |
 | Criterion-by-criterion text explanation | Done | | PRD §7.4, DESIGN §8.2 |
 
 ### Integration

@@ -424,22 +424,27 @@ export function WorksheetImageInspector({
               transition: isDragging ? "none" : "transform 150ms ease-out",
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imageUrl}
-              alt={altText}
-              loading="lazy"
-              decoding="async"
-              onError={() => {
-                if (imageUrl) setFailedImageUrl(imageUrl);
-              }}
-              style={{
-                filter: isHighContrast
-                  ? "contrast(1.4) brightness(0.92) saturate(0.6)"
-                  : "none",
-              }}
-              className="size-full object-contain pointer-events-none drop-shadow-2xs"
-            />
+            {/* Relative wrapper: positioning context for child overlays (e.g. guide-line SVG) */}
+            <div className="relative size-full">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageUrl}
+                alt={altText}
+                loading="lazy"
+                decoding="async"
+                onError={() => {
+                  if (imageUrl) setFailedImageUrl(imageUrl);
+                }}
+                style={{
+                  filter: isHighContrast
+                    ? "contrast(1.4) brightness(0.92) saturate(0.6)"
+                    : "none",
+                }}
+                className="size-full object-contain pointer-events-none drop-shadow-2xs"
+              />
+              {/* Custom Overlays / Slots (e.g. CV guide-line grid, bounding boxes) */}
+              {children}
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center p-6 text-center text-muted-foreground space-y-3 pointer-events-auto">
@@ -472,8 +477,7 @@ export function WorksheetImageInspector({
           </div>
         )}
 
-        {/* Custom Overlays / Slots (e.g. Selected Criterion Badge or CV Lines) */}
-        {children}
+
 
         {/* Stroke Magnifying Loupe Lens (Aria-Hidden to prevent duplicate reader announcements) */}
         {isLoupeActive && loupeState.visible && imageUrl && (

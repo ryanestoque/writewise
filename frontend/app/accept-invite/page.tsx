@@ -316,7 +316,7 @@ function AcceptInviteForm() {
       <CardFooter className="flex flex-col items-center justify-center border-t border-border/60 bg-muted/20 px-6 py-3.5 text-center text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5">
           <HelpCircleIcon className="size-3.5 text-muted-foreground/80 shrink-0" aria-hidden="true" />
-          <span>Matina Aplaya Elementary School Parent Portal</span>
+          <span>WriteWise Parent Portal</span>
         </div>
       </CardFooter>
     </Card>

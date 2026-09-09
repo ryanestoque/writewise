@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   Dialog,
   DialogContent,
@@ -12,6 +14,7 @@ import { BandBadge } from "@/components/shared/band-badge";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
 import { ScoreSourceIndicator } from "@/components/shared/score-source-indicator";
 import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
+import { GuideLineOverlay, type GuideLines } from "@/components/shared/guide-line-overlay";
 import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import { RUBRIC_CRITERIA, type ScoreBand } from "@/lib/utils/scoring";
@@ -46,6 +49,8 @@ interface WorksheetViewDialogProps {
     baseline_alignment: ScoreBand | null;
     composite?: ScoreBand | null;
   };
+  /** CV pipeline guide-line coordinates from raw_output */
+  guideLines?: GuideLines | null;
 }
 
 const PARENT_CRITERIA = RUBRIC_CRITERIA.map((c) => ({
@@ -64,7 +69,9 @@ export function WorksheetViewDialog({
   scoreSource = "none",
   scores,
   bands,
+  guideLines,
 }: WorksheetViewDialogProps) {
+  const [showGuideLines, setShowGuideLines] = useState(false);
   const { data: imageUrl, isLoading: isImageLoading } =
     useSubmissionImageUrl(imagePath);
 
@@ -114,13 +121,40 @@ export function WorksheetViewDialog({
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start lg:items-center">
             {/* Left: High-Resolution Worksheet Photo Inspector */}
-            <div className="lg:col-span-7 flex flex-col justify-center w-full">
+            <div className="lg:col-span-7 flex flex-col justify-center w-full gap-2">
               <WorksheetImageInspector
                 imageUrl={imageUrl}
                 altText={`Handwriting worksheet submitted for ${childName}`}
                 isLoading={isImageLoading}
                 headerLabel="Handwritten Worksheet"
-              />
+              >
+                <GuideLineOverlay
+                  guideLines={guideLines ?? null}
+                  imageUrl={imageUrl}
+                  visible={showGuideLines}
+                />
+              </WorksheetImageInspector>
+
+              {guideLines && (
+                <button
+                  type="button"
+                  onClick={() => setShowGuideLines((prev) => !prev)}
+                  className={`self-start px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-colors cursor-pointer flex items-center gap-1.5 min-h-[36px] touch-manipulation ${
+                    showGuideLines
+                      ? "bg-brand-100 text-brand-900 border-brand-300 dark:bg-brand-950 dark:text-brand-200 dark:border-brand-800"
+                      : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted/70 hover:text-foreground"
+                  }`}
+                  aria-pressed={showGuideLines}
+                  title={showGuideLines ? "Hide detected guide lines" : "Show detected guide lines on worksheet"}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0" aria-hidden="true">
+                    <line x1="1" y1="4" x2="13" y2="4" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2" />
+                    <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.6" strokeDasharray="2 2" />
+                    <line x1="1" y1="10" x2="13" y2="10" stroke="currentColor" strokeWidth="1.5" />
+                  </svg>
+                  <span>Guidelines</span>
+                </button>
+              )}
             </div>
 
             {/* Right: Worksheet Details & Criterion Feedback */}

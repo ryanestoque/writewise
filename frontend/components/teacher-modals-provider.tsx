@@ -164,7 +164,7 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
           <AlertDialogHeader>
             <AlertDialogTitle>Sign out of WriteWise?</AlertDialogTitle>
             <AlertDialogDescription>
-              You will need to sign in again to access the Grade 3 teacher portal.
+              You will need to sign in again to access the teacher portal.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

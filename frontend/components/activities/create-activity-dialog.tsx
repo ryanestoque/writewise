@@ -60,7 +60,7 @@ const PROMPT_SUGGESTIONS = [
     text: "Sphinx of black quartz, judge my vow.",
   },
   {
-    label: "Grade 3 Nature Practice",
+    label: "Nature Practice Drill",
     text: "Warm breezes blow through the tall green trees.",
   },
   {

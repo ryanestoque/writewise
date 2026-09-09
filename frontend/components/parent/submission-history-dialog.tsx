@@ -178,6 +178,7 @@ export function SubmissionHistoryDialog({
           scoreSource={selectedItemForView.scoreSource}
           scores={selectedItemForView.scores}
           bands={selectedItemForView.bands}
+          guideLines={selectedItemForView.guideLines}
         />
       )}
     </>

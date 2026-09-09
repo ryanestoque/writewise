@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createClient } from "../supabase/client";
 import { getBandFromScore, type ScoreBand } from "../utils/scoring";
 import type { StudentScoreHistoryItem } from "./use-dashboard";
+import { extractGuideLines, type GuideLines } from "@/components/shared/guide-line-overlay";
 
 // --- Types ---
 
@@ -33,6 +34,7 @@ export interface ChildLatestScores {
     baseline_alignment: ScoreBand | null;
     composite: ScoreBand | null;
   };
+  guideLines: GuideLines | null;
 }
 
 export interface TakeHomeActivity {
@@ -110,7 +112,8 @@ export function useChildLatestScores(childId: string | null) {
             spacing_score,
             slant_score,
             baseline_alignment_score,
-            composite_score
+            composite_score,
+            raw_output
           )
         `)
         .eq("student_id", childId)
@@ -188,6 +191,7 @@ export function useChildLatestScores(childId: string | null) {
           scoreSource: isCalibrated ? "calibrated" : "manual",
           scores,
           bands,
+          guideLines: extractGuideLines(m),
         };
       }
 
@@ -235,7 +239,8 @@ export function useChildScoreHistory(childId: string | null) {
             spacing_score,
             slant_score,
             baseline_alignment_score,
-            composite_score
+            composite_score,
+            raw_output
           )
         `)
         .eq("student_id", childId)
@@ -321,6 +326,7 @@ export function useChildScoreHistory(childId: string | null) {
             slant: slBand,
             baseline_alignment: baBand,
           },
+          guideLines: extractGuideLines(rawMeasurement),
         });
       }
 

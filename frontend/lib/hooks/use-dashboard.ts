@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "../supabase/client";
 import { getBandFromScore, type ScoreBand } from "../utils/scoring";
+import { extractGuideLines, type GuideLines } from "@/components/shared/guide-line-overlay";
 
 export interface StudentScoreSummary {
   studentId: string;
@@ -323,6 +324,7 @@ export interface StudentScoreHistoryItem {
     slant: ScoreBand | null;
     baseline_alignment: ScoreBand | null;
   };
+  guideLines?: GuideLines | null;
 }
 
 export function useStudentScoreHistory(studentId: string | null) {
@@ -363,7 +365,8 @@ export function useStudentScoreHistory(studentId: string | null) {
             spacing_score,
             slant_score,
             baseline_alignment_score,
-            composite_score
+            composite_score,
+            raw_output
           )
         `)
         .eq("student_id", studentId)
@@ -482,6 +485,7 @@ export function useStudentScoreHistory(studentId: string | null) {
             slant: slBand,
             baseline_alignment: baBand,
           },
+          guideLines: extractGuideLines(rawMeasurement),
         });
       }
 

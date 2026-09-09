@@ -17,6 +17,7 @@ import {
 } from "@/lib/hooks/use-submissions";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
+import { GuideLineOverlay, type GuideLines } from "@/components/shared/guide-line-overlay";
 import { cn } from "@/lib/utils";
 import {
   CheckCircle2,
@@ -116,6 +117,7 @@ function SubmissionDetailDialogContent({
   );
   const [phase1Tab, setPhase1Tab] = useState<"rubric" | "metrics">("rubric");
   const [isEditingRubric, setIsEditingRubric] = useState(false);
+  const [showGuideLines, setShowGuideLines] = useState(false);
   const [criterionAnnouncement, setCriterionAnnouncement] = useState<string>("");
   const editButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -261,6 +263,21 @@ function SubmissionDetailDialogContent({
           text.trim()
         )
     );
+
+  // Extract guide-line coordinates from the CV pipeline's raw_output (CV_PIPELINE §4)
+  const guideLines = useMemo((): GuideLines | null => {
+    const raw = submission.measurement?.raw_output;
+    if (!raw || typeof raw !== "object") return null;
+    const gl = (raw as Record<string, unknown>).guide_lines;
+    if (!gl || typeof gl !== "object") return null;
+    const typed = gl as Record<string, unknown>;
+    if (
+      !Array.isArray(typed.baseline_y) ||
+      !Array.isArray(typed.midline_y) ||
+      !Array.isArray(typed.topline_y)
+    ) return null;
+    return gl as GuideLines;
+  }, [submission.measurement?.raw_output]);
 
   const resolvedTargetText = useMemo(() => {
     if (activityTargetText && !isUuid(activityTargetText)) {
@@ -500,14 +517,43 @@ function SubmissionDetailDialogContent({
               }}
               className="flex-1 flex flex-col min-h-0"
               aspectRatioClass="aspect-4/3 sm:aspect-3/2 lg:aspect-auto lg:flex-1 min-h-[260px] sm:min-h-[300px] lg:min-h-0"
-            />
+            >
+              <GuideLineOverlay
+                guideLines={guideLines}
+                imageUrl={imageUrl}
+                visible={showGuideLines}
+              />
+            </WorksheetImageInspector>
 
-            {/* Target prompt bar */}
-            <div className="shrink-0 p-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs flex items-center gap-1.5 text-muted-foreground flex-wrap">
-              <span className="font-semibold text-foreground shrink-0">Target prompt:</span>
-              <span className="font-medium text-foreground bg-background/80 dark:bg-card/80 px-2 py-0.5 rounded-md border border-border/60">
-                {resolvedTargetText ? `“${resolvedTargetText}”` : "Cursive Penmanship Practice"}
-              </span>
+            {/* Guide-lines toggle pill + target prompt bar */}
+            <div className="shrink-0 flex items-center gap-2">
+              {guideLines && (
+                <button
+                  type="button"
+                  onClick={() => setShowGuideLines((prev) => !prev)}
+                  className={cn(
+                    "px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 min-h-[36px] touch-manipulation",
+                    showGuideLines
+                      ? "bg-brand-100 text-brand-900 border-brand-300 dark:bg-brand-950 dark:text-brand-200 dark:border-brand-800"
+                      : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted/70 hover:text-foreground"
+                  )}
+                  aria-pressed={showGuideLines}
+                  title={showGuideLines ? "Hide detected guide lines" : "Show detected guide lines on worksheet"}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0" aria-hidden="true">
+                    <line x1="1" y1="4" x2="13" y2="4" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2" />
+                    <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.6" strokeDasharray="2 2" />
+                    <line x1="1" y1="10" x2="13" y2="10" stroke="currentColor" strokeWidth="1.5" />
+                  </svg>
+                  <span>Guidelines</span>
+                </button>
+              )}
+              <div className="flex-1 p-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs flex items-center gap-1.5 text-muted-foreground flex-wrap min-w-0">
+                <span className="font-semibold text-foreground shrink-0">Target prompt:</span>
+                <span className="font-medium text-foreground bg-background/80 dark:bg-card/80 px-2 py-0.5 rounded-md border border-border/60 truncate">
+                  {resolvedTargetText ? `"${resolvedTargetText}"` : "Cursive Penmanship Practice"}
+                </span>
+              </div>
             </div>
           </div>
 

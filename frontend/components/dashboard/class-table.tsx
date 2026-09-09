@@ -110,7 +110,7 @@ const COLUMNS: Array<{
     field: "section",
     label: "Section",
     shortLabel: "Section",
-    description: "Grade 3 class section roster",
+    description: "Class section roster",
   },
   {
     field: "letter_formation",

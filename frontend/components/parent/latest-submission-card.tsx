@@ -170,6 +170,7 @@ export function LatestSubmissionCard({
         scoreSource={latest.scoreSource}
         scores={latest.scores}
         bands={latest.bands}
+        guideLines={latest.guideLines}
       />
     </>
   );

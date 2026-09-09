@@ -64,8 +64,9 @@ interface TeacherSidebarProps {
   user: {
     fullName: string;
     email: string;
+    schoolName?: string;
   };
-  }
+}
 
 function getInitials(name: string): string {
   const cleaned = name.replace(/[^a-zA-Z\s]/g, "").trim();
@@ -315,10 +316,12 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                       <span className="text-xs text-muted-foreground truncate" title={user.email}>
                         {user.email}
                       </span>
-                      <span className="text-xs text-primary font-medium mt-0.5 flex items-center gap-1 truncate">
-                        <GraduationCapIcon className="size-3.5 shrink-0" />
-                        <span className="truncate">Matina Aplaya Elementary</span>
-                      </span>
+                      {user.schoolName && (
+                        <span className="text-xs text-primary font-medium mt-0.5 flex items-center gap-1 truncate">
+                          <GraduationCapIcon className="size-3.5 shrink-0" />
+                          <span className="truncate">{user.schoolName}</span>
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
