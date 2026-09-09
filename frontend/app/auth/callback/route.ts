@@ -7,9 +7,10 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get("error");
   const errorDescription = searchParams.get("error_description");
   const next = searchParams.get("next") || "/accept-invite";
+  const errorTarget = next.startsWith("/reset-password") ? "/reset-password" : "/accept-invite";
 
   if (error || errorDescription) {
-    const redirectUrl = new URL("/accept-invite", origin);
+    const redirectUrl = new URL(errorTarget, origin);
     redirectUrl.searchParams.set("error", errorDescription || error || "auth_error");
     return NextResponse.redirect(redirectUrl);
   }
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
     if (exchangeError) {
-      const redirectUrl = new URL("/accept-invite", origin);
+      const redirectUrl = new URL(errorTarget, origin);
       redirectUrl.searchParams.set("error", exchangeError.message);
       return NextResponse.redirect(redirectUrl);
     }

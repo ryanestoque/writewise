@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -33,11 +33,66 @@ import {
   HelpCircleIcon,
   ArrowRightIcon,
   SchoolIcon,
+  CheckCircle2Icon,
 } from "lucide-react";
 
-function ForgotPasswordDialog() {
+function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) {
+  const supabase = useMemo(() => createClient(), []);
+  const [open, setOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState(initialEmail);
+  const [isSending, setIsSending] = useState(false);
+  const [isSent, setIsSent] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+
+  function handleOpenChange(isOpen: boolean) {
+    setOpen(isOpen);
+    if (isOpen) {
+      if (initialEmail && !resetEmail) {
+        setResetEmail(initialEmail);
+      }
+      setSendError(null);
+      setIsSent(false);
+    }
+  }
+
+  async function handleSendReset(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resetEmail.trim()) return;
+
+    setIsSending(true);
+    setSendError(null);
+
+    try {
+      const redirectUrl = `${window.location.origin}/auth/callback?next=/reset-password`;
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        resetEmail.trim(),
+        {
+          redirectTo: redirectUrl,
+        }
+      );
+
+      if (error) {
+        if (error.message.toLowerCase().includes("rate limit")) {
+          setSendError(
+            "Too many requests. Please wait a few moments before trying again."
+          );
+        } else {
+          setSendError(error.message || "Failed to send reset email.");
+        }
+        setIsSending(false);
+        return;
+      }
+
+      setIsSent(true);
+      setIsSending(false);
+    } catch {
+      setSendError("An unexpected error occurred. Please try again.");
+      setIsSending(false);
+    }
+  }
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
           <button
@@ -51,39 +106,106 @@ function ForgotPasswordDialog() {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-base font-semibold text-foreground font-heading">
-            Password Assistance
+            Reset Password
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
-            WriteWise accounts are pre-provisioned for the Matina Aplaya Elementary School research pilot.
+            Enter your registered email address to receive a password reset link.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 rounded-xl border border-border/80 bg-muted/40 p-4 text-xs text-foreground">
-          <div className="flex items-start gap-2.5">
-            <SchoolIcon className="size-4 text-primary shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <p className="font-medium text-foreground">For Teachers & Staff:</p>
-              <p className="text-muted-foreground">
-                Please contact your Grade 3 Department Lead or school IT coordinator to reset your credentials.
-              </p>
-            </div>
+        {isSent ? (
+          <div className="space-y-4 py-2">
+            <Alert className="border-brand-200 bg-brand-50/70 text-brand-900 dark:border-brand-900 dark:bg-brand-950/50 dark:text-brand-300">
+              <CheckCircle2Icon className="size-4 text-brand-600 dark:text-brand-400" />
+              <AlertDescription className="text-xs leading-relaxed">
+                If an account exists for <span className="font-semibold">{resetEmail}</span>, a password reset link has been sent. Please check your inbox and spam folder.
+              </AlertDescription>
+            </Alert>
+            <DialogFooter showCloseButton={false}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setOpen(false)}
+                className="w-full sm:w-auto"
+              >
+                Done
+              </Button>
+            </DialogFooter>
           </div>
-          <div className="border-t border-border/60 pt-2.5">
-            <div className="flex items-start gap-2.5">
-              <HelpCircleIcon className="size-4 text-primary shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="font-medium text-foreground">For Parents:</p>
-                <p className="text-muted-foreground">
-                  Reach out to your child&apos;s class adviser or teacher coordinator to verify your registered parent email.
-                </p>
+        ) : (
+          <>
+            <form onSubmit={handleSendReset} className="space-y-3 pt-1">
+              {sendError && (
+                <Alert variant="destructive">
+                  <CircleAlertIcon className="size-4" />
+                  <AlertDescription className="text-xs">{sendError}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="reset-email"
+                  className="text-xs font-semibold text-foreground"
+                >
+                  Email address
+                </Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  placeholder="you@school.edu"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  disabled={isSending}
+                  className="h-9 text-xs"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                size="sm"
+                className="w-full"
+                disabled={isSending || !resetEmail.trim()}
+              >
+                {isSending ? (
+                  <>
+                    <Spinner className="size-3.5 mr-2" />
+                    Sending link…
+                  </>
+                ) : (
+                  "Send Reset Link"
+                )}
+              </Button>
+            </form>
+
+            <div className="space-y-2 rounded-xl border border-border/80 bg-muted/40 p-3 text-xs text-foreground mt-2">
+              <div className="flex items-start gap-2">
+                <SchoolIcon className="size-3.5 text-primary shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="font-medium text-foreground text-[11px]">Teachers & Staff:</p>
+                  <p className="text-muted-foreground text-[11px] leading-normal">
+                    You can also contact your department head or school admin for direct credential assistance.
+                  </p>
+                </div>
+              </div>
+              <div className="border-t border-border/60 pt-2 flex items-start gap-2">
+                <HelpCircleIcon className="size-3.5 text-primary shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="font-medium text-foreground text-[11px]">Parents:</p>
+                  <p className="text-muted-foreground text-[11px] leading-normal">
+                    Reach out to your child&apos;s class adviser or coordinator to verify your registered email.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <DialogFooter showCloseButton={false}>
-          <DialogClose render={<Button variant="outline" size="sm" className="w-full sm:w-auto">Understood</Button>} />
-        </DialogFooter>
+            <DialogFooter showCloseButton={false}>
+              <DialogClose render={<Button variant="outline" size="sm" className="w-full sm:w-auto">Cancel</Button>} />
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -99,6 +221,29 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
+
+  // Detect password recovery callback (hash tokens or auth event)
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash) {
+      const hash = window.location.hash;
+      if (hash.includes("type=recovery") || hash.includes("access_token=")) {
+        router.replace(`/reset-password${hash}`);
+        return;
+      }
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        router.replace("/reset-password");
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [router, supabase]);
 
   const missingRoleError =
     searchParams.get("error") === "missing_role"
@@ -197,7 +342,7 @@ function LoginForm() {
               <Label htmlFor="password" className="text-xs font-semibold text-foreground">
                 Password
               </Label>
-              <ForgotPasswordDialog />
+              <ForgotPasswordDialog initialEmail={email} />
             </div>
             <div className="relative">
               <Input
