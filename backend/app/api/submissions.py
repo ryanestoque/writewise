@@ -12,6 +12,8 @@ from app.core.supabase import supabase_client
 from app.cv.pipeline import run_cv_pipeline
 from app.cv.quality_gate import QualityGateRejection
 from app.cv.segmentation import PostSegmentationRejection
+from app.ml.exceptions import ModelInferenceError
+from app.ml.inference import run_letter_formation_inference
 
 logger = logging.getLogger(__name__)
 
@@ -191,6 +193,22 @@ async def create_submission(
             },
         }
 
+    # 6b. Run CNN inference for letter formation on valid pipelines (ML_PIPELINE §8, §11)
+    ml_result = None
+    if not rejection:
+        try:
+            ml_result = run_letter_formation_inference(pipeline_result.word_crops)
+        except ModelInferenceError as exc:
+            logger.error("Letter formation inference failed: %s", exc)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail={
+                    "code": "MODEL_INFERENCE_ERROR",
+                    "message": "Failed to run handwriting model inference.",
+                    "details": {"error": str(exc)},
+                },
+            )
+
     # --- Upload & Persist ---
 
     # 7. Pre-generate submission UUID (need it for Storage path before DB insert)
@@ -265,11 +283,29 @@ async def create_submission(
     aggregate = measurement_data.aggregate
     raw_output = measurement_data.to_dict()
 
+    # Attach per-word letter_formation_score to lines/words in raw_output
+    # and add letter_formation to aggregate in raw_output (ML_PIPELINE §11)
+    crop_idx = 0
+    for line in raw_output.get("lines", []):
+        for word in line.get("words", []):
+            if crop_idx < len(ml_result.word_scores):
+                word["letter_formation_score"] = round(
+                    ml_result.word_scores[crop_idx].letter_formation_score, 2
+                )
+            else:
+                word["letter_formation_score"] = None
+            crop_idx += 1
+
+    if "aggregate" in raw_output:
+        raw_output["aggregate"]["letter_formation"] = {
+            "mean": round(ml_result.aggregate_mean, 2),
+            "std": round(ml_result.aggregate_std, 2),
+        }
+
     # 12. Insert measurement row (DATABASE §8)
     measurement_row = {
         "submission_id": submission_id,
         # Raw CV aggregates — 5 pairs from the CV pipeline.
-        # letter_formation_mean/std stay NULL (CNN output, not built yet).
         "slant_mean": aggregate.slant.mean,
         "slant_std": aggregate.slant.std,
         "word_spacing_mean": aggregate.word_spacing.mean,
@@ -280,6 +316,9 @@ async def create_submission(
         "baseline_deviation_std": aggregate.baseline_deviation.std,
         "size_consistency_mean": aggregate.size_consistency.mean,
         "size_consistency_std": aggregate.size_consistency.std,
+        # Letter formation aggregates from CNN inference
+        "letter_formation_mean": round(ml_result.aggregate_mean, 2),
+        "letter_formation_std": round(ml_result.aggregate_std, 2),
         # Score columns stay NULL in Phase 1 (DATABASE §8 note).
         # Full pipeline output for diagnostic overlay / downstream use.
         "raw_output": raw_output,
@@ -325,7 +364,10 @@ async def create_submission(
                     "mean": aggregate.size_consistency.mean,
                     "std": aggregate.size_consistency.std,
                 },
-                "letter_formation": {"mean": None, "std": None},
+                "letter_formation": {
+                    "mean": round(ml_result.aggregate_mean, 2),
+                    "std": round(ml_result.aggregate_std, 2),
+                },
             },
             "scores": {
                 "letter_formation_score": None,
@@ -454,11 +496,7 @@ async def submit_manual_score(
             )
         else:
             score_payload["submission_id"] = submission_id
-            save_res = (
-                supabase_client.table("manual_score")
-                .insert(score_payload)
-                .execute()
-            )
+            save_res = supabase_client.table("manual_score").insert(score_payload).execute()
     except Exception as exc:
         err_msg = str(exc)
         raise HTTPException(

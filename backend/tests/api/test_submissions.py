@@ -125,9 +125,11 @@ class TestCreateSubmission:
             assert "mean" in agg[key]
             assert "std" in agg[key]
 
-        # letter_formation is NULL (CNN not built yet)
-        assert agg["letter_formation"]["mean"] is None
-        assert agg["letter_formation"]["std"] is None
+        # letter_formation is populated by CNN inference (or stub)
+        assert isinstance(agg["letter_formation"]["mean"], (int, float))
+        assert isinstance(agg["letter_formation"]["std"], (int, float))
+        assert 0.0 <= agg["letter_formation"]["mean"] <= 100.0
+        assert agg["letter_formation"]["std"] >= 0.0
 
         # CV-produced aggregates have numeric values
         assert isinstance(agg["slant"]["mean"], (int, float))
@@ -173,9 +175,20 @@ class TestCreateSubmission:
         meas = meas_res.data[0]
         assert meas["raw_output"] is not None
         assert meas["slant_mean"] is not None
+        assert meas["letter_formation_mean"] is not None
+        assert meas["letter_formation_std"] is not None
         # Score columns NULL in Phase 1
         assert meas["letter_formation_score"] is None
         assert meas["composite_score"] is None
+
+        # Verify raw_output lines contain letter_formation_score per word
+        raw_output = meas["raw_output"]
+        assert "lines" in raw_output
+        for line in raw_output["lines"]:
+            for word in line["words"]:
+                assert "letter_formation_score" in word
+                assert isinstance(word["letter_formation_score"], (int, float))
+                assert 0.0 <= word["letter_formation_score"] <= 100.0
 
     def test_non_image_file_rejected(self, client, test_activity, test_student):
         fake_file = b"This is plain text, not an image"
@@ -338,6 +351,34 @@ class TestCreateSubmission:
         )
         assert len(meas_res.data) == 0
 
+    def test_model_inference_error_returns_500(
+        self, client, test_activity, test_student, monkeypatch
+    ):
+        """ModelInferenceError during CNN step returns 500 with MODEL_INFERENCE_ERROR code."""
+        import app.api.submissions as submissions_module
+        from app.ml.exceptions import ModelInferenceError
+
+        def mock_failing_inference(crops):
+            raise ModelInferenceError("Simulated CNN inference failure")
+
+        monkeypatch.setattr(
+            submissions_module, "run_letter_formation_inference", mock_failing_inference
+        )
+
+        img_bytes = make_segmented_worksheet()
+        response = client.post(
+            "/api/submissions",
+            data={
+                "activity_id": test_activity["id"],
+                "student_id": test_student["id"],
+            },
+            files={"image": ("worksheet.jpg", img_bytes, "image/jpeg")},
+        )
+        assert response.status_code == 500
+        data = response.json()
+        assert data["error"]["code"] == "MODEL_INFERENCE_ERROR"
+        assert "Simulated CNN inference failure" in data["error"]["details"]["error"]
+
 
 class TestSubmitManualScore:
     def _create_completed_submission(
@@ -398,10 +439,7 @@ class TestSubmitManualScore:
 
         # Verify in database directly
         db_res = (
-            supabase_client.table("manual_score")
-            .select("*")
-            .eq("submission_id", sub_id)
-            .execute()
+            supabase_client.table("manual_score").select("*").eq("submission_id", sub_id).execute()
         )
         assert len(db_res.data) == 1
         assert db_res.data[0]["letter_formation_band"] == "satisfactory"
@@ -447,10 +485,7 @@ class TestSubmitManualScore:
 
         # Verify only 1 manual_score record exists and it has the updated values
         db_res = (
-            supabase_client.table("manual_score")
-            .select("*")
-            .eq("submission_id", sub_id)
-            .execute()
+            supabase_client.table("manual_score").select("*").eq("submission_id", sub_id).execute()
         )
         assert len(db_res.data) == 1
         assert db_res.data[0]["letter_formation_band"] == "excellent"
@@ -506,4 +541,3 @@ class TestSubmitManualScore:
         response = client.patch(f"/api/submissions/{sub_id}/manual-score", json=payload)
         assert response.status_code == 403
         assert response.json()["error"]["code"] == "MANUAL_SCORING_DISABLED"
-
