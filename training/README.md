@@ -40,9 +40,31 @@ training/
 6. **Evaluate:** `python evaluate_stage1.py --checkpoint <path>` — check `results/stage1_evaluation/summary.json`
 7. **Target:** >=90% accuracy on CCC test set (PRD §11)
 
-### Stage 2 (after Phase 1 is live and collecting paired data)
+### Stage 2 (Calibration & Production Export)
 
-8. **Export paired data** — run `research/export_dataset.py` to get teacher-score + word-crop pairs
-9. **Train regression head:** `python stage2_calibrate.py --paired-data-path <path> --stage1-checkpoint <path>`
-10. **Export final model:** `python export_model.py --stage1-checkpoint <path> --stage2-checkpoint <path> --output <path>`
-11. **Upload to Supabase Storage** — upload the `.keras` artifact to the `model-artifacts` bucket
+**Immediate Export (Baseline Mode — before paired data is collected):**
+8. **Export deployable baseline model:**
+   ```bash
+   python export_model.py \
+       --stage1-checkpoint checkpoints/stage1_best.keras \
+       --baseline \
+       --output-path artifacts/writewise-model.keras
+   ```
+9. **Upload to Supabase Storage** — upload `writewise-model.keras` to the `model-artifacts` bucket.
+
+**Calibrated Export (after Phase 1 collects teacher scores):**
+10. **Export paired data** — run `research/export_dataset.py` to get teacher-score + word-crop pairs.
+11. **Train regression head:**
+    ```bash
+    python stage2_calibrate.py \
+        --paired-data-path data/paired/export.csv \
+        --stage1-checkpoint checkpoints/stage1_best.keras \
+        --output-path checkpoints/stage2_calibrated.keras
+    ```
+12. **Export final model:**
+    ```bash
+    python export_model.py \
+        --model-path checkpoints/stage2_calibrated.keras \
+        --output-path artifacts/writewise-model.keras
+    ```
+13. **Update Supabase Storage** — replace `writewise-model.keras` in the `model-artifacts` bucket.
