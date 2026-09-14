@@ -22,11 +22,14 @@ import {
   EyeOffIcon,
   HelpCircleIcon,
   ArrowRightIcon,
+  ArrowLeftIcon,
   LockIcon,
   CheckCircle2Icon,
   ClockAlertIcon,
   LogInIcon,
   MailQuestionIcon,
+  CopyIcon,
+  CheckIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -44,8 +47,35 @@ function AcceptInviteForm() {
   const [isVerifyingSession, setIsVerifyingSession] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [hasValidSession, setHasValidSession] = useState(false);
+  const [copiedTeacherNote, setCopiedTeacherNote] = useState(false);
 
   const urlError = searchParams.get("error_description") || searchParams.get("error");
+
+  const handleCopyTeacherNote = async () => {
+    const message =
+      "Hi Teacher! My WriteWise parent portal invitation link has expired. Could you please send a fresh invite to my email so I can view my child's cursive progress? Thank you!";
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(message);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = message;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+      setCopiedTeacherNote(true);
+      toast.success("Request message copied to clipboard!", {
+        description: "Paste it in an email or message to your child's teacher.",
+      });
+      setTimeout(() => setCopiedTeacherNote(false), 3000);
+    } catch {
+      toast.error("Failed to copy. Please manually message your teacher.");
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -85,13 +115,13 @@ function AcceptInviteForm() {
         }
       });
 
-      // Determine grace period: allow 6 seconds if URL hash token is present, else 3.5 seconds
+      // Determine grace period: allow 6 seconds if URL hash/search token is present, else fast-fail in 300ms
       const hasHashToken =
         typeof window !== "undefined" &&
         (window.location.hash.includes("access_token") ||
           window.location.hash.includes("refresh_token") ||
           window.location.search.includes("code="));
-      const timeoutMs = hasHashToken ? 6000 : 3500;
+      const timeoutMs = hasHashToken ? 6000 : 300;
 
       const timer = setTimeout(() => {
         if (isMounted && !hasValidSession) {
@@ -195,37 +225,61 @@ function AcceptInviteForm() {
             </Alert>
           )}
 
-          <div className="space-y-3 text-left">
-            {/* Contextual Path 1: Already registered - Interactive Action Card */}
-            <button
-              type="button"
-              onClick={() => router.push("/login")}
-              className="group w-full rounded-xl border border-border/80 bg-card p-4 text-left transition-all hover:border-primary/50 hover:bg-brand-50/40 dark:hover:bg-brand-950/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring flex items-start gap-3.5 cursor-pointer"
-            >
-              <div className="size-8 rounded-lg bg-brand-50 dark:bg-brand-950/70 text-brand-700 dark:text-brand-300 flex items-center justify-center shrink-0 mt-0.5 border border-brand-200/60 dark:border-brand-900/60 group-hover:scale-105 transition-transform">
+          <div className="space-y-3.5 text-left">
+            {/* Primary Contextual Path: First-time parent needing renewed invite */}
+            <div className="rounded-xl border border-amber-200/80 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/20 p-4 text-left space-y-3">
+              <div className="flex items-start gap-3.5">
+                <div className="size-8 rounded-lg bg-amber-100/80 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 flex items-center justify-center shrink-0 mt-0.5 border border-amber-300/60 dark:border-amber-800">
+                  <MailQuestionIcon className="size-4" aria-hidden="true" />
+                </div>
+                <div className="space-y-1 text-sm flex-1">
+                  <p className="font-semibold text-foreground">Need a fresh invitation link?</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    For your child&apos;s privacy and security, invitation links expire after 48 hours. Please ask your child&apos;s teacher to resend your invite.
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                onClick={handleCopyTeacherNote}
+                className="w-full h-10 font-medium text-sm transition-all flex items-center justify-center gap-2 shadow-warm-sm"
+              >
+                {copiedTeacherNote ? (
+                  <>
+                    <CheckIcon className="size-4 text-primary-foreground" aria-hidden="true" />
+                    <span>Request Note Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <CopyIcon className="size-4 text-primary-foreground" aria-hidden="true" />
+                    <span>Copy Request Note for Teacher</span>
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Secondary Contextual Path: Returning parent who already activated */}
+            <div className="rounded-xl border border-border/80 bg-card p-4 text-left flex items-start gap-3.5">
+              <div className="size-8 rounded-lg bg-brand-50 dark:bg-brand-950/70 text-brand-700 dark:text-brand-300 flex items-center justify-center shrink-0 mt-0.5 border border-brand-200/60 dark:border-brand-900/60">
                 <LogInIcon className="size-4" aria-hidden="true" />
               </div>
-              <div className="space-y-1 text-sm flex-1">
-                <div className="flex items-center justify-between">
+              <div className="space-y-2 text-sm flex-1">
+                <div>
                   <p className="font-semibold text-foreground">Already activated your account?</p>
-                  <ArrowRightIcon className="size-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" aria-hidden="true" />
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    If you previously set your password, your parent portal is ready.
+                  </p>
                 </div>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  If you previously created your password, your account is ready. Sign in directly to view your child&apos;s cursive progress.
-                </p>
-              </div>
-            </button>
-
-            {/* Contextual Path 2: First-time parent needing new invite */}
-            <div className="rounded-xl border border-border/70 bg-muted/30 p-4 text-left flex items-start gap-3.5">
-              <div className="size-8 rounded-lg bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 mt-0.5 border border-amber-200/60 dark:border-amber-900/60">
-                <MailQuestionIcon className="size-4" aria-hidden="true" />
-              </div>
-              <div className="space-y-1 text-sm flex-1">
-                <p className="font-semibold text-foreground">Need a fresh invitation link?</p>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  For your child&apos;s privacy and security, invitation links expire after 48 hours. Please ask your child&apos;s teacher to send a new invite to your email.
-                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push("/login")}
+                  className="w-full h-9 text-xs sm:text-sm font-medium border-border/80 hover:bg-brand-50/50 dark:hover:bg-brand-950/40 text-foreground transition-all flex items-center justify-center gap-1.5"
+                >
+                  <span>Sign In to Existing Account</span>
+                  <ArrowRightIcon className="size-3.5 text-muted-foreground ml-auto" aria-hidden="true" />
+                </Button>
               </div>
             </div>
           </div>
@@ -233,18 +287,11 @@ function AcceptInviteForm() {
 
         <CardFooter className="flex flex-col gap-2.5 border-t border-border/60 bg-muted/20 px-6 py-4">
           <Button
-            onClick={() => router.push("/login")}
-            className="w-full h-10 font-medium text-sm"
-          >
-            <LogInIcon className="size-4 mr-2" aria-hidden="true" />
-            Sign In to Parent Portal
-          </Button>
-
-          <Button
-            variant="outline"
+            variant="ghost"
             onClick={() => router.push("/")}
-            className="w-full h-10 font-medium text-sm text-muted-foreground hover:text-foreground"
+            className="w-full h-10 font-medium text-xs sm:text-sm text-muted-foreground hover:text-foreground hover:bg-background/80"
           >
+            <ArrowLeftIcon className="size-4 mr-2" aria-hidden="true" />
             Return to Homepage
           </Button>
         </CardFooter>
