@@ -1,6 +1,6 @@
 # Diagnostic Engine & Visual Overlay Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Build the backend Diagnostic Engine to compute severity-tagged geometry annotations into `measurement.overlay` (JSON) and build the interactive multi-layer SVG overlay in Next.js for the Teacher and Parent portals.
 
@@ -39,7 +39,7 @@
     - `evaluate_slant(slant_deg: float, bbox: list[int]) -> tuple[Severity, list[int], str]`
     - `evaluate_letter_formation(score: float | None) -> tuple[Severity, str, str]`
 
-- [ ] **Step 1: Write failing tests for diagnostic rules and models**
+- [x] **Step 1: Write failing tests for diagnostic rules and models**
 
 Create `backend/tests/diagnostic/test_rules.py`:
 ```python
@@ -104,12 +104,12 @@ def test_evaluate_letter_formation():
     assert band == "developing"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/diagnostic/test_rules.py -v`  
 Expected: FAIL (ModuleNotFoundError: No module named 'app.diagnostic')
 
-- [ ] **Step 3: Implement models.py, rules.py, and __init__.py**
+- [x] **Step 3: Implement models.py, rules.py, and __init__.py**
 
 Create `backend/app/diagnostic/__init__.py`:
 ```python
@@ -293,12 +293,12 @@ def evaluate_letter_formation(score: float | None) -> tuple[Severity, str, str]:
     return "needs_attention", "needs_improvement", f"Needs improvement ({rounded}/100) — guided tracing recommended"
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/diagnostic/test_rules.py -v`  
 Expected: PASS (5 passed)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/diagnostic/ backend/tests/diagnostic/
@@ -317,7 +317,7 @@ git commit -m "feat(diagnostic): add diagnostic models and severity evaluation r
 - Consumes: `raw_output` dictionary from CV pipeline and CNN inference.
 - Produces: `generate_diagnostic_overlay(raw_output: dict) -> dict` returning a serialized `DiagnosticOverlay`.
 
-- [ ] **Step 1: Write failing tests for engine.py**
+- [x] **Step 1: Write failing tests for engine.py**
 
 Create `backend/tests/diagnostic/test_engine.py`:
 ```python
@@ -405,12 +405,12 @@ def test_generate_diagnostic_overlay_resilient_on_empty_input():
     assert len(overlay["baseline"]["annotations"]) == 0
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/diagnostic/test_engine.py -v`  
 Expected: FAIL (ImportError: cannot import name 'generate_diagnostic_overlay')
 
-- [ ] **Step 3: Implement engine.py**
+- [x] **Step 3: Implement engine.py**
 
 Create `backend/app/diagnostic/engine.py`:
 ```python
@@ -601,12 +601,12 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
         }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/diagnostic/test_engine.py -v`  
 Expected: PASS (2 passed)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/diagnostic/engine.py backend/tests/diagnostic/test_engine.py
@@ -625,7 +625,7 @@ git commit -m "feat(diagnostic): implement diagnostic overlay generator engine"
 - Consumes: `generate_diagnostic_overlay` from `app.diagnostic.engine`.
 - Produces: `overlay` field populated on `measurement` database row and in `SubmissionResponse` & `GetSubmissionResponse`.
 
-- [ ] **Step 1: Write integration tests verifying overlay persistence and response**
+- [x] **Step 1: Write integration tests verifying overlay persistence and response**
 
 Add test method to `backend/tests/api/test_submissions.py` under `TestCreateSubmission`:
 ```python
@@ -667,12 +667,12 @@ Add test method to `backend/tests/api/test_submissions.py` under `TestCreateSubm
         assert "summary" in db_overlay
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/api/test_submissions.py::TestCreateSubmission::test_submission_generates_and_persists_overlay -v`  
 Expected: FAIL (AssertionError: overlay is None)
 
-- [ ] **Step 3: Modify submissions.py to generate overlay and persist it**
+- [x] **Step 3: Modify submissions.py to generate overlay and persist it**
 
 In `backend/app/api/submissions.py`:
 1. Import `generate_diagnostic_overlay`:
@@ -699,12 +699,12 @@ In `backend/app/api/submissions.py`:
    "overlay": overlay_dict,
    ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/api/test_submissions.py -v`  
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/api/submissions.py backend/tests/api/test_submissions.py
@@ -729,11 +729,11 @@ git commit -m "feat(api): wire diagnostic overlay generation into submission cre
   - `DiagnosticOverlayData` TypeScript interface
   - Sub-layer SVG components accepting `overlay`, `activeCriterion`, and hover callbacks.
 
-- [ ] **Step 1: Create types.ts**
+- [x] **Step 1: Create types.ts**
 
 Create `frontend/components/shared/diagnostic-overlay/types.ts` matching backend schema with full strict typings.
 
-- [ ] **Step 2: Create sub-layer SVG components**
+- [x] **Step 2: Create sub-layer SVG components**
 
 Create individual criterion SVG sub-renderers with Tailwind styles, hover events, and appropriate color coding:
 - `layers/baseline-layer.tsx` (reference guide lines + baseline drift markers)
@@ -742,12 +742,12 @@ Create individual criterion SVG sub-renderers with Tailwind styles, hover events
 - `layers/slant-layer.tsx` (directional vectors through centroid)
 - `layers/formation-layer.tsx` (word underlines & score band pills)
 
-- [ ] **Step 3: Run TypeScript compiler check**
+- [x] **Step 3: Run TypeScript compiler check**
 
 Run: `npx tsc --noEmit`  
 Expected: Clean pass with 0 errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add frontend/components/shared/diagnostic-overlay/
@@ -769,27 +769,27 @@ git commit -m "feat(frontend): create diagnostic overlay SVG criterion layers an
   - `<DiagnosticOverlay overlay={...} imageUrl={...} visible={true} />`
   - `<OverlayToolbar activeCriterion={...} onChangeCriterion={...} overlay={...} />`
 
-- [ ] **Step 1: Create annotation-tooltip.tsx**
+- [x] **Step 1: Create annotation-tooltip.tsx**
 
 Renders an accessible floating popover/badge positioned over the active hovered annotation element, displaying criterion name, severity badge, and explanatory note.
 
-- [ ] **Step 2: Create overlay-toolbar.tsx**
+- [x] **Step 2: Create overlay-toolbar.tsx**
 
 Pill filter bar with:
 - Buttons: `All`, `Formation`, `Spacing`, `Slant`, `Baseline`, `Size`
 - Flagged count badges (e.g. `All (3)`, amber dot if attention count > 0)
 - Master visibility toggle.
 
-- [ ] **Step 3: Create diagnostic-overlay.tsx and index.ts**
+- [x] **Step 3: Create diagnostic-overlay.tsx and index.ts**
 
 The root SVG canvas component using `viewBox="0 0 naturalWidth naturalHeight"` with `preserveAspectRatio="xMidYMid meet"`, holding state for hovered annotation and rendering the layers.
 
-- [ ] **Step 4: Run TypeScript compiler check**
+- [x] **Step 4: Run TypeScript compiler check**
 
 Run: `npx tsc --noEmit`  
 Expected: Clean pass with 0 errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/components/shared/diagnostic-overlay/
@@ -808,7 +808,7 @@ git commit -m "feat(frontend): build interactive diagnostic overlay canvas, tool
 - Consumes: `<DiagnosticOverlay />` and `<OverlayToolbar />` inside `WorksheetImageInspector`.
 - Passes `measurement.overlay` (or fallback to guide lines if legacy).
 
-- [ ] **Step 1: Update submission-detail-dialog.tsx**
+- [x] **Step 1: Update submission-detail-dialog.tsx**
 
 In `frontend/components/submissions/submission-detail-dialog.tsx`:
 - Import `DiagnosticOverlay`, `OverlayToolbar`, `extractOverlay`.
@@ -817,12 +817,12 @@ In `frontend/components/submissions/submission-detail-dialog.tsx`:
   - Render `<DiagnosticOverlay />` as a child inside `WorksheetImageInspector`.
   - Connect selection with the criterion breakdown list.
 
-- [ ] **Step 2: Update worksheet-view-dialog.tsx**
+- [x] **Step 2: Update worksheet-view-dialog.tsx**
 
 In `frontend/components/parent/worksheet-view-dialog.tsx`:
 - Render `<DiagnosticOverlay />` inside the parent worksheet modal so parents can inspect annotations on take-home activities.
 
-- [ ] **Step 3: Run verification tests and linters**
+- [x] **Step 3: Run verification tests and linters**
 
 ```bash
 cd backend && uv run pytest -v
@@ -830,7 +830,7 @@ cd ../frontend && npx tsc --noEmit && npx eslint .
 ```
 Expected: All backend unit/API tests pass; frontend compiles with 0 TypeScript/lint errors.
 
-- [ ] **Step 4: Manual QA Verification**
+- [x] **Step 4: Manual QA Verification**
 
 1. Launch web browser to `http://localhost:3000`.
 2. Log in as teacher, open an existing completed submission modal.
@@ -838,7 +838,7 @@ Expected: All backend unit/API tests pass; frontend compiles with 0 TypeScript/l
 4. Hover over highlighted words and observe diagnostic popover tooltip.
 5. Verify SVG annotations remain aligned during zoom in/out and panning.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/components/submissions/submission-detail-dialog.tsx frontend/components/parent/worksheet-view-dialog.tsx
