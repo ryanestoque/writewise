@@ -29,7 +29,7 @@ export const SlantLayer = memo(function SlantLayer({
       style={{ opacity: isSpotlight ? 1.0 : 0.65 }}
     >
       {data.annotations.map((ann, idx) => {
-        const [x, y, w, h] = ann.bbox;
+        const [x, y, w] = ann.bbox;
         const [x1, y1, x2, y2] = ann.vector;
         const isAttention = ann.severity === "needs_attention";
 

@@ -82,12 +82,10 @@ export const BaselineLayer = memo(function BaselineLayer({
         const [x, y, w, h] = ann.bbox;
         const isAttention = ann.severity === "needs_attention";
         const wordBottomY = y + h;
-        const driftHeight = Math.max(4, Math.abs(ann.deviation_ratio * 40));
 
         if (!isAttention && !isSpotlight) return null;
 
         const strokeColor = isAttention ? "#f59e0b" : "#38bdf8";
-        const fillColor = isAttention ? "#fef3c7" : "#e0f2fe";
 
         return (
           <g
