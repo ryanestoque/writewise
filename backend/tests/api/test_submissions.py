@@ -109,7 +109,9 @@ class TestCreateSubmission:
         assert "aggregate" in measurement
         assert "scores" in measurement
         assert "raw_output" in measurement
-        assert measurement["overlay"] is None
+        assert "overlay" in measurement
+        assert measurement["overlay"] is not None
+        assert "summary" in measurement["overlay"]
 
         # Aggregate contains all 6 metric groups
         agg = measurement["aggregate"]
@@ -189,6 +191,51 @@ class TestCreateSubmission:
                 assert "letter_formation_score" in word
                 assert isinstance(word["letter_formation_score"], (int, float))
                 assert 0.0 <= word["letter_formation_score"] <= 100.0
+
+    def test_submission_generates_and_persists_overlay(
+        self, client, test_activity, test_student, cleanup_submissions
+    ):
+        img_bytes = make_segmented_worksheet()
+        response = client.post(
+            "/api/submissions",
+            data={
+                "activity_id": test_activity["id"],
+                "student_id": test_student["id"],
+            },
+            files={"image": ("worksheet.jpg", img_bytes, "image/jpeg")},
+        )
+        assert response.status_code == 201
+        data = response.json()
+        sub_id = data["submission_id"]
+
+        cleanup_submissions.append(
+            {
+                "id": sub_id,
+                "image_path": f"{test_student['id']}/{sub_id}.jpg",
+            }
+        )
+
+        # 1. Returned API payload includes populated overlay
+        assert "measurement" in data
+        assert "overlay" in data["measurement"]
+        overlay = data["measurement"]["overlay"]
+        assert overlay is not None
+        assert "summary" in overlay
+        assert "baseline" in overlay
+        assert "spacing" in overlay
+        assert "letter_formation" in overlay
+
+        # 2. Database row in measurement table contains the overlay
+        meas_res = (
+            supabase_client.table("measurement")
+            .select("overlay")
+            .eq("submission_id", sub_id)
+            .execute()
+        )
+        assert len(meas_res.data) == 1
+        db_overlay = meas_res.data[0]["overlay"]
+        assert db_overlay is not None
+        assert "summary" in db_overlay
 
     def test_non_image_file_rejected(self, client, test_activity, test_student):
         fake_file = b"This is plain text, not an image"

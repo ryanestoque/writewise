@@ -12,6 +12,7 @@ from app.core.supabase import supabase_client
 from app.cv.pipeline import run_cv_pipeline
 from app.cv.quality_gate import QualityGateRejection
 from app.cv.segmentation import PostSegmentationRejection
+from app.diagnostic.engine import generate_diagnostic_overlay
 from app.ml.exceptions import ModelInferenceError
 from app.ml.inference import run_letter_formation_inference
 
@@ -302,6 +303,17 @@ async def create_submission(
             "std": round(ml_result.aggregate_std, 2),
         }
 
+    # 11b. Diagnostic Overlay generation (PRD §7.4, DESIGN §7.4)
+    overlay_dict = None
+    try:
+        overlay_dict = generate_diagnostic_overlay(raw_output)
+    except Exception as exc:
+        logger.error(
+            "Diagnostic overlay generation failed for submission_id=%s: %s",
+            submission_id,
+            exc,
+        )
+
     # 12. Insert measurement row (DATABASE §8)
     measurement_row = {
         "submission_id": submission_id,
@@ -322,6 +334,7 @@ async def create_submission(
         # Score columns stay NULL in Phase 1 (DATABASE §8 note).
         # Full pipeline output for diagnostic overlay / downstream use.
         "raw_output": raw_output,
+        "overlay": overlay_dict,
     }
 
     measurement_res = supabase_client.table("measurement").insert(measurement_row).execute()
@@ -378,7 +391,7 @@ async def create_submission(
                 "composite_score": None,
             },
             "raw_output": raw_output,
-            "overlay": None,
+            "overlay": overlay_dict,
         },
     }
 
