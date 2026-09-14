@@ -15,6 +15,12 @@ import { BandPositionBar } from "@/components/shared/band-position-bar";
 import { ScoreSourceIndicator } from "@/components/shared/score-source-indicator";
 import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
 import { GuideLineOverlay, type GuideLines } from "@/components/shared/guide-line-overlay";
+import {
+  DiagnosticOverlay,
+  OverlayToolbar,
+  type CriterionFilter,
+  type DiagnosticOverlayData,
+} from "@/components/shared/diagnostic-overlay";
 import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import { RUBRIC_CRITERIA, type ScoreBand } from "@/lib/utils/scoring";
@@ -51,6 +57,8 @@ interface WorksheetViewDialogProps {
   };
   /** CV pipeline guide-line coordinates from raw_output */
   guideLines?: GuideLines | null;
+  /** Diagnostic Engine overlay coordinates and findings */
+  overlay?: DiagnosticOverlayData | null;
 }
 
 const PARENT_CRITERIA = RUBRIC_CRITERIA.map((c) => ({
@@ -70,8 +78,11 @@ export function WorksheetViewDialog({
   scores,
   bands,
   guideLines,
+  overlay,
 }: WorksheetViewDialogProps) {
   const [showGuideLines, setShowGuideLines] = useState(false);
+  const [activeCriterion, setActiveCriterion] = useState<CriterionFilter>("all");
+  const [showOverlay, setShowOverlay] = useState(true);
   const { data: imageUrl, isLoading: isImageLoading } =
     useSubmissionImageUrl(imagePath);
 
@@ -122,20 +133,39 @@ export function WorksheetViewDialog({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start lg:items-center">
             {/* Left: High-Resolution Worksheet Photo Inspector */}
             <div className="lg:col-span-7 flex flex-col justify-center w-full gap-2">
+              {overlay && (
+                <OverlayToolbar
+                  overlay={overlay}
+                  activeCriterion={activeCriterion}
+                  onChangeCriterion={setActiveCriterion}
+                  visible={showOverlay}
+                  onToggleVisible={setShowOverlay}
+                />
+              )}
+
               <WorksheetImageInspector
                 imageUrl={imageUrl}
                 altText={`Handwriting worksheet submitted for ${childName}`}
                 isLoading={isImageLoading}
                 headerLabel="Handwritten Worksheet"
               >
-                <GuideLineOverlay
-                  guideLines={guideLines ?? null}
-                  imageUrl={imageUrl}
-                  visible={showGuideLines}
-                />
+                {overlay ? (
+                  <DiagnosticOverlay
+                    overlay={overlay}
+                    imageUrl={imageUrl}
+                    visible={showOverlay}
+                    activeCriterion={activeCriterion}
+                  />
+                ) : (
+                  <GuideLineOverlay
+                    guideLines={guideLines ?? null}
+                    imageUrl={imageUrl}
+                    visible={showGuideLines}
+                  />
+                )}
               </WorksheetImageInspector>
 
-              {guideLines && (
+              {!overlay && guideLines && (
                 <button
                   type="button"
                   onClick={() => setShowGuideLines((prev) => !prev)}

@@ -171,6 +171,7 @@ export function LatestSubmissionCard({
         scores={latest.scores}
         bands={latest.bands}
         guideLines={latest.guideLines}
+        overlay={latest.overlay}
       />
     </>
   );

@@ -1,8 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "../supabase/client";
 import { getBandFromScore, type ScoreBand } from "../utils/scoring";
-import type { StudentScoreHistoryItem } from "./use-dashboard";
 import { extractGuideLines, type GuideLines } from "@/components/shared/guide-line-overlay";
+import {
+  extractDiagnosticOverlay,
+  type DiagnosticOverlayData,
+} from "@/components/shared/diagnostic-overlay";
+import type { StudentScoreHistoryItem } from "./use-dashboard";
 
 // --- Types ---
 
@@ -35,6 +39,7 @@ export interface ChildLatestScores {
     composite: ScoreBand | null;
   };
   guideLines: GuideLines | null;
+  overlay: DiagnosticOverlayData | null;
 }
 
 export interface TakeHomeActivity {
@@ -113,7 +118,8 @@ export function useChildLatestScores(childId: string | null) {
             slant_score,
             baseline_alignment_score,
             composite_score,
-            raw_output
+            raw_output,
+            overlay
           )
         `)
         .eq("student_id", childId)
@@ -142,7 +148,7 @@ export function useChildLatestScores(childId: string | null) {
             spacing: m.spacing_score != null ? Number(m.spacing_score) : null,
             slant: m.slant_score != null ? Number(m.slant_score) : null,
             baseline_alignment: m.baseline_alignment_score != null ? Number(m.baseline_alignment_score) : null,
-            composite: Number(m.composite_score),
+            composite: m.composite_score != null ? Number(m.composite_score) : null,
           };
           bands = {
             letter_formation: getBandFromScore(scores.letter_formation),
@@ -192,6 +198,7 @@ export function useChildLatestScores(childId: string | null) {
           scores,
           bands,
           guideLines: extractGuideLines(m),
+          overlay: extractDiagnosticOverlay(m),
         };
       }
 

@@ -2,6 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { createClient } from "../supabase/client";
 import { getBandFromScore, type ScoreBand } from "../utils/scoring";
 import { extractGuideLines, type GuideLines } from "@/components/shared/guide-line-overlay";
+import {
+  extractDiagnosticOverlay,
+  type DiagnosticOverlayData,
+} from "@/components/shared/diagnostic-overlay";
 
 export interface StudentScoreSummary {
   studentId: string;
@@ -325,6 +329,7 @@ export interface StudentScoreHistoryItem {
     baseline_alignment: ScoreBand | null;
   };
   guideLines?: GuideLines | null;
+  overlay?: DiagnosticOverlayData | null;
 }
 
 export function useStudentScoreHistory(studentId: string | null) {
@@ -366,7 +371,8 @@ export function useStudentScoreHistory(studentId: string | null) {
             slant_score,
             baseline_alignment_score,
             composite_score,
-            raw_output
+            raw_output,
+            overlay
           )
         `)
         .eq("student_id", studentId)
@@ -486,6 +492,7 @@ export function useStudentScoreHistory(studentId: string | null) {
             baseline_alignment: baBand,
           },
           guideLines: extractGuideLines(rawMeasurement),
+          overlay: extractDiagnosticOverlay(rawMeasurement),
         });
       }
 

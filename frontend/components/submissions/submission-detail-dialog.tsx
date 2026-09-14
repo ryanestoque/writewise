@@ -18,6 +18,13 @@ import {
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
 import { GuideLineOverlay, type GuideLines } from "@/components/shared/guide-line-overlay";
+import {
+  DiagnosticOverlay,
+  OverlayToolbar,
+  extractDiagnosticOverlay,
+  type CriterionFilter,
+  type DiagnosticOverlayData,
+} from "@/components/shared/diagnostic-overlay";
 import { cn } from "@/lib/utils";
 import {
   CheckCircle2,
@@ -91,6 +98,23 @@ function formatDateFull(dateStr: string): string {
   });
 }
 
+const CRITERION_NAME_TO_FILTER: Record<string, CriterionFilter> = {
+  "Letter Formation": "letter_formation",
+  "Spacing": "spacing",
+  "Size Consistency": "size_consistency",
+  "Slant": "slant",
+  "Baseline Alignment": "baseline_alignment",
+};
+
+const CRITERION_FILTER_TO_NAME: Record<CriterionFilter, string | null> = {
+  all: null,
+  letter_formation: "Letter Formation",
+  spacing: "Spacing",
+  size_consistency: "Size Consistency",
+  slant: "Slant",
+  baseline_alignment: "Baseline Alignment",
+};
+
 interface SubmissionDetailDialogContentProps {
   submission: Submission;
   submissions?: Submission[];
@@ -115,6 +139,9 @@ function SubmissionDetailDialogContent({
   const [selectedCriterion, setSelectedCriterion] = useState<string | null>(
     "Letter Formation"
   );
+  const [activeOverlayCriterion, setActiveOverlayCriterion] =
+    useState<CriterionFilter>("all");
+  const [showOverlay, setShowOverlay] = useState<boolean>(true);
   const [phase1Tab, setPhase1Tab] = useState<"rubric" | "metrics">("rubric");
   const [isEditingRubric, setIsEditingRubric] = useState(false);
   const [showGuideLines, setShowGuideLines] = useState(false);
@@ -278,6 +305,11 @@ function SubmissionDetailDialogContent({
     ) return null;
     return gl as GuideLines;
   }, [submission.measurement?.raw_output]);
+
+  // Extract diagnostic overlay data (DATABASE §8, DESIGN §7.4)
+  const diagnosticOverlay = useMemo((): DiagnosticOverlayData | null => {
+    return extractDiagnosticOverlay(submission.measurement);
+  }, [submission.measurement]);
 
   const resolvedTargetText = useMemo(() => {
     if (activityTargetText && !isUuid(activityTargetText)) {
@@ -506,6 +538,23 @@ function SubmissionDetailDialogContent({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:items-stretch">
           {/* Left: Worksheet Image Preview with Interactive Stroke Inspector */}
           <div className="lg:col-span-6 flex flex-col justify-between gap-2.5 w-full h-full min-h-0">
+            {diagnosticOverlay && (
+              <OverlayToolbar
+                overlay={diagnosticOverlay}
+                activeCriterion={activeOverlayCriterion}
+                onChangeCriterion={(c) => {
+                  setActiveOverlayCriterion(c);
+                  const name = CRITERION_FILTER_TO_NAME[c];
+                  if (name) {
+                    setSelectedCriterion(name);
+                    setCriterionAnnouncement(`Selected ${name} on diagnostic overlay`);
+                  }
+                }}
+                visible={showOverlay}
+                onToggleVisible={setShowOverlay}
+              />
+            )}
+
             <WorksheetImageInspector
               imageUrl={imageUrl}
               altText={`Handwriting worksheet submitted for ${submission.student?.full_name ?? "student"}`}
@@ -518,16 +567,25 @@ function SubmissionDetailDialogContent({
               className="flex-1 flex flex-col min-h-0"
               aspectRatioClass="aspect-4/3 sm:aspect-3/2 lg:aspect-auto lg:flex-1 min-h-[260px] sm:min-h-[300px] lg:min-h-0"
             >
-              <GuideLineOverlay
-                guideLines={guideLines}
-                imageUrl={imageUrl}
-                visible={showGuideLines}
-              />
+              {diagnosticOverlay ? (
+                <DiagnosticOverlay
+                  overlay={diagnosticOverlay}
+                  imageUrl={imageUrl}
+                  visible={showOverlay}
+                  activeCriterion={activeOverlayCriterion}
+                />
+              ) : (
+                <GuideLineOverlay
+                  guideLines={guideLines}
+                  imageUrl={imageUrl}
+                  visible={showGuideLines}
+                />
+              )}
             </WorksheetImageInspector>
 
-            {/* Guide-lines toggle pill + target prompt bar */}
+            {/* Guide-lines toggle pill (for legacy without diagnostic overlay) + target prompt bar */}
             <div className="shrink-0 flex items-center gap-2">
-              {guideLines && (
+              {!diagnosticOverlay && guideLines && (
                 <button
                   type="button"
                   onClick={() => setShowGuideLines((prev) => !prev)}
@@ -637,6 +695,8 @@ function SubmissionDetailDialogContent({
                                 type="button"
                                 onClick={() => {
                                   setSelectedCriterion(c.name);
+                                  const mapped = CRITERION_NAME_TO_FILTER[c.name];
+                                  if (mapped) setActiveOverlayCriterion(mapped);
                                   setCriterionAnnouncement(
                                     `${c.name} selected. Diagnostic guide and coaching tips updated.`
                                   );

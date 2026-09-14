@@ -66,6 +66,7 @@ export interface Submission {
     letter_formation_mean: number | null;
     letter_formation_std: number | null;
     raw_output?: Record<string, unknown> | null;
+    overlay?: Record<string, unknown> | null;
   } | null;
   manual_score?: ManualScore | null;
 }
@@ -89,7 +90,7 @@ export function useSubmissions(activityId: string) {
              slant_mean, slant_std, word_spacing_mean, word_spacing_std,
              letter_spacing_mean, letter_spacing_std, baseline_deviation_mean,
              baseline_deviation_std, size_consistency_mean, size_consistency_std,
-             letter_formation_mean, letter_formation_std, raw_output
+             letter_formation_mean, letter_formation_std, raw_output, overlay
            ),
            manual_score(
              letter_formation_band, letter_formation_score,
