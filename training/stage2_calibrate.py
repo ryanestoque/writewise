@@ -42,9 +42,8 @@ Usage:
 """
 
 import argparse
-import os
+import sys
 from pathlib import Path
-from typing import Optional, Tuple
 
 import numpy as np
 
@@ -102,10 +101,16 @@ def parse_args() -> argparse.Namespace:
         default=1e-3,
         help="Adam optimizer learning rate for head training.",
     )
+    parser.add_argument(
+        "--dropout",
+        type=float,
+        default=0.0,
+        help="Dropout rate before output layer (default: 0.0 per ML_PIPELINE §6.3).",
+    )
     return parser.parse_args()
 
 
-def build_regression_model(stage1_checkpoint: str):
+def build_regression_model(stage1_checkpoint: str, dropout_rate: float = 0.0):
     """Load Stage 1 model, freeze backbone, and attach Stage 2 regression head."""
     import tensorflow as tf
 
@@ -135,9 +140,10 @@ def build_regression_model(stage1_checkpoint: str):
     if gap_layer is not None:
         gap_layer.trainable = False
 
-    # Attach regression head (Dense(64, relu) -> Dropout -> Dense(1))
+    # Attach regression head (Dense(64, relu) -> [Optional Dropout] -> Dense(1))
     x = tf.keras.layers.Dense(64, activation="relu", name="stage2_dense64")(features)
-    x = tf.keras.layers.Dropout(0.2, name="stage2_dropout")(x)
+    if dropout_rate > 0.0:
+        x = tf.keras.layers.Dropout(dropout_rate, name="stage2_dropout")(x)
     output = tf.keras.layers.Dense(1, activation="linear", name="letter_formation_score")(x)
 
     model = tf.keras.Model(
@@ -147,7 +153,9 @@ def build_regression_model(stage1_checkpoint: str):
     )
 
     print(f"Total model parameters: {model.count_params():,}")
-    print(f"Trainable parameters in head: {sum(np.prod(p.shape) for p in model.trainable_weights):,}")
+    print(
+        f"Trainable parameters in head: {sum(np.prod(p.shape) for p in model.trainable_weights):,}"
+    )
     return model
 
 
@@ -168,29 +176,38 @@ def initialize_baseline_head(model, baseline_target: float = 72.5):
 def load_paired_dataset(csv_path: str, batch_size: int = 32):
     """Load paired crop paths and rubric scores from CSV."""
     import csv
+
     import cv2
     import tensorflow as tf
 
     crops = []
     scores = []
+    csv_dir = Path(csv_path).resolve().parent
 
     with open(csv_path, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            crop_path = row.get("crop_path") or row.get("image_path")
-            if not crop_path or not os.path.exists(crop_path):
+            raw_path = row.get("crop_path") or row.get("image_path")
+            if not raw_path:
+                continue
+
+            crop_file = Path(raw_path)
+            if not crop_file.is_absolute():
+                crop_file = csv_dir / crop_file
+
+            if not crop_file.exists():
                 continue
 
             # Parse score or band
-            if "score" in row and row["score"]:
+            if row.get("score"):
                 score_val = float(row["score"])
-            elif "band" in row and row["band"]:
+            elif row.get("band"):
                 band_key = row["band"].strip().lower()
                 score_val = BAND_TO_SCORE.get(band_key, 62.5)
             else:
                 continue
 
-            crops.append(crop_path)
+            crops.append(str(crop_file))
             scores.append(score_val)
 
     if not crops:
@@ -198,13 +215,16 @@ def load_paired_dataset(csv_path: str, batch_size: int = 32):
 
     print(f"Loaded {len(crops)} paired samples from {csv_path}")
 
-    # Split 90/10 train/val
+    # Split 90/10 train/val (or use all for train/val if small sample)
     indices = np.arange(len(crops))
     np.random.seed(42)
     np.random.shuffle(indices)
 
-    val_count = max(1, int(len(crops) * 0.1))
-    train_idx, val_idx = indices[val_count:], indices[:val_count]
+    if len(crops) >= 10:
+        val_count = max(1, int(len(crops) * 0.1))
+        train_idx, val_idx = indices[val_count:], indices[:val_count]
+    else:
+        train_idx, val_idx = indices, indices
 
     def generator(idx_list):
         for idx in idx_list:
@@ -213,7 +233,20 @@ def load_paired_dataset(csv_path: str, batch_size: int = 32):
 
             # Load image (supports .npy, .jpg, .png)
             if path.endswith(".npy"):
-                img = np.load(path)
+                loaded = np.load(path)
+                if loaded.ndim == 3 and loaded.shape[-1] in (1, 3):
+                    img = (
+                        loaded[..., 0]
+                        if loaded.shape[-1] == 1
+                        else cv2.cvtColor(loaded, cv2.COLOR_RGB2GRAY)
+                    )
+                else:
+                    img = loaded
+                if img.dtype != np.uint8:
+                    if img.max() <= 1.0 and img.min() >= -1.0:
+                        img = ((img + 1.0) * 127.5).astype(np.uint8)
+                    else:
+                        img = np.clip(img, 0, 255).astype(np.uint8)
             else:
                 img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
 
@@ -228,8 +261,7 @@ def load_paired_dataset(csv_path: str, batch_size: int = 32):
             pad_left = (side - w) // 2
             pad_right = side - w - pad_left
             padded = cv2.copyMakeBorder(
-                img, pad_top, pad_bottom, pad_left, pad_right,
-                cv2.BORDER_CONSTANT, value=255
+                img, pad_top, pad_bottom, pad_left, pad_right, cv2.BORDER_CONSTANT, value=255
             )
 
             # Resize to 96x96 and 3 channels
@@ -245,12 +277,16 @@ def load_paired_dataset(csv_path: str, batch_size: int = 32):
     )
 
     train_ds = (
-        tf.data.Dataset.from_generator(lambda: generator(train_idx), output_signature=output_signature)
+        tf.data.Dataset.from_generator(
+            lambda: generator(train_idx), output_signature=output_signature
+        )
         .batch(batch_size)
         .prefetch(tf.data.AUTOTUNE)
     )
     val_ds = (
-        tf.data.Dataset.from_generator(lambda: generator(val_idx), output_signature=output_signature)
+        tf.data.Dataset.from_generator(
+            lambda: generator(val_idx), output_signature=output_signature
+        )
         .batch(batch_size)
         .prefetch(tf.data.AUTOTUNE)
     )
@@ -262,13 +298,16 @@ def main():
     args = parse_args()
 
     if not args.baseline and not args.paired_data_path:
-        print("ERROR: Specify either --baseline for initialized weights or --paired-data-path for training.")
-        return
+        print(
+            "ERROR: Specify either --baseline for initialized weights "
+            "or --paired-data-path for training."
+        )
+        sys.exit(1)
 
     import tensorflow as tf
 
     # 1. Build regression model with frozen Stage 1 backbone
-    model = build_regression_model(args.stage1_checkpoint)
+    model = build_regression_model(args.stage1_checkpoint, dropout_rate=args.dropout)
 
     # 2. Train on paired data OR initialize baseline
     if args.baseline:

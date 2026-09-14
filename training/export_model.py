@@ -90,7 +90,7 @@ def main():
     print("\nRunning test forward pass on dummy crops...")
     dummy_input = np.random.uniform(-1.0, 1.0, size=(4, 96, 96, 3)).astype(np.float32)
     predictions = model(dummy_input, training=False).numpy()
-    print(f"  Test batch size:   4")
+    print("  Test batch size:   4")
     print(f"  Prediction shape:  {predictions.shape}")
     print(f"  Sample scores:     {[round(float(s[0]), 2) for s in predictions]}")
 

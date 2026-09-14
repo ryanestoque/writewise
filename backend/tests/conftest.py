@@ -1,9 +1,16 @@
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 
 from app.api.deps import get_current_parent, get_current_teacher, get_current_user
+from app.core.config import settings
 from app.core.supabase import supabase_client
 from app.main import app
+
+# Ensure test suite runs in test environment (TESTING.md §3.2, AGENTS.md §5)
+settings.ENVIRONMENT = "test"
+os.environ["ENVIRONMENT"] = "test"
 
 # Fetch a real teacher ID from the database to avoid FK constraints.
 # Uses the service-role client which must have SELECT on public.teacher
