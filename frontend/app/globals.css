@@ -221,4 +221,21 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  /* Replace rapid rotational spinning with a gentle, non-vestibular pulse */
+  .animate-spin {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+  }
+
+  /* Suppress disorienting vestibular keyframe animations while preserving brief, intentional state feedback */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 150ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 

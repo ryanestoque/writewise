@@ -96,7 +96,7 @@ function ForgotPasswordDialog({ email }: { email: string }) {
         render={
           <button
             type="button"
-            className="text-xs font-medium text-primary hover:text-primary/80 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded py-0.5 px-1 -mr-1"
+            className="relative inline-flex items-center text-xs font-medium text-primary hover:text-primary/80 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded py-1 px-1.5 -my-1 -mr-1.5 min-h-[40px] sm:min-h-0 touch-manipulation before:absolute before:-inset-2 before:content-[''] sm:before:hidden"
           >
             Forgot password?
           </button>
@@ -116,7 +116,11 @@ function ForgotPasswordDialog({ email }: { email: string }) {
 
         {isSent ? (
           <div className="space-y-4 py-1">
-            <Alert className="border-brand-200 bg-brand-50/70 text-brand-900 dark:border-brand-900 dark:bg-brand-950/50 dark:text-brand-300">
+            <Alert
+              role="status"
+              aria-live="polite"
+              className="border-brand-200 bg-brand-50/70 text-brand-900 dark:border-brand-900 dark:bg-brand-950/50 dark:text-brand-300"
+            >
               <CheckCircle2 className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
               <AlertDescription className="text-xs leading-relaxed">
                 A recovery link has been sent to{" "}
@@ -231,7 +235,19 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
       });
 
       if (signInError) {
-        setCurrentPasswordError("Current password is incorrect. Please try again.");
+        const status = (signInError as { status?: number }).status;
+        const code = (signInError as { code?: string }).code;
+        if (
+          status === 429 ||
+          code === "over_request_rate_limit" ||
+          code === "rate_limit_exceeded"
+        ) {
+          setCurrentPasswordError(
+            "Too many sign-in attempts. Please wait a few moments before trying again."
+          );
+        } else {
+          setCurrentPasswordError("Current password is incorrect. Please try again.");
+        }
         document.getElementById("current-password")?.focus();
         setIsSubmitting(false);
         return;
@@ -285,263 +301,267 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
 
       {/* Right Form Card */}
       <div>
-        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-warm gap-0 pb-0 overflow-hidden">
+        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-warm gap-0 pb-0 overflow-hidden ring-0">
           <form onSubmit={handlePasswordUpdate} aria-busy={isSubmitting}>
             <CardContent className="flex flex-col gap-5 pt-6 pb-6">
-          {/* Current Password */}
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <Label
-                htmlFor="current-password"
-                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-              >
-                Current Password
-              </Label>
-              <ForgotPasswordDialog email={email} />
-            </div>
-            <div className="relative">
-              <Input
-                id="current-password"
-                type={showCurrent ? "text" : "password"}
-                autoComplete="current-password"
-                value={currentPassword}
-                onChange={(e) => {
-                  setCurrentPassword(e.target.value);
-                  if (currentPasswordError) {
-                    setCurrentPasswordError(null);
-                  }
-                }}
-                placeholder="Enter current password"
-                className={`h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl pr-12 transition-colors ${
-                  currentPasswordError
-                    ? "border-destructive focus-visible:ring-destructive"
-                    : ""
-                }`}
-                aria-invalid={currentPasswordError ? true : false}
-                aria-describedby={
-                  currentPasswordError ? "current-password-error" : undefined
-                }
-              />
-              <button
-                type="button"
-                onClick={() => setShowCurrent(!showCurrent)}
-                className="absolute right-0.5 top-1/2 -translate-y-1/2 flex min-h-[40px] min-w-[40px] size-10 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-                aria-label={showCurrent ? "Hide current password" : "Show current password"}
-              >
-                {showCurrent ? (
-                  <EyeOff className="size-4" aria-hidden="true" />
-                ) : (
-                  <Eye className="size-4" aria-hidden="true" />
-                )}
-              </button>
-            </div>
-            {currentPasswordError ? (
-              <p
-                id="current-password-error"
-                role="alert"
-                aria-live="polite"
-                className="text-xs text-destructive font-medium mt-0.5"
-              >
-                {currentPasswordError}
-              </p>
-            ) : null}
-          </div>
+              {/* Current Password */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <Label
+                    htmlFor="current-password"
+                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
+                    Current Password
+                  </Label>
+                  <ForgotPasswordDialog email={email} />
+                </div>
+                <div className="relative">
+                  <Input
+                    id="current-password"
+                    type={showCurrent ? "text" : "password"}
+                    autoComplete="current-password"
+                    value={currentPassword}
+                    onChange={(e) => {
+                      setCurrentPassword(e.target.value);
+                      if (currentPasswordError) {
+                        setCurrentPasswordError(null);
+                      }
+                    }}
+                    placeholder="Enter current password"
+                    className={`h-10 sm:h-9 text-base sm:text-sm rounded-lg pr-12 transition-colors ${
+                      currentPasswordError
+                        ? "border-destructive focus-visible:ring-destructive"
+                        : ""
+                    }`}
+                    aria-invalid={currentPasswordError ? true : false}
+                    aria-describedby={
+                      currentPasswordError ? "current-password-error" : undefined
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrent(!showCurrent)}
+                    className="absolute right-0.5 top-1/2 -translate-y-1/2 flex min-h-[40px] min-w-[40px] size-10 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+                    aria-label={showCurrent ? "Hide current password" : "Show current password"}
+                  >
+                    {showCurrent ? (
+                      <EyeOff className="size-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="size-4" aria-hidden="true" />
+                    )}
+                  </button>
+                </div>
+                {currentPasswordError ? (
+                  <p
+                    id="current-password-error"
+                    role="alert"
+                    aria-live="polite"
+                    className="text-xs text-destructive font-medium mt-0.5"
+                  >
+                    {currentPasswordError}
+                  </p>
+                ) : null}
+              </div>
 
-          {/* New Password */}
-          <div className="flex flex-col gap-1.5">
-            <Label
-              htmlFor="new-password"
-              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-            >
-              New Password
-            </Label>
-            <div className="relative">
-              <Input
-                id="new-password"
-                type={showNew ? "text" : "password"}
-                autoComplete="new-password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
-                className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl pr-12 transition-colors"
-                aria-describedby="password-requirements"
-                aria-invalid={newPassword.length > 0 && !allCriteriaMet}
-              />
-              <button
-                type="button"
-                onClick={() => setShowNew(!showNew)}
-                className="absolute right-0.5 top-1/2 -translate-y-1/2 flex min-h-[40px] min-w-[40px] size-10 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-                aria-label={showNew ? "Hide new password" : "Show new password"}
-              >
-                {showNew ? (
-                  <EyeOff className="size-4" aria-hidden="true" />
-                ) : (
-                  <Eye className="size-4" aria-hidden="true" />
-                )}
-              </button>
-            </div>
+              {/* New Password */}
+              <div className="flex flex-col gap-1.5">
+                <Label
+                  htmlFor="new-password"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  New Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="new-password"
+                    type={showNew ? "text" : "password"}
+                    autoComplete="new-password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    className="h-10 sm:h-9 text-base sm:text-sm rounded-lg pr-12 transition-colors"
+                    aria-describedby="new-password-hint"
+                    aria-invalid={newPassword.length > 0 && !allCriteriaMet}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNew(!showNew)}
+                    className="absolute right-0.5 top-1/2 -translate-y-1/2 flex min-h-[40px] min-w-[40px] size-10 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+                    aria-label={showNew ? "Hide new password" : "Show new password"}
+                  >
+                    {showNew ? (
+                      <EyeOff className="size-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="size-4" aria-hidden="true" />
+                    )}
+                  </button>
+                </div>
 
-            {/* Real-time criteria checklist */}
-            <ul
-              id="password-requirements"
-              aria-label="Password requirements"
-              className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs text-muted-foreground list-none p-0 m-0"
-            >
-              <li
-                className={`flex items-center gap-1.5 ${
-                  hasMinLength
-                    ? "text-brand-600 dark:text-brand-400 font-medium"
-                    : ""
-                }`}
-              >
-                {hasMinLength ? (
-                  <Check className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-                ) : (
-                  <div className="size-1.5 rounded-full bg-muted-foreground/50 mx-1 shrink-0" aria-hidden="true" />
-                )}
-                <span>At least 8 characters</span>
-                <span className="sr-only">
-                  {hasMinLength ? "(requirement met)" : "(requirement not met)"}
-                </span>
-              </li>
-              <li
-                className={`flex items-center gap-1.5 ${
-                  hasUppercase
-                    ? "text-brand-600 dark:text-brand-400 font-medium"
-                    : ""
-                }`}
-              >
-                {hasUppercase ? (
-                  <Check className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-                ) : (
-                  <div className="size-1.5 rounded-full bg-muted-foreground/50 mx-1 shrink-0" aria-hidden="true" />
-                )}
-                <span>One uppercase letter (A–Z)</span>
-                <span className="sr-only">
-                  {hasUppercase ? "(requirement met)" : "(requirement not met)"}
-                </span>
-              </li>
-              <li
-                className={`flex items-center gap-1.5 ${
-                  hasLowercase
-                    ? "text-brand-600 dark:text-brand-400 font-medium"
-                    : ""
-                }`}
-              >
-                {hasLowercase ? (
-                  <Check className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-                ) : (
-                  <div className="size-1.5 rounded-full bg-muted-foreground/50 mx-1 shrink-0" aria-hidden="true" />
-                )}
-                <span>One lowercase letter (a–z)</span>
-                <span className="sr-only">
-                  {hasLowercase ? "(requirement met)" : "(requirement not met)"}
-                </span>
-              </li>
-              <li
-                className={`flex items-center gap-1.5 ${
-                  hasNumber
-                    ? "text-brand-600 dark:text-brand-400 font-medium"
-                    : ""
-                }`}
-              >
-                {hasNumber ? (
-                  <Check className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-                ) : (
-                  <div className="size-1.5 rounded-full bg-muted-foreground/50 mx-1 shrink-0" aria-hidden="true" />
-                )}
-                <span>One number (0–9)</span>
-                <span className="sr-only">
-                  {hasNumber ? "(requirement met)" : "(requirement not met)"}
-                </span>
-              </li>
-            </ul>
+                <p id="new-password-hint" className="sr-only">
+                  Password must be at least 8 characters and include uppercase, lowercase, and a number.
+                </p>
 
-            {/* Polite screen reader live status announcement */}
-            <div className="sr-only" aria-live="polite" aria-atomic="true">
-              {allCriteriaMet ? "All password requirements satisfied." : ""}
-            </div>
-          </div>
+                {/* Real-time criteria checklist */}
+                <ul
+                  id="password-requirements"
+                  aria-label="Password requirements"
+                  className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs text-muted-foreground list-none p-0 m-0"
+                >
+                  <li
+                    className={`flex items-center gap-1.5 ${
+                      hasMinLength
+                        ? "text-brand-600 dark:text-brand-400 font-medium"
+                        : ""
+                    }`}
+                  >
+                    {hasMinLength ? (
+                      <Check className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+                    ) : (
+                      <div className="size-2 rounded-full border border-muted-foreground/70 dark:border-muted-foreground/60 mx-0.5 shrink-0" aria-hidden="true" />
+                    )}
+                    <span>At least 8 characters</span>
+                    <span className="sr-only">
+                      {hasMinLength ? "(requirement met)" : "(requirement not met)"}
+                    </span>
+                  </li>
+                  <li
+                    className={`flex items-center gap-1.5 ${
+                      hasUppercase
+                        ? "text-brand-600 dark:text-brand-400 font-medium"
+                        : ""
+                    }`}
+                  >
+                    {hasUppercase ? (
+                      <Check className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+                    ) : (
+                      <div className="size-2 rounded-full border border-muted-foreground/70 dark:border-muted-foreground/60 mx-0.5 shrink-0" aria-hidden="true" />
+                    )}
+                    <span>One uppercase letter (A–Z)</span>
+                    <span className="sr-only">
+                      {hasUppercase ? "(requirement met)" : "(requirement not met)"}
+                    </span>
+                  </li>
+                  <li
+                    className={`flex items-center gap-1.5 ${
+                      hasLowercase
+                        ? "text-brand-600 dark:text-brand-400 font-medium"
+                        : ""
+                    }`}
+                  >
+                    {hasLowercase ? (
+                      <Check className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+                    ) : (
+                      <div className="size-2 rounded-full border border-muted-foreground/70 dark:border-muted-foreground/60 mx-0.5 shrink-0" aria-hidden="true" />
+                    )}
+                    <span>One lowercase letter (a–z)</span>
+                    <span className="sr-only">
+                      {hasLowercase ? "(requirement met)" : "(requirement not met)"}
+                    </span>
+                  </li>
+                  <li
+                    className={`flex items-center gap-1.5 ${
+                      hasNumber
+                        ? "text-brand-600 dark:text-brand-400 font-medium"
+                        : ""
+                    }`}
+                  >
+                    {hasNumber ? (
+                      <Check className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+                    ) : (
+                      <div className="size-2 rounded-full border border-muted-foreground/70 dark:border-muted-foreground/60 mx-0.5 shrink-0" aria-hidden="true" />
+                    )}
+                    <span>One number (0–9)</span>
+                    <span className="sr-only">
+                      {hasNumber ? "(requirement met)" : "(requirement not met)"}
+                    </span>
+                  </li>
+                </ul>
 
-          {/* Confirm New Password */}
-          <div className="flex flex-col gap-1.5">
-            <Label
-              htmlFor="confirm-password"
-              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-            >
-              Confirm New Password
-            </Label>
-            <div className="relative">
-              <Input
-                id="confirm-password"
-                type={showConfirm ? "text" : "password"}
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Re-enter new password"
-                className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl pr-12 transition-colors"
-                aria-describedby={
-                  confirmPassword.length > 0 ? "confirm-password-status" : undefined
-                }
-                aria-invalid={confirmPassword.length > 0 && !passwordsMatch}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirm(!showConfirm)}
-                className="absolute right-0.5 top-1/2 -translate-y-1/2 flex min-h-[40px] min-w-[40px] size-10 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-                aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
+                {/* Polite screen reader live status announcement */}
+                <div className="sr-only" aria-live="polite" aria-atomic="true">
+                  {allCriteriaMet ? "All password requirements satisfied." : ""}
+                </div>
+              </div>
+
+              {/* Confirm New Password */}
+              <div className="flex flex-col gap-1.5">
+                <Label
+                  htmlFor="confirm-password"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  Confirm New Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="confirm-password"
+                    type={showConfirm ? "text" : "password"}
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter new password"
+                    className="h-10 sm:h-9 text-base sm:text-sm rounded-lg pr-12 transition-colors"
+                    aria-describedby={
+                      confirmPassword.length > 0 ? "confirm-password-status" : undefined
+                    }
+                    aria-invalid={confirmPassword.length > 0 && !passwordsMatch}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="absolute right-0.5 top-1/2 -translate-y-1/2 flex min-h-[40px] min-w-[40px] size-10 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+                    aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
+                  >
+                    {showConfirm ? (
+                      <EyeOff className="size-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="size-4" aria-hidden="true" />
+                    )}
+                  </button>
+                </div>
+                {confirmPassword.length > 0 ? (
+                  <p
+                    id="confirm-password-status"
+                    role="status"
+                    aria-live="polite"
+                    className={`text-xs font-medium flex items-center gap-1 mt-0.5 ${
+                      passwordsMatch
+                        ? "text-brand-600 dark:text-brand-400"
+                        : "text-destructive"
+                    }`}
+                  >
+                    {passwordsMatch ? (
+                      <>
+                        <Check className="size-3.5" aria-hidden="true" /> Passwords match
+                      </>
+                    ) : (
+                      <>
+                        <X className="size-3.5" aria-hidden="true" /> Passwords do not match
+                      </>
+                    )}
+                  </p>
+                ) : null}
+              </div>
+            </CardContent>
+
+            <CardFooter className="flex justify-end border-t border-border bg-muted/20 px-6 py-3.5">
+              <Button
+                type="submit"
+                disabled={!canSubmit}
+                className="w-full sm:w-auto h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 sm:px-5 text-xs sm:text-sm font-medium shadow-xs"
               >
-                {showConfirm ? (
-                  <EyeOff className="size-4" aria-hidden="true" />
-                ) : (
-                  <Eye className="size-4" aria-hidden="true" />
-                )}
-              </button>
-            </div>
-            {confirmPassword.length > 0 ? (
-              <p
-                id="confirm-password-status"
-                role="status"
-                aria-live="polite"
-                className={`text-xs font-medium flex items-center gap-1 mt-0.5 ${
-                  passwordsMatch
-                    ? "text-brand-600 dark:text-brand-400"
-                    : "text-destructive"
-                }`}
-              >
-                {passwordsMatch ? (
+                {isSubmitting ? (
                   <>
-                    <Check className="size-3.5" aria-hidden="true" /> Passwords match
+                    <Loader2 data-icon="inline-start" className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
+                    Updating...
                   </>
                 ) : (
                   <>
-                    <X className="size-3.5" aria-hidden="true" /> Passwords do not match
+                    <ShieldCheck data-icon="inline-start" className="mr-1.5 size-4" aria-hidden="true" />
+                    Update Password
                   </>
                 )}
-              </p>
-            ) : null}
-          </div>
-        </CardContent>
-
-        <CardFooter className="flex justify-end border-t border-border bg-muted/20 px-6 py-3.5">
-          <Button
-            type="submit"
-            disabled={!canSubmit}
-            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 sm:px-5 text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl bg-primary hover:bg-brand-700 text-primary-foreground transition-all cursor-pointer disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 data-icon="inline-start" className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
-                Updating...
-              </>
-            ) : (
-              <>
-                <ShieldCheck data-icon="inline-start" className="mr-1.5 size-4" aria-hidden="true" />
-                Update Password
-              </>
-            )}
-          </Button>
-        </CardFooter>
+              </Button>
+            </CardFooter>
           </form>
         </Card>
       </div>

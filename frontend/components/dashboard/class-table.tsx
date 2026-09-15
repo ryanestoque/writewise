@@ -169,9 +169,17 @@ export function ClassTable({
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Global keyboard shortcut: press '/' or 'Cmd/Ctrl+K' to focus search input
+  // Global keyboard shortcut: press '/' or 'Cmd/Ctrl+K' to focus search input (disabled when modal is open)
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Do not intercept shortcuts if any modal dialog is currently active
+      if (
+        document.querySelector('[role="dialog"]') !== null ||
+        document.querySelector('[data-slot="dialog-content"]') !== null
+      ) {
+        return;
+      }
+
       const target = e.target as HTMLElement | null;
       const isInput =
         target &&

@@ -36,6 +36,12 @@ export function ProfileSettingsCard({
     fullName.trim() !== initialFullName.trim() ||
     schoolName.trim() !== initialSchoolName.trim();
 
+  const handleReset = () => {
+    setFullName(initialFullName);
+    setSchoolName(initialSchoolName);
+    setNameError(null);
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedName = fullName.trim();
@@ -112,122 +118,133 @@ export function ProfileSettingsCard({
 
       {/* Right Form Card */}
       <div>
-        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-warm gap-0 pb-0 overflow-hidden">
+        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-warm gap-0 pb-0 overflow-hidden ring-0">
           <form onSubmit={handleSave} aria-busy={isSaving}>
             <CardContent className="flex flex-col gap-5 pt-6 pb-6">
-          {/* Full Name */}
-          <div className="flex flex-col gap-1.5">
-            <Label
-              htmlFor="full-name"
-              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-            >
-              Full Name
-            </Label>
-            <Input
-              id="full-name"
-              type="text"
-              autoComplete="name"
-              value={fullName}
-              onChange={(e) => {
-                setFullName(e.target.value);
-                if (nameError && e.target.value.trim()) {
-                  setNameError(null);
-                }
-              }}
-              placeholder="e.g. Maria Santos"
-              className={`h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl transition-colors ${
-                nameError
-                  ? "border-destructive focus-visible:ring-destructive"
-                  : ""
-              }`}
-              aria-invalid={nameError ? true : false}
-              aria-describedby={nameError ? "name-error" : undefined}
-            />
-            {nameError ? (
-              <p
-                id="name-error"
-                role="alert"
-                aria-live="polite"
-                className="text-xs text-destructive font-medium mt-0.5"
+              {/* Full Name */}
+              <div className="flex flex-col gap-1.5">
+                <Label
+                  htmlFor="full-name"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  Full Name
+                </Label>
+                <Input
+                  id="full-name"
+                  type="text"
+                  autoComplete="name"
+                  value={fullName}
+                  onChange={(e) => {
+                    setFullName(e.target.value);
+                    if (nameError && e.target.value.trim()) {
+                      setNameError(null);
+                    }
+                  }}
+                  placeholder="e.g. Maria Santos"
+                  className={`h-10 sm:h-9 text-base sm:text-sm rounded-lg transition-colors ${
+                    nameError
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : ""
+                  }`}
+                  aria-invalid={nameError ? true : false}
+                  aria-describedby={nameError ? "name-error" : undefined}
+                />
+                {nameError ? (
+                  <p
+                    id="name-error"
+                    role="alert"
+                    aria-live="polite"
+                    className="text-xs text-destructive font-medium mt-0.5"
+                  >
+                    {nameError}
+                  </p>
+                ) : null}
+              </div>
+
+              {/* School Name */}
+              <div className="flex flex-col gap-1.5">
+                <Label
+                  htmlFor="school-name"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  School / Institution
+                </Label>
+                <Input
+                  id="school-name"
+                  type="text"
+                  autoComplete="organization"
+                  value={schoolName}
+                  onChange={(e) => setSchoolName(e.target.value)}
+                  placeholder="e.g. Holy Cross of Davao College"
+                  className="h-10 sm:h-9 text-base sm:text-sm rounded-lg transition-colors"
+                  aria-describedby="school-name-hint"
+                />
+                <p id="school-name-hint" className="text-xs text-muted-foreground">
+                  Appears alongside your name in the portal sidebar and class reports.
+                </p>
+              </div>
+
+              {/* Email (Read-only) */}
+              <div className="flex flex-col gap-1.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <Label
+                    htmlFor="email-display"
+                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
+                    Email Address
+                  </Label>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
+                    <Lock className="size-3" aria-hidden="true" /> Verified Login
+                  </span>
+                </div>
+                <Input
+                  id="email-display"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  readOnly
+                  aria-readonly="true"
+                  className="h-10 sm:h-9 text-base sm:text-sm rounded-lg bg-muted/60 text-muted-foreground cursor-default border-dashed select-all focus-visible:ring-1 focus-visible:ring-ring/40"
+                  aria-describedby="email-display-hint"
+                />
+                <p id="email-display-hint" className="text-xs text-muted-foreground">
+                  Your email is your authenticated login identifier and cannot be
+                  changed here. Contact an administrator if your email address has
+                  changed.
+                </p>
+              </div>
+            </CardContent>
+
+            <CardFooter className="flex flex-col-reverse sm:flex-row justify-end gap-2 border-t border-border bg-muted/20 px-6 py-3.5">
+              {isDirty && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleReset}
+                  disabled={isSaving}
+                  className="w-full sm:w-auto h-10 sm:h-9 text-xs sm:text-sm font-medium"
+                >
+                  Discard
+                </Button>
+              )}
+              <Button
+                type="submit"
+                disabled={!isDirty || isSaving}
+                className="w-full sm:w-auto h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 sm:px-5 text-xs sm:text-sm font-medium shadow-xs"
               >
-                {nameError}
-              </p>
-            ) : null}
-          </div>
-
-          {/* School Name */}
-          <div className="flex flex-col gap-1.5">
-            <Label
-              htmlFor="school-name"
-              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-            >
-              School / Institution
-            </Label>
-            <Input
-              id="school-name"
-              type="text"
-              autoComplete="organization"
-              value={schoolName}
-              onChange={(e) => setSchoolName(e.target.value)}
-              placeholder="e.g. Holy Cross of Davao College"
-              className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl transition-colors"
-              aria-describedby="school-name-hint"
-            />
-            <p id="school-name-hint" className="text-xs text-muted-foreground">
-              Appears alongside your name in the portal sidebar and class reports.
-            </p>
-          </div>
-
-          {/* Email (Read-only) */}
-          <div className="flex flex-col gap-1.5 pt-1">
-            <div className="flex items-center justify-between">
-              <Label
-                htmlFor="email-display"
-                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-              >
-                Email Address
-              </Label>
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
-                <Lock className="size-3" aria-hidden="true" /> Verified Login
-              </span>
-            </div>
-            <Input
-              id="email-display"
-              type="email"
-              autoComplete="email"
-              value={email}
-              readOnly
-              aria-readonly="true"
-              className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl bg-muted/60 text-muted-foreground cursor-default border-dashed select-all focus-visible:ring-1 focus-visible:ring-ring/40"
-              aria-describedby="email-display-hint"
-            />
-            <p id="email-display-hint" className="text-xs text-muted-foreground">
-              Your email is your authenticated login identifier and cannot be
-              changed here. Contact an administrator if your email address has
-              changed.
-            </p>
-          </div>
-        </CardContent>
-
-        <CardFooter className="flex justify-end border-t border-border bg-muted/20 px-6 py-3.5">
-          <Button
-            type="submit"
-            disabled={!isDirty || isSaving}
-            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 sm:px-5 text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl bg-primary hover:bg-brand-700 text-primary-foreground transition-all cursor-pointer disabled:cursor-not-allowed"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 data-icon="inline-start" className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Check data-icon="inline-start" className="mr-1.5 size-4" aria-hidden="true" />
-                Save Changes
-              </>
-            )}
-          </Button>
-        </CardFooter>
+                {isSaving ? (
+                  <>
+                    <Loader2 data-icon="inline-start" className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check data-icon="inline-start" className="mr-1.5 size-4" aria-hidden="true" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </CardFooter>
           </form>
         </Card>
       </div>
