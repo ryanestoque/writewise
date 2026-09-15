@@ -2,16 +2,16 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-09-09
+**Last updated:** 2026-09-15
 
 ## Summary
 
 | Phase | Done / Total |
 |---|---|
-| Phase 0 — Setup | 11 / 16 |
+| Phase 0 — Setup | 13 / 18 |
 | Phase 1 — Teacher Tooling & Raw CV Pipeline | 18 / 18 |
-| Between Phases — Calibration | 3 / 6 |
-| Phase 2 — Calibrated Scoring & Full System | 8 / 11 |
+| Between Phases — Calibration | 3 / 6 *(+2 code-ready)* |
+| Phase 2 — Calibrated Scoring & Full System | 10 / 11 |
 
 *(Update this table whenever you check off an item below.)*
 
@@ -32,7 +32,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 - [x] `.env.example` templates committed (frontend + backend)
 - [x] Initial Supabase migration files written (schema skeleton — `DATABASE.md`)
 - [x] CI workflow committed (`.github/workflows/`)
-- [x] Auth Portal Shell & Layout audited (Login, Teacher Sidebar, Sign-Out Modal — `frontend/docs/audits/`)
+- [x] Auth Portal Shell & Layout audited (Login, Teacher Sidebar, Sign-Out Modal, Rubric Dialog — `frontend/docs/audits/`)
 
 **Cloud provisioning** (`DEPLOYMENT.md` provisioning order-of-operations)
 - [x] `writewise-dev` + `writewise-prod` Supabase projects created
@@ -86,12 +86,12 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
-| Threshold/correlation analysis (Spearman's Rho per criterion) | Not Started | | PRD §5, PRD §11 |
+| Threshold/correlation analysis (Spearman's Rho per criterion) | Not Started | Blocked on Phase 1 paired data collection | PRD §5, PRD §11 |
 | ML Stage 1 — CCC dataset prep (format conversion, split) | Done | | ML_PIPELINE §2 |
 | ML Stage 1 — fine-tuning (two-phase) | Done | | ML_PIPELINE §4 |
 | ML Stage 1 — evaluation (Accuracy/Precision/Recall/F1) | Done | | ML_PIPELINE §5 |
-| ML Stage 2 — regression-head training/calibration | Not Started | Blocked on Phase 1 paired data | ML_PIPELINE §6 |
-| Export combined inference artifact (`.keras`) | Not Started | Blocked on Stage 2 calibration | ML_PIPELINE §7 |
+| ML Stage 2 — regression-head training/calibration | Code Complete | Training script ready (`training/stage2_calibrate.py`); blocked on Phase 1 paired data | ML_PIPELINE §6 |
+| Export combined inference artifact (`.keras`) | Code Complete | Exporter ready (`training/export_model.py`); blocked on Stage 2 execution | ML_PIPELINE §7 |
 
 ---
 
@@ -103,7 +103,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
-| Calibrated score, qualitative band, diagnostic feedback display | Not Started | | PRD §7.1, DESIGN §7.4–7.6 |
+| Calibrated score, qualitative band, diagnostic feedback display | Done | UI complete in `SubmissionDetailDialog` (5-criterion breakdown, band badges, coaching tips, diagnostic overlay); renders manual/placeholder scores until calibration | PRD §7.1, DESIGN §7.4–7.6 |
 | Class-wide dashboard (sortable by weakest criterion, class-average trend) | Done | | PRD §7.1/§7.5, DESIGN §7.8 |
 | Per-student drill-down trend | Done | | PRD §7.1/§7.5 |
 
@@ -121,11 +121,11 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
 | Numeric score → qualitative band conversion | Done | | PRD §7.4 |
-| Visual overlay annotation generation | Done | | PRD §7.4, DESIGN §7.4 |
+| Visual overlay annotation generation | Done | Full backend generator (`app/diagnostic/`) + interactive SVG overlay in Teacher/Parent portals | PRD §7.4, DESIGN §7.4 |
 | Criterion-by-criterion text explanation | Done | | PRD §7.4, DESIGN §8.2 |
 
 ### Integration
 
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
-| Flip `SCORING_ENGINE` flag to calibrated; remove manual-score field | Not Started | | PRD §5, DATABASE §9.1 |
+| Flip `SCORING_ENGINE` flag to calibrated; remove manual-score field | Not Started | Blocked on Stage 2 calibration completion | PRD §5, DATABASE §9.1 |
