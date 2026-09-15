@@ -94,6 +94,18 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
         setUploadOpen((prev) => !prev);
       }
 
+      // Alt+R (Option+R) -> Toggle handwriting rubric reference guide
+      // Note: On macOS, Option+R produces the character "®" (e.key === "®"), so we check e.code === "KeyR" as well.
+      if (
+        e.altKey &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        (e.key.toLowerCase() === "r" || e.code === "KeyR")
+      ) {
+        e.preventDefault();
+        setRubricOpen((prev) => !prev);
+      }
+
       // ? (Shift + /) -> Open keyboard shortcuts dialog
       if (e.key === "?" && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();

@@ -43,6 +43,11 @@ const shortcuts: ShortcutItem[] = [
     description: "Open Quick Worksheet Upload / Scan dialog",
   },
   {
+    category: "Worksheet & Assessment",
+    keys: ["Alt", "R"],
+    description: "Toggle Rubric Reference Guide (5 Diagnostic Criteria)",
+  },
+  {
     category: "Dialogs & Actions",
     keys: ["?"],
     description: "Open keyboard shortcuts guide",

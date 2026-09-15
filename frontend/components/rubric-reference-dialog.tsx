@@ -8,25 +8,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
 import {
   PenToolIcon,
   CompassIcon,
   SpaceIcon,
   MoveVerticalIcon,
   ScalingIcon,
-  CpuIcon,
-  EyeIcon,
   BookOpenIcon,
   GraduationCapIcon,
   SearchIcon,
   XCircleIcon,
   ChevronDownIcon,
   ChevronsUpDownIcon,
-  PanelRightIcon,
-  Maximize2Icon,
   RotateCcwIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -34,10 +27,7 @@ import { cn } from "@/lib/utils";
 interface RubricReferenceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  defaultMode?: "dialog" | "docked";
 }
-
-type LayoutMode = "dialog" | "docked";
 
 interface CriterionItem {
   id: string;
@@ -376,10 +366,8 @@ const CriterionVisualGuide = React.memo(function CriterionVisualGuide({
 export function RubricReferenceDialog({
   open,
   onOpenChange,
-  defaultMode = "dialog",
 }: RubricReferenceDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>(defaultMode);
   const [expandedCriteria, setExpandedCriteria] = useState<Set<string>>(new Set());
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -487,65 +475,25 @@ export function RubricReferenceDialog({
     ));
   }, [searchQuery]);
 
-  const isDocked = layoutMode === "docked";
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} modal={!isDocked}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        overlayClassName={
-          isDocked
-            ? "pointer-events-none bg-transparent opacity-0 supports-backdrop-filter:backdrop-blur-none"
-            : "bg-foreground/25 supports-backdrop-filter:backdrop-blur-xs"
-        }
-        className={cn(
-          "p-0 overflow-hidden flex flex-col gap-0 shadow-warm transition-[opacity,transform,width] duration-200 ease-out motion-reduce:transition-none",
-          isDocked
-            ? "fixed top-0 right-0 left-auto bottom-0 translate-x-0 translate-y-0 h-dvh max-h-dvh w-full sm:w-[480px] md:w-[520px] rounded-none sm:rounded-l-2xl border-y-0 border-r-0 border-l border-border shadow-2xl z-50 pointer-events-auto"
-            : "w-[calc(100%-1.5rem)] sm:max-w-2xl max-h-[min(90dvh,calc(100vh-2rem))] rounded-2xl"
-        )}
+        id="rubric-reference-dialog"
+        overlayClassName="bg-foreground/25 supports-backdrop-filter:backdrop-blur-xs"
+        className="p-0 overflow-hidden flex flex-col gap-0 shadow-warm w-[calc(100%-1.5rem)] sm:max-w-2xl max-h-[min(90dvh,calc(100vh-2rem))] rounded-2xl"
       >
-        {/* Streamlined Header: Title + Search + Actions */}
+        {/* Streamlined Header: Title + Search */}
         <DialogHeader className="p-4 sm:p-5 pb-3 sm:pb-3.5 border-b border-border/70 bg-background/95 backdrop-blur-xs shrink-0 space-y-3">
-          <div className="flex items-center justify-between gap-3 pr-10 sm:pr-8">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div
-                className="size-8 sm:size-9 rounded-lg bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shrink-0 shadow-xs"
-                aria-hidden="true"
-              >
-                <BookOpenIcon className="size-4 sm:size-4.5" />
-              </div>
-              <div className="min-w-0 flex items-center gap-2 flex-wrap">
-                <DialogTitle className="text-base sm:text-lg font-heading font-semibold text-foreground tracking-tight">
-                  Handwriting Rubric Guide
-                </DialogTitle>
-                <Badge
-                  variant="outline"
-                  className="text-[10px] h-5 px-1.5 font-medium bg-muted/60 text-muted-foreground border-border/60"
-                >
-                  Grade 3 DepEd
-                </Badge>
-              </div>
+          <div className="flex items-center gap-2.5 min-w-0 pr-10 sm:pr-8">
+            <div
+              className="size-8 sm:size-9 rounded-lg bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shrink-0 shadow-xs"
+              aria-hidden="true"
+            >
+              <BookOpenIcon className="size-4 sm:size-4.5" />
             </div>
-
-            {/* Layout Mode Toggle */}
-            <div className="flex items-center gap-1 shrink-0">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => setLayoutMode(isDocked ? "dialog" : "docked")}
-                className="hidden sm:inline-flex size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 cursor-pointer transition-colors"
-                title={isDocked ? "Switch to centered dialog" : "Dock to side"}
-                aria-label={isDocked ? "Switch to centered dialog" : "Dock to side"}
-                aria-pressed={isDocked}
-              >
-                {isDocked ? (
-                  <Maximize2Icon className="size-3.5" aria-hidden="true" />
-                ) : (
-                  <PanelRightIcon className="size-3.5" aria-hidden="true" />
-                )}
-              </Button>
-            </div>
+            <DialogTitle className="text-base sm:text-lg font-heading font-semibold text-foreground tracking-tight">
+              Handwriting Rubric Guide
+            </DialogTitle>
           </div>
 
           <DialogDescription className="sr-only">
@@ -596,7 +544,7 @@ export function RubricReferenceDialog({
         </DialogHeader>
 
         {/* Scrollable Body: Clean & Unified Single View */}
-        <ScrollArea className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain focus-visible:outline-none">
           <div className="p-4 sm:p-5 space-y-6">
             {/* Section 1: Assessment Criteria */}
             <section aria-labelledby="criteria-heading" className="space-y-3">
@@ -670,22 +618,9 @@ export function RubricReferenceDialog({
                                 <Icon className="size-3.5 sm:size-4" />
                               </div>
                               <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-semibold text-foreground tracking-tight">
-                                    {item.name}
-                                  </span>
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-[10px] h-4.5 px-1.5 font-normal bg-muted text-muted-foreground border border-border/40"
-                                  >
-                                    {item.engine === "CNN" ? (
-                                      <CpuIcon className="size-2.5 mr-0.5 text-primary" />
-                                    ) : (
-                                      <EyeIcon className="size-2.5 mr-0.5 text-primary" />
-                                    )}
-                                    {item.engine}
-                                  </Badge>
-                                </div>
+                                <span className="text-sm font-semibold text-foreground tracking-tight block">
+                                  {item.name}
+                                </span>
                                 <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
                                   {item.classroomStandard}
                                 </p>
@@ -771,10 +706,7 @@ export function RubricReferenceDialog({
                 <div
                   role="list"
                   aria-label="Qualitative scoring developmental bands"
-                  className={cn(
-                    "grid gap-2.5",
-                    isDocked ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"
-                  )}
+                  className="grid gap-2.5 grid-cols-1 sm:grid-cols-2"
                 >
                   {filteredBands.map((band) => (
                     <div
@@ -811,7 +743,7 @@ export function RubricReferenceDialog({
               )}
             </section>
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );

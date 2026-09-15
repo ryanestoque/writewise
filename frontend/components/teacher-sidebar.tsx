@@ -197,11 +197,11 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                       }
                       isActive={isActive}
                       tooltip={item.title}
-                      className="h-9.5"
+                      className="h-10 sm:h-9.5"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <item.icon className="size-4 shrink-0" />
-                        <span className="truncate">{item.title}</span>
+                        <span className="truncate group-data-[collapsible=icon]:hidden">{item.title}</span>
                       </div>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -234,11 +234,11 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                       }
                       isActive={isActive}
                       tooltip={item.title}
-                      className="h-9.5"
+                      className="h-10 sm:h-9.5"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <item.icon className="size-4 shrink-0" />
-                        <span className="truncate">{item.title}</span>
+                        <span className="truncate group-data-[collapsible=icon]:hidden">{item.title}</span>
                       </div>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -252,15 +252,30 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                     if (isMobile) setOpenMobile(false);
                     openRubric();
                   }}
+                  isActive={rubricOpen}
                   aria-haspopup="dialog"
                   aria-expanded={rubricOpen}
-                  tooltip="Rubric Guide Reference (5 Diagnostic Criteria Modal)"
-                  className="h-9.5 cursor-pointer"
+                  aria-controls={rubricOpen ? "rubric-reference-dialog" : undefined}
+                  aria-label="Rubric Guide Reference (5 Diagnostic Criteria Modal)"
+                  tooltip={{
+                    children: (
+                      <div className="flex items-center gap-1.5">
+                        <span>Rubric Guide</span>
+                        <Kbd className="text-xs h-4.5 px-1 font-mono font-normal">Alt+R</Kbd>
+                      </div>
+                    ),
+                  }}
+                  className="h-10 sm:h-9.5 cursor-pointer"
                   id="open-rubric-guide"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <BookOpenIcon className="size-4 shrink-0" />
-                    <span className="truncate">Rubric Guide</span>
+                  <div className="flex items-center justify-between w-full min-w-0">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <BookOpenIcon className="size-4 shrink-0" aria-hidden="true" />
+                      <span className="truncate group-data-[collapsible=icon]:hidden">Rubric Guide</span>
+                    </div>
+                    <Kbd className="text-[10px] h-4 px-1.5 font-mono font-medium text-muted-foreground bg-muted/80 border border-border/50 shrink-0 group-data-[collapsible=icon]:hidden">
+                      Alt+R
+                    </Kbd>
                   </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>
