@@ -6,7 +6,7 @@ const publicRoutes = ["/login", "/accept-invite", "/auth/callback", "/reset-pass
 
 // Route-to-role mapping (Next.js strips the route group prefix from URLs)
 const teacherRoutes = ["/dashboard", "/roster", "/activities", "/settings"];
-const parentRoutes = ["/progress"];
+const parentRoutes = ["/progress", "/parent-settings"];
 
 // Default landing pages per role
 const roleLanding: Record<string, string> = {

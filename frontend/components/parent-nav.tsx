@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { createClient } from "@/lib/supabase/client";
 import type { LinkedChild } from "@/lib/hooks/use-parent-data";
-import { LogOut, Upload, User, Users } from "lucide-react";
+import { LogOut, Settings, Upload, User, Users } from "lucide-react";
 
 interface ParentNavProps {
   user: { fullName: string; email: string };
@@ -150,6 +150,16 @@ export function ParentNav({
                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </div>
                   </DropdownMenuLabel>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    onClick={() => router.push("/parent-settings")}
+                    className="cursor-pointer gap-2"
+                  >
+                    <Settings className="size-4" />
+                    <span>Account Settings</span>
+                  </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>

@@ -350,7 +350,7 @@ function ParentUploadFlow({
 
             {activitiesLoading ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+                <Loader2Icon className="size-5 animate-spin motion-reduce:animate-none text-muted-foreground" />
               </div>
             ) : !activities || activities.length === 0 ? (
               <div className="p-6 rounded-xl border border-dashed text-center space-y-2">
@@ -668,13 +668,13 @@ function ParentUploadFlow({
             ) : (
               <div className="text-center space-y-4 py-8">
                 <div className="flex justify-center">
-                  <Loader2Icon className="size-10 animate-spin text-brand-600 dark:text-brand-400" />
+                  <Loader2Icon className="size-10 animate-spin motion-reduce:animate-none text-brand-600 dark:text-brand-400" />
                 </div>
                 <div className="space-y-1.5">
                   <h3 className="font-heading text-base font-semibold text-foreground">
                     Analyzing Worksheet
                   </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground animate-pulse">
+                  <p className="text-xs sm:text-sm text-muted-foreground animate-pulse motion-reduce:animate-none">
                     {STAGED_PROGRESS_MESSAGES[stagedProgressIndex]}
                   </p>
                 </div>
