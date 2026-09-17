@@ -6,7 +6,7 @@ import { ParentProfileSettingsCard } from "@/components/settings/parent-profile-
 import { SecuritySettingsCard } from "@/components/settings/security-settings-card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, UserCog } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Account Settings — WriteWise",
@@ -52,21 +52,13 @@ export default async function ParentSettingsPage() {
       </div>
 
       {/* Page Header */}
-      <div className="flex items-center gap-3.5 pb-5 border-b border-border/70">
-        <div
-          aria-hidden="true"
-          className="flex size-11 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold border border-brand-200/60 dark:border-brand-800/60 shadow-xs shrink-0 select-none"
-        >
-          <UserCog className="size-5" />
-        </div>
-        <div className="space-y-0.5 min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
-            Account Settings
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            Manage your parent profile display name and security credentials.
-          </p>
-        </div>
+      <div className="border-b border-border pb-6 space-y-1">
+        <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
+          Account Settings
+        </h1>
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Manage your parent profile display name and security credentials.
+        </p>
       </div>
 
       {/* Profile Section */}

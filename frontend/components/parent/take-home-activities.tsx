@@ -8,6 +8,13 @@ import {
 import { BandBadge } from "@/components/shared/band-badge";
 import { Button } from "@/components/ui/button";
 import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
   Upload,
   ClipboardList,
   Loader2,
@@ -42,21 +49,17 @@ export function TakeHomeActivities({
 
   if (!activities || activities.length === 0) {
     return (
-      <div className="rounded-xl border border-border bg-card shadow-warm p-6 sm:p-8 text-center space-y-3.5">
-        <div className="flex justify-center">
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
-            <ClipboardList className="size-6" aria-hidden="true" />
-          </div>
-        </div>
-        <div className="space-y-1 max-w-md mx-auto">
-          <h3 className="font-heading text-base font-semibold text-foreground">
-            No Take-Home Worksheets Due Yet
-          </h3>
-          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+      <Empty className="border border-border rounded-xl shadow-warm bg-card py-10">
+        <EmptyMedia variant="icon" className="bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
+          <ClipboardList className="size-6" />
+        </EmptyMedia>
+        <EmptyHeader>
+          <EmptyTitle>No Take-Home Worksheets Due Yet</EmptyTitle>
+          <EmptyDescription className="text-xs sm:text-sm max-w-md mx-auto">
             Your child&apos;s teacher will assign practice activities here as classroom cursive lessons progress. No immediate submission is needed.
-          </p>
-        </div>
-      </div>
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 

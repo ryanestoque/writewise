@@ -32,8 +32,6 @@ import {
   Target,
   ZoomIn,
   ArrowRight,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -49,7 +47,6 @@ export function LatestSubmissionCard({
   const [viewImageOpen, setViewImageOpen] = useState(false);
   const [selectedCriterionForView, setSelectedCriterionForView] =
     useState<CriterionFilter>("all");
-  const [showDetailedNotes, setShowDetailedNotes] = useState(false);
   const { data: latest, isLoading } = useChildLatestScores(childId);
   const { data: imageUrl } = useSubmissionImageUrl(latest?.imagePath ?? null);
 
@@ -320,8 +317,8 @@ export function LatestSubmissionCard({
           {/* 5-Criterion Stacked List */}
           <div className="space-y-1 pt-1">
             <div className="flex items-center justify-between pb-2 border-b border-border/60">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Skill Breakdown
+              <h4 className="text-xs sm:text-sm font-heading font-semibold text-foreground">
+                5-Skill Diagnostic Breakdown
               </h4>
               <span className="text-xs text-muted-foreground font-medium">5 skills assessed</span>
             </div>
@@ -335,33 +332,9 @@ export function LatestSubmissionCard({
                   score={latest.scores[criterion.key]}
                   band={latest.bands[criterion.key]}
                   onInspect={() => openWorksheetForCriterion(criterion.key as CriterionFilter)}
-                  showDiagnosticNote={showDetailedNotes}
+                  showDiagnosticNote={true}
                 />
               ))}
-            </div>
-
-            <div className="pt-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowDetailedNotes((prev) => !prev)}
-                aria-expanded={showDetailedNotes}
-                aria-controls="criterion-breakdown-details"
-                className="w-full h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:bg-muted/50 gap-1.5 cursor-pointer rounded-lg border border-border/50 bg-card shadow-2xs"
-              >
-                {showDetailedNotes ? (
-                  <>
-                    <ChevronUp className="size-3.5" aria-hidden="true" />
-                    <span>Hide detailed diagnostic notes</span>
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="size-3.5" aria-hidden="true" />
-                    <span>View detailed diagnostic notes for all 5 skills</span>
-                  </>
-                )}
-              </Button>
             </div>
           </div>
         </div>

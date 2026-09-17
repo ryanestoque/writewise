@@ -104,9 +104,9 @@ export function ParentNav({
             <BrandLogo size="sm" />
           </Link>
 
-          {/* Center: Child Switcher (multi-child only) */}
+          {/* Center: Child Switcher (DESIGN §5: Always-present child indicator) */}
           <div className="flex-1 flex justify-center min-w-0 px-1 sm:px-2">
-            {linkedChildren.length > 1 && (
+            {linkedChildren.length > 1 ? (
               <Select
                 value={selectedChildId ?? undefined}
                 onValueChange={(val) => {
@@ -131,7 +131,16 @@ export function ParentNav({
                   ))}
                 </SelectContent>
               </Select>
-            )}
+            ) : linkedChildren.length === 1 ? (
+              <div
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/70 bg-card text-xs sm:text-sm font-medium shadow-2xs max-w-[190px] sm:max-w-[320px] truncate select-none"
+                title={`Active student: ${linkedChildren[0].fullName} (${linkedChildren[0].section})`}
+              >
+                <Users className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+                <span className="font-medium text-foreground truncate">{linkedChildren[0].fullName}</span>
+                <span className="text-[11px] text-muted-foreground shrink-0">({linkedChildren[0].section})</span>
+              </div>
+            ) : null}
           </div>
 
           {/* Right: Upload utility button + User menu */}
@@ -156,12 +165,20 @@ export function ParentNav({
               >
                 {initials}
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 shadow-warm">
+              <DropdownMenuContent
+                align="end"
+                className="w-64 rounded-2xl p-1.5 shadow-xl border border-border/80 bg-popover"
+              >
                 <DropdownMenuGroup>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col gap-0.5">
-                      <p className="text-sm font-medium text-foreground truncate">{user.fullName}</p>
-                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  <DropdownMenuLabel className="font-normal p-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex aspect-square size-9 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-semibold text-xs border border-brand-200/60 dark:border-brand-900/60 shrink-0">
+                        {initials}
+                      </div>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-foreground truncate">{user.fullName}</p>
+                        <p className="text-xs text-muted-foreground truncate" title={user.email}>{user.email}</p>
+                      </div>
                     </div>
                   </DropdownMenuLabel>
                 </DropdownMenuGroup>
@@ -169,9 +186,9 @@ export function ParentNav({
                 <DropdownMenuGroup>
                   <DropdownMenuItem
                     render={<Link href="/parent-settings" />}
-                    className="cursor-pointer gap-2"
+                    className="cursor-pointer gap-2 py-2 text-xs"
                   >
-                    <Settings className="size-4" />
+                    <Settings className="size-3.5 text-muted-foreground" />
                     <span>Account Settings</span>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
@@ -179,9 +196,9 @@ export function ParentNav({
                 <DropdownMenuGroup>
                   <DropdownMenuItem
                     onClick={() => setShowSignOutDialog(true)}
-                    className="text-destructive focus:text-destructive cursor-pointer gap-2"
+                    className="cursor-pointer gap-2 py-2 text-xs text-destructive focus:text-destructive"
                   >
-                    <LogOut className="size-4" />
+                    <LogOut className="size-3.5" />
                     <span>Sign out</span>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>

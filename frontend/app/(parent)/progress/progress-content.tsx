@@ -14,6 +14,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { BandBadge } from "@/components/shared/band-badge";
 import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
   FileText,
   LineChart,
   ClipboardList,
@@ -68,22 +75,18 @@ export function ProgressPageContent() {
 
   if (!selectedChild) {
     return (
-      <div
-        role="status"
-        aria-live="polite"
-        className="max-w-md mx-auto my-12 p-8 rounded-xl border border-border bg-card shadow-warm text-center space-y-3"
-      >
-        <div className="flex justify-center">
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+      <div className="max-w-md mx-auto my-12">
+        <Empty className="border border-border rounded-xl shadow-warm bg-card py-10">
+          <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
             <UserX className="size-6" aria-hidden="true" />
-          </div>
-        </div>
-        <h2 className="font-heading text-lg font-semibold text-foreground">
-          No Linked Student Record
-        </h2>
-        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-          No student profile is currently linked to your parent account. Please check with your child&apos;s teacher to verify your invitation.
-        </p>
+          </EmptyMedia>
+          <EmptyHeader>
+            <EmptyTitle>No Linked Student Record</EmptyTitle>
+            <EmptyDescription className="text-xs sm:text-sm leading-relaxed">
+              No student profile is currently linked to your parent account. Please check with your child&apos;s teacher to verify your invitation.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       </div>
     );
   }
