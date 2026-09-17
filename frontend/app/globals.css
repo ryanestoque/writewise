@@ -28,8 +28,11 @@
   --color-band-1: #b6754a;
   --color-band-1-text: #8f4a21;
   --color-band-2: #c9a227;
+  --color-band-2-text: #7a4e00;
   --color-band-3: #7c9b6e;
+  --color-band-3-text: #36542c;
   --color-band-4: #4a8b5c;
+  --color-band-4-text: #1a4a2b;
 
   --color-surface: var(--surface);
 
@@ -222,19 +225,46 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
   /* Replace rapid rotational spinning with a gentle, non-vestibular pulse */
   .animate-spin {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
   }
 
-  /* Suppress disorienting vestibular keyframe animations while preserving brief, intentional state feedback */
+  /* Disable disorienting translational movement and large keyframe shifts */
+  .animate-in,
+  .slide-in-from-top-1,
+  .slide-in-from-bottom-1,
+  .slide-in-from-left-1,
+  .slide-in-from-right-1,
+  [data-state="open"],
+  [data-state="closed"] {
+    animation-duration: 150ms !important;
+    transform: none !important;
+  }
+
+  /* Ensure smooth scrolling does not induce motion vertigo */
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 150ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* Preserve subtle, non-vestibular color and opacity state changes */
+  button,
+  [role="button"],
+  [role="tab"],
+  [role="dialog"],
+  a,
+  input,
+  select,
+  .transition-all,
+  .transition-colors,
+  .transition-opacity {
+    transition: opacity 150ms ease-out, background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out !important;
   }
 }
 

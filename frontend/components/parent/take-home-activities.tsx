@@ -1,13 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import {
   useTakeHomeActivities,
   useChildSubmissionForActivity,
 } from "@/lib/hooks/use-parent-data";
 import { BandBadge } from "@/components/shared/band-badge";
 import { Button } from "@/components/ui/button";
-import { Upload, ClipboardList, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  Upload,
+  ClipboardList,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { getRejectionSummary } from "@/lib/utils/submission-status";
+import { cn } from "@/lib/utils";
 
 interface TakeHomeActivitiesProps {
   childId: string | null;
@@ -18,12 +28,13 @@ export function TakeHomeActivities({
   childId,
   onUploadClick,
 }: TakeHomeActivitiesProps) {
+  const [expanded, setExpanded] = useState(false);
   const { data: activities, isLoading } = useTakeHomeActivities(childId);
 
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-8 gap-2">
-        <Loader2 className="size-5 animate-spin motion-reduce:animate-none text-muted-foreground" />
+        <Loader2 className="size-5 animate-spin text-muted-foreground" />
         <span className="text-xs text-muted-foreground">Loading assigned activities...</span>
       </div>
     );
@@ -31,34 +42,68 @@ export function TakeHomeActivities({
 
   if (!activities || activities.length === 0) {
     return (
-      <div className="rounded-xl border border-border bg-card shadow-warm p-8 text-center space-y-3">
+      <div className="rounded-xl border border-border bg-card shadow-warm p-6 sm:p-8 text-center space-y-3.5">
         <div className="flex justify-center">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
             <ClipboardList className="size-6" />
           </div>
         </div>
-        <h3 className="font-heading text-base font-semibold text-foreground">
-          No take-home activities assigned yet
-        </h3>
-        <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
-          Your child&apos;s teacher will assign cursive practice activities here when ready for home practice.
-        </p>
+        <div className="space-y-1 max-w-md mx-auto">
+          <h3 className="font-heading text-base font-semibold text-foreground">
+            No Take-Home Worksheets Due Yet
+          </h3>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            Your child&apos;s teacher will assign practice activities here as classroom cursive lessons progress. No immediate submission is needed.
+          </p>
+        </div>
       </div>
     );
   }
 
+  const visibleActivities =
+    activities.length > 2 && !expanded ? activities.slice(0, 2) : activities;
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {activities.map((activity) => (
-        <ActivityCard
-          key={activity.id}
-          activityId={activity.id}
-          targetText={activity.targetText}
-          createdAt={activity.createdAt}
-          childId={childId}
-          onUploadClick={() => onUploadClick(activity.id)}
-        />
-      ))}
+    <div className="space-y-3">
+      <div id="take-home-activities-grid" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {visibleActivities.map((activity) => (
+          <ActivityCard
+            key={activity.id}
+            activityId={activity.id}
+            targetText={activity.targetText}
+            createdAt={activity.createdAt}
+            childId={childId}
+            initialSubmission={activity.submission}
+            onUploadClick={() => onUploadClick(activity.id)}
+          />
+        ))}
+      </div>
+
+      {activities.length > 2 && (
+        <div className="flex justify-center pt-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setExpanded((prev) => !prev)}
+            aria-expanded={expanded}
+            aria-controls="take-home-activities-grid"
+            className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 gap-1.5 cursor-pointer rounded-lg border border-border/50 bg-card shadow-2xs"
+          >
+            {expanded ? (
+              <>
+                <ChevronUp className="size-3.5" />
+                <span>Show fewer activities</span>
+              </>
+            ) : (
+              <>
+                <ChevronDown className="size-3.5" />
+                <span>View all assigned activities ({activities.length})</span>
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -68,18 +113,33 @@ function ActivityCard({
   targetText,
   createdAt,
   childId,
+  initialSubmission,
   onUploadClick,
 }: {
   activityId: string;
   targetText: string;
   createdAt: string;
   childId: string | null;
+  initialSubmission?: {
+    submissionId: string;
+    status: string;
+    rejectionCode: string | null;
+    compositeScore: number | null;
+    compositeBand: import("@/lib/utils/scoring").ScoreBand | null;
+  } | null;
   onUploadClick: () => void;
 }) {
-  const { data: submission, isLoading } = useChildSubmissionForActivity(
-    childId,
-    activityId
-  );
+  // Only query individually if initialSubmission was not provided by parent query
+  const shouldFetchIndividually = initialSubmission === undefined;
+  const { data: individualSubmission, isLoading: individualLoading } =
+    useChildSubmissionForActivity(
+      shouldFetchIndividually ? childId : null,
+      shouldFetchIndividually ? activityId : ""
+    );
+
+  const submission =
+    initialSubmission !== undefined ? initialSubmission : individualSubmission;
+  const isLoading = shouldFetchIndividually && individualLoading;
 
   const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
     month: "short",
@@ -90,10 +150,26 @@ function ActivityCard({
   const isCompleted = submission?.status === "completed";
   const isRejected = submission?.status === "rejected";
 
+  const needsUpload = !submission || isRejected;
+
   return (
-    <div className="rounded-xl border border-border bg-card shadow-warm p-4 sm:p-5 flex flex-col justify-between gap-3.5 transition-shadow hover:shadow-md">
+    <div
+      className={cn(
+        "rounded-xl border bg-card shadow-warm p-4 sm:p-5 flex flex-col justify-between gap-3.5 transition-all hover:shadow-md",
+        needsUpload
+          ? "border-brand-500/40 dark:border-brand-500/30 bg-brand-50/15 dark:bg-brand-950/15 ring-1 ring-brand-500/20"
+          : "border-border"
+      )}
+    >
       <div className="space-y-1.5">
-        <p className="text-xs text-muted-foreground font-medium">Assigned {formattedDate}</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground font-medium">Assigned {formattedDate}</p>
+          {needsUpload && !isLoading && (
+            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/60 text-brand-800 dark:text-brand-300">
+              Needs Upload
+            </span>
+          )}
+        </div>
         <p className="text-sm font-semibold text-foreground line-clamp-3 leading-snug">
           &ldquo;{targetText}&rdquo;
         </p>
@@ -102,7 +178,7 @@ function ActivityCard({
       <div className="pt-2 border-t border-border/50 flex flex-wrap items-center justify-between gap-2.5">
         {isLoading ? (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" />
+            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
             <span>Checking status...</span>
           </div>
         ) : submission ? (
@@ -111,7 +187,7 @@ function ActivityCard({
               {isCompleted ? (
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 dark:text-brand-300">
-                    <CheckCircle2 className="size-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                    <CheckCircle2 className="size-4 shrink-0 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                     Completed
                   </span>
                   {submission.compositeScore != null && (
@@ -119,16 +195,16 @@ function ActivityCard({
                   )}
                 </div>
               ) : isProcessing ? (
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
-                    <Loader2 className="size-3.5 shrink-0 animate-spin text-amber-600 dark:text-amber-400 motion-reduce:animate-none" />
-                    Analyzing photo…
+                <div role="status" aria-live="polite" className="flex items-center gap-2 min-w-0">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-200 bg-amber-100/70 dark:bg-amber-950/60 px-2.5 py-0.5 rounded-md border border-amber-300 dark:border-amber-800/80 shadow-2xs">
+                    <Loader2 className="size-3.5 shrink-0 animate-spin text-amber-800 dark:text-amber-300" aria-hidden="true" />
+                    Analyzing handwriting…
                   </span>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 text-xs font-medium text-destructive">
-                  <AlertCircle className="size-4 shrink-0" />
-                  <span>Photo rejected</span>
+                <div role="status" className="flex items-center gap-1.5 text-xs font-medium text-destructive">
+                  <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
+                  <span>Photo needs retaking</span>
                 </div>
               )}
 
@@ -143,50 +219,67 @@ function ActivityCard({
                     ? `Submit another practice attempt for "${targetText}"`
                     : isProcessing
                       ? `Worksheet "${targetText}" is currently being analyzed`
-                      : `Retake photo for "${targetText}"`
+                      : `Try another photo for "${targetText}"`
                 }
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" />
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
                     <span>In Progress</span>
                   </>
                 ) : (
                   <>
-                    <Upload className="size-3.5" />
-                    <span>{isCompleted ? "New Attempt" : "Retake"}</span>
+                    <Upload className="size-3.5" aria-hidden="true" />
+                    <span>{isCompleted ? "Practice Again" : "Try Another Photo"}</span>
                   </>
                 )}
               </Button>
             </div>
 
             {isProcessing && (
-              <p className="text-[11px] text-muted-foreground bg-muted/40 border border-border/60 p-2 rounded-md leading-normal">
-                AI penmanship assessment is in progress. Check back shortly to view updated scores.
+              <p
+                role="status"
+                aria-live="polite"
+                className="text-[11px] text-muted-foreground bg-muted/40 border border-border/60 p-2.5 rounded-md leading-normal"
+              >
+                Analyzing your child&apos;s handwriting now (usually takes 10–20 seconds). Results will appear automatically.
               </p>
             )}
 
             {isRejected && (() => {
               const rejection = getRejectionSummary(submission.rejectionCode);
               return (
-                <p className="text-[11px] text-muted-foreground bg-destructive/5 border border-destructive/20 p-2 rounded-md leading-normal">
-                  <strong className="text-foreground font-medium">{rejection.label}:</strong>{" "}
-                  {rejection.detail}
-                </p>
+                <div
+                  role="alert"
+                  className="space-y-1 text-[11px] text-muted-foreground bg-destructive/5 border border-destructive/20 p-2.5 rounded-md leading-normal"
+                >
+                  <p>
+                    <strong className="text-foreground font-medium">{rejection.label}:</strong>{" "}
+                    {rejection.detail}
+                  </p>
+                  <p className="text-muted-foreground/90 italic">
+                    Tip: Lay the worksheet flat under good lighting with all 4 corners visible in the camera frame.
+                  </p>
+                </div>
               );
             })()}
           </div>
         ) : (
-          <Button
-            variant="default"
-            size="sm"
-            className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 shadow-warm w-full font-medium cursor-pointer"
-            onClick={onUploadClick}
-            aria-label={`Upload worksheet for "${targetText}"`}
-          >
-            <Upload className="size-4" />
-            Upload Worksheet
-          </Button>
+          <div className="space-y-1.5 w-full">
+            <Button
+              variant="default"
+              size="sm"
+              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 shadow-warm w-full font-medium cursor-pointer"
+              onClick={onUploadClick}
+              aria-label={`Upload worksheet for "${targetText}"`}
+            >
+              <Upload className="size-4" />
+              Upload Worksheet
+            </Button>
+            <p className="text-[11px] text-muted-foreground/80 leading-tight text-center">
+              Tip: Lay flat under bright lighting with all 4 corners in frame
+            </p>
+          </div>
         )}
       </div>
     </div>

@@ -23,11 +23,12 @@ import {
 } from "@/components/shared/diagnostic-overlay";
 import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
-import { RUBRIC_CRITERIA, type ScoreBand } from "@/lib/utils/scoring";
+import { PARENT_CRITERIA_LIST, type ScoreBand } from "@/lib/utils/scoring";
 import {
   FileImage,
   Calendar,
   User,
+  ArrowLeft,
 } from "lucide-react";
 
 interface WorksheetViewDialogProps {
@@ -39,6 +40,7 @@ interface WorksheetViewDialogProps {
   childName: string;
   compositeScore: number | null;
   scoreSource?: "manual" | "calibrated" | "none";
+  initialCriterion?: CriterionFilter;
   scores?: {
     letter_formation: number | null;
     size_consistency: number | null;
@@ -59,11 +61,14 @@ interface WorksheetViewDialogProps {
   guideLines?: GuideLines | null;
   /** Diagnostic Engine overlay coordinates and findings */
   overlay?: DiagnosticOverlayData | null;
+  /** Optional back action when opened from a parent history view */
+  onBack?: () => void;
+  backLabel?: string;
 }
 
-const PARENT_CRITERIA = RUBRIC_CRITERIA.map((c) => ({
-  criterionKey: c.criterionKey,
-  label: c.shortName,
+const PARENT_CRITERIA = PARENT_CRITERIA_LIST.map((c) => ({
+  criterionKey: c.key,
+  label: c.label,
 }));
 
 export function WorksheetViewDialog({
@@ -75,14 +80,27 @@ export function WorksheetViewDialog({
   childName,
   compositeScore,
   scoreSource = "none",
+  initialCriterion = "all",
   scores,
   bands,
   guideLines,
   overlay,
+  onBack,
+  backLabel = "Back to History",
 }: WorksheetViewDialogProps) {
   const [showGuideLines, setShowGuideLines] = useState(false);
-  const [activeCriterion, setActiveCriterion] = useState<CriterionFilter>("all");
+  const [criterionOverride, setCriterionOverride] = useState<CriterionFilter | null>(null);
+  const [prevInitialCriterion, setPrevInitialCriterion] = useState(initialCriterion);
+  const [prevOpen, setPrevOpen] = useState(open);
   const [showOverlay, setShowOverlay] = useState(true);
+
+  if (initialCriterion !== prevInitialCriterion || open !== prevOpen) {
+    setPrevInitialCriterion(initialCriterion);
+    setPrevOpen(open);
+    setCriterionOverride(null);
+  }
+
+  const activeCriterion = criterionOverride ?? initialCriterion;
   const { data: imageUrl, isLoading: isImageLoading } =
     useSubmissionImageUrl(imagePath);
 
@@ -137,7 +155,7 @@ export function WorksheetViewDialog({
                 <OverlayToolbar
                   overlay={overlay}
                   activeCriterion={activeCriterion}
-                  onChangeCriterion={setActiveCriterion}
+                  onChangeCriterion={setCriterionOverride}
                   visible={showOverlay}
                   onToggleVisible={setShowOverlay}
                 />
@@ -169,7 +187,7 @@ export function WorksheetViewDialog({
                 <button
                   type="button"
                   onClick={() => setShowGuideLines((prev) => !prev)}
-                  className={`self-start px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-colors cursor-pointer flex items-center gap-1.5 min-h-[36px] touch-manipulation ${
+                  className={`self-start px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-colors cursor-pointer flex items-center gap-1.5 min-h-[40px] sm:min-h-[36px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 ${
                     showGuideLines
                       ? "bg-brand-100 text-brand-900 border-brand-300 dark:bg-brand-950 dark:text-brand-200 dark:border-brand-800"
                       : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted/70 hover:text-foreground"
@@ -204,7 +222,7 @@ export function WorksheetViewDialog({
                 <div className="p-3.5 rounded-xl border border-border/80 bg-card space-y-2 shadow-xs">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Overall Composite Score
+                      Overall Penmanship Score
                     </span>
                     <BandBadge score={compositeScore} size="sm" />
                   </div>
@@ -213,7 +231,7 @@ export function WorksheetViewDialog({
                       {compositeScore.toFixed(1)}%
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      composite penmanship mastery
+                      overall handwriting score
                     </span>
                   </div>
                   <BandPositionBar score={compositeScore} height="sm" />
@@ -225,10 +243,10 @@ export function WorksheetViewDialog({
                 <div className="p-3.5 rounded-xl border border-border/80 bg-muted/10 space-y-2 shadow-xs">
                   <div className="flex items-center justify-between pb-1 border-b border-border/50">
                     <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Criterion Diagnostics
+                      Skill Breakdown
                     </span>
                     <span className="text-[11px] text-muted-foreground">
-                      5 criteria
+                      5 skills
                     </span>
                   </div>
                   <div className="divide-y divide-border/50">
@@ -249,7 +267,20 @@ export function WorksheetViewDialog({
         </div>
 
         {/* Footer */}
-        <div className="p-3.5 sm:p-4 border-t border-border bg-card/80 flex justify-end">
+        <div className="p-3.5 sm:p-4 border-t border-border bg-card/80 flex items-center justify-between">
+          {onBack ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 px-3.5 text-xs font-medium gap-1.5 cursor-pointer"
+              onClick={onBack}
+            >
+              <ArrowLeft className="size-3.5" />
+              <span>{backLabel}</span>
+            </Button>
+          ) : (
+            <div />
+          )}
           <Button
             variant="default"
             size="sm"

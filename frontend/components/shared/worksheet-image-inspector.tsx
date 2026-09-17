@@ -297,7 +297,7 @@ export function WorksheetImageInspector({
             size="sm"
             onClick={handleToggleContrast}
             className={cn(
-              "h-9 sm:h-7 min-h-[36px] sm:min-h-0 px-2.5 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+              "h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-3 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
               isHighContrast
                 ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
                 : "text-muted-foreground hover:text-foreground"
@@ -317,7 +317,7 @@ export function WorksheetImageInspector({
             size="sm"
             onClick={handleToggleLoupe}
             className={cn(
-              "h-9 sm:h-7 min-h-[36px] sm:min-h-0 px-2.5 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+              "h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-3 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
               isLoupeActive
                 ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
                 : "text-muted-foreground hover:text-foreground"
@@ -340,7 +340,7 @@ export function WorksheetImageInspector({
             size="sm"
             disabled={zoomScale <= 1}
             onClick={handleZoomOut}
-            className="size-9 sm:size-7 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
+            className="size-10 sm:size-8 min-h-[40px] min-w-[40px] sm:min-h-[32px] sm:min-w-[32px] p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
             aria-label="Zoom out (Key: -)"
             title="Zoom out (-)"
           >
@@ -351,7 +351,7 @@ export function WorksheetImageInspector({
           <button
             type="button"
             onClick={handleResetZoom}
-            className="px-2 sm:px-1.5 py-1.5 sm:py-0.5 min-h-[36px] sm:min-h-0 flex items-center justify-center text-xs sm:text-[11px] font-mono font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded touch-manipulation"
+            className="px-2.5 sm:px-2 py-1.5 sm:py-0.5 min-h-[40px] sm:min-h-[32px] flex items-center justify-center text-xs sm:text-[11px] font-mono font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded touch-manipulation"
             title="Click to reset zoom (Key: 0)"
             aria-label={`Current zoom ${Math.round(zoomScale * 100)} percent. Click to reset.`}
           >
@@ -365,7 +365,7 @@ export function WorksheetImageInspector({
             size="sm"
             disabled={zoomScale >= 2.5}
             onClick={handleZoomIn}
-            className="size-9 sm:size-7 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
+            className="size-10 sm:size-8 min-h-[40px] min-w-[40px] sm:min-h-[32px] sm:min-w-[32px] p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
             aria-label="Zoom in (Key: +)"
             title="Zoom in (+)"
           >

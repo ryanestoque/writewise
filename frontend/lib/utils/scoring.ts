@@ -19,9 +19,9 @@ export const RUBRIC_BANDS: RubricBandMeta[] = [
     shortLabel: "Needs Imp.",
     score: "12.5%",
     activeClass:
-      "bg-orange-100 dark:bg-orange-950/80 text-orange-950 dark:text-orange-200 border-orange-400 dark:border-orange-600 ring-2 ring-orange-500/40 shadow-xs font-semibold",
+      "bg-band-1/20 dark:bg-band-1/30 text-band-1-text dark:text-orange-200 border-band-1 ring-2 ring-band-1/40 shadow-xs font-semibold",
     badgeClass:
-      "bg-orange-50 text-orange-800 dark:bg-orange-950 dark:text-orange-300 border-orange-200/80 dark:border-orange-900",
+      "bg-band-1/15 text-band-1-text dark:text-orange-200 border-band-1/30 dark:border-band-1/40",
     dotColor: "bg-band-1",
   },
   {
@@ -30,9 +30,9 @@ export const RUBRIC_BANDS: RubricBandMeta[] = [
     shortLabel: "Developing",
     score: "37.5%",
     activeClass:
-      "bg-amber-100 dark:bg-amber-950/80 text-amber-950 dark:text-amber-200 border-amber-400 dark:border-amber-600 ring-2 ring-amber-500/40 shadow-xs font-semibold",
+      "bg-band-2/20 dark:bg-band-2/30 text-band-2-text dark:text-amber-200 border-band-2 ring-2 ring-band-2/40 shadow-xs font-semibold",
     badgeClass:
-      "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200/80 dark:border-amber-900",
+      "bg-band-2/15 text-band-2-text dark:text-amber-200 border-band-2/30 dark:border-band-2/40",
     dotColor: "bg-band-2",
   },
   {
@@ -41,9 +41,9 @@ export const RUBRIC_BANDS: RubricBandMeta[] = [
     shortLabel: "Satisfactory",
     score: "62.5%",
     activeClass:
-      "bg-brand-100 dark:bg-brand-950/80 text-brand-950 dark:text-brand-200 border-brand-400 dark:border-brand-600 ring-2 ring-brand-500/40 shadow-xs font-semibold",
+      "bg-band-3/20 dark:bg-band-3/30 text-band-3-text dark:text-emerald-200 border-band-3 ring-2 ring-band-3/40 shadow-xs font-semibold",
     badgeClass:
-      "bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300/50 dark:border-brand-900",
+      "bg-band-3/15 text-band-3-text dark:text-emerald-200 border-band-3/30 dark:border-band-3/40",
     dotColor: "bg-band-3",
   },
   {
@@ -52,9 +52,9 @@ export const RUBRIC_BANDS: RubricBandMeta[] = [
     shortLabel: "Excellent",
     score: "87.5%",
     activeClass:
-      "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-950 dark:text-emerald-200 border-emerald-400 dark:border-emerald-600 ring-2 ring-emerald-500/40 shadow-xs font-semibold",
+      "bg-band-4/20 dark:bg-band-4/30 text-band-4-text dark:text-emerald-300 border-band-4 ring-2 ring-band-4/40 shadow-xs font-semibold",
     badgeClass:
-      "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-900",
+      "bg-band-4/15 text-band-4-text dark:text-emerald-300 border-band-4/30 dark:border-band-4/40",
     dotColor: "bg-band-4",
   },
 ];
@@ -236,4 +236,66 @@ export function getScoreBand(score: number | null | undefined): {
     dotColor: meta.dotColor,
     band,
   };
+}
+
+export type CriterionKey =
+  | "letter_formation"
+  | "size_consistency"
+  | "spacing"
+  | "slant"
+  | "baseline_alignment";
+
+export interface ParentCriterionMeta {
+  key: CriterionKey;
+  label: string;
+  shortDescription: string;
+  homeTip: string;
+}
+
+export const PARENT_CRITERIA_METADATA: Record<CriterionKey, ParentCriterionMeta> = {
+  letter_formation: {
+    key: "letter_formation",
+    label: "Letter Shapes",
+    shortDescription: "Proper cursive loops and complete stroke closures",
+    homeTip: "Practice tracing tricky lowercase cursive loops (like f, g, and b) with smooth, continuous pencil strokes.",
+  },
+  size_consistency: {
+    key: "size_consistency",
+    label: "Size & Proportions",
+    shortDescription: "Consistent height across the 3-line ruling",
+    homeTip: "Guide letters to reach the dotted midline without drifting over the top headline.",
+  },
+  spacing: {
+    key: "spacing",
+    label: "Spacing",
+    shortDescription: "Even gaps between letters and words",
+    homeTip: "Use the child's index finger as an easy visual spacer between separate cursive words.",
+  },
+  slant: {
+    key: "slant",
+    label: "Slant & Tilt",
+    shortDescription: "Consistent, forward cursive angle",
+    homeTip: "Slightly tilt the practice paper to help natural, comfortable cursive slant without straining the wrist.",
+  },
+  baseline_alignment: {
+    key: "baseline_alignment",
+    label: "Line Alignment",
+    shortDescription: "Staying grounded along the writing line",
+    homeTip: "Encourage resting every letter securely along the solid baseline before moving to the next word.",
+  },
+};
+
+export const PARENT_CRITERIA_LIST: ParentCriterionMeta[] = [
+  PARENT_CRITERIA_METADATA.letter_formation,
+  PARENT_CRITERIA_METADATA.size_consistency,
+  PARENT_CRITERIA_METADATA.spacing,
+  PARENT_CRITERIA_METADATA.slant,
+  PARENT_CRITERIA_METADATA.baseline_alignment,
+];
+
+export function getParentCriterionLabel(key: string): string {
+  if (key in PARENT_CRITERIA_METADATA) {
+    return PARENT_CRITERIA_METADATA[key as CriterionKey].label;
+  }
+  return key;
 }

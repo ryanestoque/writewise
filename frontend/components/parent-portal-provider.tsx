@@ -8,7 +8,11 @@ import {
 } from "react";
 import { ParentNav } from "@/components/parent-nav";
 import { ParentUploadDialog } from "@/components/parent/parent-upload-dialog";
-import { useLinkedChildren, type LinkedChild } from "@/lib/hooks/use-parent-data";
+import {
+  useLinkedChildren,
+  useTakeHomeActivities,
+  type LinkedChild,
+} from "@/lib/hooks/use-parent-data";
 
 interface ParentPortalContextValue {
   selectedChildId: string | null;
@@ -55,6 +59,9 @@ export function ParentPortalProvider({
   const selectedChild =
     linkedChildren?.find((c) => c.id === selectedChildId) ?? null;
 
+  const { data: activities } = useTakeHomeActivities(selectedChildId);
+  const hasActivities = (activities?.length ?? 0) > 0;
+
   const openUploadDialog = (activityId?: string) => {
     setPrefilledActivityId(activityId);
     setUploadOpen(true);
@@ -81,6 +88,7 @@ export function ParentPortalProvider({
           linkedChildren={linkedChildren ?? []}
           onChildChange={setSelectedChildId}
           onUploadClick={() => openUploadDialog()}
+          hasActivities={hasActivities}
         />
         <main className="flex-1 min-w-0 w-full px-4 sm:px-6 py-6 sm:py-8 space-y-6">
           {pageChildren}

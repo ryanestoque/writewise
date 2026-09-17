@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,10 +11,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { BookOpen, PenTool, Scaling, MoveHorizontal, Compass, AlignHorizontalJustifyStart, CheckCircle2 } from "lucide-react";
 import { BandBadge } from "@/components/shared/band-badge";
+import { cn } from "@/lib/utils";
 
 interface ParentRubricDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialCriterion?: string | null;
 }
 
 const CRITERIA_GUIDE = [
@@ -55,31 +58,58 @@ const CRITERIA_GUIDE = [
 ];
 
 const BANDS_GUIDE = [
-  { band: "excellent" as const, score: 90, label: "Excellent (75–100%)", desc: "Fluent, highly consistent penmanship meeting grade-level mastery." },
-  { band: "satisfactory" as const, score: 65, label: "Satisfactory (50–74%)", desc: "Solid cursive foundation with minor areas for refinement." },
-  { band: "developing" as const, score: 38, label: "Developing (25–49%)", desc: "Actively building muscle memory and learning stroke shapes." },
-  { band: "needs_improvement" as const, score: 15, label: "Needs Improvement (0–24%)", desc: "Needs guided practice with basic strokes, posture, or pencil grip." },
+  { band: "excellent" as const, score: 90, label: "Excellent (75–100%)", desc: "Fluent, highly consistent handwriting meeting grade-level goals." },
+  { band: "satisfactory" as const, score: 65, label: "Satisfactory (50–74%)", desc: "Solid cursive foundation with minor areas to refine." },
+  { band: "developing" as const, score: 38, label: "Developing (25–49%)", desc: "Actively learning and building muscle memory — a normal, key stage in cursive development." },
+  { band: "needs_improvement" as const, score: 15, label: "Needs Practice (0–24%)", desc: "Working on basic letter strokes, posture, or pencil grip with guided practice." },
 ];
 
 export function ParentRubricDialog({
   open,
   onOpenChange,
+  initialCriterion,
 }: ParentRubricDialogProps) {
+  const [selectedCriterionOverride, setSelectedCriterionOverride] = useState<
+    string | null | undefined
+  >(undefined);
+
+  const activeCriterion =
+    selectedCriterionOverride !== undefined
+      ? selectedCriterionOverride
+      : (initialCriterion ?? null);
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      setSelectedCriterionOverride(undefined);
+    }
+    onOpenChange(newOpen);
+  };
+
+  useEffect(() => {
+    if (open && initialCriterion) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`rubric-criterion-${initialCriterion}`);
+        el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 120);
+      return () => clearTimeout(timer);
+    }
+  }, [open, initialCriterion]);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-[calc(100%-1.5rem)] max-w-2xl max-h-[min(90dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
         {/* Header */}
         <DialogHeader className="p-5 sm:p-6 pb-4 border-b border-border bg-card/60">
           <div className="flex items-center gap-2.5 mb-1">
             <div className="flex size-9 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
-              <BookOpen className="size-4.5" />
+              <BookOpen className="size-4.5" aria-hidden="true" />
             </div>
             <div>
               <DialogTitle className="font-heading text-lg sm:text-xl font-semibold text-foreground">
-                Parent Guide to Cursive Rubrics
+                Parent Guide to Handwriting Rubrics
               </DialogTitle>
               <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                How WriteWise measures your child&apos;s penmanship development across five key criteria.
+                How WriteWise measures your child&apos;s cursive handwriting development across five essential skills.
               </DialogDescription>
             </div>
           </div>
@@ -89,30 +119,62 @@ export function ParentRubricDialog({
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
           {/* Five Criteria Section */}
           <div className="space-y-3.5">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              The 5 Cursive Criteria
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                The 5 Cursive Skills
+              </h3>
+              {activeCriterion && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedCriterionOverride(null)}
+                  className="text-[11px] text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
+                >
+                  Show all skills
+                </button>
+              )}
+            </div>
             <div className="grid gap-3">
               {CRITERIA_GUIDE.map((criterion) => {
                 const Icon = criterion.icon;
+                const isHighlighted = activeCriterion === criterion.key;
                 return (
                   <div
                     key={criterion.key}
-                    className="p-3.5 sm:p-4 rounded-xl border border-border/80 bg-card/50 space-y-2"
+                    id={`rubric-criterion-${criterion.key}`}
+                    className={cn(
+                      "p-3.5 sm:p-4 rounded-xl border transition-all space-y-2",
+                      isHighlighted
+                        ? "border-brand-500 ring-2 ring-brand-500/25 bg-brand-50/40 dark:bg-brand-950/30"
+                        : "border-border/80 bg-card/50"
+                    )}
                   >
-                    <div className="flex items-center gap-2">
-                      <div className="flex size-7 items-center justify-center rounded-md bg-muted text-foreground shrink-0">
-                        <Icon className="size-3.5 text-brand-600 dark:text-brand-400" />
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={cn(
+                            "flex size-7 items-center justify-center rounded-md shrink-0",
+                            isHighlighted
+                              ? "bg-brand-200 dark:bg-brand-900 text-brand-800 dark:text-brand-200"
+                              : "bg-muted text-foreground"
+                          )}
+                        >
+                          <Icon className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                        </div>
+                        <h4 className="text-sm font-semibold text-foreground">
+                          {criterion.title}
+                        </h4>
                       </div>
-                      <h4 className="text-sm font-semibold text-foreground">
-                        {criterion.title}
-                      </h4>
+                      {isHighlighted && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300">
+                          Selected Skill
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed">
                       {criterion.summary}
                     </p>
                     <div className="flex items-start gap-1.5 pt-1 text-xs text-muted-foreground bg-muted/30 p-2.5 rounded-lg border border-border/40">
-                      <CheckCircle2 className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" />
+                      <CheckCircle2 className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
                       <span>
                         <strong className="text-foreground font-medium">Home tip:</strong>{" "}
                         {criterion.whatToLookFor}

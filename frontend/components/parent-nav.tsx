@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { createClient } from "@/lib/supabase/client";
 import type { LinkedChild } from "@/lib/hooks/use-parent-data";
-import { LogOut, Settings, Upload, User, Users } from "lucide-react";
+import { LogOut, Settings, Upload, Users } from "lucide-react";
 
 interface ParentNavProps {
   user: { fullName: string; email: string };
@@ -40,6 +40,7 @@ interface ParentNavProps {
   linkedChildren: LinkedChild[];
   onChildChange: (childId: string) => void;
   onUploadClick?: () => void;
+  hasActivities?: boolean;
 }
 
 export function ParentNav({
@@ -48,12 +49,11 @@ export function ParentNav({
   linkedChildren,
   onChildChange,
   onUploadClick,
+  hasActivities = false,
 }: ParentNavProps) {
   const router = useRouter();
   const supabase = createClient();
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
-
-  const selectedChild = linkedChildren.find((c) => c.id === selectedChildId) ?? null;
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -82,8 +82,8 @@ export function ParentNav({
             <BrandLogo size="sm" />
           </div>
 
-          {/* Center: Child Switcher */}
-          <div className="flex-1 flex justify-center min-w-0">
+          {/* Center: Child Switcher / Indicator */}
+          <div className="flex-1 flex justify-center min-w-0 px-1 sm:px-2">
             {linkedChildren.length > 1 ? (
               <Select
                 value={selectedChildId ?? undefined}
@@ -92,7 +92,7 @@ export function ParentNav({
                 }}
               >
                 <SelectTrigger
-                  className="w-auto min-w-[160px] max-w-[240px] sm:max-w-[320px] h-9 text-xs sm:text-sm font-medium gap-1.5 border-border/70 bg-card hover:bg-muted/40 transition-colors shadow-xs"
+                  className="w-auto min-w-[140px] max-w-[190px] sm:max-w-[320px] h-9 text-xs sm:text-sm font-medium gap-1.5 border-border/70 bg-card hover:bg-muted/40 transition-colors shadow-xs"
                   aria-label="Select child"
                 >
                   <Users className="size-3.5 text-muted-foreground shrink-0" />
@@ -109,12 +109,16 @@ export function ParentNav({
                   ))}
                 </SelectContent>
               </Select>
-            ) : selectedChild ? (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/60 border border-border/60 text-xs sm:text-sm font-medium text-foreground max-w-[260px] sm:max-w-none truncate">
-                <User className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" />
-                <span className="truncate">{selectedChild.fullName}</span>
-                <span className="text-muted-foreground text-[11px] sm:text-xs shrink-0 font-normal">
-                  ({selectedChild.section})
+            ) : linkedChildren.length === 1 ? (
+              <div
+                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 h-9 rounded-lg border border-border/70 bg-card text-xs sm:text-sm font-medium text-foreground shadow-xs max-w-[160px] sm:max-w-[320px] truncate"
+                aria-label={`Current student: ${linkedChildren[0].fullName}, Section ${linkedChildren[0].section}`}
+                title={`${linkedChildren[0].fullName} (Section ${linkedChildren[0].section})`}
+              >
+                <Users className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+                <span className="truncate">{linkedChildren[0].fullName}</span>
+                <span className="text-[11px] text-muted-foreground shrink-0 hidden sm:inline">
+                  &middot; Section {linkedChildren[0].section}
                 </span>
               </div>
             ) : null}
@@ -122,7 +126,7 @@ export function ParentNav({
 
           {/* Right: Upload button + User menu */}
           <div className="flex items-center gap-2 shrink-0">
-            {onUploadClick && (
+            {onUploadClick && hasActivities && (
               <Button
                 variant="default"
                 size="sm"

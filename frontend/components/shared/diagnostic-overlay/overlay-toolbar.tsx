@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import {
   Layers,
-  Sparkles,
+  PenTool,
   AlignJustify,
   Compass,
   Ruler,
@@ -42,7 +42,7 @@ const FILTERS: FilterItem[] = [
   {
     id: "letter_formation",
     label: "Formation",
-    icon: Sparkles,
+    icon: PenTool,
     getAttentionCount: (ov) =>
       ov.letter_formation.annotations.filter((a) => a.severity === "needs_attention")
         .length,
@@ -93,7 +93,11 @@ export const OverlayToolbar = memo(function OverlayToolbar({
       )}
     >
       {/* 1. Filter Pills */}
-      <div className="flex flex-wrap items-center gap-1">
+      <div
+        role="group"
+        aria-label="Worksheet diagnostic criteria filters"
+        className="flex flex-wrap items-center gap-1"
+      >
         {FILTERS.map((item) => {
           const Icon = item.icon;
           const isSelected = activeCriterion === item.id;
@@ -107,8 +111,9 @@ export const OverlayToolbar = memo(function OverlayToolbar({
               size="sm"
               disabled={!visible}
               onClick={() => onChangeCriterion(item.id)}
+              aria-pressed={isSelected}
               className={cn(
-                "h-7 px-2.5 text-2xs font-medium rounded-lg gap-1.5 transition-all cursor-pointer",
+                "h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-3 sm:px-2 text-xs sm:text-[11px] font-medium rounded-lg gap-1.5 transition-all cursor-pointer",
                 isSelected
                   ? "bg-brand-600 hover:bg-brand-700 text-white shadow-2xs"
                   : "hover:bg-muted text-muted-foreground hover:text-foreground",
@@ -121,7 +126,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 <Badge
                   variant="secondary"
                   className={cn(
-                    "px-1 py-0 h-3.5 text-[9px] font-bold rounded-full",
+                    "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
                     isSelected
                       ? "bg-white/20 text-white"
                       : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200"
@@ -141,11 +146,11 @@ export const OverlayToolbar = memo(function OverlayToolbar({
           id="toggle-diagnostic-overlay"
           checked={visible}
           onCheckedChange={onToggleVisible}
-          className="cursor-pointer scale-75"
+          className="cursor-pointer scale-90 sm:scale-75"
         />
         <Label
           htmlFor="toggle-diagnostic-overlay"
-          className="text-2xs font-medium text-muted-foreground cursor-pointer select-none"
+          className="text-xs sm:text-[11px] font-medium text-muted-foreground cursor-pointer select-none"
         >
           {visible ? "Overlay on" : "Overlay off"}
         </Label>

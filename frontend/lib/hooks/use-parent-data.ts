@@ -42,10 +42,19 @@ export interface ChildLatestScores {
   overlay: DiagnosticOverlayData | null;
 }
 
+export interface TakeHomeActivitySubmission {
+  submissionId: string;
+  status: string;
+  rejectionCode: string | null;
+  compositeScore: number | null;
+  compositeBand: ScoreBand | null;
+}
+
 export interface TakeHomeActivity {
   id: string;
   targetText: string;
   createdAt: string;
+  submission?: TakeHomeActivitySubmission | null;
 }
 
 // --- Hooks ---
@@ -349,22 +358,82 @@ export function useTakeHomeActivities(childId: string | null) {
   return useQuery({
     queryKey: ["parent-take-home-activities", childId],
     queryFn: async (): Promise<TakeHomeActivity[]> => {
-      const { data, error } = await supabase
+      if (!childId) return [];
+
+      // 1. Fetch teacher(s) linked to this specific child (via 0018_parent_access_policies)
+      const { data: teacherLinks, error: teacherError } = await supabase
+        .from("teacher_student")
+        .select("teacher_id")
+        .eq("student_id", childId);
+
+      if (teacherError) throw new Error(teacherError.message);
+
+      const teacherIds = (teacherLinks || []).map((t) => t.teacher_id);
+      if (teacherIds.length === 0) return [];
+
+      // 2. Fetch take-home activities created by this child's teacher(s)
+      const { data: activitiesData, error } = await supabase
         .from("activity")
-        .select("id, target_text, created_at")
+        .select("id, target_text, created_at, created_by")
         .eq("is_take_home", true)
         .eq("is_archived", false)
+        .in("created_by", teacherIds)
         .order("created_at", { ascending: false });
 
       if (error) throw new Error(error.message);
+      if (!activitiesData || activitiesData.length === 0) return [];
 
-      return (data || []).map((row) => ({
+      const activityIds = activitiesData.map((a) => a.id);
+
+      // Batch-fetch the latest submission per activity for this child in a single query (eliminating N+1)
+      const submissionsMap: Record<string, TakeHomeActivitySubmission> = {};
+      if (childId && activityIds.length > 0) {
+        const { data: subsData } = await supabase
+          .from("submission")
+          .select(`
+            id,
+            activity_id,
+            status,
+            rejection_code,
+            created_at,
+            measurement(composite_score)
+          `)
+          .eq("student_id", childId)
+          .in("activity_id", activityIds)
+          .order("created_at", { ascending: false });
+
+        if (subsData) {
+          for (const sub of subsData) {
+            // Since sorted created_at desc, the first time we see an activity_id is the latest
+            if (!submissionsMap[sub.activity_id]) {
+              const m = Array.isArray(sub.measurement) ? sub.measurement[0] : sub.measurement;
+              const compositeScore = m?.composite_score != null ? Number(m.composite_score) : null;
+              submissionsMap[sub.activity_id] = {
+                submissionId: sub.id,
+                status: sub.status,
+                rejectionCode: sub.rejection_code,
+                compositeScore,
+                compositeBand: getBandFromScore(compositeScore),
+              };
+            }
+          }
+        }
+      }
+
+      return activitiesData.map((row) => ({
         id: row.id,
         targetText: row.target_text,
         createdAt: row.created_at,
+        submission: submissionsMap[row.id] ?? null,
       }));
     },
     enabled: !!childId,
+    // Auto-poll every 3s if any activity submission is currently processing
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      const hasProcessing = data?.some((a) => a.submission?.status === "processing");
+      return hasProcessing ? 3000 : false;
+    },
   });
 }
 
@@ -409,5 +478,9 @@ export function useChildSubmissionForActivity(
       };
     },
     enabled: !!childId && !!activityId,
+    // Auto-poll every 3s if submission is currently processing
+    refetchInterval: (query) => {
+      return query.state.data?.status === "processing" ? 3000 : false;
+    },
   });
 }

@@ -13,7 +13,7 @@ import { BandBadge } from "@/components/shared/band-badge";
 import { ScoreSourceIndicator } from "@/components/shared/score-source-indicator";
 import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { WorksheetViewDialog } from "./worksheet-view-dialog";
-import { RUBRIC_CRITERIA } from "@/lib/utils/scoring";
+import { PARENT_CRITERIA_LIST } from "@/lib/utils/scoring";
 import type { StudentScoreHistoryItem } from "@/lib/hooks/use-dashboard";
 import { History, Calendar, FileText, Eye } from "lucide-react";
 
@@ -24,9 +24,9 @@ interface SubmissionHistoryDialogProps {
   childName: string;
 }
 
-const PARENT_CRITERIA = RUBRIC_CRITERIA.map((c) => ({
-  criterionKey: c.criterionKey,
-  label: c.shortName,
+const PARENT_CRITERIA = PARENT_CRITERIA_LIST.map((c) => ({
+  criterionKey: c.key,
+  label: c.label,
 }));
 
 export function SubmissionHistoryDialog({
@@ -40,23 +40,24 @@ export function SubmissionHistoryDialog({
 
   // Sort reverse-chronologically (newest first)
   const sortedHistory = [...history].reverse();
+  const isViewingWorksheet = !!selectedItemForView;
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open && !isViewingWorksheet} onOpenChange={onOpenChange}>
         <DialogContent className="w-[calc(100%-1.5rem)] max-w-2xl max-h-[min(90dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
           {/* Header */}
           <DialogHeader className="p-5 sm:p-6 pb-4 border-b border-border bg-card/60">
             <div className="flex items-center gap-2.5">
               <div className="flex size-9 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
-                <History className="size-4.5" />
+                <History className="size-4.5" aria-hidden="true" />
               </div>
               <div>
                 <DialogTitle className="font-heading text-lg sm:text-xl font-semibold text-foreground">
-                  Worksheet Assessment History
+                  Worksheet History &amp; Scores
                 </DialogTitle>
                 <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                  Past graded worksheets and criterion feedback for {childName}.
+                  Past scored worksheets and skill feedback for {childName}.
                 </DialogDescription>
               </div>
             </div>
@@ -66,7 +67,7 @@ export function SubmissionHistoryDialog({
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
             {sortedHistory.length === 0 ? (
               <div className="p-8 text-center space-y-2 rounded-xl border border-dashed border-border bg-muted/20">
-                <FileText className="size-8 text-muted-foreground/60 mx-auto" />
+                <FileText className="size-8 text-muted-foreground/60 mx-auto" aria-hidden="true" />
                 <p className="text-sm font-medium text-foreground">No past submissions recorded</p>
                 <p className="text-xs text-muted-foreground">
                   Completed worksheets will appear here in chronological order.
@@ -99,7 +100,7 @@ export function SubmissionHistoryDialog({
                           &ldquo;{item.targetText}&rdquo;
                         </h4>
                         <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <Calendar className="size-3.5" />
+                          <Calendar className="size-3.5" aria-hidden="true" />
                           <span>Assessed on {formattedDate}</span>
                         </p>
                       </div>
@@ -117,10 +118,11 @@ export function SubmissionHistoryDialog({
                             variant="outline"
                             size="sm"
                             onClick={() => setSelectedItemForView(item)}
-                            className="h-8 text-xs font-medium gap-1.5 border-brand-200 dark:border-brand-900 bg-brand-50/40 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 hover:bg-brand-100/60 dark:hover:bg-brand-900/50 cursor-pointer shadow-2xs"
+                            aria-haspopup="dialog"
+                            className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-medium gap-1.5 border-brand-200 dark:border-brand-900 bg-brand-50/40 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 hover:bg-brand-100/60 dark:hover:bg-brand-900/50 cursor-pointer shadow-2xs"
                           >
-                            <Eye className="size-3.5 text-brand-600 dark:text-brand-400" />
-                            <span>View Photo</span>
+                            <Eye className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                            <span>View Photo &amp; Guide Lines</span>
                           </Button>
                         )}
                       </div>
@@ -128,8 +130,8 @@ export function SubmissionHistoryDialog({
 
                     {/* Criterion Breakdown */}
                     <div className="pt-1">
-                      <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                        Criterion Diagnostics
+                      <h5 className="text-xs font-semibold text-muted-foreground mb-2">
+                        Score Details by Skill
                       </h5>
                       <div className="divide-y divide-border/50 bg-muted/10 rounded-lg p-3 border border-border/40">
                         {PARENT_CRITERIA.map((criterion) => (
@@ -170,6 +172,8 @@ export function SubmissionHistoryDialog({
           onOpenChange={(openNext) => {
             if (!openNext) setSelectedItemForView(null);
           }}
+          onBack={() => setSelectedItemForView(null)}
+          backLabel="Back to History"
           imagePath={selectedItemForView.imagePath ?? null}
           targetText={selectedItemForView.targetText}
           submissionDate={selectedItemForView.submissionDate}
