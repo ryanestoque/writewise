@@ -155,6 +155,8 @@ No workspace tooling (Turborepo/pnpm workspaces) — Vercel builds from `/fronte
 
 ## 9. Getting Started
 
+> 🚀 **New to the team?** Follow the step-by-step teammate onboarding guide in [`docs/QUICKSTART.md`](./docs/QUICKSTART.md) to get your machine configured with Node, `uv`, and dev environment credentials.
+
 No Docker required — local dev connects directly to the hosted `writewise-dev` Supabase project.
 
 ```bash
@@ -216,6 +218,7 @@ This repo's docs form one connected build guide — `PRD.md` is the source of tr
 | [`SECURITY.md`](./SECURITY.md) | Threat model, secrets/access control, auth/session security, file-upload hardening, RA 10173 compliance |
 | [`TESTING.md`](./TESTING.md) | Unit/integration/security tests, manual QA checklist, pre-launch and pre-defense checklists |
 | [`DEPLOYMENT.md`](./DEPLOYMENT.md) | Platform setup, provisioning runbook, Railway/Vercel config, model versioning, backups, rollback, go-live, decommission |
+| [`QUICKSTART.md`](./docs/QUICKSTART.md) | Zero-to-running local setup guide for teammates — prerequisites, installation commands, env config, troubleshooting |
 | `AGENTS.md` | Agent-facing operating manual for AI coding agents (Claude Code/Cursor/Codex) working in this repo |
 | `IMPLEMENTATION_STATUS.md` | Live "what's actually built" tracker against the `PRD.md` §5 roadmap |
 
