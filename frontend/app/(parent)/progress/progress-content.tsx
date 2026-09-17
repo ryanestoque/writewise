@@ -99,7 +99,7 @@ export function ProgressPageContent() {
     ).length ?? 0;
 
   return (
-    <div className="w-full space-y-6 pb-12">
+    <div className="w-full space-y-5 sm:space-y-6 pb-12">
       {/* Zone 1: Child Header & Quick Guides */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-3 border-b border-border/60">
         <div className="flex items-center gap-3">
@@ -119,38 +119,36 @@ export function ProgressPageContent() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-          {historyCount >= 1 && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setHistoryOpen(true)}
-                aria-haspopup="dialog"
-                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 text-xs font-medium border-border/80 hover:bg-muted/50 cursor-pointer"
-              >
-                <History className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                <span>All Worksheets ({historyCount})</span>
-              </Button>
+        {historyCount >= 1 && (
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setHistoryOpen(true)}
+              aria-haspopup="dialog"
+              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 text-xs font-medium border-border/80 hover:bg-muted/50 cursor-pointer"
+            >
+              <History className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+              <span>All Worksheets ({historyCount})</span>
+            </Button>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleOpenRubric(null)}
-                aria-haspopup="dialog"
-                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 text-xs font-medium border-border/80 hover:bg-muted/50 cursor-pointer"
-              >
-                <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                <span>Handwriting Guide &amp; Scoring</span>
-              </Button>
-            </>
-          )}
-        </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleOpenRubric(null)}
+              aria-haspopup="dialog"
+              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 text-xs font-medium border-border/80 hover:bg-muted/50 cursor-pointer"
+            >
+              <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+              <span>Handwriting Guide &amp; Scoring</span>
+            </Button>
+          </div>
+        )}
       </div>
 
       {isZeroState ? (
         /* Day-One Welcoming Onboarding Experience */
-        <div className="space-y-6">
+        <div className="space-y-5 sm:space-y-6">
           {/* Welcome & How It Works Guide Hub */}
           <div className="rounded-xl border border-border bg-card shadow-warm p-5 sm:p-7 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -173,7 +171,7 @@ export function ProgressPageContent() {
                 size="sm"
                 onClick={() => handleOpenRubric(null)}
                 aria-haspopup="dialog"
-                className="self-start sm:self-center h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-medium gap-1.5 shrink-0 cursor-pointer shadow-2xs border-border/80 hover:bg-muted/50"
+                className="self-start sm:self-center h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-semibold gap-1.5 shrink-0 cursor-pointer shadow-xs border-brand-300/80 dark:border-brand-800 bg-brand-50/60 dark:bg-brand-950/40 text-brand-800 dark:text-brand-200 hover:bg-brand-100 dark:hover:bg-brand-900/60"
               >
                 <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                 <span>Handwriting Guide &amp; Rubrics</span>
@@ -210,7 +208,7 @@ export function ProgressPageContent() {
                   <div className="space-y-0.5">
                     <span className="font-semibold text-foreground block">Take-Home Practice</span>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      When home practice is assigned, practice on paper, snap a flat photo, and upload it below.
+                      When home practice is assigned, practice on paper, snap a flat photo, and upload below.
                     </p>
                   </div>
                 </li>
@@ -232,37 +230,33 @@ export function ProgressPageContent() {
             </div>
           </div>
 
-          {/* Active Homework Alert Banner when activities need upload */}
-          {pendingActivitiesCount > 0 && (
-            <div className="flex items-center gap-3 p-4 rounded-xl border border-brand-300/80 dark:border-brand-800 bg-brand-50/50 dark:bg-brand-950/40 text-brand-950 dark:text-brand-100 shadow-xs">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 shrink-0">
-                <ClipboardList className="size-4.5" aria-hidden="true" />
-              </div>
-              <div className="min-w-0 space-y-0.5">
-                <p className="text-xs sm:text-sm font-semibold">
-                  {pendingActivitiesCount} Take-Home {pendingActivitiesCount === 1 ? "Worksheet" : "Worksheets"} Ready for Practice
-                </p>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Complete on paper, snap a flat photo, and upload below to establish your child&apos;s baseline score.
-                </p>
-              </div>
-            </div>
-          )}
-
           {/* Assigned Take-Home Worksheets */}
           <section
             id="assigned-take-home-worksheets"
             aria-labelledby="take-home-onboarding-heading"
-            className="space-y-3"
+            className="space-y-3.5"
           >
-            <div className="flex items-center justify-between">
-              <h2
-                id="take-home-onboarding-heading"
-                className="font-heading text-base sm:text-lg font-semibold text-foreground flex items-center gap-2"
-              >
-                <ClipboardList className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                <span>Assigned Take-Home Worksheets</span>
-              </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+              <div className="space-y-0.5">
+                <h2
+                  id="take-home-onboarding-heading"
+                  className="font-heading text-base sm:text-lg font-semibold text-foreground flex items-center gap-2"
+                >
+                  <ClipboardList className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                  <span>Assigned Take-Home Worksheets</span>
+                </h2>
+                {pendingActivitiesCount > 0 && (
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Complete on paper, snap a flat photo, and upload below to establish your child&apos;s baseline score.
+                  </p>
+                )}
+              </div>
+              {pendingActivitiesCount > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/80 px-2.5 py-1 rounded-full border border-brand-200/70 dark:border-brand-800/70 self-start sm:self-auto shrink-0 shadow-2xs">
+                  <span className="size-1.5 rounded-full bg-brand-600 dark:bg-brand-400 animate-pulse motion-reduce:animate-none" aria-hidden="true" />
+                  {pendingActivitiesCount} Ready for Practice
+                </span>
+              )}
             </div>
             <TakeHomeActivities
               childId={selectedChildId}
@@ -338,6 +332,12 @@ export function ProgressPageContent() {
                   <ClipboardList className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                   <span>Assigned Take-Home Worksheets</span>
                 </h2>
+                {pendingActivitiesCount > 0 && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/80 px-2.5 py-0.5 rounded-full border border-brand-200/70 dark:border-brand-800/70 shrink-0">
+                    <span className="size-1.5 rounded-full bg-brand-600 dark:bg-brand-400" aria-hidden="true" />
+                    {pendingActivitiesCount} Due
+                  </span>
+                )}
               </div>
               <TakeHomeActivities
                 childId={selectedChildId}
@@ -395,7 +395,7 @@ export function ProgressPageContent() {
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-medium text-foreground flex items-center gap-1.5">
                         <CheckCircle2 className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                        First Worksheet (Baseline Recorded)
+                        First Worksheet (Starting Benchmark)
                       </span>
                       <span className="text-muted-foreground">Next Worksheet (Unlocks Trend)</span>
                     </div>
@@ -413,7 +413,7 @@ export function ProgressPageContent() {
 
                   <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">
-                      Baseline Score (&ldquo;{history[0].targetText}&rdquo;):
+                      Starting Benchmark (&ldquo;{history[0].targetText}&rdquo;):
                     </span>
                     <div className="flex items-center gap-2 font-medium">
                       <span className="font-sans tabular-nums font-semibold text-foreground">
