@@ -162,18 +162,7 @@ function ActivityCard({
       )}
     >
       <div className="space-y-1.5">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-xs text-muted-foreground font-medium">Assigned {formattedDate}</p>
-          {isRejected && !isLoading ? (
-            <span className="text-xs font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-warning/15 dark:bg-warning/25 text-warning-foreground border border-warning/30">
-              Photo Retake
-            </span>
-          ) : needsUpload && !isLoading ? (
-            <span className="text-xs font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/60 text-brand-800 dark:text-brand-300">
-              Needs Upload
-            </span>
-          ) : null}
-        </div>
+        <p className="text-xs text-muted-foreground font-medium">Assigned {formattedDate}</p>
         <p className="text-sm font-semibold text-foreground line-clamp-3 leading-snug">
           &ldquo;{targetText}&rdquo;
         </p>

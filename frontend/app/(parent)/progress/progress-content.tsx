@@ -231,24 +231,17 @@ export function ProgressPageContent() {
 
           {/* Active Homework Alert Banner when activities need upload */}
           {pendingActivitiesCount > 0 && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-brand-300/80 dark:border-brand-800 bg-brand-50/50 dark:bg-brand-950/40 text-brand-950 dark:text-brand-100 shadow-xs">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex size-9 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 shrink-0">
-                  <ClipboardList className="size-4.5" aria-hidden="true" />
-                </div>
-                <div className="min-w-0 space-y-0.5">
-                  <p className="text-xs sm:text-sm font-semibold">
-                    {pendingActivitiesCount} Take-Home {pendingActivitiesCount === 1 ? "Worksheet" : "Worksheets"} Ready for Practice
-                  </p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Complete on paper, snap a flat photo, and upload below to establish your child&apos;s baseline score.
-                  </p>
-                </div>
+            <div className="flex items-center gap-3 p-4 rounded-xl border border-brand-300/80 dark:border-brand-800 bg-brand-50/50 dark:bg-brand-950/40 text-brand-950 dark:text-brand-100 shadow-xs">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 shrink-0">
+                <ClipboardList className="size-4.5" aria-hidden="true" />
               </div>
-              <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-100 dark:bg-brand-900/80 text-brand-800 dark:text-brand-200 border border-brand-200/60 dark:border-brand-800/60">
-                  Ready to Practice
-                </span>
+              <div className="min-w-0 space-y-0.5">
+                <p className="text-xs sm:text-sm font-semibold">
+                  {pendingActivitiesCount} Take-Home {pendingActivitiesCount === 1 ? "Worksheet" : "Worksheets"} Ready for Practice
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Complete on paper, snap a flat photo, and upload below to establish your child&apos;s baseline score.
+                </p>
               </div>
             </div>
           )}
