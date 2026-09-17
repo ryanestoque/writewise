@@ -33,7 +33,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { createClient } from "@/lib/supabase/client";
 import type { LinkedChild } from "@/lib/hooks/use-parent-data";
-import { LogOut, Settings, Upload, Users } from "lucide-react";
+import { Loader2, LogOut, Settings, Upload, Users } from "lucide-react";
+import { toast } from "sonner";
 
 interface ParentNavProps {
   user: { fullName: string; email: string };
@@ -55,12 +56,28 @@ export function ParentNav({
   const router = useRouter();
   const supabase = createClient();
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  };
+  async function handleSignOut() {
+    try {
+      setIsSigningOut(true);
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+      setShowSignOutDialog(false);
+      router.push("/login");
+      router.refresh();
+    } catch (err: unknown) {
+      console.error("Sign out error:", err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Failed to sign out. Please check your connection and try again.";
+      toast.error(message);
+      setIsSigningOut(false);
+    }
+  }
 
   const initials =
     user.fullName
@@ -151,13 +168,6 @@ export function ParentNav({
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                   <DropdownMenuItem
-                    render={<Link href="/progress" />}
-                    className="cursor-pointer gap-2"
-                  >
-                    <Users className="size-4" />
-                    <span>Child Progress</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
                     render={<Link href="/parent-settings" />}
                     className="cursor-pointer gap-2"
                   >
@@ -183,20 +193,29 @@ export function ParentNav({
 
       {/* Sign-out confirmation dialog */}
       <AlertDialog open={showSignOutDialog} onOpenChange={setShowSignOutDialog}>
-        <AlertDialogContent className="rounded-2xl shadow-warm border border-border">
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-heading text-lg">Sign out?</AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-muted-foreground leading-relaxed">
+            <AlertDialogTitle>Sign out of WriteWise?</AlertDialogTitle>
+            <AlertDialogDescription>
               You will need to sign in again to view your child&apos;s handwriting progress.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2">
-            <AlertDialogCancel className="h-10 sm:h-9">Cancel</AlertDialogCancel>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSigningOut}>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              id="confirm-parent-sign-out"
               onClick={handleSignOut}
-              className="h-10 sm:h-9 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isSigningOut}
+              className="gap-2"
             >
-              Sign out
+              {isSigningOut ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  <span>Signing out...</span>
+                </>
+              ) : (
+                "Sign out"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
