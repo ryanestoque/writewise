@@ -106,7 +106,7 @@ export function LatestSubmissionCard({
       <div className="rounded-xl border border-border bg-card shadow-warm p-8 text-center space-y-3">
         <div className="flex justify-center">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
-            <FileText className="size-6" />
+            <FileText className="size-6" aria-hidden="true" />
           </div>
         </div>
         <h3 className="font-heading text-base font-semibold text-foreground">
@@ -162,11 +162,11 @@ export function LatestSubmissionCard({
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent flex items-end justify-between p-3">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-sm border border-white/20 text-xs font-medium text-white shadow-xs">
-                  <Eye className="size-3.5 text-white/90" />
+                  <Eye className="size-3.5 text-white/90" aria-hidden="true" />
                   <span>View Worksheet &amp; Guidelines</span>
                 </span>
                 <span className="inline-flex items-center justify-center size-7 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 text-white group-hover:bg-brand-600 group-hover:border-brand-500 transition-all shadow-xs">
-                  <ZoomIn className="size-4" />
+                  <ZoomIn className="size-4" aria-hidden="true" />
                 </span>
               </div>
             </button>
@@ -215,7 +215,7 @@ export function LatestSubmissionCard({
                 aria-haspopup="dialog"
                 className="w-full h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium gap-2 border-brand-200 dark:border-brand-900 bg-brand-50/50 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 hover:bg-brand-100/60 dark:hover:bg-brand-900/50 cursor-pointer shadow-xs"
               >
-                <Eye className="size-4 text-brand-600 dark:text-brand-400" />
+                <Eye className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                 <span>View Worksheet Photo &amp; Guide Lines</span>
               </Button>
             </div>
@@ -240,7 +240,7 @@ export function LatestSubmissionCard({
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="flex size-6 items-center justify-center rounded-md bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
-                          <Award className="size-3.5" />
+                          <Award className="size-3.5" aria-hidden="true" />
                         </div>
                         <span className="text-xs font-semibold text-foreground truncate">
                           Top Strength: {topStrength.meta.label}
@@ -248,7 +248,7 @@ export function LatestSubmissionCard({
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <BandBadge band={topStrength.band} score={topStrength.score} size="sm" />
-                        <ArrowRight className="size-3.5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-transform" />
+                        <ArrowRight className="size-3.5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
@@ -259,10 +259,10 @@ export function LatestSubmissionCard({
                   </div>
                   <div className="pt-2 flex items-center justify-between text-xs border-t border-border/40">
                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 dark:text-brand-300 group-hover:underline">
-                      <Eye className="size-3.5" />
+                      <Eye className="size-3.5" aria-hidden="true" />
                       <span>See on worksheet guidelines</span>
                     </span>
-                    <span className="text-[11px] text-muted-foreground group-hover:text-foreground transition-colors">
+                    <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
                       Click to inspect
                     </span>
                   </div>
@@ -276,13 +276,13 @@ export function LatestSubmissionCard({
                   onClick={() => openWorksheetForCriterion(practiceFocus.key as CriterionFilter)}
                   aria-label={`Practice focus: ${practiceFocus.meta.label}${practiceFocus.band ? `, rated ${practiceFocus.band.replace('_', ' ')}` : ""}. Home tip: ${practiceFocus.meta.homeTip}. Click to inspect on worksheet guidelines dialog.`}
                   aria-haspopup="dialog"
-                  className="group w-full h-full text-left rounded-xl border border-border/80 bg-card hover:bg-muted/40 hover:border-warning/60 dark:hover:border-warning/50 p-3.5 sm:p-4 flex flex-col justify-between gap-2.5 transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-warning shadow-2xs"
+                  className="group w-full h-full text-left rounded-xl border border-border/80 bg-card hover:bg-muted/40 hover:border-warning/60 dark:hover:border-warning/50 p-3.5 sm:p-4 flex flex-col justify-between gap-2.5 transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-600 dark:focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-card shadow-2xs"
                 >
                   <div className="space-y-2 flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="flex size-6 items-center justify-center rounded-md bg-warning/15 dark:bg-warning/25 text-warning-foreground shrink-0">
-                          <Target className="size-3.5" />
+                          <Target className="size-3.5" aria-hidden="true" />
                         </div>
                         <span className="text-xs font-semibold text-foreground truncate">
                           Practice Focus: {practiceFocus.meta.label}
@@ -290,7 +290,7 @@ export function LatestSubmissionCard({
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <BandBadge band={practiceFocus.band} score={practiceFocus.score} size="sm" />
-                        <ArrowRight className="size-3.5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-transform" />
+                        <ArrowRight className="size-3.5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
                       </div>
                     </div>
                     <p
@@ -305,10 +305,10 @@ export function LatestSubmissionCard({
                   </div>
                   <div className="pt-2 flex items-center justify-between text-xs border-t border-border/40">
                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-warning-foreground group-hover:underline">
-                      <Eye className="size-3.5" />
+                      <Eye className="size-3.5" aria-hidden="true" />
                       <span>See on worksheet guidelines</span>
                     </span>
-                    <span className="text-[11px] text-muted-foreground group-hover:text-foreground transition-colors">
+                    <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
                       Click to inspect
                     </span>
                   </div>
@@ -323,7 +323,7 @@ export function LatestSubmissionCard({
               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Skill Breakdown
               </h4>
-              <span className="text-[11px] text-muted-foreground font-medium">5 skills assessed</span>
+              <span className="text-xs text-muted-foreground font-medium">5 skills assessed</span>
             </div>
 
             <div id="criterion-breakdown-details" className="divide-y divide-border/50">
@@ -348,7 +348,7 @@ export function LatestSubmissionCard({
                 onClick={() => setShowDetailedNotes((prev) => !prev)}
                 aria-expanded={showDetailedNotes}
                 aria-controls="criterion-breakdown-details"
-                className="w-full h-9 min-h-[36px] text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:bg-muted/50 gap-1.5 cursor-pointer rounded-lg border border-border/50 bg-card shadow-2xs"
+                className="w-full h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:bg-muted/50 gap-1.5 cursor-pointer rounded-lg border border-border/50 bg-card shadow-2xs"
               >
                 {showDetailedNotes ? (
                   <>

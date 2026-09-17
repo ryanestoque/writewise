@@ -89,7 +89,7 @@ export function SubmissionHistoryDialog({
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/60 pb-3">
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                             Attempt #{sortedHistory.length - index}
                           </span>
                           {item.scoreSource && (

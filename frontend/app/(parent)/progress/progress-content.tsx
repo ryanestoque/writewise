@@ -68,7 +68,7 @@ export function ProgressPageContent() {
 
   if (!selectedChild) {
     return (
-      <div className="max-w-md mx-auto my-12 p-8 rounded-2xl border border-border bg-card shadow-warm text-center space-y-3">
+      <div className="max-w-md mx-auto my-12 p-8 rounded-xl border border-border bg-card shadow-warm text-center space-y-3">
         <div className="flex justify-center">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
             <UserX className="size-6" aria-hidden="true" />
@@ -145,7 +145,7 @@ export function ProgressPageContent() {
         /* Day-One Welcoming Onboarding Experience */
         <div className="space-y-6">
           {/* Welcome & How It Works Guide Hub */}
-          <div className="rounded-2xl border border-border bg-card shadow-warm p-5 sm:p-7 space-y-6">
+          <div className="rounded-xl border border-border bg-card shadow-warm p-5 sm:p-7 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-start gap-3.5">
                 <div className="flex size-11 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0 mt-0.5">
@@ -178,41 +178,50 @@ export function ProgressPageContent() {
               <h3 className="text-xs font-semibold text-foreground">
                 How It Works
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 text-xs">
-                <div className="flex items-start gap-2.5">
-                  <span className="flex size-6 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 text-xs font-bold shrink-0 mt-0.5">
+              <ol className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 text-xs list-none p-0 m-0">
+                <li className="flex items-start gap-2.5">
+                  <span
+                    aria-hidden="true"
+                    className="flex size-6 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 text-xs font-bold shrink-0 mt-0.5 select-none"
+                  >
                     1
                   </span>
                   <div className="space-y-0.5">
                     <span className="font-semibold text-foreground block">Classroom Worksheets</span>
-                    <p className="text-muted-foreground leading-relaxed text-[11px]">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
                       Worksheets completed in class are assessed by your teacher and automatically logged here.
                     </p>
                   </div>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <span className="flex size-6 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 text-xs font-bold shrink-0 mt-0.5">
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span
+                    aria-hidden="true"
+                    className="flex size-6 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 text-xs font-bold shrink-0 mt-0.5 select-none"
+                  >
                     2
                   </span>
                   <div className="space-y-0.5">
                     <span className="font-semibold text-foreground block">Take-Home Practice</span>
-                    <p className="text-muted-foreground leading-relaxed text-[11px]">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
                       When home practice is assigned, practice on paper, snap a flat photo, and upload it below.
                     </p>
                   </div>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <span className="flex size-6 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 text-xs font-bold shrink-0 mt-0.5">
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span
+                    aria-hidden="true"
+                    className="flex size-6 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 text-xs font-bold shrink-0 mt-0.5 select-none"
+                  >
                     3
                   </span>
                   <div className="space-y-0.5">
                     <span className="font-semibold text-foreground block">Progress Over Time</span>
-                    <p className="text-muted-foreground leading-relaxed text-[11px]">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
                       After 2 evaluated worksheets, progress trend lines across all 5 skills unlock automatically.
                     </p>
                   </div>
-                </div>
-              </div>
+                </li>
+              </ol>
             </div>
           </div>
 
@@ -227,7 +236,7 @@ export function ProgressPageContent() {
                   <p className="text-xs sm:text-sm font-semibold">
                     {pendingActivitiesCount} Take-Home {pendingActivitiesCount === 1 ? "Worksheet" : "Worksheets"} Ready for Practice
                   </p>
-                  <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
                     Complete on paper, snap a flat photo, and upload below to establish your child&apos;s baseline score.
                   </p>
                 </div>
@@ -302,12 +311,14 @@ export function ProgressPageContent() {
                 <button
                   type="button"
                   onClick={() => handleOpenRubric(null)}
+                  aria-haspopup="dialog"
+                  aria-label="Review rubrics and handwriting tips"
                   className="text-xs font-semibold text-brand-700 dark:text-brand-300 hover:underline flex items-center gap-1 cursor-pointer min-h-[40px] sm:min-h-[36px] -my-1 py-1"
                 >
                   <span>Review Rubrics &amp; Tips</span>
                   <ChevronRight className="size-3" aria-hidden="true" />
                 </button>
-                <span className="text-[11px] text-muted-foreground">5 cursive skills</span>
+                <span className="text-xs text-muted-foreground">5 cursive skills</span>
               </div>
             </div>
           </div>
@@ -374,14 +385,14 @@ export function ProgressPageContent() {
                         </p>
                       </div>
                     </div>
-                    <span className="text-[11px] font-semibold text-brand-700 dark:text-brand-300 bg-brand-100 dark:bg-brand-900/60 px-2.5 py-1 rounded-full self-start sm:self-auto shrink-0">
+                    <span className="text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-100 dark:bg-brand-900/60 px-2.5 py-1 rounded-full self-start sm:self-auto shrink-0">
                       1 of 2 Complete
                     </span>
                   </div>
 
                   {/* 2-Step Progress Stepper with Accessible Semantics */}
                   <div className="space-y-2 pt-1">
-                    <div className="flex items-center justify-between text-[11px]">
+                    <div className="flex items-center justify-between text-xs">
                       <span className="font-medium text-foreground flex items-center gap-1.5">
                         <CheckCircle2 className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                         First Worksheet (Baseline Recorded)
@@ -396,7 +407,7 @@ export function ProgressPageContent() {
                       aria-label="Worksheets completed to unlock trend lines: 1 of 2"
                       className="h-2 w-full rounded-full bg-muted overflow-hidden"
                     >
-                      <div className="h-full w-1/2 rounded-full bg-brand-600 dark:bg-brand-500 transition-all duration-500" />
+                      <div className="h-full w-1/2 rounded-full bg-brand-600 dark:bg-brand-500 transition-all duration-500 motion-reduce:transition-none" />
                     </div>
                   </div>
 
@@ -462,11 +473,11 @@ function TrendGraphTeaser({ subtitle }: { subtitle?: string }) {
   return (
     <div className="relative rounded-lg border border-border/70 bg-muted/30 p-3 sm:p-4 overflow-hidden select-none">
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <LineChart className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
           <span>5-Criterion Longitudinal Tracking</span>
         </div>
-        <span className="text-[10px] font-semibold text-brand-700 dark:text-brand-300 bg-brand-100/70 dark:bg-brand-950/70 px-2 py-0.5 rounded-full border border-brand-200/50 dark:border-brand-800/50">
+        <span className="text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-100/70 dark:bg-brand-950/70 px-2.5 py-0.5 rounded-full border border-brand-200/50 dark:border-brand-800/50">
           Preview
         </span>
       </div>
@@ -488,14 +499,14 @@ function TrendGraphTeaser({ subtitle }: { subtitle?: string }) {
           <path
             d="M 0 50 Q 100 42, 200 30 T 400 16"
             fill="none"
-            stroke="rgba(27, 107, 99, 0.45)"
+            className="stroke-brand-600/50 dark:stroke-brand-400/50"
             strokeWidth="2"
             strokeLinecap="round"
           />
           <path
             d="M 0 56 Q 100 52, 200 38 T 400 24"
             fill="none"
-            stroke="rgba(209, 137, 36, 0.35)"
+            className="stroke-warning/50 dark:stroke-warning/60"
             strokeWidth="1.75"
             strokeDasharray="4 2"
             strokeLinecap="round"
@@ -503,7 +514,7 @@ function TrendGraphTeaser({ subtitle }: { subtitle?: string }) {
           <path
             d="M 0 44 Q 100 38, 200 26 T 400 14"
             fill="none"
-            stroke="rgba(16, 120, 80, 0.35)"
+            className="stroke-brand-700/40 dark:stroke-brand-300/40"
             strokeWidth="1.5"
             strokeLinecap="round"
           />
@@ -511,7 +522,7 @@ function TrendGraphTeaser({ subtitle }: { subtitle?: string }) {
 
         {/* Center overlay pill */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium bg-background/95 backdrop-blur-xs border border-border/80 text-foreground shadow-2xs">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-background/95 backdrop-blur-xs border border-border/80 text-foreground shadow-2xs">
             <LineChart className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
             <span>{subtitle ?? "Unlocks after 2 evaluated worksheets"}</span>
           </span>

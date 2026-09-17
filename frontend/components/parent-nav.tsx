@@ -97,7 +97,7 @@ export function ParentNav({
                 }}
               >
                 <SelectTrigger
-                  className="w-auto min-w-[140px] max-w-[190px] sm:max-w-[320px] h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 border-border/70 bg-card hover:bg-muted/40 transition-colors shadow-xs"
+                  className="w-auto min-w-0 max-w-[170px] sm:max-w-[320px] h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 border-border/70 bg-card hover:bg-muted/40 transition-colors shadow-xs truncate"
                   aria-label="Select child"
                 >
                   <Users className="size-3.5 text-muted-foreground shrink-0" />
@@ -108,7 +108,7 @@ export function ParentNav({
                     <SelectItem key={child.id} value={child.id} className="cursor-pointer text-xs sm:text-sm">
                       <div className="flex flex-col text-left">
                         <span className="font-medium text-foreground">{child.fullName}</span>
-                        <span className="text-[11px] text-muted-foreground">{child.section}</span>
+                        <span className="text-xs text-muted-foreground">{child.section}</span>
                       </div>
                     </SelectItem>
                   ))}

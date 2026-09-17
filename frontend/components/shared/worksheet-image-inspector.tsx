@@ -145,13 +145,33 @@ export function WorksheetImageInspector({
   // Keyboard shortcuts (global while inspector mounted or inside focused container)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const container = imageContainerRef.current;
+      if (!container) return;
+
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
         e.target instanceof HTMLSelectElement ||
-        (e.target instanceof HTMLElement && e.target.closest("[role='radiogroup']"))
+        (e.target instanceof HTMLElement && (
+          e.target.closest("[role='radiogroup']") ||
+          e.target.closest("[role='menu']") ||
+          e.target.closest("[role='listbox']")
+        ))
       ) {
         return;
+      }
+
+      // Ensure the inspector's dialog or container is active before handling
+      const dialog = container.closest("[role='dialog']");
+      if (dialog) {
+        if (!dialog.contains(document.activeElement)) {
+          return;
+        }
+      } else {
+        const inspectorWrapper = container.closest("[data-inspector-container='true']");
+        if (inspectorWrapper && !inspectorWrapper.contains(document.activeElement)) {
+          return;
+        }
       }
 
       if (e.key === "+" || e.key === "=") {
@@ -297,7 +317,7 @@ export function WorksheetImageInspector({
             size="sm"
             onClick={handleToggleContrast}
             className={cn(
-              "h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-3 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+              "h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-3 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
               isHighContrast
                 ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
                 : "text-muted-foreground hover:text-foreground"
@@ -317,7 +337,7 @@ export function WorksheetImageInspector({
             size="sm"
             onClick={handleToggleLoupe}
             className={cn(
-              "h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-3 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+              "h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-3 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
               isLoupeActive
                 ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
                 : "text-muted-foreground hover:text-foreground"
@@ -340,7 +360,7 @@ export function WorksheetImageInspector({
             size="sm"
             disabled={zoomScale <= 1}
             onClick={handleZoomOut}
-            className="size-10 sm:size-8 min-h-[40px] min-w-[40px] sm:min-h-[32px] sm:min-w-[32px] p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
+            className="size-11 sm:size-8 min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
             aria-label="Zoom out (Key: -)"
             title="Zoom out (-)"
           >
@@ -351,7 +371,7 @@ export function WorksheetImageInspector({
           <button
             type="button"
             onClick={handleResetZoom}
-            className="px-2.5 sm:px-2 py-1.5 sm:py-0.5 min-h-[40px] sm:min-h-[32px] flex items-center justify-center text-xs sm:text-[11px] font-mono font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded touch-manipulation"
+            className="px-2.5 sm:px-2 py-2 sm:py-0.5 min-h-[44px] sm:min-h-[32px] flex items-center justify-center text-xs sm:text-[11px] font-mono font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded touch-manipulation"
             title="Click to reset zoom (Key: 0)"
             aria-label={`Current zoom ${Math.round(zoomScale * 100)} percent. Click to reset.`}
           >
@@ -365,7 +385,7 @@ export function WorksheetImageInspector({
             size="sm"
             disabled={zoomScale >= 2.5}
             onClick={handleZoomIn}
-            className="size-10 sm:size-8 min-h-[40px] min-w-[40px] sm:min-h-[32px] sm:min-w-[32px] p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
+            className="size-11 sm:size-8 min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
             aria-label="Zoom in (Key: +)"
             title="Zoom in (+)"
           >
@@ -521,10 +541,10 @@ export function WorksheetImageInspector({
               e.stopPropagation();
               handleResetZoom();
             }}
-            className="absolute bottom-2.5 right-2.5 z-10 bg-background/95 dark:bg-card/95 text-foreground px-3 py-1.5 rounded-lg border border-border shadow-xs text-[11px] font-medium flex items-center gap-1.5 hover:bg-muted transition-colors cursor-pointer min-h-[36px] touch-manipulation"
+            className="absolute bottom-2.5 right-2.5 z-10 bg-background/95 dark:bg-card/95 text-foreground px-3 py-2 rounded-lg border border-border shadow-xs text-xs font-medium flex items-center gap-1.5 hover:bg-muted transition-colors cursor-pointer min-h-[44px] sm:min-h-[36px] touch-manipulation"
             title="Reset zoom & pan (Key: 0)"
           >
-            <RotateCcw className="size-3 text-muted-foreground" aria-hidden="true" />
+            <RotateCcw className="size-3.5 text-muted-foreground" aria-hidden="true" />
             <span>Reset view</span>
           </button>
         )}

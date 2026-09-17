@@ -61,7 +61,7 @@ const BANDS_GUIDE = [
   { band: "excellent" as const, score: 90, label: "Excellent (75–100%)", desc: "Fluent, highly consistent handwriting meeting grade-level goals." },
   { band: "satisfactory" as const, score: 65, label: "Satisfactory (50–74%)", desc: "Solid cursive foundation with minor areas to refine." },
   { band: "developing" as const, score: 38, label: "Developing (25–49%)", desc: "Actively learning and building muscle memory — a normal, key stage in cursive development." },
-  { band: "needs_improvement" as const, score: 15, label: "Needs Practice (0–24%)", desc: "Working on basic letter strokes, posture, or pencil grip with guided practice." },
+  { band: "needs_improvement" as const, score: 15, label: "Needs Improvement (0–24%)", desc: "Working on basic letter strokes, posture, or pencil grip with guided practice." },
 ];
 
 function CursiveCriterionIllustration({ criterionKey }: { criterionKey: string }) {
@@ -69,14 +69,14 @@ function CursiveCriterionIllustration({ criterionKey }: { criterionKey: string }
     case "letter_formation":
       return (
         <svg
-          viewBox="0 0 160 52"
-          className="w-full max-w-[170px] h-13 select-none"
+          viewBox="0 0 168 52"
+          className="w-full max-w-[178px] h-13 select-none"
           aria-hidden="true"
         >
           {/* 3-line penmanship rule */}
-          <line x1="8" y1="10" x2="152" y2="10" stroke="currentColor" className="text-border/60" strokeWidth="1" />
-          <line x1="8" y1="26" x2="152" y2="26" stroke="currentColor" className="text-brand-300/60 dark:text-brand-700/60" strokeWidth="1" strokeDasharray="3 3" />
-          <line x1="8" y1="42" x2="152" y2="42" stroke="currentColor" className="text-brand-600/70 dark:text-brand-400/70" strokeWidth="1.5" />
+          <line x1="8" y1="10" x2="160" y2="10" stroke="currentColor" className="text-border/60" strokeWidth="1" />
+          <line x1="8" y1="26" x2="160" y2="26" stroke="currentColor" className="text-brand-300/60 dark:text-brand-700/60" strokeWidth="1" strokeDasharray="3 3" />
+          <line x1="8" y1="42" x2="160" y2="42" stroke="currentColor" className="text-brand-600/70 dark:text-brand-400/70" strokeWidth="1.5" />
 
           {/* Cursive 'l' and 'e' strokes with rounded loop */}
           <path
@@ -89,11 +89,11 @@ function CursiveCriterionIllustration({ criterionKey }: { criterionKey: string }
             strokeLinejoin="round"
           />
           {/* Loop highlight callout */}
-          <circle cx="40" cy="10" r="5" fill="none" stroke="currentColor" className="text-brand-500 animate-pulse" strokeWidth="1.2" strokeDasharray="2 2" />
-          <text x="88" y="24" className="text-[10px] font-sans font-semibold fill-brand-700 dark:fill-brand-300">
+          <circle cx="40" cy="10" r="5" fill="none" stroke="currentColor" className="text-brand-500 animate-pulse motion-reduce:animate-none" strokeWidth="1.2" strokeDasharray="2 2" />
+          <text x="86" y="23" className="text-[11px] font-sans font-semibold fill-brand-700 dark:fill-brand-300">
             Smooth loops
           </text>
-          <text x="88" y="36" className="text-[9px] font-sans fill-muted-foreground">
+          <text x="86" y="37" className="text-[11px] font-sans fill-muted-foreground">
             no sharp corners
           </text>
         </svg>
@@ -102,14 +102,14 @@ function CursiveCriterionIllustration({ criterionKey }: { criterionKey: string }
     case "size_consistency":
       return (
         <svg
-          viewBox="0 0 160 52"
-          className="w-full max-w-[170px] h-13 select-none"
+          viewBox="0 0 168 52"
+          className="w-full max-w-[178px] h-13 select-none"
           aria-hidden="true"
         >
           {/* 3-line penmanship rule */}
-          <line x1="8" y1="10" x2="152" y2="10" stroke="currentColor" className="text-brand-600/40" strokeWidth="1" />
-          <line x1="8" y1="26" x2="152" y2="26" stroke="currentColor" className="text-brand-300/60 dark:text-brand-700/60" strokeWidth="1" strokeDasharray="3 3" />
-          <line x1="8" y1="42" x2="152" y2="42" stroke="currentColor" className="text-brand-600/70 dark:text-brand-400/70" strokeWidth="1.5" />
+          <line x1="8" y1="10" x2="160" y2="10" stroke="currentColor" className="text-brand-600/40" strokeWidth="1" />
+          <line x1="8" y1="26" x2="160" y2="26" stroke="currentColor" className="text-brand-300/60 dark:text-brand-700/60" strokeWidth="1" strokeDasharray="3 3" />
+          <line x1="8" y1="42" x2="160" y2="42" stroke="currentColor" className="text-brand-600/70 dark:text-brand-400/70" strokeWidth="1.5" />
 
           {/* Tall letter 't' touching headline */}
           <path
@@ -134,11 +134,11 @@ function CursiveCriterionIllustration({ criterionKey }: { criterionKey: string }
           />
 
           {/* Height indicators */}
-          <line x1="76" y1="10" x2="76" y2="42" stroke="currentColor" className="text-brand-400/80" strokeWidth="1" strokeDasharray="2 2" />
-          <text x="84" y="20" className="text-[10px] font-sans font-semibold fill-brand-700 dark:fill-brand-300">
+          <line x1="74" y1="10" x2="74" y2="42" stroke="currentColor" className="text-brand-400/80" strokeWidth="1" strokeDasharray="2 2" />
+          <text x="82" y="21" className="text-[11px] font-sans font-semibold fill-brand-700 dark:fill-brand-300">
             Tall: Headline
           </text>
-          <text x="84" y="34" className="text-[10px] font-sans font-medium fill-muted-foreground">
+          <text x="82" y="35" className="text-[11px] font-sans font-medium fill-muted-foreground">
             Middle: Midline
           </text>
         </svg>
@@ -147,14 +147,14 @@ function CursiveCriterionIllustration({ criterionKey }: { criterionKey: string }
     case "spacing":
       return (
         <svg
-          viewBox="0 0 160 52"
-          className="w-full max-w-[170px] h-13 select-none"
+          viewBox="0 0 168 52"
+          className="w-full max-w-[178px] h-13 select-none"
           aria-hidden="true"
         >
           {/* 3-line penmanship rule */}
-          <line x1="8" y1="10" x2="152" y2="10" stroke="currentColor" className="text-border/60" strokeWidth="1" />
-          <line x1="8" y1="26" x2="152" y2="26" stroke="currentColor" className="text-brand-300/60 dark:text-brand-700/60" strokeWidth="1" strokeDasharray="3 3" />
-          <line x1="8" y1="42" x2="152" y2="42" stroke="currentColor" className="text-brand-600/70 dark:text-brand-400/70" strokeWidth="1.5" />
+          <line x1="8" y1="10" x2="160" y2="10" stroke="currentColor" className="text-border/60" strokeWidth="1" />
+          <line x1="8" y1="26" x2="160" y2="26" stroke="currentColor" className="text-brand-300/60 dark:text-brand-700/60" strokeWidth="1" strokeDasharray="3 3" />
+          <line x1="8" y1="42" x2="160" y2="42" stroke="currentColor" className="text-brand-600/70 dark:text-brand-400/70" strokeWidth="1.5" />
 
           {/* Cursive join with even gap */}
           <path
@@ -170,10 +170,10 @@ function CursiveCriterionIllustration({ criterionKey }: { criterionKey: string }
           <circle cx="38" cy="36" r="1.5" className="fill-brand-600 dark:fill-brand-400" />
           <circle cx="48" cy="36" r="1.5" className="fill-brand-600 dark:fill-brand-400" />
 
-          <text x="78" y="24" className="text-[10px] font-sans font-semibold fill-brand-700 dark:fill-brand-300">
+          <text x="76" y="23" className="text-[11px] font-sans font-semibold fill-brand-700 dark:fill-brand-300">
             Rhythmic gap
           </text>
-          <text x="78" y="36" className="text-[9px] font-sans fill-muted-foreground">
+          <text x="76" y="37" className="text-[11px] font-sans fill-muted-foreground">
             consistent space
           </text>
         </svg>
@@ -182,14 +182,14 @@ function CursiveCriterionIllustration({ criterionKey }: { criterionKey: string }
     case "slant":
       return (
         <svg
-          viewBox="0 0 160 52"
-          className="w-full max-w-[170px] h-13 select-none"
+          viewBox="0 0 168 52"
+          className="w-full max-w-[178px] h-13 select-none"
           aria-hidden="true"
         >
           {/* 3-line penmanship rule */}
-          <line x1="8" y1="10" x2="152" y2="10" stroke="currentColor" className="text-border/60" strokeWidth="1" />
-          <line x1="8" y1="26" x2="152" y2="26" stroke="currentColor" className="text-brand-300/60 dark:text-brand-700/60" strokeWidth="1" strokeDasharray="3 3" />
-          <line x1="8" y1="42" x2="152" y2="42" stroke="currentColor" className="text-brand-600/70 dark:text-brand-400/70" strokeWidth="1.5" />
+          <line x1="8" y1="10" x2="160" y2="10" stroke="currentColor" className="text-border/60" strokeWidth="1" />
+          <line x1="8" y1="26" x2="160" y2="26" stroke="currentColor" className="text-brand-300/60 dark:text-brand-700/60" strokeWidth="1" strokeDasharray="3 3" />
+          <line x1="8" y1="42" x2="160" y2="42" stroke="currentColor" className="text-brand-600/70 dark:text-brand-400/70" strokeWidth="1.5" />
 
           {/* 68° Slanted guideline rays */}
           <line x1="32" y1="8" x2="18" y2="44" stroke="currentColor" className="text-brand-400/50 dark:text-brand-600/50" strokeWidth="1.2" strokeDasharray="2 2" />
@@ -207,10 +207,10 @@ function CursiveCriterionIllustration({ criterionKey }: { criterionKey: string }
 
           {/* Slant angle degree indicator */}
           <path d="M 22 42 A 10 10 0 0 1 24 34" fill="none" stroke="currentColor" className="text-brand-600 dark:text-brand-400" strokeWidth="1.2" />
-          <text x="68" y="24" className="text-[10px] font-sans font-semibold fill-brand-700 dark:fill-brand-300">
+          <text x="68" y="23" className="text-[11px] font-sans font-semibold fill-brand-700 dark:fill-brand-300">
             60°–75° Slant
           </text>
-          <text x="68" y="36" className="text-[9px] font-sans fill-muted-foreground">
+          <text x="68" y="37" className="text-[11px] font-sans fill-muted-foreground">
             forward lean
           </text>
         </svg>
@@ -220,14 +220,14 @@ function CursiveCriterionIllustration({ criterionKey }: { criterionKey: string }
     default:
       return (
         <svg
-          viewBox="0 0 160 52"
-          className="w-full max-w-[170px] h-13 select-none"
+          viewBox="0 0 168 52"
+          className="w-full max-w-[178px] h-13 select-none"
           aria-hidden="true"
         >
           {/* 3-line penmanship rule with highlighted baseline */}
-          <line x1="8" y1="10" x2="152" y2="10" stroke="currentColor" className="text-border/60" strokeWidth="1" />
-          <line x1="8" y1="26" x2="152" y2="26" stroke="currentColor" className="text-brand-300/60 dark:text-brand-700/60" strokeWidth="1" strokeDasharray="3 3" />
-          <line x1="8" y1="42" x2="152" y2="42" stroke="currentColor" className="text-brand-600 dark:text-brand-400" strokeWidth="2.5" />
+          <line x1="8" y1="10" x2="160" y2="10" stroke="currentColor" className="text-border/60" strokeWidth="1" />
+          <line x1="8" y1="26" x2="160" y2="26" stroke="currentColor" className="text-brand-300/60 dark:text-brand-700/60" strokeWidth="1" strokeDasharray="3 3" />
+          <line x1="8" y1="42" x2="160" y2="42" stroke="currentColor" className="text-brand-600 dark:text-brand-400" strokeWidth="2.5" />
 
           {/* Cursive word resting squarely on baseline */}
           <path
@@ -243,10 +243,10 @@ function CursiveCriterionIllustration({ criterionKey }: { criterionKey: string }
           <circle cx="34" cy="42" r="2" className="fill-brand-600 dark:fill-brand-400" />
           <circle cx="52" cy="42" r="2" className="fill-brand-600 dark:fill-brand-400" />
 
-          <text x="74" y="24" className="text-[10px] font-sans font-semibold fill-brand-700 dark:fill-brand-300">
+          <text x="72" y="23" className="text-[11px] font-sans font-semibold fill-brand-700 dark:fill-brand-300">
             Solid baseline
           </text>
-          <text x="74" y="36" className="text-[9px] font-sans fill-muted-foreground">
+          <text x="72" y="37" className="text-[11px] font-sans fill-muted-foreground">
             no floating/sinking
           </text>
         </svg>
@@ -355,7 +355,7 @@ export function ParentRubricDialog({
                         </h4>
                       </div>
                       {isHighlighted && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300">
+                        <span className="text-xs font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300">
                           Selected Skill
                         </span>
                       )}

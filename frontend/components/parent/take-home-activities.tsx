@@ -45,7 +45,7 @@ export function TakeHomeActivities({
       <div className="rounded-xl border border-border bg-card shadow-warm p-6 sm:p-8 text-center space-y-3.5">
         <div className="flex justify-center">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
-            <ClipboardList className="size-6" />
+            <ClipboardList className="size-6" aria-hidden="true" />
           </div>
         </div>
         <div className="space-y-1 max-w-md mx-auto">
@@ -92,12 +92,12 @@ export function TakeHomeActivities({
           >
             {expanded ? (
               <>
-                <ChevronUp className="size-3.5" />
+                <ChevronUp className="size-3.5" aria-hidden="true" />
                 <span>Show fewer activities</span>
               </>
             ) : (
               <>
-                <ChevronDown className="size-3.5" />
+                <ChevronDown className="size-3.5" aria-hidden="true" />
                 <span>View all assigned activities ({activities.length})</span>
               </>
             )}
@@ -165,11 +165,11 @@ function ActivityCard({
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground font-medium">Assigned {formattedDate}</p>
           {isRejected && !isLoading ? (
-            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300/60 dark:border-amber-800/60">
+            <span className="text-xs font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-warning/15 dark:bg-warning/25 text-warning-foreground border border-warning/30">
               Photo Retake
             </span>
           ) : needsUpload && !isLoading ? (
-            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/60 text-brand-800 dark:text-brand-300">
+            <span className="text-xs font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/60 text-brand-800 dark:text-brand-300">
               Needs Upload
             </span>
           ) : null}
@@ -193,16 +193,16 @@ function ActivityCard({
                 <div
                   role="status"
                   aria-live="polite"
-                  className="space-y-1.5 text-xs bg-amber-50/70 dark:bg-amber-950/30 border border-amber-300/70 dark:border-amber-800/60 p-3 rounded-lg leading-normal shadow-2xs"
+                  className="space-y-1.5 text-xs bg-warning/10 dark:bg-warning/20 border border-warning/40 dark:border-warning/50 p-3 rounded-lg leading-normal shadow-2xs"
                 >
-                  <div className="flex items-center gap-1.5 font-semibold text-amber-900 dark:text-amber-200 text-xs">
-                    <Camera className="size-3.5 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden="true" />
+                  <div className="flex items-center gap-1.5 font-semibold text-warning-foreground text-xs">
+                    <Camera className="size-3.5 shrink-0 text-warning-foreground" aria-hidden="true" />
                     <span>Photo Retake Needed: {rejection.label}</span>
                   </div>
-                  <p className="text-[11px] text-amber-950/85 dark:text-amber-100/85 leading-relaxed pl-5">
+                  <p className="text-xs text-foreground/90 leading-relaxed pl-5">
                     {rejection.detail}
                   </p>
-                  <p className="text-[11px] text-amber-900/70 dark:text-amber-300/70 italic pl-5 pt-0.5">
+                  <p className="text-xs text-warning-foreground font-medium pl-5 pt-0.5">
                     Tip: Lay the worksheet flat under good lighting with all 4 corners visible in the camera frame.
                   </p>
                 </div>
@@ -216,7 +216,7 @@ function ActivityCard({
               onClick={onUploadClick}
               aria-label={`Take another photo for "${targetText}"`}
             >
-              <Upload className="size-4" />
+              <Upload className="size-4" aria-hidden="true" />
               <span>Take Another Photo</span>
             </Button>
           </div>
@@ -235,8 +235,8 @@ function ActivityCard({
                 </div>
               ) : (
                 <div role="status" aria-live="polite" className="flex items-center gap-2 min-w-0">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-200 bg-amber-100/70 dark:bg-amber-950/60 px-2.5 py-0.5 rounded-md border border-amber-300 dark:border-amber-800/80 shadow-2xs">
-                    <Loader2 className="size-3.5 shrink-0 animate-spin motion-reduce:animate-none text-amber-800 dark:text-amber-300" aria-hidden="true" />
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-warning-foreground bg-warning/15 dark:bg-warning/25 px-2.5 py-0.5 rounded-md border border-warning/30 shadow-2xs">
+                    <Loader2 className="size-3.5 shrink-0 animate-spin motion-reduce:animate-none text-warning-foreground" aria-hidden="true" />
                     Analyzing handwriting…
                   </span>
                 </div>
@@ -272,7 +272,7 @@ function ActivityCard({
               <p
                 role="status"
                 aria-live="polite"
-                className="text-[11px] text-muted-foreground bg-muted/40 border border-border/60 p-2.5 rounded-md leading-normal"
+                className="text-xs text-muted-foreground bg-muted/40 border border-border/60 p-2.5 rounded-md leading-normal"
               >
                 Analyzing your child&apos;s handwriting now (usually takes 10–20 seconds). Results will appear automatically.
               </p>
@@ -287,10 +287,10 @@ function ActivityCard({
               onClick={onUploadClick}
               aria-label={`Upload worksheet for "${targetText}"`}
             >
-              <Upload className="size-4" />
+              <Upload className="size-4" aria-hidden="true" />
               Upload Worksheet
             </Button>
-            <p className="text-[11px] text-muted-foreground leading-tight text-center">
+            <p className="text-xs text-muted-foreground leading-tight text-center">
               Tip: Lay flat under bright lighting with all 4 corners in frame
             </p>
           </div>

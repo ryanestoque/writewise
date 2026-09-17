@@ -90,15 +90,14 @@ export function WorksheetViewDialog({
 }: WorksheetViewDialogProps) {
   const [showGuideLines, setShowGuideLines] = useState(false);
   const [criterionOverride, setCriterionOverride] = useState<CriterionFilter | null>(null);
-  const [prevInitialCriterion, setPrevInitialCriterion] = useState(initialCriterion);
-  const [prevOpen, setPrevOpen] = useState(open);
   const [showOverlay, setShowOverlay] = useState(true);
 
-  if (initialCriterion !== prevInitialCriterion || open !== prevOpen) {
-    setPrevInitialCriterion(initialCriterion);
-    setPrevOpen(open);
-    setCriterionOverride(null);
-  }
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      setCriterionOverride(null);
+    }
+    onOpenChange(nextOpen);
+  };
 
   const activeCriterion = criterionOverride ?? initialCriterion;
   const { data: imageUrl, isLoading: isImageLoading } =
@@ -111,14 +110,14 @@ export function WorksheetViewDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-[calc(100%-1.5rem)] max-w-4xl max-h-[min(94dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
         {/* Header */}
         <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border bg-card/80">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pr-8">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="flex size-9 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
-                <FileImage className="size-4.5" />
+                <FileImage className="size-4.5" aria-hidden="true" />
               </div>
               <div className="min-w-0">
                 <DialogTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
@@ -126,12 +125,12 @@ export function WorksheetViewDialog({
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap truncate">
                   <span className="inline-flex items-center gap-1 font-medium text-foreground">
-                    <User className="size-3 text-brand-600 dark:text-brand-400" />
+                    <User className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                     {childName}
                   </span>
                   <span>&middot;</span>
                   <span className="inline-flex items-center gap-1">
-                    <Calendar className="size-3" />
+                    <Calendar className="size-3" aria-hidden="true" />
                     {formattedDate}
                   </span>
                 </DialogDescription>
@@ -187,7 +186,7 @@ export function WorksheetViewDialog({
                 <button
                   type="button"
                   onClick={() => setShowGuideLines((prev) => !prev)}
-                  className={`self-start px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-colors cursor-pointer flex items-center gap-1.5 min-h-[40px] sm:min-h-[36px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 ${
+                  className={`self-start px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer flex items-center gap-1.5 min-h-[40px] sm:min-h-[36px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 ${
                     showGuideLines
                       ? "bg-brand-100 text-brand-900 border-brand-300 dark:bg-brand-950 dark:text-brand-200 dark:border-brand-800"
                       : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted/70 hover:text-foreground"
@@ -209,7 +208,7 @@ export function WorksheetViewDialog({
             <div className="lg:col-span-5 space-y-4">
               {/* Activity Target Text */}
               <div className="p-3.5 rounded-xl border border-border/80 bg-card/60 space-y-1 shadow-xs">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Assigned Target Text
                 </span>
                 <p className="text-sm font-semibold text-foreground leading-snug">
@@ -245,7 +244,7 @@ export function WorksheetViewDialog({
                     <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Skill Breakdown
                     </span>
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       5 skills
                     </span>
                   </div>
@@ -275,7 +274,7 @@ export function WorksheetViewDialog({
               className="h-10 sm:h-9 px-3.5 text-xs font-medium gap-1.5 cursor-pointer"
               onClick={onBack}
             >
-              <ArrowLeft className="size-3.5" />
+              <ArrowLeft className="size-3.5" aria-hidden="true" />
               <span>{backLabel}</span>
             </Button>
           ) : (

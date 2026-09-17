@@ -256,7 +256,8 @@ export function useChildScoreHistory(childId: string | null) {
             slant_score,
             baseline_alignment_score,
             composite_score,
-            raw_output
+            raw_output,
+            overlay
           )
         `)
         .eq("student_id", childId)
@@ -343,6 +344,7 @@ export function useChildScoreHistory(childId: string | null) {
             baseline_alignment: baBand,
           },
           guideLines: extractGuideLines(rawMeasurement),
+          overlay: extractDiagnosticOverlay(rawMeasurement),
         });
       }
 

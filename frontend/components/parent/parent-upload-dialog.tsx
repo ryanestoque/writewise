@@ -326,7 +326,7 @@ function ParentUploadFlow({
       <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-border pr-12">
         <div className="flex items-center gap-2.5">
           <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
-            <UploadCloudIcon className="size-5" />
+            <UploadCloudIcon className="size-5" aria-hidden="true" />
           </div>
           <div className="min-w-0">
             <DialogTitle className="text-base sm:text-lg font-semibold text-foreground truncate">
@@ -355,7 +355,7 @@ function ParentUploadFlow({
               </div>
             ) : !activities || activities.length === 0 ? (
               <div className="p-6 rounded-xl border border-dashed text-center space-y-2">
-                <BookOpen className="size-8 text-muted-foreground mx-auto" />
+                <BookOpen className="size-8 text-muted-foreground mx-auto" aria-hidden="true" />
                 <p className="text-sm font-medium text-foreground">
                   No take-home activities available
                 </p>
@@ -419,7 +419,7 @@ function ParentUploadFlow({
             {/* Reassurance banner for completed activities */}
             {priorSubmission?.status === "completed" && (
               <div className="flex items-center gap-2 p-2.5 px-3 rounded-xl bg-brand-50/80 dark:bg-brand-950/40 border border-brand-200/70 dark:border-brand-800/50 text-[11px] sm:text-xs text-brand-900 dark:text-brand-200">
-                <CheckCircle2Icon className="size-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                <CheckCircle2Icon className="size-4 shrink-0 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                 <span>
                   <strong>New attempt:</strong> Submitting a new photo records an updated assessment while keeping earlier scores safely archived in your child&apos;s history.
                 </span>
@@ -466,7 +466,7 @@ function ParentUploadFlow({
                     className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
                     onClick={handleRetake}
                   >
-                    <RotateCcwIcon className="size-3.5" />
+                    <RotateCcwIcon className="size-3.5" aria-hidden="true" />
                     Retake Photo
                   </Button>
 
@@ -477,7 +477,7 @@ function ParentUploadFlow({
                     className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 shadow-warm cursor-pointer"
                     onClick={handleSubmit}
                   >
-                    <UploadCloudIcon className="size-4" />
+                    <UploadCloudIcon className="size-4" aria-hidden="true" />
                     Submit Assessment
                   </Button>
                 </div>
@@ -504,9 +504,9 @@ function ParentUploadFlow({
                 >
                   <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-2.5">
                     {isMobile ? (
-                      <CameraIcon className="size-6" />
+                      <CameraIcon className="size-6" aria-hidden="true" />
                     ) : (
-                      <UploadCloudIcon className="size-6" />
+                      <UploadCloudIcon className="size-6" aria-hidden="true" />
                     )}
                   </div>
                   <p className="text-sm sm:text-base font-semibold text-foreground">
@@ -532,7 +532,7 @@ function ParentUploadFlow({
                           cameraInputRef.current?.click();
                         }}
                       >
-                        <CameraIcon className="size-3.5" />
+                        <CameraIcon className="size-3.5" aria-hidden="true" />
                         Take Photo
                       </Button>
                     )}
@@ -546,7 +546,7 @@ function ParentUploadFlow({
                         fileInputRef.current?.click();
                       }}
                     >
-                      <FileImageIcon className="size-3.5" />
+                      <FileImageIcon className="size-3.5" aria-hidden="true" />
                       {isMobile ? "Photo Library" : "Browse Files"}
                     </Button>
                   </div>
@@ -554,7 +554,7 @@ function ParentUploadFlow({
 
                 {/* Privacy Badge */}
                 <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground pt-0.5">
-                  <ShieldCheckIcon className="size-4 text-primary/70 shrink-0" />
+                  <ShieldCheckIcon className="size-4 text-primary/70 shrink-0" aria-hidden="true" />
                   <span>Location and device metadata stripped automatically</span>
                 </div>
 
@@ -568,7 +568,7 @@ function ParentUploadFlow({
                     aria-controls={photoTipsId}
                   >
                     <div className="flex items-center gap-2">
-                      <LightbulbIcon className="size-4 text-primary shrink-0" />
+                      <LightbulbIcon className="size-4 text-primary shrink-0" aria-hidden="true" />
                       <span className="text-xs sm:text-sm font-semibold">
                         Photo quality tips
                       </span>
@@ -579,6 +579,7 @@ function ParentUploadFlow({
                         className={`size-3.5 transition-transform duration-200 ${
                           showTips ? "rotate-180" : ""
                         }`}
+                        aria-hidden="true"
                       />
                     </div>
                   </button>
@@ -604,7 +605,7 @@ function ParentUploadFlow({
                   role="alert"
                   className="flex items-start gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive text-sm"
                 >
-                  <AlertCircleIcon className="size-5 shrink-0 mt-0.5" />
+                  <AlertCircleIcon className="size-5 shrink-0 mt-0.5" aria-hidden="true" />
                   <div className="space-y-1">
                     <p className="font-semibold text-foreground">
                       Unable to process worksheet
@@ -623,7 +624,7 @@ function ParentUploadFlow({
                     className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 shadow-warm cursor-pointer"
                     onClick={handleRetake}
                   >
-                    <RotateCcwIcon className="size-3.5" />
+                    <RotateCcwIcon className="size-3.5" aria-hidden="true" />
                     Retake Photo
                   </Button>
                 </div>
@@ -632,7 +633,7 @@ function ParentUploadFlow({
               <div className="text-center space-y-4 py-4">
                 <div className="flex justify-center">
                   <div className="flex size-14 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-950 text-brand-600 dark:text-brand-400 animate-in zoom-in-50 duration-200 motion-reduce:animate-none">
-                    <CheckCircle2Icon className="size-8" />
+                    <CheckCircle2Icon className="size-8" aria-hidden="true" />
                   </div>
                 </div>
                 <div className="space-y-1">

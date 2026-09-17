@@ -43,7 +43,7 @@ export default async function ParentSettingsPage() {
           href="/progress"
           className={cn(
             buttonVariants({ variant: "outline", size: "sm" }),
-            "h-9 px-3.5 text-xs font-medium text-foreground/80 hover:text-foreground hover:bg-muted/50 border-border/80 hover:border-brand-500/40 gap-2 cursor-pointer inline-flex items-center rounded-lg bg-card shadow-2xs transition-all focus-visible:ring-2 focus-visible:ring-primary"
+            "h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-3.5 text-xs font-medium text-foreground/80 hover:text-foreground hover:bg-muted/50 border-border/80 hover:border-brand-500/40 gap-2 cursor-pointer inline-flex items-center rounded-lg bg-card shadow-2xs transition-all focus-visible:ring-2 focus-visible:ring-primary"
           )}
         >
           <ArrowLeft className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />

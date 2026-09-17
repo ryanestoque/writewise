@@ -53,6 +53,8 @@ interface GuideLineOverlayProps {
  * behaves with `object-fit: contain`. This means all y-coordinates from the
  * pipeline can be drawn directly without manual scale calculations.
  */
+const naturalSizeCache = new Map<string, { width: number; height: number }>();
+
 export function GuideLineOverlay({
   guideLines,
   imageUrl,
@@ -62,22 +64,24 @@ export function GuideLineOverlay({
   const [naturalSize, setNaturalSize] = useState<{
     width: number;
     height: number;
-  } | null>(null);
+  } | null>(() => (imageUrl ? naturalSizeCache.get(imageUrl) ?? null : null));
 
   if (imageUrl !== prevImageUrl) {
     setPrevImageUrl(imageUrl);
-    setNaturalSize(null);
+    setNaturalSize(imageUrl ? naturalSizeCache.get(imageUrl) ?? null : null);
   }
 
   // Load the image's intrinsic dimensions so the SVG viewBox can mirror them.
   useEffect(() => {
-    if (!imageUrl) return;
+    if (!imageUrl || naturalSizeCache.has(imageUrl)) return;
 
     let active = true;
     const img = new Image();
     img.onload = () => {
       if (active) {
-        setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
+        const size = { width: img.naturalWidth, height: img.naturalHeight };
+        naturalSizeCache.set(imageUrl, size);
+        setNaturalSize(size);
       }
     };
     img.onerror = () => {
