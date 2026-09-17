@@ -326,7 +326,7 @@ function LoginForm() {
             Write<span className="text-primary">Wise</span>
           </h1>
           <CardDescription className="mt-1 text-sm text-muted-foreground">
-            Sign in to your account
+            {/* Sign in to your account */}
           </CardDescription>
         </div>
       </CardHeader>
