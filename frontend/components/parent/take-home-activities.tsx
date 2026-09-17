@@ -194,23 +194,25 @@ function ActivityCard({
                   <p className="text-xs text-foreground/90 leading-relaxed pl-5">
                     {rejection.detail}
                   </p>
-                  <p className="text-xs text-warning-foreground font-medium pl-5 pt-0.5">
-                    Tip: Lay the worksheet flat under good lighting with all 4 corners visible in the camera frame.
-                  </p>
                 </div>
               );
             })()}
 
-            <Button
-              variant="default"
-              size="sm"
-              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 shadow-warm w-full font-medium cursor-pointer"
-              onClick={onUploadClick}
-              aria-label={`Take another photo for "${targetText}"`}
-            >
-              <Upload className="size-4" aria-hidden="true" />
-              <span>Take Another Photo</span>
-            </Button>
+            <div className="space-y-1.5 w-full">
+              <Button
+                variant="default"
+                size="sm"
+                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 shadow-warm w-full font-medium cursor-pointer"
+                onClick={onUploadClick}
+                aria-label={`Take another photo for "${targetText}"`}
+              >
+                <Upload className="size-4" aria-hidden="true" />
+                <span>Take Another Photo</span>
+              </Button>
+              <p className="text-xs text-muted-foreground leading-tight text-center">
+                Tip: Lay flat under bright lighting with all 4 corners in frame
+              </p>
+            </div>
           </div>
         ) : submission ? (
           <div className="space-y-2 w-full">

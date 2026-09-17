@@ -155,7 +155,7 @@ export function LatestSubmissionCard({
                 alt={`Handwriting worksheet sample for ${latest.activityText}`}
                 fill
                 sizes="(max-width: 768px) 100vw, 400px"
-                className="object-cover object-center group-hover:scale-[1.02] transition-transform duration-300"
+                className="object-cover object-center group-hover:scale-[1.02] transition-transform duration-300 motion-reduce:transform-none motion-reduce:transition-none"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent flex items-end justify-between p-3">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-sm border border-white/20 text-xs font-medium text-white shadow-xs">
@@ -225,92 +225,104 @@ export function LatestSubmissionCard({
           {(topStrength || practiceFocus) && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-stretch">
               {/* Top Strength Card */}
-              {topStrength && (
-                <button
-                  type="button"
-                  onClick={() => openWorksheetForCriterion(topStrength.key as CriterionFilter)}
-                  aria-label={`Top strength: ${topStrength.meta.label}${topStrength.band ? `, rated ${topStrength.band.replace('_', ' ')}` : ""}. Click to inspect guidelines on worksheet.`}
-                  aria-haspopup="dialog"
-                  className="group w-full h-full text-left rounded-xl border border-border/80 bg-card hover:bg-muted/40 hover:border-brand-400/60 dark:hover:border-brand-700/60 p-3.5 sm:p-4 flex flex-col justify-between gap-2.5 transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 shadow-2xs"
-                >
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="flex size-6 items-center justify-center rounded-md bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
-                          <Award className="size-3.5" aria-hidden="true" />
+              {topStrength && (() => {
+                const topNote = topStrength.band
+                  ? DIAGNOSTIC_NOTES[topStrength.key][topStrength.band]
+                  : topStrength.meta.shortDescription;
+                const topStrengthAriaLabel = `Top strength: ${topStrength.meta.label}${topStrength.band ? `, rated ${topStrength.band.replace(/_/g, " ")}` : ""}. ${topNote}. Click to inspect guidelines on worksheet.`;
+                return (
+                  <button
+                    type="button"
+                    onClick={() => openWorksheetForCriterion(topStrength.key as CriterionFilter)}
+                    aria-label={topStrengthAriaLabel}
+                    aria-haspopup="dialog"
+                    className="group w-full h-full text-left rounded-xl border border-border/80 bg-card hover:bg-muted/40 hover:border-brand-400/60 dark:hover:border-brand-700/60 p-3.5 sm:p-4 flex flex-col justify-between gap-2.5 transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 shadow-2xs"
+                  >
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="flex size-6 items-center justify-center rounded-md bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
+                            <Award className="size-3.5" aria-hidden="true" />
+                          </div>
+                          <span className="text-xs font-semibold text-foreground truncate">
+                            Top Strength: {topStrength.meta.label}
+                          </span>
                         </div>
-                        <span className="text-xs font-semibold text-foreground truncate">
-                          Top Strength: {topStrength.meta.label}
-                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <BandBadge band={topStrength.band} score={topStrength.score} size="sm" />
+                          <ArrowRight className="size-3.5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <BandBadge band={topStrength.band} score={topStrength.score} size="sm" />
-                        <ArrowRight className="size-3.5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
-                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                        {topNote}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                      {topStrength.band
-                        ? DIAGNOSTIC_NOTES[topStrength.key][topStrength.band]
-                        : topStrength.meta.shortDescription}
-                    </p>
-                  </div>
-                  <div className="pt-2 flex items-center justify-between text-xs border-t border-border/40">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 dark:text-brand-300 group-hover:underline">
-                      <Eye className="size-3.5" aria-hidden="true" />
-                      <span>See on worksheet guidelines</span>
-                    </span>
-                    <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
-                      Click to inspect
-                    </span>
-                  </div>
-                </button>
-              )}
+                    <div className="pt-2 flex items-center justify-between text-xs border-t border-border/40 text-muted-foreground group-hover:text-foreground transition-colors">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-700 dark:text-brand-300">
+                        <Eye className="size-3.5" aria-hidden="true" />
+                        <span>Inspect on worksheet</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground group-hover:text-brand-700 dark:group-hover:text-brand-300">
+                        <span>View strokes</span>
+                        <ArrowRight className="size-3 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+                      </span>
+                    </div>
+                  </button>
+                );
+              })()}
 
               {/* Practice Focus Card */}
-              {practiceFocus && (
-                <button
-                  type="button"
-                  onClick={() => openWorksheetForCriterion(practiceFocus.key as CriterionFilter)}
-                  aria-label={`Practice focus: ${practiceFocus.meta.label}${practiceFocus.band ? `, rated ${practiceFocus.band.replace('_', ' ')}` : ""}. Home tip: ${practiceFocus.meta.homeTip}. Click to inspect on worksheet guidelines dialog.`}
-                  aria-haspopup="dialog"
-                  className="group w-full h-full text-left rounded-xl border border-border/80 bg-card hover:bg-muted/40 hover:border-warning/60 dark:hover:border-warning/50 p-3.5 sm:p-4 flex flex-col justify-between gap-2.5 transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-600 dark:focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-card shadow-2xs"
-                >
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="flex size-6 items-center justify-center rounded-md bg-warning/15 dark:bg-warning/25 text-warning-foreground shrink-0">
-                          <Target className="size-3.5" aria-hidden="true" />
+              {practiceFocus && (() => {
+                const focusNote = practiceFocus.band
+                  ? DIAGNOSTIC_NOTES[practiceFocus.key][practiceFocus.band]
+                  : practiceFocus.meta.shortDescription;
+                const practiceFocusAriaLabel = `Practice focus: ${practiceFocus.meta.label}${practiceFocus.band ? `, rated ${practiceFocus.band.replace(/_/g, " ")}` : ""}. Observation: ${focusNote}. Home practice tip: ${practiceFocus.meta.homeTip}. Click to inspect on worksheet guidelines dialog.`;
+                return (
+                  <button
+                    type="button"
+                    onClick={() => openWorksheetForCriterion(practiceFocus.key as CriterionFilter)}
+                    aria-label={practiceFocusAriaLabel}
+                    aria-haspopup="dialog"
+                    className="group w-full h-full text-left rounded-xl border border-border/80 bg-card hover:bg-muted/40 hover:border-warning/60 dark:hover:border-warning/50 p-3.5 sm:p-4 flex flex-col justify-between gap-2.5 transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-600 dark:focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-card shadow-2xs"
+                  >
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="flex size-6 items-center justify-center rounded-md bg-warning/15 dark:bg-warning/25 text-warning-foreground shrink-0">
+                            <Target className="size-3.5" aria-hidden="true" />
+                          </div>
+                          <span className="text-xs font-semibold text-foreground truncate">
+                            Practice Focus: {practiceFocus.meta.label}
+                          </span>
                         </div>
-                        <span className="text-xs font-semibold text-foreground truncate">
-                          Practice Focus: {practiceFocus.meta.label}
-                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <BandBadge band={practiceFocus.band} score={practiceFocus.score} size="sm" />
+                          <ArrowRight className="size-3.5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <BandBadge band={practiceFocus.band} score={practiceFocus.score} size="sm" />
-                        <ArrowRight className="size-3.5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
-                      </div>
+                      <p
+                        className="text-xs text-muted-foreground leading-relaxed line-clamp-2"
+                        title={practiceFocus.meta.homeTip}
+                      >
+                        <strong className="font-semibold text-foreground">
+                          Home practice tip:
+                        </strong>{" "}
+                        {practiceFocus.meta.homeTip}
+                      </p>
                     </div>
-                    <p
-                      className="text-xs text-muted-foreground leading-relaxed line-clamp-2"
-                      title={practiceFocus.meta.homeTip}
-                    >
-                      <strong className="font-semibold text-foreground">
-                        Home practice tip:
-                      </strong>{" "}
-                      {practiceFocus.meta.homeTip}
-                    </p>
-                  </div>
-                  <div className="pt-2 flex items-center justify-between text-xs border-t border-border/40">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-warning-foreground group-hover:underline">
-                      <Eye className="size-3.5" aria-hidden="true" />
-                      <span>See on worksheet guidelines</span>
-                    </span>
-                    <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
-                      Click to inspect
-                    </span>
-                  </div>
-                </button>
-              )}
+                    <div className="pt-2 flex items-center justify-between text-xs border-t border-border/40 text-muted-foreground group-hover:text-foreground transition-colors">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-warning-foreground">
+                        <Eye className="size-3.5" aria-hidden="true" />
+                        <span>Inspect on worksheet</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground group-hover:text-warning-foreground">
+                        <span>View strokes</span>
+                        <ArrowRight className="size-3 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+                      </span>
+                    </div>
+                  </button>
+                );
+              })()}
             </div>
           )}
 

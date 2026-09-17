@@ -328,22 +328,15 @@ export function ParentRubricDialog({
                 const Icon = criterion.icon;
                 const isHighlighted = activeCriterion === criterion.key;
                 return (
-                  <div
+                  <button
                     key={criterion.key}
+                    type="button"
                     id={`rubric-criterion-${criterion.key}`}
-                    role="button"
-                    tabIndex={0}
                     aria-pressed={isHighlighted}
                     aria-label={`${criterion.title}${isHighlighted ? " (selected, click to show all skills)" : " (click to highlight)"}`}
                     onClick={() => setSelectedCriterionOverride(isHighlighted ? null : criterion.key)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setSelectedCriterionOverride(isHighlighted ? null : criterion.key);
-                      }
-                    }}
                     className={cn(
-                      "group p-3.5 sm:p-4 rounded-xl border transition-all space-y-2 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
+                      "group w-full text-left p-3.5 sm:p-4 rounded-xl border transition-all space-y-2 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
                       isHighlighted
                         ? "border-brand-500 ring-2 ring-brand-500/25 bg-brand-50/40 dark:bg-brand-950/30 shadow-xs"
                         : "border-border/80 bg-card/50 hover:border-brand-400/60 dark:hover:border-brand-700/60 hover:bg-muted/30"
@@ -390,7 +383,7 @@ export function ParentRubricDialog({
                         {criterion.whatToLookFor}
                       </span>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>

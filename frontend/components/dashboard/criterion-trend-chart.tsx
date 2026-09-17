@@ -17,7 +17,7 @@ import { BandBadge } from "@/components/shared/band-badge";
 import { LineChart as LineChartIcon, Info, Table2, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-import { CRITERION_CONFIG, CHART_BAND_AREAS } from "@/lib/utils/chart-theme";
+import { CRITERION_CONFIG, CHART_BAND_AREAS, CHART_DOT_STROKE } from "@/lib/utils/chart-theme";
 
 interface CriterionTrendChartProps {
   history: StudentScoreHistoryItem[];
@@ -479,13 +479,13 @@ export function CriterionTrendChart({
                       dot={{
                         r: c.key === "composite" ? 4 : 3,
                         fill: color,
-                        stroke: isDark ? "#2a3330" : "#ffffff",
+                        stroke: isDark ? CHART_DOT_STROKE.dark : CHART_DOT_STROKE.light,
                         strokeWidth: 1.5,
                       }}
                       activeDot={{
                         r: 5,
                         strokeWidth: 2,
-                        stroke: isDark ? "#2a3330" : "#ffffff",
+                        stroke: isDark ? CHART_DOT_STROKE.dark : CHART_DOT_STROKE.light,
                       }}
                     />
                   );

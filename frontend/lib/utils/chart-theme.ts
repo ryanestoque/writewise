@@ -108,3 +108,9 @@ export const CHART_BAND_AREAS: readonly ChartBandAreaConfig[] = [
     label: "Needs Improvement (0–24%)",
   },
 ] as const;
+
+export const CHART_DOT_STROKE = {
+  light: "#ffffff",
+  dark: "#2a3330",
+} as const;
+
