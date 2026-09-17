@@ -64,6 +64,196 @@ const BANDS_GUIDE = [
   { band: "needs_improvement" as const, score: 15, label: "Needs Practice (0–24%)", desc: "Working on basic letter strokes, posture, or pencil grip with guided practice." },
 ];
 
+function CursiveCriterionIllustration({ criterionKey }: { criterionKey: string }) {
+  switch (criterionKey) {
+    case "letter_formation":
+      return (
+        <svg
+          viewBox="0 0 160 52"
+          className="w-full max-w-[170px] h-13 select-none"
+          aria-hidden="true"
+        >
+          {/* 3-line penmanship rule */}
+          <line x1="8" y1="10" x2="152" y2="10" stroke="currentColor" className="text-border/60" strokeWidth="1" />
+          <line x1="8" y1="26" x2="152" y2="26" stroke="currentColor" className="text-brand-300/60 dark:text-brand-700/60" strokeWidth="1" strokeDasharray="3 3" />
+          <line x1="8" y1="42" x2="152" y2="42" stroke="currentColor" className="text-brand-600/70 dark:text-brand-400/70" strokeWidth="1.5" />
+
+          {/* Cursive 'l' and 'e' strokes with rounded loop */}
+          <path
+            d="M 18 42 C 24 38, 30 18, 38 10 C 42 6, 46 12, 42 26 C 40 34, 42 42, 50 42 C 54 42, 58 36, 62 26 C 66 18, 70 24, 66 34 C 64 39, 68 42, 76 42"
+            fill="none"
+            stroke="currentColor"
+            className="text-brand-700 dark:text-brand-300"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* Loop highlight callout */}
+          <circle cx="40" cy="10" r="5" fill="none" stroke="currentColor" className="text-brand-500 animate-pulse" strokeWidth="1.2" strokeDasharray="2 2" />
+          <text x="88" y="24" className="text-[10px] font-sans font-semibold fill-brand-700 dark:fill-brand-300">
+            Smooth loops
+          </text>
+          <text x="88" y="36" className="text-[9px] font-sans fill-muted-foreground">
+            no sharp corners
+          </text>
+        </svg>
+      );
+
+    case "size_consistency":
+      return (
+        <svg
+          viewBox="0 0 160 52"
+          className="w-full max-w-[170px] h-13 select-none"
+          aria-hidden="true"
+        >
+          {/* 3-line penmanship rule */}
+          <line x1="8" y1="10" x2="152" y2="10" stroke="currentColor" className="text-brand-600/40" strokeWidth="1" />
+          <line x1="8" y1="26" x2="152" y2="26" stroke="currentColor" className="text-brand-300/60 dark:text-brand-700/60" strokeWidth="1" strokeDasharray="3 3" />
+          <line x1="8" y1="42" x2="152" y2="42" stroke="currentColor" className="text-brand-600/70 dark:text-brand-400/70" strokeWidth="1.5" />
+
+          {/* Tall letter 't' touching headline */}
+          <path
+            d="M 22 42 C 26 38, 28 20, 28 10 C 28 25, 28 42, 34 42"
+            fill="none"
+            stroke="currentColor"
+            className="text-brand-700 dark:text-brand-300"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <line x1="22" y1="22" x2="34" y2="22" stroke="currentColor" className="text-brand-700 dark:text-brand-300" strokeWidth="2" strokeLinecap="round" />
+
+          {/* Middle letter 'a' capped at midline */}
+          <path
+            d="M 44 34 C 44 28, 50 26, 56 26 C 62 26, 64 32, 64 42 M 64 26 C 64 35, 64 42, 68 42 M 44 34 C 44 40, 52 42, 64 42"
+            fill="none"
+            stroke="currentColor"
+            className="text-brand-700 dark:text-brand-300"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {/* Height indicators */}
+          <line x1="76" y1="10" x2="76" y2="42" stroke="currentColor" className="text-brand-400/80" strokeWidth="1" strokeDasharray="2 2" />
+          <text x="84" y="20" className="text-[10px] font-sans font-semibold fill-brand-700 dark:fill-brand-300">
+            Tall: Headline
+          </text>
+          <text x="84" y="34" className="text-[10px] font-sans font-medium fill-muted-foreground">
+            Middle: Midline
+          </text>
+        </svg>
+      );
+
+    case "spacing":
+      return (
+        <svg
+          viewBox="0 0 160 52"
+          className="w-full max-w-[170px] h-13 select-none"
+          aria-hidden="true"
+        >
+          {/* 3-line penmanship rule */}
+          <line x1="8" y1="10" x2="152" y2="10" stroke="currentColor" className="text-border/60" strokeWidth="1" />
+          <line x1="8" y1="26" x2="152" y2="26" stroke="currentColor" className="text-brand-300/60 dark:text-brand-700/60" strokeWidth="1" strokeDasharray="3 3" />
+          <line x1="8" y1="42" x2="152" y2="42" stroke="currentColor" className="text-brand-600/70 dark:text-brand-400/70" strokeWidth="1.5" />
+
+          {/* Cursive join with even gap */}
+          <path
+            d="M 18 42 C 22 36, 26 26, 30 26 C 34 26, 36 34, 38 42 M 48 42 C 52 36, 56 26, 60 26 C 64 26, 66 34, 68 42"
+            fill="none"
+            stroke="currentColor"
+            className="text-brand-700 dark:text-brand-300"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          {/* Spacing dimension bracket */}
+          <line x1="38" y1="36" x2="48" y2="36" stroke="currentColor" className="text-brand-600 dark:text-brand-400" strokeWidth="1.5" />
+          <circle cx="38" cy="36" r="1.5" className="fill-brand-600 dark:fill-brand-400" />
+          <circle cx="48" cy="36" r="1.5" className="fill-brand-600 dark:fill-brand-400" />
+
+          <text x="78" y="24" className="text-[10px] font-sans font-semibold fill-brand-700 dark:fill-brand-300">
+            Rhythmic gap
+          </text>
+          <text x="78" y="36" className="text-[9px] font-sans fill-muted-foreground">
+            consistent space
+          </text>
+        </svg>
+      );
+
+    case "slant":
+      return (
+        <svg
+          viewBox="0 0 160 52"
+          className="w-full max-w-[170px] h-13 select-none"
+          aria-hidden="true"
+        >
+          {/* 3-line penmanship rule */}
+          <line x1="8" y1="10" x2="152" y2="10" stroke="currentColor" className="text-border/60" strokeWidth="1" />
+          <line x1="8" y1="26" x2="152" y2="26" stroke="currentColor" className="text-brand-300/60 dark:text-brand-700/60" strokeWidth="1" strokeDasharray="3 3" />
+          <line x1="8" y1="42" x2="152" y2="42" stroke="currentColor" className="text-brand-600/70 dark:text-brand-400/70" strokeWidth="1.5" />
+
+          {/* 68° Slanted guideline rays */}
+          <line x1="32" y1="8" x2="18" y2="44" stroke="currentColor" className="text-brand-400/50 dark:text-brand-600/50" strokeWidth="1.2" strokeDasharray="2 2" />
+          <line x1="52" y1="8" x2="38" y2="44" stroke="currentColor" className="text-brand-400/50 dark:text-brand-600/50" strokeWidth="1.2" strokeDasharray="2 2" />
+
+          {/* Slanted cursive letter strokes */}
+          <path
+            d="M 22 42 C 26 34, 30 14, 32 10 C 30 25, 26 38, 28 42 M 42 42 C 46 34, 50 14, 52 10"
+            fill="none"
+            stroke="currentColor"
+            className="text-brand-700 dark:text-brand-300"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+
+          {/* Slant angle degree indicator */}
+          <path d="M 22 42 A 10 10 0 0 1 24 34" fill="none" stroke="currentColor" className="text-brand-600 dark:text-brand-400" strokeWidth="1.2" />
+          <text x="68" y="24" className="text-[10px] font-sans font-semibold fill-brand-700 dark:fill-brand-300">
+            60°–75° Slant
+          </text>
+          <text x="68" y="36" className="text-[9px] font-sans fill-muted-foreground">
+            forward lean
+          </text>
+        </svg>
+      );
+
+    case "baseline_alignment":
+    default:
+      return (
+        <svg
+          viewBox="0 0 160 52"
+          className="w-full max-w-[170px] h-13 select-none"
+          aria-hidden="true"
+        >
+          {/* 3-line penmanship rule with highlighted baseline */}
+          <line x1="8" y1="10" x2="152" y2="10" stroke="currentColor" className="text-border/60" strokeWidth="1" />
+          <line x1="8" y1="26" x2="152" y2="26" stroke="currentColor" className="text-brand-300/60 dark:text-brand-700/60" strokeWidth="1" strokeDasharray="3 3" />
+          <line x1="8" y1="42" x2="152" y2="42" stroke="currentColor" className="text-brand-600 dark:text-brand-400" strokeWidth="2.5" />
+
+          {/* Cursive word resting squarely on baseline */}
+          <path
+            d="M 16 42 C 20 34, 24 26, 28 26 C 30 26, 32 38, 34 42 C 38 42, 42 26, 46 26 C 48 26, 50 38, 52 42 M 34 42 L 36 42 M 52 42 L 56 42"
+            fill="none"
+            stroke="currentColor"
+            className="text-brand-700 dark:text-brand-300"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* Anchored checkmarks on baseline */}
+          <circle cx="34" cy="42" r="2" className="fill-brand-600 dark:fill-brand-400" />
+          <circle cx="52" cy="42" r="2" className="fill-brand-600 dark:fill-brand-400" />
+
+          <text x="74" y="24" className="text-[10px] font-sans font-semibold fill-brand-700 dark:fill-brand-300">
+            Solid baseline
+          </text>
+          <text x="74" y="36" className="text-[9px] font-sans fill-muted-foreground">
+            no floating/sinking
+          </text>
+        </svg>
+      );
+  }
+}
+
 export function ParentRubricDialog({
   open,
   onOpenChange,
@@ -100,15 +290,15 @@ export function ParentRubricDialog({
       <DialogContent className="w-[calc(100%-1.5rem)] max-w-2xl max-h-[min(90dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
         {/* Header */}
         <DialogHeader className="p-5 sm:p-6 pb-4 border-b border-border bg-card/60">
-          <div className="flex items-center gap-2.5 mb-1">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
+          <div className="flex items-start gap-3 mb-1 pr-6">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0 mt-0.5">
               <BookOpen className="size-4.5" aria-hidden="true" />
             </div>
-            <div>
+            <div className="space-y-0.5 min-w-0">
               <DialogTitle className="font-heading text-lg sm:text-xl font-semibold text-foreground">
                 Parent Guide to Handwriting Rubrics
               </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              <DialogDescription className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 How WriteWise measures your child&apos;s cursive handwriting development across five essential skills.
               </DialogDescription>
             </div>
@@ -127,7 +317,7 @@ export function ParentRubricDialog({
                 <button
                   type="button"
                   onClick={() => setSelectedCriterionOverride(null)}
-                  className="text-[11px] text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
+                  className="text-xs text-brand-600 dark:text-brand-400 hover:underline cursor-pointer min-h-[44px] sm:min-h-[36px] px-2.5 sm:px-1.5 -my-1 inline-flex items-center rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   Show all skills
                 </button>
@@ -170,9 +360,14 @@ export function ParentRubricDialog({
                         </span>
                       )}
                     </div>
-                    <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed">
-                      {criterion.summary}
-                    </p>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-0.5">
+                      <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed flex-1">
+                        {criterion.summary}
+                      </p>
+                      <div className="shrink-0 self-center sm:self-auto bg-brand-50/50 dark:bg-brand-950/40 border border-brand-200/50 dark:border-brand-800/50 rounded-lg p-1.5 flex items-center justify-center shadow-2xs">
+                        <CursiveCriterionIllustration criterionKey={criterion.key} />
+                      </div>
+                    </div>
                     <div className="flex items-start gap-1.5 pt-1 text-xs text-muted-foreground bg-muted/30 p-2.5 rounded-lg border border-border/40">
                       <CheckCircle2 className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
                       <span>
@@ -214,7 +409,7 @@ export function ParentRubricDialog({
           <Button
             variant="default"
             size="sm"
-            className="h-9 px-4 font-medium"
+            className="h-10 sm:h-9 px-4 font-medium cursor-pointer"
             onClick={() => onOpenChange(false)}
           >
             Got it

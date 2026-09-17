@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
@@ -78,13 +79,17 @@ export function ParentNav({
           className="flex h-14 items-center justify-between gap-3 px-4 sm:px-6"
         >
           {/* Left: Brand Logo */}
-          <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href="/progress"
+            className="flex items-center gap-2 shrink-0 rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-opacity hover:opacity-90"
+            aria-label="WriteWise Parent Portal Home"
+          >
             <BrandLogo size="sm" />
-          </div>
+          </Link>
 
-          {/* Center: Child Switcher / Indicator */}
+          {/* Center: Child Switcher (multi-child only) */}
           <div className="flex-1 flex justify-center min-w-0 px-1 sm:px-2">
-            {linkedChildren.length > 1 ? (
+            {linkedChildren.length > 1 && (
               <Select
                 value={selectedChildId ?? undefined}
                 onValueChange={(val) => {
@@ -92,7 +97,7 @@ export function ParentNav({
                 }}
               >
                 <SelectTrigger
-                  className="w-auto min-w-[140px] max-w-[190px] sm:max-w-[320px] h-9 text-xs sm:text-sm font-medium gap-1.5 border-border/70 bg-card hover:bg-muted/40 transition-colors shadow-xs"
+                  className="w-auto min-w-[140px] max-w-[190px] sm:max-w-[320px] h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 border-border/70 bg-card hover:bg-muted/40 transition-colors shadow-xs"
                   aria-label="Select child"
                 >
                   <Users className="size-3.5 text-muted-foreground shrink-0" />
@@ -109,39 +114,27 @@ export function ParentNav({
                   ))}
                 </SelectContent>
               </Select>
-            ) : linkedChildren.length === 1 ? (
-              <div
-                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 h-9 rounded-lg border border-border/70 bg-card text-xs sm:text-sm font-medium text-foreground shadow-xs max-w-[160px] sm:max-w-[320px] truncate"
-                aria-label={`Current student: ${linkedChildren[0].fullName}, Section ${linkedChildren[0].section}`}
-                title={`${linkedChildren[0].fullName} (Section ${linkedChildren[0].section})`}
-              >
-                <Users className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-                <span className="truncate">{linkedChildren[0].fullName}</span>
-                <span className="text-[11px] text-muted-foreground shrink-0 hidden sm:inline">
-                  &middot; Section {linkedChildren[0].section}
-                </span>
-              </div>
-            ) : null}
+            )}
           </div>
 
-          {/* Right: Upload button + User menu */}
+          {/* Right: Upload utility button + User menu */}
           <div className="flex items-center gap-2 shrink-0">
             {onUploadClick && hasActivities && (
               <Button
-                variant="default"
+                variant="outline"
                 size="sm"
-                className="h-10 sm:h-9 gap-1.5 shadow-warm font-medium cursor-pointer"
+                className="h-10 sm:h-9 gap-1.5 font-medium border-border/80 hover:bg-muted/50 text-foreground cursor-pointer shadow-2xs"
                 onClick={onUploadClick}
                 aria-label="Upload take-home worksheet"
               >
-                <Upload className="size-4" />
+                <Upload className="size-3.5 text-brand-600 dark:text-brand-400" />
                 <span className="hidden sm:inline">Upload</span>
               </Button>
             )}
 
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="size-10 sm:size-9 rounded-full inline-flex items-center justify-center font-semibold text-xs bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 hover:bg-brand-200/80 dark:hover:bg-brand-900/80 ring-1 ring-brand-700/20 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary outline-none transition-colors"
+                className="size-10 sm:size-9 rounded-full inline-flex items-center justify-center font-semibold text-xs bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 hover:bg-brand-200/80 dark:hover:bg-brand-900/80 ring-1 ring-brand-700/25 dark:ring-brand-400/25 border border-brand-200/60 dark:border-brand-800/60 shadow-2xs cursor-pointer focus-visible:ring-2 focus-visible:ring-primary outline-none transition-all"
                 aria-label={`User menu for ${user.fullName}`}
               >
                 {initials}
@@ -158,7 +151,14 @@ export function ParentNav({
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                   <DropdownMenuItem
-                    onClick={() => router.push("/parent-settings")}
+                    render={<Link href="/progress" />}
+                    className="cursor-pointer gap-2"
+                  >
+                    <Users className="size-4" />
+                    <span>Child Progress</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    render={<Link href="/parent-settings" />}
                     className="cursor-pointer gap-2"
                   >
                     <Settings className="size-4" />

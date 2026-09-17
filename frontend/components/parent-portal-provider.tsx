@@ -4,6 +4,8 @@ import {
   createContext,
   useContext,
   useState,
+  useMemo,
+  useCallback,
   type ReactNode,
 } from "react";
 import { ParentNav } from "@/components/parent-nav";
@@ -62,22 +64,33 @@ export function ParentPortalProvider({
   const { data: activities } = useTakeHomeActivities(selectedChildId);
   const hasActivities = (activities?.length ?? 0) > 0;
 
-  const openUploadDialog = (activityId?: string) => {
+  const openUploadDialog = useCallback((activityId?: string) => {
     setPrefilledActivityId(activityId);
     setUploadOpen(true);
-  };
+  }, []);
 
-  const contextValue: ParentPortalContextValue = {
-    selectedChildId,
-    setSelectedChildId,
-    selectedChild,
-    children: linkedChildren ?? [],
-    isLoading,
-    uploadOpen,
-    setUploadOpen,
-    prefilledActivityId,
-    openUploadDialog,
-  };
+  const contextValue: ParentPortalContextValue = useMemo(
+    () => ({
+      selectedChildId,
+      setSelectedChildId,
+      selectedChild,
+      children: linkedChildren ?? [],
+      isLoading,
+      uploadOpen,
+      setUploadOpen,
+      prefilledActivityId,
+      openUploadDialog,
+    }),
+    [
+      selectedChildId,
+      selectedChild,
+      linkedChildren,
+      isLoading,
+      uploadOpen,
+      prefilledActivityId,
+      openUploadDialog,
+    ]
+  );
 
   return (
     <ParentPortalContext.Provider value={contextValue}>
@@ -90,7 +103,7 @@ export function ParentPortalProvider({
           onUploadClick={() => openUploadDialog()}
           hasActivities={hasActivities}
         />
-        <main className="flex-1 min-w-0 w-full px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+        <main className="flex-1 min-w-0 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
           {pageChildren}
         </main>
       </div>

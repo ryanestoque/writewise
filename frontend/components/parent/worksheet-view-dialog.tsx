@@ -272,7 +272,7 @@ export function WorksheetViewDialog({
             <Button
               variant="outline"
               size="sm"
-              className="h-9 px-3.5 text-xs font-medium gap-1.5 cursor-pointer"
+              className="h-10 sm:h-9 px-3.5 text-xs font-medium gap-1.5 cursor-pointer"
               onClick={onBack}
             >
               <ArrowLeft className="size-3.5" />
@@ -284,7 +284,7 @@ export function WorksheetViewDialog({
           <Button
             variant="default"
             size="sm"
-            className="h-9 px-5 font-medium cursor-pointer"
+            className="h-10 sm:h-9 px-5 font-medium cursor-pointer"
             onClick={() => onOpenChange(false)}
           >
             Close

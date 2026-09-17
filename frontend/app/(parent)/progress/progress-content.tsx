@@ -23,7 +23,6 @@ import {
   Info,
   History,
   GraduationCap,
-  ArrowRight,
   PenTool,
   Award,
   CheckCircle2,
@@ -60,8 +59,8 @@ export function ProgressPageContent() {
 
   if (childrenLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
-        <Loader2 className="size-8 animate-spin text-brand-600 dark:text-brand-400" aria-hidden="true" />
+      <div role="status" aria-live="polite" className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
+        <Loader2 className="size-8 animate-spin motion-reduce:animate-none text-brand-600 dark:text-brand-400" aria-hidden="true" />
         <p className="text-sm text-muted-foreground">Loading child profile...</p>
       </div>
     );
@@ -145,41 +144,6 @@ export function ProgressPageContent() {
       {isZeroState ? (
         /* Day-One Welcoming Onboarding Experience */
         <div className="space-y-6">
-          {/* Active Homework Alert Banner when activities need upload */}
-          {pendingActivitiesCount > 0 && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-brand-300/80 dark:border-brand-800 bg-brand-50/50 dark:bg-brand-950/40 text-brand-950 dark:text-brand-100 shadow-xs">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex size-9 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 shrink-0">
-                  <ClipboardList className="size-4.5" aria-hidden="true" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs sm:text-sm font-semibold truncate">
-                    {pendingActivitiesCount} Take-Home {pendingActivitiesCount === 1 ? "Worksheet" : "Worksheets"} Ready for Practice
-                  </p>
-                  <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
-                    Complete on paper, snap a flat photo, and upload to receive handwriting feedback.
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => {
-                  const firstPending = activities?.find(
-                    (a) => !a.submission || a.submission.status === "rejected"
-                  );
-                  if (firstPending) {
-                    handleUploadActivity(firstPending.id);
-                  }
-                }}
-                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-3.5 text-xs font-medium shrink-0 cursor-pointer shadow-xs gap-1.5 self-start sm:self-auto"
-              >
-                <span>Upload Practice</span>
-                <ArrowRight className="size-3.5" aria-hidden="true" />
-              </Button>
-            </div>
-          )}
-
           {/* Welcome & How It Works Guide Hub */}
           <div className="rounded-2xl border border-border bg-card shadow-warm p-5 sm:p-7 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -198,14 +162,14 @@ export function ProgressPageContent() {
               </div>
 
               <Button
-                variant="default"
+                variant="outline"
                 size="sm"
                 onClick={() => handleOpenRubric(null)}
                 aria-haspopup="dialog"
-                className="self-start sm:self-center h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-medium gap-1.5 shrink-0 cursor-pointer shadow-xs"
+                className="self-start sm:self-center h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-medium gap-1.5 shrink-0 cursor-pointer shadow-2xs border-border/80 hover:bg-muted/50"
               >
-                <span>Explore Handwriting Guide &amp; Rubrics</span>
-                <ArrowRight className="size-3.5" aria-hidden="true" />
+                <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                <span>Handwriting Guide &amp; Rubrics</span>
               </Button>
             </div>
 
@@ -214,7 +178,7 @@ export function ProgressPageContent() {
               <h3 className="text-xs font-semibold text-foreground">
                 How It Works
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 text-xs">
                 <div className="flex items-start gap-2.5">
                   <span className="flex size-6 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 text-xs font-bold shrink-0 mt-0.5">
                     1
@@ -252,22 +216,50 @@ export function ProgressPageContent() {
             </div>
           </div>
 
-          {/* Assigned Take-Home Worksheets */}
-          <section aria-labelledby="take-home-onboarding-heading" className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2
-                  id="take-home-onboarding-heading"
-                  className="font-heading text-base sm:text-lg font-semibold text-foreground flex items-center gap-2"
-                >
-                  <ClipboardList className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                  <span>Assigned Take-Home Worksheets</span>
-                </h2>
+          {/* Active Homework Alert Banner when activities need upload */}
+          {pendingActivitiesCount > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-brand-300/80 dark:border-brand-800 bg-brand-50/50 dark:bg-brand-950/40 text-brand-950 dark:text-brand-100 shadow-xs">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex size-9 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 shrink-0">
+                  <ClipboardList className="size-4.5" aria-hidden="true" />
+                </div>
+                <div className="min-w-0 space-y-0.5">
+                  <p className="text-xs sm:text-sm font-semibold">
+                    {pendingActivitiesCount} Take-Home {pendingActivitiesCount === 1 ? "Worksheet" : "Worksheets"} Ready for Practice
+                  </p>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
+                    Complete on paper, snap a flat photo, and upload below to establish your child&apos;s baseline score.
+                  </p>
+                </div>
               </div>
-              <TakeHomeActivities
-                childId={selectedChildId}
-                onUploadClick={handleUploadActivity}
-              />
-            </section>
+              <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-100 dark:bg-brand-900/80 text-brand-800 dark:text-brand-200 border border-brand-200/60 dark:border-brand-800/60">
+                  Ready to Practice
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Assigned Take-Home Worksheets */}
+          <section
+            id="assigned-take-home-worksheets"
+            aria-labelledby="take-home-onboarding-heading"
+            className="space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <h2
+                id="take-home-onboarding-heading"
+                className="font-heading text-base sm:text-lg font-semibold text-foreground flex items-center gap-2"
+              >
+                <ClipboardList className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                <span>Assigned Take-Home Worksheets</span>
+              </h2>
+            </div>
+            <TakeHomeActivities
+              childId={selectedChildId}
+              onUploadClick={handleUploadActivity}
+            />
+          </section>
         </div>
       ) : (
         /* Standard 2-Column Dashboard when child has assessment history */
@@ -358,8 +350,8 @@ export function ProgressPageContent() {
               </div>
 
               {historyLoading ? (
-                <div className="rounded-xl border border-border bg-card shadow-warm p-8 flex flex-col items-center justify-center min-h-[220px] gap-2.5">
-                  <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                <div role="status" aria-live="polite" className="rounded-xl border border-border bg-card shadow-warm p-8 flex flex-col items-center justify-center min-h-[220px] gap-2.5">
+                  <Loader2 className="size-6 animate-spin motion-reduce:animate-none text-muted-foreground" aria-hidden="true" />
                   <span className="text-xs text-muted-foreground">Loading trend history...</span>
                 </div>
               ) : history && history.length >= 2 ? (
@@ -421,20 +413,28 @@ export function ProgressPageContent() {
                       <BandBadge score={history[0].compositeScore} size="sm" />
                     </div>
                   </div>
+
+                  {/* Locked Trend Preview Illustration */}
+                  <div className="pt-2 border-t border-border/60">
+                    <TrendGraphTeaser subtitle="Interactive multi-skill graph unlocks after worksheet #2" />
+                  </div>
                 </div>
               ) : (
-                <div className="rounded-xl border border-border bg-card/60 shadow-warm p-5 sm:p-6 flex items-start gap-3.5">
-                  <div className="flex size-9 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0 mt-0.5">
-                    <Info className="size-4.5" aria-hidden="true" />
+                <div className="rounded-xl border border-border bg-card/60 shadow-warm p-5 sm:p-6 space-y-4">
+                  <div className="flex items-start gap-3.5">
+                    <div className="flex size-9 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0 mt-0.5">
+                      <Info className="size-4.5" aria-hidden="true" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="font-heading text-sm font-semibold text-foreground">
+                        Progress History Coming Soon
+                      </h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Handwriting trend lines across all 5 skills will appear here once your child completes 2 or more scored worksheets.
+                      </p>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <h3 className="font-heading text-sm font-semibold text-foreground">
-                      Progress History Coming Soon
-                    </h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Handwriting trend lines across all 5 skills will appear here once your child completes 2 or more scored worksheets.
-                    </p>
-                  </div>
+                  <TrendGraphTeaser subtitle="Trend lines across Letter Formation, Size, Spacing, Slant & Baseline" />
                 </div>
               )}
             </section>
@@ -454,6 +454,69 @@ export function ProgressPageContent() {
         history={history ?? []}
         childName={selectedChild.fullName}
       />
+    </div>
+  );
+}
+
+function TrendGraphTeaser({ subtitle }: { subtitle?: string }) {
+  return (
+    <div className="relative rounded-lg border border-border/70 bg-muted/30 p-3 sm:p-4 overflow-hidden select-none">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+          <LineChart className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+          <span>5-Criterion Longitudinal Tracking</span>
+        </div>
+        <span className="text-[10px] font-semibold text-brand-700 dark:text-brand-300 bg-brand-100/70 dark:bg-brand-950/70 px-2 py-0.5 rounded-full border border-brand-200/50 dark:border-brand-800/50">
+          Preview
+        </span>
+      </div>
+
+      {/* Stylized ghosted chart curves representing penmanship skills */}
+      <div className="relative h-16 w-full flex items-center justify-center">
+        <svg
+          viewBox="0 0 400 64"
+          className="w-full h-full text-border/60"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          {/* Subtle horizontal grid guide lines */}
+          <line x1="0" y1="14" x2="400" y2="14" stroke="currentColor" strokeDasharray="3 3" strokeWidth="0.75" />
+          <line x1="0" y1="34" x2="400" y2="34" stroke="currentColor" strokeDasharray="3 3" strokeWidth="0.75" />
+          <line x1="0" y1="54" x2="400" y2="54" stroke="currentColor" strokeDasharray="3 3" strokeWidth="0.75" />
+
+          {/* Smooth cursive trend waves in brand palette */}
+          <path
+            d="M 0 50 Q 100 42, 200 30 T 400 16"
+            fill="none"
+            stroke="rgba(27, 107, 99, 0.45)"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 0 56 Q 100 52, 200 38 T 400 24"
+            fill="none"
+            stroke="rgba(209, 137, 36, 0.35)"
+            strokeWidth="1.75"
+            strokeDasharray="4 2"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 0 44 Q 100 38, 200 26 T 400 14"
+            fill="none"
+            stroke="rgba(16, 120, 80, 0.35)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+
+        {/* Center overlay pill */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium bg-background/95 backdrop-blur-xs border border-border/80 text-foreground shadow-2xs">
+            <LineChart className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+            <span>{subtitle ?? "Unlocks after 2 evaluated worksheets"}</span>
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

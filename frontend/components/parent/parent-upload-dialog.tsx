@@ -162,6 +162,7 @@ function ParentUploadFlow({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const previewUrlRef = useRef<string | null>(null);
   const dropzoneRef = useRef<HTMLDivElement>(null);
+  const primaryActionButtonRef = useRef<HTMLButtonElement>(null);
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   const retryButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -218,7 +219,7 @@ function ParentUploadFlow({
   // Focus steering upon step change
   useEffect(() => {
     if (step === "capture" && !selectedFile) {
-      dropzoneRef.current?.focus();
+      primaryActionButtonRef.current?.focus();
     } else if (step === "capture" && selectedFile) {
       submitButtonRef.current?.focus();
     } else if (step === "processing" && uploadError) {
@@ -485,20 +486,6 @@ function ParentUploadFlow({
               <>
                 <div
                   ref={dropzoneRef}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={
-                    isMobile
-                      ? "Worksheet photo upload dropzone. Take a photo or choose from library."
-                      : "Worksheet photo upload dropzone. Drop an image or press Enter or Space to choose a file."
-                  }
-                  onClick={() => fileInputRef.current?.click()}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      fileInputRef.current?.click();
-                    }
-                  }}
                   onDragOver={(e) => {
                     e.preventDefault();
                     setIsDragging(true);
@@ -509,7 +496,7 @@ function ParentUploadFlow({
                     setIsDragging(false);
                     handleFileChange(e.dataTransfer.files?.[0]);
                   }}
-                  className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-all text-center cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 shadow-warm ${
+                  className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-all text-center shadow-warm ${
                     isDragging
                       ? "border-primary bg-primary/5 scale-[0.99]"
                       : "border-border bg-card hover:border-primary/60 hover:bg-muted/10"
@@ -536,6 +523,7 @@ function ParentUploadFlow({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-xs mt-4">
                     {isMobile && (
                       <Button
+                        ref={primaryActionButtonRef}
                         type="button"
                         variant="default"
                         className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
@@ -549,6 +537,7 @@ function ParentUploadFlow({
                       </Button>
                     )}
                     <Button
+                      ref={!isMobile ? primaryActionButtonRef : undefined}
                       type="button"
                       variant={isMobile ? "outline" : "default"}
                       className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
@@ -642,7 +631,7 @@ function ParentUploadFlow({
             ) : uploadSuccess ? (
               <div className="text-center space-y-4 py-4">
                 <div className="flex justify-center">
-                  <div className="flex size-14 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-950 text-brand-600 dark:text-brand-400 animate-in zoom-in-50 duration-200">
+                  <div className="flex size-14 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-950 text-brand-600 dark:text-brand-400 animate-in zoom-in-50 duration-200 motion-reduce:animate-none">
                     <CheckCircle2Icon className="size-8" />
                   </div>
                 </div>
@@ -666,9 +655,14 @@ function ParentUploadFlow({
                 </div>
               </div>
             ) : (
-              <div className="text-center space-y-4 py-8">
+              <div
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+                className="text-center space-y-4 py-8"
+              >
                 <div className="flex justify-center">
-                  <Loader2Icon className="size-10 animate-spin motion-reduce:animate-none text-brand-600 dark:text-brand-400" />
+                  <Loader2Icon className="size-10 animate-spin motion-reduce:animate-none text-brand-600 dark:text-brand-400" aria-hidden="true" />
                 </div>
                 <div className="space-y-1.5">
                   <h3 className="font-heading text-base font-semibold text-foreground">

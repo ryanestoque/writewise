@@ -32,6 +32,8 @@ import {
   Target,
   ZoomIn,
   ArrowRight,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -47,6 +49,7 @@ export function LatestSubmissionCard({
   const [viewImageOpen, setViewImageOpen] = useState(false);
   const [selectedCriterionForView, setSelectedCriterionForView] =
     useState<CriterionFilter>("all");
+  const [showDetailedNotes, setShowDetailedNotes] = useState(false);
   const { data: latest, isLoading } = useChildLatestScores(childId);
   const { data: imageUrl } = useSubmissionImageUrl(latest?.imagePath ?? null);
 
@@ -87,8 +90,12 @@ export function LatestSubmissionCard({
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border bg-card shadow-warm p-8 flex flex-col items-center justify-center min-h-[220px] gap-2.5">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      <div
+        role="status"
+        aria-live="polite"
+        className="rounded-xl border border-border bg-card shadow-warm p-8 flex flex-col items-center justify-center min-h-[220px] gap-2.5"
+      >
+        <Loader2 className="size-6 animate-spin motion-reduce:animate-none text-muted-foreground" aria-hidden="true" />
         <span className="text-xs text-muted-foreground">Loading latest assessment...</span>
       </div>
     );
@@ -151,7 +158,7 @@ export function LatestSubmissionCard({
                 alt={`Handwriting worksheet sample for ${latest.activityText}`}
                 fill
                 sizes="(max-width: 768px) 100vw, 400px"
-                className="object-cover object-center group-hover:scale-102 transition-transform duration-300"
+                className="object-cover object-center group-hover:scale-[1.02] transition-transform duration-300"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent flex items-end justify-between p-3">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-sm border border-white/20 text-xs font-medium text-white shadow-xs">
@@ -184,7 +191,8 @@ export function LatestSubmissionCard({
             </div>
             <BandPositionBar score={latest.scores.composite} height="default" />
             {latest.scores.composite != null && (() => {
-              const compositeBand = getBandFromScore(latest.scores.composite);
+              const compositeBand =
+                latest.bands.composite ?? getBandFromScore(latest.scores.composite);
               const bandMeta = getBandMeta(compositeBand);
               const explanation = compositeBand ? PARENT_BAND_EXPLANATIONS[compositeBand] : null;
               if (!explanation) return null;
@@ -218,36 +226,38 @@ export function LatestSubmissionCard({
         <div className="border-t border-border/60 p-5 space-y-4 bg-muted/10">
           {/* Highlights: Top Strength & Practice Focus */}
           {(topStrength || practiceFocus) && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-stretch">
               {/* Top Strength Card */}
               {topStrength && (
                 <button
                   type="button"
                   onClick={() => openWorksheetForCriterion(topStrength.key as CriterionFilter)}
-                  aria-label={`Inspect ${topStrength.meta.label} on worksheet guidelines dialog`}
+                  aria-label={`Top strength: ${topStrength.meta.label}${topStrength.band ? `, rated ${topStrength.band.replace('_', ' ')}` : ""}. Click to inspect guidelines on worksheet.`}
                   aria-haspopup="dialog"
-                  className="group w-full text-left rounded-xl border border-border/80 bg-card hover:bg-muted/40 hover:border-brand-400/60 dark:hover:border-brand-700/60 p-3.5 sm:p-4 space-y-2 transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 shadow-2xs"
+                  className="group w-full h-full text-left rounded-xl border border-border/80 bg-card hover:bg-muted/40 hover:border-brand-400/60 dark:hover:border-brand-700/60 p-3.5 sm:p-4 flex flex-col justify-between gap-2.5 transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 shadow-2xs"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="flex size-6 items-center justify-center rounded-md bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
-                        <Award className="size-3.5" />
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex size-6 items-center justify-center rounded-md bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
+                          <Award className="size-3.5" />
+                        </div>
+                        <span className="text-xs font-semibold text-foreground truncate">
+                          Top Strength: {topStrength.meta.label}
+                        </span>
                       </div>
-                      <span className="text-xs font-semibold text-foreground truncate">
-                        Top Strength: {topStrength.meta.label}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <BandBadge band={topStrength.band} score={topStrength.score} size="sm" />
+                        <ArrowRight className="size-3.5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-transform" />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <BandBadge band={topStrength.band} score={topStrength.score} size="sm" />
-                      <ArrowRight className="size-3.5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-transform" />
-                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                      {topStrength.band
+                        ? DIAGNOSTIC_NOTES[topStrength.key][topStrength.band]
+                        : topStrength.meta.shortDescription}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                    {topStrength.band
-                      ? DIAGNOSTIC_NOTES[topStrength.key][topStrength.band]
-                      : topStrength.meta.shortDescription}
-                  </p>
-                  <div className="pt-1 flex items-center justify-between text-xs border-t border-border/40">
+                  <div className="pt-2 flex items-center justify-between text-xs border-t border-border/40">
                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 dark:text-brand-300 group-hover:underline">
                       <Eye className="size-3.5" />
                       <span>See on worksheet guidelines</span>
@@ -264,32 +274,37 @@ export function LatestSubmissionCard({
                 <button
                   type="button"
                   onClick={() => openWorksheetForCriterion(practiceFocus.key as CriterionFilter)}
-                  aria-label={`Inspect ${practiceFocus.meta.label} home practice tips on worksheet guidelines dialog`}
+                  aria-label={`Practice focus: ${practiceFocus.meta.label}${practiceFocus.band ? `, rated ${practiceFocus.band.replace('_', ' ')}` : ""}. Home tip: ${practiceFocus.meta.homeTip}. Click to inspect on worksheet guidelines dialog.`}
                   aria-haspopup="dialog"
-                  className="group w-full text-left rounded-xl border border-border/80 bg-card hover:bg-muted/40 hover:border-amber-400/60 dark:hover:border-amber-700/60 p-3.5 sm:p-4 space-y-2 transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500 shadow-2xs"
+                  className="group w-full h-full text-left rounded-xl border border-border/80 bg-card hover:bg-muted/40 hover:border-warning/60 dark:hover:border-warning/50 p-3.5 sm:p-4 flex flex-col justify-between gap-2.5 transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-warning shadow-2xs"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="flex size-6 items-center justify-center rounded-md bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 shrink-0">
-                        <Target className="size-3.5" />
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex size-6 items-center justify-center rounded-md bg-warning/15 dark:bg-warning/25 text-warning-foreground shrink-0">
+                          <Target className="size-3.5" />
+                        </div>
+                        <span className="text-xs font-semibold text-foreground truncate">
+                          Practice Focus: {practiceFocus.meta.label}
+                        </span>
                       </div>
-                      <span className="text-xs font-semibold text-foreground truncate">
-                        Practice Focus: {practiceFocus.meta.label}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <BandBadge band={practiceFocus.band} score={practiceFocus.score} size="sm" />
+                        <ArrowRight className="size-3.5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-transform" />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <BandBadge band={practiceFocus.band} score={practiceFocus.score} size="sm" />
-                      <ArrowRight className="size-3.5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-transform" />
-                    </div>
+                    <p
+                      className="text-xs text-muted-foreground leading-relaxed line-clamp-2"
+                      title={practiceFocus.meta.homeTip}
+                    >
+                      <strong className="font-semibold text-foreground">
+                        Home practice tip:
+                      </strong>{" "}
+                      {practiceFocus.meta.homeTip}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                    <strong className="font-semibold text-foreground">
-                      Home practice tip:
-                    </strong>{" "}
-                    {practiceFocus.meta.homeTip}
-                  </p>
-                  <div className="pt-1 flex items-center justify-between text-xs border-t border-border/40">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 group-hover:underline">
+                  <div className="pt-2 flex items-center justify-between text-xs border-t border-border/40">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-warning-foreground group-hover:underline">
                       <Eye className="size-3.5" />
                       <span>See on worksheet guidelines</span>
                     </span>
@@ -302,11 +317,11 @@ export function LatestSubmissionCard({
             </div>
           )}
 
-          {/* 5-Criterion Stacked List (DESIGN §7.6: Always visible, no accordion) */}
+          {/* 5-Criterion Stacked List */}
           <div className="space-y-1 pt-1">
             <div className="flex items-center justify-between pb-2 border-b border-border/60">
               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Skill Breakdown &amp; Diagnostic Notes
+                Skill Breakdown
               </h4>
               <span className="text-[11px] text-muted-foreground font-medium">5 skills assessed</span>
             </div>
@@ -320,8 +335,33 @@ export function LatestSubmissionCard({
                   score={latest.scores[criterion.key]}
                   band={latest.bands[criterion.key]}
                   onInspect={() => openWorksheetForCriterion(criterion.key as CriterionFilter)}
+                  showDiagnosticNote={showDetailedNotes}
                 />
               ))}
+            </div>
+
+            <div className="pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDetailedNotes((prev) => !prev)}
+                aria-expanded={showDetailedNotes}
+                aria-controls="criterion-breakdown-details"
+                className="w-full h-9 min-h-[36px] text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:bg-muted/50 gap-1.5 cursor-pointer rounded-lg border border-border/50 bg-card shadow-2xs"
+              >
+                {showDetailedNotes ? (
+                  <>
+                    <ChevronUp className="size-3.5" aria-hidden="true" />
+                    <span>Hide detailed diagnostic notes</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="size-3.5" aria-hidden="true" />
+                    <span>View detailed diagnostic notes for all 5 skills</span>
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </div>

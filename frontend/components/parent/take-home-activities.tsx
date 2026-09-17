@@ -12,9 +12,9 @@ import {
   ClipboardList,
   Loader2,
   CheckCircle2,
-  AlertCircle,
   ChevronDown,
   ChevronUp,
+  Camera,
 } from "lucide-react";
 import { getRejectionSummary } from "@/lib/utils/submission-status";
 import { cn } from "@/lib/utils";
@@ -33,8 +33,8 @@ export function TakeHomeActivities({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 gap-2">
-        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      <div role="status" aria-live="polite" className="flex flex-col items-center justify-center py-8 gap-2">
+        <Loader2 className="size-5 animate-spin motion-reduce:animate-none text-muted-foreground" aria-hidden="true" />
         <span className="text-xs text-muted-foreground">Loading assigned activities...</span>
       </div>
     );
@@ -164,11 +164,15 @@ function ActivityCard({
       <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground font-medium">Assigned {formattedDate}</p>
-          {needsUpload && !isLoading && (
+          {isRejected && !isLoading ? (
+            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300/60 dark:border-amber-800/60">
+              Photo Retake
+            </span>
+          ) : needsUpload && !isLoading ? (
             <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/60 text-brand-800 dark:text-brand-300">
               Needs Upload
             </span>
-          )}
+          ) : null}
         </div>
         <p className="text-sm font-semibold text-foreground line-clamp-3 leading-snug">
           &ldquo;{targetText}&rdquo;
@@ -178,8 +182,43 @@ function ActivityCard({
       <div className="pt-2 border-t border-border/50 flex flex-wrap items-center justify-between gap-2.5">
         {isLoading ? (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+            <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
             <span>Checking status...</span>
+          </div>
+        ) : isRejected ? (
+          <div className="space-y-2.5 w-full">
+            {(() => {
+              const rejection = getRejectionSummary(submission.rejectionCode);
+              return (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="space-y-1.5 text-xs bg-amber-50/70 dark:bg-amber-950/30 border border-amber-300/70 dark:border-amber-800/60 p-3 rounded-lg leading-normal shadow-2xs"
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-amber-900 dark:text-amber-200 text-xs">
+                    <Camera className="size-3.5 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden="true" />
+                    <span>Photo Retake Needed: {rejection.label}</span>
+                  </div>
+                  <p className="text-[11px] text-amber-950/85 dark:text-amber-100/85 leading-relaxed pl-5">
+                    {rejection.detail}
+                  </p>
+                  <p className="text-[11px] text-amber-900/70 dark:text-amber-300/70 italic pl-5 pt-0.5">
+                    Tip: Lay the worksheet flat under good lighting with all 4 corners visible in the camera frame.
+                  </p>
+                </div>
+              );
+            })()}
+
+            <Button
+              variant="default"
+              size="sm"
+              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 shadow-warm w-full font-medium cursor-pointer"
+              onClick={onUploadClick}
+              aria-label={`Take another photo for "${targetText}"`}
+            >
+              <Upload className="size-4" />
+              <span>Take Another Photo</span>
+            </Button>
           </div>
         ) : submission ? (
           <div className="space-y-2 w-full">
@@ -194,17 +233,12 @@ function ActivityCard({
                     <BandBadge score={submission.compositeScore} size="sm" />
                   )}
                 </div>
-              ) : isProcessing ? (
+              ) : (
                 <div role="status" aria-live="polite" className="flex items-center gap-2 min-w-0">
                   <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-200 bg-amber-100/70 dark:bg-amber-950/60 px-2.5 py-0.5 rounded-md border border-amber-300 dark:border-amber-800/80 shadow-2xs">
-                    <Loader2 className="size-3.5 shrink-0 animate-spin text-amber-800 dark:text-amber-300" aria-hidden="true" />
+                    <Loader2 className="size-3.5 shrink-0 animate-spin motion-reduce:animate-none text-amber-800 dark:text-amber-300" aria-hidden="true" />
                     Analyzing handwriting…
                   </span>
-                </div>
-              ) : (
-                <div role="status" className="flex items-center gap-1.5 text-xs font-medium text-destructive">
-                  <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
-                  <span>Photo needs retaking</span>
                 </div>
               )}
 
@@ -217,20 +251,18 @@ function ActivityCard({
                 aria-label={
                   isCompleted
                     ? `Submit another practice attempt for "${targetText}"`
-                    : isProcessing
-                      ? `Worksheet "${targetText}" is currently being analyzed`
-                      : `Try another photo for "${targetText}"`
+                    : `Worksheet "${targetText}" is currently being analyzed`
                 }
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                    <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
                     <span>In Progress</span>
                   </>
                 ) : (
                   <>
                     <Upload className="size-3.5" aria-hidden="true" />
-                    <span>{isCompleted ? "Practice Again" : "Try Another Photo"}</span>
+                    <span>Practice Again</span>
                   </>
                 )}
               </Button>
@@ -245,24 +277,6 @@ function ActivityCard({
                 Analyzing your child&apos;s handwriting now (usually takes 10–20 seconds). Results will appear automatically.
               </p>
             )}
-
-            {isRejected && (() => {
-              const rejection = getRejectionSummary(submission.rejectionCode);
-              return (
-                <div
-                  role="alert"
-                  className="space-y-1 text-[11px] text-muted-foreground bg-destructive/5 border border-destructive/20 p-2.5 rounded-md leading-normal"
-                >
-                  <p>
-                    <strong className="text-foreground font-medium">{rejection.label}:</strong>{" "}
-                    {rejection.detail}
-                  </p>
-                  <p className="text-muted-foreground/90 italic">
-                    Tip: Lay the worksheet flat under good lighting with all 4 corners visible in the camera frame.
-                  </p>
-                </div>
-              );
-            })()}
           </div>
         ) : (
           <div className="space-y-1.5 w-full">
@@ -276,7 +290,7 @@ function ActivityCard({
               <Upload className="size-4" />
               Upload Worksheet
             </Button>
-            <p className="text-[11px] text-muted-foreground/80 leading-tight text-center">
+            <p className="text-[11px] text-muted-foreground leading-tight text-center">
               Tip: Lay flat under bright lighting with all 4 corners in frame
             </p>
           </div>

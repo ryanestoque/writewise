@@ -14,6 +14,7 @@ interface CriterionFeedbackRowProps {
   score: number | null;
   band: ScoreBand | null;
   onInspect?: () => void;
+  showDiagnosticNote?: boolean;
 }
 
 export function CriterionFeedbackRow({
@@ -22,6 +23,7 @@ export function CriterionFeedbackRow({
   score,
   band,
   onInspect,
+  showDiagnosticNote = true,
 }: CriterionFeedbackRowProps) {
   const meta = PARENT_CRITERIA_METADATA[criterionKey];
   const displayLabel = label || meta?.label || criterionKey;
@@ -49,19 +51,19 @@ export function CriterionFeedbackRow({
             <button
               type="button"
               onClick={onInspect}
-              className="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 hover:underline inline-flex items-center gap-1 cursor-pointer min-h-[32px] sm:min-h-[28px] px-1 -my-1 rounded-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+              className="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 hover:underline inline-flex items-center gap-1 cursor-pointer min-h-[40px] sm:min-h-[32px] px-2 sm:px-1.5 -my-1.5 sm:-my-1 rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
               title={`Inspect ${displayLabel} on worksheet`}
               aria-label={`Inspect ${displayLabel} on worksheet photo`}
             >
-              <Eye className="size-3" aria-hidden="true" />
-              <span className="hidden sm:inline text-[11px] font-medium">Inspect</span>
+              <Eye className="size-3.5 sm:size-3" aria-hidden="true" />
+              <span className="text-[11px] font-medium">Inspect</span>
             </button>
           )}
         </div>
       </div>
       <BandPositionBar score={score} height="sm" />
-      {diagnosticNote && (
-        <p className="text-xs text-muted-foreground leading-relaxed pt-0.5">
+      {showDiagnosticNote && diagnosticNote && (
+        <p className="text-xs text-muted-foreground leading-relaxed pt-0.5 animate-in fade-in-50 duration-200">
           {diagnosticNote}
         </p>
       )}

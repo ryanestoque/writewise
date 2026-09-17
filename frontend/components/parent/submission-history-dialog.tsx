@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -39,7 +39,7 @@ export function SubmissionHistoryDialog({
     useState<StudentScoreHistoryItem | null>(null);
 
   // Sort reverse-chronologically (newest first)
-  const sortedHistory = [...history].reverse();
+  const sortedHistory = useMemo(() => [...history].reverse(), [history]);
   const isViewingWorksheet = !!selectedItemForView;
 
   return (
@@ -156,7 +156,7 @@ export function SubmissionHistoryDialog({
             <Button
               variant="default"
               size="sm"
-              className="h-9 px-4 font-medium cursor-pointer"
+              className="h-10 sm:h-9 px-4 font-medium cursor-pointer"
               onClick={() => onOpenChange(false)}
             >
               Close

@@ -177,7 +177,7 @@ function ForgotPasswordDialog({ email }: { email: string }) {
               >
                 {isSending ? (
                   <>
-                    <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+                    <Loader2 className="mr-2 size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
                     Sending Link...
                   </>
                 ) : (
@@ -228,7 +228,7 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
     try {
       const supabase = createClient();
 
-      // 1. Re-authenticate current credentials to verify teacher identity
+      // 1. Re-authenticate current credentials to verify user identity
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password: currentPassword,
@@ -293,7 +293,7 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
               Password & Security
             </h2>
             <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-              Update your password to keep your classroom account protected.
+              Update your password to keep your account protected.
             </p>
           </div>
         </div>
@@ -551,7 +551,7 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 data-icon="inline-start" className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
+                    <Loader2 data-icon="inline-start" className="mr-1.5 size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
                     Updating...
                   </>
                 ) : (
