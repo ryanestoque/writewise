@@ -119,6 +119,7 @@ export function SubmissionHistoryDialog({
                             size="sm"
                             onClick={() => setSelectedItemForView(item)}
                             aria-haspopup="dialog"
+                            aria-label={`View photo and guide lines for attempt #${sortedHistory.length - index}: "${item.targetText}"`}
                             className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-medium gap-1.5 border-brand-200 dark:border-brand-900 bg-brand-50/40 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 hover:bg-brand-100/60 dark:hover:bg-brand-900/50 cursor-pointer shadow-2xs"
                           >
                             <Eye className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />

@@ -315,7 +315,7 @@ function AcceptInviteForm() {
         </div>
         {userEmail && (
           <div className="inline-flex items-center justify-center gap-1.5 rounded-full bg-brand-50 dark:bg-brand-950 px-3 py-1 text-xs font-medium text-brand-800 dark:text-brand-300 border border-brand-200/80 dark:border-brand-900 mx-auto">
-            <CheckCircle2Icon className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" />
+            <CheckCircle2Icon className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
             <span className="truncate max-w-[260px]">{userEmail}</span>
           </div>
         )}

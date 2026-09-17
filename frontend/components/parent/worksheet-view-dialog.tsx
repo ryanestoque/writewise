@@ -192,6 +192,7 @@ export function WorksheetViewDialog({
                       : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted/70 hover:text-foreground"
                   }`}
                   aria-pressed={showGuideLines}
+                  aria-label={showGuideLines ? "Hide detected guide lines on worksheet" : "Show detected guide lines on worksheet"}
                   title={showGuideLines ? "Hide detected guide lines" : "Show detected guide lines on worksheet"}
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0" aria-hidden="true">

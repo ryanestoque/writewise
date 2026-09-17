@@ -24,15 +24,16 @@ export function ScoreSourceIndicator({
     <TooltipProvider delay={150}>
       <Tooltip>
         <TooltipTrigger
+          aria-label={isManual ? "Teacher-assessed score" : "Auto-calibrated score"}
           className={cn(
             "inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-muted/60 hover:bg-muted px-2 py-0.5 rounded-md border border-border/60 transition-colors cursor-default select-none",
             className
           )}
         >
           {isManual ? (
-            <UserCheck className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" />
+            <UserCheck className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
           ) : (
-            <Cpu className="size-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <Cpu className="size-3.5 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
           )}
           {!compact && <span>{isManual ? "Teacher-assessed" : "Auto-calibrated"}</span>}
         </TooltipTrigger>

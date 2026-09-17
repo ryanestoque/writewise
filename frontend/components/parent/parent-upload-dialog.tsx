@@ -455,6 +455,7 @@ function ParentUploadFlow({
                   <img
                     src={previewUrl}
                     alt="Worksheet photo preview"
+                    decoding="async"
                     className="w-full h-full object-contain"
                   />
                 </div>

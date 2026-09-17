@@ -68,7 +68,11 @@ export function ProgressPageContent() {
 
   if (!selectedChild) {
     return (
-      <div className="max-w-md mx-auto my-12 p-8 rounded-xl border border-border bg-card shadow-warm text-center space-y-3">
+      <div
+        role="status"
+        aria-live="polite"
+        className="max-w-md mx-auto my-12 p-8 rounded-xl border border-border bg-card shadow-warm text-center space-y-3"
+      >
         <div className="flex justify-center">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
             <UserX className="size-6" aria-hidden="true" />

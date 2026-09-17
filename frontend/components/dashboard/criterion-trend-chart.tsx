@@ -17,61 +17,12 @@ import { BandBadge } from "@/components/shared/band-badge";
 import { LineChart as LineChartIcon, Info, Table2, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { CRITERION_CONFIG, CHART_BAND_AREAS } from "@/lib/utils/chart-theme";
+
 interface CriterionTrendChartProps {
   history: StudentScoreHistoryItem[];
   className?: string;
 }
-
-const CRITERION_CONFIG = [
-  {
-    key: "composite",
-    label: "Overall Penmanship",
-    lightColor: "#1b6b63", // Primary Brand Teal
-    darkColor: "#57b3a6",  // Vibrant Teal (brand-400)
-    strokeWidth: 3,
-    strokeDasharray: undefined,
-  },
-  {
-    key: "letter_formation",
-    label: "Letter Shapes",
-    lightColor: "#475569", // Slate Gray
-    darkColor: "#cbd5e1",  // Slate 300
-    strokeWidth: 2,
-    strokeDasharray: "6 3",
-  },
-  {
-    key: "size_consistency",
-    label: "Size & Proportions",
-    lightColor: "#0e7490", // Deep Cyan / Cool Teal
-    darkColor: "#38bdf8",  // Sky 400
-    strokeWidth: 2,
-    strokeDasharray: "4 2",
-  },
-  {
-    key: "spacing",
-    label: "Spacing",
-    lightColor: "#4338ca", // Indigo Slate
-    darkColor: "#a5b4fc",  // Indigo 300
-    strokeWidth: 2,
-    strokeDasharray: "3 3",
-  },
-  {
-    key: "slant",
-    label: "Slant & Tilt",
-    lightColor: "#92400e", // Warm Bronze / Sepia
-    darkColor: "#fbbf24",  // Amber 400
-    strokeWidth: 2,
-    strokeDasharray: "8 3 2 3",
-  },
-  {
-    key: "baseline_alignment",
-    label: "Line Alignment",
-    lightColor: "#15803d", // Deep Pine
-    darkColor: "#4ade80",  // Green 400
-    strokeWidth: 2,
-    strokeDasharray: "2 2",
-  },
-];
 
 export function CriterionTrendChart({
   history,
@@ -432,10 +383,15 @@ export function CriterionTrendChart({
                 />
 
                 {/* Shaded Band Background Zones */}
-                <ReferenceArea y1={75} y2={100} fill="#4a8b5c" fillOpacity={isDark ? 0.18 : 0.12} />
-                <ReferenceArea y1={50} y2={75} fill="#7c9b6e" fillOpacity={isDark ? 0.18 : 0.12} />
-                <ReferenceArea y1={25} y2={50} fill="#c9a227" fillOpacity={isDark ? 0.18 : 0.12} />
-                <ReferenceArea y1={0} y2={25} fill="#b6754a" fillOpacity={isDark ? 0.18 : 0.12} />
+                {CHART_BAND_AREAS.map((band) => (
+                  <ReferenceArea
+                    key={band.label}
+                    y1={band.y1}
+                    y2={band.y2}
+                    fill={band.fill}
+                    fillOpacity={isDark ? band.darkOpacity : band.lightOpacity}
+                  />
+                ))}
 
                 <XAxis
                   dataKey="dateLabel"

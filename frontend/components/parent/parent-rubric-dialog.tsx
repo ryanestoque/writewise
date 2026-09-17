@@ -331,21 +331,32 @@ export function ParentRubricDialog({
                   <div
                     key={criterion.key}
                     id={`rubric-criterion-${criterion.key}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={isHighlighted}
+                    aria-label={`${criterion.title}${isHighlighted ? " (selected, click to show all skills)" : " (click to highlight)"}`}
+                    onClick={() => setSelectedCriterionOverride(isHighlighted ? null : criterion.key)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelectedCriterionOverride(isHighlighted ? null : criterion.key);
+                      }
+                    }}
                     className={cn(
-                      "p-3.5 sm:p-4 rounded-xl border transition-all space-y-2",
+                      "group p-3.5 sm:p-4 rounded-xl border transition-all space-y-2 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
                       isHighlighted
-                        ? "border-brand-500 ring-2 ring-brand-500/25 bg-brand-50/40 dark:bg-brand-950/30"
-                        : "border-border/80 bg-card/50"
+                        ? "border-brand-500 ring-2 ring-brand-500/25 bg-brand-50/40 dark:bg-brand-950/30 shadow-xs"
+                        : "border-border/80 bg-card/50 hover:border-brand-400/60 dark:hover:border-brand-700/60 hover:bg-muted/30"
                     )}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <div
                           className={cn(
-                            "flex size-7 items-center justify-center rounded-md shrink-0",
+                            "flex size-7 items-center justify-center rounded-md shrink-0 transition-colors",
                             isHighlighted
                               ? "bg-brand-200 dark:bg-brand-900 text-brand-800 dark:text-brand-200"
-                              : "bg-muted text-foreground"
+                              : "bg-muted text-foreground group-hover:bg-brand-100/60 dark:group-hover:bg-brand-950/60"
                           )}
                         >
                           <Icon className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
@@ -354,9 +365,13 @@ export function ParentRubricDialog({
                           {criterion.title}
                         </h4>
                       </div>
-                      {isHighlighted && (
+                      {isHighlighted ? (
                         <span className="text-xs font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300">
                           Selected Skill
+                        </span>
+                      ) : (
+                        <span className="text-xs font-medium text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden sm:inline">
+                          Click to highlight
                         </span>
                       )}
                     </div>

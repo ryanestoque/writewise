@@ -123,18 +123,18 @@ export function ParentNav({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-10 sm:h-9 gap-1.5 font-medium border-border/80 hover:bg-muted/50 text-foreground cursor-pointer shadow-2xs"
+                className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3 sm:px-2.5 gap-1.5 font-medium border-border/80 hover:bg-muted/50 text-foreground cursor-pointer shadow-2xs touch-manipulation"
                 onClick={onUploadClick}
                 aria-label="Upload take-home worksheet"
               >
-                <Upload className="size-3.5 text-brand-600 dark:text-brand-400" />
+                <Upload className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                 <span className="hidden sm:inline">Upload</span>
               </Button>
             )}
 
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="size-10 sm:size-9 rounded-full inline-flex items-center justify-center font-semibold text-xs bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 hover:bg-brand-200/80 dark:hover:bg-brand-900/80 ring-1 ring-brand-700/25 dark:ring-brand-400/25 border border-brand-200/60 dark:border-brand-800/60 shadow-2xs cursor-pointer focus-visible:ring-2 focus-visible:ring-primary outline-none transition-all"
+                className="size-11 sm:size-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-full inline-flex items-center justify-center font-semibold text-xs bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 hover:bg-brand-200/80 dark:hover:bg-brand-900/80 ring-1 ring-brand-700/25 dark:ring-brand-400/25 border border-brand-200/60 dark:border-brand-800/60 shadow-2xs cursor-pointer focus-visible:ring-2 focus-visible:ring-primary outline-none transition-all touch-manipulation"
                 aria-label={`User menu for ${user.fullName}`}
               >
                 {initials}
