@@ -138,7 +138,9 @@ export function ParentNav({
               >
                 <Users className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
                 <span className="font-medium text-foreground truncate">{linkedChildren[0].fullName}</span>
-                <span className="text-[11px] text-muted-foreground shrink-0">({linkedChildren[0].section})</span>
+                <span className="inline-flex items-center self-center text-xs text-muted-foreground shrink-0 leading-none">
+                  ({linkedChildren[0].section})
+                </span>
               </div>
             ) : null}
           </div>
