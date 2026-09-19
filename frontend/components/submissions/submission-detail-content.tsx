@@ -439,7 +439,7 @@ export function SubmissionDetailContent({
             variant="outline"
             size="sm"
             onClick={onClose}
-            className="h-9 px-2.5 sm:px-3 rounded-xl border-border/80 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 gap-1.5 shrink-0 transition-colors cursor-pointer group shadow-2xs"
+            className="h-10 sm:h-9 min-h-[40px] sm:min-h-0 px-3 sm:px-3 rounded-xl border-border/80 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 gap-1.5 shrink-0 transition-colors cursor-pointer group shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 touch-manipulation"
             title="Return to activity (Esc)"
           >
             <ArrowLeft className="size-3.5 group-hover:-translate-x-0.5 transition-transform" aria-hidden="true" />
@@ -603,7 +603,7 @@ export function SubmissionDetailContent({
         )}
       >
         {/* Mobile Sticky Preview Pill (< lg screens, modal only) */}
-        {variant === "modal" && isScrolledPastInspector && (
+        {variant === "modal" && isScrolledPastInspector && !isEditingRubric && (
           <div className="lg:hidden sticky -top-3 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-surface/95 dark:bg-card/95 backdrop-blur-md border-b border-border/80 flex items-center justify-between gap-2 shadow-xs animate-in fade-in slide-in-from-top-2 duration-150 motion-reduce:animate-none">
             <div className="flex items-center gap-2 min-w-0">
               <div className="size-7 rounded-md bg-muted overflow-hidden border border-border shrink-0">
@@ -1062,7 +1062,7 @@ export function SubmissionDetailContent({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setIsEditingRubric(true)}
-                                className="h-7 px-2.5 text-xs text-brand-800 dark:text-brand-200 border-brand-300 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 gap-1.5 cursor-pointer touch-manipulation shrink-0 font-medium"
+                                className="h-9 sm:h-7 min-h-[38px] sm:min-h-0 px-3 sm:px-2.5 text-xs text-brand-800 dark:text-brand-200 border-brand-300 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 gap-1.5 cursor-pointer touch-manipulation shrink-0 font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                                 aria-label="Edit recorded rubric scores"
                               >
                                 <Edit3 className="size-3" aria-hidden="true" />

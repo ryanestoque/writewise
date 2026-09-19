@@ -114,14 +114,16 @@ export const FormationLayer = memo(function FormationLayer({
               className="pointer-events-auto"
             />
 
-            {/* Keyboard Focus Highlight Indicator (WCAG 2.4.7) */}
+            {/* Keyboard Focus / Selection Highlight Indicator (WCAG 2.4.7) */}
             <rect
               x={x - 2}
               y={underlineY - 1}
               width={w + 4}
               height={4}
               rx={2}
-              className="opacity-0 group-focus-visible:opacity-100 transition-opacity fill-brand-600 dark:fill-brand-400 pointer-events-none"
+              className={`transition-opacity fill-brand-600 dark:fill-brand-400 pointer-events-none ${
+                isActive ? "opacity-100" : "opacity-0 group-focus-visible:opacity-100"
+              }`}
             />
 
             {/* Low visual weight penmanship stroke underline */}

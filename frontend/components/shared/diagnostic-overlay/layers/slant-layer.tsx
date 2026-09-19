@@ -109,7 +109,7 @@ export const SlantLayer = memo(function SlantLayer({
               className="pointer-events-auto"
             />
 
-            {/* Keyboard Focus Highlight Halo (WCAG 2.4.7) */}
+            {/* Keyboard Focus / Selection Highlight Halo (WCAG 2.4.7) */}
             <line
               x1={x1}
               y1={y1}
@@ -118,7 +118,9 @@ export const SlantLayer = memo(function SlantLayer({
               strokeWidth={5}
               strokeLinecap="round"
               strokeOpacity={0.6}
-              className="opacity-0 group-focus-visible:opacity-100 transition-opacity stroke-brand-600 dark:stroke-brand-400 pointer-events-none"
+              className={`transition-opacity stroke-brand-600 dark:stroke-brand-400 pointer-events-none ${
+                isActive ? "opacity-100" : "opacity-0 group-focus-visible:opacity-100"
+              }`}
             />
 
             {/* Slant Vector Line */}

@@ -111,7 +111,7 @@ export const SpacingLayer = memo(function SpacingLayer({
               className="pointer-events-auto"
             />
 
-            {/* Keyboard Focus Highlight Ring (WCAG 2.4.7) */}
+            {/* Keyboard Focus / Selection Highlight Ring (WCAG 2.4.7) */}
             <rect
               x={x1 - 2}
               y={y - tickHeight - 2}
@@ -121,7 +121,9 @@ export const SpacingLayer = memo(function SpacingLayer({
               strokeWidth={2}
               strokeDasharray="3 2"
               rx={3}
-              className="opacity-0 group-focus-visible:opacity-100 transition-opacity stroke-brand-600 dark:stroke-brand-400 pointer-events-none"
+              className={`transition-opacity stroke-brand-600 dark:stroke-brand-400 pointer-events-none ${
+                isActive ? "opacity-100" : "opacity-0 group-focus-visible:opacity-100"
+              }`}
             />
 
             {/* Shaded Gap Interval */}

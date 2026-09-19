@@ -161,7 +161,7 @@ export const BaselineLayer = memo(function BaselineLayer({
               className="pointer-events-auto"
             />
 
-            {/* Keyboard Focus Highlight Indicator (WCAG 2.4.7) */}
+            {/* Keyboard Focus / Selection Highlight Indicator (WCAG 2.4.7) */}
             <line
               x1={x - 2}
               y1={wordBottomY}
@@ -169,7 +169,9 @@ export const BaselineLayer = memo(function BaselineLayer({
               y2={wordBottomY}
               strokeWidth={4}
               strokeLinecap="round"
-              className="opacity-0 group-focus-visible:opacity-100 transition-opacity stroke-brand-600 dark:stroke-brand-400 pointer-events-none"
+              className={`transition-opacity stroke-brand-600 dark:stroke-brand-400 pointer-events-none ${
+                isActive ? "opacity-100" : "opacity-0 group-focus-visible:opacity-100"
+              }`}
             />
 
             {/* Word Baseline Anchor Bar */}

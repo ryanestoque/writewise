@@ -247,7 +247,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 variant="ghost"
                 size="sm"
                 onClick={() => onChangeCriterion("all")}
-                className="h-7 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors"
+                className="h-9 sm:h-7 min-h-[36px] sm:min-h-0 px-2.5 sm:px-2 text-xs sm:text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                 title="Reset to show all guides"
               >
                 <X className="size-3 mr-1" aria-hidden="true" />
@@ -356,11 +356,11 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 size="sm"
                 disabled={!visible}
                 onClick={handlePrevAttention}
-                className="relative size-8 sm:size-6 p-0 min-h-[32px] min-w-[32px] sm:min-h-[24px] sm:min-w-[24px] rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation after:absolute after:-inset-1.5 after:content-['']"
+                className="relative size-10 sm:size-6 p-0 min-h-[40px] min-w-[40px] sm:min-h-[24px] sm:min-w-[24px] rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
                 aria-label="Previous practice area (Key: Alt+[ or [)"
                 title="Previous practice area (Alt+[ or [)"
               >
-                <ChevronLeft className="size-3.5 sm:size-3" aria-hidden="true" />
+                <ChevronLeft className="size-4 sm:size-3" aria-hidden="true" />
               </Button>
               <span className="tabular-nums font-semibold text-foreground px-0.5 text-[11px] select-none">
                 {currentIndex >= 0 ? currentIndex + 1 : 1}
@@ -373,11 +373,11 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 size="sm"
                 disabled={!visible}
                 onClick={handleNextAttention}
-                className="relative size-8 sm:size-6 p-0 min-h-[32px] min-w-[32px] sm:min-h-[24px] sm:min-w-[24px] rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation after:absolute after:-inset-1.5 after:content-['']"
+                className="relative size-10 sm:size-6 p-0 min-h-[40px] min-w-[40px] sm:min-h-[24px] sm:min-w-[24px] rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
                 aria-label="Next practice area (Key: Alt+] or ])"
                 title="Next practice area (Alt+] or ])"
               >
-                <ChevronRight className="size-3.5 sm:size-3" aria-hidden="true" />
+                <ChevronRight className="size-4 sm:size-3" aria-hidden="true" />
               </Button>
             </div>
           )}
@@ -388,9 +388,9 @@ export const OverlayToolbar = memo(function OverlayToolbar({
             size="sm"
             onClick={() => setShowLegend((prev) => !prev)}
             className={cn(
-              "relative h-10 sm:h-7 min-h-[40px] sm:min-h-[28px] px-2.5 sm:px-2 text-[11px] font-medium rounded-lg gap-1 cursor-pointer transition-colors touch-manipulation after:absolute after:-inset-1",
+              "relative h-10 sm:h-7 min-h-[40px] sm:min-h-[28px] px-2.5 sm:px-2 text-[11px] font-medium rounded-lg gap-1 cursor-pointer transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1",
               showLegend
-                ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200"
+                ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200 font-semibold"
                 : "text-muted-foreground hover:text-foreground"
             )}
             title="Toggle diagnostic symbols legend"
@@ -401,19 +401,21 @@ export const OverlayToolbar = memo(function OverlayToolbar({
             <span className="hidden md:inline">Legend</span>
           </Button>
 
-          <Switch
-            id="toggle-diagnostic-overlay"
-            aria-label="Toggle handwriting diagnostic overlay"
-            checked={visible}
-            onCheckedChange={onToggleVisible}
-            className="cursor-pointer scale-90 sm:scale-75 touch-manipulation"
-          />
-          <Label
-            htmlFor="toggle-diagnostic-overlay"
-            className="text-xs sm:text-[11px] font-medium text-muted-foreground cursor-pointer select-none whitespace-nowrap hidden min-[360px]:inline"
-          >
-            {visible ? "Overlay on" : "Overlay off"}
-          </Label>
+          <div className="flex items-center gap-1.5 min-h-[40px] sm:min-h-0 touch-manipulation px-0.5">
+            <Switch
+              id="toggle-diagnostic-overlay"
+              aria-label="Toggle handwriting diagnostic overlay"
+              checked={visible}
+              onCheckedChange={onToggleVisible}
+              className="cursor-pointer scale-90 sm:scale-75 touch-manipulation"
+            />
+            <Label
+              htmlFor="toggle-diagnostic-overlay"
+              className="text-xs sm:text-[11px] font-medium text-muted-foreground cursor-pointer select-none whitespace-nowrap hidden min-[360px]:inline"
+            >
+              {visible ? "Overlay on" : "Overlay off"}
+            </Label>
+          </div>
         </div>
       </div>
 

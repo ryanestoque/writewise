@@ -558,9 +558,9 @@ export function WorksheetImageInspector({
               <button
                 type="button"
                 onClick={handleResetZoom}
-                className="px-2.5 sm:px-2 py-1 sm:py-0.5 h-10 sm:h-7 min-h-[40px] sm:min-h-0 flex items-center justify-center text-xs font-mono font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded-lg touch-manipulation"
+                className="px-2.5 sm:px-2 py-1 sm:py-0.5 h-10 sm:h-7 min-h-[40px] sm:min-h-0 flex items-center justify-center text-xs font-mono font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded-lg touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                 title="Click to reset zoom (Key: 0)"
-                aria-label={`Current zoom ${Math.round(zoomScale * 100)} percent. Click to reset.`}
+                aria-label={`Current zoom ${Math.round(zoomScale * 100)} percent. Click to reset (Shortcut: 0).`}
               >
                 {Math.round(zoomScale * 100)}%
               </button>
@@ -642,9 +642,9 @@ export function WorksheetImageInspector({
             <button
               type="button"
               onClick={handleResetZoom}
-              className="px-2.5 sm:px-2 py-2 sm:py-0.5 min-h-[44px] sm:min-h-[32px] flex items-center justify-center text-xs sm:text-[11px] font-mono font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded touch-manipulation"
+              className="px-2.5 sm:px-2 py-2 sm:py-0.5 min-h-[44px] sm:min-h-[32px] flex items-center justify-center text-xs sm:text-[11px] font-mono font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded-lg touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
               title="Click to reset zoom (Key: 0)"
-              aria-label={`Current zoom ${Math.round(zoomScale * 100)} percent. Click to reset.`}
+              aria-label={`Current zoom ${Math.round(zoomScale * 100)} percent. Click to reset (Shortcut: 0).`}
             >
               {Math.round(zoomScale * 100)}%
             </button>
@@ -821,7 +821,7 @@ export function WorksheetImageInspector({
               e.stopPropagation();
               handleResetZoom();
             }}
-            className="absolute bottom-2.5 right-2.5 z-10 bg-background/95 dark:bg-card/95 text-foreground px-3 py-2 rounded-lg border border-border shadow-xs text-xs font-medium flex items-center gap-1.5 hover:bg-muted transition-colors cursor-pointer min-h-[44px] sm:min-h-[36px] touch-manipulation"
+            className="absolute bottom-2.5 right-2.5 z-10 bg-background/95 dark:bg-card/95 text-foreground px-3 py-2 rounded-lg border border-border shadow-xs text-xs font-medium flex items-center gap-1.5 hover:bg-muted transition-colors cursor-pointer min-h-[44px] sm:min-h-[36px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             title="Reset zoom & pan (Key: 0)"
           >
             <RotateCcw className="size-3.5 text-muted-foreground" aria-hidden="true" />
