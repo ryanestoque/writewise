@@ -4,18 +4,24 @@ import { memo } from "react";
 import type {
   SpacingOverlay,
   CriterionFilter,
-  ActiveAnnotationHover,
+  HoverAnnotationCallback,
 } from "../types";
+
+import { OVERLAY_COLORS, OVERLAY_WEIGHTS } from "../constants";
 
 interface SpacingLayerProps {
   data: SpacingOverlay;
   activeCriterion: CriterionFilter;
-  onHoverAnnotation: (hover: ActiveAnnotationHover | null) => void;
+  hitScale?: number;
+  activeAnnotationId?: string | null;
+  onHoverAnnotation: HoverAnnotationCallback;
 }
 
 export const SpacingLayer = memo(function SpacingLayer({
   data,
   activeCriterion,
+  hitScale = 1,
+  activeAnnotationId,
   onHoverAnnotation,
 }: SpacingLayerProps) {
   const isSpotlight = activeCriterion === "spacing";
@@ -23,37 +29,101 @@ export const SpacingLayer = memo(function SpacingLayer({
 
   if (isDimmed) return null;
 
+  const annotations = data?.annotations ?? [];
+
   return (
     <g
       className="transition-opacity duration-200"
-      style={{ opacity: isSpotlight ? 1.0 : 0.7 }}
+      style={{
+        opacity: isSpotlight
+          ? OVERLAY_WEIGHTS.opacitySpotlight
+          : OVERLAY_WEIGHTS.opacityAllGuides,
+      }}
     >
-      {data.annotations.map((ann, idx) => {
+      {annotations.map((ann, idx) => {
         const { x1, x2, y, gap_ratio, severity, note } = ann;
         const width = Math.max(8, x2 - x1);
         const isAttention = severity === "needs_attention";
 
         if (!isAttention && !isSpotlight) return null;
 
-        const bracketColor = isAttention ? "#f43f5e" : "#8b5cf6";
-        const tickHeight = isSpotlight ? 8 : 6;
+        const bracketColor = isAttention
+          ? OVERLAY_COLORS.needs_attention.stroke
+          : OVERLAY_COLORS.consistent.stroke;
+        const tickHeight = isSpotlight ? 7 : 5;
+        const id = `spacing-${ann.line_index}-${ann.gap_index}`;
+        const title = isAttention ? "Spacing Needs Attention" : "Consistent Word Spacing";
+        const hoverPayload = {
+          id,
+          criterion: "spacing" as const,
+          title,
+          note,
+          severity,
+          x: x1 + width / 2,
+          y: y - 10,
+        };
+
+        const toggleAnnotation = () => {
+          onHoverAnnotation((prev) => (prev?.id === id ? null : hoverPayload));
+        };
+
+        const isFocusable = isSpotlight || isAttention;
+        const isActive = activeAnnotationId === id;
+        const minHit = Math.max(28, 28 * hitScale);
+        const hitW = Math.max(minHit, width + 8);
+        const hitH = Math.max(minHit, tickHeight * 2 + 8);
 
         return (
           <g
             key={`spacing-gap-${idx}`}
-            className="cursor-pointer pointer-events-auto group"
-            onMouseEnter={() =>
-              onHoverAnnotation({
-                criterion: "spacing",
-                title: isAttention ? "Spacing Needs Attention" : "Consistent Word Spacing",
-                note,
-                severity,
-                x: x1 + width / 2,
-                y: y - 10,
-              })
-            }
+            role="button"
+            tabIndex={isFocusable ? 0 : -1}
+            aria-haspopup="dialog"
+            aria-expanded={isActive}
+            aria-describedby={isActive ? "diagnostic-annotation-tooltip" : undefined}
+            aria-label={`${isAttention ? "Needs attention: " : "Consistent: "} ${title}. ${note}`}
+            className="cursor-pointer pointer-events-auto group focus-visible:outline-hidden"
+            onMouseEnter={() => onHoverAnnotation(hoverPayload)}
             onMouseLeave={() => onHoverAnnotation(null)}
+            onFocus={() => onHoverAnnotation(hoverPayload)}
+            onBlur={() => onHoverAnnotation(null)}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleAnnotation();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleAnnotation();
+              } else if (e.key === "Escape") {
+                onHoverAnnotation(null);
+              }
+            }}
           >
+            {/* Generous touch hit area (scaled to maintain minimum 28-32px physical screen pixels on mobile) */}
+            <rect
+              x={x1 - (hitW - width) / 2}
+              y={y - hitH / 2}
+              width={hitW}
+              height={hitH}
+              fill="transparent"
+              className="pointer-events-auto"
+            />
+
+            {/* Keyboard Focus Highlight Ring (WCAG 2.4.7) */}
+            <rect
+              x={x1 - 2}
+              y={y - tickHeight - 2}
+              width={width + 4}
+              height={tickHeight * 2 + 4}
+              fill="none"
+              strokeWidth={2}
+              strokeDasharray="3 2"
+              rx={3}
+              className="opacity-0 group-focus-visible:opacity-100 transition-opacity stroke-[#1b6b63] dark:stroke-[#2dd4bf] pointer-events-none"
+            />
+
             {/* Shaded Gap Interval */}
             <rect
               x={x1}
@@ -61,9 +131,9 @@ export const SpacingLayer = memo(function SpacingLayer({
               width={width}
               height={tickHeight * 2}
               fill={bracketColor}
-              fillOpacity={isAttention ? 0.18 : 0.08}
-              rx={2}
-              className="transition-opacity group-hover:fill-opacity-30"
+              fillOpacity={isAttention ? 0.12 : 0.04}
+              rx={1.5}
+              className="transition-opacity group-hover:fill-opacity-25 group-focus-visible:fill-opacity-25"
             />
 
             {/* Horizontal Measurement Line */}
@@ -73,7 +143,7 @@ export const SpacingLayer = memo(function SpacingLayer({
               x2={x2}
               y2={y}
               stroke={bracketColor}
-              strokeWidth={isAttention ? 2 : 1.25}
+              strokeWidth={isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal}
             />
 
             {/* Left Bracket Tick */}
@@ -83,7 +153,7 @@ export const SpacingLayer = memo(function SpacingLayer({
               x2={x1}
               y2={y + tickHeight}
               stroke={bracketColor}
-              strokeWidth={isAttention ? 2 : 1.25}
+              strokeWidth={isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal}
             />
 
             {/* Right Bracket Tick */}
@@ -93,27 +163,27 @@ export const SpacingLayer = memo(function SpacingLayer({
               x2={x2}
               y2={y + tickHeight}
               stroke={bracketColor}
-              strokeWidth={isAttention ? 2 : 1.25}
+              strokeWidth={isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal}
             />
 
-            {/* In spotlight or on attention, render small ratio pill */}
-            {(isSpotlight || isAttention) && (
+            {/* In spotlight mode, render ratio pill */}
+            {isSpotlight && (
               <g transform={`translate(${x1 + width / 2}, ${y - 10})`}>
                 <rect
                   x={-14}
-                  y={-9}
+                  y={-7}
                   width={28}
                   height={14}
                   rx={7}
                   fill={bracketColor}
-                  className="transition-transform group-hover:scale-110"
+                  className="transition-transform group-hover:scale-110 motion-reduce:transform-none"
                 />
                 <text
                   x={0}
-                  y={1.5}
+                  y={3}
                   textAnchor="middle"
                   fill="#ffffff"
-                  fontSize="9"
+                  fontSize="8.5"
                   fontWeight="600"
                   fontFamily="system-ui, sans-serif"
                 >

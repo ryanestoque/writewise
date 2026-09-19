@@ -99,6 +99,7 @@ export interface DiagnosticOverlayData {
 }
 
 export interface ActiveAnnotationHover {
+  id?: string;
   criterion: CriterionFilter;
   title: string;
   note: string;
@@ -106,3 +107,109 @@ export interface ActiveAnnotationHover {
   x: number;
   y: number;
 }
+
+export type HoverAnnotationCallback = (
+  hover:
+    | ActiveAnnotationHover
+    | null
+    | ((prev: ActiveAnnotationHover | null) => ActiveAnnotationHover | null)
+) => void;
+
+/**
+ * Extracts and returns an ordered list of all annotations that require attention
+ * matching the given criterion filter (or across all criteria if "all").
+ */
+export function getAttentionItems(
+  overlay: DiagnosticOverlayData | null | undefined,
+  filter: CriterionFilter = "all"
+): ActiveAnnotationHover[] {
+  if (!overlay) return [];
+  const items: ActiveAnnotationHover[] = [];
+
+  if (filter === "all" || filter === "letter_formation") {
+    overlay.letter_formation?.annotations?.forEach((ann) => {
+      if (ann.severity === "needs_attention") {
+        const [x, y, w, h] = ann.bbox;
+        items.push({
+          id: `formation-${ann.line_index}-${ann.word_index}`,
+          criterion: "letter_formation",
+          title: `Letter Formation (${ann.band})`,
+          note: ann.note,
+          severity: "needs_attention",
+          x: x + w / 2,
+          y: y + h + 4,
+        });
+      }
+    });
+  }
+
+  if (filter === "all" || filter === "baseline_alignment") {
+    overlay.baseline?.annotations?.forEach((ann) => {
+      if (ann.severity === "needs_attention") {
+        const [x, y, w, h] = ann.bbox;
+        items.push({
+          id: `baseline-${ann.line_index}-${ann.word_index}`,
+          criterion: "baseline_alignment",
+          title: "Baseline Drift Detected",
+          note: ann.note,
+          severity: "needs_attention",
+          x: x + w / 2,
+          y: y + h + 6,
+        });
+      }
+    });
+  }
+
+  if (filter === "all" || filter === "slant") {
+    overlay.slant?.annotations?.forEach((ann) => {
+      if (ann.severity === "needs_attention") {
+        const [x, y, w] = ann.bbox;
+        items.push({
+          id: `slant-${ann.line_index}-${ann.word_index}`,
+          criterion: "slant",
+          title: "Irregular Slant",
+          note: ann.note,
+          severity: "needs_attention",
+          x: x + w / 2,
+          y: y - 6,
+        });
+      }
+    });
+  }
+
+  if (filter === "all" || filter === "spacing") {
+    overlay.spacing?.annotations?.forEach((ann) => {
+      if (ann.severity === "needs_attention") {
+        items.push({
+          id: `spacing-${ann.line_index}-${ann.gap_index}`,
+          criterion: "spacing",
+          title: "Irregular Word Spacing",
+          note: ann.note,
+          severity: "needs_attention",
+          x: (ann.x1 + ann.x2) / 2,
+          y: ann.y - 10,
+        });
+      }
+    });
+  }
+
+  if (filter === "all" || filter === "size_consistency") {
+    overlay.size?.annotations?.forEach((ann) => {
+      if (ann.severity === "needs_attention") {
+        const [x, y, w, h] = ann.bbox;
+        items.push({
+          id: `size-${ann.line_index}-${ann.word_index}`,
+          criterion: "size_consistency",
+          title: "Inconsistent Size",
+          note: ann.note,
+          severity: "needs_attention",
+          x: x + w / 2,
+          y: y + h + 4,
+        });
+      }
+    });
+  }
+
+  return items;
+}
+

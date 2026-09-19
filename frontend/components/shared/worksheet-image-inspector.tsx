@@ -3,8 +3,11 @@
 import {
   useState,
   useCallback,
+  useMemo,
   useEffect,
   useRef,
+  createContext,
+  useContext,
   type ReactNode,
   type PointerEvent as ReactPointerEvent,
 } from "react";
@@ -19,6 +22,23 @@ import {
   FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+export interface InspectorContextValue {
+  zoomScale: number;
+  panOffset: { x: number; y: number };
+  isHighContrast: boolean;
+  centerPoint?: (point: { x: number; y: number; imageWidth: number; imageHeight: number }) => void;
+}
+
+export const InspectorContext = createContext<InspectorContextValue>({
+  zoomScale: 1,
+  panOffset: { x: 0, y: 0 },
+  isHighContrast: false,
+});
+
+export function useInspectorContext(): InspectorContextValue {
+  return useContext(InspectorContext);
+}
 
 export interface WorksheetImageInspectorProps {
   /** Signed URL or public URL of the worksheet photo */
@@ -70,12 +90,16 @@ export function WorksheetImageInspector({
   const [loupeState, setLoupeState] = useState<{
     x: number;
     y: number;
+    targetX: number;
+    targetY: number;
     width: number;
     height: number;
     visible: boolean;
   }>({
     x: 0,
     y: 0,
+    targetX: 0,
+    targetY: 0,
     width: 0,
     height: 0,
     visible: false,
@@ -84,7 +108,9 @@ export function WorksheetImageInspector({
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
 
   const imageContainerRef = useRef<HTMLDivElement>(null);
-  const activePointerIdRef = useRef<number | null>(null);
+  const activePointersRef = useRef<Map<number, { clientX: number; clientY: number }>>(new Map());
+  const pinchStartDistRef = useRef<number | null>(null);
+  const pinchStartScaleRef = useRef<number>(1);
 
   const hasImageError = Boolean(
     isError || (imageUrl && failedImageUrl === imageUrl)
@@ -141,6 +167,56 @@ export function WorksheetImageInspector({
       y: Math.max(-400, Math.min(400, prev.y + dy)),
     }));
   }, []);
+
+  // Auto-center a specific point on the image when magnified (e.g. focused annotation)
+  const centerPoint = useCallback(
+    (point: { x: number; y: number; imageWidth: number; imageHeight: number }) => {
+      const container = imageContainerRef.current;
+      if (!container || zoomScale <= 1 || point.imageWidth <= 0 || point.imageHeight <= 0) return;
+
+      const rect = container.getBoundingClientRect();
+      const containerW = rect.width;
+      const containerH = rect.height;
+
+      const containerRatio = containerW / containerH;
+      const imgRatio = point.imageWidth / point.imageHeight;
+
+      let renderedW = containerW;
+      let renderedH = containerH;
+      let offsetX = 0;
+      let offsetY = 0;
+
+      if (containerRatio > imgRatio) {
+        renderedW = containerH * imgRatio;
+        offsetX = (containerW - renderedW) / 2;
+      } else {
+        renderedH = containerW / imgRatio;
+        offsetY = (containerH - renderedH) / 2;
+      }
+
+      const pixelX = offsetX + (point.x / point.imageWidth) * renderedW;
+      const pixelY = offsetY + (point.y / point.imageHeight) * renderedH;
+
+      const dxFromCenter = pixelX - containerW / 2;
+      const dyFromCenter = pixelY - containerH / 2;
+
+      const targetX = Math.max(-400, Math.min(400, -dxFromCenter * zoomScale));
+      const targetY = Math.max(-400, Math.min(400, -dyFromCenter * zoomScale));
+
+      setPanOffset({ x: Math.round(targetX), y: Math.round(targetY) });
+    },
+    [zoomScale]
+  );
+
+  const inspectorContextValue = useMemo<InspectorContextValue>(
+    () => ({
+      zoomScale,
+      panOffset,
+      isHighContrast,
+      centerPoint,
+    }),
+    [zoomScale, panOffset, isHighContrast, centerPoint]
+  );
 
   // Keyboard shortcuts (global while inspector mounted or inside focused container)
   useEffect(() => {
@@ -224,43 +300,81 @@ export function WorksheetImageInspector({
     handleKeyPan,
   ]);
 
-  // Pointer Events for Cross-Device Touch, Stylus, and Mouse Panning
+  // Pointer Events for Cross-Device Touch, Stylus, and Mouse Panning + Multi-Touch Pinch
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.target instanceof HTMLElement && e.target.closest("button")) {
       return;
     }
 
-    if (zoomScale > 1) {
+    activePointersRef.current.set(e.pointerId, {
+      clientX: e.clientX,
+      clientY: e.clientY,
+    });
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Safe fallback if pointer capture unsupported
+    }
+
+    const count = activePointersRef.current.size;
+
+    if (count === 2) {
+      // Two-finger gesture -> initialize pinch-to-zoom
+      setIsDragging(false);
+      const pts = Array.from(activePointersRef.current.values());
+      const dist = Math.hypot(pts[0].clientX - pts[1].clientX, pts[0].clientY - pts[1].clientY);
+      pinchStartDistRef.current = dist;
+      pinchStartScaleRef.current = zoomScale;
+    } else if (count === 1 && zoomScale > 1) {
+      // Single cursor/finger pan
       setIsDragging(true);
-      activePointerIdRef.current = e.pointerId;
       setDragStart({
         x: e.clientX - panOffset.x,
         y: e.clientY - panOffset.y,
       });
-      try {
-        e.currentTarget.setPointerCapture(e.pointerId);
-      } catch {
-        // Safe fallback if pointer capture unsupported
-      }
     }
   };
 
   const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (activePointersRef.current.has(e.pointerId)) {
+      activePointersRef.current.set(e.pointerId, {
+        clientX: e.clientX,
+        clientY: e.clientY,
+      });
+    }
+
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
     if (isLoupeActive) {
+      const isTouch = e.pointerType === "touch";
+      const lensY = isTouch ? y - 95 : y;
       setLoupeState({
-        x,
-        y,
+        x: Math.max(65, Math.min(rect.width - 65, x)),
+        y: Math.max(65, Math.min(rect.height - 65, lensY)),
+        targetX: x,
+        targetY: y,
         width: rect.width,
         height: rect.height,
         visible: true,
       });
     }
 
-    if (isDragging && zoomScale > 1) {
+    const count = activePointersRef.current.size;
+
+    if (count === 2 && pinchStartDistRef.current !== null && pinchStartDistRef.current > 0) {
+      const pts = Array.from(activePointersRef.current.values());
+      const currentDist = Math.hypot(pts[0].clientX - pts[1].clientX, pts[0].clientY - pts[1].clientY);
+      const factor = currentDist / pinchStartDistRef.current;
+      const nextScale = Math.max(1, Math.min(2.5, +(pinchStartScaleRef.current * factor).toFixed(2)));
+      setZoomScale(nextScale);
+      if (nextScale === 1) {
+        setPanOffset({ x: 0, y: 0 });
+      }
+      setAccessibilityNotice(`Pinch zoom ${Math.round(nextScale * 100)} percent`);
+    } else if (count === 1 && isDragging && zoomScale > 1) {
       setPanOffset({
         x: Math.max(-500, Math.min(500, e.clientX - dragStart.x)),
         y: Math.max(-500, Math.min(500, e.clientY - dragStart.y)),
@@ -269,19 +383,34 @@ export function WorksheetImageInspector({
   };
 
   const handlePointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (activePointerIdRef.current !== null) {
-      try {
-        e.currentTarget.releasePointerCapture(activePointerIdRef.current);
-      } catch {
-        // Safe fallback
-      }
-      activePointerIdRef.current = null;
+    activePointersRef.current.delete(e.pointerId);
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      // Safe fallback
     }
-    setIsDragging(false);
+
+    const remaining = activePointersRef.current.size;
+    if (remaining < 2) {
+      pinchStartDistRef.current = null;
+    }
+
+    if (remaining === 0) {
+      setIsDragging(false);
+    } else if (remaining === 1 && zoomScale > 1) {
+      // Transition back to single pointer dragging with remaining finger
+      const pointer = Array.from(activePointersRef.current.values())[0];
+      setDragStart({
+        x: pointer.clientX - panOffset.x,
+        y: pointer.clientY - panOffset.y,
+      });
+      setIsDragging(true);
+    }
   };
 
-  const handlePointerCancel = () => {
-    activePointerIdRef.current = null;
+  const handlePointerCancel = (e: ReactPointerEvent<HTMLDivElement>) => {
+    activePointersRef.current.delete(e.pointerId);
+    pinchStartDistRef.current = null;
     setIsDragging(false);
   };
 
@@ -407,12 +536,17 @@ export function WorksheetImageInspector({
         onMouseEnter={(e) => {
           if (isLoupeActive) {
             const rect = e.currentTarget.getBoundingClientRect();
-            setLoupeState((prev) => ({
-              ...prev,
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            setLoupeState({
+              x: Math.max(65, Math.min(rect.width - 65, x)),
+              y: Math.max(65, Math.min(rect.height - 65, y)),
+              targetX: x,
+              targetY: y,
               width: rect.width,
               height: rect.height,
               visible: true,
-            }));
+            });
           }
         }}
         onMouseLeave={() => {
@@ -436,7 +570,7 @@ export function WorksheetImageInspector({
           <Skeleton className="size-full min-h-[260px] rounded-none" />
         ) : imageUrl && !hasImageError && !isError ? (
           <div
-            className="size-full flex items-center justify-center p-2"
+            className="size-full flex items-center justify-center p-2 motion-reduce:!transition-none"
             style={{
               transform: `translate3d(${panOffset.x}px, ${panOffset.y}px, 0) scale(${zoomScale})`,
               transformOrigin: "center center",
@@ -463,7 +597,9 @@ export function WorksheetImageInspector({
                 className="size-full object-contain pointer-events-none drop-shadow-2xs"
               />
               {/* Custom Overlays / Slots (e.g. CV guide-line grid, bounding boxes) */}
-              {children}
+              <InspectorContext.Provider value={inspectorContextValue}>
+                {children}
+              </InspectorContext.Provider>
             </div>
           </div>
         ) : (
@@ -505,8 +641,8 @@ export function WorksheetImageInspector({
             aria-hidden="true"
             className="absolute size-[130px] rounded-full border-2 border-brand-600 dark:border-brand-400 shadow-xl overflow-hidden pointer-events-none z-30 ring-2 ring-background/80 bg-background"
             style={{
-              left: Math.max(0, Math.min(loupeState.width - 130, loupeState.x - 65)),
-              top: Math.max(0, Math.min(loupeState.height - 130, loupeState.y - 65)),
+              left: loupeState.x - 65,
+              top: loupeState.y - 65,
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -518,8 +654,8 @@ export function WorksheetImageInspector({
                 position: "absolute",
                 width: loupeState.width * 2.5,
                 height: loupeState.height * 2.5,
-                left: -loupeState.x * 2.5 + 65,
-                top: -loupeState.y * 2.5 + 65,
+                left: -loupeState.targetX * 2.5 + 65,
+                top: -loupeState.targetY * 2.5 + 65,
                 filter: isHighContrast
                   ? "contrast(1.4) brightness(0.92) saturate(0.6)"
                   : "none",

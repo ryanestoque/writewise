@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 import {
   Dialog,
@@ -18,8 +18,10 @@ import { GuideLineOverlay, type GuideLines } from "@/components/shared/guide-lin
 import {
   DiagnosticOverlay,
   OverlayToolbar,
+  DiagnosticFallbackBanner,
   type CriterionFilter,
   type DiagnosticOverlayData,
+  type ActiveAnnotationHover,
 } from "@/components/shared/diagnostic-overlay";
 import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
@@ -91,15 +93,26 @@ export function WorksheetViewDialog({
   const [showGuideLines, setShowGuideLines] = useState(false);
   const [criterionOverride, setCriterionOverride] = useState<CriterionFilter | null>(null);
   const [showOverlay, setShowOverlay] = useState(true);
+  const [selectedAttentionItem, setSelectedAttentionItem] =
+    useState<ActiveAnnotationHover | null>(null);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       setCriterionOverride(null);
+      setSelectedAttentionItem(null);
     }
     onOpenChange(nextOpen);
   };
 
-  const activeCriterion = criterionOverride ?? initialCriterion;
+  const effectiveInitialCriterion: CriterionFilter = useMemo(() => {
+    if (initialCriterion !== "all") return initialCriterion;
+    if (overlay?.summary?.weakest_criterion) {
+      return overlay.summary.weakest_criterion as CriterionFilter;
+    }
+    return "all";
+  }, [initialCriterion, overlay?.summary?.weakest_criterion]);
+
+  const activeCriterion = criterionOverride ?? effectiveInitialCriterion;
   const { data: imageUrl, isLoading: isImageLoading } =
     useSubmissionImageUrl(imagePath);
 
@@ -150,13 +163,23 @@ export function WorksheetViewDialog({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start lg:items-center">
             {/* Left: High-Resolution Worksheet Photo Inspector */}
             <div className="lg:col-span-7 flex flex-col justify-center w-full gap-2">
-              {overlay && (
+              {overlay ? (
                 <OverlayToolbar
                   overlay={overlay}
                   activeCriterion={activeCriterion}
-                  onChangeCriterion={setCriterionOverride}
+                  onChangeCriterion={(c) => {
+                    setCriterionOverride(c);
+                    setSelectedAttentionItem(null);
+                  }}
+                  selectedAttentionId={selectedAttentionItem?.id}
+                  onSelectAttentionItem={setSelectedAttentionItem}
                   visible={showOverlay}
                   onToggleVisible={setShowOverlay}
+                />
+              ) : (
+                <DiagnosticFallbackBanner
+                  scoreSource={scoreSource}
+                  isParentView
                 />
               )}
 
@@ -172,6 +195,8 @@ export function WorksheetViewDialog({
                     imageUrl={imageUrl}
                     visible={showOverlay}
                     activeCriterion={activeCriterion}
+                    selectedAnnotation={selectedAttentionItem}
+                    onSelectAnnotation={setSelectedAttentionItem}
                   />
                 ) : (
                   <GuideLineOverlay
