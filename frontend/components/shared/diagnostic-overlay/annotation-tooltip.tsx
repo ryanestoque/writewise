@@ -42,6 +42,7 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
   let leftPos: string;
   let topPos: string;
   let isNearTop = false;
+  let caretOffset = 0;
 
   if (containerWidth && containerHeight && containerWidth > 0 && containerHeight > 0) {
     // Calculate exact rendered image box inside object-contain
@@ -66,24 +67,30 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
     const pixelX = offsetX + (x / imageWidth) * renderedW;
     const pixelY = offsetY + (y / imageHeight) * renderedH;
 
-    // Tooltip width is up to 256px (sm:w-64). Clamp within rendered bounds considering counterScale
-    const halfWidth = 128 * counterScale;
+    // Tooltip width is 240px on mobile (w-60) and 256px on sm+ (sm:w-64). Clamp within rendered bounds
+    const baseHalfWidth = containerWidth < 640 ? 120 : 128;
+    const halfWidth = baseHalfWidth * counterScale;
     const imageMinX = offsetX + halfWidth + 8;
     const imageMaxX = offsetX + renderedW - halfWidth - 8;
-    const minX = Math.max(halfWidth + 4, imageMinX <= imageMaxX ? imageMinX : containerWidth / 2);
-    const maxX = Math.min(containerWidth - halfWidth - 4, imageMinX <= imageMaxX ? imageMaxX : containerWidth / 2);
+    const minX = Math.max(halfWidth + 12, imageMinX <= imageMaxX ? imageMinX : containerWidth / 2);
+    const maxX = Math.min(containerWidth - halfWidth - 12, imageMinX <= imageMaxX ? imageMaxX : containerWidth / 2);
     const clampedX = Math.max(minX, Math.min(maxX, pixelX));
 
-    isNearTop = pixelY < 85 * counterScale;
+    isNearTop = pixelY < 125 * counterScale;
     leftPos = `${clampedX}px`;
     topPos = `${pixelY}px`;
+
+    // Horizontal relative offset for the pointer caret, clamped safely inside card's rounded corners
+    const rawCaretOffset = (pixelX - clampedX) / counterScale;
+    caretOffset = Math.max(-100, Math.min(100, rawCaretOffset));
   } else {
     // Fallback to percentage offset inside relative container
     const leftPct = Math.max(8, Math.min(92, (x / imageWidth) * 100));
     const topPct = Math.max(8, Math.min(92, (y / imageHeight) * 100));
-    isNearTop = topPct < 15;
+    isNearTop = topPct < 25;
     leftPos = `${leftPct}%`;
     topPos = `${topPct}%`;
+    caretOffset = 0;
   }
 
   return (
@@ -98,9 +105,38 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
         transformOrigin: isNearTop ? "top center" : "bottom center",
       }}
     >
+      {/* Directional Caret Stem pointing to the active stroke coordinate */}
+      <div
+        className="absolute pointer-events-none -translate-x-1/2 z-40"
+        style={{
+          left: `calc(50% + ${caretOffset}px)`,
+          ...(isNearTop ? { top: "-6px" } : { bottom: "-6px" }),
+        }}
+      >
+        <svg
+          width="14"
+          height="7"
+          viewBox="0 0 14 7"
+          className="block overflow-visible"
+        >
+          <path
+            d={isNearTop ? "M0 7 L7 0 L14 7" : "M0 0 L7 7 L14 0"}
+            fill="currentColor"
+            className={cn(
+              "text-white/95 dark:text-card/95",
+              isAttention
+                ? "stroke-destructive/40 dark:stroke-destructive/50"
+                : "stroke-brand-600/40 dark:stroke-brand-500/50"
+            )}
+            strokeWidth="1.2"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+
       <div
         className={cn(
-          "w-60 sm:w-64 max-w-[calc(100vw-2rem)] p-2.5 rounded-xl shadow-warm border backdrop-blur-md transition-colors select-none",
+          "w-60 sm:w-64 max-w-[calc(100vw-2rem)] p-2.5 rounded-xl shadow-warm border backdrop-blur-md transition-colors select-none relative",
           "bg-white/95 dark:bg-card/95 text-foreground",
           isAttention
             ? "border-destructive/40 dark:border-destructive/50 ring-2 ring-destructive/10"

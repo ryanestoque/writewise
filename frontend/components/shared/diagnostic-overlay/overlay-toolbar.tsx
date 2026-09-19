@@ -40,6 +40,7 @@ interface OverlayToolbarProps {
 interface FilterItem {
   id: CriterionFilter;
   label: string;
+  shortLabel?: string;
   icon: typeof Layers;
 }
 
@@ -47,31 +48,37 @@ const FILTERS: FilterItem[] = [
   {
     id: "all",
     label: "All Guides",
+    shortLabel: "All",
     icon: Layers,
   },
   {
     id: "letter_formation",
     label: "Formation",
+    shortLabel: "Formation",
     icon: PenTool,
   },
   {
     id: "spacing",
     label: "Spacing",
+    shortLabel: "Spacing",
     icon: AlignJustify,
   },
   {
     id: "slant",
     label: "Slant",
+    shortLabel: "Slant",
     icon: Compass,
   },
   {
     id: "baseline_alignment",
     label: "Baseline",
+    shortLabel: "Baseline",
     icon: Ruler,
   },
   {
     id: "size_consistency",
     label: "Size",
+    shortLabel: "Size",
     icon: Maximize2,
   },
 ];
@@ -92,7 +99,29 @@ export const OverlayToolbar = memo(function OverlayToolbar({
 }: OverlayToolbarProps) {
   const [showLegend, setShowLegend] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
+  const filterScrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
   const weakest = overlay?.summary.weakest_criterion;
+
+  const updateScrollState = useCallback(() => {
+    const el = filterScrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = filterScrollRef.current;
+    if (!el) return;
+    updateScrollState();
+    el.addEventListener("scroll", updateScrollState, { passive: true });
+    window.addEventListener("resize", updateScrollState);
+    return () => {
+      el.removeEventListener("scroll", updateScrollState);
+      window.removeEventListener("resize", updateScrollState);
+    };
+  }, [updateScrollState]);
 
   const attentionCounts = useMemo<Record<CriterionFilter, number>>(() => {
     if (!overlay) {
@@ -221,14 +250,14 @@ export const OverlayToolbar = memo(function OverlayToolbar({
       >
         {/* 1. Filter Pills or Compact Spotlight Indicator */}
         {variant === "compact" ? (
-          <div className="flex items-center gap-1.5 min-w-0 flex-1 flex-wrap">
-            <div className="inline-flex items-center gap-1 bg-surface dark:bg-card px-2.5 py-1 rounded-lg border border-border/70 text-xs shadow-2xs min-w-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 overflow-hidden">
+            <div className="inline-flex items-center gap-1 bg-surface dark:bg-card px-2 py-1 rounded-lg border border-border/70 text-xs shadow-2xs min-w-0 shrink">
               {(() => {
                 const Icon = activeFilterMeta.icon;
                 return <Icon className="size-3 text-brand-700 dark:text-brand-300 shrink-0" aria-hidden="true" />;
               })()}
               <span className="font-semibold text-foreground truncate">
-                {activeCriterion === "all" ? "All Guides" : `${activeFilterMeta.label} Spotlight`}
+                {activeCriterion === "all" ? "All Guides" : activeFilterMeta.label}
               </span>
               {attentionCounts[activeCriterion] > 0 && (
                 <Badge
@@ -247,72 +276,112 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 variant="ghost"
                 size="sm"
                 onClick={() => onChangeCriterion("all")}
-                className="h-9 sm:h-7 min-h-[36px] sm:min-h-0 px-2.5 sm:px-2 text-xs sm:text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                className="size-7 sm:h-7 sm:w-auto p-0 sm:px-2 text-xs sm:text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors touch-manipulation shrink-0 flex items-center justify-center"
                 title="Reset to show all guides"
+                aria-label="Reset to show all guides"
               >
-                <X className="size-3 mr-1" aria-hidden="true" />
-                <span>Show All</span>
+                <X className="size-3.5 sm:size-3 xl:mr-1" aria-hidden="true" />
+                <span className="hidden xl:inline">Show All</span>
               </Button>
             )}
           </div>
         ) : (
-          <div
-            role="group"
-            aria-label="Worksheet diagnostic criteria filters"
-            className="flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth py-0.5 min-w-0 flex-1 sm:flex-wrap sm:overflow-visible [mask-image:linear-gradient(to_right,black_88%,transparent_100%)] sm:[mask-image:none]"
-          >
-            {FILTERS.map((item) => {
-              const Icon = item.icon;
-              const isSelected = activeCriterion === item.id;
-              const count = attentionCounts[item.id] ?? 0;
-              const isWeakest = weakest === item.id;
+          <div className="relative min-w-0 flex-1 flex items-center">
+            {canScrollLeft && (
+              <button
+                type="button"
+                onClick={() => {
+                  filterScrollRef.current?.scrollBy({ left: -80, behavior: "smooth" });
+                }}
+                aria-label="Scroll to see earlier criteria filters"
+                className="sm:hidden absolute left-0 z-10 flex size-6 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform"
+              >
+                <ChevronLeft className="size-3.5" aria-hidden="true" />
+              </button>
+            )}
 
-              return (
-                <Button
-                  key={item.id}
-                  type="button"
-                  variant={isSelected ? "default" : "ghost"}
-                  size="sm"
-                  disabled={!visible}
-                  onClick={() => onChangeCriterion(item.id)}
-                  aria-pressed={isSelected}
-                  className={cn(
-                    "shrink-0 h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-2.5 sm:px-2 text-xs sm:text-[11px] font-medium rounded-lg gap-1.5 transition-all cursor-pointer touch-manipulation",
-                    isSelected
-                      ? "bg-brand-600 hover:bg-brand-700 text-white shadow-2xs font-semibold"
-                      : "hover:bg-muted text-muted-foreground hover:text-foreground",
-                    !visible && "opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  <Icon className="size-3 shrink-0" aria-hidden="true" />
-                  <span>{item.label}</span>
-                  {isWeakest && !isSelected && count > 0 && (
-                    <span
-                      role="img"
-                      className="size-1.5 rounded-full bg-band-1 animate-pulse motion-reduce:animate-none shrink-0"
-                      title="Recommended focus area"
-                      aria-label="Recommended focus area"
-                    >
-                      <span className="sr-only">Recommended focus area</span>
-                    </span>
-                  )}
-                  {count > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className={cn(
-                        "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
-                        isSelected
-                          ? "bg-white/25 text-white"
-                          : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
-                      )}
-                    >
-                      <span className="sr-only">({count} attention items)</span>
-                      <span aria-hidden="true">{count}</span>
-                    </Badge>
-                  )}
-                </Button>
-              );
-            })}
+            <div
+              ref={filterScrollRef}
+              role="group"
+              aria-label="Worksheet diagnostic criteria filters"
+              className={cn(
+                "flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth py-0.5 min-w-0 flex-1 sm:flex-wrap sm:overflow-visible transition-[mask-image]",
+                canScrollLeft && canScrollRight
+                  ? "[mask-image:linear-gradient(to_right,transparent,black_14px,black_calc(100%-14px),transparent)] sm:[mask-image:none]"
+                  : canScrollRight
+                    ? "[mask-image:linear-gradient(to_right,black_86%,transparent_100%)] sm:[mask-image:none]"
+                    : canScrollLeft
+                      ? "[mask-image:linear-gradient(to_left,black_86%,transparent_100%)] sm:[mask-image:none]"
+                      : "sm:[mask-image:none]"
+              )}
+            >
+              {FILTERS.map((item) => {
+                const Icon = item.icon;
+                const isSelected = activeCriterion === item.id;
+                const count = attentionCounts[item.id] ?? 0;
+                const isWeakest = weakest === item.id;
+
+                return (
+                  <Button
+                    key={item.id}
+                    type="button"
+                    variant={isSelected ? "default" : "ghost"}
+                    size="sm"
+                    disabled={!visible}
+                    onClick={() => onChangeCriterion(item.id)}
+                    aria-pressed={isSelected}
+                    className={cn(
+                      "shrink-0 h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-2.5 sm:px-2 text-xs sm:text-[11px] font-medium rounded-lg gap-1.5 transition-all cursor-pointer touch-manipulation",
+                      isSelected
+                        ? "bg-brand-600 hover:bg-brand-700 text-white shadow-2xs font-semibold"
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground",
+                      !visible && "opacity-50 cursor-not-allowed"
+                    )}
+                  >
+                    <Icon className="size-3 shrink-0" aria-hidden="true" />
+                    <span className="hidden min-[400px]:inline">{item.label}</span>
+                    <span className="min-[400px]:hidden">{item.shortLabel ?? item.label}</span>
+                    {isWeakest && !isSelected && count > 0 && (
+                      <span
+                        role="img"
+                        className="size-1.5 rounded-full bg-band-1 animate-pulse motion-reduce:animate-none shrink-0"
+                        title="Recommended focus area"
+                        aria-label="Recommended focus area"
+                      >
+                        <span className="sr-only">Recommended focus area</span>
+                      </span>
+                    )}
+                    {count > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
+                          isSelected
+                            ? "bg-white/25 text-white"
+                            : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
+                        )}
+                      >
+                        <span className="sr-only">({count} attention items)</span>
+                        <span aria-hidden="true">{count}</span>
+                      </Badge>
+                    )}
+                  </Button>
+                );
+              })}
+            </div>
+
+            {canScrollRight && (
+              <button
+                type="button"
+                onClick={() => {
+                  filterScrollRef.current?.scrollBy({ left: 80, behavior: "smooth" });
+                }}
+                aria-label="Scroll to see more criteria filters"
+                className="sm:hidden absolute right-0 z-10 flex size-6 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform"
+              >
+                <ChevronRight className="size-3.5" aria-hidden="true" />
+              </button>
+            )}
           </div>
         )}
 
@@ -338,7 +407,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.6" strokeDasharray="2 2" />
                 <line x1="1" y1="10" x2="13" y2="10" stroke="currentColor" strokeWidth="1.5" />
               </svg>
-              <span className="hidden min-[480px]:inline">Lines</span>
+              <span className="hidden xl:inline">Lines</span>
             </Button>
           )}
           {visible && attentionItems.length > 0 && (
@@ -347,7 +416,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
               aria-label="Practice areas sequential navigation stepper"
               className="flex items-center gap-1 bg-background/80 dark:bg-card/80 rounded-lg px-2 py-0.5 border border-border/70 text-xs shrink-0 shadow-2xs"
             >
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hidden min-[480px]:inline select-none">
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hidden xl:inline select-none">
                 Focus
               </span>
               <Button
@@ -398,7 +467,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
             aria-label="Toggle diagnostic symbols legend"
           >
             <HelpCircle className="size-3.5" aria-hidden="true" />
-            <span className="hidden md:inline">Legend</span>
+            <span className="hidden xl:inline">Legend</span>
           </Button>
 
           <div className="flex items-center gap-1.5 min-h-[40px] sm:min-h-0 touch-manipulation px-0.5">
@@ -411,7 +480,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
             />
             <Label
               htmlFor="toggle-diagnostic-overlay"
-              className="text-xs sm:text-[11px] font-medium text-muted-foreground cursor-pointer select-none whitespace-nowrap hidden min-[360px]:inline"
+              className="text-xs sm:text-[11px] font-medium text-muted-foreground cursor-pointer select-none whitespace-nowrap hidden xl:inline"
             >
               {visible ? "Overlay on" : "Overlay off"}
             </Label>
