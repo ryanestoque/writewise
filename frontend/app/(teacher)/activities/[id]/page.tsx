@@ -2,6 +2,7 @@
 
 import { use, useState, useMemo, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   type Activity,
   useActivity,
@@ -16,7 +17,6 @@ import { useTeacherModals } from "@/components/teacher-modals-provider";
 import { EditActivityDialog } from "@/components/activities/edit-activity-dialog";
 import { DeleteActivityDialog } from "@/components/activities/delete-activity-dialog";
 import { CreateActivityDialog } from "@/components/activities/create-activity-dialog";
-import { SubmissionDetailDialog } from "@/components/submissions/submission-detail-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -86,6 +86,7 @@ export default function ActivityDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
 
   const { data: activity, isLoading, error, refetch } = useActivity(id);
   const { data: students } = useStudents();
@@ -103,8 +104,6 @@ export default function ActivityDetailPage({
   const [deletingActivity, setDeletingActivity] = useState<Activity | null>(null);
   const [isDuplicateOpen, setIsDuplicateOpen] = useState(false);
   const [hasCopiedPrompt, setHasCopiedPrompt] = useState(false);
-  const [selectedSubmission, setSelectedSubmission] =
-    useState<Submission | null>(null);
 
   // View, search, filter, and sort states
   const [viewMode, setViewMode] = useState<ViewMode>("grouped");
@@ -418,29 +417,7 @@ export default function ActivityDetailPage({
     });
   }, [submissions, searchQuery, statusFilter, sortBy]);
 
-  // Dialog navigation flat list
-  const activeDialogSubmissionsList = useMemo(() => {
-    if (viewMode === "grouped") {
-      return filteredAndSortedGroups.map(
-        (g) => attemptOverrides.get(g.studentId) ?? g.latestSubmission
-      );
-    }
-    return filteredAndSortedSubmissions;
-  }, [viewMode, filteredAndSortedGroups, attemptOverrides, filteredAndSortedSubmissions]);
 
-  const currentSubmissionIndex = useMemo(() => {
-    if (!selectedSubmission) return -1;
-    const directIdx = activeDialogSubmissionsList.findIndex(
-      (s) => s.id === selectedSubmission.id
-    );
-    if (directIdx >= 0) return directIdx;
-    if (viewMode === "grouped") {
-      return filteredAndSortedGroups.findIndex(
-        (g) => g.studentId === selectedSubmission.student_id
-      );
-    }
-    return -1;
-  }, [activeDialogSubmissionsList, selectedSubmission, viewMode, filteredAndSortedGroups]);
 
   const handleToggleArchive = useCallback(() => {
     if (!activity) return;
@@ -482,9 +459,12 @@ export default function ActivityDetailPage({
       });
   }, [activity]);
 
-  const handleSelectSubmission = useCallback((sub: Submission) => {
-    setSelectedSubmission(sub);
-  }, []);
+  const handleSelectSubmission = useCallback(
+    (sub: Submission) => {
+      router.push(`/activities/${id}/submissions/${sub.id}`);
+    },
+    [router, id]
+  );
 
   const handleReupload = useCallback(
     (studentId?: string) => {
@@ -1033,19 +1013,6 @@ export default function ActivityDetailPage({
         activity={deletingActivity}
         open={!!deletingActivity}
         onOpenChange={(open) => !open && setDeletingActivity(null)}
-      />
-
-      {/* Submission Detail / Diagnostic Review Dialog */}
-      <SubmissionDetailDialog
-        submission={selectedSubmission}
-        submissions={activeDialogSubmissionsList}
-        currentIndex={
-          currentSubmissionIndex >= 0 ? currentSubmissionIndex : undefined
-        }
-        onNavigate={setSelectedSubmission}
-        activityTargetText={activity.target_text}
-        open={!!selectedSubmission}
-        onOpenChange={(open) => !open && setSelectedSubmission(null)}
       />
     </div>
   );
