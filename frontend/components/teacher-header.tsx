@@ -38,7 +38,10 @@ export function TeacherHeader() {
     if (primarySegment === "roster") {
       subTitle = "Student Profile";
     } else if (primarySegment === "activities") {
-      subTitle = "Activity Details";
+      subTitle =
+        segments.length > 2 && segments[2] === "submissions"
+          ? "Submission Detail"
+          : "Activity Details";
     } else {
       subTitle = segments[1];
     }

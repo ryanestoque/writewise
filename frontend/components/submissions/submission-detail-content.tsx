@@ -420,9 +420,9 @@ export function SubmissionDetailContent({
                 {submission.student?.full_name ?? "Student"}
               </DialogTitle>
             ) : (
-              <h2 className="font-heading text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">
+              <h1 className="font-heading text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">
                 {submission.student?.full_name ?? "Student"}
-              </h2>
+              </h1>
             )}
           </div>
           {variant === "modal" ? (
