@@ -53,7 +53,10 @@ export default function SubmissionDetailPage({
           document.activeElement instanceof HTMLInputElement ||
           document.activeElement instanceof HTMLTextAreaElement ||
           document.activeElement?.getAttribute("role") === "combobox" ||
-          document.querySelector('[data-rubric-editing="true"]')
+          document.querySelector('[data-rubric-editing="true"]') ||
+          document.querySelector('[data-diagnostic-active="true"]') ||
+          document.querySelector('[role="tooltip"]') ||
+          document.querySelector('#diagnostic-annotation-tooltip')
         ) {
           return;
         }

@@ -67,16 +67,16 @@ export const SizeLayer = memo(function SizeLayer({
 
         const isFocusable = isSpotlight || isAttention;
         const isActive = activeAnnotationId === id;
-        const minHit = Math.max(28, 28 * hitScale);
+        const minHit = Math.max(36, 36 * hitScale);
         const hitW = Math.max(minHit, w);
         const hitH = Math.max(minHit, h);
 
         return (
           <g
             key={`size-box-${idx}`}
+            id={id}
             role="button"
             tabIndex={isFocusable ? 0 : -1}
-            aria-haspopup="dialog"
             aria-expanded={isActive}
             aria-describedby={isActive ? "diagnostic-annotation-tooltip" : undefined}
             aria-label={`${isAttention ? "Needs attention: " : "Consistent: "} ${title}. ${ann.note}`}
@@ -95,11 +95,13 @@ export const SizeLayer = memo(function SizeLayer({
                 e.stopPropagation();
                 toggleAnnotation();
               } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
                 onHoverAnnotation(null);
               }
             }}
           >
-            {/* Transparent padding to guarantee minimum 28x28px hit target (scaled for mobile screen pixels) */}
+            {/* Transparent padding to guarantee minimum 36x36px hit target (scaled for mobile screen pixels) */}
             <rect
               x={x - (hitW > w ? (hitW - w) / 2 : 0)}
               y={y - (hitH > h ? (hitH - h) / 2 : 0)}
@@ -111,15 +113,15 @@ export const SizeLayer = memo(function SizeLayer({
 
             {/* Keyboard Focus / Selection Highlight Ring (WCAG 2.4.7) */}
             <rect
-              x={x - 2}
-              y={y - 2}
-              width={w + 4}
-              height={h + 4}
+              x={x - 2 * hitScale}
+              y={y - 2 * hitScale}
+              width={w + 4 * hitScale}
+              height={h + 4 * hitScale}
               fill="none"
-              strokeWidth={2.5}
-              strokeDasharray="4 2"
-              rx={4}
-              className={`transition-opacity stroke-brand-600 dark:stroke-brand-400 pointer-events-none ${
+              strokeWidth={2.5 * hitScale}
+              strokeDasharray={`${4 * hitScale} ${2 * hitScale}`}
+              rx={4 * hitScale}
+              className={`transition-opacity stroke-brand-700 dark:stroke-brand-400 pointer-events-none ${
                 isActive ? "opacity-100" : "opacity-0 group-focus-visible:opacity-100"
               }`}
             />
@@ -133,19 +135,19 @@ export const SizeLayer = memo(function SizeLayer({
               fill={boxColor}
               fillOpacity={isAttention ? 0.08 : 0.03}
               stroke={boxColor}
-              strokeWidth={isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal}
-              strokeDasharray={isAttention ? "none" : "3 3"}
-              rx={3}
-              className="transition-all group-hover:stroke-width-2.5 group-focus-visible:stroke-width-2.5"
+              strokeWidth={(isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal) * hitScale}
+              strokeDasharray={isAttention ? "none" : `${3 * hitScale} ${3 * hitScale}`}
+              rx={3 * hitScale}
+              className="transition-all"
             />
 
             {/* Corner Guide Accent on Attention */}
             {isAttention && (
               <path
-                d={`M ${x} ${y + 6} L ${x} ${y} L ${x + 6} ${y}`}
+                d={`M ${x} ${y + 6 * hitScale} L ${x} ${y} L ${x + 6 * hitScale} ${y}`}
                 fill="none"
                 stroke={boxColor}
-                strokeWidth={2}
+                strokeWidth={2 * hitScale}
                 strokeLinecap="round"
               />
             )}

@@ -11,26 +11,18 @@ export const OVERLAY_COLORS = {
   proficient: {
     stroke: "#1b6b63", // Forest Teal
     fill: "rgba(27, 107, 99, 0.08)",
-    badgeBg: "#e4f1ef",
-    badgeText: "#145049",
   },
   consistent: {
     stroke: "#4a7c59", // Warm Sage
     fill: "rgba(74, 124, 89, 0.08)",
-    badgeBg: "#edf5f0",
-    badgeText: "#355940",
   },
   developing: {
     stroke: "#d48b28", // Ochre Gold
     fill: "rgba(212, 139, 40, 0.10)",
-    badgeBg: "#fef3c7",
-    badgeText: "#92400e",
   },
   needs_attention: {
     stroke: "#9c4a2f", // Terracotta (Never harsh red)
     fill: "rgba(156, 74, 47, 0.12)",
-    badgeBg: "#ffedd5",
-    badgeText: "#7c2d12",
   },
   // Traditional 3-line penmanship ruling guides
   guidelines: {

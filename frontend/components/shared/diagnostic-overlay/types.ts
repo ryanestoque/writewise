@@ -106,6 +106,8 @@ export interface ActiveAnnotationHover {
   severity: Severity;
   x: number;
   y: number;
+  lineIndex?: number;
+  wordIndex?: number;
 }
 
 export type HoverAnnotationCallback = (
@@ -118,6 +120,7 @@ export type HoverAnnotationCallback = (
 /**
  * Extracts and returns an ordered list of all annotations that require attention
  * matching the given criterion filter (or across all criteria if "all").
+ * Results are sorted in spatial reading order (top-to-bottom by line, left-to-right).
  */
 export function getAttentionItems(
   overlay: DiagnosticOverlayData | null | undefined,
@@ -138,6 +141,8 @@ export function getAttentionItems(
           severity: "needs_attention",
           x: x + w / 2,
           y: y + h + 4,
+          lineIndex: ann.line_index,
+          wordIndex: ann.word_index,
         });
       }
     });
@@ -155,6 +160,8 @@ export function getAttentionItems(
           severity: "needs_attention",
           x: x + w / 2,
           y: y + h + 6,
+          lineIndex: ann.line_index,
+          wordIndex: ann.word_index,
         });
       }
     });
@@ -172,6 +179,8 @@ export function getAttentionItems(
           severity: "needs_attention",
           x: x + w / 2,
           y: y - 6,
+          lineIndex: ann.line_index,
+          wordIndex: ann.word_index,
         });
       }
     });
@@ -188,6 +197,8 @@ export function getAttentionItems(
           severity: "needs_attention",
           x: (ann.x1 + ann.x2) / 2,
           y: ann.y - 10,
+          lineIndex: ann.line_index,
+          wordIndex: ann.gap_index,
         });
       }
     });
@@ -205,11 +216,22 @@ export function getAttentionItems(
           severity: "needs_attention",
           x: x + w / 2,
           y: y + h + 4,
+          lineIndex: ann.line_index,
+          wordIndex: ann.word_index,
         });
       }
     });
   }
 
+  // Sort in spatial reading order (line index ascending, then horizontal x coordinate ascending)
+  items.sort((a, b) => {
+    if (a.lineIndex !== undefined && b.lineIndex !== undefined && a.lineIndex !== b.lineIndex) {
+      return a.lineIndex - b.lineIndex;
+    }
+    return a.x - b.x;
+  });
+
   return items;
 }
+
 

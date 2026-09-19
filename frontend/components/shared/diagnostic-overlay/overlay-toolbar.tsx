@@ -10,6 +10,12 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import {
   Layers,
   PenTool,
   AlignJustify,
@@ -20,6 +26,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 
 interface OverlayToolbarProps {
@@ -104,6 +111,8 @@ export const OverlayToolbar = memo(function OverlayToolbar({
   const [canScrollRight, setCanScrollRight] = useState(false);
   const weakest = overlay?.summary.weakest_criterion;
 
+  const rafIdRef = useRef<number | null>(null);
+
   const updateScrollState = useCallback(() => {
     const el = filterScrollRef.current;
     if (!el) return;
@@ -111,17 +120,28 @@ export const OverlayToolbar = memo(function OverlayToolbar({
     setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
   }, []);
 
+  const handleResize = useCallback(() => {
+    if (rafIdRef.current !== null) return;
+    rafIdRef.current = requestAnimationFrame(() => {
+      rafIdRef.current = null;
+      updateScrollState();
+    });
+  }, [updateScrollState]);
+
   useEffect(() => {
     const el = filterScrollRef.current;
     if (!el) return;
     updateScrollState();
     el.addEventListener("scroll", updateScrollState, { passive: true });
-    window.addEventListener("resize", updateScrollState);
+    window.addEventListener("resize", handleResize);
     return () => {
       el.removeEventListener("scroll", updateScrollState);
-      window.removeEventListener("resize", updateScrollState);
+      window.removeEventListener("resize", handleResize);
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
     };
-  }, [updateScrollState]);
+  }, [updateScrollState, handleResize]);
 
   const attentionCounts = useMemo<Record<CriterionFilter, number>>(() => {
     if (!overlay) {
@@ -134,28 +154,36 @@ export const OverlayToolbar = memo(function OverlayToolbar({
         size_consistency: 0,
       };
     }
+    const letter_formation =
+      overlay.letter_formation?.annotations?.filter(
+        (a) => a.severity === "needs_attention"
+      ).length ?? 0;
+    const spacing =
+      overlay.spacing?.annotations?.filter(
+        (a) => a.severity === "needs_attention"
+      ).length ?? 0;
+    const slant =
+      overlay.slant?.annotations?.filter(
+        (a) => a.severity === "needs_attention"
+      ).length ?? 0;
+    const baseline_alignment =
+      overlay.baseline?.annotations?.filter(
+        (a) => a.severity === "needs_attention"
+      ).length ?? 0;
+    const size_consistency =
+      overlay.size?.annotations?.filter(
+        (a) => a.severity === "needs_attention"
+      ).length ?? 0;
+    const total =
+      letter_formation + spacing + slant + baseline_alignment + size_consistency;
+
     return {
-      all: overlay.summary.attention_item_count,
-      letter_formation:
-        overlay.letter_formation?.annotations?.filter(
-          (a) => a.severity === "needs_attention"
-        ).length ?? 0,
-      spacing:
-        overlay.spacing?.annotations?.filter(
-          (a) => a.severity === "needs_attention"
-        ).length ?? 0,
-      slant:
-        overlay.slant?.annotations?.filter(
-          (a) => a.severity === "needs_attention"
-        ).length ?? 0,
-      baseline_alignment:
-        overlay.baseline?.annotations?.filter(
-          (a) => a.severity === "needs_attention"
-        ).length ?? 0,
-      size_consistency:
-        overlay.size?.annotations?.filter(
-          (a) => a.severity === "needs_attention"
-        ).length ?? 0,
+      all: total > 0 ? total : overlay.summary.attention_item_count,
+      letter_formation,
+      spacing,
+      slant,
+      baseline_alignment,
+      size_consistency,
     };
   }, [overlay]);
 
@@ -174,7 +202,14 @@ export const OverlayToolbar = memo(function OverlayToolbar({
     if (attentionItems.length === 0) return;
     const nextIdx =
       currentIndex <= 0 ? attentionItems.length - 1 : currentIndex - 1;
-    onSelectAttentionItem?.(attentionItems[nextIdx]);
+    const nextItem = attentionItems[nextIdx];
+    onSelectAttentionItem?.(nextItem);
+    if (nextItem.id) {
+      requestAnimationFrame(() => {
+        const el = document.getElementById(nextItem.id!);
+        el?.focus();
+      });
+    }
   }, [attentionItems, currentIndex, onSelectAttentionItem]);
 
   const handleNextAttention = useCallback(() => {
@@ -183,7 +218,14 @@ export const OverlayToolbar = memo(function OverlayToolbar({
       currentIndex === -1 || currentIndex >= attentionItems.length - 1
         ? 0
         : currentIndex + 1;
-    onSelectAttentionItem?.(attentionItems[nextIdx]);
+    const nextItem = attentionItems[nextIdx];
+    onSelectAttentionItem?.(nextItem);
+    if (nextItem.id) {
+      requestAnimationFrame(() => {
+        const el = document.getElementById(nextItem.id!);
+        el?.focus();
+      });
+    }
   }, [attentionItems, currentIndex, onSelectAttentionItem]);
 
   // Keyboard shortcut navigation for stepping through attention items
@@ -208,8 +250,19 @@ export const OverlayToolbar = memo(function OverlayToolbar({
         return;
       }
 
-      const isPrevKey = (e.altKey && e.key === "[") || e.key === "[";
-      const isNextKey = (e.altKey && e.key === "]") || e.key === "]";
+      // Conforms to WCAG 2.1.4: Alt+[ and Alt+] globally, or [ and ] when inspector/toolbar has focus
+      const activeEl = document.activeElement;
+      const isFocusedInInspector =
+        (toolbarRef.current !== null && toolbarRef.current.contains(activeEl)) ||
+        (activeEl instanceof HTMLElement &&
+          (activeEl.closest('[role="region"][aria-label*="inspector"]') !== null ||
+            activeEl.closest('[role="region"][aria-label*="annotations"]') !== null ||
+            activeEl.closest('[aria-label*="practice area"]') !== null));
+
+      const isPrevKey =
+        (e.altKey && e.key === "[") || (e.key === "[" && isFocusedInInspector);
+      const isNextKey =
+        (e.altKey && e.key === "]") || (e.key === "]" && isFocusedInInspector);
 
       if (isPrevKey) {
         e.preventDefault();
@@ -224,6 +277,22 @@ export const OverlayToolbar = memo(function OverlayToolbar({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [visible, attentionItems.length, showLegend, handlePrevAttention, handleNextAttention]);
 
+  const [debouncedAnnouncement, setDebouncedAnnouncement] = useState("");
+
+  useEffect(() => {
+    if (currentIndex >= 0 && attentionItems[currentIndex]) {
+      const currentItem = attentionItems[currentIndex];
+      const timer = setTimeout(() => {
+        setDebouncedAnnouncement(
+          `Practice area ${currentIndex + 1} of ${attentionItems.length}: ${currentItem.title}. ${currentItem.note}`
+        );
+      }, 200);
+      return () => clearTimeout(timer);
+    } else {
+      setDebouncedAnnouncement("");
+    }
+  }, [currentIndex, attentionItems]);
+
   const activeFilterMeta = useMemo(() => {
     return FILTERS.find((f) => f.id === activeCriterion) ?? FILTERS[0];
   }, [activeCriterion]);
@@ -237,9 +306,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
         aria-atomic="true"
         className="sr-only"
       >
-        {currentIndex >= 0 && attentionItems[currentIndex]
-          ? `Practice area ${currentIndex + 1} of ${attentionItems.length}: ${attentionItems[currentIndex].title}. ${attentionItems[currentIndex].note}`
-          : ""}
+        {debouncedAnnouncement}
       </div>
 
       <div
@@ -248,27 +315,69 @@ export const OverlayToolbar = memo(function OverlayToolbar({
           className
         )}
       >
-        {/* 1. Filter Pills or Compact Spotlight Indicator */}
+        {/* 1. Filter Pills or Compact Spotlight Indicator with Inline Dropdown Selector */}
         {variant === "compact" ? (
           <div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 overflow-hidden">
-            <div className="inline-flex items-center gap-1 bg-surface dark:bg-card px-2 py-1 rounded-lg border border-border/70 text-xs shadow-2xs min-w-0 shrink">
-              {(() => {
-                const Icon = activeFilterMeta.icon;
-                return <Icon className="size-3 text-brand-700 dark:text-brand-300 shrink-0" aria-hidden="true" />;
-              })()}
-              <span className="font-semibold text-foreground truncate">
-                {activeCriterion === "all" ? "All Guides" : activeFilterMeta.label}
-              </span>
-              {attentionCounts[activeCriterion] > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="px-1.5 py-0 h-4 text-[10px] font-bold rounded-full bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30 ml-0.5 shrink-0"
-                >
-                  <span className="sr-only">({attentionCounts[activeCriterion]} attention items)</span>
-                  <span aria-hidden="true">{attentionCounts[activeCriterion]}</span>
-                </Badge>
-              )}
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="inline-flex items-center gap-1.5 bg-surface dark:bg-card px-2.5 py-1 rounded-lg border border-border/70 text-xs shadow-2xs min-w-0 shrink cursor-pointer hover:bg-muted/70 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation"
+                aria-label={`Current guide: ${activeCriterion === "all" ? "All Guides" : activeFilterMeta.label}. Click to select a diagnostic criterion.`}
+                title="Select diagnostic criterion"
+              >
+                {(() => {
+                  const Icon = activeFilterMeta.icon;
+                  return <Icon className="size-3 text-brand-700 dark:text-brand-300 shrink-0" aria-hidden="true" />;
+                })()}
+                <span className="font-semibold text-foreground truncate max-w-[120px] sm:max-w-none">
+                  {activeCriterion === "all" ? "All Guides" : activeFilterMeta.label}
+                </span>
+                {attentionCounts[activeCriterion] > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="px-1.5 py-0 h-4 text-[10px] font-bold rounded-full bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-destructive border border-band-1/30 ml-0.5 shrink-0"
+                  >
+                    <span className="sr-only">({attentionCounts[activeCriterion]} attention items)</span>
+                    <span aria-hidden="true">{attentionCounts[activeCriterion]}</span>
+                  </Badge>
+                )}
+                <ChevronDown className="size-3 text-muted-foreground shrink-0 ml-0.5 opacity-70" aria-hidden="true" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56 p-1 text-xs">
+                {FILTERS.map((item) => {
+                  const ItemIcon = item.icon;
+                  const isSelected = activeCriterion === item.id;
+                  const count = attentionCounts[item.id] ?? 0;
+                  return (
+                    <DropdownMenuItem
+                      key={item.id}
+                      onClick={() => onChangeCriterion(item.id)}
+                      className={cn(
+                        "flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md cursor-pointer text-xs",
+                        isSelected && "bg-brand-50 dark:bg-brand-950/60 font-semibold text-brand-900 dark:text-brand-200"
+                      )}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <ItemIcon className="size-3.5 text-brand-700 dark:text-brand-300 shrink-0" aria-hidden="true" />
+                        <span className="truncate">{item.label}</span>
+                      </div>
+                      {count > 0 && (
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
+                            isSelected
+                              ? "bg-brand-200/60 text-brand-900 dark:bg-brand-900 dark:text-brand-200"
+                              : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-destructive border border-band-1/30"
+                          )}
+                        >
+                          {count}
+                        </Badge>
+                      )}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {activeCriterion !== "all" && (
               <Button
@@ -276,7 +385,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 variant="ghost"
                 size="sm"
                 onClick={() => onChangeCriterion("all")}
-                className="size-7 sm:h-7 sm:w-auto p-0 sm:px-2 text-xs sm:text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors touch-manipulation shrink-0 flex items-center justify-center"
+                className="relative size-8 sm:size-auto sm:h-7 p-0 sm:px-2 min-h-[40px] min-w-[40px] sm:min-h-[28px] sm:min-w-0 text-xs sm:text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors touch-manipulation shrink-0 flex items-center justify-center after:absolute after:-inset-1 sm:after:hidden after:content-['']"
                 title="Reset to show all guides"
                 aria-label="Reset to show all guides"
               >
@@ -294,9 +403,9 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   filterScrollRef.current?.scrollBy({ left: -80, behavior: "smooth" });
                 }}
                 aria-label="Scroll to see earlier criteria filters"
-                className="sm:hidden absolute left-0 z-10 flex size-6 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform"
+                className="sm:hidden absolute left-0 z-10 flex size-8 min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-background/95 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
               >
-                <ChevronLeft className="size-3.5" aria-hidden="true" />
+                <ChevronLeft className="size-4" aria-hidden="true" />
               </button>
             )}
 
@@ -358,7 +467,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                           "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
                           isSelected
                             ? "bg-white/25 text-white"
-                            : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
+                            : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-destructive border border-band-1/30"
                         )}
                       >
                         <span className="sr-only">({count} attention items)</span>
@@ -377,9 +486,9 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   filterScrollRef.current?.scrollBy({ left: 80, behavior: "smooth" });
                 }}
                 aria-label="Scroll to see more criteria filters"
-                className="sm:hidden absolute right-0 z-10 flex size-6 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform"
+                className="sm:hidden absolute right-0 z-10 flex size-8 min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-background/95 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
               >
-                <ChevronRight className="size-3.5" aria-hidden="true" />
+                <ChevronRight className="size-4" aria-hidden="true" />
               </button>
             )}
           </div>
@@ -425,7 +534,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 size="sm"
                 disabled={!visible}
                 onClick={handlePrevAttention}
-                className="relative size-10 sm:size-6 p-0 min-h-[40px] min-w-[40px] sm:min-h-[24px] sm:min-w-[24px] rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
+                className="relative size-10 sm:size-7 p-0 min-h-[40px] min-w-[40px] sm:min-h-[28px] sm:min-w-[28px] rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
                 aria-label="Previous practice area (Key: Alt+[ or [)"
                 title="Previous practice area (Alt+[ or [)"
               >
@@ -442,7 +551,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 size="sm"
                 disabled={!visible}
                 onClick={handleNextAttention}
-                className="relative size-10 sm:size-6 p-0 min-h-[40px] min-w-[40px] sm:min-h-[24px] sm:min-w-[24px] rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
+                className="relative size-10 sm:size-7 p-0 min-h-[40px] min-w-[40px] sm:min-h-[28px] sm:min-w-[28px] rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
                 aria-label="Next practice area (Key: Alt+] or ])"
                 title="Next practice area (Alt+] or ])"
               >
@@ -514,10 +623,13 @@ export const OverlayToolbar = memo(function OverlayToolbar({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1 text-[11px]">
             <div className="flex items-start gap-2">
-              <div
-                className="size-3 rounded-full mt-0.5 shrink-0"
-                style={{ backgroundColor: OVERLAY_COLORS.proficient.stroke }}
-              />
+              <div className="flex size-4 items-center justify-center rounded-xs bg-muted/60 border border-border/70 mt-0.5 shrink-0 p-0.5">
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" className="shrink-0" aria-hidden="true">
+                  <line x1="1" y1="3" x2="13" y2="3" stroke={OVERLAY_COLORS.guidelines.topline} strokeWidth="1.5" strokeDasharray="3 2" />
+                  <line x1="1" y1="7" x2="13" y2="7" stroke={OVERLAY_COLORS.guidelines.midline} strokeWidth="1.5" strokeDasharray="2 2" />
+                  <line x1="1" y1="11" x2="13" y2="11" stroke={OVERLAY_COLORS.guidelines.baseline} strokeWidth="1.5" />
+                </svg>
+              </div>
               <div>
                 <p className="font-semibold text-foreground">3-Line Penmanship Ruling</p>
                 <p className="text-muted-foreground leading-snug">

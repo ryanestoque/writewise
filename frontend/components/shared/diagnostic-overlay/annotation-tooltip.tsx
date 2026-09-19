@@ -5,7 +5,7 @@ import type { ActiveAnnotationHover } from "./types";
 import { OVERLAY_COLORS } from "./constants";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, X } from "lucide-react";
 
 interface AnnotationTooltipProps {
   hover: ActiveAnnotationHover | null;
@@ -14,6 +14,7 @@ interface AnnotationTooltipProps {
   containerWidth?: number;
   containerHeight?: number;
   zoomScale?: number;
+  onDismiss?: () => void;
 }
 
 const CRITERION_LABELS: Record<string, string> = {
@@ -31,6 +32,7 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
   containerWidth,
   containerHeight,
   zoomScale = 1,
+  onDismiss,
 }: AnnotationTooltipProps) {
   if (!hover || imageWidth <= 0 || imageHeight <= 0) return null;
 
@@ -136,7 +138,7 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
 
       <div
         className={cn(
-          "w-60 sm:w-64 max-w-[calc(100vw-2rem)] p-2.5 rounded-xl shadow-warm border backdrop-blur-md transition-colors select-none relative",
+          "w-60 sm:w-64 max-w-[calc(100vw-2rem)] p-2.5 rounded-xl shadow-warm border backdrop-blur-md transition-colors select-text pointer-events-auto relative",
           "bg-white/95 dark:bg-card/95 text-foreground",
           isAttention
             ? "border-destructive/40 dark:border-destructive/50 ring-2 ring-destructive/10"
@@ -165,16 +167,30 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
             className={cn(
               "ml-auto text-[11px] px-1.5 py-0 h-4.5 font-medium border",
               isAttention
-                ? "border-band-1/40 text-band-1-text dark:text-orange-200 bg-band-1/15 dark:bg-band-1/25"
+                ? "border-band-1/40 text-band-1-text dark:text-destructive bg-band-1/15 dark:bg-band-1/25"
                 : "border-brand-300 dark:border-brand-800 text-brand-800 dark:text-brand-300 bg-brand-50/90 dark:bg-brand-950/60"
             )}
           >
             {isAttention ? "Needs Attention" : "Consistent"}
           </Badge>
+          {onDismiss && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDismiss();
+              }}
+              className="relative size-7 min-h-[40px] min-w-[40px] sm:min-h-[28px] sm:min-w-[28px] sm:size-6 rounded-md p-0 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer pointer-events-auto touch-manipulation shrink-0 ml-1 hover:bg-muted/80 transition-colors after:absolute after:-inset-1.5 sm:after:hidden after:content-['']"
+              aria-label="Dismiss annotation details"
+              title="Close annotation details"
+            >
+              <X className="size-3.5" aria-hidden="true" />
+            </button>
+          )}
         </div>
 
         <p className="text-xs font-semibold leading-snug">{title}</p>
-        <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{note}</p>
+        <p className="text-xs text-muted-foreground leading-relaxed mt-1">{note}</p>
       </div>
     </div>
   );

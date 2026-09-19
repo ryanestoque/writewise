@@ -160,13 +160,6 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
     let active = true;
     const img = new Image();
 
-    // Check if the image is already complete in browser cache to avoid layout skeleton flash
-    if (img.complete && img.naturalWidth > 0) {
-      setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
-    } else {
-      setNaturalSize(null);
-    }
-
     img.onload = () => {
       if (active) {
         setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
@@ -178,6 +171,13 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
       }
     };
     img.src = imageUrl;
+
+    // Check if the image is already complete in browser cache to avoid layout skeleton flash
+    if (img.complete && img.naturalWidth > 0) {
+      setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
+    } else {
+      setNaturalSize(null);
+    }
 
     return () => {
       active = false;
@@ -212,6 +212,10 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
   // Global escape key listener to dismiss active annotation tooltip cleanly
   useEffect(() => {
     if (!activeAnnotation) return;
+    const el = containerRef.current;
+    if (el) {
+      el.setAttribute("data-diagnostic-active", "true");
+    }
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
@@ -220,8 +224,13 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
         onSelectAnnotation?.(null);
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => {
+      if (el) {
+        el.removeAttribute("data-diagnostic-active");
+      }
+      window.removeEventListener("keydown", handleKeyDown, true);
+    };
   }, [activeAnnotation, onSelectAnnotation]);
 
   if (!visible || !overlay) return null;
@@ -342,6 +351,10 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
         containerWidth={containerSize?.width}
         containerHeight={containerSize?.height}
         zoomScale={effectiveZoom}
+        onDismiss={() => {
+          setHoveredAnnotation(null);
+          onSelectAnnotation?.(null);
+        }}
       />
     </div>
   );

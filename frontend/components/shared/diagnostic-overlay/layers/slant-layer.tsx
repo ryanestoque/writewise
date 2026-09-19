@@ -68,13 +68,15 @@ export const SlantLayer = memo(function SlantLayer({
 
         const isFocusable = isSpotlight || isAttention;
         const isActive = activeAnnotationId === id;
+        const badgeW = 28 * hitScale;
+        const badgeH = 14 * hitScale;
 
         return (
           <g
             key={`slant-vec-${idx}`}
+            id={id}
             role="button"
             tabIndex={isFocusable ? 0 : -1}
-            aria-haspopup="dialog"
             aria-expanded={isActive}
             aria-describedby={isActive ? "diagnostic-annotation-tooltip" : undefined}
             aria-label={`${isAttention ? "Needs attention: " : "Consistent: "} ${title}. ${ann.note}`}
@@ -93,18 +95,20 @@ export const SlantLayer = memo(function SlantLayer({
                 e.stopPropagation();
                 toggleAnnotation();
               } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
                 onHoverAnnotation(null);
               }
             }}
           >
-            {/* Generous touch hit area (scaled to maintain minimum 28-32px physical screen pixels on mobile) */}
+            {/* Generous touch hit area (scaled to maintain minimum 36px physical screen pixels on mobile) */}
             <line
               x1={x1}
               y1={y1}
               x2={x2}
               y2={y2}
               stroke="transparent"
-              strokeWidth={Math.max(28, 28 * hitScale)}
+              strokeWidth={Math.max(36, 36 * hitScale)}
               strokeLinecap="round"
               className="pointer-events-auto"
             />
@@ -115,10 +119,10 @@ export const SlantLayer = memo(function SlantLayer({
               y1={y1}
               x2={x2}
               y2={y2}
-              strokeWidth={5}
+              strokeWidth={5 * hitScale}
               strokeLinecap="round"
               strokeOpacity={0.6}
-              className={`transition-opacity stroke-brand-600 dark:stroke-brand-400 pointer-events-none ${
+              className={`transition-opacity stroke-brand-700 dark:stroke-brand-400 pointer-events-none ${
                 isActive ? "opacity-100" : "opacity-0 group-focus-visible:opacity-100"
               }`}
             />
@@ -130,37 +134,37 @@ export const SlantLayer = memo(function SlantLayer({
               x2={x2}
               y2={y2}
               stroke={slantColor}
-              strokeWidth={isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal}
+              strokeWidth={(isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal) * hitScale}
               strokeLinecap="round"
-              className="transition-all group-hover:stroke-width-2.5 group-focus-visible:stroke-width-2.5"
+              className="transition-all"
             />
 
             {/* Vector Origin/Top Anchor Dot */}
             <circle
               cx={x2}
               cy={y2}
-              r={isAttention ? 3 : 2}
+              r={(isAttention ? 3 : 2) * hitScale}
               fill={slantColor}
               className="transition-transform group-hover:scale-125 group-focus-visible:scale-125 motion-reduce:transform-none"
             />
 
             {/* Angle pill in spotlight mode */}
             {isSpotlight && (
-              <g transform={`translate(${x + w / 2}, ${y - 12})`}>
+              <g transform={`translate(${x + w / 2}, ${y - 12 * hitScale})`}>
                 <rect
-                  x={-14}
-                  y={-7}
-                  width={28}
-                  height={14}
-                  rx={7}
+                  x={-badgeW / 2}
+                  y={-badgeH / 2}
+                  width={badgeW}
+                  height={badgeH}
+                  rx={badgeH / 2}
                   fill={slantColor}
                 />
                 <text
                   x={0}
-                  y={3}
+                  y={3 * hitScale}
                   textAnchor="middle"
                   fill="#ffffff"
-                  fontSize="8.5"
+                  fontSize={8.5 * hitScale}
                   fontWeight="600"
                   fontFamily="system-ui, sans-serif"
                 >

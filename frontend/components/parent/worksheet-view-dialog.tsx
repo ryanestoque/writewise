@@ -163,31 +163,38 @@ export function WorksheetViewDialog({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start lg:items-center">
             {/* Left: High-Resolution Worksheet Photo Inspector */}
             <div className="lg:col-span-7 flex flex-col justify-center w-full gap-2">
-              {overlay ? (
-                <OverlayToolbar
-                  overlay={overlay}
-                  activeCriterion={activeCriterion}
-                  onChangeCriterion={(c) => {
-                    setCriterionOverride(c);
-                    setSelectedAttentionItem(null);
-                  }}
-                  selectedAttentionId={selectedAttentionItem?.id}
-                  onSelectAttentionItem={setSelectedAttentionItem}
-                  visible={showOverlay}
-                  onToggleVisible={setShowOverlay}
-                />
-              ) : (
-                <DiagnosticFallbackBanner
-                  scoreSource={scoreSource}
-                  isParentView
-                />
-              )}
-
               <WorksheetImageInspector
                 imageUrl={imageUrl}
                 altText={`Handwriting worksheet submitted for ${childName}`}
                 isLoading={isImageLoading}
                 headerLabel="Handwritten Worksheet"
+                diagnosticToolbar={
+                  overlay ? (
+                    <OverlayToolbar
+                      variant="compact"
+                      overlay={overlay}
+                      activeCriterion={activeCriterion}
+                      onChangeCriterion={(c) => {
+                        setCriterionOverride(c);
+                        setSelectedAttentionItem(null);
+                      }}
+                      selectedAttentionId={selectedAttentionItem?.id}
+                      onSelectAttentionItem={setSelectedAttentionItem}
+                      visible={showOverlay}
+                      onToggleVisible={setShowOverlay}
+                      showGuideLines={showGuideLines}
+                      onToggleGuideLines={() => setShowGuideLines((prev) => !prev)}
+                      hasGuideLines={Boolean(guideLines)}
+                      className="border-none bg-transparent p-0 shadow-none backdrop-blur-none"
+                    />
+                  ) : (
+                    <DiagnosticFallbackBanner
+                      scoreSource={scoreSource}
+                      isParentView
+                      className="border-none bg-transparent p-0 shadow-none"
+                    />
+                  )
+                }
               >
                 {overlay ? (
                   <DiagnosticOverlay

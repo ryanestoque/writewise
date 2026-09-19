@@ -50,7 +50,7 @@ export const SpacingLayer = memo(function SpacingLayer({
         const bracketColor = isAttention
           ? OVERLAY_COLORS.needs_attention.stroke
           : OVERLAY_COLORS.consistent.stroke;
-        const tickHeight = isSpotlight ? 7 : 5;
+        const tickHeight = (isSpotlight ? 7 : 5) * hitScale;
         const id = `spacing-${ann.line_index}-${ann.gap_index}`;
         const title = isAttention ? "Spacing Needs Attention" : "Consistent Word Spacing";
         const hoverPayload = {
@@ -69,16 +69,18 @@ export const SpacingLayer = memo(function SpacingLayer({
 
         const isFocusable = isSpotlight || isAttention;
         const isActive = activeAnnotationId === id;
-        const minHit = Math.max(28, 28 * hitScale);
+        const minHit = Math.max(36, 36 * hitScale);
         const hitW = Math.max(minHit, width + 8);
         const hitH = Math.max(minHit, tickHeight * 2 + 8);
+        const badgeW = 28 * hitScale;
+        const badgeH = 14 * hitScale;
 
         return (
           <g
             key={`spacing-gap-${idx}`}
+            id={id}
             role="button"
             tabIndex={isFocusable ? 0 : -1}
-            aria-haspopup="dialog"
             aria-expanded={isActive}
             aria-describedby={isActive ? "diagnostic-annotation-tooltip" : undefined}
             aria-label={`${isAttention ? "Needs attention: " : "Consistent: "} ${title}. ${note}`}
@@ -97,11 +99,13 @@ export const SpacingLayer = memo(function SpacingLayer({
                 e.stopPropagation();
                 toggleAnnotation();
               } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
                 onHoverAnnotation(null);
               }
             }}
           >
-            {/* Generous touch hit area (scaled to maintain minimum 28-32px physical screen pixels on mobile) */}
+            {/* Generous touch hit area (scaled to maintain minimum 36px physical screen pixels on mobile) */}
             <rect
               x={x1 - (hitW - width) / 2}
               y={y - hitH / 2}
@@ -113,15 +117,15 @@ export const SpacingLayer = memo(function SpacingLayer({
 
             {/* Keyboard Focus / Selection Highlight Ring (WCAG 2.4.7) */}
             <rect
-              x={x1 - 2}
-              y={y - tickHeight - 2}
-              width={width + 4}
-              height={tickHeight * 2 + 4}
+              x={x1 - 2 * hitScale}
+              y={y - tickHeight - 2 * hitScale}
+              width={width + 4 * hitScale}
+              height={tickHeight * 2 + 4 * hitScale}
               fill="none"
-              strokeWidth={2}
-              strokeDasharray="3 2"
-              rx={3}
-              className={`transition-opacity stroke-brand-600 dark:stroke-brand-400 pointer-events-none ${
+              strokeWidth={2 * hitScale}
+              strokeDasharray={`${3 * hitScale} ${2 * hitScale}`}
+              rx={3 * hitScale}
+              className={`transition-opacity stroke-brand-700 dark:stroke-brand-400 pointer-events-none ${
                 isActive ? "opacity-100" : "opacity-0 group-focus-visible:opacity-100"
               }`}
             />
@@ -134,7 +138,7 @@ export const SpacingLayer = memo(function SpacingLayer({
               height={tickHeight * 2}
               fill={bracketColor}
               fillOpacity={isAttention ? 0.12 : 0.04}
-              rx={1.5}
+              rx={1.5 * hitScale}
               className="transition-opacity group-hover:fill-opacity-25 group-focus-visible:fill-opacity-25"
             />
 
@@ -145,7 +149,7 @@ export const SpacingLayer = memo(function SpacingLayer({
               x2={x2}
               y2={y}
               stroke={bracketColor}
-              strokeWidth={isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal}
+              strokeWidth={(isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal) * hitScale}
             />
 
             {/* Left Bracket Tick */}
@@ -155,7 +159,7 @@ export const SpacingLayer = memo(function SpacingLayer({
               x2={x1}
               y2={y + tickHeight}
               stroke={bracketColor}
-              strokeWidth={isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal}
+              strokeWidth={(isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal) * hitScale}
             />
 
             {/* Right Bracket Tick */}
@@ -165,27 +169,27 @@ export const SpacingLayer = memo(function SpacingLayer({
               x2={x2}
               y2={y + tickHeight}
               stroke={bracketColor}
-              strokeWidth={isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal}
+              strokeWidth={(isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal) * hitScale}
             />
 
             {/* In spotlight mode, render ratio pill */}
             {isSpotlight && (
-              <g transform={`translate(${x1 + width / 2}, ${y - 10})`}>
+              <g transform={`translate(${x1 + width / 2}, ${y - 10 * hitScale})`}>
                 <rect
-                  x={-14}
-                  y={-7}
-                  width={28}
-                  height={14}
-                  rx={7}
+                  x={-badgeW / 2}
+                  y={-badgeH / 2}
+                  width={badgeW}
+                  height={badgeH}
+                  rx={badgeH / 2}
                   fill={bracketColor}
                   className="transition-transform group-hover:scale-110 motion-reduce:transform-none"
                 />
                 <text
                   x={0}
-                  y={3}
+                  y={3 * hitScale}
                   textAnchor="middle"
                   fill="#ffffff"
-                  fontSize="8.5"
+                  fontSize={8.5 * hitScale}
                   fontWeight="600"
                   fontFamily="system-ui, sans-serif"
                 >
