@@ -121,7 +121,7 @@ export const FormationLayer = memo(function FormationLayer({
               width={w + 4}
               height={4}
               rx={2}
-              className="opacity-0 group-focus-visible:opacity-100 transition-opacity fill-[#1b6b63] dark:fill-[#2dd4bf] pointer-events-none"
+              className="opacity-0 group-focus-visible:opacity-100 transition-opacity fill-brand-600 dark:fill-brand-400 pointer-events-none"
             />
 
             {/* Low visual weight penmanship stroke underline */}

@@ -54,6 +54,12 @@ export const CRITERIA_GUIDE: Record<
     coachingTip:
       "Encourage the student to keep paper angled at 30°–45° on their desk to maintain parallel, uniform forward slant.",
   },
+  Slant: {
+    rubricGoal:
+      "Measures cursive stroke tilt consistency against the standard 6.0°–15.0° forward slant angle relative to vertical guideline perpendicular (75.0°–84.0° from horizontal baseline).",
+    coachingTip:
+      "Encourage the student to keep paper angled at 30°–45° on their desk to maintain parallel, uniform forward slant.",
+  },
   "Baseline Alignment": {
     rubricGoal:
       "Evaluates stroke drift along the bottom solid ruling line across every word.",
@@ -211,7 +217,7 @@ export const RUBRIC_CRITERIA: Array<{
     key: "slant_band",
     name: "Slant Angle",
     shortName: "Slant Angle",
-    hint: "Uniform forward slant tilt (target 60°–68° angle)",
+    hint: "Uniform forward slant tilt (target 6.0°–15.0° forward)",
   },
   {
     key: "baseline_alignment_band",
@@ -537,13 +543,13 @@ export function ManualRubricEntryForm({
         <div className="space-y-0.5">
           <div className="flex items-center gap-2 flex-wrap">
             <Award className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-            <h4 className="text-xs font-heading font-semibold text-foreground">
+            <h3 className="text-xs font-heading font-semibold text-foreground">
               Teacher Rubric Assessment
-            </h4>
+            </h3>
             <button
               type="button"
               onClick={() => setShowKeyboardHelp((prev) => !prev)}
-              className="hidden sm:flex text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg cursor-pointer items-center justify-center min-h-7 min-w-7 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+              className="hidden sm:flex text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg cursor-pointer items-center justify-center min-h-8 min-w-8 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
               title="Toggle Keyboard Shortcuts"
               aria-label="Toggle Keyboard Shortcuts"
               aria-expanded={showKeyboardHelp}
@@ -562,7 +568,7 @@ export function ManualRubricEntryForm({
             <button
               type="button"
               onClick={() => setLayoutMode("stepper")}
-              className={`px-2 py-1 rounded-md text-[10px] sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-[36px] sm:min-h-[28px] flex items-center gap-1 touch-manipulation ${
+              className={`px-2.5 py-1.5 sm:py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-[40px] sm:min-h-[28px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
                 layoutMode === "stepper"
                   ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                   : "text-muted-foreground hover:text-foreground"
@@ -570,13 +576,13 @@ export function ManualRubricEntryForm({
               aria-pressed={layoutMode === "stepper"}
               title="Focus Stepper Mode (1 criterion at a time)"
             >
-              <Layers className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+              <Layers className="size-3.5 sm:size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
               <span>Focus</span>
             </button>
             <button
               type="button"
               onClick={() => setLayoutMode("list")}
-              className={`px-2 py-1 rounded-md text-[10px] sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-[36px] sm:min-h-[28px] flex items-center gap-1 touch-manipulation ${
+              className={`px-2.5 py-1.5 sm:py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-[40px] sm:min-h-[28px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
                 layoutMode === "list"
                   ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                   : "text-muted-foreground hover:text-foreground"
@@ -584,7 +590,7 @@ export function ManualRubricEntryForm({
               aria-pressed={layoutMode === "list"}
               title="List Mode (show all 5 criteria)"
             >
-              <LayoutList className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+              <LayoutList className="size-3.5 sm:size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
               <span>All (5)</span>
             </button>
           </div>
@@ -618,32 +624,32 @@ export function ManualRubricEntryForm({
           <button
             type="button"
             onClick={() => handleApplyPreset("satisfactory")}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-band-3/15 text-emerald-950 dark:text-emerald-200 border border-band-3/35 hover:bg-band-3/25 transition-colors cursor-pointer min-h-[28px] touch-manipulation"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 sm:py-0.5 rounded-md text-xs sm:text-[11px] font-medium bg-band-3/15 text-emerald-950 dark:text-emerald-200 border border-band-3/35 hover:bg-band-3/25 transition-colors cursor-pointer min-h-[40px] sm:min-h-[28px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
             title="Rate all 5 criteria as Satisfactory (Alt+3)"
           >
             <span className="size-1.5 rounded-full bg-band-3" aria-hidden="true" />
             <span>All Satisfactory</span>
-            <kbd className="text-[9px] font-mono opacity-70 ml-0.5 hidden sm:inline">Alt+3</kbd>
+            <kbd className="text-[10px] font-mono opacity-75 ml-0.5 hidden sm:inline">Alt+3</kbd>
           </button>
           <button
             type="button"
             onClick={() => handleApplyPreset("excellent")}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border border-brand-300/70 hover:bg-brand-100 transition-colors cursor-pointer min-h-[28px] touch-manipulation"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 sm:py-0.5 rounded-md text-xs sm:text-[11px] font-medium bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border border-brand-300/70 hover:bg-brand-100 dark:hover:bg-brand-900/60 transition-colors cursor-pointer min-h-[40px] sm:min-h-[28px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
             title="Rate all 5 criteria as Excellent (Alt+4)"
           >
             <span className="size-1.5 rounded-full bg-brand-600 dark:bg-brand-400" aria-hidden="true" />
             <span>All Excellent</span>
-            <kbd className="text-[9px] font-mono opacity-70 ml-0.5 hidden sm:inline">Alt+4</kbd>
+            <kbd className="text-[10px] font-mono opacity-75 ml-0.5 hidden sm:inline">Alt+4</kbd>
           </button>
           <button
             type="button"
             onClick={() => handleApplyPreset("developing")}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-band-2/15 text-amber-900 dark:text-amber-200 border border-band-2/35 hover:bg-band-2/25 transition-colors cursor-pointer min-h-[28px] touch-manipulation"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 sm:py-0.5 rounded-md text-xs sm:text-[11px] font-medium bg-band-2/15 text-amber-900 dark:text-amber-200 border border-band-2/35 hover:bg-band-2/25 transition-colors cursor-pointer min-h-[40px] sm:min-h-[28px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
             title="Rate all 5 criteria as Developing (Alt+2)"
           >
             <span className="size-1.5 rounded-full bg-band-2" aria-hidden="true" />
             <span>All Developing</span>
-            <kbd className="text-[9px] font-mono opacity-70 ml-0.5 hidden sm:inline">Alt+2</kbd>
+            <kbd className="text-[10px] font-mono opacity-75 ml-0.5 hidden sm:inline">Alt+2</kbd>
           </button>
         </div>
 
@@ -659,7 +665,7 @@ export function ManualRubricEntryForm({
 
       {/* Keyboard Shortcuts Hint Bar */}
       {showKeyboardHelp && (
-        <div className="p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-[11px] text-brand-900 dark:text-brand-200 space-y-1 animate-in fade-in-50 duration-150">
+        <div className="p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-[11px] text-brand-900 dark:text-brand-200 space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none">
           <div className="flex items-center gap-1.5 font-semibold">
             <Keyboard className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
             <span>Fast Keyboard Grading</span>
@@ -709,7 +715,7 @@ export function ManualRubricEntryForm({
                   key={criterion.key}
                   type="button"
                   onClick={() => handleSelectCriterion(idx)}
-                  className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg border text-center transition-all cursor-pointer min-h-[40px] touch-manipulation ${
+                  className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg border text-center transition-all cursor-pointer min-h-[40px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
                     isStepActive
                       ? "bg-brand-100 dark:bg-brand-950 text-brand-950 dark:text-brand-200 border-brand-500 ring-2 ring-brand-400/40 font-bold"
                       : isRated
@@ -828,7 +834,7 @@ export function ManualRubricEntryForm({
                             {option.label}
                           </span>
                         </div>
-                        <span className="text-[11px] font-semibold text-muted-foreground/90 mt-0.5">
+                        <span className="text-[11px] font-semibold text-muted-foreground mt-0.5">
                           {option.score}
                         </span>
                       </button>
@@ -869,7 +875,7 @@ export function ManualRubricEntryForm({
                         onFocusCriterion?.(RUBRIC_CRITERIA[prevIdx].shortName);
                       }
                     }}
-                    className="h-8 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-30 touch-manipulation"
+                    className="h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-2.5 sm:px-2 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-30 touch-manipulation"
                   >
                     <ChevronLeft className="size-3.5" aria-hidden="true" />
                     <span>Prev</span>
@@ -891,7 +897,7 @@ export function ManualRubricEntryForm({
                         onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
                       }
                     }}
-                    className="h-8 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-30 touch-manipulation"
+                    className="h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-2.5 sm:px-2 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-30 touch-manipulation"
                   >
                     <span>Next</span>
                     <ChevronRight className="size-3.5" aria-hidden="true" />
@@ -996,7 +1002,7 @@ export function ManualRubricEntryForm({
                           {option.shortLabel}
                         </span>
                       </div>
-                      <span className="text-[11px] font-semibold text-muted-foreground/90 mt-0.5">
+                      <span className="text-[11px] font-semibold text-muted-foreground mt-0.5">
                         {option.score}
                       </span>
                     </button>
@@ -1006,7 +1012,7 @@ export function ManualRubricEntryForm({
 
               {/* Inline Mobile Coaching Tip when criterion is focused in List mode (sm:hidden) */}
               {isFocused && guide && (
-                <div className="sm:hidden mt-2 p-2 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-[11px] text-brand-900 dark:text-brand-200 flex items-start gap-1.5 animate-in fade-in-50 duration-150">
+                <div className="sm:hidden mt-2 p-2 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-[11px] text-brand-900 dark:text-brand-200 flex items-start gap-1.5 animate-in fade-in-50 duration-150 motion-reduce:animate-none">
                   <Info className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
                   <div className="space-y-0.5 min-w-0">
                     <span className="font-semibold block text-brand-800 dark:text-brand-300">
@@ -1039,12 +1045,12 @@ export function ManualRubricEntryForm({
           )}
 
           {canGoNext && (
-            <label className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none touch-manipulation px-2 py-1 rounded-md hover:bg-muted/40 transition-colors min-h-[32px] sm:min-h-0">
+            <label className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none touch-manipulation px-2.5 py-1.5 rounded-md hover:bg-muted/40 transition-colors min-h-[40px] sm:min-h-0">
               <input
                 type="checkbox"
                 checked={autoAdvance}
                 onChange={(e) => setAutoAdvance(e.target.checked)}
-                className="size-3.5 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary"
+                className="size-4 sm:size-3.5 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary"
               />
               <span>Auto-advance</span>
             </label>

@@ -94,6 +94,7 @@ export const CRITERION_NAME_TO_FILTER: Record<string, CriterionFilter> = {
   "Spacing": "spacing",
   "Size Consistency": "size_consistency",
   "Slant": "slant",
+  "Slant Angle": "slant",
   "Baseline Alignment": "baseline_alignment",
 };
 
@@ -102,7 +103,7 @@ export const CRITERION_FILTER_TO_NAME: Record<CriterionFilter, string | null> = 
   letter_formation: "Letter Formation",
   spacing: "Spacing",
   size_consistency: "Size Consistency",
-  slant: "Slant",
+  slant: "Slant Angle",
   baseline_alignment: "Baseline Alignment",
 };
 
@@ -420,6 +421,14 @@ export function SubmissionDetailContent({
     ? CRITERIA_GUIDE[selectedCriterion]
     : null;
 
+  const isDesktopGuideRendered = Boolean(
+    selectedCriterion &&
+      activeCriterionInfo &&
+      (hasCalibratedScores ||
+        phase1Tab === "metrics" ||
+        (phase1Tab === "rubric" && submission.manual_score && !isEditingRubric))
+  );
+
   // Render header content based on variant
   const headerContent = (
     <div className="flex flex-row items-center justify-between gap-2.5 sm:gap-3 w-full">
@@ -562,7 +571,10 @@ export function SubmissionDetailContent({
   );
 
   return (
-    <div className={cn("w-full flex flex-col gap-0", variant === "modal" ? "flex-1 min-h-0" : "")}>
+    <div
+      data-rubric-editing={isEditingRubric ? "true" : undefined}
+      className={cn("w-full flex flex-col gap-0", variant === "modal" ? "flex-1 min-h-0" : "")}
+    >
       {/* Screen reader live announcement region for criterion selection */}
       <div className="sr-only" role="status" aria-live="polite">
         {criterionAnnouncement}
@@ -592,7 +604,7 @@ export function SubmissionDetailContent({
       >
         {/* Mobile Sticky Preview Pill (< lg screens, modal only) */}
         {variant === "modal" && isScrolledPastInspector && (
-          <div className="lg:hidden sticky -top-3 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-surface/95 dark:bg-card/95 backdrop-blur-md border-b border-border/80 flex items-center justify-between gap-2 shadow-xs animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="lg:hidden sticky -top-3 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-surface/95 dark:bg-card/95 backdrop-blur-md border-b border-border/80 flex items-center justify-between gap-2 shadow-xs animate-in fade-in slide-in-from-top-2 duration-150 motion-reduce:animate-none">
             <div className="flex items-center gap-2 min-w-0">
               <div className="size-7 rounded-md bg-muted overflow-hidden border border-border shrink-0">
                 {imageUrl ? (
@@ -654,6 +666,7 @@ export function SubmissionDetailContent({
                 : "h-full"
             )}
           >
+            <h2 className="sr-only">Handwriting Worksheet Preview and Stroke Inspector</h2>
             <WorksheetImageInspector
               imageUrl={imageUrl}
               altText={`Handwriting worksheet submitted for ${submission.student?.full_name ?? "student"}`}
@@ -738,6 +751,7 @@ export function SubmissionDetailContent({
 
           {/* Right: Diagnostic Assessment Details */}
           <div className="lg:col-span-6 flex flex-col justify-between space-y-2.5">
+            <h2 className="sr-only">Diagnostic Assessment and Feedback</h2>
             {/* REJECTED / QUALITY GATE FAILED STATE */}
             {submission.status === "rejected" && (
               <SubmissionRejectionCard
@@ -753,9 +767,9 @@ export function SubmissionDetailContent({
                   <Clock className="size-5 sm:size-6" aria-hidden="true" />
                 </div>
                 <div className="space-y-1 max-w-sm mx-auto">
-                  <h4 className="text-sm font-heading font-semibold text-foreground">
+                  <h3 className="text-sm font-heading font-semibold text-foreground">
                     Analyzing Handwriting Worksheet
-                  </h4>
+                  </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     OpenCV quality verification passed. The CNN model is evaluating letter formation, spacing, and baseline stability.
                   </p>
@@ -825,7 +839,9 @@ export function SubmissionDetailContent({
                                 aria-expanded={isSelected}
                                 aria-controls={
                                   isSelected
-                                    ? `${inlineId} criterion-diagnostic-guide`
+                                    ? isDesktopGuideRendered
+                                      ? `${inlineId} criterion-diagnostic-guide`
+                                      : inlineId
                                     : undefined
                                 }
                                 aria-label={`${c.name}: ${
@@ -851,7 +867,7 @@ export function SubmissionDetailContent({
                                           "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
                                           isSelected
                                             ? "bg-brand-200 text-brand-900 dark:bg-brand-900 dark:text-brand-100"
-                                            : "bg-[#ffedd5] text-[#9c4a2f] dark:bg-[#9c4a2f]/25 dark:text-[#fca5a5] border border-[#9c4a2f]/30"
+                                            : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
                                         )}
                                       >
                                         <span>
@@ -886,7 +902,7 @@ export function SubmissionDetailContent({
                                   id={inlineId}
                                   role="region"
                                   aria-label={`${c.name} coaching tip`}
-                                  className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150"
+                                  className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none"
                                 >
                                   <div className="flex items-center gap-1 text-[11px] font-semibold text-brand-800 dark:text-brand-300">
                                     <Info className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
@@ -1088,7 +1104,13 @@ export function SubmissionDetailContent({
                                         );
                                       }}
                                       aria-expanded={isSelected}
-                                      aria-controls={isSelected ? `criterion-guide-inline-${criterion.key} criterion-diagnostic-guide` : undefined}
+                                      aria-controls={
+                                        isSelected
+                                          ? isDesktopGuideRendered
+                                            ? `criterion-guide-inline-${criterion.key} criterion-diagnostic-guide`
+                                            : `criterion-guide-inline-${criterion.key}`
+                                          : undefined
+                                      }
                                       aria-label={`${criterion.shortName}: ${badgeLabel}. Tap to focus coaching tip.`}
                                       className={cn(
                                         "w-full flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-lg border text-xs text-left cursor-pointer transition-all min-h-[40px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
@@ -1109,7 +1131,7 @@ export function SubmissionDetailContent({
                                                 "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
                                                 isSelected
                                                   ? "bg-brand-200 text-brand-900 dark:bg-brand-900 dark:text-brand-100"
-                                                  : "bg-[#ffedd5] text-[#9c4a2f] dark:bg-[#9c4a2f]/25 dark:text-[#fca5a5] border border-[#9c4a2f]/30"
+                                                  : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
                                               )}
                                             >
                                               <span>
@@ -1140,7 +1162,7 @@ export function SubmissionDetailContent({
                                         id={`criterion-guide-inline-${criterion.key}`}
                                         role="region"
                                         aria-label={`${criterion.shortName} coaching tip`}
-                                        className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150"
+                                        className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none"
                                       >
                                         <div className="flex items-center gap-1 text-[11px] font-semibold text-brand-800 dark:text-brand-300">
                                           <Info className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
@@ -1215,16 +1237,16 @@ export function SubmissionDetailContent({
                 )}
 
                 {/* Focused Criterion Diagnostic Insight Card (Desktop view >=lg; mobile/tablet handled inline) */}
-                {selectedCriterion && activeCriterionInfo && (hasCalibratedScores || phase1Tab === "metrics" || (phase1Tab === "rubric" && submission.manual_score && !isEditingRubric)) && (
+                {isDesktopGuideRendered && activeCriterionInfo && (
                   <div
                     id="criterion-diagnostic-guide"
                     className="hidden lg:block p-2.5 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1 animate-in fade-in-50 duration-200 motion-reduce:animate-none"
                   >
                     <div className="flex items-center justify-between text-xs font-semibold text-brand-900 dark:text-brand-200">
-                      <h4 className="flex items-center gap-1.5 font-semibold text-brand-900 dark:text-brand-200">
+                      <h3 className="flex items-center gap-1.5 font-semibold text-brand-900 dark:text-brand-200">
                         <Info className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                         <span>{selectedCriterion} Diagnostic Guide</span>
-                      </h4>
+                      </h3>
                       <span className="text-[10px] text-brand-700 dark:text-brand-300 font-medium">
                         Criterion Guide
                       </span>
@@ -1319,7 +1341,7 @@ export function SubmissionDetailContent({
             <span>back</span>
           </div>
           {hasMultipleSubmissions && submissions && submissions.length > 0 && (
-            <span className="text-xs text-muted-foreground/80 tabular-nums">
+            <span className="text-xs text-muted-foreground tabular-nums">
               Student {effectiveIndex + 1} of {submissions.length}
             </span>
           )}

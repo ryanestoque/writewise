@@ -171,16 +171,16 @@ export const OverlayToolbar = memo(function OverlayToolbar({
         return;
       }
 
-      // Check if toolbar or inspector region has active focus
-      const isFocusedInContext =
-        Boolean(toolbarRef.current?.contains(document.activeElement)) ||
-        (e.target instanceof HTMLElement && (
-          Boolean(e.target.closest("[role='region']")) ||
-          Boolean(e.target.closest("[data-inspector-container='true']"))
-        ));
+      // Dismiss in-situ guide legend on Escape without bubbling out of submission
+      if (e.key === "Escape" && showLegend) {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowLegend(false);
+        return;
+      }
 
-      const isPrevKey = (e.altKey && e.key === "[") || (isFocusedInContext && e.key === "[");
-      const isNextKey = (e.altKey && e.key === "]") || (isFocusedInContext && e.key === "]");
+      const isPrevKey = (e.altKey && e.key === "[") || e.key === "[";
+      const isNextKey = (e.altKey && e.key === "]") || e.key === "]";
 
       if (isPrevKey) {
         e.preventDefault();
@@ -193,7 +193,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [visible, attentionItems.length, handlePrevAttention, handleNextAttention]);
+  }, [visible, attentionItems.length, showLegend, handlePrevAttention, handleNextAttention]);
 
   const activeFilterMeta = useMemo(() => {
     return FILTERS.find((f) => f.id === activeCriterion) ?? FILTERS[0];
@@ -233,7 +233,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
               {attentionCounts[activeCriterion] > 0 && (
                 <Badge
                   variant="secondary"
-                  className="px-1.5 py-0 h-4 text-[10px] font-bold rounded-full bg-[#ffedd5] text-[#9c4a2f] dark:bg-[#9c4a2f]/25 dark:text-[#fca5a5] border border-[#9c4a2f]/30 ml-0.5 shrink-0"
+                  className="px-1.5 py-0 h-4 text-[10px] font-bold rounded-full bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30 ml-0.5 shrink-0"
                 >
                   <span className="sr-only">({attentionCounts[activeCriterion]} attention items)</span>
                   <span aria-hidden="true">{attentionCounts[activeCriterion]}</span>
@@ -289,7 +289,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   {isWeakest && !isSelected && count > 0 && (
                     <span
                       role="img"
-                      className="size-1.5 rounded-full bg-[#9c4a2f] animate-pulse motion-reduce:animate-none shrink-0"
+                      className="size-1.5 rounded-full bg-band-1 animate-pulse motion-reduce:animate-none shrink-0"
                       title="Recommended focus area"
                       aria-label="Recommended focus area"
                     >
@@ -303,7 +303,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                         "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
                         isSelected
                           ? "bg-white/25 text-white"
-                          : "bg-[#ffedd5] text-[#9c4a2f] dark:bg-[#9c4a2f]/25 dark:text-[#fca5a5] border border-[#9c4a2f]/30"
+                          : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
                       )}
                     >
                       <span className="sr-only">({count} attention items)</span>
@@ -325,7 +325,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
               size="sm"
               onClick={onToggleGuideLines}
               className={cn(
-                "h-8 sm:h-7 px-2 text-[11px] font-medium rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+                "h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-2.5 sm:px-2 text-[11px] font-medium rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
                 showGuideLines
                   ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200 font-semibold"
                   : "text-muted-foreground hover:text-foreground"
@@ -422,7 +422,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
         <div
           role="region"
           aria-label="Diagnostic guide legend"
-          className="p-3 rounded-xl bg-card border border-border/80 shadow-warm text-xs flex flex-col gap-2 transition-all animate-in fade-in duration-150"
+          className="p-3 rounded-xl bg-card border border-border/80 shadow-warm text-xs flex flex-col gap-2 transition-all animate-in fade-in duration-150 motion-reduce:animate-none"
         >
           <div className="flex items-center justify-between pb-1 border-b border-border/50">
             <span className="font-semibold text-foreground text-xs flex items-center gap-1.5">
@@ -434,10 +434,10 @@ export const OverlayToolbar = memo(function OverlayToolbar({
               variant="ghost"
               size="sm"
               onClick={() => setShowLegend(false)}
-              className="relative size-9 sm:size-7 min-h-[36px] min-w-[36px] sm:min-h-[28px] sm:min-w-[28px] p-0 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation after:absolute after:-inset-1"
+              className="relative size-10 sm:size-7 min-h-[40px] min-w-[40px] sm:min-h-[28px] sm:min-w-[28px] p-0 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation after:absolute after:-inset-1"
               aria-label="Close guide legend"
             >
-              <X className="size-3.5" />
+              <X className="size-4 sm:size-3.5" />
             </Button>
           </div>
 

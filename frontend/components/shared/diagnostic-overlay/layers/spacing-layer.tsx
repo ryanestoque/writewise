@@ -121,7 +121,7 @@ export const SpacingLayer = memo(function SpacingLayer({
               strokeWidth={2}
               strokeDasharray="3 2"
               rx={3}
-              className="opacity-0 group-focus-visible:opacity-100 transition-opacity stroke-[#1b6b63] dark:stroke-[#2dd4bf] pointer-events-none"
+              className="opacity-0 group-focus-visible:opacity-100 transition-opacity stroke-brand-600 dark:stroke-brand-400 pointer-events-none"
             />
 
             {/* Shaded Gap Interval */}

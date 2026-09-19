@@ -114,9 +114,22 @@ export function WorksheetImageInspector({
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
 
   const imageContainerRef = useRef<HTMLDivElement>(null);
+  const containerRectRef = useRef<DOMRect | null>(null);
   const activePointersRef = useRef<Map<number, { clientX: number; clientY: number }>>(new Map());
   const pinchStartDistRef = useRef<number | null>(null);
   const pinchStartScaleRef = useRef<number>(1);
+  const rafIdRef = useRef<number | null>(null);
+  const pendingLoupeRef = useRef<typeof loupeState | null>(null);
+  const pendingPanRef = useRef<{ x: number; y: number } | null>(null);
+  const pendingZoomRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
+  }, []);
 
   const hasImageError = Boolean(
     isError || (imageUrl && failedImageUrl === imageUrl)
@@ -243,17 +256,10 @@ export function WorksheetImageInspector({
         return;
       }
 
-      // Ensure the inspector's dialog or container is active before handling
+      // Ensure the inspector's dialog is active when inside a modal dialog
       const dialog = container.closest("[role='dialog']");
-      if (dialog) {
-        if (!dialog.contains(document.activeElement)) {
-          return;
-        }
-      } else {
-        const inspectorWrapper = container.closest("[data-inspector-container='true']");
-        if (inspectorWrapper && !inspectorWrapper.contains(document.activeElement)) {
-          return;
-        }
+      if (dialog && !dialog.contains(document.activeElement)) {
+        return;
       }
 
       if (e.key === "+" || e.key === "=") {
@@ -312,6 +318,8 @@ export function WorksheetImageInspector({
       return;
     }
 
+    containerRectRef.current = e.currentTarget.getBoundingClientRect();
+
     activePointersRef.current.set(e.pointerId, {
       clientX: e.clientX,
       clientY: e.clientY,
@@ -350,14 +358,14 @@ export function WorksheetImageInspector({
       });
     }
 
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = containerRectRef.current ?? e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
     if (isLoupeActive) {
       const isTouch = e.pointerType === "touch";
       const lensY = isTouch ? y - 95 : y;
-      setLoupeState({
+      pendingLoupeRef.current = {
         x: Math.max(65, Math.min(rect.width - 65, x)),
         y: Math.max(65, Math.min(rect.height - 65, lensY)),
         targetX: x,
@@ -365,7 +373,7 @@ export function WorksheetImageInspector({
         width: rect.width,
         height: rect.height,
         visible: true,
-      });
+      };
     }
 
     const count = activePointersRef.current.size;
@@ -375,15 +383,35 @@ export function WorksheetImageInspector({
       const currentDist = Math.hypot(pts[0].clientX - pts[1].clientX, pts[0].clientY - pts[1].clientY);
       const factor = currentDist / pinchStartDistRef.current;
       const nextScale = Math.max(1, Math.min(2.5, +(pinchStartScaleRef.current * factor).toFixed(2)));
-      setZoomScale(nextScale);
+      pendingZoomRef.current = nextScale;
       if (nextScale === 1) {
-        setPanOffset({ x: 0, y: 0 });
+        pendingPanRef.current = { x: 0, y: 0 };
       }
-      setAccessibilityNotice(`Pinch zoom ${Math.round(nextScale * 100)} percent`);
     } else if (count === 1 && isDragging && zoomScale > 1) {
-      setPanOffset({
+      pendingPanRef.current = {
         x: Math.max(-500, Math.min(500, e.clientX - dragStart.x)),
         y: Math.max(-500, Math.min(500, e.clientY - dragStart.y)),
+      };
+    }
+
+    // Schedule updates on next animation frame for silky 60fps interaction
+    if (rafIdRef.current === null) {
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null;
+        if (pendingLoupeRef.current) {
+          setLoupeState(pendingLoupeRef.current);
+          pendingLoupeRef.current = null;
+        }
+        if (pendingZoomRef.current !== null) {
+          const next = pendingZoomRef.current;
+          setZoomScale(next);
+          setAccessibilityNotice(`Pinch zoom ${Math.round(next * 100)} percent`);
+          pendingZoomRef.current = null;
+        }
+        if (pendingPanRef.current) {
+          setPanOffset(pendingPanRef.current);
+          pendingPanRef.current = null;
+        }
       });
     }
   };
@@ -396,6 +424,23 @@ export function WorksheetImageInspector({
       // Safe fallback
     }
 
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+      if (pendingLoupeRef.current) {
+        setLoupeState(pendingLoupeRef.current);
+        pendingLoupeRef.current = null;
+      }
+      if (pendingZoomRef.current !== null) {
+        setZoomScale(pendingZoomRef.current);
+        pendingZoomRef.current = null;
+      }
+      if (pendingPanRef.current) {
+        setPanOffset(pendingPanRef.current);
+        pendingPanRef.current = null;
+      }
+    }
+
     const remaining = activePointersRef.current.size;
     if (remaining < 2) {
       pinchStartDistRef.current = null;
@@ -403,6 +448,7 @@ export function WorksheetImageInspector({
 
     if (remaining === 0) {
       setIsDragging(false);
+      containerRectRef.current = null;
     } else if (remaining === 1 && zoomScale > 1) {
       // Transition back to single pointer dragging with remaining finger
       const pointer = Array.from(activePointersRef.current.values())[0];
@@ -417,7 +463,12 @@ export function WorksheetImageInspector({
   const handlePointerCancel = (e: ReactPointerEvent<HTMLDivElement>) => {
     activePointersRef.current.delete(e.pointerId);
     pinchStartDistRef.current = null;
+    containerRectRef.current = null;
     setIsDragging(false);
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
   };
 
   return (
@@ -456,7 +507,7 @@ export function WorksheetImageInspector({
                 size="sm"
                 onClick={handleToggleContrast}
                 className={cn(
-                  "h-8 sm:h-7 px-2.5 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+                  "h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-2.5 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
                   isHighContrast
                     ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -475,7 +526,7 @@ export function WorksheetImageInspector({
                 size="sm"
                 onClick={handleToggleLoupe}
                 className={cn(
-                  "h-8 sm:h-7 px-2.5 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+                  "h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-2.5 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
                   isLoupeActive
                     ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -497,7 +548,7 @@ export function WorksheetImageInspector({
                 size="sm"
                 disabled={zoomScale <= 1}
                 onClick={handleZoomOut}
-                className="size-8 sm:size-7 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
+                className="size-10 sm:size-7 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation flex items-center justify-center"
                 aria-label="Zoom out (Key: -)"
                 title="Zoom out (-)"
               >
@@ -507,7 +558,7 @@ export function WorksheetImageInspector({
               <button
                 type="button"
                 onClick={handleResetZoom}
-                className="px-2 py-0.5 h-8 sm:h-7 flex items-center justify-center text-xs font-mono font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded touch-manipulation"
+                className="px-2.5 sm:px-2 py-1 sm:py-0.5 h-10 sm:h-7 min-h-[40px] sm:min-h-0 flex items-center justify-center text-xs font-mono font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded-lg touch-manipulation"
                 title="Click to reset zoom (Key: 0)"
                 aria-label={`Current zoom ${Math.round(zoomScale * 100)} percent. Click to reset.`}
               >
@@ -520,7 +571,7 @@ export function WorksheetImageInspector({
                 size="sm"
                 disabled={zoomScale >= 2.5}
                 onClick={handleZoomIn}
-                className="size-8 sm:size-7 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
+                className="size-10 sm:size-7 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation flex items-center justify-center"
                 aria-label="Zoom in (Key: +)"
                 title="Zoom in (+)"
               >
@@ -625,8 +676,9 @@ export function WorksheetImageInspector({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerCancel}
         onMouseEnter={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          containerRectRef.current = rect;
           if (isLoupeActive) {
-            const rect = e.currentTarget.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             setLoupeState({
@@ -641,6 +693,7 @@ export function WorksheetImageInspector({
           }
         }}
         onMouseLeave={() => {
+          containerRectRef.current = null;
           setIsDragging(false);
           setLoupeState((prev) => ({ ...prev, visible: false }));
         }}

@@ -103,8 +103,8 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
           "w-60 sm:w-64 max-w-[calc(100vw-2rem)] p-2.5 rounded-xl shadow-warm border backdrop-blur-md transition-colors select-none",
           "bg-white/95 dark:bg-card/95 text-foreground",
           isAttention
-            ? "border-[#9c4a2f]/40 dark:border-[#9c4a2f]/50 ring-2 ring-[#9c4a2f]/10"
-            : "border-[#1b6b63]/40 dark:border-[#1b6b63]/50 ring-2 ring-[#1b6b63]/10"
+            ? "border-destructive/40 dark:border-destructive/50 ring-2 ring-destructive/10"
+            : "border-brand-600/40 dark:border-brand-500/50 ring-2 ring-brand-600/10"
         )}
       >
         <div className="flex items-center gap-1.5 mb-1">
@@ -129,8 +129,8 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
             className={cn(
               "ml-auto text-[11px] px-1.5 py-0 h-4.5 font-medium border",
               isAttention
-                ? "border-[#9c4a2f]/40 text-[#7c2d12] dark:text-[#fca5a5] bg-[#ffedd5]/90 dark:bg-[#9c4a2f]/25"
-                : "border-[#1b6b63]/30 text-[#145049] dark:text-[#2dd4bf] bg-[#e4f1ef]/90 dark:bg-[#1b6b63]/20"
+                ? "border-band-1/40 text-band-1-text dark:text-orange-200 bg-band-1/15 dark:bg-band-1/25"
+                : "border-brand-300 dark:border-brand-800 text-brand-800 dark:text-brand-300 bg-brand-50/90 dark:bg-brand-950/60"
             )}
           >
             {isAttention ? "Needs Attention" : "Consistent"}

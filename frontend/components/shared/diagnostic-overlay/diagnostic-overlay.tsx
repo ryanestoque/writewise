@@ -214,6 +214,8 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
     if (!activeAnnotation) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
         setHoveredAnnotation(null);
         onSelectAnnotation?.(null);
       }
@@ -234,8 +236,8 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
       >
         <div className="absolute inset-x-8 top-1/4 bottom-1/4 flex flex-col justify-around opacity-30 animate-pulse motion-reduce:animate-none pointer-events-none">
           <div className="w-full border-b border-dashed border-slate-400 dark:border-slate-500" />
-          <div className="w-full border-b border-dotted border-[#1b6b63]" />
-          <div className="w-full border-b border-solid border-[#1b6b63]" />
+          <div className="w-full border-b border-dotted border-brand-600 dark:border-brand-400" />
+          <div className="w-full border-b border-solid border-brand-600 dark:border-brand-400" />
         </div>
         <span className="sr-only">Loading handwriting diagnostic guidelines...</span>
       </div>

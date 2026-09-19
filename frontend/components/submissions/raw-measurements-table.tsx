@@ -90,8 +90,8 @@ export function RawMeasurementsTable({
         formationBenchmark = {
           status: "deviating",
           label: "Needs Focus",
-          badgeClass: "bg-[#9c4a2f]/10 text-[#9c4a2f] border-[#9c4a2f]/30 dark:bg-[#9c4a2f]/20 dark:text-[#e07a5f] dark:border-[#9c4a2f]/50",
-          dotClass: "bg-[#9c4a2f]",
+          badgeClass: "bg-band-1/15 text-band-1-text border-band-1/40 dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+          dotClass: "bg-band-1",
         };
       }
     } else {
@@ -116,8 +116,8 @@ export function RawMeasurementsTable({
           ? "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
           : isBorderline
             ? "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-            : "bg-[#9c4a2f]/10 text-[#9c4a2f] border-[#9c4a2f]/30 dark:bg-[#9c4a2f]/20 dark:text-[#e07a5f] dark:border-[#9c4a2f]/50",
-        dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-[#9c4a2f]",
+            : "bg-band-1/15 text-band-1-text border-band-1/40 dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+        dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
         meter: { min: 0.5, max: 1.3, targetMin: 0.85, targetMax: 1.0, current: val },
       };
     }
@@ -135,8 +135,8 @@ export function RawMeasurementsTable({
           ? "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
           : isBorderline
             ? "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-            : "bg-[#9c4a2f]/10 text-[#9c4a2f] border-[#9c4a2f]/30 dark:bg-[#9c4a2f]/20 dark:text-[#e07a5f] dark:border-[#9c4a2f]/50",
-        dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-[#9c4a2f]",
+            : "bg-band-1/15 text-band-1-text border-band-1/40 dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+        dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
         meter: { min: 0.8, max: 3.2, targetMin: 1.5, targetMax: 2.5, current: val },
       };
     }
@@ -154,8 +154,8 @@ export function RawMeasurementsTable({
           ? "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
           : isBorderline
             ? "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-            : "bg-[#9c4a2f]/10 text-[#9c4a2f] border-[#9c4a2f]/30 dark:bg-[#9c4a2f]/20 dark:text-[#e07a5f] dark:border-[#9c4a2f]/50",
-        dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-[#9c4a2f]",
+            : "bg-band-1/15 text-band-1-text border-band-1/40 dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+        dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
         meter: { min: 0, max: 24, targetMin: 6.0, targetMax: 15.0, current: val },
       };
     }
@@ -173,8 +173,8 @@ export function RawMeasurementsTable({
           ? "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
           : isBorderline
             ? "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-            : "bg-[#9c4a2f]/10 text-[#9c4a2f] border-[#9c4a2f]/30 dark:bg-[#9c4a2f]/20 dark:text-[#e07a5f] dark:border-[#9c4a2f]/50",
-        dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-[#9c4a2f]",
+            : "bg-band-1/15 text-band-1-text border-band-1/40 dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+        dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
         meter: { min: 0, max: 0.8, targetMin: 0, targetMax: 0.05, current: val },
       };
     }
@@ -368,49 +368,54 @@ export function RawMeasurementsTable({
 
           return (
             <div key={c.name} className="space-y-1">
-              <button
-                type="button"
-                onClick={() => onSelectCriterion(c.name)}
-                aria-expanded={isSelected}
-                aria-labelledby={`${titleId} ${valueId}`}
-                aria-describedby={`${descId} ${detailsId}`}
-                aria-controls={
-                  isSelected
-                    ? `${inlineId} criterion-diagnostic-guide`
-                    : undefined
-                }
-                className={`w-full flex flex-col p-2.5 sm:px-3.5 sm:py-2.5 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[40px] sm:min-h-0 touch-manipulation ${
+              <div
+                className={`w-full flex flex-col p-2.5 sm:px-3.5 sm:py-2.5 rounded-xl border transition-all text-xs text-left ${
                   isSelected
                     ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/40"
                     : "bg-surface dark:bg-card border-border/70 hover:border-brand-300 dark:hover:border-brand-800 hover:bg-muted/30"
                 }`}
               >
-                <div className="w-full flex items-center justify-between gap-2">
-                  <div className="min-w-0 flex items-center gap-2 flex-wrap">
-                    <span id={titleId} className="font-semibold text-foreground truncate block">
-                      {c.name}
-                    </span>
-                    {c.benchmark && (
-                      <span
-                        className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border inline-flex items-center gap-1 ${c.benchmark.badgeClass}`}
-                      >
-                        <span className={`size-1.5 rounded-full shrink-0 ${c.benchmark.dotClass}`} aria-hidden="true" />
-                        <span>{c.benchmark.label}</span>
+                <button
+                  type="button"
+                  onClick={() => onSelectCriterion(c.name)}
+                  aria-expanded={isSelected}
+                  aria-labelledby={`${titleId} ${valueId}`}
+                  aria-controls={
+                    isSelected
+                      ? activeCriterionInfo
+                        ? `${inlineId} criterion-diagnostic-guide`
+                        : inlineId
+                      : undefined
+                  }
+                  className="w-full flex flex-col text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg touch-manipulation min-h-[40px] sm:min-h-0 justify-center"
+                >
+                  <div className="w-full flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex items-center gap-2 flex-wrap">
+                      <span id={titleId} className="font-semibold text-foreground truncate block">
+                        {c.name}
                       </span>
-                    )}
+                      {c.benchmark && (
+                        <span
+                          className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border inline-flex items-center gap-1 ${c.benchmark.badgeClass}`}
+                        >
+                          <span className={`size-1.5 rounded-full shrink-0 ${c.benchmark.dotClass}`} aria-hidden="true" />
+                          <span>{c.benchmark.label}</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span id={valueId} className="font-sans font-semibold text-foreground tabular-nums text-xs px-2.5 py-0.5 rounded-md bg-muted/60 border border-border/60">
+                        {c.primaryValue}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span id={valueId} className="font-sans font-semibold text-foreground tabular-nums text-xs px-2.5 py-0.5 rounded-md bg-muted/60 border border-border/60">
-                      {c.primaryValue}
-                    </span>
-                  </div>
-                </div>
 
-                <span id={descId} className="text-xs text-muted-foreground mt-0.5 leading-snug block line-clamp-1">
-                  {c.description}
-                </span>
+                  <span id={descId} className="text-xs text-muted-foreground mt-0.5 leading-snug block line-clamp-1">
+                    {c.description}
+                  </span>
+                </button>
 
-                {/* Visual Target Range Meter (if quantitative meter exists) */}
+                {/* Visual Target Range Meter (outside button for valid HTML/ARIA nesting) */}
                 {c.benchmark?.meter && (
                   <div className="mt-1.5 pt-1.5 border-t border-border/50 space-y-1 w-full">
                     <div className="flex items-center justify-between text-[11px] text-muted-foreground font-medium">
@@ -421,7 +426,15 @@ export function RawMeasurementsTable({
                       </span>
                       <span className="tabular-nums font-medium">Target: {c.targetText}</span>
                     </div>
-                    <div className="relative h-2 w-full bg-muted/70 dark:bg-muted/40 rounded-full overflow-hidden border border-border/50">
+                    <div
+                      role="meter"
+                      aria-label={`${c.name} target range meter`}
+                      aria-valuenow={c.benchmark.meter.current}
+                      aria-valuemin={c.benchmark.meter.min}
+                      aria-valuemax={c.benchmark.meter.max}
+                      aria-valuetext={`${c.benchmark.label}: ${c.primaryValue} (Target: ${c.targetText})`}
+                      className="relative h-2 w-full bg-muted/70 dark:bg-muted/40 rounded-full overflow-hidden border border-border/50"
+                    >
                       {/* Target Window Highlight */}
                       <div
                         className="absolute top-0 bottom-0 bg-emerald-500/20 dark:bg-emerald-500/30 border-x border-emerald-500/40"
@@ -438,7 +451,7 @@ export function RawMeasurementsTable({
                             ? "bg-emerald-600 dark:bg-emerald-400"
                             : c.benchmark.status === "borderline"
                               ? "bg-amber-600 dark:bg-amber-400"
-                              : "bg-[#9c4a2f]"
+                              : "bg-band-1"
                         }`}
                         style={{
                           left: `${Math.max(2, Math.min(98, ((c.benchmark.meter.current - c.benchmark.meter.min) / (c.benchmark.meter.max - c.benchmark.meter.min)) * 100))}%`,
@@ -466,7 +479,7 @@ export function RawMeasurementsTable({
                     ))}
                   </div>
                 )}
-              </button>
+              </div>
 
               {/* Inline Mobile & Tablet Coaching Tip when selected (lg:hidden) */}
               {isSelected && activeCriterionInfo && (

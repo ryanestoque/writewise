@@ -118,7 +118,7 @@ export const SlantLayer = memo(function SlantLayer({
               strokeWidth={5}
               strokeLinecap="round"
               strokeOpacity={0.6}
-              className="opacity-0 group-focus-visible:opacity-100 transition-opacity stroke-[#1b6b63] dark:stroke-[#2dd4bf] pointer-events-none"
+              className="opacity-0 group-focus-visible:opacity-100 transition-opacity stroke-brand-600 dark:stroke-brand-400 pointer-events-none"
             />
 
             {/* Slant Vector Line */}
