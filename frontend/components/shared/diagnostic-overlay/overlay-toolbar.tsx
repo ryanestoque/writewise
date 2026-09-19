@@ -31,6 +31,10 @@ interface OverlayToolbarProps {
   selectedAttentionId?: string | null;
   onSelectAttentionItem?: (item: ActiveAnnotationHover | null) => void;
   className?: string;
+  variant?: "full" | "compact";
+  showGuideLines?: boolean;
+  onToggleGuideLines?: () => void;
+  hasGuideLines?: boolean;
 }
 
 interface FilterItem {
@@ -81,6 +85,10 @@ export const OverlayToolbar = memo(function OverlayToolbar({
   selectedAttentionId,
   onSelectAttentionItem,
   className,
+  variant = "full",
+  showGuideLines,
+  onToggleGuideLines,
+  hasGuideLines,
 }: OverlayToolbarProps) {
   const [showLegend, setShowLegend] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -187,6 +195,10 @@ export const OverlayToolbar = memo(function OverlayToolbar({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [visible, attentionItems.length, handlePrevAttention, handleNextAttention]);
 
+  const activeFilterMeta = useMemo(() => {
+    return FILTERS.find((f) => f.id === activeCriterion) ?? FILTERS[0];
+  }, [activeCriterion]);
+
   return (
     <div ref={toolbarRef} className="flex flex-col gap-1.5 min-w-0 max-w-full">
       {/* Screen reader live region for practice area navigation announcements (WCAG 4.1.3) */}
@@ -207,68 +219,128 @@ export const OverlayToolbar = memo(function OverlayToolbar({
           className
         )}
       >
-        {/* 1. Filter Pills (Horizontal scrollable on mobile, wrapping on larger screens) */}
-        <div
-          role="group"
-          aria-label="Worksheet diagnostic criteria filters"
-          className="flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth py-0.5 min-w-0 flex-1 sm:flex-wrap sm:overflow-visible [mask-image:linear-gradient(to_right,black_88%,transparent_100%)] sm:[mask-image:none]"
-        >
-          {FILTERS.map((item) => {
-            const Icon = item.icon;
-            const isSelected = activeCriterion === item.id;
-            const count = attentionCounts[item.id] ?? 0;
-            const isWeakest = weakest === item.id;
+        {/* 1. Filter Pills or Compact Spotlight Indicator */}
+        {variant === "compact" ? (
+          <div className="flex items-center gap-1.5 min-w-0 flex-1 flex-wrap">
+            <div className="inline-flex items-center gap-1 bg-surface dark:bg-card px-2.5 py-1 rounded-lg border border-border/70 text-xs shadow-2xs min-w-0">
+              {(() => {
+                const Icon = activeFilterMeta.icon;
+                return <Icon className="size-3 text-brand-700 dark:text-brand-300 shrink-0" aria-hidden="true" />;
+              })()}
+              <span className="font-semibold text-foreground truncate">
+                {activeCriterion === "all" ? "All Guides" : `${activeFilterMeta.label} Spotlight`}
+              </span>
+              {attentionCounts[activeCriterion] > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="px-1.5 py-0 h-4 text-[10px] font-bold rounded-full bg-[#ffedd5] text-[#9c4a2f] dark:bg-[#9c4a2f]/25 dark:text-[#fca5a5] border border-[#9c4a2f]/30 ml-0.5 shrink-0"
+                >
+                  <span className="sr-only">({attentionCounts[activeCriterion]} attention items)</span>
+                  <span aria-hidden="true">{attentionCounts[activeCriterion]}</span>
+                </Badge>
+              )}
+            </div>
 
-            return (
+            {activeCriterion !== "all" && (
               <Button
-                key={item.id}
                 type="button"
-                variant={isSelected ? "default" : "ghost"}
+                variant="ghost"
                 size="sm"
-                disabled={!visible}
-                onClick={() => onChangeCriterion(item.id)}
-                aria-pressed={isSelected}
-                className={cn(
-                  "shrink-0 h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-2.5 sm:px-2 text-xs sm:text-[11px] font-medium rounded-lg gap-1.5 transition-all cursor-pointer touch-manipulation",
-                  isSelected
-                    ? "bg-brand-600 hover:bg-brand-700 text-white shadow-2xs font-semibold"
-                    : "hover:bg-muted text-muted-foreground hover:text-foreground",
-                  !visible && "opacity-50 cursor-not-allowed"
-                )}
+                onClick={() => onChangeCriterion("all")}
+                className="h-7 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors"
+                title="Reset to show all guides"
               >
-                <Icon className="size-3 shrink-0" aria-hidden="true" />
-                <span>{item.label}</span>
-                {isWeakest && !isSelected && count > 0 && (
-                  <span
-                    role="img"
-                    className="size-1.5 rounded-full bg-[#9c4a2f] animate-pulse motion-reduce:animate-none shrink-0"
-                    title="Recommended focus area"
-                    aria-label="Recommended focus area"
-                  >
-                    <span className="sr-only">Recommended focus area</span>
-                  </span>
-                )}
-                {count > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className={cn(
-                      "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
-                      isSelected
-                        ? "bg-white/25 text-white"
-                        : "bg-[#ffedd5] text-[#9c4a2f] dark:bg-[#9c4a2f]/25 dark:text-[#fca5a5] border border-[#9c4a2f]/30"
-                    )}
-                  >
-                    <span className="sr-only">({count} attention items)</span>
-                    <span aria-hidden="true">{count}</span>
-                  </Badge>
-                )}
+                <X className="size-3 mr-1" aria-hidden="true" />
+                <span>Show All</span>
               </Button>
-            );
-          })}
-        </div>
+            )}
+          </div>
+        ) : (
+          <div
+            role="group"
+            aria-label="Worksheet diagnostic criteria filters"
+            className="flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth py-0.5 min-w-0 flex-1 sm:flex-wrap sm:overflow-visible [mask-image:linear-gradient(to_right,black_88%,transparent_100%)] sm:[mask-image:none]"
+          >
+            {FILTERS.map((item) => {
+              const Icon = item.icon;
+              const isSelected = activeCriterion === item.id;
+              const count = attentionCounts[item.id] ?? 0;
+              const isWeakest = weakest === item.id;
 
-        {/* 2. Sequential Attention Item Stepper & Master Visibility Toggle */}
+              return (
+                <Button
+                  key={item.id}
+                  type="button"
+                  variant={isSelected ? "default" : "ghost"}
+                  size="sm"
+                  disabled={!visible}
+                  onClick={() => onChangeCriterion(item.id)}
+                  aria-pressed={isSelected}
+                  className={cn(
+                    "shrink-0 h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-2.5 sm:px-2 text-xs sm:text-[11px] font-medium rounded-lg gap-1.5 transition-all cursor-pointer touch-manipulation",
+                    isSelected
+                      ? "bg-brand-600 hover:bg-brand-700 text-white shadow-2xs font-semibold"
+                      : "hover:bg-muted text-muted-foreground hover:text-foreground",
+                    !visible && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <Icon className="size-3 shrink-0" aria-hidden="true" />
+                  <span>{item.label}</span>
+                  {isWeakest && !isSelected && count > 0 && (
+                    <span
+                      role="img"
+                      className="size-1.5 rounded-full bg-[#9c4a2f] animate-pulse motion-reduce:animate-none shrink-0"
+                      title="Recommended focus area"
+                      aria-label="Recommended focus area"
+                    >
+                      <span className="sr-only">Recommended focus area</span>
+                    </span>
+                  )}
+                  {count > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
+                        isSelected
+                          ? "bg-white/25 text-white"
+                          : "bg-[#ffedd5] text-[#9c4a2f] dark:bg-[#9c4a2f]/25 dark:text-[#fca5a5] border border-[#9c4a2f]/30"
+                      )}
+                    >
+                      <span className="sr-only">({count} attention items)</span>
+                      <span aria-hidden="true">{count}</span>
+                    </Badge>
+                  )}
+                </Button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* 2. Sequential Attention Item Stepper, Guideline Toggle, Legend, & Master Switch */}
         <div className="flex items-center gap-1.5 pl-2 border-l border-border/60 shrink-0">
+          {hasGuideLines && onToggleGuideLines && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onToggleGuideLines}
+              className={cn(
+                "h-8 sm:h-7 px-2 text-[11px] font-medium rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+                showGuideLines
+                  ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200 font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title={showGuideLines ? "Hide detected 3-line penmanship guidelines" : "Show detected 3-line penmanship guidelines"}
+              aria-pressed={showGuideLines}
+            >
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" className="shrink-0" aria-hidden="true">
+                <line x1="1" y1="4" x2="13" y2="4" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2" />
+                <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.6" strokeDasharray="2 2" />
+                <line x1="1" y1="10" x2="13" y2="10" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
+              <span className="hidden min-[480px]:inline">Lines</span>
+            </Button>
+          )}
           {visible && attentionItems.length > 0 && (
             <div
               role="group"

@@ -34,6 +34,7 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
+  ArrowLeft,
   Eye,
   Info,
   Award,
@@ -328,6 +329,38 @@ export function SubmissionDetailContent({
     [submission.id]
   );
 
+  // Attention alert counts for embedding in rubric and criterion lists
+  const criterionAttentionCounts = useMemo<Record<string, number>>(() => {
+    const emptyCounts: Record<string, number> = {};
+    if (!diagnosticOverlay) return emptyCounts;
+    return {
+      "Letter Formation":
+        diagnosticOverlay.letter_formation?.annotations?.filter(
+          (a) => a.severity === "needs_attention"
+        ).length ?? 0,
+      "Spacing":
+        diagnosticOverlay.spacing?.annotations?.filter(
+          (a) => a.severity === "needs_attention"
+        ).length ?? 0,
+      "Slant Angle":
+        diagnosticOverlay.slant?.annotations?.filter(
+          (a) => a.severity === "needs_attention"
+        ).length ?? 0,
+      "Slant":
+        diagnosticOverlay.slant?.annotations?.filter(
+          (a) => a.severity === "needs_attention"
+        ).length ?? 0,
+      "Baseline Alignment":
+        diagnosticOverlay.baseline?.annotations?.filter(
+          (a) => a.severity === "needs_attention"
+        ).length ?? 0,
+      "Size Consistency":
+        diagnosticOverlay.size?.annotations?.filter(
+          (a) => a.severity === "needs_attention"
+        ).length ?? 0,
+    };
+  }, [diagnosticOverlay]);
+
   const resolvedTargetText = useMemo(() => {
     if (activityTargetText && !isUuid(activityTargetText)) {
       return activityTargetText.trim();
@@ -391,6 +424,20 @@ export function SubmissionDetailContent({
   const headerContent = (
     <div className="flex flex-row items-center justify-between gap-2.5 sm:gap-3 w-full">
       <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+        {variant === "page" && onClose && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onClose}
+            className="h-9 px-2.5 sm:px-3 rounded-xl border-border/80 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 gap-1.5 shrink-0 transition-colors cursor-pointer group shadow-2xs"
+            title="Return to activity (Esc)"
+          >
+            <ArrowLeft className="size-3.5 group-hover:-translate-x-0.5 transition-transform" aria-hidden="true" />
+            <span className="hidden sm:inline">Back to Activity</span>
+            <span className="sm:hidden">Back</span>
+          </Button>
+        )}
         <div
           className={cn(
             "flex size-9 sm:size-10 items-center justify-center rounded-xl border text-sm font-bold shrink-0 select-none shadow-2xs",
@@ -426,7 +473,7 @@ export function SubmissionDetailContent({
             )}
           </div>
           {variant === "modal" ? (
-            <DialogDescription className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 flex items-center gap-x-2.5 sm:gap-x-3 gap-y-0.5 flex-wrap">
+            <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-x-3 gap-y-0.5 flex-wrap">
               <span className="inline-flex items-center gap-1">
                 <User className="size-3" aria-hidden="true" />
                 Uploaded by{" "}
@@ -444,7 +491,7 @@ export function SubmissionDetailContent({
               </span>
             </DialogDescription>
           ) : (
-            <div className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 flex items-center gap-x-2.5 sm:gap-x-3 gap-y-0.5 flex-wrap">
+            <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-x-3 gap-y-0.5 flex-wrap">
               <span className="inline-flex items-center gap-1">
                 <User className="size-3" aria-hidden="true" />
                 Uploaded by{" "}
@@ -523,11 +570,11 @@ export function SubmissionDetailContent({
 
       {/* Header */}
       {variant === "modal" ? (
-        <DialogHeader className="pb-3 sm:pb-4 border-b border-border/70 shrink-0 text-left">
+        <DialogHeader className="pb-2.5 sm:pb-3 border-b border-border/70 shrink-0 text-left">
           {headerContent}
         </DialogHeader>
       ) : (
-        <header className="pb-3 sm:pb-4 border-b border-border/70">
+        <header className="pb-2.5 sm:pb-3 border-b border-border/70">
           {headerContent}
         </header>
       )}
@@ -537,10 +584,10 @@ export function SubmissionDetailContent({
         ref={variant === "modal" ? scrollContainerRef : undefined}
         onScroll={variant === "modal" ? handleScroll : undefined}
         className={cn(
-          "space-y-4",
+          "space-y-3 sm:space-y-3.5",
           variant === "modal"
-            ? "flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain py-3 sm:py-4"
-            : "py-4 sm:py-5"
+            ? "flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain py-2.5 sm:py-3"
+            : "py-2.5 sm:py-3.5"
         )}
       >
         {/* Mobile Sticky Preview Pill (< lg screens, modal only) */}
@@ -597,60 +644,67 @@ export function SubmissionDetailContent({
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 lg:items-start">
           {/* Left: Worksheet Image Preview with Interactive Stroke Inspector */}
           <div
             className={cn(
               "lg:col-span-6 flex flex-col justify-between gap-2.5 w-full min-h-0",
               variant === "page"
-                ? "lg:sticky lg:top-[4.5rem] lg:self-start lg:max-h-[calc(100dvh-6rem)]"
+                ? "lg:sticky lg:top-[4.25rem] lg:self-start lg:max-h-[calc(100dvh-5.5rem)]"
                 : "h-full"
             )}
           >
-            {diagnosticOverlay ? (
-              <OverlayToolbar
-                overlay={diagnosticOverlay}
-                activeCriterion={activeOverlayCriterion}
-                onChangeCriterion={(c) => {
-                  setActiveOverlayCriterion(c);
-                  setSelectedAttentionItem(null);
-                  const name = CRITERION_FILTER_TO_NAME[c];
-                  if (name) {
-                    setSelectedCriterion(name);
-                    setCriterionAnnouncement(`Selected ${name} on diagnostic overlay`);
-                  }
-                }}
-                selectedAttentionId={selectedAttentionItem?.id}
-                onSelectAttentionItem={setSelectedAttentionItem}
-                visible={showOverlay}
-                onToggleVisible={setShowOverlay}
-              />
-            ) : (
-              <DiagnosticFallbackBanner
-                scoreSource={
-                  hasCalibratedScores
-                    ? "calibrated"
-                    : submission.manual_score
-                      ? "manual"
-                      : "none"
-                }
-              />
-            )}
-
             <WorksheetImageInspector
               imageUrl={imageUrl}
               altText={`Handwriting worksheet submitted for ${submission.student?.full_name ?? "student"}`}
               isLoading={isImageLoading}
               isError={isImageError}
-              headerLabel="Handwritten Worksheet"
+              diagnosticToolbar={
+                diagnosticOverlay ? (
+                  <OverlayToolbar
+                    variant="compact"
+                    overlay={diagnosticOverlay}
+                    activeCriterion={activeOverlayCriterion}
+                    onChangeCriterion={(c) => {
+                      setActiveOverlayCriterion(c);
+                      setSelectedAttentionItem(null);
+                      const name = CRITERION_FILTER_TO_NAME[c];
+                      if (name) {
+                        setSelectedCriterion(name);
+                        setCriterionAnnouncement(`Selected ${name} on diagnostic overlay`);
+                      }
+                    }}
+                    selectedAttentionId={selectedAttentionItem?.id}
+                    onSelectAttentionItem={setSelectedAttentionItem}
+                    visible={showOverlay}
+                    onToggleVisible={setShowOverlay}
+                    showGuideLines={showGuideLines}
+                    onToggleGuideLines={() => setShowGuideLines((prev) => !prev)}
+                    hasGuideLines={Boolean(guideLines)}
+                    className="border-none bg-transparent p-0 shadow-none backdrop-blur-none"
+                  />
+                ) : (
+                  <DiagnosticFallbackBanner
+                    scoreSource={
+                      hasCalibratedScores
+                        ? "calibrated"
+                        : submission.manual_score
+                          ? "manual"
+                          : "none"
+                    }
+                    className="border-none bg-transparent p-0 shadow-none"
+                  />
+                )
+              }
+              showShortcutsLegend={false}
               onRetry={() => {
                 refetchImage();
               }}
               className="flex-1 flex flex-col min-h-0"
               aspectRatioClass={
                 variant === "page"
-                  ? "aspect-4/3 sm:aspect-3/2 lg:aspect-4/3 min-h-[300px] sm:min-h-[360px]"
-                  : "aspect-4/3 sm:aspect-3/2 lg:aspect-auto lg:flex-1 min-h-[260px] sm:min-h-[300px] lg:min-h-0"
+                  ? "aspect-4/3 sm:aspect-3/2 lg:aspect-4/3 min-h-[280px] sm:min-h-[320px] lg:min-h-[320px]"
+                  : "aspect-4/3 sm:aspect-3/2 lg:aspect-auto lg:flex-1 min-h-[260px] sm:min-h-[280px] lg:min-h-0"
               }
             >
               {diagnosticOverlay ? (
@@ -671,32 +725,11 @@ export function SubmissionDetailContent({
               )}
             </WorksheetImageInspector>
 
-            {/* Guide-lines toggle pill (for legacy without diagnostic overlay) + target prompt bar */}
-            <div className="shrink-0 flex items-center gap-2">
-              {!diagnosticOverlay && guideLines && (
-                <button
-                  type="button"
-                  onClick={() => setShowGuideLines((prev) => !prev)}
-                  className={cn(
-                    "px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 min-h-[36px] touch-manipulation",
-                    showGuideLines
-                      ? "bg-brand-100 text-brand-900 border-brand-300 dark:bg-brand-950 dark:text-brand-200 dark:border-brand-800"
-                      : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted/70 hover:text-foreground"
-                  )}
-                  aria-pressed={showGuideLines}
-                  title={showGuideLines ? "Hide detected guide lines" : "Show detected guide lines on worksheet"}
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0" aria-hidden="true">
-                    <line x1="1" y1="4" x2="13" y2="4" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2" />
-                    <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.6" strokeDasharray="2 2" />
-                    <line x1="1" y1="10" x2="13" y2="10" stroke="currentColor" strokeWidth="1.5" />
-                  </svg>
-                  <span>Guidelines</span>
-                </button>
-              )}
-              <div className="flex-1 p-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs flex items-center gap-1.5 text-muted-foreground flex-wrap min-w-0">
-                <span className="font-semibold text-foreground shrink-0">Target prompt:</span>
-                <span className="font-medium text-foreground bg-background/80 dark:bg-card/80 px-2 py-0.5 rounded-md border border-border/60 truncate">
+            {/* Target prompt card */}
+            <div className="shrink-0 flex items-center justify-between gap-2.5 p-2 sm:p-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs text-muted-foreground flex-wrap">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="font-semibold text-foreground shrink-0 text-xs">Target prompt:</span>
+                <span className="font-medium text-foreground bg-background/80 dark:bg-card/80 px-2.5 py-1 rounded-lg border border-border/60 truncate max-w-full text-xs">
                   {resolvedTargetText ? `"${resolvedTargetText}"` : "Cursive Penmanship Practice"}
                 </span>
               </div>
@@ -704,7 +737,7 @@ export function SubmissionDetailContent({
           </div>
 
           {/* Right: Diagnostic Assessment Details */}
-          <div className="lg:col-span-6 flex flex-col justify-between space-y-3.5">
+          <div className="lg:col-span-6 flex flex-col justify-between space-y-2.5">
             {/* REJECTED / QUALITY GATE FAILED STATE */}
             {submission.status === "rejected" && (
               <SubmissionRejectionCard
@@ -715,9 +748,9 @@ export function SubmissionDetailContent({
 
             {/* PROCESSING STATE */}
             {submission.status === "processing" && (
-              <div className="p-5 rounded-xl sm:rounded-2xl bg-warning/10 border border-warning/30 space-y-3 text-center">
-                <div className="flex size-12 items-center justify-center rounded-2xl bg-warning/20 text-warning-foreground mx-auto motion-safe:animate-pulse">
-                  <Clock className="size-6" aria-hidden="true" />
+              <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-warning/10 border border-warning/30 space-y-2.5 text-center">
+                <div className="flex size-11 items-center justify-center rounded-2xl bg-warning/20 text-warning-foreground mx-auto motion-safe:animate-pulse">
+                  <Clock className="size-5 sm:size-6" aria-hidden="true" />
                 </div>
                 <div className="space-y-1 max-w-sm mx-auto">
                   <h4 className="text-sm font-heading font-semibold text-foreground">
@@ -732,17 +765,17 @@ export function SubmissionDetailContent({
 
             {/* COMPLETED STATE */}
             {submission.status === "completed" && (
-              <div className="space-y-3.5">
+              <div className="space-y-2.5">
                 {hasCalibratedScores ? (
                   <>
                     {/* Phase 2: Overall Composite Score Card */}
-                    <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface dark:bg-card border border-border shadow-xs">
+                    <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-surface dark:bg-card border border-border shadow-xs">
                       <div className="space-y-0.5">
-                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                           Composite Assessment
                         </h3>
                         <div className="flex items-center gap-2">
-                          <span className="text-2xl font-sans font-bold text-foreground tabular-nums">
+                          <span className="text-xl sm:text-2xl font-sans font-bold text-foreground tabular-nums">
                             {compositeScore !== null && compositeScore !== undefined
                               ? `${Math.round(compositeScore)}%`
                               : "Scored"}
@@ -756,8 +789,8 @@ export function SubmissionDetailContent({
                         </div>
                       </div>
 
-                      <div className="flex size-10 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
-                        <CheckCircle2 className="size-5" aria-hidden="true" />
+                      <div className="flex size-8 sm:size-9 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
+                        <CheckCircle2 className="size-4.5 sm:size-5" aria-hidden="true" />
                       </div>
                     </div>
 
@@ -767,18 +800,18 @@ export function SubmissionDetailContent({
                         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                           5-Criterion Breakdown
                         </h3>
-                        <span className="text-[11px] text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           Tap to focus coaching tip
                         </span>
                       </div>
 
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         {criteria.map((c) => {
                           const band = getScoreBandLabel(c.score);
                           const isSelected = selectedCriterion === c.name;
                           const inlineId = `phase2-criterion-guide-inline-${c.name.toLowerCase().replace(/\s+/g, "-")}`;
                           return (
-                            <div key={c.name} className="space-y-1.5">
+                            <div key={c.name} className="space-y-1">
                               <button
                                 type="button"
                                 onClick={() => {
@@ -800,17 +833,35 @@ export function SubmissionDetailContent({
                                     ? `${Math.round(c.score)}%`
                                     : "Unrated"
                                 } (${band.band}). Tap to focus coaching tip.`}
-                                className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 touch-manipulation ${
+                                className={`w-full flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[40px] sm:min-h-0 touch-manipulation ${
                                   isSelected
                                     ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
                                     : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
                                 }`}
                               >
                                 <div className="min-w-0 pr-2">
-                                  <span className="font-semibold text-foreground truncate block">
-                                    {c.name}
-                                  </span>
-                                  <span className="text-[11px] text-muted-foreground line-clamp-2 block">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="font-semibold text-foreground truncate block">
+                                      {c.name}
+                                    </span>
+                                    {(criterionAttentionCounts[c.name] ?? 0) > 0 && (
+                                      <Badge
+                                        variant="secondary"
+                                        className={cn(
+                                          "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
+                                          isSelected
+                                            ? "bg-brand-200 text-brand-900 dark:bg-brand-900 dark:text-brand-100"
+                                            : "bg-[#ffedd5] text-[#9c4a2f] dark:bg-[#9c4a2f]/25 dark:text-[#fca5a5] border border-[#9c4a2f]/30"
+                                        )}
+                                      >
+                                        <span>
+                                          {criterionAttentionCounts[c.name]}{" "}
+                                          {criterionAttentionCounts[c.name] === 1 ? "alert" : "alerts"}
+                                        </span>
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <span className="text-xs text-muted-foreground line-clamp-1 block">
                                     {c.description}
                                   </span>
                                 </div>
@@ -822,7 +873,7 @@ export function SubmissionDetailContent({
                                   )}
                                   <Badge
                                     variant="outline"
-                                    className={`text-[11px] font-semibold px-2 py-0.5 ${band.className}`}
+                                    className={`text-xs font-semibold px-2.5 py-0.5 ${band.className}`}
                                   >
                                     {band.band}
                                   </Badge>
@@ -953,48 +1004,41 @@ export function SubmissionDetailContent({
                         id="phase1-tabpanel-rubric"
                         role="tabpanel"
                         aria-labelledby="phase1-tab-rubric"
-                        className="space-y-3"
+                        className="space-y-2.5"
                       >
                         {submission.manual_score && !isEditingRubric ? (
                           /* READ-ONLY / CONFIRMED RUBRIC STATE */
-                          <div className="p-4 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900/80 shadow-xs space-y-3">
-                            <div className="flex items-start justify-between gap-2.5">
-                              <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                                <div className="flex size-8 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 shrink-0 mt-0.5">
-                                  <ShieldCheck className="size-4.5 sm:size-4" aria-hidden="true" />
+                          <div className="p-2.5 sm:p-3 rounded-xl bg-surface dark:bg-card border border-border/80 shadow-xs space-y-2">
+                            <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/60">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="flex size-6 sm:size-7 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 shrink-0">
+                                  <ShieldCheck className="size-3.5 sm:size-4" aria-hidden="true" />
                                 </div>
-                                <div className="space-y-0.5 min-w-0 flex-1">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <h3 className="text-xs font-semibold text-brand-950 dark:text-brand-200">
-                                      Rubric Assessment Recorded
-                                    </h3>
-                                    {recordedComposite && (
-                                      <Badge
-                                        variant="outline"
-                                        className={cn(
-                                          "text-[11px] font-semibold px-2.5 py-0.5 inline-flex items-center gap-1.5 font-sans tabular-nums",
-                                          recordedComposite.overallBandMeta.badgeClass
-                                        )}
-                                      >
-                                        <span
-                                          className={cn(
-                                            "size-1.5 rounded-full shrink-0",
-                                            recordedComposite.overallBandMeta.dotColor
-                                          )}
-                                          aria-hidden="true"
-                                        />
-                                        <span>
-                                          {recordedComposite.isComplete
-                                            ? `${recordedComposite.totalPoints}/20 pts (${recordedComposite.avgPercentage}%) • ${recordedComposite.overallBandMeta.label}`
-                                            : `${recordedComposite.totalPoints}/${recordedComposite.maxPoints} pts (${recordedComposite.ratedCount}/5 rated)`}
-                                        </span>
-                                      </Badge>
+                                <span className="text-xs font-semibold text-foreground truncate">
+                                  Teacher Benchmark
+                                </span>
+                                {recordedComposite && (
+                                  <Badge
+                                    variant="outline"
+                                    className={cn(
+                                      "text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 inline-flex items-center gap-1.5 font-sans tabular-nums",
+                                      recordedComposite.overallBandMeta.badgeClass
                                     )}
-                                  </div>
-                                  <p className="text-[11px] text-muted-foreground">
-                                    Phase 1 teacher calibration benchmark saved for this worksheet.
-                                  </p>
-                                </div>
+                                  >
+                                    <span
+                                      className={cn(
+                                        "size-1.5 rounded-full shrink-0",
+                                        recordedComposite.overallBandMeta.dotColor
+                                      )}
+                                      aria-hidden="true"
+                                    />
+                                    <span>
+                                      {recordedComposite.isComplete
+                                        ? `${recordedComposite.totalPoints}/20 pts (${recordedComposite.avgPercentage}%) • ${recordedComposite.overallBandMeta.label}`
+                                        : `${recordedComposite.totalPoints}/${recordedComposite.maxPoints} pts`}
+                                    </span>
+                                  </Badge>
+                                )}
                               </div>
                               <Button
                                 ref={editButtonRef}
@@ -1002,21 +1046,25 @@ export function SubmissionDetailContent({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setIsEditingRubric(true)}
-                                className="min-h-[40px] h-9 sm:h-7 sm:min-h-0 px-3 sm:px-2.5 text-xs text-brand-800 dark:text-brand-200 border-brand-300 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 gap-1.5 cursor-pointer touch-manipulation self-start shrink-0 font-medium"
+                                className="h-7 px-2.5 text-xs text-brand-800 dark:text-brand-200 border-brand-300 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 gap-1.5 cursor-pointer touch-manipulation shrink-0 font-medium"
                                 aria-label="Edit recorded rubric scores"
                               >
-                                <Edit3 className="size-3.5 sm:size-3" aria-hidden="true" />
+                                <Edit3 className="size-3" aria-hidden="true" />
                                 <span>Edit</span>
                               </Button>
                             </div>
 
-                            <div className="space-y-1.5 pt-1" role="group" aria-label="Recorded criterion breakdown">
+                            <div className="space-y-1 pt-0.5" role="group" aria-label="Recorded criterion breakdown">
                               {RUBRIC_CRITERIA.map((criterion) => {
                                 const bandValue =
                                   submission.manual_score?.[criterion.key];
                                 const bandMeta = getBandMeta(bandValue);
                                 const isSelected =
                                   selectedCriterion === criterion.shortName;
+                                const attentionCount =
+                                  criterionAttentionCounts[criterion.shortName] ??
+                                  criterionAttentionCounts[criterion.name] ??
+                                  0;
                                 const hasPoints =
                                   typeof bandMeta.points === "number" && bandMeta.points > 0;
                                 const pointsText = hasPoints
@@ -1026,11 +1074,15 @@ export function SubmissionDetailContent({
                                   ? `${bandMeta.label} (${pointsText})`
                                   : bandMeta.label;
                                 return (
-                                  <div key={criterion.key} className="space-y-1.5">
+                                  <div key={criterion.key} className="space-y-1">
                                     <button
                                       type="button"
                                       onClick={() => {
                                         setSelectedCriterion(criterion.shortName);
+                                        const mapped =
+                                          CRITERION_NAME_TO_FILTER[criterion.shortName] ??
+                                          CRITERION_NAME_TO_FILTER[criterion.name];
+                                        if (mapped) setActiveOverlayCriterion(mapped);
                                         setCriterionAnnouncement(
                                           `${criterion.shortName} selected. Diagnostic guide and coaching tips updated.`
                                         );
@@ -1039,24 +1091,41 @@ export function SubmissionDetailContent({
                                       aria-controls={isSelected ? `criterion-guide-inline-${criterion.key} criterion-diagnostic-guide` : undefined}
                                       aria-label={`${criterion.shortName}: ${badgeLabel}. Tap to focus coaching tip.`}
                                       className={cn(
-                                        "w-full flex items-center justify-between p-2.5 rounded-lg border text-xs text-left cursor-pointer transition-all min-h-[44px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                                        "w-full flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-lg border text-xs text-left cursor-pointer transition-all min-h-[40px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                                         isSelected
                                           ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
-                                          : "bg-surface/90 dark:bg-card/90 border-brand-200/60 dark:border-brand-900/60 hover:bg-muted/30"
+                                          : "bg-surface dark:bg-card border-border/60 hover:bg-muted/30"
                                       )}
                                     >
                                       <div className="min-w-0 pr-2">
-                                        <span className="font-semibold text-foreground truncate block">
-                                          {criterion.name}
-                                        </span>
-                                        <span className="text-[11px] text-muted-foreground line-clamp-2 block">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <span className="font-semibold text-foreground truncate block">
+                                            {criterion.name}
+                                          </span>
+                                          {attentionCount > 0 && (
+                                            <Badge
+                                              variant="secondary"
+                                              className={cn(
+                                                "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
+                                                isSelected
+                                                  ? "bg-brand-200 text-brand-900 dark:bg-brand-900 dark:text-brand-100"
+                                                  : "bg-[#ffedd5] text-[#9c4a2f] dark:bg-[#9c4a2f]/25 dark:text-[#fca5a5] border border-[#9c4a2f]/30"
+                                              )}
+                                            >
+                                              <span>
+                                                {attentionCount} {attentionCount === 1 ? "alert" : "alerts"}
+                                              </span>
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        <span className="text-xs text-muted-foreground line-clamp-1 block">
                                           {criterion.hint}
                                         </span>
                                       </div>
                                       <Badge
                                         variant="outline"
                                         className={cn(
-                                          "text-[11px] font-semibold px-2.5 py-0.5 shrink-0 inline-flex items-center gap-1.5",
+                                          "text-xs font-semibold px-2.5 py-0.5 shrink-0 inline-flex items-center gap-1.5",
                                           bandMeta.badgeClass
                                         )}
                                       >
@@ -1149,21 +1218,21 @@ export function SubmissionDetailContent({
                 {selectedCriterion && activeCriterionInfo && (hasCalibratedScores || phase1Tab === "metrics" || (phase1Tab === "rubric" && submission.manual_score && !isEditingRubric)) && (
                   <div
                     id="criterion-diagnostic-guide"
-                    className="hidden lg:block p-3 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1.5 animate-in fade-in-50 duration-200 motion-reduce:animate-none"
+                    className="hidden lg:block p-2.5 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1 animate-in fade-in-50 duration-200 motion-reduce:animate-none"
                   >
                     <div className="flex items-center justify-between text-xs font-semibold text-brand-900 dark:text-brand-200">
                       <h4 className="flex items-center gap-1.5 font-semibold text-brand-900 dark:text-brand-200">
                         <Info className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                         <span>{selectedCriterion} Diagnostic Guide</span>
                       </h4>
-                      <span className="text-[11px] text-brand-700 dark:text-brand-300 font-medium">
+                      <span className="text-[10px] text-brand-700 dark:text-brand-300 font-medium">
                         Criterion Guide
                       </span>
                     </div>
-                    <p className="text-xs text-foreground/85 leading-relaxed">
+                    <p className="text-[11px] sm:text-xs text-foreground/85 leading-snug">
                       {activeCriterionInfo.rubricGoal}
                     </p>
-                    <div className="pt-1.5 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1.5 text-xs text-brand-800 dark:text-brand-300">
+                    <div className="pt-1 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1.5 text-[11px] sm:text-xs text-brand-800 dark:text-brand-300">
                       <Eye className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
                       <span className="leading-normal">
                         <strong>Coaching tip:</strong> {activeCriterionInfo.coachingTip}
@@ -1213,19 +1282,48 @@ export function SubmissionDetailContent({
           </Button>
         </DialogFooter>
       ) : (
-        hasMultipleSubmissions && (
-          <footer className="pt-3 sm:pt-4 border-t border-border/70 flex items-center justify-between text-[11px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-muted border border-border rounded-md">
-                ←
-              </kbd>
-              <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-muted border border-border rounded-md">
-                →
-              </kbd>
-              <span>Navigate between students (or J / K)</span>
+        <footer className="pt-3 sm:pt-3.5 border-t border-border/70 flex items-center justify-between text-xs text-muted-foreground flex-wrap gap-2">
+          <div className="inline-flex items-center gap-1.5 flex-wrap">
+            <span className="font-medium text-foreground">Shortcuts:</span>
+            {hasMultipleSubmissions && (
+              <>
+                <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
+                  J
+                </kbd>
+                <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
+                  K
+                </kbd>
+                <span>student</span>
+                <span className="text-border">·</span>
+              </>
+            )}
+            <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
+              [
+            </kbd>
+            <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
+              ]
+            </kbd>
+            <span>practice area</span>
+            <span className="text-border">·</span>
+            <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
+              +
+            </kbd>
+            <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
+              -
+            </kbd>
+            <span>zoom</span>
+            <span className="text-border">·</span>
+            <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
+              Esc
+            </kbd>
+            <span>back</span>
+          </div>
+          {hasMultipleSubmissions && submissions && submissions.length > 0 && (
+            <span className="text-xs text-muted-foreground/80 tabular-nums">
+              Student {effectiveIndex + 1} of {submissions.length}
             </span>
-          </footer>
-        )
+          )}
+        </footer>
       )}
     </div>
   );

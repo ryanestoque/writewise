@@ -57,6 +57,10 @@ export interface WorksheetImageInspectorProps {
   onRetry?: () => void;
   /** Optional custom child overlay (e.g. focus badge, CV guidelines, bounding boxes) */
   children?: ReactNode;
+  /** Optional diagnostic toolbar or slot rendered in a unified command deck */
+  diagnosticToolbar?: ReactNode;
+  /** Whether to show keyboard shortcut legend below canvas (defaults to true) */
+  showShortcutsLegend?: boolean;
   /** Additional container classes */
   className?: string;
   /** Custom aspect ratio / height classes */
@@ -71,6 +75,8 @@ export function WorksheetImageInspector({
   onRetry,
   headerLabel = "Handwritten Worksheet",
   headerIcon,
+  diagnosticToolbar,
+  showShortcutsLegend = true,
   children,
   className,
   aspectRatioClass = "aspect-4/3 sm:aspect-3/2 max-h-[420px]",
@@ -425,8 +431,8 @@ export function WorksheetImageInspector({
         {accessibilityNotice}
       </div>
 
-      {/* Header Label (if present) */}
-      {headerLabel && (
+      {/* Header Label (if present and no diagnostic toolbar to prevent visual clutter) */}
+      {headerLabel && !diagnosticToolbar && (
         <div className="flex items-center justify-between px-0.5 shrink-0">
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
             {headerIcon}
@@ -435,93 +441,178 @@ export function WorksheetImageInspector({
         </div>
       )}
 
-      {/* Full-width Inspector Action Controls */}
-      <div className="w-full flex items-center justify-between gap-1 bg-muted/50 p-1 rounded-xl border border-border/80 text-xs shadow-2xs shrink-0">
-        {/* Left tools: Contrast & Loupe */}
-        <div className="flex items-center gap-1">
-          {/* High-Contrast Ink Filter Toggle */}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleToggleContrast}
-            className={cn(
-              "h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-3 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
-              isHighContrast
-                ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-            aria-pressed={isHighContrast}
-            aria-label="Toggle high contrast ink enhancement (Key: C)"
-            title="Enhance faint pencil ink (C)"
-          >
-            <Contrast className="size-3.5" aria-hidden="true" />
-            <span className="hidden sm:inline">Ink Contrast</span>
-          </Button>
+      {/* Action Controls: Unified Command Deck or Standalone Inspector Controls */}
+      {diagnosticToolbar ? (
+        <div className="w-full flex flex-col rounded-xl border border-border/70 bg-muted/35 overflow-hidden shadow-2xs divide-y divide-border/60 shrink-0">
+          <div className="p-1 sm:p-1.5">
+            {diagnosticToolbar}
+          </div>
+          <div className="w-full flex items-center justify-between gap-1 p-1 sm:p-1.5 text-xs">
+            {/* Left tools: Contrast & Loupe */}
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleContrast}
+                className={cn(
+                  "h-8 sm:h-7 px-2.5 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+                  isHighContrast
+                    ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                aria-pressed={isHighContrast}
+                aria-label="Toggle high contrast ink enhancement (Key: C)"
+                title="Enhance faint pencil ink (C)"
+              >
+                <Contrast className="size-3.5" aria-hidden="true" />
+                <span className="hidden sm:inline">Ink Contrast</span>
+              </Button>
 
-          {/* Stroke Magnifying Tool Toggle */}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleToggleLoupe}
-            className={cn(
-              "h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-3 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
-              isLoupeActive
-                ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-            aria-pressed={isLoupeActive}
-            aria-label="Toggle stroke magnify (Key: L)"
-            title="Hover to magnify handwriting strokes (L)"
-          >
-            <Search className="size-3.5" aria-hidden="true" />
-            <span className="hidden sm:inline">Magnify</span>
-          </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleLoupe}
+                className={cn(
+                  "h-8 sm:h-7 px-2.5 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+                  isLoupeActive
+                    ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                aria-pressed={isLoupeActive}
+                aria-label="Toggle stroke magnify (Key: L)"
+                title="Hover to magnify handwriting strokes (L)"
+              >
+                <Search className="size-3.5" aria-hidden="true" />
+                <span className="hidden sm:inline">Magnify</span>
+              </Button>
+            </div>
+
+            {/* Right tools: Zoom controls & frame toggle */}
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={zoomScale <= 1}
+                onClick={handleZoomOut}
+                className="size-8 sm:size-7 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
+                aria-label="Zoom out (Key: -)"
+                title="Zoom out (-)"
+              >
+                <ZoomOut className="size-3.5" aria-hidden="true" />
+              </Button>
+
+              <button
+                type="button"
+                onClick={handleResetZoom}
+                className="px-2 py-0.5 h-8 sm:h-7 flex items-center justify-center text-xs font-mono font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded touch-manipulation"
+                title="Click to reset zoom (Key: 0)"
+                aria-label={`Current zoom ${Math.round(zoomScale * 100)} percent. Click to reset.`}
+              >
+                {Math.round(zoomScale * 100)}%
+              </button>
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={zoomScale >= 2.5}
+                onClick={handleZoomIn}
+                className="size-8 sm:size-7 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
+                aria-label="Zoom in (Key: +)"
+                title="Zoom in (+)"
+              >
+                <ZoomIn className="size-3.5" aria-hidden="true" />
+              </Button>
+            </div>
+          </div>
         </div>
+      ) : (
+        /* Standalone Inspector Action Controls */
+        <div className="w-full flex items-center justify-between gap-1 bg-muted/50 p-1 rounded-xl border border-border/80 text-xs shadow-2xs shrink-0">
+          {/* Left tools: Contrast & Loupe */}
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleToggleContrast}
+              className={cn(
+                "h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-3 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+                isHighContrast
+                  ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              aria-pressed={isHighContrast}
+              aria-label="Toggle high contrast ink enhancement (Key: C)"
+              title="Enhance faint pencil ink (C)"
+            >
+              <Contrast className="size-3.5" aria-hidden="true" />
+              <span className="hidden sm:inline">Ink Contrast</span>
+            </Button>
 
-        {/* Right tools: Zoom controls & frame toggle */}
-        <div className="flex items-center gap-1">
-          {/* Zoom Out Button */}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={zoomScale <= 1}
-            onClick={handleZoomOut}
-            className="size-11 sm:size-8 min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
-            aria-label="Zoom out (Key: -)"
-            title="Zoom out (-)"
-          >
-            <ZoomOut className="size-3.5" aria-hidden="true" />
-          </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleToggleLoupe}
+              className={cn(
+                "h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-3 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+                isLoupeActive
+                  ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              aria-pressed={isLoupeActive}
+              aria-label="Toggle stroke magnify (Key: L)"
+              title="Hover to magnify handwriting strokes (L)"
+            >
+              <Search className="size-3.5" aria-hidden="true" />
+              <span className="hidden sm:inline">Magnify</span>
+            </Button>
+          </div>
 
-          {/* Zoom Percentage Label / Reset Trigger */}
-          <button
-            type="button"
-            onClick={handleResetZoom}
-            className="px-2.5 sm:px-2 py-2 sm:py-0.5 min-h-[44px] sm:min-h-[32px] flex items-center justify-center text-xs sm:text-[11px] font-mono font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded touch-manipulation"
-            title="Click to reset zoom (Key: 0)"
-            aria-label={`Current zoom ${Math.round(zoomScale * 100)} percent. Click to reset.`}
-          >
-            {Math.round(zoomScale * 100)}%
-          </button>
+          {/* Right tools: Zoom controls & frame toggle */}
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={zoomScale <= 1}
+              onClick={handleZoomOut}
+              className="size-11 sm:size-8 min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
+              aria-label="Zoom out (Key: -)"
+              title="Zoom out (-)"
+            >
+              <ZoomOut className="size-3.5" aria-hidden="true" />
+            </Button>
 
-          {/* Zoom In Button */}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={zoomScale >= 2.5}
-            onClick={handleZoomIn}
-            className="size-11 sm:size-8 min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
-            aria-label="Zoom in (Key: +)"
-            title="Zoom in (+)"
-          >
-            <ZoomIn className="size-3.5" aria-hidden="true" />
-          </Button>
+            <button
+              type="button"
+              onClick={handleResetZoom}
+              className="px-2.5 sm:px-2 py-2 sm:py-0.5 min-h-[44px] sm:min-h-[32px] flex items-center justify-center text-xs sm:text-[11px] font-mono font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded touch-manipulation"
+              title="Click to reset zoom (Key: 0)"
+              aria-label={`Current zoom ${Math.round(zoomScale * 100)} percent. Click to reset.`}
+            >
+              {Math.round(zoomScale * 100)}%
+            </button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={zoomScale >= 2.5}
+              onClick={handleZoomIn}
+              className="size-11 sm:size-8 min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
+              aria-label="Zoom in (Key: +)"
+              title="Zoom in (+)"
+            >
+              <ZoomIn className="size-3.5" aria-hidden="true" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Interactive Image Container */}
       <div
@@ -686,27 +777,30 @@ export function WorksheetImageInspector({
         )}
       </div>
 
-      {/* Desktop Keyboard Shortcuts Legend */}
-      <div className="hidden sm:flex items-center justify-between text-[11px] text-muted-foreground px-1 flex-wrap gap-1 shrink-0">
-        <span>
-          Shortcuts: <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">+</kbd> / <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">-</kbd> zoom &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">L</kbd> magnify &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">C</kbd> contrast &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">0</kbd> reset
-        </span>
-        {zoomScale > 1 && (
-          <span className="font-medium text-brand-700 dark:text-brand-300 text-[11px]">
-            Drag or use arrow keys to pan
-          </span>
-        )}
-      </div>
+      {/* Keyboard Shortcuts Legend (optional, enabled by default) */}
+      {showShortcutsLegend && (
+        <>
+          <div className="hidden sm:flex items-center justify-between text-xs text-muted-foreground px-1 flex-wrap gap-1 shrink-0">
+            <span>
+              Shortcuts: <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">+</kbd> / <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">-</kbd> zoom &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">L</kbd> magnify &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">C</kbd> contrast &middot; <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono text-[10px]">0</kbd> reset
+            </span>
+            {zoomScale > 1 && (
+              <span className="font-medium text-brand-700 dark:text-brand-300 text-xs">
+                Drag or use arrow keys to pan
+              </span>
+            )}
+          </div>
 
-      {/* Mobile Touch Guidance */}
-      <div className="sm:hidden flex items-center justify-center text-[11px] text-muted-foreground px-1 text-center shrink-0">
-        <span>Pinch or use toolbar to zoom</span>
-        {zoomScale > 1 && (
-          <span className="font-medium text-brand-700 dark:text-brand-300 ml-1.5">
-            &middot; Drag to pan
-          </span>
-        )}
-      </div>
+          <div className="sm:hidden flex items-center justify-center text-xs text-muted-foreground px-1 text-center shrink-0">
+            <span>Pinch or use toolbar to zoom</span>
+            {zoomScale > 1 && (
+              <span className="font-medium text-brand-700 dark:text-brand-300 ml-1.5">
+                &middot; Drag to pan
+              </span>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

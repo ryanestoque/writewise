@@ -525,7 +525,7 @@ export function ManualRubricEntryForm({
   return (
     <div
       ref={formRef}
-      className="p-3.5 sm:p-4 rounded-xl bg-surface dark:bg-card border border-border shadow-xs space-y-3"
+      className="p-2.5 sm:p-3.5 rounded-xl bg-surface dark:bg-card border border-border shadow-xs space-y-2.5"
     >
       {/* Screen reader live announcement region */}
       <div className="sr-only" role="status" aria-live="polite">
@@ -533,7 +533,7 @@ export function ManualRubricEntryForm({
       </div>
 
       {/* Header with status counter, mobile view toggle, & keyboard hint toggle */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2.5 border-b border-border/60">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2 border-b border-border/60">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2 flex-wrap">
             <Award className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />

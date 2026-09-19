@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useMemo, useCallback } from "react";
+import { use, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useActivity } from "@/lib/hooks/use-activities";
@@ -43,6 +43,24 @@ export default function SubmissionDetailPage({
   const handleClose = useCallback(() => {
     router.push(`/activities/${activityId}`);
   }, [router, activityId]);
+
+  // Handle Esc key to return to activity view
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (
+          document.activeElement instanceof HTMLInputElement ||
+          document.activeElement instanceof HTMLTextAreaElement ||
+          document.activeElement?.getAttribute("role") === "combobox"
+        ) {
+          return;
+        }
+        handleClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleClose]);
 
   const isLoading = activityLoading || submissionsLoading;
 
@@ -106,46 +124,9 @@ export default function SubmissionDetailPage({
     );
   }
 
+
   return (
-    <div className="space-y-4">
-      {/* Breadcrumb Bar */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
-        <Link
-          href="/activities"
-          className="hover:text-foreground transition-colors font-medium"
-        >
-          Activities
-        </Link>
-        <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/60" aria-hidden="true" />
-        <Link
-          href={`/activities/${activityId}`}
-          className="hover:text-foreground transition-colors font-medium truncate max-w-[140px] sm:max-w-[240px]"
-          title={activity?.target_text || "Activity"}
-        >
-          {activity?.target_text
-            ? activity.target_text.length > 25
-              ? activity.target_text.slice(0, 25) + "…"
-              : activity.target_text
-            : "Activity"}
-        </Link>
-        <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/60" aria-hidden="true" />
-        <span className="text-foreground font-semibold truncate max-w-[140px] sm:max-w-[200px]">
-          {submission.student?.full_name ?? "Student"}
-        </span>
-      </nav>
-
-      {/* Back link */}
-      <div>
-        <button
-          type="button"
-          onClick={handleClose}
-          className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer group"
-        >
-          <ArrowLeft className="size-3.5 sm:size-4 group-hover:-translate-x-0.5 transition-transform" aria-hidden="true" />
-          <span>Back to activity</span>
-        </button>
-      </div>
-
+    <div className="w-full">
       {/* Main Content */}
       <SubmissionDetailContent
         key={submission.id}
