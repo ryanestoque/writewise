@@ -53,18 +53,19 @@ training/
 9. **Upload to Supabase Storage** — upload `writewise-model.keras` to the `model-artifacts` bucket.
 
 **Calibrated Export (after Phase 1 collects teacher scores):**
-10. **Export paired data** — run `research/export_dataset.py` to get teacher-score + word-crop pairs.
-11. **Train regression head:**
+10. **Export paired data** — run `python research/export_dataset.py` to get teacher-score + word-crop pairs (`paired_measurements.csv` and `paired_crops.csv`).
+11. **Analyze correlations & derive thresholds** — run `python research/analyze_correlations.py` to compute Spearman's Rho ($\rho \ge 0.70$), evaluate rubric band distributions, and derive calibration constants for `backend/app/scoring/provider.py`.
+12. **Train regression head:**
     ```bash
     python stage2_calibrate.py \
-        --paired-data-path data/paired/export.csv \
+        --paired-data-path ../research/output/paired_crops.csv \
         --stage1-checkpoint checkpoints/stage1_best.keras \
         --output-path checkpoints/stage2_calibrated.keras
     ```
-12. **Export final model:**
+13. **Export final model:**
     ```bash
     python export_model.py \
         --model-path checkpoints/stage2_calibrated.keras \
         --output-path artifacts/writewise-model.keras
     ```
-13. **Update Supabase Storage** — replace `writewise-model.keras` in the `model-artifacts` bucket.
+14. **Update Supabase Storage** — replace `writewise-model.keras` in the `model-artifacts` bucket.

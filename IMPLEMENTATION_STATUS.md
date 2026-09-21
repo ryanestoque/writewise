@@ -10,7 +10,7 @@ Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §
 |---|---|
 | Phase 0 — Setup | 13 / 18 |
 | Phase 1 — Teacher Tooling & Raw CV Pipeline | 18 / 18 |
-| Between Phases — Calibration | 4 / 7 *(+2 code-ready)* |
+| Between Phases — Calibration | 4 / 7 *(+3 code-ready)* |
 | Phase 2 — Calibrated Scoring & Full System | 12 / 13 |
 
 *(Update this table whenever you check off an item below.)*
@@ -86,7 +86,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
-| Threshold/correlation analysis (Spearman's Rho per criterion) | Not Started | Blocked on Phase 1 paired data collection | PRD §5, PRD §11 |
+| Threshold/correlation analysis (Spearman's Rho per criterion) | Code Complete | Script ready (`research/analyze_correlations.py`); blocked on Phase 1 paired data | PRD §5, PRD §11 |
 | Calibration dataset export & anonymization (`research/export_dataset.py`) | Done | | ARCHITECTURE §16, SECURITY §6, training/README.md |
 | ML Stage 1 — CCC dataset prep (format conversion, split) | Done | | ML_PIPELINE §2 |
 | ML Stage 1 — fine-tuning (two-phase) | Done | | ML_PIPELINE §4 |
