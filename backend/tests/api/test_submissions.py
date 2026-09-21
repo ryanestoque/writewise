@@ -280,10 +280,7 @@ class TestCreateSubmission:
 
         # Verify DB: measurement row contains computed scores
         meas_res = (
-            supabase_client.table("measurement")
-            .select("*")
-            .eq("submission_id", sub_id)
-            .execute()
+            supabase_client.table("measurement").select("*").eq("submission_id", sub_id).execute()
         )
         assert len(meas_res.data) == 1
         meas = meas_res.data[0]

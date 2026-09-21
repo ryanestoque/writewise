@@ -1,0 +1,17 @@
+{
+  "include": [
+    "backend",
+    "research"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "backend/.venv"
+  ],
+  "extraPaths": [
+    "research",
+    "backend"
+  ],
+  "venvPath": "backend",
+  "venv": ".venv"
+}
