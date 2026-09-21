@@ -61,3 +61,7 @@ training/data/
 training/results/
 *.keras
 *.h5
+
+# Research exports (SECURITY §6, ARCHITECTURE §16 - never commit student data)
+research/output/
+research/data/
