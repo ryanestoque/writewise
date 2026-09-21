@@ -12,15 +12,14 @@ from tests.synthetic import make_segmented_worksheet
 # Fetch an existing parent ID from DB or use fallback
 res_parent = supabase_client.table("parent").select("id").limit(1).execute()
 TEST_PARENT_ID = (
-    res_parent.data[0]["id"]
-    if res_parent.data
-    else "b6b6f61b-6445-4ed3-b278-27218ba0255b"
+    res_parent.data[0]["id"] if res_parent.data else "b6b6f61b-6445-4ed3-b278-27218ba0255b"
 )
 
 
 @pytest.fixture
 def parent_client():
     """Client authenticated as a parent user."""
+
     def override_user():
         return {"sub": TEST_PARENT_ID, "role": "parent", "email": "parent@test.com"}
 

@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
+from app.core.config import settings
 from app.core.supabase import supabase_client
 from tests.conftest import TEST_TEACHER_ID
 from tests.synthetic import make_blurry_image, make_segmented_worksheet
@@ -236,6 +237,66 @@ class TestCreateSubmission:
         db_overlay = meas_res.data[0]["overlay"]
         assert db_overlay is not None
         assert "summary" in db_overlay
+
+    def test_successful_upload_calibrated_scoring(
+        self, client, test_activity, test_student, cleanup_submissions, monkeypatch
+    ):
+        """When SCORING_ENGINE=calibrated, verify criterion scores and composite_score
+        are computed, persisted to the measurement row, and returned in the API response.
+        """
+        monkeypatch.setattr(settings, "SCORING_ENGINE", "calibrated")
+        jpeg_bytes = make_segmented_worksheet()
+        response = client.post(
+            "/api/submissions",
+            data={
+                "activity_id": test_activity["id"],
+                "student_id": test_student["id"],
+            },
+            files={"image": ("test_calibrated.jpg", io.BytesIO(jpeg_bytes), "image/jpeg")},
+        )
+        assert response.status_code == 201
+        data = response.json()
+        sub_id = data["submission_id"]
+
+        cleanup_submissions.append(
+            {
+                "id": sub_id,
+                "image_path": f"{test_student['id']}/{sub_id}.jpg",
+            }
+        )
+
+        scores = data["measurement"]["scores"]
+        for key in (
+            "letter_formation_score",
+            "size_consistency_score",
+            "spacing_score",
+            "slant_score",
+            "baseline_alignment_score",
+            "composite_score",
+        ):
+            assert scores[key] is not None
+            assert isinstance(scores[key], (int, float))
+            assert 0.0 <= scores[key] <= 100.0
+
+        # Verify DB: measurement row contains computed scores
+        meas_res = (
+            supabase_client.table("measurement")
+            .select("*")
+            .eq("submission_id", sub_id)
+            .execute()
+        )
+        assert len(meas_res.data) == 1
+        meas = meas_res.data[0]
+        for key in (
+            "letter_formation_score",
+            "size_consistency_score",
+            "spacing_score",
+            "slant_score",
+            "baseline_alignment_score",
+            "composite_score",
+        ):
+            assert meas[key] is not None
+            assert 0.0 <= float(meas[key]) <= 100.0
 
     def test_non_image_file_rejected(self, client, test_activity, test_student):
         fake_file = b"This is plain text, not an image"

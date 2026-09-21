@@ -334,8 +334,8 @@ def resend_parent_invite(student_id: str, teacher: dict = Depends(get_current_te
         supabase_client.table("student").select("id, parent_status").eq("id", student_id).execute()
     )
     current_status = (
-        (refreshed.data[0].get("parent_status") if refreshed.data else None) or "pending"
-    )
+        refreshed.data[0].get("parent_status") if refreshed.data else None
+    ) or "pending"
 
     return {
         "success": True,

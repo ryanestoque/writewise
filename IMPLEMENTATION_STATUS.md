@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-09-16
+**Last updated:** 2026-09-21
 
 ## Summary
 
@@ -10,8 +10,8 @@ Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §
 |---|---|
 | Phase 0 — Setup | 13 / 18 |
 | Phase 1 — Teacher Tooling & Raw CV Pipeline | 18 / 18 |
-| Between Phases — Calibration | 3 / 6 *(+2 code-ready)* |
-| Phase 2 — Calibrated Scoring & Full System | 11 / 12 |
+| Between Phases — Calibration | 4 / 7 *(+2 code-ready)* |
+| Phase 2 — Calibrated Scoring & Full System | 12 / 13 |
 
 *(Update this table whenever you check off an item below.)*
 
@@ -87,6 +87,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
 | Threshold/correlation analysis (Spearman's Rho per criterion) | Not Started | Blocked on Phase 1 paired data collection | PRD §5, PRD §11 |
+| Calibration dataset export & anonymization (`research/export_dataset.py`) | Done | | ARCHITECTURE §16, SECURITY §6, training/README.md |
 | ML Stage 1 — CCC dataset prep (format conversion, split) | Done | | ML_PIPELINE §2 |
 | ML Stage 1 — fine-tuning (two-phase) | Done | | ML_PIPELINE §4 |
 | ML Stage 1 — evaluation (Accuracy/Precision/Recall/F1) | Done | | ML_PIPELINE §5 |
@@ -129,4 +130,5 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
-| Flip `SCORING_ENGINE` flag to calibrated; remove manual-score field | Not Started | Blocked on Stage 2 calibration completion | PRD §5, DATABASE §9.1 |
+| ScoreProvider abstraction (`ManualScoreProvider` & `CalibratedScoreProvider`) | Done | Built in `backend/app/scoring/`, integrated with `create_submission` | ARCHITECTURE §10, ML_PIPELINE §6.5 |
+| Flip `SCORING_ENGINE` flag to calibrated; remove manual-score field | Ready / Awaiting Calibration | Blocked on Stage 2 calibration completion | PRD §5, DATABASE §9.1 |

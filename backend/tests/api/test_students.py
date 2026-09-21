@@ -193,10 +193,7 @@ def test_create_student_with_existing_parent_email(client, cleanup_students, con
 
     # Verify student_parent link in DB
     sp_res = (
-        supabase_client.table("student_parent")
-        .select("*")
-        .eq("student_id", student_id)
-        .execute()
+        supabase_client.table("student_parent").select("*").eq("student_id", student_id).execute()
     )
     assert len(sp_res.data) == 1
     assert sp_res.data[0]["parent_id"] == confirmed_parent["id"]

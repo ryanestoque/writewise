@@ -15,6 +15,7 @@ from app.cv.segmentation import PostSegmentationRejection
 from app.diagnostic.engine import generate_diagnostic_overlay
 from app.ml.exceptions import ModelInferenceError
 from app.ml.inference import run_letter_formation_inference
+from app.scoring import get_score_provider
 
 logger = logging.getLogger(__name__)
 
@@ -314,6 +315,10 @@ async def create_submission(
             exc,
         )
 
+    # 11c. Compute criterion scores via active ScoreProvider (ARCHITECTURE §10, ML_PIPELINE §6.5)
+    score_provider = get_score_provider()
+    computed_scores = score_provider.compute_scores(aggregate, ml_result)
+
     # 12. Insert measurement row (DATABASE §8)
     measurement_row = {
         "submission_id": submission_id,
@@ -331,7 +336,8 @@ async def create_submission(
         # Letter formation aggregates from CNN inference
         "letter_formation_mean": round(ml_result.aggregate_mean, 2),
         "letter_formation_std": round(ml_result.aggregate_std, 2),
-        # Score columns stay NULL in Phase 1 (DATABASE §8 note).
+        # Score columns (populated when CalibratedScoreProvider is active; NULL in Phase 1)
+        **computed_scores.to_db_dict(),
         # Full pipeline output for diagnostic overlay / downstream use.
         "raw_output": raw_output,
         "overlay": overlay_dict,
@@ -382,14 +388,7 @@ async def create_submission(
                     "std": round(ml_result.aggregate_std, 2),
                 },
             },
-            "scores": {
-                "letter_formation_score": None,
-                "size_consistency_score": None,
-                "spacing_score": None,
-                "slant_score": None,
-                "baseline_alignment_score": None,
-                "composite_score": None,
-            },
+            "scores": computed_scores.to_dict(),
             "raw_output": raw_output,
             "overlay": overlay_dict,
         },

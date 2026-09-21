@@ -89,9 +89,7 @@ def _run_stub_inference(word_crops: list[np.ndarray]) -> LetterFormationResult:
     )
 
 
-def _run_real_inference(
-    model: Any, word_crops: list[np.ndarray]
-) -> LetterFormationResult:
+def _run_real_inference(model: Any, word_crops: list[np.ndarray]) -> LetterFormationResult:
     """Run real CNN inference on word crops."""
     preprocessed = np.array([_preprocess_crop(crop) for crop in word_crops])
 
