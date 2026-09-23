@@ -94,7 +94,7 @@ export function ActivityDetailHero({
     <section
       aria-labelledby="activity-prompt-heading"
       className={cn(
-        "relative bg-surface dark:bg-card border rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-warm transition-all overflow-hidden print:shadow-none print:border-black/30 print:p-4 print:bg-white",
+        "relative bg-surface dark:bg-card border rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-warm transition-all overflow-hidden print:shadow-none print:border-black/30 print:p-4 print:bg-white",
         isArchived
           ? "border-muted-foreground/30 bg-muted/20 opacity-95"
           : "border-border"
@@ -124,14 +124,14 @@ export function ActivityDetailHero({
 
       <div className="flex flex-col gap-4 min-w-0">
         {/* Top Row: Context Badges + Action Buttons */}
-        <div className="flex items-start justify-between gap-2.5 sm:gap-3 min-w-0">
+        <div className="flex items-start justify-between gap-2 sm:gap-3 min-w-0">
           {/* Badges & Metadata */}
           <div className="flex flex-col gap-1.5 min-w-0 flex-1">
             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap text-xs text-muted-foreground min-w-0">
               {isArchived ? (
                 <Badge
                   variant="outline"
-                  className="text-xs font-semibold px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border/80 print:border-black/30 print:text-black"
+                  className="text-xs font-semibold px-2 sm:px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border/80 shrink-0 print:border-black/30 print:text-black"
                 >
                   <Archive className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
                   Archived
@@ -139,28 +139,28 @@ export function ActivityDetailHero({
               ) : activity.is_take_home ? (
                 <Badge
                   variant="outline"
-                  className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900 print:border-black/30 print:text-black"
+                  className="text-xs font-semibold px-2 sm:px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900 shrink-0 print:border-black/30 print:text-black"
                 >
                   <Home
                     className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400 print:text-black"
                     aria-hidden="true"
                   />
-                  Take-home Activity
+                  <span>Take-home Activity</span>
                 </Badge>
               ) : (
                 <Badge
                   variant="outline"
-                  className="text-xs font-semibold px-2.5 py-0.5 bg-brand-100/70 text-brand-800 dark:bg-brand-900/50 dark:text-brand-200 border-brand-200/70 dark:border-brand-800/80 print:border-black/30 print:text-black"
+                  className="text-xs font-semibold px-2 sm:px-2.5 py-0.5 bg-brand-100/70 text-brand-800 dark:bg-brand-900/50 dark:text-brand-200 border-brand-200/70 dark:border-brand-800/80 shrink-0 print:border-black/30 print:text-black"
                 >
                   <BookOpen
                     className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400 print:text-black"
                     aria-hidden="true"
                   />
-                  In-Class Activity
+                  <span>In-Class Activity</span>
                 </Badge>
               )}
 
-              <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-muted/40 dark:bg-muted/30 px-2 py-0.5 rounded-md border border-border/50 tabular-nums print:border-black/30 print:text-black">
+              <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-muted/40 dark:bg-muted/30 px-2 py-0.5 rounded-md border border-border/50 tabular-nums shrink-0 print:border-black/30 print:text-black">
                 {wordCount} {wordCount === 1 ? "word" : "words"}
               </span>
             </div>
@@ -169,8 +169,8 @@ export function ActivityDetailHero({
               dateTime={activity.created_at}
               className="text-xs text-muted-foreground inline-flex items-center gap-1 print:text-black"
             >
-              <CalendarDays className="w-3.5 h-3.5" aria-hidden="true" />
-              Created {formatDate(activity.created_at)}
+              <CalendarDays className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              <span>Created {formatDate(activity.created_at)}</span>
             </time>
           </div>
 
@@ -179,10 +179,12 @@ export function ActivityDetailHero({
             <Button
               size="sm"
               onClick={onUpload}
-              className="h-10 sm:h-9 px-3 sm:px-3.5 bg-primary hover:bg-brand-700 text-primary-foreground text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer"
+              className="h-9 px-2.5 sm:px-3.5 bg-primary hover:bg-brand-700 text-primary-foreground text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer"
+              title="Upload Worksheets (U)"
             >
-              <Upload className="w-4 h-4 mr-1.5 shrink-0" />
-              <span>Upload Worksheets</span>
+              <Upload className="w-4 h-4 mr-1 sm:mr-1.5 shrink-0" />
+              <span className="inline sm:hidden">Upload</span>
+              <span className="hidden sm:inline">Upload Worksheets</span>
               <kbd className="hidden sm:inline-flex items-center justify-center ml-2 px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground/90 bg-white/20 dark:bg-white/15 rounded border border-white/30 font-mono">
                 U
               </kbd>
@@ -191,7 +193,7 @@ export function ActivityDetailHero({
             {/* Options Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="inline-flex items-center justify-center size-10 sm:size-9 rounded-lg sm:rounded-xl border border-border bg-background hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                className="inline-flex items-center justify-center size-9 rounded-lg sm:rounded-xl border border-border bg-background hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label="More activity options"
               >
                 <MoreVertical className="w-4 h-4" />
@@ -281,7 +283,7 @@ export function ActivityDetailHero({
       <div className="pt-3 border-t border-border/50 grid grid-cols-1 lg:grid-cols-2 gap-3.5 mt-4">
         {/* Left: Class Roster Completion */}
         <div className="flex flex-col justify-center gap-2">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5 flex-wrap">
               <GraduationCap
                 className="size-4 text-brand-600 dark:text-brand-400 shrink-0"
