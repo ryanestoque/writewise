@@ -356,6 +356,8 @@ export function LatestSubmissionCard({
       <WorksheetViewDialog
         open={viewImageOpen}
         onOpenChange={setViewImageOpen}
+        submissionId={latest.submissionId}
+        canDelete={latest.canDelete}
         imagePath={latest.imagePath}
         targetText={latest.activityText}
         submissionDate={latest.submissionDate}

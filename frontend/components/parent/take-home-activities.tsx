@@ -22,7 +22,21 @@ import {
   ChevronDown,
   ChevronUp,
   Camera,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useDeleteSubmission } from "@/lib/hooks/use-submissions";
+import { toast } from "sonner";
+import type { TakeHomeActivitySubmission } from "@/lib/hooks/use-parent-data";
 import { getRejectionSummary } from "@/lib/utils/submission-status";
 import { cn } from "@/lib/utils";
 
@@ -123,13 +137,7 @@ function ActivityCard({
   targetText: string;
   createdAt: string;
   childId: string | null;
-  initialSubmission?: {
-    submissionId: string;
-    status: string;
-    rejectionCode: string | null;
-    compositeScore: number | null;
-    compositeBand: import("@/lib/utils/scoring").ScoreBand | null;
-  } | null;
+  initialSubmission?: TakeHomeActivitySubmission | null;
   onUploadClick: () => void;
 }) {
   // Only query individually if initialSubmission was not provided by parent query
@@ -143,6 +151,22 @@ function ActivityCard({
   const submission =
     initialSubmission !== undefined ? initialSubmission : individualSubmission;
   const isLoading = shouldFetchIndividually && individualLoading;
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const deleteMutation = useDeleteSubmission();
+
+  const handleDelete = async () => {
+    if (!submission?.submissionId) return;
+    try {
+      await deleteMutation.mutateAsync(submission.submissionId);
+      toast.success("Submission removed. You can upload a new photo anytime.");
+      setIsDeleteDialogOpen(false);
+    } catch (err: unknown) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to delete submission";
+      toast.error(errorMsg);
+    }
+  };
 
   const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
     month: "short",
@@ -236,30 +260,48 @@ function ActivityCard({
                 </div>
               )}
 
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-medium gap-1.5 cursor-pointer shrink-0 border-border/80 hover:bg-muted/50"
-                onClick={onUploadClick}
-                disabled={isProcessing}
-                aria-label={
-                  isCompleted
-                    ? `Submit another practice attempt for "${targetText}"`
-                    : `Worksheet "${targetText}" is currently being analyzed`
-                }
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-                    <span>In Progress</span>
-                  </>
-                ) : (
-                  <>
-                    <Upload className="size-3.5" aria-hidden="true" />
-                    <span>Practice Again</span>
-                  </>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {submission?.canDelete && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                    disabled={deleteMutation.isPending}
+                    className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive gap-1 px-2.5 rounded-lg border border-destructive/20 cursor-pointer"
+                    title="Delete this submission"
+                    aria-label="Delete this submission"
+                  >
+                    <Trash2 className="size-3.5" aria-hidden="true" />
+                    <span className="hidden sm:inline">Delete</span>
+                  </Button>
                 )}
-              </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-medium gap-1.5 cursor-pointer shrink-0 border-border/80 hover:bg-muted/50"
+                  onClick={onUploadClick}
+                  disabled={isProcessing}
+                  aria-label={
+                    isCompleted
+                      ? `Submit another practice attempt for "${targetText}"`
+                      : `Worksheet "${targetText}" is currently being analyzed`
+                  }
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                      <span>In Progress</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="size-3.5" aria-hidden="true" />
+                      <span>Practice Again</span>
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
 
             {isProcessing && (
@@ -289,6 +331,46 @@ function ActivityCard({
             </p>
           </div>
         )}
+
+        {/* Delete Confirmation Modal */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this submission?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will remove your uploaded worksheet for &ldquo;{targetText}&rdquo;. You will be able to take and upload a new photo for this activity. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                disabled={deleteMutation.isPending}
+                onClick={() => setIsDeleteDialogOpen(false)}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                disabled={deleteMutation.isPending}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleDelete();
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2 cursor-pointer"
+              >
+                {deleteMutation.isPending ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="size-4" aria-hidden="true" />
+                    <span>Delete Submission</span>
+                  </>
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

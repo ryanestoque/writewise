@@ -175,6 +175,8 @@ export function SubmissionHistoryDialog({
           }}
           onBack={() => setSelectedItemForView(null)}
           backLabel="Back to History"
+          submissionId={selectedItemForView.submissionId}
+          canDelete={selectedItemForView.canDelete}
           imagePath={selectedItemForView.imagePath ?? null}
           targetText={selectedItemForView.targetText}
           submissionDate={selectedItemForView.submissionDate}

@@ -31,11 +31,27 @@ import {
   Calendar,
   User,
   ArrowLeft,
+  Trash2,
+  Loader2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useDeleteSubmission } from "@/lib/hooks/use-submissions";
+import { toast } from "sonner";
 
 interface WorksheetViewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  submissionId?: string;
+  canDelete?: boolean;
   imagePath: string | null;
   targetText: string;
   submissionDate: string;
@@ -89,12 +105,31 @@ export function WorksheetViewDialog({
   overlay,
   onBack,
   backLabel = "Back to History",
+  submissionId,
+  canDelete = false,
 }: WorksheetViewDialogProps) {
   const [showGuideLines, setShowGuideLines] = useState(false);
   const [criterionOverride, setCriterionOverride] = useState<CriterionFilter | null>(null);
   const [showOverlay, setShowOverlay] = useState(true);
   const [selectedAttentionItem, setSelectedAttentionItem] =
     useState<ActiveAnnotationHover | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const deleteMutation = useDeleteSubmission();
+
+  const handleDelete = async () => {
+    if (!submissionId) return;
+    try {
+      await deleteMutation.mutateAsync(submissionId);
+      toast.success("Worksheet removed. You can upload a new photo anytime.");
+      setIsDeleteDialogOpen(false);
+      onOpenChange(false);
+    } catch (err: unknown) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to delete submission";
+      toast.error(errorMsg);
+    }
+  };
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
@@ -300,19 +335,33 @@ export function WorksheetViewDialog({
 
         {/* Footer */}
         <div className="p-3.5 sm:p-4 border-t border-border bg-card/80 flex items-center justify-between">
-          {onBack ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-10 sm:h-9 px-3.5 text-xs font-medium gap-1.5 cursor-pointer"
-              onClick={onBack}
-            >
-              <ArrowLeft className="size-3.5" aria-hidden="true" />
-              <span>{backLabel}</span>
-            </Button>
-          ) : (
-            <div />
-          )}
+          <div className="flex items-center gap-2">
+            {onBack && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-10 sm:h-9 px-3.5 text-xs font-medium gap-1.5 cursor-pointer"
+                onClick={onBack}
+              >
+                <ArrowLeft className="size-3.5" aria-hidden="true" />
+                <span>{backLabel}</span>
+              </Button>
+            )}
+            {canDelete && submissionId && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsDeleteDialogOpen(true)}
+                disabled={deleteMutation.isPending}
+                className="h-10 sm:h-9 px-3 text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive rounded-xl border border-destructive/20 gap-1.5 cursor-pointer transition-colors"
+                title="Delete this uploaded worksheet"
+              >
+                <Trash2 className="size-3.5" aria-hidden="true" />
+                <span>Delete Upload</span>
+              </Button>
+            )}
+          </div>
           <Button
             variant="default"
             size="sm"
@@ -323,6 +372,47 @@ export function WorksheetViewDialog({
           </Button>
         </div>
       </DialogContent>
+
+      {/* Delete Confirmation Modal */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this uploaded worksheet?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove your uploaded worksheet photo. You will be able to take and upload
+              a new photo for this activity. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={deleteMutation.isPending}
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteMutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2 cursor-pointer"
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  <span>Deleting...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="size-4" aria-hidden="true" />
+                  <span>Delete Upload</span>
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

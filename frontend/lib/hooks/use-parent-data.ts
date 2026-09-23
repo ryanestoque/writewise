@@ -40,6 +40,7 @@ export interface ChildLatestScores {
   };
   guideLines: GuideLines | null;
   overlay: DiagnosticOverlayData | null;
+  canDelete?: boolean;
 }
 
 export interface TakeHomeActivitySubmission {
@@ -48,6 +49,7 @@ export interface TakeHomeActivitySubmission {
   rejectionCode: string | null;
   compositeScore: number | null;
   compositeBand: ScoreBand | null;
+  canDelete?: boolean;
 }
 
 export interface TakeHomeActivity {
@@ -104,6 +106,7 @@ export function useChildLatestScores(childId: string | null) {
           created_at,
           status,
           image_path,
+          uploader_role,
           activity:activity_id(
             id,
             target_text
@@ -208,6 +211,7 @@ export function useChildLatestScores(childId: string | null) {
           bands,
           guideLines: extractGuideLines(m),
           overlay: extractDiagnosticOverlay(m),
+          canDelete: row.uploader_role === "parent" && !ms,
         };
       }
 
@@ -232,6 +236,7 @@ export function useChildScoreHistory(childId: string | null) {
           created_at,
           status,
           image_path,
+          uploader_role,
           activity:activity_id(
             id,
             target_text,
@@ -345,6 +350,7 @@ export function useChildScoreHistory(childId: string | null) {
           },
           guideLines: extractGuideLines(rawMeasurement),
           overlay: extractDiagnosticOverlay(rawMeasurement),
+          canDelete: row.uploader_role === "parent" && !rawManual,
         });
       }
 
@@ -398,6 +404,8 @@ export function useTakeHomeActivities(childId: string | null) {
             status,
             rejection_code,
             created_at,
+            uploader_role,
+            manual_score(id),
             measurement(composite_score)
           `)
           .eq("student_id", childId)
@@ -410,12 +418,16 @@ export function useTakeHomeActivities(childId: string | null) {
             if (!submissionsMap[sub.activity_id]) {
               const m = Array.isArray(sub.measurement) ? sub.measurement[0] : sub.measurement;
               const compositeScore = m?.composite_score != null ? Number(m.composite_score) : null;
+              const hasManualScore = Array.isArray(sub.manual_score)
+                ? sub.manual_score.length > 0
+                : !!sub.manual_score;
               submissionsMap[sub.activity_id] = {
                 submissionId: sub.id,
                 status: sub.status,
                 rejectionCode: sub.rejection_code,
                 compositeScore,
                 compositeBand: getBandFromScore(compositeScore),
+                canDelete: sub.uploader_role === "parent" && !hasManualScore,
               };
             }
           }
@@ -447,7 +459,7 @@ export function useChildSubmissionForActivity(
 
   return useQuery({
     queryKey: ["parent-child-submission", childId, activityId],
-    queryFn: async () => {
+    queryFn: async (): Promise<TakeHomeActivitySubmission | null> => {
       if (!childId || !activityId) return null;
 
       const { data, error } = await supabase
@@ -456,6 +468,8 @@ export function useChildSubmissionForActivity(
           id,
           status,
           rejection_code,
+          uploader_role,
+          manual_score(id),
           measurement(composite_score)
         `)
         .eq("student_id", childId)
@@ -470,6 +484,9 @@ export function useChildSubmissionForActivity(
       const row = data[0];
       const m = Array.isArray(row.measurement) ? row.measurement[0] : row.measurement;
       const compositeScore = m?.composite_score != null ? Number(m.composite_score) : null;
+      const hasManualScore = Array.isArray(row.manual_score)
+        ? row.manual_score.length > 0
+        : !!row.manual_score;
 
       return {
         submissionId: row.id as string,
@@ -477,6 +494,7 @@ export function useChildSubmissionForActivity(
         rejectionCode: row.rejection_code as string | null,
         compositeScore,
         compositeBand: getBandFromScore(compositeScore),
+        canDelete: row.uploader_role === "parent" && !hasManualScore,
       };
     },
     enabled: !!childId && !!activityId,

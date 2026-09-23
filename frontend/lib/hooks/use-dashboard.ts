@@ -330,6 +330,7 @@ export interface StudentScoreHistoryItem {
   };
   guideLines?: GuideLines | null;
   overlay?: DiagnosticOverlayData | null;
+  canDelete?: boolean;
 }
 
 export function useStudentScoreHistory(studentId: string | null) {
