@@ -232,3 +232,38 @@ export function useSubmitManualScore() {
   });
 }
 
+export function useDeleteSubmission() {
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (submissionId: string) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      if (!token) {
+        throw new Error("No active session");
+      }
+
+      const response = await fetch(`/api/submissions/${submissionId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      return handleApiResponse<{ id: string; deleted: boolean }>(response);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-scores"] });
+      queryClient.invalidateQueries({ queryKey: ["student-trend"] });
+      queryClient.invalidateQueries({ queryKey: ["parent-child-latest-scores"] });
+      queryClient.invalidateQueries({ queryKey: ["parent-child-score-history"] });
+      queryClient.invalidateQueries({ queryKey: ["parent-take-home-activities"] });
+      queryClient.invalidateQueries({ queryKey: ["parent-child-submission"] });
+      queryClient.invalidateQueries({ queryKey: ["parent-all-submissions"] });
+    },
+  });
+}
+
