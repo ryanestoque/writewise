@@ -84,14 +84,14 @@ export function TeacherHeader() {
                 <BreadcrumbItem>
                   <BreadcrumbLink
                     render={<Link href={`/${primarySegment}`} />}
-                    className="text-xs"
+                    className="text-xs truncate max-w-[110px] sm:max-w-none"
                   >
                     {primaryTitle}
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage className="text-xs font-medium truncate max-w-[160px] sm:max-w-[240px]">
+                  <BreadcrumbPage className="text-xs font-medium truncate max-w-[130px] sm:max-w-[240px]">
                     {subTitle}
                   </BreadcrumbPage>
                 </BreadcrumbItem>

@@ -471,157 +471,202 @@ export function SubmissionDetailContent({
         (phase1Tab === "rubric" && submission.manual_score && !isEditingRubric))
   );
 
-  // Render header content based on variant
-  const headerContent = (
-    <div className="flex flex-row items-center justify-between gap-2.5 sm:gap-3 w-full">
-      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-        {variant === "page" && onClose && (
+  // Reusable actions toolbar (Delete attempt + student navigation carousel)
+  const actionsContent = (
+    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => setIsDeleteDialogOpen(true)}
+        disabled={deleteMutation.isPending}
+        className="h-9 px-2.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl border border-border/60 hover:border-destructive/30 transition-colors flex items-center gap-1.5 cursor-pointer touch-manipulation font-medium shrink-0"
+        title="Delete this attempt"
+        aria-label="Delete this attempt"
+      >
+        <Trash2 className="size-3.5" aria-hidden="true" />
+        <span className="hidden sm:inline">Delete Attempt</span>
+      </Button>
+
+      {hasMultipleSubmissions && submissions && onNavigate && (
+        <div className="flex items-center gap-0.5 sm:gap-1 bg-muted/50 p-0.5 sm:p-1 rounded-xl border border-border h-9 shrink-0">
           <Button
-            type="button"
-            variant="outline"
+            ref={prevButtonRef}
+            variant="ghost"
             size="sm"
-            onClick={onClose}
-            className="h-10 sm:h-9 min-h-[40px] sm:min-h-0 px-3 sm:px-3 rounded-xl border-border/80 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 gap-1.5 shrink-0 transition-colors cursor-pointer group shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 touch-manipulation"
-            title="Return to activity (Esc)"
+            disabled={!canGoPrev}
+            onClick={() => {
+              if (canGoPrev && submissions) {
+                onNavigate(submissions[effectiveIndex - 1]);
+              }
+            }}
+            className="size-8 sm:size-7 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
+            aria-label="Previous student (Key: J or ←)"
+            title="Previous student (← / J)"
           >
-            <ArrowLeft className="size-3.5 group-hover:-translate-x-0.5 transition-transform" aria-hidden="true" />
-            <span className="hidden sm:inline">Back to Activity</span>
-            <span className="sm:hidden">Back</span>
+            <ChevronLeft className="size-4" aria-hidden="true" />
           </Button>
-        )}
-        <div
-          className={cn(
-            "flex size-9 sm:size-10 items-center justify-center rounded-xl border text-sm font-bold shrink-0 select-none shadow-2xs",
-            submission.student?.full_name
-              ? getAvatarColor(submission.student.full_name)
-              : "bg-brand-100 text-brand-700 border-brand-200/60 dark:bg-brand-950 dark:text-brand-300 dark:border-brand-900"
-          )}
-          role="img"
-          aria-label={
-            submission.student?.full_name
-              ? `${submission.student.full_name}'s avatar`
-              : "Student avatar"
-          }
-        >
-          {submission.student?.full_name && getInitials(submission.student.full_name) ? (
-            <span aria-hidden="true" className="tracking-tight font-semibold text-xs sm:text-sm">
-              {getInitials(submission.student.full_name)}
-            </span>
-          ) : (
-            <GraduationCap className="size-4 sm:size-5" aria-hidden="true" />
-          )}
+          <span
+            className="text-[11px] sm:text-xs text-muted-foreground px-1 sm:px-1.5 tabular-nums font-medium select-none whitespace-nowrap"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {effectiveIndex + 1} of {submissions.length}
+          </span>
+          <Button
+            ref={nextButtonRef}
+            variant="ghost"
+            size="sm"
+            disabled={!canGoNext}
+            onClick={() => {
+              if (canGoNext && submissions) {
+                onNavigate(submissions[effectiveIndex + 1]);
+              }
+            }}
+            className="size-8 sm:size-7 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
+            aria-label="Next student (Key: K or →)"
+            title="Next student (→ / K)"
+          >
+            <ChevronRight className="size-4" aria-hidden="true" />
+          </Button>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            {variant === "modal" ? (
-              <DialogTitle className="font-heading text-base sm:text-xl font-semibold tracking-tight text-foreground truncate">
-                {submission.student?.full_name ?? "Student"}
-              </DialogTitle>
+      )}
+    </div>
+  );
+
+  // Render header content based on variant and viewport tier
+  const headerContent = (
+    <div className="w-full flex flex-col gap-2.5 sm:gap-3">
+      {/* Mobile-only toolbar for page variant (< sm) */}
+      {variant === "page" && (
+        <div className="flex sm:hidden items-center justify-between gap-2 w-full">
+          {onClose && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onClose}
+              className="h-9 min-h-[36px] px-2.5 rounded-xl border-border/80 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 gap-1.5 shrink-0 transition-colors cursor-pointer group shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 touch-manipulation flex items-center"
+              title="Return to activity (Esc)"
+            >
+              <ArrowLeft className="size-3.5 group-hover:-translate-x-0.5 transition-transform" aria-hidden="true" />
+              <span>Back</span>
+            </Button>
+          )}
+          <div className="ml-auto flex items-center">
+            {actionsContent}
+          </div>
+        </div>
+      )}
+
+      {/* Main Student Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 w-full">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+          {/* Desktop-only back button (>= sm) */}
+          {variant === "page" && onClose && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onClose}
+              className="hidden sm:inline-flex h-9 px-3 rounded-xl border-border/80 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 gap-1.5 shrink-0 transition-colors cursor-pointer group shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 touch-manipulation"
+              title="Return to activity (Esc)"
+            >
+              <ArrowLeft className="size-3.5 group-hover:-translate-x-0.5 transition-transform" aria-hidden="true" />
+              <span>Back to Activity</span>
+            </Button>
+          )}
+
+          {/* Student Avatar */}
+          <div
+            className={cn(
+              "flex size-9 sm:size-10 items-center justify-center rounded-xl border text-sm font-bold shrink-0 select-none shadow-2xs",
+              submission.student?.full_name
+                ? getAvatarColor(submission.student.full_name)
+                : "bg-brand-100 text-brand-700 border-brand-200/60 dark:bg-brand-950 dark:text-brand-300 dark:border-brand-900"
+            )}
+            role="img"
+            aria-label={
+              submission.student?.full_name
+                ? `${submission.student.full_name}'s avatar`
+                : "Student avatar"
+            }
+          >
+            {submission.student?.full_name && getInitials(submission.student.full_name) ? (
+              <span aria-hidden="true" className="tracking-tight font-semibold text-xs sm:text-sm">
+                {getInitials(submission.student.full_name)}
+              </span>
             ) : (
-              <h1 className="font-heading text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">
-                {submission.student?.full_name ?? "Student"}
-              </h1>
+              <GraduationCap className="size-4 sm:size-5" aria-hidden="true" />
             )}
           </div>
-          {variant === "modal" ? (
-            <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-x-3 gap-y-0.5 flex-wrap">
-              <span className="inline-flex items-center gap-1">
-                <User className="size-3" aria-hidden="true" />
-                Uploaded by{" "}
-                {submission.uploader_role === "parent" ? "Parent" : "Teacher"}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <Clock className="size-3" aria-hidden="true" />
-                <time
-                  dateTime={submission.created_at}
-                  title={formatDateFull(submission.created_at)}
-                  className="tabular-nums"
-                >
-                  {formatDateFull(submission.created_at)}
-                </time>
-              </span>
-            </DialogDescription>
-          ) : (
-            <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-x-3 gap-y-0.5 flex-wrap">
-              <span className="inline-flex items-center gap-1">
-                <User className="size-3" aria-hidden="true" />
-                Uploaded by{" "}
-                {submission.uploader_role === "parent" ? "Parent" : "Teacher"}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <Clock className="size-3" aria-hidden="true" />
-                <time
-                  dateTime={submission.created_at}
-                  title={formatDateFull(submission.created_at)}
-                  className="tabular-nums"
-                >
-                  {formatDateFull(submission.created_at)}
-                </time>
-              </span>
+
+          {/* Student Name and Upload Metadata */}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              {variant === "modal" ? (
+                <DialogTitle className="font-heading text-base sm:text-xl font-semibold tracking-tight text-foreground truncate">
+                  {submission.student?.full_name ?? "Student"}
+                </DialogTitle>
+              ) : (
+                <h1 className="font-heading text-base sm:text-xl md:text-2xl font-bold tracking-tight text-foreground truncate">
+                  {submission.student?.full_name ?? "Student"}
+                </h1>
+              )}
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Actions and Navigation */}
-      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsDeleteDialogOpen(true)}
-          disabled={deleteMutation.isPending}
-          className="h-8.5 sm:h-9 px-2 sm:px-2.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl border border-border/60 hover:border-destructive/30 transition-colors flex items-center gap-1.5 cursor-pointer touch-manipulation font-medium"
-          title="Delete this attempt"
-          aria-label="Delete this attempt"
-        >
-          <Trash2 className="size-3.5" aria-hidden="true" />
-          <span className="hidden sm:inline">Delete Attempt</span>
-        </Button>
-
-        {hasMultipleSubmissions && submissions && onNavigate && (
-          <div className="flex items-center gap-0.5 sm:gap-1 bg-muted/50 p-0.5 sm:p-1 rounded-xl border border-border h-8.5 sm:h-9">
-            <Button
-              ref={prevButtonRef}
-              variant="ghost"
-              size="sm"
-              disabled={!canGoPrev}
-              onClick={() => {
-                if (canGoPrev && submissions) {
-                  onNavigate(submissions[effectiveIndex - 1]);
-                }
-              }}
-              className="size-10 sm:size-7 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
-              aria-label="Previous student (Key: J or ←)"
-              title="Previous student (← / J)"
-            >
-              <ChevronLeft className="size-4" aria-hidden="true" />
-            </Button>
-            <span
-              className="text-[11px] sm:text-xs text-muted-foreground px-1 sm:px-1.5 tabular-nums font-medium select-none"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              {effectiveIndex + 1} of {submissions.length}
-            </span>
-            <Button
-              ref={nextButtonRef}
-              variant="ghost"
-              size="sm"
-              disabled={!canGoNext}
-              onClick={() => {
-                if (canGoNext && submissions) {
-                  onNavigate(submissions[effectiveIndex + 1]);
-                }
-              }}
-              className="size-10 sm:size-7 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
-              aria-label="Next student (Key: K or →)"
-              title="Next student (→ / K)"
-            >
-              <ChevronRight className="size-4" aria-hidden="true" />
-            </Button>
+            {variant === "modal" ? (
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-x-2 sm:gap-x-3 gap-y-0.5 flex-wrap">
+                <span className="inline-flex items-center gap-1 shrink-0">
+                  <User className="size-3" aria-hidden="true" />
+                  Uploaded by{" "}
+                  {submission.uploader_role === "parent" ? "Parent" : "Teacher"}
+                </span>
+                <span className="text-border hidden min-[400px]:inline">·</span>
+                <span className="inline-flex items-center gap-1 shrink-0">
+                  <Clock className="size-3" aria-hidden="true" />
+                  <time
+                    dateTime={submission.created_at}
+                    title={formatDateFull(submission.created_at)}
+                    className="tabular-nums"
+                  >
+                    {formatDateFull(submission.created_at)}
+                  </time>
+                </span>
+              </DialogDescription>
+            ) : (
+              <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-x-2 sm:gap-x-3 gap-y-0.5 flex-wrap">
+                <span className="inline-flex items-center gap-1 shrink-0">
+                  <User className="size-3" aria-hidden="true" />
+                  Uploaded by{" "}
+                  {submission.uploader_role === "parent" ? "Parent" : "Teacher"}
+                </span>
+                <span className="text-border hidden min-[400px]:inline">·</span>
+                <span className="inline-flex items-center gap-1 shrink-0">
+                  <Clock className="size-3" aria-hidden="true" />
+                  <time
+                    dateTime={submission.created_at}
+                    title={formatDateFull(submission.created_at)}
+                    className="tabular-nums"
+                  >
+                    {formatDateFull(submission.created_at)}
+                  </time>
+                </span>
+              </div>
+            )}
           </div>
-        )}
+        </div>
+
+        {/* Action buttons: for modal mode on mobile it wraps below cleanly; for desktop it sits on the right */}
+        <div
+          className={cn(
+            "shrink-0",
+            variant === "page"
+              ? "hidden sm:flex items-center"
+              : "flex items-center self-end sm:self-auto"
+          )}
+        >
+          {actionsContent}
+        </div>
       </div>
     </div>
   );
@@ -1361,7 +1406,8 @@ export function SubmissionDetailContent({
         </DialogFooter>
       ) : (
         <footer className="pt-3 sm:pt-3.5 border-t border-border/70 flex items-center justify-between text-xs text-muted-foreground flex-wrap gap-2">
-          <div className="inline-flex items-center gap-1.5 flex-wrap">
+          {/* Desktop keyboard shortcuts (>= sm) */}
+          <div className="hidden sm:inline-flex items-center gap-1.5 flex-wrap">
             <span className="font-medium text-foreground">Shortcuts:</span>
             {hasMultipleSubmissions && (
               <>
@@ -1396,8 +1442,21 @@ export function SubmissionDetailContent({
             </kbd>
             <span>back</span>
           </div>
+
+          {/* Mobile footer status (< sm) */}
+          <div className="sm:hidden flex items-center justify-between w-full text-xs text-muted-foreground">
+            {hasMultipleSubmissions && submissions && submissions.length > 0 ? (
+              <span className="tabular-nums font-medium">
+                Student {effectiveIndex + 1} of {submissions.length}
+              </span>
+            ) : (
+              <span />
+            )}
+            <span className="text-[11px]">Use top controls to navigate</span>
+          </div>
+
           {hasMultipleSubmissions && submissions && submissions.length > 0 && (
-            <span className="text-xs text-muted-foreground tabular-nums">
+            <span className="hidden sm:inline text-xs text-muted-foreground tabular-nums">
               Student {effectiveIndex + 1} of {submissions.length}
             </span>
           )}

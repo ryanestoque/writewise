@@ -82,17 +82,25 @@ export default function SubmissionDetailPage({
   if (isLoading) {
     return (
       <div className="w-full space-y-4 animate-pulse" role="status" aria-label="Loading handwriting submission details">
-        {/* Header Skeleton matching rendered layout */}
-        <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-border/70">
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <Skeleton className="h-9 w-28 sm:w-36 rounded-xl shrink-0" />
-            <Skeleton className="size-9 sm:size-10 rounded-xl shrink-0" />
-            <div className="space-y-1.5 min-w-0">
-              <Skeleton className="h-5 sm:h-6 w-36 sm:w-48 rounded-md" />
-              <Skeleton className="h-3 w-40 sm:w-52 rounded-md" />
-            </div>
+        {/* Header Skeleton matching rendered responsive layout */}
+        <div className="space-y-2 pb-2.5 sm:pb-3 border-b border-border/70">
+          {/* Mobile top toolbar skeleton (< sm) */}
+          <div className="flex sm:hidden items-center justify-between gap-2">
+            <Skeleton className="h-9 w-20 rounded-xl shrink-0" />
+            <Skeleton className="h-9 w-32 rounded-xl shrink-0" />
           </div>
-          <Skeleton className="h-9 w-24 sm:w-28 rounded-xl shrink-0" />
+          {/* Main identity row */}
+          <div className="flex items-center justify-between gap-2.5 sm:gap-3">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+              <Skeleton className="hidden sm:inline-flex h-9 w-32 rounded-xl shrink-0" />
+              <Skeleton className="size-9 sm:size-10 rounded-xl shrink-0" />
+              <div className="space-y-1.5 min-w-0 flex-1">
+                <Skeleton className="h-5 sm:h-6 w-36 sm:w-48 rounded-md" />
+                <Skeleton className="h-3 w-40 sm:w-52 rounded-md" />
+              </div>
+            </div>
+            <Skeleton className="hidden sm:inline-flex h-9 w-32 rounded-xl shrink-0" />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 lg:items-start py-2.5 sm:py-3.5">
