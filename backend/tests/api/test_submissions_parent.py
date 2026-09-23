@@ -204,3 +204,100 @@ class TestParentSubmissionAuthorization:
         cleanup_submissions.append(
             {"id": data["submission_id"], "image_path": sub_row.data["image_path"]}
         )
+
+
+class TestDeleteSubmissionParent:
+    def test_parent_delete_own_ungraded_submission_success(
+        self, parent_client, take_home_activity, linked_student
+    ):
+        """Parent can delete their own un-graded submission."""
+        sub_res = (
+            supabase_client.table("submission")
+            .insert(
+                {
+                    "activity_id": take_home_activity["id"],
+                    "student_id": linked_student["id"],
+                    "image_path": f"{linked_student['id']}/parent_delete.jpg",
+                    "status": "completed",
+                    "uploader_id": TEST_PARENT_ID,
+                    "uploader_role": "parent",
+                }
+            )
+            .execute()
+        )
+        sub_id = sub_res.data[0]["id"]
+
+        response = parent_client.delete(f"/api/submissions/{sub_id}")
+        assert response.status_code == 200
+        assert response.json()["deleted"] is True
+
+        check = supabase_client.table("submission").select("id").eq("id", sub_id).execute()
+        assert len(check.data) == 0
+
+    def test_parent_delete_graded_submission_conflict(
+        self, parent_client, take_home_activity, linked_student
+    ):
+        """Parent cannot delete a submission that has already been graded by a teacher."""
+        sub_res = (
+            supabase_client.table("submission")
+            .insert(
+                {
+                    "activity_id": take_home_activity["id"],
+                    "student_id": linked_student["id"],
+                    "image_path": f"{linked_student['id']}/parent_graded.jpg",
+                    "status": "completed",
+                    "uploader_id": TEST_PARENT_ID,
+                    "uploader_role": "parent",
+                }
+            )
+            .execute()
+        )
+        sub_id = sub_res.data[0]["id"]
+
+        # Insert manual score
+        supabase_client.table("manual_score").insert(
+            {
+                "submission_id": sub_id,
+                "graded_by": TEST_TEACHER_ID,
+                "letter_formation_band": "satisfactory",
+                "size_consistency_band": "satisfactory",
+                "spacing_band": "satisfactory",
+                "slant_band": "satisfactory",
+                "baseline_alignment_band": "satisfactory",
+            }
+        ).execute()
+
+        try:
+            response = parent_client.delete(f"/api/submissions/{sub_id}")
+            assert response.status_code == 409
+            assert response.json()["error"]["code"] == "SUBMISSION_ALREADY_GRADED"
+        finally:
+            supabase_client.table("manual_score").delete().eq("submission_id", sub_id).execute()
+            supabase_client.table("submission").delete().eq("id", sub_id).execute()
+
+    def test_parent_delete_teacher_upload_forbidden(
+        self, parent_client, take_home_activity, linked_student
+    ):
+        """Parent cannot delete a submission uploaded by a teacher."""
+        sub_res = (
+            supabase_client.table("submission")
+            .insert(
+                {
+                    "activity_id": take_home_activity["id"],
+                    "student_id": linked_student["id"],
+                    "image_path": f"{linked_student['id']}/teacher_upload.jpg",
+                    "status": "completed",
+                    "uploader_id": TEST_TEACHER_ID,
+                    "uploader_role": "teacher",
+                }
+            )
+            .execute()
+        )
+        sub_id = sub_res.data[0]["id"]
+
+        try:
+            response = parent_client.delete(f"/api/submissions/{sub_id}")
+            assert response.status_code == 403
+            assert response.json()["error"]["code"] == "NOT_SUBMISSION_UPLOADER"
+        finally:
+            supabase_client.table("submission").delete().eq("id", sub_id).execute()

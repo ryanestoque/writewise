@@ -560,3 +560,152 @@ async def submit_manual_score(
         "graded_by": row["graded_by"],
         "created_at": row["created_at"],
     }
+
+
+@router.delete("/{submission_id}", status_code=status.HTTP_200_OK)
+async def delete_submission(
+    submission_id: str,
+    caller: dict = Depends(get_current_user),
+):
+    caller_id = caller.get("sub")
+    caller_role = caller.get("role")
+
+    # 1. Validate UUID format
+    try:
+        uuid.UUID(submission_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "VALIDATION_ERROR",
+                "message": "submission_id must be a valid UUID.",
+                "details": {},
+            },
+        )
+
+    # 2. Fetch submission row
+    sub_res = (
+        supabase_client.table("submission")
+        .select("id, student_id, uploader_id, uploader_role, image_path")
+        .eq("id", submission_id)
+        .execute()
+    )
+    if not sub_res.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "NOT_FOUND",
+                "message": "Submission not found.",
+                "details": {},
+            },
+        )
+    submission = sub_res.data[0]
+    student_id = submission["student_id"]
+    uploader_id = submission["uploader_id"]
+    image_path = submission["image_path"]
+
+    # 3. Role-based authorization
+    if caller_role == "teacher":
+        # Check roster link: teacher must teach this student
+        roster_check = (
+            supabase_client.table("teacher_student")
+            .select("teacher_id")
+            .eq("teacher_id", caller_id)
+            .eq("student_id", student_id)
+            .execute()
+        )
+        if not roster_check.data:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "code": "NOT_ROSTER_TEACHER",
+                    "message": "You can only delete submissions for students on your roster.",
+                    "details": {},
+                },
+            )
+    elif caller_role == "parent":
+        # Parent must be the uploader
+        if uploader_id != caller_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "code": "NOT_SUBMISSION_UPLOADER",
+                    "message": "Parents can only delete submissions they personally uploaded.",
+                    "details": {},
+                },
+            )
+        # Parent must be linked to the child
+        link_check = (
+            supabase_client.table("student_parent")
+            .select("parent_id")
+            .eq("parent_id", caller_id)
+            .eq("student_id", student_id)
+            .execute()
+        )
+        if not link_check.data:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "code": "NOT_CHILD_PARENT",
+                    "message": "You are not linked to this student.",
+                    "details": {},
+                },
+            )
+        # Cannot delete if teacher has already entered manual_score
+        score_check = (
+            supabase_client.table("manual_score")
+            .select("id")
+            .eq("submission_id", submission_id)
+            .execute()
+        )
+        if score_check.data:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "code": "SUBMISSION_ALREADY_GRADED",
+                    "message": (
+                        "This worksheet has already been graded by the teacher "
+                        "and cannot be deleted."
+                    ),
+                    "details": {},
+                },
+            )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "FORBIDDEN",
+                "message": "Unauthorized role for submission deletion.",
+                "details": {},
+            },
+        )
+
+    # 4. Delete Storage asset
+    try:
+        supabase_client.storage.from_("submission-images").remove([image_path])
+    except Exception as exc:
+        logger.warning(
+            "Failed to delete storage asset %s for submission %s: %s",
+            image_path,
+            submission_id,
+            exc,
+        )
+
+    # 5. Delete DB record (cascades to measurement and manual_score)
+    try:
+        # Also clean up child rows explicitly for safety if migration pending
+        supabase_client.table("manual_score").delete().eq("submission_id", submission_id).execute()
+        supabase_client.table("measurement").delete().eq("submission_id", submission_id).execute()
+        supabase_client.table("submission").delete().eq("id", submission_id).execute()
+    except Exception as exc:
+        logger.error("Failed to delete submission record %s: %s", submission_id, exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "code": "INTERNAL_ERROR",
+                "message": "Failed to delete submission.",
+                "details": {"error": str(exc)},
+            },
+        )
+
+    return {"id": submission_id, "deleted": True}

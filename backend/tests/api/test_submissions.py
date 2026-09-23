@@ -646,3 +646,95 @@ class TestSubmitManualScore:
         response = client.patch(f"/api/submissions/{sub_id}/manual-score", json=payload)
         assert response.status_code == 403
         assert response.json()["error"]["code"] == "MANUAL_SCORING_DISABLED"
+
+
+class TestDeleteSubmissionTeacher:
+    def test_teacher_delete_submission_success(self, client, test_activity, test_student):
+        """Teacher can delete a submission for a student on their roster."""
+        # 1. Create submission directly in DB
+        sub_res = (
+            supabase_client.table("submission")
+            .insert(
+                {
+                    "activity_id": test_activity["id"],
+                    "student_id": test_student["id"],
+                    "image_path": f"{test_student['id']}/test_delete.jpg",
+                    "status": "completed",
+                    "uploader_id": TEST_TEACHER_ID,
+                    "uploader_role": "teacher",
+                }
+            )
+            .execute()
+        )
+        submission = sub_res.data[0]
+        sub_id = submission["id"]
+
+        # Insert dummy measurement
+        supabase_client.table("measurement").insert(
+            {
+                "submission_id": sub_id,
+                "raw_output": {},
+            }
+        ).execute()
+
+        # 2. Call DELETE endpoint
+        response = client.delete(f"/api/submissions/{sub_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == sub_id
+        assert data["deleted"] is True
+
+        # 3. Verify submission and measurement are gone
+        check_sub = supabase_client.table("submission").select("id").eq("id", sub_id).execute()
+        assert len(check_sub.data) == 0
+
+        check_meas = (
+            supabase_client.table("measurement").select("id").eq("submission_id", sub_id).execute()
+        )
+        assert len(check_meas.data) == 0
+
+    def test_teacher_delete_non_roster_student_forbidden(self, client, test_activity):
+        """Teacher cannot delete a submission for a student not on their roster."""
+        other_student_res = (
+            supabase_client.table("student")
+            .insert({"full_name": "Other Teacher Student", "section": "Other Section"})
+            .execute()
+        )
+        other_student = other_student_res.data[0]
+
+        sub_res = (
+            supabase_client.table("submission")
+            .insert(
+                {
+                    "activity_id": test_activity["id"],
+                    "student_id": other_student["id"],
+                    "image_path": f"{other_student['id']}/test_forbidden.jpg",
+                    "status": "completed",
+                    "uploader_id": TEST_TEACHER_ID,
+                    "uploader_role": "teacher",
+                }
+            )
+            .execute()
+        )
+        sub_id = sub_res.data[0]["id"]
+
+        try:
+            response = client.delete(f"/api/submissions/{sub_id}")
+            assert response.status_code == 403
+            assert response.json()["error"]["code"] == "NOT_ROSTER_TEACHER"
+        finally:
+            supabase_client.table("submission").delete().eq("id", sub_id).execute()
+            supabase_client.table("student").delete().eq("id", other_student["id"]).execute()
+
+    def test_delete_submission_not_found(self, client):
+        """Deleting a non-existent submission returns 404."""
+        non_existent_id = str(uuid.uuid4())
+        response = client.delete(f"/api/submissions/{non_existent_id}")
+        assert response.status_code == 404
+        assert response.json()["error"]["code"] == "NOT_FOUND"
+
+    def test_delete_submission_invalid_uuid(self, client):
+        """Deleting with malformed UUID returns 400."""
+        response = client.delete("/api/submissions/not-a-uuid")
+        assert response.status_code == 400
+        assert response.json()["error"]["code"] == "VALIDATION_ERROR"
