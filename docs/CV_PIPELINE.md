@@ -61,12 +61,12 @@ Runs first, before any of the real processing. Fails fast with a specific reason
 
 | Check | Method | Reject if | Note |
 |---|---|---|---|
-| Blur | `cv2.Laplacian(gray, cv2.CV_64F).var()` | variance < 100 | Standard rule-of-thumb for document-style phone photos |
+| Blur | `cv2.Laplacian(gray, cv2.CV_64F).var()` on normalized 1500px short side | variance < 15 | Recalibrated for sparse handwriting on white worksheet paper; normalized to prevent high-MP dilution |
 | Brightness | Grayscale mean intensity | outside 50–200 (of 255) | Catches severe under/overexposure |
 | Contrast | Grayscale intensity std dev | < 20 | Catches washed-out/flat images even when mean brightness looks fine |
 | Resolution | Shorter image side | < 1500px | Proxy check — guide-line pixel spacing isn't known yet at this stage, so this rules out heavily downscaled/screenshotted images by absolute size instead |
 
-**All four thresholds are starting defaults, not final values.** They're reasonable literature/rule-of-thumb picks made with zero real worksheet photos to test against. Once Phase 1 is live and real rejections start coming in, revisit these against actual false-positive/false-negative rates.
+**All four thresholds are starting defaults, calibrated iteratively.** The blur threshold was recalibrated from 100 to 15 once testing showed blank paper and sparse pencil writing naturally diluted global Laplacian variance. Revisit remaining thresholds against actual false-positive/false-negative rates as needed.
 
 Rejected submissions are **not discarded** — per ARCHITECTURE.md, they're persisted as a `Submission` row with status `rejected`, the image, and the failure reason, so Phase 1 usability findings aren't lost.
 

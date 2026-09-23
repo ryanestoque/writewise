@@ -15,13 +15,13 @@ def test_quality_gate_rejection_carries_fields():
     exc = QualityGateRejection(
         code="QUALITY_GATE_BLUR",
         message="too blurry",
-        measured_value=42.1,
-        threshold=100.0,
+        measured_value=8.1,
+        threshold=15.0,
     )
     assert exc.code == "QUALITY_GATE_BLUR"
     assert exc.message == "too blurry"
-    assert exc.measured_value == 42.1
-    assert exc.threshold == 100.0
+    assert exc.measured_value == 8.1
+    assert exc.threshold == 15.0
     with pytest.raises(QualityGateRejection):
         raise exc
 
@@ -63,6 +63,7 @@ def test_blurry_image_rejected_on_blur():
     with pytest.raises(QualityGateRejection) as exc_info:
         run_quality_gate(make_blurry_image())
     assert exc_info.value.code == "QUALITY_GATE_BLUR"
+    assert exc_info.value.threshold == 15.0
 
 
 def test_dark_image_rejected_on_brightness():
@@ -89,9 +90,37 @@ def test_sharp_worksheet_passes_end_to_end():
     result = run_quality_gate(make_sharp_worksheet())
     assert isinstance(result, QualityMetrics)
     assert result.resolution_short_side >= 1500
-    assert result.blur_variance >= 100.0
+    assert result.blur_variance >= 15.0
     assert 50 <= result.brightness_mean <= 200
     assert result.contrast_std >= 20.0
+
+
+def test_realistic_sparse_pencil_worksheet_passes_blur():
+    """Verify that a sharp, realistic phone photo with sparse pencil writing
+    (which naturally has lower global variance due to blank paper) passes blur check.
+    """
+    from app.cv.quality_gate import _check_blur
+    from tests.synthetic import _base_worksheet
+
+    # Simulate 12MP phone camera with sparse pencil writing
+    img = _base_worksheet(3000, 4000, bg_value=190, ink_value=90, density=350000)
+    variance = _check_blur(img)
+    assert variance >= 15.0
+
+
+def test_realistic_sparse_pencil_worksheet_blurred_is_rejected():
+    """Verify that an actual blurry photo of sparse writing is reliably caught."""
+    import cv2
+
+    from app.cv.quality_gate import _check_blur
+    from tests.synthetic import _base_worksheet
+
+    img = _base_worksheet(3000, 4000, bg_value=190, ink_value=90, density=350000)
+    blurred = cv2.GaussianBlur(img, (25, 25), 5.0)
+    with pytest.raises(QualityGateRejection) as exc_info:
+        _check_blur(blurred)
+    assert exc_info.value.code == "QUALITY_GATE_BLUR"
+    assert exc_info.value.threshold == 15.0
 
 
 def test_fail_fast_checks_resolution_first():

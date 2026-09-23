@@ -7,10 +7,11 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
-# Tunable thresholds — starting defaults per CV_PIPELINE §2 note, to be
-# recalibrated once real Phase 1 photos flow.
+# Tunable thresholds — recalibrated for sparse handwriting on white worksheet paper.
+# In document images, 90%+ of pixels are blank paper where Laplacian response is ~0,
+# so the global variance is naturally diluted compared to textured natural scenes.
 RESOLUTION_MIN_SHORT_SIDE = 1500
-BLUR_VARIANCE_MIN = 100.0
+BLUR_VARIANCE_MIN = 15.0
 BRIGHTNESS_MIN = 50
 BRIGHTNESS_MAX = 200
 CONTRAST_STD_MIN = 20.0
@@ -51,7 +52,21 @@ def _check_resolution(image: np.ndarray) -> int:
 
 
 def _check_blur(gray: np.ndarray) -> float:
-    variance = cv2.Laplacian(gray, cv2.CV_64F).var()
+    # Scale to standard evaluation size so high-megapixel cameras (12MP–48MP)
+    # do not artificially dilute the Laplacian edge variance across blank paper.
+    h, w = gray.shape[:2]
+    short_side = min(h, w)
+    if short_side > RESOLUTION_MIN_SHORT_SIDE:
+        scale = RESOLUTION_MIN_SHORT_SIDE / short_side
+        eval_gray = cv2.resize(
+            gray,
+            (int(w * scale), int(h * scale)),
+            interpolation=cv2.INTER_AREA,
+        )
+    else:
+        eval_gray = gray
+
+    variance = cv2.Laplacian(eval_gray, cv2.CV_64F).var()
     if variance < BLUR_VARIANCE_MIN:
         raise QualityGateRejection(
             code="QUALITY_GATE_BLUR",

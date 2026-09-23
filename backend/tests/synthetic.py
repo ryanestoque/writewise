@@ -9,7 +9,7 @@ import numpy as np
 
 # Tuned so each generator's JPEG-encoded output sits clearly on the correct
 # side of quality_gate.py's thresholds (RESOLUTION_MIN_SHORT_SIDE=1500,
-# BLUR_VARIANCE_MIN=100.0, BRIGHTNESS range 50-200, CONTRAST_STD_MIN=20.0).
+# BLUR_VARIANCE_MIN=15.0, BRIGHTNESS range 50-200, CONTRAST_STD_MIN=20.0).
 _SHARP_BG = 190
 _SHARP_INK = 30
 _DARK_BG = 20
