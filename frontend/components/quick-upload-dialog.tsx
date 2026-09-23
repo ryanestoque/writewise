@@ -34,6 +34,7 @@ import {
 import { useActivities } from "@/lib/hooks/use-activities";
 import { useStudents } from "@/lib/hooks/use-students";
 import { useUploadSubmission } from "@/lib/hooks/use-submissions";
+import { rotateImageFile } from "@/lib/utils/image";
 import {
   UploadCloudIcon,
   CameraIcon,
@@ -46,6 +47,7 @@ import {
   Loader2Icon,
   AlertCircleIcon,
   RotateCcwIcon,
+  RotateCwIcon,
   CheckIcon,
   Scan,
   SunMedium,
@@ -220,6 +222,7 @@ function UploadFlow({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const previewUrlRef = useRef<string | null>(null);
+  const originalFileRef = useRef<File | null>(null);
   const dropzoneRef = useRef<HTMLDivElement>(null);
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   const retryButtonRef = useRef<HTMLButtonElement>(null);
@@ -231,6 +234,8 @@ function UploadFlow({
   const [studentChoice, setStudentChoice] = useState<Choice | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [rotationDegrees, setRotationDegrees] = useState(0);
+  const [isRotating, setIsRotating] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadError, setUploadError] = useState<UploadError | null>(null);
   const [uploadedCount, setUploadedCount] = useState(0);
@@ -335,6 +340,8 @@ function UploadFlow({
       URL.revokeObjectURL(previewUrlRef.current);
       previewUrlRef.current = null;
     }
+    originalFileRef.current = null;
+    setRotationDegrees(0);
     setSelectedFile(null);
     setPreviewUrl(null);
     setUploadError(null);
@@ -380,12 +387,37 @@ function UploadFlow({
       URL.revokeObjectURL(previewUrlRef.current);
     }
 
+    originalFileRef.current = file;
+    setRotationDegrees(0);
     setSelectedFile(file);
     const url = URL.createObjectURL(file);
     previewUrlRef.current = url;
     setPreviewUrl(url);
     setUploadError(null);
     setStep(3);
+  };
+
+  const handleRotateClockwise = async () => {
+    const baseFile = originalFileRef.current ?? selectedFile;
+    if (!baseFile || isRotating) return;
+
+    const nextDegrees = (rotationDegrees + 90) % 360;
+    setIsRotating(true);
+    try {
+      const rotatedFile = await rotateImageFile(baseFile, nextDegrees);
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+      }
+      const newUrl = URL.createObjectURL(rotatedFile);
+      previewUrlRef.current = newUrl;
+      setPreviewUrl(newUrl);
+      setSelectedFile(rotatedFile);
+      setRotationDegrees(nextDegrees);
+    } catch {
+      toast.error("Failed to rotate photo. Please try again.");
+    } finally {
+      setIsRotating(false);
+    }
   };
 
   const handleSubmit = () => {
@@ -1050,24 +1082,52 @@ function UploadFlow({
                         <p className="text-sm font-semibold truncate text-foreground">
                           {selectedFile.name}
                         </p>
-                        <p className="text-xs text-muted-foreground font-mono tabular-nums">
-                          {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
-                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <p className="text-xs text-muted-foreground font-mono tabular-nums">
+                            {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+                          </p>
+                          {rotationDegrees > 0 && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] h-4 px-1.5 font-medium border-primary/30 text-primary bg-primary/5"
+                            >
+                              Rotated {rotationDegrees}°
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-10 sm:size-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
-                      onClick={handleClearFile}
-                      aria-label="Remove selected image and select another"
-                    >
-                      <XIcon className="size-4" />
-                    </Button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-10 sm:size-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                        onClick={handleRotateClockwise}
+                        disabled={isRotating}
+                        title="Rotate 90° clockwise"
+                        aria-label="Rotate photo 90 degrees clockwise"
+                      >
+                        <RotateCwIcon
+                          className={`size-4 ${isRotating ? "animate-spin" : ""}`}
+                          aria-hidden="true"
+                        />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-10 sm:size-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                        onClick={handleClearFile}
+                        aria-label="Remove selected image and select another"
+                      >
+                        <XIcon className="size-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   {previewUrl && (
-                    <div className="relative aspect-4/3 w-full rounded-xl overflow-hidden bg-muted/40 border border-border">
+                    <div className="relative aspect-4/3 w-full rounded-xl overflow-hidden bg-muted/40 border border-border flex items-center justify-center">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={previewUrl}
