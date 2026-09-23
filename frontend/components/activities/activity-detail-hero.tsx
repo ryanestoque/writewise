@@ -270,9 +270,14 @@ export function ActivityDetailHero({
                 className={cn(
                   "relative z-10 tracking-wide select-all break-words print:text-black",
                   activity.target_text?.trim()
-                    ? "font-cursive text-foreground/90 font-normal text-[32px] sm:text-[36px] leading-[48px]"
+                    ? "font-cursive text-foreground/90 font-normal text-[32px]/[48px] sm:text-[36px]/[48px] leading-[48px]"
                     : "text-muted-foreground italic font-sans text-sm sm:text-base leading-normal py-3"
                 )}
+                style={
+                  activity.target_text?.trim()
+                    ? { lineHeight: "48px" }
+                    : undefined
+                }
               >
                 {activity.target_text?.trim() || "No target text specified"}
               </p>

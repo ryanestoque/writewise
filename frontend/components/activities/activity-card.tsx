@@ -298,11 +298,16 @@ export const ActivityCard = memo(function ActivityCard({
 
               <p
                 className={cn(
-                  "relative z-10 font-cursive leading-[48px] tracking-wide break-words line-clamp-3 print:text-black",
+                  "relative z-10 font-cursive tracking-wide break-words line-clamp-3 print:text-black",
                   activity.target_text?.trim()
-                    ? "text-[30px] sm:text-[32px] md:text-[34px] text-foreground/90 font-normal"
+                    ? "text-[32px]/[48px] sm:text-[34px]/[48px] md:text-[36px]/[48px] leading-[48px] text-foreground/90 font-normal"
                     : "text-base sm:text-lg text-muted-foreground/70 italic font-sans"
                 )}
+                style={
+                  activity.target_text?.trim()
+                    ? { lineHeight: "48px" }
+                    : undefined
+                }
               >
                 {activity.target_text?.trim() || "No text specified"}
               </p>

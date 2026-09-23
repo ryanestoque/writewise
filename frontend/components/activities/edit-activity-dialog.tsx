@@ -168,7 +168,10 @@ export function EditActivityDialog({
                           className="absolute inset-0 pointer-events-none cursive-guidelines overflow-hidden"
                           aria-hidden="true"
                         />
-                        <p className="relative z-10 font-cursive text-[34px] sm:text-[36px] leading-[48px] text-foreground/90 font-normal tracking-wide break-words">
+                        <p
+                          className="relative z-10 font-cursive text-[34px]/[48px] sm:text-[36px]/[48px] leading-[48px] text-foreground/90 font-normal tracking-wide break-words"
+                          style={{ lineHeight: "48px" }}
+                        >
                           {targetText}
                         </p>
                       </div>
