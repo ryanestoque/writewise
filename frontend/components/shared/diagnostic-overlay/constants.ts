@@ -10,35 +10,35 @@ export const OVERLAY_COLORS = {
   // Developmental tiers (pedagogical grading standards)
   proficient: {
     stroke: "#1b6b63", // Forest Teal
-    fill: "rgba(27, 107, 99, 0.08)",
+    fill: "rgba(27, 107, 99, 0.12)",
   },
   consistent: {
     stroke: "#4a7c59", // Warm Sage
-    fill: "rgba(74, 124, 89, 0.08)",
+    fill: "rgba(74, 124, 89, 0.12)",
   },
   developing: {
     stroke: "#d48b28", // Ochre Gold
-    fill: "rgba(212, 139, 40, 0.10)",
+    fill: "rgba(212, 139, 40, 0.14)",
   },
   needs_attention: {
-    stroke: "#9c4a2f", // Terracotta (Never harsh red)
-    fill: "rgba(156, 74, 47, 0.12)",
+    stroke: "#c2410c", // Vibrant Terracotta / Rust (distinct, pedagogical, never harsh red #ef4444)
+    fill: "rgba(194, 65, 12, 0.18)",
   },
   // Traditional 3-line penmanship ruling guides
   guidelines: {
-    topline: "#94a3b8", // Slate headline
+    topline: "#64748b", // Slate 500 headline
     midline: "#0f766e", // Teal dotted midline
-    baseline: "#1b6b63", // Solid Forest Teal baseline
+    baseline: "#115e59", // Deep Forest Teal baseline
   },
 } as const;
 
 export const OVERLAY_WEIGHTS = {
-  strokeNormal: 1.5,
-  strokeAttention: 2.0,
-  strokeHover: 2.75,
+  strokeNormal: 2.25,
+  strokeAttention: 3.0,
+  strokeHover: 3.75,
   opacitySpotlight: 1.0,
-  opacityAllGuides: 0.55,
-  opacityDimmed: 0.18,
+  opacityAllGuides: 0.90,
+  opacityDimmed: 0.25,
 } as const;
 
 export const CRITERIA_META = {

@@ -75,8 +75,8 @@ export const FormationLayer = memo(function FormationLayer({
         const isActive = activeAnnotationId === id;
         const hitH = Math.max(36, 36 * hitScale);
         const hitW = Math.max(hitH, w);
-        const badgeW = 28 * hitScale;
-        const badgeH = 14 * hitScale;
+        const badgeW = 34 * hitScale;
+        const badgeH = 20 * hitScale;
 
         return (
           <g
@@ -130,15 +130,15 @@ export const FormationLayer = memo(function FormationLayer({
               }`}
             />
 
-            {/* Low visual weight penmanship stroke underline */}
+            {/* Penmanship stroke underline */}
             <rect
               x={x}
               y={underlineY}
               width={w}
-              height={(isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal) * hitScale}
-              rx={1 * hitScale}
+              height={Math.max(4 * hitScale, (isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal) * hitScale)}
+              rx={2 * hitScale}
               fill={formationColor}
-              fillOpacity={isAttention ? 0.85 : 0.5}
+              fillOpacity={isAttention ? 0.95 : 0.75}
               className="transition-all group-hover:opacity-100 group-focus-visible:opacity-100"
             />
 
@@ -156,10 +156,10 @@ export const FormationLayer = memo(function FormationLayer({
                 />
                 <text
                   x={0}
-                  y={3 * hitScale}
+                  y={4 * hitScale}
                   textAnchor="middle"
                   fill="#ffffff"
-                  fontSize={8.5 * hitScale}
+                  fontSize={11 * hitScale}
                   fontWeight="600"
                   fontFamily="system-ui, sans-serif"
                 >

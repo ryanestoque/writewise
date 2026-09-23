@@ -68,8 +68,8 @@ export const SlantLayer = memo(function SlantLayer({
 
         const isFocusable = isSpotlight || isAttention;
         const isActive = activeAnnotationId === id;
-        const badgeW = 28 * hitScale;
-        const badgeH = 14 * hitScale;
+        const badgeW = 36 * hitScale;
+        const badgeH = 20 * hitScale;
 
         return (
           <g
@@ -119,7 +119,8 @@ export const SlantLayer = memo(function SlantLayer({
               y1={y1}
               x2={x2}
               y2={y2}
-              strokeWidth={5 * hitScale}
+              strokeWidth={5}
+              vectorEffect="non-scaling-stroke"
               strokeLinecap="round"
               strokeOpacity={0.6}
               className={`transition-opacity stroke-brand-700 dark:stroke-brand-400 pointer-events-none ${
@@ -134,7 +135,8 @@ export const SlantLayer = memo(function SlantLayer({
               x2={x2}
               y2={y2}
               stroke={slantColor}
-              strokeWidth={(isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal) * hitScale}
+              strokeWidth={isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal}
+              vectorEffect="non-scaling-stroke"
               strokeLinecap="round"
               className="transition-all"
             />
@@ -143,8 +145,11 @@ export const SlantLayer = memo(function SlantLayer({
             <circle
               cx={x2}
               cy={y2}
-              r={(isAttention ? 3 : 2) * hitScale}
+              r={(isAttention ? 5 : 4) * hitScale}
               fill={slantColor}
+              stroke="#ffffff"
+              strokeWidth={1.5}
+              vectorEffect="non-scaling-stroke"
               className="transition-transform group-hover:scale-125 group-focus-visible:scale-125 motion-reduce:transform-none"
             />
 
@@ -161,10 +166,10 @@ export const SlantLayer = memo(function SlantLayer({
                 />
                 <text
                   x={0}
-                  y={3 * hitScale}
+                  y={4 * hitScale}
                   textAnchor="middle"
                   fill="#ffffff"
-                  fontSize={8.5 * hitScale}
+                  fontSize={11 * hitScale}
                   fontWeight="600"
                   fontFamily="system-ui, sans-serif"
                 >

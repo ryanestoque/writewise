@@ -122,13 +122,14 @@ export function GuideLineOverlay({
           y1={y}
           x2={naturalSize.width}
           y2={y}
-          stroke="var(--color-brand-600)"
-          strokeWidth={2}
-          strokeOpacity={0.35}
+          stroke="var(--color-brand-700, #0f766e)"
+          strokeWidth={2.5}
+          vectorEffect="non-scaling-stroke"
+          strokeOpacity={0.85}
         />
       ))}
 
-      {/* Midlines — dashed, muted */}
+      {/* Midlines — dashed, teal tinted */}
       {midline_y.map((y, i) => (
         <line
           key={`midline-${i}`}
@@ -136,14 +137,15 @@ export function GuideLineOverlay({
           y1={y}
           x2={naturalSize.width}
           y2={y}
-          stroke="var(--color-muted-foreground)"
-          strokeWidth={1.25}
-          strokeOpacity={0.3}
-          strokeDasharray="8 6"
+          stroke="var(--color-brand-600, #0d9488)"
+          strokeWidth={1.75}
+          vectorEffect="non-scaling-stroke"
+          strokeOpacity={0.75}
+          strokeDasharray="6 4"
         />
       ))}
 
-      {/* Toplines — dashed, lightest */}
+      {/* Toplines — dashed, slate headline */}
       {topline_y.map((y, i) => (
         <line
           key={`topline-${i}`}
@@ -151,10 +153,11 @@ export function GuideLineOverlay({
           y1={y}
           x2={naturalSize.width}
           y2={y}
-          stroke="var(--color-muted-foreground)"
-          strokeWidth={1}
-          strokeOpacity={0.22}
-          strokeDasharray="4 6"
+          stroke="var(--color-muted-foreground, #64748b)"
+          strokeWidth={1.5}
+          vectorEffect="non-scaling-stroke"
+          strokeOpacity={0.65}
+          strokeDasharray="4 4"
         />
       ))}
     </svg>

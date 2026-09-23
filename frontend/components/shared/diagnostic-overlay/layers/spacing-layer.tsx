@@ -50,7 +50,7 @@ export const SpacingLayer = memo(function SpacingLayer({
         const bracketColor = isAttention
           ? OVERLAY_COLORS.needs_attention.stroke
           : OVERLAY_COLORS.consistent.stroke;
-        const tickHeight = (isSpotlight ? 7 : 5) * hitScale;
+        const tickHeight = (isSpotlight ? 10 : 8) * hitScale;
         const id = `spacing-${ann.line_index}-${ann.gap_index}`;
         const title = isAttention ? "Spacing Needs Attention" : "Consistent Word Spacing";
         const hoverPayload = {
@@ -72,8 +72,8 @@ export const SpacingLayer = memo(function SpacingLayer({
         const minHit = Math.max(36, 36 * hitScale);
         const hitW = Math.max(minHit, width + 8);
         const hitH = Math.max(minHit, tickHeight * 2 + 8);
-        const badgeW = 28 * hitScale;
-        const badgeH = 14 * hitScale;
+        const badgeW = 34 * hitScale;
+        const badgeH = 20 * hitScale;
 
         return (
           <g
@@ -122,8 +122,9 @@ export const SpacingLayer = memo(function SpacingLayer({
               width={width + 4 * hitScale}
               height={tickHeight * 2 + 4 * hitScale}
               fill="none"
-              strokeWidth={2 * hitScale}
-              strokeDasharray={`${3 * hitScale} ${2 * hitScale}`}
+              strokeWidth={3}
+              vectorEffect="non-scaling-stroke"
+              strokeDasharray={`${4 * hitScale} ${2 * hitScale}`}
               rx={3 * hitScale}
               className={`transition-opacity stroke-brand-700 dark:stroke-brand-400 pointer-events-none ${
                 isActive ? "opacity-100" : "opacity-0 group-focus-visible:opacity-100"
@@ -137,7 +138,7 @@ export const SpacingLayer = memo(function SpacingLayer({
               width={width}
               height={tickHeight * 2}
               fill={bracketColor}
-              fillOpacity={isAttention ? 0.12 : 0.04}
+              fillOpacity={isAttention ? 0.20 : 0.08}
               rx={1.5 * hitScale}
               className="transition-opacity group-hover:fill-opacity-25 group-focus-visible:fill-opacity-25"
             />
@@ -149,7 +150,8 @@ export const SpacingLayer = memo(function SpacingLayer({
               x2={x2}
               y2={y}
               stroke={bracketColor}
-              strokeWidth={(isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal) * hitScale}
+              strokeWidth={isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal}
+              vectorEffect="non-scaling-stroke"
             />
 
             {/* Left Bracket Tick */}
@@ -159,7 +161,8 @@ export const SpacingLayer = memo(function SpacingLayer({
               x2={x1}
               y2={y + tickHeight}
               stroke={bracketColor}
-              strokeWidth={(isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal) * hitScale}
+              strokeWidth={isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal}
+              vectorEffect="non-scaling-stroke"
             />
 
             {/* Right Bracket Tick */}
@@ -169,12 +172,13 @@ export const SpacingLayer = memo(function SpacingLayer({
               x2={x2}
               y2={y + tickHeight}
               stroke={bracketColor}
-              strokeWidth={(isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal) * hitScale}
+              strokeWidth={isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal}
+              vectorEffect="non-scaling-stroke"
             />
 
             {/* In spotlight mode, render ratio pill */}
             {isSpotlight && (
-              <g transform={`translate(${x1 + width / 2}, ${y - 10 * hitScale})`}>
+              <g transform={`translate(${x1 + width / 2}, ${y - 12 * hitScale})`}>
                 <rect
                   x={-badgeW / 2}
                   y={-badgeH / 2}
@@ -186,10 +190,10 @@ export const SpacingLayer = memo(function SpacingLayer({
                 />
                 <text
                   x={0}
-                  y={3 * hitScale}
+                  y={4 * hitScale}
                   textAnchor="middle"
                   fill="#ffffff"
-                  fontSize={8.5 * hitScale}
+                  fontSize={11 * hitScale}
                   fontWeight="600"
                   fontFamily="system-ui, sans-serif"
                 >

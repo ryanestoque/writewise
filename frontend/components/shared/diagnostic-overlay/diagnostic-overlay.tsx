@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, memo } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import type {
   DiagnosticOverlayData,
   CriterionFilter,
@@ -233,6 +233,23 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
     };
   }, [activeAnnotation, onSelectAnnotation]);
 
+  // Calculate coordinate scaling factor to preserve minimum touch targets & geometric badge proportions
+  const hitScale = useMemo(() => {
+    if (!naturalSize) return 1;
+    if (!containerSize || containerSize.width <= 0 || containerSize.height <= 0) {
+      // Sensible initial estimate before ResizeObserver fires (typical viewport ~480px)
+      return Math.max(1, naturalSize.width / 480);
+    }
+    const imgRatio = naturalSize.width / naturalSize.height;
+    const containerRatio = containerSize.width / containerSize.height;
+    let renderedW = containerSize.width;
+    if (containerRatio > imgRatio) {
+      // Container is wider than image (pillarboxed) -> height fills container
+      renderedW = containerSize.height * imgRatio;
+    }
+    return Math.max(1, naturalSize.width / Math.max(renderedW, 1));
+  }, [naturalSize, containerSize]);
+
   if (!visible || !overlay) return null;
 
   // Asynchronous image decoding skeleton state: provide visual reassurance while natural dimensions resolve
@@ -252,12 +269,6 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
       </div>
     );
   }
-
-  // Calculate coordinate scaling factor to preserve minimum 28-32px touch hit targets on mobile
-  const hitScale =
-    naturalSize && containerSize && containerSize.width > 0
-      ? Math.max(1, naturalSize.width / containerSize.width)
-      : 1;
 
   return (
     <div

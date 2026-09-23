@@ -117,3 +117,23 @@ class TestExifStripping:
         result = validate_and_harden_image(jpeg_bytes)
         assert isinstance(result, bytes)
         assert result[:2] == b"\xff\xd8"
+
+    def test_exif_orientation_transposed_before_stripping(self):
+        """Portrait phone photos with EXIF orientation must be physically rotated
+        before EXIF is stripped.
+        """
+        import piexif
+
+        # Build 100x200 image with orientation=6 (which transposes to 200x100)
+        img = Image.new("RGB", (100, 200), (128, 128, 128))
+        exif_dict = {"0th": {piexif.ImageIFD.Orientation: 6}}
+        exif_bytes = piexif.dump(exif_dict)
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", exif=exif_bytes)
+        input_bytes = buf.getvalue()
+
+        result = validate_and_harden_image(input_bytes)
+        result_img = Image.open(io.BytesIO(result))
+        assert result_img.size == (200, 100)
+        assert result_img.info.get("exif", b"") == b"" or len(result_img.info.get("exif", b"")) == 0
+

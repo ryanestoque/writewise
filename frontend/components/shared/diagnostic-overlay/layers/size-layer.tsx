@@ -118,8 +118,9 @@ export const SizeLayer = memo(function SizeLayer({
               width={w + 4 * hitScale}
               height={h + 4 * hitScale}
               fill="none"
-              strokeWidth={2.5 * hitScale}
-              strokeDasharray={`${4 * hitScale} ${2 * hitScale}`}
+              strokeWidth={3.5}
+              vectorEffect="non-scaling-stroke"
+              strokeDasharray={`${6 * hitScale} ${3 * hitScale}`}
               rx={4 * hitScale}
               className={`transition-opacity stroke-brand-700 dark:stroke-brand-400 pointer-events-none ${
                 isActive ? "opacity-100" : "opacity-0 group-focus-visible:opacity-100"
@@ -133,21 +134,23 @@ export const SizeLayer = memo(function SizeLayer({
               width={w}
               height={h}
               fill={boxColor}
-              fillOpacity={isAttention ? 0.08 : 0.03}
+              fillOpacity={isAttention ? 0.16 : 0.06}
               stroke={boxColor}
-              strokeWidth={(isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal) * hitScale}
-              strokeDasharray={isAttention ? "none" : `${3 * hitScale} ${3 * hitScale}`}
-              rx={3 * hitScale}
+              strokeWidth={isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal}
+              vectorEffect="non-scaling-stroke"
+              strokeDasharray={isAttention ? "none" : `${4 * hitScale} ${3 * hitScale}`}
+              rx={4 * hitScale}
               className="transition-all"
             />
 
             {/* Corner Guide Accent on Attention */}
             {isAttention && (
               <path
-                d={`M ${x} ${y + 6 * hitScale} L ${x} ${y} L ${x + 6 * hitScale} ${y}`}
+                d={`M ${x} ${y + 12 * hitScale} L ${x} ${y} L ${x + 12 * hitScale} ${y}`}
                 fill="none"
                 stroke={boxColor}
-                strokeWidth={2 * hitScale}
+                strokeWidth={3}
+                vectorEffect="non-scaling-stroke"
                 strokeLinecap="round"
               />
             )}

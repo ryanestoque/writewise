@@ -1,7 +1,7 @@
 import io
 
 from fastapi import HTTPException, status
-from PIL import Image
+from PIL import Image, ImageOps
 
 # JPEG: FF D8 FF
 _JPEG_MAGIC = b"\xff\xd8\xff"
@@ -89,6 +89,12 @@ def validate_and_harden_image(file_bytes: bytes) -> bytes:
         )
 
     # Check 3: Unconditional EXIF strip — re-save as JPEG with no metadata.
+    # First, transpose pixel bitmap according to EXIF orientation so phone camera
+    # photos stay upright when EXIF metadata is stripped.
+    transposed = ImageOps.exif_transpose(img)
+    if transposed is not None:
+        img = transposed
+
     # Convert RGBA (PNG with transparency) to RGB for JPEG compatibility.
     if img.mode in ("RGBA", "P", "LA"):
         img = img.convert("RGB")

@@ -55,9 +55,10 @@ export const BaselineLayer = memo(function BaselineLayer({
           x2={viewWidth}
           y2={y}
           stroke={OVERLAY_COLORS.guidelines.topline}
-          strokeWidth={1 * hitScale}
-          strokeDasharray={`${4 * hitScale} ${4 * hitScale}`}
-          strokeOpacity={isSpotlight ? 0.65 : 0.4}
+          strokeWidth={1.5}
+          vectorEffect="non-scaling-stroke"
+          strokeDasharray={`${6 * hitScale} ${5 * hitScale}`}
+          strokeOpacity={isSpotlight ? 0.85 : 0.65}
           className="pointer-events-none"
         />
       ))}
@@ -70,9 +71,10 @@ export const BaselineLayer = memo(function BaselineLayer({
           x2={viewWidth}
           y2={y}
           stroke={OVERLAY_COLORS.guidelines.midline}
-          strokeWidth={1 * hitScale}
-          strokeDasharray={`${2 * hitScale} ${3 * hitScale}`}
-          strokeOpacity={isSpotlight ? 0.75 : 0.45}
+          strokeWidth={1.75}
+          vectorEffect="non-scaling-stroke"
+          strokeDasharray={`${3 * hitScale} ${4 * hitScale}`}
+          strokeOpacity={isSpotlight ? 0.95 : 0.75}
           className="pointer-events-none"
         />
       ))}
@@ -85,8 +87,9 @@ export const BaselineLayer = memo(function BaselineLayer({
           x2={viewWidth}
           y2={y}
           stroke={OVERLAY_COLORS.guidelines.baseline}
-          strokeWidth={(isSpotlight ? 1.5 : 1.2) * hitScale}
-          strokeOpacity={isSpotlight ? 0.9 : 0.55}
+          strokeWidth={isSpotlight ? 3 : 2.5}
+          vectorEffect="non-scaling-stroke"
+          strokeOpacity={isSpotlight ? 1.0 : 0.85}
           className="pointer-events-none"
         />
       ))}
@@ -169,7 +172,8 @@ export const BaselineLayer = memo(function BaselineLayer({
               y1={wordBottomY}
               x2={x + w + 2 * hitScale}
               y2={wordBottomY}
-              strokeWidth={4 * hitScale}
+              strokeWidth={5}
+              vectorEffect="non-scaling-stroke"
               strokeLinecap="round"
               className={`transition-opacity stroke-brand-700 dark:stroke-brand-400 pointer-events-none ${
                 isActive ? "opacity-100" : "opacity-0 group-focus-visible:opacity-100"
@@ -183,8 +187,9 @@ export const BaselineLayer = memo(function BaselineLayer({
               x2={x + w}
               y2={wordBottomY}
               stroke={strokeColor}
-              strokeWidth={(isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal) * hitScale}
-              strokeDasharray={isAttention ? "none" : `${3 * hitScale} ${2 * hitScale}`}
+              strokeWidth={isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal}
+              vectorEffect="non-scaling-stroke"
+              strokeDasharray={isAttention ? "none" : `${4 * hitScale} ${3 * hitScale}`}
               className="transition-all"
             />
 
@@ -193,10 +198,11 @@ export const BaselineLayer = memo(function BaselineLayer({
               <circle
                 cx={x + w / 2}
                 cy={wordBottomY}
-                r={3.5 * hitScale}
+                r={5.5 * hitScale}
                 fill={strokeColor}
                 stroke="#ffffff"
-                strokeWidth={1.5 * hitScale}
+                strokeWidth={2}
+                vectorEffect="non-scaling-stroke"
                 className="transition-transform group-hover:scale-125 group-focus-visible:scale-125 motion-reduce:transform-none"
               />
             )}
