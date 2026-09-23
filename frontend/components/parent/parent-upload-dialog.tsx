@@ -288,9 +288,15 @@ function ParentUploadFlow({
     setUploadError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (cameraInputRef.current) cameraInputRef.current.value = "";
-    if (step === 3) {
+    if (step === 3 || step === 4) {
       setStep(2);
     }
+  };
+
+  const handleRetakePhoto = () => {
+    handleClearFile();
+    setUploadError(null);
+    setStep(2);
   };
 
   const handleFileChange = (file: File | undefined) => {
@@ -960,24 +966,15 @@ function ParentUploadFlow({
 
                 <div className="flex items-center gap-2 pt-2 border-t border-destructive/15 justify-end">
                   {isQualityGateError(uploadError.code) ? (
-                    <>
-                      <Button
-                        variant="outline"
-                        onClick={() => setStep(2)}
-                        className="border-destructive/30 hover:bg-destructive/10 text-destructive shrink-0 h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium cursor-pointer"
-                      >
-                        Back to Capture
-                      </Button>
-                      <Button
-                        ref={retryButtonRef}
-                        variant="destructive"
-                        onClick={handleClearFile}
-                        className="shrink-0 h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
-                      >
-                        <CameraIcon className="size-3.5" aria-hidden="true" />
-                        Retake Photo
-                      </Button>
-                    </>
+                    <Button
+                      ref={retryButtonRef}
+                      variant="destructive"
+                      onClick={handleRetakePhoto}
+                      className="shrink-0 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
+                    >
+                      <CameraIcon className="size-3.5" aria-hidden="true" />
+                      Retake Photo
+                    </Button>
                   ) : (
                     <>
                       <Button
