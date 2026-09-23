@@ -392,8 +392,8 @@ function ParentUploadFlow({
 
   return (
     <>
-      <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-border/80 pr-12">
-        <div className="flex items-center gap-2.5">
+      <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-border/80">
+        <div className="flex items-center gap-2.5 pr-10 sm:pr-8">
           <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
             <UploadCloudIcon className="size-5" aria-hidden="true" />
           </div>
@@ -408,7 +408,7 @@ function ParentUploadFlow({
         </div>
 
         {/* 3-Step Interactive Progress Stepper */}
-        <nav aria-label="Upload progress" className="mt-3 sm:mt-3.5">
+        <nav aria-label="Upload progress" className="mt-3 sm:mt-3.5 w-full">
           <p className="sr-only" aria-live="polite" aria-atomic="true">
             {stepAnnouncement}
           </p>

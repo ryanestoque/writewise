@@ -531,25 +531,26 @@ export function ManualRubricEntryForm({
   return (
     <div
       ref={formRef}
-      className="p-2.5 sm:p-3.5 rounded-xl bg-surface dark:bg-card border border-border shadow-xs space-y-2.5"
+      className="@container p-2.5 sm:p-3.5 rounded-xl bg-surface dark:bg-card border border-border shadow-xs space-y-2.5"
     >
       {/* Screen reader live announcement region */}
       <div className="sr-only" role="status" aria-live="polite">
         {accessibilityAnnouncement}
       </div>
 
-      {/* Header with status counter, mobile view toggle, & keyboard hint toggle */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2 border-b border-border/60">
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Award className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-            <h3 className="text-xs font-heading font-semibold text-foreground">
+      {/* Header with status counter, view toggle, & keyboard hint toggle */}
+      <div className="flex flex-col gap-2 pb-2.5 border-b border-border/60">
+        {/* Top Row: Title + Keyboard Help on Left, Badge Status on Right */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Award className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+            <h3 className="text-xs font-heading font-semibold text-foreground truncate">
               Teacher Rubric Assessment
             </h3>
             <button
               type="button"
               onClick={() => setShowKeyboardHelp((prev) => !prev)}
-              className="hidden sm:flex text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg cursor-pointer items-center justify-center min-h-8 min-w-8 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+              className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg cursor-pointer flex items-center justify-center min-h-7 min-w-7 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
               title="Toggle Keyboard Shortcuts"
               aria-label="Toggle Keyboard Shortcuts"
               aria-expanded={showKeyboardHelp}
@@ -557,47 +558,10 @@ export function ManualRubricEntryForm({
               <Keyboard className="size-3.5" aria-hidden="true" />
             </button>
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            Evaluate student penmanship across 5 core criteria to finalize assessment scores.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
-          {/* Layout Mode Switcher (Focus Stepper vs Full List for all viewports) */}
-          <div className="flex items-center p-0.5 rounded-lg bg-muted/60 border border-border/80">
-            <button
-              type="button"
-              onClick={() => setLayoutMode("stepper")}
-              className={`px-2.5 py-1.5 sm:py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-[40px] sm:min-h-[28px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
-                layoutMode === "stepper"
-                  ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              aria-pressed={layoutMode === "stepper"}
-              title="Focus Stepper Mode (1 criterion at a time)"
-            >
-              <Layers className="size-3.5 sm:size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-              <span>Focus</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setLayoutMode("list")}
-              className={`px-2.5 py-1.5 sm:py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-[40px] sm:min-h-[28px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
-                layoutMode === "list"
-                  ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              aria-pressed={layoutMode === "list"}
-              title="List Mode (show all 5 criteria)"
-            >
-              <LayoutList className="size-3.5 sm:size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-              <span>All (5)</span>
-            </button>
-          </div>
 
           <Badge
             variant="outline"
-            className={`text-[11px] font-semibold px-2.5 py-0.5 shrink-0 font-sans tabular-nums inline-flex items-center ${
+            className={`text-[11px] font-semibold px-2 py-0.5 shrink-0 font-sans tabular-nums inline-flex items-center ${
               allBandsSelected && compositeRubric
                 ? compositeRubric.overallBandMeta.badgeClass
                 : "bg-band-2/15 text-amber-900 dark:bg-band-2/25 dark:text-amber-200 border-band-2/40"
@@ -612,55 +576,102 @@ export function ManualRubricEntryForm({
             )}
           </Badge>
         </div>
+
+        {/* Second Row: Subtitle and Mode Switcher */}
+        <div className="flex flex-col @[440px]:flex-row @[440px]:items-center justify-between gap-2">
+          <p className="text-[11px] text-muted-foreground leading-normal flex-1">
+            Evaluate student penmanship across 5 core criteria to finalize assessment scores.
+          </p>
+
+          <div className="flex items-center p-0.5 rounded-lg bg-muted/60 border border-border/80 shrink-0 self-start @[440px]:self-auto">
+            <button
+              type="button"
+              onClick={() => setLayoutMode("stepper")}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer min-h-[30px] sm:min-h-[28px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
+                layoutMode === "stepper"
+                  ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              aria-pressed={layoutMode === "stepper"}
+              title="Focus Stepper Mode (1 criterion at a time)"
+            >
+              <Layers className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+              <span>Focus</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setLayoutMode("list")}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer min-h-[30px] sm:min-h-[28px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
+                layoutMode === "list"
+                  ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              aria-pressed={layoutMode === "list"}
+              title="List Mode (show all 5 criteria)"
+            >
+              <LayoutList className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+              <span>All (5)</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Quick Batch Presets Row */}
-      <div className="flex items-center justify-between gap-2 pt-0.5 pb-0.5 flex-wrap">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1 shrink-0">
+      <div className="space-y-1.5 pt-0.5 pb-0.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5 shrink-0">
             <SlidersHorizontal className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-            <span>Presets:</span>
+            <span>Batch Presets:</span>
           </span>
+
+          {compositeRubric && (
+            <div className="flex items-center gap-1.5 text-[11px] shrink-0 font-sans tabular-nums">
+              <span className="text-muted-foreground hidden @[440px]:inline">Cumulative:</span>
+              <span className="font-semibold text-foreground">
+                {compositeRubric.totalPoints}/{compositeRubric.maxPoints} pts ({compositeRubric.avgPercentage}%)
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-3 gap-1.5 w-full">
           <button
             type="button"
             onClick={() => handleApplyPreset("satisfactory")}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 sm:py-0.5 rounded-md text-xs sm:text-[11px] font-medium bg-band-3/15 text-emerald-950 dark:text-emerald-200 border border-band-3/35 hover:bg-band-3/25 transition-colors cursor-pointer min-h-[40px] sm:min-h-[28px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+            className="inline-flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-[11px] font-medium bg-band-3/15 text-emerald-950 dark:text-emerald-200 border border-band-3/35 hover:bg-band-3/25 transition-colors cursor-pointer min-h-[34px] sm:min-h-[28px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 text-center"
             title="Rate all 5 criteria as Satisfactory (Alt+3)"
           >
-            <span className="size-1.5 rounded-full bg-band-3" aria-hidden="true" />
-            <span>All Satisfactory</span>
-            <kbd className="text-[10px] font-mono opacity-75 ml-0.5 hidden sm:inline">Alt+3</kbd>
+            <span className="size-1.5 rounded-full bg-band-3 shrink-0" aria-hidden="true" />
+            <span className="truncate">
+              <span className="hidden @[480px]:inline">All </span>Satisfactory
+            </span>
+            <kbd className="text-[9.5px] font-mono opacity-75 ml-0.5 hidden @[520px]:inline">Alt+3</kbd>
           </button>
           <button
             type="button"
             onClick={() => handleApplyPreset("excellent")}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 sm:py-0.5 rounded-md text-xs sm:text-[11px] font-medium bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border border-brand-300/70 hover:bg-brand-100 dark:hover:bg-brand-900/60 transition-colors cursor-pointer min-h-[40px] sm:min-h-[28px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+            className="inline-flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-[11px] font-medium bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border border-brand-300/70 hover:bg-brand-100 dark:hover:bg-brand-900/60 transition-colors cursor-pointer min-h-[34px] sm:min-h-[28px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 text-center"
             title="Rate all 5 criteria as Excellent (Alt+4)"
           >
-            <span className="size-1.5 rounded-full bg-brand-600 dark:bg-brand-400" aria-hidden="true" />
-            <span>All Excellent</span>
-            <kbd className="text-[10px] font-mono opacity-75 ml-0.5 hidden sm:inline">Alt+4</kbd>
+            <span className="size-1.5 rounded-full bg-brand-600 dark:bg-brand-400 shrink-0" aria-hidden="true" />
+            <span className="truncate">
+              <span className="hidden @[480px]:inline">All </span>Excellent
+            </span>
+            <kbd className="text-[9.5px] font-mono opacity-75 ml-0.5 hidden @[520px]:inline">Alt+4</kbd>
           </button>
           <button
             type="button"
             onClick={() => handleApplyPreset("developing")}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 sm:py-0.5 rounded-md text-xs sm:text-[11px] font-medium bg-band-2/15 text-amber-900 dark:text-amber-200 border border-band-2/35 hover:bg-band-2/25 transition-colors cursor-pointer min-h-[40px] sm:min-h-[28px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+            className="inline-flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-[11px] font-medium bg-band-2/15 text-amber-900 dark:text-amber-200 border border-band-2/35 hover:bg-band-2/25 transition-colors cursor-pointer min-h-[34px] sm:min-h-[28px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 text-center"
             title="Rate all 5 criteria as Developing (Alt+2)"
           >
-            <span className="size-1.5 rounded-full bg-band-2" aria-hidden="true" />
-            <span>All Developing</span>
-            <kbd className="text-[10px] font-mono opacity-75 ml-0.5 hidden sm:inline">Alt+2</kbd>
+            <span className="size-1.5 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
+            <span className="truncate">
+              <span className="hidden @[480px]:inline">All </span>Developing
+            </span>
+            <kbd className="text-[9.5px] font-mono opacity-75 ml-0.5 hidden @[520px]:inline">Alt+2</kbd>
           </button>
         </div>
-
-        {compositeRubric && (
-          <div className="flex items-center gap-1.5 text-[11px] shrink-0 font-sans tabular-nums ml-auto">
-            <span className="text-muted-foreground hidden sm:inline">Cumulative:</span>
-            <span className="font-semibold text-foreground">
-              {compositeRubric.totalPoints}/{compositeRubric.maxPoints} pts ({compositeRubric.avgPercentage}%)
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Keyboard Shortcuts Hint Bar */}
@@ -781,7 +792,7 @@ export function ManualRubricEntryForm({
                 </div>
 
                 {/* Segmented 4-Radio Buttons with Responsive Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-0.5">
+                <div className="grid grid-cols-2 @[480px]:grid-cols-4 gap-1.5 pt-0.5">
                   {RUBRIC_BANDS.map((option, optIdx) => {
                     const isChecked = selectedBand === option.band;
                     const isTabTarget = isChecked || (!selectedBand && optIdx === 0);
@@ -820,21 +831,21 @@ export function ManualRubricEntryForm({
                             onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
                           }
                         }}
-                        className={`flex flex-col items-center justify-center p-2.5 rounded-lg border text-center transition-all cursor-pointer min-h-[46px] sm:min-h-[40px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${
+                        className={`flex flex-row items-center justify-between px-3 py-2.5 @[480px]:flex-col @[480px]:items-center @[480px]:justify-center @[480px]:p-2.5 rounded-lg border text-center transition-all cursor-pointer min-h-[44px] @[480px]:min-h-[42px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${
                           isChecked
                             ? option.activeClass
                             : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
                         }`}
                       >
-                        <div className="flex items-center gap-1">
-                          <span className="text-[11px] font-mono font-medium text-muted-foreground">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-[11px] font-mono font-medium text-muted-foreground shrink-0">
                             [{option.shortcutKey}]
                           </span>
-                          <span className="text-xs leading-tight font-semibold">
+                          <span className="text-xs leading-tight font-semibold truncate">
                             {option.label}
                           </span>
                         </div>
-                        <span className="text-[11px] font-semibold text-muted-foreground mt-0.5">
+                        <span className="text-[11px] font-semibold text-muted-foreground shrink-0 @[480px]:mt-0.5">
                           {option.score}
                         </span>
                       </button>
@@ -952,7 +963,7 @@ export function ManualRubricEntryForm({
               </div>
 
               {/* Segmented 4-Radio Buttons with WAI-ARIA Roving Tabindex & Mobile Touch Sizing */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-2 @[480px]:grid-cols-4 gap-1.5">
                 {RUBRIC_BANDS.map((option, optIdx) => {
                   const isChecked = selectedBand === option.band;
                   const isTabTarget = isChecked || (!selectedBand && optIdx === 0);
@@ -988,21 +999,21 @@ export function ManualRubricEntryForm({
                           `${criterion.shortName} rated ${option.label} (${option.score}).`
                         );
                       }}
-                      className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all cursor-pointer min-h-[44px] sm:min-h-[38px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${
+                      className={`flex flex-row items-center justify-between px-2.5 py-2 @[480px]:flex-col @[480px]:items-center @[480px]:justify-center @[480px]:p-2 rounded-lg border text-center transition-all cursor-pointer min-h-[42px] @[480px]:min-h-[38px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${
                         isChecked
                           ? option.activeClass
                           : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
                       }`}
                     >
-                      <div className="flex items-center gap-1">
-                        <span className="text-[11px] font-mono font-medium text-muted-foreground">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-[11px] font-mono font-medium text-muted-foreground shrink-0">
                           [{option.shortcutKey}]
                         </span>
-                        <span className="text-[11px] leading-tight font-medium">
+                        <span className="text-[11px] leading-tight font-medium truncate">
                           {option.shortLabel}
                         </span>
                       </div>
-                      <span className="text-[11px] font-semibold text-muted-foreground mt-0.5">
+                      <span className="text-[11px] font-semibold text-muted-foreground shrink-0 @[480px]:mt-0.5">
                         {option.score}
                       </span>
                     </button>
@@ -1010,9 +1021,9 @@ export function ManualRubricEntryForm({
                 })}
               </div>
 
-              {/* Inline Mobile Coaching Tip when criterion is focused in List mode (sm:hidden) */}
+              {/* Inline Coaching Tip when criterion is focused in List mode */}
               {isFocused && guide && (
-                <div className="sm:hidden mt-2 p-2 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-[11px] text-brand-900 dark:text-brand-200 flex items-start gap-1.5 animate-in fade-in-50 duration-150 motion-reduce:animate-none">
+                <div className="mt-2 p-2 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-[11px] text-brand-900 dark:text-brand-200 flex items-start gap-1.5 animate-in fade-in-50 duration-150 motion-reduce:animate-none">
                   <Info className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
                   <div className="space-y-0.5 min-w-0">
                     <span className="font-semibold block text-brand-800 dark:text-brand-300">
@@ -1030,8 +1041,8 @@ export function ManualRubricEntryForm({
       </div>
 
       {/* Form Submit Footer */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-2 border-t border-border/60 gap-2.5">
-        <div className="text-[11px] text-muted-foreground flex items-center justify-between sm:justify-start gap-3 flex-wrap">
+      <div className="flex flex-col @[460px]:flex-row @[460px]:items-center justify-between pt-2 border-t border-border/60 gap-2.5">
+        <div className="text-[11px] text-muted-foreground flex items-center justify-between @[460px]:justify-start gap-3 flex-wrap">
           {allBandsSelected && compositeRubric ? (
             <span className="text-brand-700 dark:text-brand-300 font-medium flex items-center gap-1.5 font-sans tabular-nums">
               <Check className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
@@ -1045,26 +1056,26 @@ export function ManualRubricEntryForm({
           )}
 
           {canGoNext && (
-            <label className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none touch-manipulation px-2.5 py-1.5 rounded-md hover:bg-muted/40 transition-colors min-h-[40px] sm:min-h-0">
+            <label className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none touch-manipulation px-2 py-1 rounded-md hover:bg-muted/40 transition-colors min-h-[36px] sm:min-h-0">
               <input
                 type="checkbox"
                 checked={autoAdvance}
                 onChange={(e) => setAutoAdvance(e.target.checked)}
-                className="size-4 sm:size-3.5 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary"
+                className="size-3.5 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary"
               />
               <span>Auto-advance</span>
             </label>
           )}
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2 w-full @[460px]:w-auto">
           {onCancel && (
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={onCancel}
-              className="flex-1 sm:flex-initial h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-3.5 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+              className="flex-1 @[460px]:flex-initial h-9 sm:h-8 px-3.5 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
             >
               Cancel
             </Button>
@@ -1075,7 +1086,7 @@ export function ManualRubricEntryForm({
             size="sm"
             disabled={!allBandsSelected || isSubmittingScore}
             onClick={handleSubmitRubric}
-            className="flex-1 sm:flex-initial w-full sm:w-auto h-10 sm:h-8 min-h-[44px] sm:min-h-[32px] px-4 bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-semibold rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation"
+            className="flex-1 @[460px]:flex-initial w-full @[460px]:w-auto h-9 sm:h-8 px-4 bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-semibold rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation"
           >
             {isSubmittingScore ? (
               <>
