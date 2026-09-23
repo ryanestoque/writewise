@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import type { Submission } from "@/lib/hooks/use-submissions";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertCircle,
   RotateCcw,
@@ -101,19 +100,6 @@ export const REJECTION_GUIDE: Record<string, RejectionDetail> = {
   },
 };
 
-export const REJECTION_BADGE_LABELS: Record<string, string> = {
-  QUALITY_GATE_BLUR: "Blur Detected",
-  QUALITY_GATE_BRIGHTNESS: "Lighting / Glare",
-  QUALITY_GATE_CONTRAST: "Low Contrast",
-  QUALITY_GATE_RESOLUTION: "Low Resolution",
-  SEGMENTATION_COUNT_MISMATCH: "Word Count Mismatch",
-  PIPELINE_ERROR: "Processing Issue",
-  QUALITY_GATE_LIGHTING: "Lighting / Glare",
-  QUALITY_GATE_SKEW: "Tilted Angle",
-  QUALITY_GATE_OCCLUDED: "Guidelines Covered",
-  QUALITY_GATE_NO_TEXT: "No Handwriting Found",
-};
-
 export interface SubmissionRejectionCardProps {
   submission: Submission;
   onReupload: () => void;
@@ -141,15 +127,10 @@ export function SubmissionRejectionCard({
       ? `This worksheet was uploaded by the student's parent. ${baseInfo.advice} You can take a new photo in class now or advise the parent to re-scan.`
       : baseInfo.advice;
 
-    const badgeLabel = submission.rejection_code
-      ? REJECTION_BADGE_LABELS[submission.rejection_code] ?? "Needs Re-scan"
-      : "Needs Re-scan";
-
     return {
       ...baseInfo,
       actionLabel,
       actionAdvice,
-      badgeLabel,
     };
   }, [submission.rejection_code, submission.uploader_role]);
 
@@ -168,20 +149,12 @@ export function SubmissionRejectionCard({
           />
           <div className="min-w-0 flex-1">
             <AlertTitle className="font-heading text-sm sm:text-base font-semibold text-destructive tracking-tight leading-snug">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <h3
-                  id="rejection-heading"
-                  className="text-balance break-words font-inherit"
-                >
-                  {rejectionInfo.title}
-                </h3>
-                <Badge
-                  variant="outline"
-                  className="text-[10px] font-semibold px-2 py-0.5 bg-destructive/15 text-destructive border-destructive/30 shrink-0"
-                >
-                  {rejectionInfo.badgeLabel}
-                </Badge>
-              </div>
+              <h3
+                id="rejection-heading"
+                className="text-balance break-words font-inherit"
+              >
+                {rejectionInfo.title}
+              </h3>
             </AlertTitle>
           </div>
         </div>
