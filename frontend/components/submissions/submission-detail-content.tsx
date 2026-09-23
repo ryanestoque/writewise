@@ -41,7 +41,21 @@ import {
   SlidersHorizontal,
   ShieldCheck,
   Edit3,
+  Trash2,
+  Loader2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { useDeleteSubmission } from "@/lib/hooks/use-submissions";
 import {
   ManualRubricEntryForm,
   calculateCompositeRubric,
@@ -264,6 +278,34 @@ export function SubmissionDetailContent({
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [submissions, effectiveIndex, canGoPrev, canGoNext, onNavigate]);
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const deleteMutation = useDeleteSubmission();
+
+  const handleDelete = async () => {
+    try {
+      await deleteMutation.mutateAsync(submission.id);
+      toast.success("Attempt deleted");
+      setIsDeleteDialogOpen(false);
+
+      if (submissions && submissions.length > 1 && onNavigate) {
+        const remaining = submissions.filter((s) => s.id !== submission.id);
+        if (remaining.length > 0) {
+          const nextTarget = remaining[Math.min(effectiveIndex, remaining.length - 1)];
+          onNavigate(nextTarget);
+          return;
+        }
+      }
+
+      if (onClose) {
+        onClose();
+      }
+    } catch (err: unknown) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to delete submission";
+      toast.error(errorMsg);
+    }
+  };
 
   const measurement = submission.measurement;
   const compositeScore = measurement?.composite_score;
@@ -521,8 +563,22 @@ export function SubmissionDetailContent({
         </div>
       </div>
 
-      {/* Navigation between students */}
-      <div className="flex items-center gap-2 shrink-0">
+      {/* Actions and Navigation */}
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsDeleteDialogOpen(true)}
+          disabled={deleteMutation.isPending}
+          className="h-8.5 sm:h-9 px-2 sm:px-2.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl border border-border/60 hover:border-destructive/30 transition-colors flex items-center gap-1.5 cursor-pointer touch-manipulation font-medium"
+          title="Delete this attempt"
+          aria-label="Delete this attempt"
+        >
+          <Trash2 className="size-3.5" aria-hidden="true" />
+          <span className="hidden sm:inline">Delete Attempt</span>
+        </Button>
+
         {hasMultipleSubmissions && submissions && onNavigate && (
           <div className="flex items-center gap-0.5 sm:gap-1 bg-muted/50 p-0.5 sm:p-1 rounded-xl border border-border h-8.5 sm:h-9">
             <Button
@@ -1347,6 +1403,51 @@ export function SubmissionDetailContent({
           )}
         </footer>
       )}
+
+      {/* Delete Confirmation Alert Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this attempt?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the uploaded worksheet photo, computer vision analysis,
+              and rubric scores for{" "}
+              <strong className="font-semibold text-foreground">
+                {submission.student?.full_name ?? "this student"}
+              </strong>
+              . This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={deleteMutation.isPending}
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteMutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2 cursor-pointer"
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  <span>Deleting...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="size-4" aria-hidden="true" />
+                  <span>Delete Attempt</span>
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
