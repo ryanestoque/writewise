@@ -396,7 +396,8 @@ export function WorksheetViewDialog({
                 e.preventDefault();
                 handleDelete();
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2 cursor-pointer"
+              variant="destructive"
+              className="gap-2 cursor-pointer"
             >
               {deleteMutation.isPending ? (
                 <>
@@ -404,10 +405,7 @@ export function WorksheetViewDialog({
                   <span>Deleting...</span>
                 </>
               ) : (
-                <>
-                  <Trash2 className="size-4" aria-hidden="true" />
-                  <span>Delete Upload</span>
-                </>
+                "Delete Upload"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

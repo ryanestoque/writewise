@@ -82,24 +82,23 @@ export default function SubmissionDetailPage({
   if (isLoading) {
     return (
       <div className="w-full space-y-4 animate-pulse" role="status" aria-label="Loading handwriting submission details">
+        {/* Top Back Navigation Trail Skeleton */}
+        <div className="py-2 -ml-1 sm:-ml-2">
+          <Skeleton className="h-4 w-28 rounded-md" />
+        </div>
+
         {/* Header Skeleton matching rendered responsive layout */}
         <div className="space-y-2 pb-2.5 sm:pb-3 border-b border-border/70">
-          {/* Mobile top toolbar skeleton (< sm) */}
-          <div className="flex sm:hidden items-center justify-between gap-2">
-            <Skeleton className="h-9 w-20 rounded-xl shrink-0" />
-            <Skeleton className="h-9 w-32 rounded-xl shrink-0" />
-          </div>
           {/* Main identity row */}
           <div className="flex items-center justify-between gap-2.5 sm:gap-3">
             <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-              <Skeleton className="hidden sm:inline-flex h-9 w-32 rounded-xl shrink-0" />
               <Skeleton className="size-9 sm:size-10 rounded-xl shrink-0" />
               <div className="space-y-1.5 min-w-0 flex-1">
                 <Skeleton className="h-5 sm:h-6 w-36 sm:w-48 rounded-md" />
                 <Skeleton className="h-3 w-40 sm:w-52 rounded-md" />
               </div>
             </div>
-            <Skeleton className="hidden sm:inline-flex h-9 w-32 rounded-xl shrink-0" />
+            <Skeleton className="h-9 w-32 rounded-xl shrink-0" />
           </div>
         </div>
 
@@ -143,7 +142,21 @@ export default function SubmissionDetailPage({
 
 
   return (
-    <div className="w-full">
+    <div className="w-full space-y-3 sm:space-y-4">
+      {/* Top Back Navigation Trail */}
+      <nav aria-label="Breadcrumb navigation" className="print:hidden">
+        <Link
+          href={`/activities/${activityId}`}
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-2.5 py-2 min-h-[44px] sm:min-h-[36px] hover:bg-muted/50 -ml-1 sm:-ml-2"
+        >
+          <ArrowLeft
+            className="size-3.5 transition-transform group-hover:-translate-x-0.5"
+            aria-hidden="true"
+          />
+          <span>Back to Activity</span>
+        </Link>
+      </nav>
+
       {/* Main Content */}
       <SubmissionDetailContent
         key={submission.id}

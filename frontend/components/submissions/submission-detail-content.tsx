@@ -34,7 +34,6 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
-  ArrowLeft,
   Eye,
   Info,
   Award,
@@ -537,46 +536,9 @@ export function SubmissionDetailContent({
   // Render header content based on variant and viewport tier
   const headerContent = (
     <div className="w-full flex flex-col gap-2.5 sm:gap-3">
-      {/* Mobile-only toolbar for page variant (< sm) */}
-      {variant === "page" && (
-        <div className="flex sm:hidden items-center justify-between gap-2 w-full">
-          {onClose && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onClose}
-              className="h-9 min-h-[36px] px-2.5 rounded-xl border-border/80 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 gap-1.5 shrink-0 transition-colors cursor-pointer group shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 touch-manipulation flex items-center"
-              title="Return to activity (Esc)"
-            >
-              <ArrowLeft className="size-3.5 group-hover:-translate-x-0.5 transition-transform" aria-hidden="true" />
-              <span>Back</span>
-            </Button>
-          )}
-          <div className="ml-auto flex items-center">
-            {actionsContent}
-          </div>
-        </div>
-      )}
-
       {/* Main Student Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 w-full">
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-          {/* Desktop-only back button (>= sm) */}
-          {variant === "page" && onClose && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onClose}
-              className="hidden sm:inline-flex h-9 px-3 rounded-xl border-border/80 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 gap-1.5 shrink-0 transition-colors cursor-pointer group shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 touch-manipulation"
-              title="Return to activity (Esc)"
-            >
-              <ArrowLeft className="size-3.5 group-hover:-translate-x-0.5 transition-transform" aria-hidden="true" />
-              <span>Back to Activity</span>
-            </Button>
-          )}
-
           {/* Student Avatar */}
           <div
             className={cn(
@@ -656,15 +618,8 @@ export function SubmissionDetailContent({
           </div>
         </div>
 
-        {/* Action buttons: for modal mode on mobile it wraps below cleanly; for desktop it sits on the right */}
-        <div
-          className={cn(
-            "shrink-0",
-            variant === "page"
-              ? "hidden sm:flex items-center"
-              : "flex items-center self-end sm:self-auto"
-          )}
-        >
+        {/* Action buttons */}
+        <div className="shrink-0 flex items-center self-end sm:self-auto">
           {actionsContent}
         </div>
       </div>
@@ -1490,7 +1445,8 @@ export function SubmissionDetailContent({
                 e.preventDefault();
                 handleDelete();
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2 cursor-pointer"
+              variant="destructive"
+              className="gap-2 cursor-pointer"
             >
               {deleteMutation.isPending ? (
                 <>
@@ -1498,10 +1454,7 @@ export function SubmissionDetailContent({
                   <span>Deleting...</span>
                 </>
               ) : (
-                <>
-                  <Trash2 className="size-4" aria-hidden="true" />
-                  <span>Delete Attempt</span>
-                </>
+                "Delete Attempt"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
