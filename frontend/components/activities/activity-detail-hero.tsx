@@ -261,20 +261,22 @@ export function ActivityDetailHero({
         {/* Hero Penmanship Prompt on Authentic 3-Line Cursive Ruling */}
         <div className="relative group/prompt">
           <div className="relative rounded-xl border border-border/80 bg-background/60 dark:bg-card/60 p-4 sm:p-5 shadow-warm-sm overflow-hidden">
-            <div
-              className="absolute inset-0 pointer-events-none opacity-25 dark:opacity-15 bg-[repeating-linear-gradient(0deg,transparent,transparent_47px,currentColor_48px)] text-brand-600 dark:text-brand-400"
-              aria-hidden="true"
-            />
-            <p
-              className={cn(
-                "relative tracking-wide select-all break-words print:text-black",
-                activity.target_text?.trim()
-                  ? "font-cursive text-foreground/90 font-normal text-2xl sm:text-3xl lg:text-4xl leading-[48px]"
-                  : "text-muted-foreground italic font-sans text-sm sm:text-base leading-normal py-3"
-              )}
-            >
-              {activity.target_text?.trim() || "No target text specified"}
-            </p>
+            <div className="relative overflow-hidden">
+              <div
+                className="absolute inset-0 pointer-events-none cursive-guidelines overflow-hidden print:opacity-60"
+                aria-hidden="true"
+              />
+              <p
+                className={cn(
+                  "relative z-10 tracking-wide select-all break-words print:text-black",
+                  activity.target_text?.trim()
+                    ? "font-cursive text-foreground/90 font-normal text-[32px] sm:text-[36px] leading-[48px]"
+                    : "text-muted-foreground italic font-sans text-sm sm:text-base leading-normal py-3"
+                )}
+              >
+                {activity.target_text?.trim() || "No target text specified"}
+              </p>
+            </div>
           </div>
         </div>
       </div>

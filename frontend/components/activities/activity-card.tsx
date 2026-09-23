@@ -292,15 +292,15 @@ export const ActivityCard = memo(function ActivityCard({
             <div className="relative max-h-[148px] sm:max-h-[156px] overflow-hidden">
               {/* Authentic 3-line ruling aligned with Cedarville Cursive baseline */}
               <div
-                className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden z-0"
+                className="absolute inset-0 pointer-events-none cursive-guidelines overflow-hidden z-0 print:opacity-60"
                 aria-hidden="true"
               />
 
               <p
                 className={cn(
-                  "relative z-10 font-cursive leading-snug sm:leading-[44px] md:leading-[48px] tracking-wide break-words line-clamp-3",
+                  "relative z-10 font-cursive leading-[48px] tracking-wide break-words line-clamp-3 print:text-black",
                   activity.target_text?.trim()
-                    ? "text-2xl sm:text-[32px] md:text-[34px] text-foreground/90 font-normal"
+                    ? "text-[30px] sm:text-[32px] md:text-[34px] text-foreground/90 font-normal"
                     : "text-base sm:text-lg text-muted-foreground/70 italic font-sans"
                 )}
               >

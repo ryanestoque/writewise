@@ -242,12 +242,12 @@ export function CreateActivityDialog({
                       </span>
                     </div>
                     <div className="relative p-3.5 sm:p-4 pb-5 sm:pb-6 rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-2xs">
-                      <div className="relative">
+                      <div className="relative overflow-hidden">
                         <div
-                          className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-20 cursive-guidelines overflow-hidden"
+                          className="absolute inset-0 pointer-events-none cursive-guidelines overflow-hidden"
                           aria-hidden="true"
                         />
-                        <p className="relative font-cursive text-[34px] leading-[48px] text-foreground/90 font-normal tracking-wide break-words">
+                        <p className="relative z-10 font-cursive text-[34px] sm:text-[36px] leading-[48px] text-foreground/90 font-normal tracking-wide break-words">
                           {targetText}
                         </p>
                       </div>
