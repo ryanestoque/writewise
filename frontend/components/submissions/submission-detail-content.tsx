@@ -1016,22 +1016,6 @@ export function SubmissionDetailContent({
                       >
                         <Award className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                         <span>Rubric Rating</span>
-                        {submission.manual_score ? (
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] px-1.5 py-0 bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300"
-                          >
-                            Graded
-                          </Badge>
-                        ) : (
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] px-1.5 py-0 bg-amber-50 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border-amber-300/70 inline-flex items-center gap-1"
-                          >
-                            <span className="size-1.5 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
-                            <span>Unrated</span>
-                          </Badge>
-                        )}
                       </button>
 
                       <button
@@ -1061,12 +1045,6 @@ export function SubmissionDetailContent({
                       >
                         <SlidersHorizontal className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                         <span>CV Metrics</span>
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] px-1.5 py-0 bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300"
-                        >
-                          Raw
-                        </Badge>
                       </button>
                     </div>
 
