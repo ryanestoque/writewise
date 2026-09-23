@@ -56,6 +56,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Class roster management (add/edit/remove student) | Done | | PRD §7.1, API_SPEC §3.1, DATABASE §5 |
 | Activity creation (freeform target text) | Done | | PRD §7.1, API_SPEC §3.2, DESIGN §6 screens 5–6 |
 | Submission upload (single photo per activity) | Done | | PRD §7.1, API_SPEC §3.3 |
+| Submission deletion & attempt management | Done | | API_SPEC §3.3, DESIGN §7.1 |
 | Raw CV measurement display | Done | | PRD §7.1/§7.3, CV_PIPELINE §8, DESIGN §7.2 |
 | Manual rubric score entry | Done | | PRD §7.1, DATABASE §9, DESIGN §7.9 |
 | Teacher account settings (profile & in-session password update) | Done | | PRD §7.1, DESIGN §6 screen 3, DATABASE §4 |
