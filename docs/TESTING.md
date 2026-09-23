@@ -126,6 +126,11 @@ Covers ARCHITECTURE.md §8's synchronous pipeline end-to-end: upload → quality
 | `PATCH /submissions/{id}/manual-score`, first call | `200`, scores match band-anchor values (DATABASE §9) |
 | `PATCH /submissions/{id}/manual-score`, called twice on same submission | `409 MANUAL_SCORE_ALREADY_EXISTS` |
 | `PATCH /submissions/{id}/manual-score` while `SCORING_ENGINE=calibrated` | `403 MANUAL_SCORING_DISABLED` |
+| `DELETE /api/submissions/{id}` by roster teacher | `200`, deletes image from storage, cascades `measurement` & `manual_score` |
+| `DELETE /api/submissions/{id}` by non-roster teacher | `403 NOT_ROSTER_TEACHER` |
+| `DELETE /api/submissions/{id}` by parent on own un-graded submission | `200`, deletes image from storage and submission record |
+| `DELETE /api/submissions/{id}` by parent on graded submission | `409 SUBMISSION_ALREADY_GRADED` |
+| `DELETE /api/submissions/{id}` by parent on unlinked child or not uploader | `403 NOT_CHILD_PARENT` or `403 NOT_SUBMISSION_UPLOADER` |
 
 > The last two rows close API_SPEC.md §8's own flagged gap ("`MANUAL_SCORING_DISABLED` has no automated end-to-end test yet"). Both are testable today by setting the config flag in the test environment — neither depends on real calibration thresholds existing yet, so there's no reason to wait for PRD §5's "Between Phases" step to close this.
 
@@ -149,6 +154,9 @@ Each test case is written against, and cited back to, the specific SECURITY.md �
 | Malformed/corrupt image upload doesn't crash the process | #4 Malicious/malformed file upload |
 | A non-image file with a spoofed image MIME type is rejected by the magic-byte check before decode | #4 Malicious/malformed file upload |
 | A stored submission image's EXIF data (GPS especially) is verified absent after upload | #5 Incidental privacy leakage via the image itself |
+| A teacher cannot delete a submission for a student not on their roster | #1 Horizontal privilege escalation |
+| A parent cannot delete another family's submission or a teacher-uploaded submission | #1 Horizontal privilege escalation |
+| A parent cannot delete a take-home submission after the teacher has graded it | #1 / Data integrity |
 
 ### 6.2 Manual RLS Checklist (pre-defense only)
 
@@ -183,6 +191,8 @@ One row per DESIGN.md §6 screen, run pre-launch (Phase 1 rows) and pre-defense 
 | Child progress dashboard (parent) | Per-criterion + composite trend renders; multi-child switcher works if applicable |
 | Latest diagnostic feedback (parent) | Overlay + text breakdown render at correct visual weight (DESIGN §7.4) |
 | Parent submission upload | Same pass conditions as teacher upload, scoped to assigned take-home activity |
+| Submission attempt deletion (teacher) | "Delete Attempt" confirmation dialog removes submission and measurements, updates roster and activity attempt lists |
+| Take-home submission deletion (parent) | "Delete Upload" visible on un-graded assignments, confirmation removes upload; hidden/disabled once graded |
 
 Every row also gets a quick pass against DESIGN.md's token system generally: no red anywhere in the diagnostic band system, role-based routing actually blocks the wrong role (not just hides nav), keyboard focus visible.
 

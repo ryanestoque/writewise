@@ -18,7 +18,7 @@ Scoped to what's actually plausible for a 30-student, one-school academic pilot 
 
 **In scope:**
 
-1. **Horizontal privilege escalation** — a parent or teacher account viewing another family's/roster's data. This is the #1 threat given RA 10173 and that every data subject here is a minor.
+1. **Horizontal privilege escalation** — a parent or teacher account viewing or deleting another family's/roster's data. This is the #1 threat given RA 10173 and that every data subject here is a minor.
 2. **Service-role key compromise** — since it bypasses RLS entirely (ARCHITECTURE §4), a leaked key is close to a full breach. The single highest-impact secret in the system.
 3. **Account takeover** — teacher/parent credential compromise via phishing or password reuse. Supabase Auth handles the mechanics; policy (password strength, session length) is still ours to set (§4).
 4. **Malicious or malformed file upload** — the CV pipeline processes arbitrary uploaded images; a crafted file could exploit an image-parsing bug, or a small file could decode into an enormous bitmap and exhaust container memory before the quality gate ever runs (§5).
@@ -121,6 +121,7 @@ RA 10173's IRR requires notifying both the NPC and affected data subjects within
 No prior doc defines an endpoint for "the purpose has been served." Two data categories, two rules:
 
 - **Identified prod data** (real names, images, tied to real children in `writewise-prod`): retained through the October defense **plus a 6-month buffer** (covers any panel follow-up or re-validation request), then deleted from prod — both DB rows and Storage images — via a documented deletion pass, not left indefinitely. **This commitment extends to backup copies** (DEPLOYMENT.md §11) — a weekly backup is still identified data, so it's deleted on the same 6-months-post-defense schedule as the live database and Storage bucket, not left sitting in the shared backup folder indefinitely.
+- **Self-serve attempt deletion:** In addition to retention caps, teachers (for enrolled students) and parents (for un-graded take-home uploads) have self-serve hard deletion via `DELETE /api/submissions/{id}`. This purges the raw photo from Supabase Storage and cascades database records (`measurement`, `manual_score`), allowing immediate remediation of mistaken, duplicate, or poor-quality uploads.
 - **Anonymized exported dataset** (`research/export_dataset.py`'s output, ARCHITECTURE §16): retained indefinitely / for potential future publication, since it no longer contains identifiers and RA 10173's disposal pressure is much lighter on data that's genuinely no longer personal.
 
 ### 6.4 Data subject withdrawal procedure

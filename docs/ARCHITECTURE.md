@@ -25,7 +25,7 @@ WriteWise is a single web application serving two roles (Teacher, Parent) throug
 ┌──────────────┐  ┌─────────────────────────────┐
 │ Supabase      │  │ FastAPI Backend (Railway)   │
 │ direct reads  │  │ - roster/activity CRUD      │
-│ (supabase-js, │  │ - submission upload+process │
+│ (supabase-js, │  │ - submission upload/delete  │
 │  RLS-gated)   │  │ - CV pipeline (in-process)  │
 └──────┬────────┘  │ - CNN inference (in-process)│
        │           └──────────┬───────────────────┘
@@ -89,7 +89,7 @@ There is no third staging environment. Vercel's automatic preview deployments (o
 Hybrid — two paths, chosen per operation:
 
 - **Direct reads** (`supabase-js` from the frontend): dashboard trend data, roster display, activity lists. Protected entirely by Postgres Row-Level Security — the frontend never needs role-checking logic of its own for these; if a query returns rows, the user is allowed to see them.
-- **Writes and business logic** (FastAPI): creating an activity, uploading and processing a submission, roster changes, anything involving the CV/CNN pipeline. FastAPI holds the service-role key and does its own authorization checks in Python.
+- **Writes and business logic** (FastAPI): creating an activity, uploading, processing, or deleting a submission attempt, roster changes, anything involving the CV/CNN pipeline. FastAPI holds the service-role key and does its own authorization checks in Python.
 
 Auth itself (login, session/JWT) goes through Supabase Auth directly from the frontend — FastAPI never proxies login.
 
@@ -133,6 +133,8 @@ Private Supabase Storage bucket, access controlled by Storage-level RLS policies
 What's stored per submission: **the original uploaded photo only.** The Phase 2 diagnostic overlay (baseline drift line, spacing/size highlight boxes) is *not* a second baked image — its coordinates are stored as JSON on the `measurement` row, and the frontend renders it as an SVG layer on top of the original photo at view time. This roughly halves storage usage per submission and keeps the overlay flexible (togglable annotation types, no quality loss at zoom).
 
 The CNN model artifact also lives in Storage (a separate, private location from submission images) — see §9.
+
+**Deletion cleanup:** when a submission is deleted via FastAPI (`DELETE /api/submissions/{id}`), the service-role client unconditionally deletes the corresponding photo from `submission-images` alongside the cascading database row removals (`measurement`, `manual_score`), ensuring no orphaned files linger in storage.
 
 ---
 

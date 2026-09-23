@@ -19,7 +19,8 @@ Established once here so individual table sections below don't repeat them.
 - **Enums:** native Postgres `enum` types for every genuinely fixed, closed set (`submission_status`, `user_role`, `score_band`). This isn't just style — `supabase gen types typescript` (ARCHITECTURE §6) maps Postgres enums straight to TypeScript string-literal unions, which is exactly the "frontend and backend never drift on shape" guarantee that tool exists for. A `text` + `check` column would just generate as `string`, losing that.
 - **`ON DELETE` behavior:**
   - **Identity/roster cleanup** (`auth.users` → `teacher`/`parent`; `teacher`/`student`/`parent` → their join-table rows): `CASCADE`. If the identity or roster entry is gone, its own link rows should disappear with it — no orphans.
-  - **Research data** (`teacher`/`student` → `activity`/`submission`/`measurement`/`manual_score`): `RESTRICT`. Deleting a teacher or student account must be *blocked* while calibration data still references them — this is a thesis's actual dataset, and an account cleanup action should never be able to silently take part of it out.
+  - **Account deletion vs. research data** (`teacher`/`student` → `activity`/`submission`): `RESTRICT`. Deleting a teacher or student account must be *blocked* while calibration data still references them — this is a thesis's actual dataset, and an account cleanup action should never be able to silently take part of it out.
+  - **Submission attempt deletion** (`submission` → `measurement`/`manual_score`): `CASCADE` (updated via migration `0019_submission_cascade_delete.sql`). When an authorized user (teacher, or parent on an un-graded take-home attempt) deletes a submission attempt, its dependent `measurement` and `manual_score` records cascade delete cleanly, in lockstep with Storage object cleanup in FastAPI.
 - **Indexing philosophy:** minimal. Primary key and `unique` constraints (which Postgres indexes automatically) are all this schema gets up front — no proactive indexes for dashboard/trend query patterns. At pilot scale (5 teachers, 30 students), a full scan of any table here is scanning a few hundred rows at absolute worst. Add indexes reactively if Railway's structured logs (ARCHITECTURE §15) ever show a real slowdown — see §11.
 - **Access pattern reminder (from ARCHITECTURE §4):** RLS policies below are effectively **read policies**. Writes (roster changes, activity creation, submission upload) go through FastAPI using the service-role key, which bypasses RLS by design — FastAPI does its own authorization in Python. Don't go looking for `insert`/`update`/`delete` policies on most tables; they're intentionally not here.
 - **Migrations:** SQL-first via Supabase CLI (`supabase/migrations/*.sql`, timestamp-prefixed), per ARCHITECTURE §2/§6 — this document's SQL is written in the grouping it would actually ship as migration files (see §12), not as one monolithic script.
@@ -237,7 +238,7 @@ No `unique` constraint on `(activity_id, student_id)` — nothing in the PRD rul
 
 create table public.measurement (
   id uuid primary key default gen_random_uuid(),
-  submission_id uuid not null unique references public.submission(id) on delete restrict,
+  submission_id uuid not null unique references public.submission(id) on delete cascade,
 
   -- Raw CV/CNN aggregates — 6 pairs, matching CV_PIPELINE.md §8 / ML_PIPELINE.md §11's
   -- `aggregate` block shape exactly (not collapsed to the PRD's 5 criteria — see note below).
@@ -299,7 +300,7 @@ create table public.measurement (
 
 create table public.manual_score (
   id uuid primary key default gen_random_uuid(),
-  submission_id uuid not null unique references public.submission(id) on delete restrict,
+  submission_id uuid not null unique references public.submission(id) on delete cascade,
 
   letter_formation_band public.score_band not null,
   letter_formation_score numeric(5,2) generated always as (

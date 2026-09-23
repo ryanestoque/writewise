@@ -135,6 +135,7 @@ The scoring system cannot be "designed" up front the normal way — the rubric t
 - Class roster management (add/edit students: real name + section; remove a student from own roster — e.g. a mid-pilot transfer — without deleting their historical submission/measurement records)
 - Activity creation (freeform target text entry)
 - Submission upload (single photo per activity per student)
+- Submission & attempt management (delete erroneous, illegible, or duplicate submission attempts for enrolled students, cascading to raw measurements and manual scores while cleaning up uploaded worksheet storage)
 - **Phase 1:** raw CV measurement display + manual rubric score entry
 - **Phase 2:** calibrated score, qualitative band, diagnostic feedback (overlay + text)
 - Class-wide dashboard: roster table sortable by weakest criterion, class-average trend
@@ -145,6 +146,7 @@ The scoring system cannot be "designed" up front the normal way — the rubric t
 - Per-criterion trend chart + composite trend
 - Latest diagnostic feedback view
 - Upload submission for a teacher-assigned activity
+- Manage take-home submissions (delete un-graded uploads so the child can retake the activity prior to teacher evaluation)
 
 ### 7.3 Computer Vision & CV/CNN Module
 - Image preprocessing: grayscale conversion, noise removal, thresholding, deskewing

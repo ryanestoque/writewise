@@ -70,6 +70,10 @@ The frontend branches on `error.code`, never on parsing `message` text (ARCHITEC
 | `QUALITY_GATE_RESOLUTION` | 422 | CV_PIPELINE §2 |
 | `SEGMENTATION_COUNT_MISMATCH` | 422 | CV_PIPELINE §5.3 (post-segmentation gate) |
 | `MANUAL_SCORE_ALREADY_EXISTS` | 409 | `manual_score.submission_id` is `unique` (DATABASE §9) — no re-grade flow (§3.3) |
+| `NOT_ROSTER_TEACHER` | 403 | Attempt deletion — caller is a teacher, but the student is not on their roster (§3.3) |
+| `NOT_SUBMISSION_UPLOADER` | 403 | Attempt deletion — caller is a parent, but was not the original uploader of this submission (§3.3) |
+| `NOT_CHILD_PARENT` | 403 | Attempt deletion — caller is a parent, but has no linked relationship to the student (§3.3) |
+| `SUBMISSION_ALREADY_GRADED` | 409 | Attempt deletion — parent attempted to delete an already graded submission (§3.3) |
 | `MODEL_INFERENCE_ERROR` | 500 | ML_PIPELINE §9's `ModelInferenceError` |
 | `INTERNAL_ERROR` | 500 | Catch-all for unhandled failures |
 
@@ -360,6 +364,35 @@ Numeric `*_score` fields are DATABASE §9's generated columns (12.5 / 37.5 / 62.
 
 ---
 
+#### `DELETE /api/submissions/{id}`
+
+**Caller:**
+- **Teacher:** Can delete any submission attempt for students currently on their roster.
+- **Parent:** Can delete **only** take-home submissions they personally uploaded (`uploader_id == caller_id`) for their linked child, provided the submission has **not yet been graded** with a `manual_score` (otherwise `409 SUBMISSION_ALREADY_GRADED`).
+
+**Behavior:**
+Performs a permanent hard-deletion of the submission attempt and all associated artifacts:
+1. Validates caller authorization and role-based deletion constraints.
+2. Removes the image file from Supabase Storage (`submission-images` bucket).
+3. Deletes the `submission` row in Postgres. Dependent child rows (`measurement`, `manual_score`) cascade automatically via `ON DELETE CASCADE` (DATABASE §8/§9, migration `0019_submission_cascade_delete.sql`).
+
+Response (`200 OK`):
+```json
+{
+  "id": "44444444-4444-4444-4444-444444444444",
+  "deleted": true
+}
+```
+
+**Failure modes specific to this endpoint:**
+- **Submission not found** → `404 NOT_FOUND`.
+- **Teacher not linked to student** → `403 NOT_ROSTER_TEACHER`.
+- **Parent not linked to student** → `403 NOT_CHILD_PARENT`.
+- **Parent was not the uploader** → `403 NOT_SUBMISSION_UPLOADER`.
+- **Parent attempts to delete an already graded submission** → `409 SUBMISSION_ALREADY_GRADED`.
+
+---
+
 ### 3.4 Health & Config
 
 #### `GET /api/health`
@@ -390,6 +423,7 @@ Response (`200 OK`):
 | `POST /api/activities` | §7.1 Teacher Portal — activity creation |
 | `POST /api/submissions` | §7.1 submission upload; §7.2 Parent Portal — take-home upload |
 | `PATCH /api/submissions/{id}/manual-score` | §7.1 Teacher Portal — Phase 1 manual rubric entry |
+| `DELETE /api/submissions/{id}` | §7.1 Teacher Portal & §7.2 Parent Portal — attempt management & deletion |
 | `GET /api/health` | Not a PRD feature — deploy/monitoring infrastructure (ARCHITECTURE §14/§15) |
 
 Every endpoint here is organized by REST resource (§3), not by portal, since submission upload is shared by both roles (PRD §6) — this table gives the portal-oriented view without duplicating any endpoint's documentation under two headings.
@@ -414,7 +448,7 @@ Extends ARCHITECTURE §2's repo layout, which reserves `backend/app/api/` for "r
 backend/app/api/
 ├── students.py       # POST /students, PATCH /students/{id}, DELETE /students/{id}/teacher-link
 ├── activities.py      # POST /activities
-├── submissions.py      # POST /submissions, PATCH /submissions/{id}/manual-score
+├── submissions.py      # POST /submissions, PATCH /submissions/{id}/manual-score, DELETE /submissions/{id}
 ├── health.py            # GET /health
 └── deps.py                # get_current_user, get_current_teacher, get_current_parent (§2.2)
 ```

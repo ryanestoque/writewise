@@ -97,7 +97,7 @@ One Next.js frontend, one FastAPI backend, Supabase for Postgres/Auth/Storage. N
 ┌──────────────┐  ┌──────────────────────────────┐
 │ Supabase      │  │ FastAPI Backend (Railway)     │
 │ direct reads  │  │ - roster/activity CRUD        │
-│ (supabase-js, │  │ - submission upload+process   │
+│ (supabase-js, │  │ - submission upload/delete    │
 │  RLS-gated)   │  │ - CV pipeline (in-process)     │
 └──────┬────────┘  │ - CNN inference (in-process)   │
        │           └──────────┬─────────────────────┘
@@ -111,7 +111,7 @@ One Next.js frontend, one FastAPI backend, Supabase for Postgres/Auth/Storage. N
 └─────────────────────────────────────────────────┘
 ```
 
-Reads split from writes: dashboard/roster/trend data is read directly via RLS-gated `supabase-js`; anything with business logic (activity creation, submission upload + CV/CNN processing) goes through FastAPI with the service-role key. Full rationale in `ARCHITECTURE.md` §1–4.
+Reads split from writes: dashboard/roster/trend data is read directly via RLS-gated `supabase-js`; anything with business logic (activity creation, submission upload/deletion + CV/CNN processing) goes through FastAPI with the service-role key. Full rationale in `ARCHITECTURE.md` §1–4.
 
 ## 7. Tech Stack
 

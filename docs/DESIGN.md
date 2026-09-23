@@ -250,6 +250,14 @@ Five rows (one per criterion), each a **segmented button group** showing all rub
 
 > **Why this screen gets its own optimization pass:** this input directly feeds the Spearman's Rho calibration study — the PRD's own top-flagged project risk. A segmented button group is faster than a dropdown (no menu-open step) and safer than a slider (no accidental drift), which matters more here than on almost any other screen in the product.
 
+### 7.10 Submission Attempt Management & Deletion
+
+Provides safe, role-scoped removal of mistaken, illegible, or duplicate submissions:
+
+- **Teacher portal:** From the submission detail modal/page, an accessible **"Delete Attempt"** button opens a high-contrast confirmation `AlertDialog` using the `--destructive` token (§2.1). Confirming permanently removes the attempt, raw CV measurements, rubric scores, and stored photo, invalidating dashboard queries and returning to the activity or student view.
+- **Parent portal:** For take-home activities, parents who uploaded a worksheet photo can select **"Delete Upload"** from the assignment view or worksheet dialog *only while the submission is un-graded* (`canDelete = true`). This allows retaking an accidental or blurry upload before the teacher reviews it. Once graded, deletion is disabled/hidden to preserve evaluated school records.
+- **Confirmation dialog:** Uses clear, unambiguous copy stating that deletion is permanent and cannot be undone, avoiding vague warning language (§8.1).
+
 ---
 
 ## 8. Content & Voice Guidelines
