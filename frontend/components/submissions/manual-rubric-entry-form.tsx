@@ -634,7 +634,31 @@ export function ManualRubricEntryForm({
           )}
         </div>
 
-        <div className="grid grid-cols-3 gap-1.5 w-full">
+        <div className="grid grid-cols-2 @[440px]:grid-cols-4 gap-1.5 w-full">
+          <button
+            type="button"
+            onClick={() => handleApplyPreset("needs_improvement")}
+            className="inline-flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-[11px] font-medium bg-band-1/15 text-band-1-text dark:text-orange-200 border border-band-1/35 hover:bg-band-1/25 transition-colors cursor-pointer min-h-[34px] sm:min-h-[28px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 text-center"
+            title="Rate all 5 criteria as Needs Improvement (Alt+1)"
+          >
+            <span className="size-1.5 rounded-full bg-band-1 shrink-0" aria-hidden="true" />
+            <span className="truncate">
+              <span className="hidden @[480px]:inline">All </span>Needs Imp.
+            </span>
+            <kbd className="text-[9.5px] font-mono opacity-75 ml-0.5 hidden @[520px]:inline">Alt+1</kbd>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleApplyPreset("developing")}
+            className="inline-flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-[11px] font-medium bg-band-2/15 text-amber-900 dark:text-amber-200 border border-band-2/35 hover:bg-band-2/25 transition-colors cursor-pointer min-h-[34px] sm:min-h-[28px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 text-center"
+            title="Rate all 5 criteria as Developing (Alt+2)"
+          >
+            <span className="size-1.5 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
+            <span className="truncate">
+              <span className="hidden @[480px]:inline">All </span>Developing
+            </span>
+            <kbd className="text-[9.5px] font-mono opacity-75 ml-0.5 hidden @[520px]:inline">Alt+2</kbd>
+          </button>
           <button
             type="button"
             onClick={() => handleApplyPreset("satisfactory")}
@@ -659,18 +683,6 @@ export function ManualRubricEntryForm({
             </span>
             <kbd className="text-[9.5px] font-mono opacity-75 ml-0.5 hidden @[520px]:inline">Alt+4</kbd>
           </button>
-          <button
-            type="button"
-            onClick={() => handleApplyPreset("developing")}
-            className="inline-flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-[11px] font-medium bg-band-2/15 text-amber-900 dark:text-amber-200 border border-band-2/35 hover:bg-band-2/25 transition-colors cursor-pointer min-h-[34px] sm:min-h-[28px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 text-center"
-            title="Rate all 5 criteria as Developing (Alt+2)"
-          >
-            <span className="size-1.5 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
-            <span className="truncate">
-              <span className="hidden @[480px]:inline">All </span>Developing
-            </span>
-            <kbd className="text-[9.5px] font-mono opacity-75 ml-0.5 hidden @[520px]:inline">Alt+2</kbd>
-          </button>
         </div>
       </div>
 
@@ -688,6 +700,8 @@ export function ManualRubricEntryForm({
             <div><kbd className="px-1.5 py-0.5 rounded bg-background border border-brand-300 font-mono font-bold text-[11px]">4</kbd> Excellent</div>
           </div>
           <div className="pt-1 border-t border-brand-200/60 dark:border-brand-900/60 flex items-center justify-between gap-2 flex-wrap text-muted-foreground text-[10.5px]">
+            <span><kbd className="px-1 py-0.5 rounded bg-background border border-border font-mono text-[10px]">Alt+1</kbd> All Needs Imp.</span>
+            <span><kbd className="px-1 py-0.5 rounded bg-background border border-border font-mono text-[10px]">Alt+2</kbd> All Developing</span>
             <span><kbd className="px-1 py-0.5 rounded bg-background border border-border font-mono text-[10px]">Alt+3</kbd> All Satisfactory</span>
             <span><kbd className="px-1 py-0.5 rounded bg-background border border-border font-mono text-[10px]">Alt+4</kbd> All Excellent</span>
             <span><kbd className="px-1 py-0.5 rounded bg-background border border-border font-mono text-[10px]">Ctrl+Enter</kbd> Submit</span>
