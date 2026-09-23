@@ -297,6 +297,11 @@ export const OverlayToolbar = memo(function OverlayToolbar({
     return FILTERS.find((f) => f.id === activeCriterion) ?? FILTERS[0];
   }, [activeCriterion]);
 
+  const hasSecondaryControls =
+    (visible && attentionItems.length > 0) ||
+    (hasGuideLines && Boolean(onToggleGuideLines)) ||
+    visible;
+
   return (
     <div ref={toolbarRef} className="flex flex-col gap-1.5 min-w-0 max-w-full">
       {/* Screen reader live region for practice area navigation announcements (WCAG 4.1.3) */}
@@ -311,290 +316,319 @@ export const OverlayToolbar = memo(function OverlayToolbar({
 
       <div
         className={cn(
-          "flex items-center justify-between gap-2 p-1.5 sm:p-2 rounded-xl bg-muted/40 border border-border/70 backdrop-blur-xs text-xs min-w-0 max-w-full",
+          "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-xl bg-muted/40 border border-border/70 backdrop-blur-xs text-xs min-w-0 max-w-full",
           className
         )}
       >
-        {/* 1. Filter Pills or Compact Spotlight Indicator with Inline Dropdown Selector */}
-        {variant === "compact" ? (
-          <div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 overflow-hidden">
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className="inline-flex items-center gap-1.5 bg-surface dark:bg-card px-2.5 py-1 rounded-lg border border-border/70 text-xs shadow-2xs min-w-0 shrink cursor-pointer hover:bg-muted/70 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation"
-                aria-label={`Current guide: ${activeCriterion === "all" ? "All Guides" : activeFilterMeta.label}. Click to select a diagnostic criterion.`}
-                title="Select diagnostic criterion"
-              >
-                {(() => {
-                  const Icon = activeFilterMeta.icon;
-                  return <Icon className="size-3 text-brand-700 dark:text-brand-300 shrink-0" aria-hidden="true" />;
-                })()}
-                <span className="font-semibold text-foreground truncate max-w-[120px] sm:max-w-none">
-                  {activeCriterion === "all" ? "All Guides" : activeFilterMeta.label}
-                </span>
-                {attentionCounts[activeCriterion] > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="px-1.5 py-0 h-4 text-[10px] font-bold rounded-full bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-destructive border border-band-1/30 ml-0.5 shrink-0"
-                  >
-                    <span className="sr-only">({attentionCounts[activeCriterion]} attention items)</span>
-                    <span aria-hidden="true">{attentionCounts[activeCriterion]}</span>
-                  </Badge>
+        {/* Tier 1 / Primary Controls: Rubric Selector (+ Reset) + Mobile Master Switch */}
+        <div className="flex items-center justify-between gap-1.5 min-w-0 w-full sm:w-auto sm:flex-1">
+          {variant === "compact" ? (
+            <div className="flex items-center gap-1.5 min-w-0 flex-1 sm:flex-initial">
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  disabled={!visible}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 bg-surface dark:bg-card px-2.5 py-1.5 sm:py-1 rounded-lg border border-border/70 text-xs shadow-2xs min-w-0 shrink-0 sm:shrink cursor-pointer hover:bg-muted/70 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation",
+                    !visible && "opacity-50 cursor-not-allowed"
+                  )}
+                  aria-label={`Current guide: ${activeCriterion === "all" ? "All Guides" : activeFilterMeta.label}. Click to select a diagnostic criterion.`}
+                  title={visible ? "Select diagnostic criterion" : "Overlay is turned off"}
+                >
+                  {(() => {
+                    const Icon = activeFilterMeta.icon;
+                    return <Icon className="size-3 text-brand-700 dark:text-brand-300 shrink-0" aria-hidden="true" />;
+                  })()}
+                  <span className="font-semibold text-foreground truncate max-w-[160px] sm:max-w-none">
+                    {activeCriterion === "all" ? "All Guides" : activeFilterMeta.label}
+                  </span>
+                  {attentionCounts[activeCriterion] > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="px-1.5 py-0 h-4 text-[10px] font-bold rounded-full bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-destructive border border-band-1/30 ml-0.5 shrink-0"
+                    >
+                      <span className="sr-only">({attentionCounts[activeCriterion]} attention items)</span>
+                      <span aria-hidden="true">{attentionCounts[activeCriterion]}</span>
+                    </Badge>
+                  )}
+                  <ChevronDown className="size-3 text-muted-foreground shrink-0 ml-0.5 opacity-70" aria-hidden="true" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56 p-1 text-xs">
+                  {FILTERS.map((item) => {
+                    const ItemIcon = item.icon;
+                    const isSelected = activeCriterion === item.id;
+                    const count = attentionCounts[item.id] ?? 0;
+                    return (
+                      <DropdownMenuItem
+                        key={item.id}
+                        onClick={() => onChangeCriterion(item.id)}
+                        className={cn(
+                          "flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md cursor-pointer text-xs",
+                          isSelected && "bg-brand-50 dark:bg-brand-950/60 font-semibold text-brand-900 dark:text-brand-200"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <ItemIcon className="size-3.5 text-brand-700 dark:text-brand-300 shrink-0" aria-hidden="true" />
+                          <span className="truncate">{item.label}</span>
+                        </div>
+                        {count > 0 && (
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
+                              isSelected
+                                ? "bg-brand-200/60 text-brand-900 dark:bg-brand-900 dark:text-brand-200"
+                                : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-destructive border border-band-1/30"
+                            )}
+                          >
+                            {count}
+                          </Badge>
+                        )}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {activeCriterion !== "all" && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onChangeCriterion("all")}
+                  className="h-8 sm:h-7 px-2 text-xs sm:text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors touch-manipulation shrink-0 flex items-center justify-center gap-1"
+                  title="Reset to show all guides"
+                  aria-label="Reset to show all guides"
+                >
+                  <X className="size-3.5 sm:size-3" aria-hidden="true" />
+                  <span className="hidden sm:inline">Show All</span>
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="relative min-w-0 flex-1 flex items-center">
+              {canScrollLeft && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    filterScrollRef.current?.scrollBy({ left: -80, behavior: "smooth" });
+                  }}
+                  aria-label="Scroll to see earlier criteria filters"
+                  className="sm:hidden absolute left-0 z-10 flex size-8 min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-background/95 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
+                >
+                  <ChevronLeft className="size-4" aria-hidden="true" />
+                </button>
+              )}
+
+              <div
+                ref={filterScrollRef}
+                role="group"
+                aria-label="Worksheet diagnostic criteria filters"
+                className={cn(
+                  "flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth py-0.5 min-w-0 flex-1 sm:flex-wrap sm:overflow-visible transition-[mask-image]",
+                  canScrollLeft && canScrollRight
+                    ? "[mask-image:linear-gradient(to_right,transparent,black_14px,black_calc(100%-14px),transparent)] sm:[mask-image:none]"
+                    : canScrollRight
+                      ? "[mask-image:linear-gradient(to_right,black_86%,transparent_100%)] sm:[mask-image:none]"
+                      : canScrollLeft
+                        ? "[mask-image:linear-gradient(to_left,black_86%,transparent_100%)] sm:[mask-image:none]"
+                        : "sm:[mask-image:none]"
                 )}
-                <ChevronDown className="size-3 text-muted-foreground shrink-0 ml-0.5 opacity-70" aria-hidden="true" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56 p-1 text-xs">
+              >
                 {FILTERS.map((item) => {
-                  const ItemIcon = item.icon;
+                  const Icon = item.icon;
                   const isSelected = activeCriterion === item.id;
                   const count = attentionCounts[item.id] ?? 0;
+                  const isWeakest = weakest === item.id;
+
                   return (
-                    <DropdownMenuItem
+                    <Button
                       key={item.id}
+                      type="button"
+                      variant={isSelected ? "default" : "ghost"}
+                      size="sm"
+                      disabled={!visible}
                       onClick={() => onChangeCriterion(item.id)}
+                      aria-pressed={isSelected}
                       className={cn(
-                        "flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md cursor-pointer text-xs",
-                        isSelected && "bg-brand-50 dark:bg-brand-950/60 font-semibold text-brand-900 dark:text-brand-200"
+                        "shrink-0 h-9 sm:h-8 px-2.5 sm:px-2 text-xs sm:text-[11px] font-medium rounded-lg gap-1.5 transition-all cursor-pointer touch-manipulation",
+                        isSelected
+                          ? "bg-brand-600 hover:bg-brand-700 text-white shadow-2xs font-semibold"
+                          : "hover:bg-muted text-muted-foreground hover:text-foreground",
+                        !visible && "opacity-50 cursor-not-allowed"
                       )}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <ItemIcon className="size-3.5 text-brand-700 dark:text-brand-300 shrink-0" aria-hidden="true" />
-                        <span className="truncate">{item.label}</span>
-                      </div>
+                      <Icon className="size-3 shrink-0" aria-hidden="true" />
+                      <span className="hidden min-[400px]:inline">{item.label}</span>
+                      <span className="min-[400px]:hidden">{item.shortLabel ?? item.label}</span>
+                      {isWeakest && !isSelected && count > 0 && (
+                        <span
+                          role="img"
+                          className="size-1.5 rounded-full bg-band-1 animate-pulse motion-reduce:animate-none shrink-0"
+                          title="Recommended focus area"
+                          aria-label="Recommended focus area"
+                        >
+                          <span className="sr-only">Recommended focus area</span>
+                        </span>
+                      )}
                       {count > 0 && (
                         <Badge
                           variant="secondary"
                           className={cn(
                             "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
                             isSelected
-                              ? "bg-brand-200/60 text-brand-900 dark:bg-brand-900 dark:text-brand-200"
+                              ? "bg-white/25 text-white"
                               : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-destructive border border-band-1/30"
                           )}
                         >
-                          {count}
+                          <span className="sr-only">({count} attention items)</span>
+                          <span aria-hidden="true">{count}</span>
                         </Badge>
                       )}
-                    </DropdownMenuItem>
+                    </Button>
                   );
                 })}
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </div>
 
-            {activeCriterion !== "all" && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => onChangeCriterion("all")}
-                className="relative size-8 sm:size-auto sm:h-7 p-0 sm:px-2 min-h-[40px] min-w-[40px] sm:min-h-[28px] sm:min-w-0 text-xs sm:text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors touch-manipulation shrink-0 flex items-center justify-center after:absolute after:-inset-1 sm:after:hidden after:content-['']"
-                title="Reset to show all guides"
-                aria-label="Reset to show all guides"
-              >
-                <X className="size-3.5 sm:size-3 xl:mr-1" aria-hidden="true" />
-                <span className="hidden xl:inline">Show All</span>
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="relative min-w-0 flex-1 flex items-center">
-            {canScrollLeft && (
-              <button
-                type="button"
-                onClick={() => {
-                  filterScrollRef.current?.scrollBy({ left: -80, behavior: "smooth" });
-                }}
-                aria-label="Scroll to see earlier criteria filters"
-                className="sm:hidden absolute left-0 z-10 flex size-8 min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-background/95 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
-              >
-                <ChevronLeft className="size-4" aria-hidden="true" />
-              </button>
-            )}
-
-            <div
-              ref={filterScrollRef}
-              role="group"
-              aria-label="Worksheet diagnostic criteria filters"
-              className={cn(
-                "flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth py-0.5 min-w-0 flex-1 sm:flex-wrap sm:overflow-visible transition-[mask-image]",
-                canScrollLeft && canScrollRight
-                  ? "[mask-image:linear-gradient(to_right,transparent,black_14px,black_calc(100%-14px),transparent)] sm:[mask-image:none]"
-                  : canScrollRight
-                    ? "[mask-image:linear-gradient(to_right,black_86%,transparent_100%)] sm:[mask-image:none]"
-                    : canScrollLeft
-                      ? "[mask-image:linear-gradient(to_left,black_86%,transparent_100%)] sm:[mask-image:none]"
-                      : "sm:[mask-image:none]"
+              {canScrollRight && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    filterScrollRef.current?.scrollBy({ left: 80, behavior: "smooth" });
+                  }}
+                  aria-label="Scroll to see more criteria filters"
+                  className="sm:hidden absolute right-0 z-10 flex size-8 min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-background/95 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
+                >
+                  <ChevronRight className="size-4" aria-hidden="true" />
+                </button>
               )}
-            >
-              {FILTERS.map((item) => {
-                const Icon = item.icon;
-                const isSelected = activeCriterion === item.id;
-                const count = attentionCounts[item.id] ?? 0;
-                const isWeakest = weakest === item.id;
-
-                return (
-                  <Button
-                    key={item.id}
-                    type="button"
-                    variant={isSelected ? "default" : "ghost"}
-                    size="sm"
-                    disabled={!visible}
-                    onClick={() => onChangeCriterion(item.id)}
-                    aria-pressed={isSelected}
-                    className={cn(
-                      "shrink-0 h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-2.5 sm:px-2 text-xs sm:text-[11px] font-medium rounded-lg gap-1.5 transition-all cursor-pointer touch-manipulation",
-                      isSelected
-                        ? "bg-brand-600 hover:bg-brand-700 text-white shadow-2xs font-semibold"
-                        : "hover:bg-muted text-muted-foreground hover:text-foreground",
-                      !visible && "opacity-50 cursor-not-allowed"
-                    )}
-                  >
-                    <Icon className="size-3 shrink-0" aria-hidden="true" />
-                    <span className="hidden min-[400px]:inline">{item.label}</span>
-                    <span className="min-[400px]:hidden">{item.shortLabel ?? item.label}</span>
-                    {isWeakest && !isSelected && count > 0 && (
-                      <span
-                        role="img"
-                        className="size-1.5 rounded-full bg-band-1 animate-pulse motion-reduce:animate-none shrink-0"
-                        title="Recommended focus area"
-                        aria-label="Recommended focus area"
-                      >
-                        <span className="sr-only">Recommended focus area</span>
-                      </span>
-                    )}
-                    {count > 0 && (
-                      <Badge
-                        variant="secondary"
-                        className={cn(
-                          "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
-                          isSelected
-                            ? "bg-white/25 text-white"
-                            : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-destructive border border-band-1/30"
-                        )}
-                      >
-                        <span className="sr-only">({count} attention items)</span>
-                        <span aria-hidden="true">{count}</span>
-                      </Badge>
-                    )}
-                  </Button>
-                );
-              })}
-            </div>
-
-            {canScrollRight && (
-              <button
-                type="button"
-                onClick={() => {
-                  filterScrollRef.current?.scrollBy({ left: 80, behavior: "smooth" });
-                }}
-                aria-label="Scroll to see more criteria filters"
-                className="sm:hidden absolute right-0 z-10 flex size-8 min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-background/95 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
-              >
-                <ChevronRight className="size-4" aria-hidden="true" />
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* 2. Sequential Attention Item Stepper, Guideline Toggle, Legend, & Master Switch */}
-        <div className="flex items-center gap-1.5 pl-2 border-l border-border/60 shrink-0">
-          {hasGuideLines && onToggleGuideLines && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onToggleGuideLines}
-              className={cn(
-                "h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-2.5 sm:px-2 text-[11px] font-medium rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
-                showGuideLines
-                  ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200 font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-              title={showGuideLines ? "Hide detected 3-line penmanship guidelines" : "Show detected 3-line penmanship guidelines"}
-              aria-pressed={showGuideLines}
-            >
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" className="shrink-0" aria-hidden="true">
-                <line x1="1" y1="4" x2="13" y2="4" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2" />
-                <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.6" strokeDasharray="2 2" />
-                <line x1="1" y1="10" x2="13" y2="10" stroke="currentColor" strokeWidth="1.5" />
-              </svg>
-              <span className="hidden xl:inline">Lines</span>
-            </Button>
-          )}
-          {visible && attentionItems.length > 0 && (
-            <div
-              role="group"
-              aria-label="Practice areas sequential navigation stepper"
-              className="flex items-center gap-1 bg-background/80 dark:bg-card/80 rounded-lg px-2 py-0.5 border border-border/70 text-xs shrink-0 shadow-2xs"
-            >
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hidden xl:inline select-none">
-                Focus
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={!visible}
-                onClick={handlePrevAttention}
-                className="relative size-10 sm:size-7 p-0 min-h-[40px] min-w-[40px] sm:min-h-[28px] sm:min-w-[28px] rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
-                aria-label="Previous practice area (Key: Alt+[ or [)"
-                title="Previous practice area (Alt+[ or [)"
-              >
-                <ChevronLeft className="size-4 sm:size-3" aria-hidden="true" />
-              </Button>
-              <span className="tabular-nums font-semibold text-foreground px-0.5 text-[11px] select-none">
-                {currentIndex >= 0 ? currentIndex + 1 : 1}
-                <span className="text-muted-foreground font-normal"> / </span>
-                {attentionItems.length}
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={!visible}
-                onClick={handleNextAttention}
-                className="relative size-10 sm:size-7 p-0 min-h-[40px] min-w-[40px] sm:min-h-[28px] sm:min-w-[28px] rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
-                aria-label="Next practice area (Key: Alt+] or ])"
-                title="Next practice area (Alt+] or ])"
-              >
-                <ChevronRight className="size-4 sm:size-3" aria-hidden="true" />
-              </Button>
             </div>
           )}
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowLegend((prev) => !prev)}
-            className={cn(
-              "relative h-10 sm:h-7 min-h-[40px] sm:min-h-[28px] px-2.5 sm:px-2 text-[11px] font-medium rounded-lg gap-1 cursor-pointer transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1",
-              showLegend
-                ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200 font-semibold"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-            title="Toggle diagnostic symbols legend"
-            aria-expanded={showLegend}
-            aria-label="Toggle diagnostic symbols legend"
-          >
-            <HelpCircle className="size-3.5" aria-hidden="true" />
-            <span className="hidden xl:inline">Legend</span>
-          </Button>
-
-          <div className="flex items-center gap-1.5 min-h-[40px] sm:min-h-0 touch-manipulation px-0.5">
+          {/* Master Switch on Mobile (aligned to the right on Row 1) */}
+          <div className="flex sm:hidden items-center gap-1.5 shrink-0 pl-1">
             <Switch
-              id="toggle-diagnostic-overlay"
+              id="toggle-diagnostic-overlay-mobile"
               aria-label="Toggle handwriting diagnostic overlay"
               checked={visible}
               onCheckedChange={onToggleVisible}
-              className="cursor-pointer scale-90 sm:scale-75 touch-manipulation"
+              className="cursor-pointer scale-85 touch-manipulation"
             />
-            <Label
-              htmlFor="toggle-diagnostic-overlay"
-              className="text-xs sm:text-[11px] font-medium text-muted-foreground cursor-pointer select-none whitespace-nowrap hidden xl:inline"
-            >
-              {visible ? "Overlay on" : "Overlay off"}
-            </Label>
           </div>
         </div>
+
+        {/* Tier 2 / Secondary Controls: Stepper, Guideline Toggle, Legend, & Desktop Switch */}
+        {hasSecondaryControls && (
+          <div className="flex items-center justify-between sm:justify-end gap-1.5 pt-1.5 sm:pt-0 border-t border-border/50 sm:border-t-0 sm:pl-2 sm:border-l sm:border-border/60 w-full sm:w-auto shrink-0">
+            {/* Sequential Practice Area Stepper */}
+            {visible && attentionItems.length > 0 ? (
+              <div
+                role="group"
+                aria-label="Practice areas sequential navigation stepper"
+                className="flex items-center gap-1 bg-background/80 dark:bg-card/80 rounded-lg px-2 py-0.5 border border-border/70 text-xs shrink-0 shadow-2xs"
+              >
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hidden lg:inline select-none">
+                  Focus
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={!visible}
+                  onClick={handlePrevAttention}
+                  className="relative size-8 sm:size-7 p-0 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
+                  aria-label="Previous practice area (Key: Alt+[ or [)"
+                  title="Previous practice area (Alt+[ or [)"
+                >
+                  <ChevronLeft className="size-4 sm:size-3" aria-hidden="true" />
+                </Button>
+                <span className="tabular-nums font-semibold text-foreground px-1 text-[11px] select-none">
+                  {currentIndex >= 0 ? currentIndex + 1 : 1}
+                  <span className="text-muted-foreground font-normal"> / </span>
+                  {attentionItems.length}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={!visible}
+                  onClick={handleNextAttention}
+                  className="relative size-8 sm:size-7 p-0 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
+                  aria-label="Next practice area (Key: Alt+] or ])"
+                  title="Next practice area (Alt+] or ])"
+                >
+                  <ChevronRight className="size-4 sm:size-3" aria-hidden="true" />
+                </Button>
+              </div>
+            ) : (
+              <div className="sm:hidden" />
+            )}
+
+            {/* Utility buttons (Lines & Legend) + Desktop Switch */}
+            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+              {hasGuideLines && onToggleGuideLines && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={onToggleGuideLines}
+                  className={cn(
+                    "h-8 sm:h-7 px-2.5 sm:px-2 text-[11px] font-medium rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+                    showGuideLines
+                      ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200 font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  title={showGuideLines ? "Hide detected 3-line penmanship guidelines" : "Show detected 3-line penmanship guidelines"}
+                  aria-pressed={showGuideLines}
+                >
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" className="shrink-0" aria-hidden="true">
+                    <line x1="1" y1="4" x2="13" y2="4" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2" />
+                    <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.6" strokeDasharray="2 2" />
+                    <line x1="1" y1="10" x2="13" y2="10" stroke="currentColor" strokeWidth="1.5" />
+                  </svg>
+                  <span className="hidden xl:inline">Lines</span>
+                </Button>
+              )}
+
+              {visible && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowLegend((prev) => !prev)}
+                  className={cn(
+                    "relative h-8 sm:h-7 px-2 text-[11px] font-medium rounded-lg gap-1 cursor-pointer transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1",
+                    showLegend
+                      ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200 font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  title="Toggle diagnostic symbols legend"
+                  aria-expanded={showLegend}
+                  aria-label="Toggle diagnostic symbols legend"
+                >
+                  <HelpCircle className="size-3.5" aria-hidden="true" />
+                  <span className="hidden xl:inline">Legend</span>
+                </Button>
+              )}
+
+              {/* Desktop Switch with Label */}
+              <div className="hidden sm:flex items-center gap-1.5 pl-2 border-l border-border/60 shrink-0">
+                <Switch
+                  id="toggle-diagnostic-overlay-desktop"
+                  aria-label="Toggle handwriting diagnostic overlay"
+                  checked={visible}
+                  onCheckedChange={onToggleVisible}
+                  className="cursor-pointer scale-90 sm:scale-75 touch-manipulation"
+                />
+                <Label
+                  htmlFor="toggle-diagnostic-overlay-desktop"
+                  className="text-xs sm:text-[11px] font-medium text-muted-foreground cursor-pointer select-none whitespace-nowrap hidden xl:inline"
+                >
+                  {visible ? "Overlay on" : "Overlay off"}
+                </Label>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 3. In-Situ Visual Guide Legend (Collapsible) */}
