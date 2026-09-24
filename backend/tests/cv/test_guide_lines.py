@@ -91,3 +91,33 @@ def test_detect_and_deskew_rejects_spurious_edge_peaks():
     # Spurious bottom noise (5px spacing) must NOT be accepted as a ruling
     assert 4008 not in result.baseline_y
     assert len(result.baseline_y) == 0
+
+
+def test_detect_and_deskew_rejects_cursive_handwriting_as_guideline_peak():
+    """Wide cursive words (spanning 30%+ of width) must not trigger guideline peaks."""
+    import cv2
+    import numpy as np
+
+    from app.cv.preprocessing import PreprocessResult
+
+    h, w = 3000, 2400
+    binary = np.zeros((h, w), dtype=np.uint8)
+
+    # 3 real guidelines for a ruling (top=1000, mid=1200, base=1400)
+    cv2.line(binary, (100, 1000), (w - 100, 1000), 255, thickness=4)
+    cv2.line(binary, (100, 1200), (w - 100, 1200), 255, thickness=4)
+    cv2.line(binary, (100, 1400), (w - 100, 1400), 255, thickness=4)
+
+    # Simulate a wide cursive handwriting stroke (e.g. at y=1300, spanning 800px)
+    # but drawn with diagonal/looping strokes without long straight horizontal runs
+    for x in range(400, 1200, 20):
+        cv2.line(binary, (x, 1220), (x + 15, 1380), 255, thickness=5)
+
+    prep = PreprocessResult(gray=binary, denoised=binary, binary=binary, otsu_threshold=100.0)
+    result = detect_and_deskew(prep)
+
+    # Only the true ruling should be detected, not a split at y=1300
+    assert len(result.baseline_y) == 1
+    assert result.topline_y[0] == 1000
+    assert result.midline_y[0] == 1200
+    assert result.baseline_y[0] == 1400

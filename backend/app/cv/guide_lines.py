@@ -89,10 +89,20 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
             deskewed_color = preprocessed.color
 
     # 3. Find line Y-coordinates in deskewed image
-    row_proj = np.sum(binary, axis=1) / 255.0  # number of ink pixels per row
+    # Extract true horizontal line structures before finding row projection peaks
+    # to prevent wide cursive handwriting words from being misidentified as guidelines.
+    k_w = max(40, int(w * 0.08))
+    h_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (k_w, 1))
+    h_only = cv2.morphologyEx(binary, cv2.MORPH_OPEN, h_kernel)
 
-    # Find peaks (rows with many ink pixels)
-    peak_threshold = w * 0.25  # 25% of width must be ink
+    row_proj = np.sum(h_only, axis=1) / 255.0  # number of guideline ink pixels per row
+
+    # Find peaks (rows with many guideline ink pixels)
+    peak_threshold = max(50, int(w * 0.08))
+    min_line_spacing = max(20, int(h * 0.012))
+    max_total_span = int(h * 0.35)
+    margin_guard = max(15, int(h * 0.02))
+
     peaks = []
     in_peak = False
     peak_start = 0
@@ -105,9 +115,18 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
             if in_peak:
                 in_peak = False
                 peak_center = (peak_start + y - 1) // 2
-                peaks.append(peak_center)
+                if peaks and (peak_center - peaks[-1]) < min_line_spacing:
+                    if row_proj[peak_center] > row_proj[peaks[-1]]:
+                        peaks[-1] = peak_center
+                else:
+                    peaks.append(peak_center)
     if in_peak:
-        peaks.append((peak_start + len(row_proj) - 1) // 2)
+        peak_center = (peak_start + len(row_proj) - 1) // 2
+        if peaks and (peak_center - peaks[-1]) < min_line_spacing:
+            if row_proj[peak_center] > row_proj[peaks[-1]]:
+                peaks[-1] = peak_center
+        else:
+            peaks.append(peak_center)
 
     # Group and validate rulings (topline, midline, baseline)
     # A standard Grade 3 worksheet has a repeating 3-line ruling.
@@ -116,10 +135,6 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
     baseline_y = []
     midline_y = []
     topline_y = []
-
-    min_line_spacing = max(20, int(h * 0.012))
-    max_total_span = int(h * 0.35)
-    margin_guard = max(10, int(h * 0.01))
 
     if len(peaks) >= 3:
         i = 0
@@ -135,7 +150,7 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
                 sp1 >= min_line_spacing
                 and sp2 >= min_line_spacing
                 and (b - t) <= max_total_span
-                and (0.35 <= (sp1 / sp2) <= 2.8)
+                and (0.55 <= (sp1 / sp2) <= 1.8)
                 and t >= margin_guard
                 and b <= (h - margin_guard)
             ):
@@ -151,6 +166,24 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
                     i += 3
                 continue
             i += 1
+
+    # Filter rulings for global spacing consistency across the page.
+    # Hand-ruled or printed worksheets have uniform line height; noise clusters
+    # near paper margins (like shadows, barcodes, or text) with abnormal spacing are rejected.
+    if len(baseline_y) >= 2:
+        sps = [(b - t) / 2.0 for t, b in zip(topline_y, baseline_y)]
+        med_sp = float(np.median(sps))
+        filtered_top = []
+        filtered_mid = []
+        filtered_base = []
+        for t, m, b, sp in zip(topline_y, midline_y, baseline_y, sps):
+            if 0.6 <= (sp / med_sp) <= 1.5:
+                filtered_top.append(t)
+                filtered_mid.append(m)
+                filtered_base.append(b)
+        topline_y = filtered_top
+        midline_y = filtered_mid
+        baseline_y = filtered_base
 
     return DeskewResult(
         gray=gray,

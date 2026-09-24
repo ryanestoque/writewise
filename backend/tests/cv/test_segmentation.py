@@ -184,3 +184,42 @@ def test_rejects_full_width_line_artifacts():
     result = segment_lines_and_words(deskew, expected_word_count=None)
     # The full-width artifact must NOT be accepted as a valid word
     assert result.total_word_count == 0
+
+
+def test_segment_lines_and_words_rejects_vertical_margin_and_empty_rulings():
+    """Verify empty ruling bands and vertical margin lines do not produce false words."""
+    import cv2
+    import numpy as np
+
+    from app.cv.guide_lines import DeskewResult
+
+    h, w = 3000, 2400
+    binary = np.zeros((h, w), dtype=np.uint8)
+
+    # 3 rulings (0: empty, 1: contains 1 real word + margin line, 2: empty)
+    toplines = [600, 1200, 1800]
+    midlines = [800, 1400, 2000]
+    baselines = [1000, 1600, 2200]
+
+    # Draw vertical red margin line at x=300 down the whole page
+    cv2.line(binary, (300, 400), (300, 2400), 255, thickness=4)
+
+    # Draw 1 real cursive-like word on ruling 1 (x=600 to 1100, y=1350 to 1600)
+    for x in range(600, 1100, 15):
+        cv2.line(binary, (x, 1380), (x + 10, 1590), 255, thickness=4)
+
+    deskew = DeskewResult(
+        gray=binary,
+        denoised=binary,
+        binary=binary,
+        topline_y=toplines,
+        midline_y=midlines,
+        baseline_y=baselines,
+        deskew_angle=0.0,
+    )
+
+    result = segment_lines_and_words(deskew, expected_word_count=1)
+    assert result.total_word_count == 1
+    assert len(result.lines[1].words) == 1
+    assert result.lines[0].words == []
+    assert result.lines[2].words == []

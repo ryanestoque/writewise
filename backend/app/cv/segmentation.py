@@ -10,6 +10,7 @@ import math
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
 
+import cv2
 import numpy as np
 
 from app.cv.guide_lines import DeskewResult
@@ -179,22 +180,64 @@ def segment_lines_and_words(
         if band_bottom <= band_top:
             continue
 
-        band_binary = deskew.binary[band_top:band_bottom, :]
+        band_binary = deskew.binary[band_top:band_bottom, :].copy()
+        band_height = band_bottom - band_top
 
         # §5.2: Create a projection mask by ignoring the continuous horizontal guide line rows
         proj_mask = band_binary.copy()
+        line_mask_half = max(3, int(0.08 * unit_height))
         for gy in (top_y, mid_y, base_y):
             rel_y = gy - band_top
-            if 0 <= rel_y < proj_mask.shape[0]:
-                y_min_line = max(0, rel_y - 3)
-                y_max_line = min(proj_mask.shape[0], rel_y + 4)
+            y_min_line = max(0, rel_y - line_mask_half)
+            y_max_line = min(proj_mask.shape[0], rel_y + line_mask_half + 1)
+            if y_min_line < proj_mask.shape[0] and y_max_line > 0:
                 proj_mask[y_min_line:y_max_line, :] = 0
+
+        # Suppress wide horizontal ruling remnants that survive row slicing
+        h_len = max(35, int(unit_height * 0.45))
+        h_lines = cv2.morphologyEx(
+            proj_mask, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (h_len, 1))
+        )
+        if np.any(h_lines):
+            dilate_v = max(3, int(unit_height * 0.05))
+            if dilate_v % 2 == 0:
+                dilate_v += 1
+            h_lines_dil = cv2.dilate(
+                h_lines, cv2.getStructuringElement(cv2.MORPH_RECT, (1, dilate_v))
+            )
+            proj_mask[h_lines_dil > 0] = 0
+
+        # Clean small speckle noise (paper grain / shadow dust)
+        k_speck = max(1, int(0.02 * unit_height))
+        if k_speck >= 2:
+            proj_mask = cv2.morphologyEx(
+                proj_mask,
+                cv2.MORPH_OPEN,
+                cv2.getStructuringElement(cv2.MORPH_RECT, (k_speck, k_speck)),
+            )
+
+        # Minimum line ink: Skip empty ruling rows early
+        min_line_ink = max(40, int(0.12 * (unit_height**2)))
+        if np.sum(proj_mask > 0) < min_line_ink:
+            line_segments.append(
+                LineSegment(
+                    line_index=i,
+                    row_band=(band_top, band_bottom),
+                    topline_y=top_y,
+                    midline_y=mid_y,
+                    baseline_y=base_y,
+                    words=[],
+                    word_gaps=[],
+                    raw_word_gaps=[],
+                    intra_word_gaps=[],
+                )
+            )
+            continue
 
         # Vertical ink projection across columns
         proj = np.sum(proj_mask > 0, axis=0)
 
-        band_height = band_bottom - band_top
-        ink_threshold = max(2, int(0.03 * band_height))
+        ink_threshold = max(2, int(0.04 * band_height))
         min_run_width = max(2, int(0.04 * unit_height))
         ink_runs = _find_ink_runs(proj, ink_threshold=ink_threshold, min_run_width=min_run_width)
 
@@ -224,15 +267,16 @@ def segment_lines_and_words(
 
         # Classify gaps into word boundaries vs intra-word gaps (§5.2)
         word_boundaries: List[int] = []
+        min_word_gap = max(25.0, 0.35 * unit_height)
         if gaps:
             gap_widths = [g[2] for g in gaps]
             if len(gap_widths) == 1:
                 # If there is only 1 gap, check against guideline reference height
-                if gap_widths[0] >= max(35, int(0.5 * unit_height)):
+                if gap_widths[0] >= min_word_gap:
                     word_boundaries.append(0)
             else:
                 median_gap = float(np.median(gap_widths))
-                split_threshold = max(word_gap_multiplier * median_gap, 25.0)
+                split_threshold = max(word_gap_multiplier * median_gap, min_word_gap)
 
                 for g_idx, g_width in enumerate(gap_widths):
                     if g_width >= split_threshold:
@@ -261,20 +305,38 @@ def segment_lines_and_words(
                 bbox_y = int(band_top + np.min(ys))
                 bbox_w = int(np.max(xs) - np.min(xs) + 1)
                 bbox_h = int(np.max(ys) - np.min(ys) + 1)
+                ink_pixel_count = len(xs)
             else:
                 bbox_x = int(word_x1)
                 bbox_y = int(band_top)
                 bbox_w = int(word_x2 - word_x1)
                 bbox_h = int(band_bottom - band_top)
+                ink_pixel_count = 0
 
-            # Filter out full-width line artifacts (uncut ruling remnants or borders)
-            if bbox_w > int(img_w * 0.85) or (bbox_w / max(1, bbox_h) > 15.0):
+            # 1. Filter out full-width line artifacts (uncut ruling remnants or borders)
+            if bbox_w > int(img_w * 0.85) or (bbox_w / max(1, bbox_h) > 12.0):
                 return None
 
-            # Filter out tiny dust / noise specks
+            # 2. Filter out vertical margin lines (skinny and tall spanning line band)
+            if (bbox_h / max(1, bbox_w) > 2.5) and (bbox_h > int(0.50 * band_height)):
+                return None
+
+            # 3. Filter out low-density noise clouds across blank lines
+            density = ink_pixel_count / max(1, bbox_w * bbox_h)
+            if bbox_w > int(0.7 * unit_height) and density < 0.05:
+                return None
+
+            # 4. Filter out tiny dust / noise specks
             min_w = max(10, int(0.12 * unit_height))
             min_h = max(8, int(0.10 * unit_height))
-            if bbox_w < min_w or bbox_h < min_h:
+            min_area = max(20, int(0.06 * (unit_height**2)))
+            if bbox_w < min_w or bbox_h < min_h or ink_pixel_count < min_area:
+                return None
+
+            # 5. Filter out outer image border noise (shadows/table edges touching extremities)
+            if bbox_y < int(0.015 * img_h) or (bbox_y + bbox_h) > int(0.985 * img_h):
+                return None
+            if bbox_x < int(0.01 * img_w) or (bbox_x + bbox_w) > int(0.99 * img_w):
                 return None
 
             # Safe boundary clamping
