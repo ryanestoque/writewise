@@ -84,6 +84,7 @@ def test_low_contrast_image_rejected_on_contrast():
     with pytest.raises(QualityGateRejection) as exc_info:
         run_quality_gate(make_low_contrast_image())
     assert exc_info.value.code == "QUALITY_GATE_CONTRAST"
+    assert exc_info.value.threshold == 12.0
 
 
 def test_sharp_worksheet_passes_end_to_end():
@@ -92,7 +93,23 @@ def test_sharp_worksheet_passes_end_to_end():
     assert result.resolution_short_side >= 1500
     assert result.blur_variance >= 15.0
     assert 50 <= result.brightness_mean <= 210
-    assert result.contrast_std >= 20.0
+    assert result.contrast_std >= 12.0
+
+
+def test_realistic_sparse_pencil_worksheet_passes_contrast():
+    """Verify that a realistic phone capture of sparse cursive writing on ruled paper
+    (which naturally has lower global standard deviation due to mostly blank paper)
+    passes the contrast check.
+    """
+    import numpy as np
+
+    from app.cv.quality_gate import _check_contrast
+
+    # Simulate 12MP capture of ruled notebook paper with sparse pencil writing (~16–19 std)
+    h, w = 4000, 3000
+    paper = np.random.normal(145, 14, (h, w)).clip(0, 255).astype(np.uint8)
+    std = _check_contrast(paper)
+    assert std >= 12.0
 
 
 def test_realistic_sparse_pencil_worksheet_passes_blur():

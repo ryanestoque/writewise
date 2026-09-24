@@ -9,12 +9,13 @@ import numpy as np
 
 # Tunable thresholds — recalibrated for sparse handwriting on white worksheet paper.
 # In document images, 90%+ of pixels are blank paper where Laplacian response is ~0,
-# so the global variance is naturally diluted compared to textured natural scenes.
+# and global pixel intensity standard deviation is naturally diluted (~15–19 for clean,
+# evenly-lit pencil writing on ruled paper). Low-contrast washed out scans measure < 8.
 RESOLUTION_MIN_SHORT_SIDE = 1500
 BLUR_VARIANCE_MIN = 15.0
 BRIGHTNESS_MIN = 50
 BRIGHTNESS_MAX = 210
-CONTRAST_STD_MIN = 20.0
+CONTRAST_STD_MIN = 12.0
 
 
 @dataclass
