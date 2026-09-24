@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   AlertCircle,
   Camera,
@@ -14,6 +14,9 @@ import {
   Eye,
   X,
   Lightbulb,
+  ChevronDown,
+  ChevronUp,
+  ImageOff,
 } from "lucide-react";
 
 export interface QualityErrorDetails {
@@ -42,7 +45,7 @@ export interface QualityErrorCardProps {
 
 interface ErrorPresentation {
   isQualityCheck: boolean;
-  badgeLabel: string;
+  badgeLabel?: string;
   title: string;
   description: string;
   tips: string[];
@@ -77,10 +80,10 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
       if ((threshold !== null && threshold <= 50) || (measured !== null && measured < 50)) {
         return {
           isQualityCheck: true,
-          badgeLabel: "Lighting Too Dark",
+          badgeLabel: "Photo Coach • Lighting",
           title: "Lighting Is Too Dim",
           description:
-            "The photo doesn't have enough light to clearly distinguish handwriting strokes from the paper.",
+            "The photo doesn't have enough light to clearly distinguish cursive pencil strokes from the page ruling.",
           tips: [
             "Turn on room lighting or move closer to an open window.",
             "Hold your phone steady so the camera sensor can take in more light.",
@@ -93,10 +96,10 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
       if ((threshold !== null && threshold >= 200) || (measured !== null && measured > 200)) {
         return {
           isQualityCheck: true,
-          badgeLabel: "Harsh Glare / Overexposed",
-          title: "Washed Out by Glare",
+          badgeLabel: "Photo Coach • Glare",
+          title: "Worksheet Washed Out by Glare",
           description:
-            "Direct lighting or flash glare washed out the page, obscuring the pencil marks and guidelines.",
+            "Direct overhead lighting or flash glare washed out the page, obscuring the pencil marks and guidelines.",
           tips: [
             "Turn off the camera flash to eliminate bright white reflections.",
             "Angle your phone slightly to avoid direct ceiling lights bouncing off the paper.",
@@ -108,8 +111,8 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
 
       return {
         isQualityCheck: true,
-        badgeLabel: "Lighting Issue",
-        title: "Lighting Needs Adjustment",
+        badgeLabel: "Photo Coach • Lighting",
+        title: "Lighting Needs a Quick Adjustment",
         description:
           "Heavy shadows or strong glare obscured the cursive strokes and penmanship ruling.",
         tips: [
@@ -123,7 +126,7 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
     case "QUALITY_GATE_CONTRAST": {
       return {
         isQualityCheck: true,
-        badgeLabel: "Faint Pencil Strokes",
+        badgeLabel: "Photo Coach • Contrast",
         title: "Pencil Strokes Too Faint",
         description:
           "The pencil marks blend into the paper background, making it hard to trace continuous cursive strokes.",
@@ -139,7 +142,7 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
     case "QUALITY_GATE_BLUR": {
       return {
         isQualityCheck: true,
-        badgeLabel: "Motion Blur",
+        badgeLabel: "Photo Coach • Sharpness",
         title: "Photo Is Blurry or Unfocused",
         description:
           "Camera movement or slight defocus softened the stroke edges needed for geometric evaluation.",
@@ -155,8 +158,8 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
     case "QUALITY_GATE_RESOLUTION": {
       return {
         isQualityCheck: true,
-        badgeLabel: "Low Resolution",
-        title: "Photo Needs More Detail",
+        badgeLabel: "Photo Coach • Framing",
+        title: "Move Closer for More Detail",
         description:
           "The captured image does not meet the minimum resolution needed to measure letter formations accurately.",
         tips: [
@@ -175,7 +178,7 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
 
       return {
         isQualityCheck: true,
-        badgeLabel: "Word Count Mismatch",
+        badgeLabel: "Photo Coach • Word Count",
         title: hasCounts
           ? `Detected ${detected} of ${expected} Words`
           : "Word Count Mismatch",
@@ -194,7 +197,7 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
     case "QUALITY_GATE_SKEW": {
       return {
         isQualityCheck: true,
-        badgeLabel: "Tilted Angle",
+        badgeLabel: "Photo Coach • Angle",
         title: "Worksheet Captured at an Angle",
         description: "The page was tilted too steeply for automated line deskewing.",
         tips: [
@@ -202,6 +205,34 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
           "Hold the phone directly above the paper, parallel to the surface.",
         ],
         icon: Maximize2,
+      };
+    }
+
+    case "QUALITY_GATE_OCCLUDED": {
+      return {
+        isQualityCheck: true,
+        badgeLabel: "Photo Coach • Coverage",
+        title: "Worksheet Partially Covered",
+        description: "Part of the writing area or page margin appears obscured or cut off.",
+        tips: [
+          "Keep hands, fingers, and pencils outside the written sentence area.",
+          "Make sure no stray papers or books are covering the worksheet edges.",
+        ],
+        icon: Maximize2,
+      };
+    }
+
+    case "QUALITY_GATE_NO_TEXT": {
+      return {
+        isQualityCheck: true,
+        badgeLabel: "Photo Coach • Handwriting",
+        title: "No Handwriting Detected",
+        description: "The page was clear, but no handwritten cursive strokes were found in the guideline zone.",
+        tips: [
+          "Make sure the student has written on the worksheet before scanning.",
+          "Frame the camera directly on the completed guideline rows.",
+        ],
+        icon: FileQuestion,
       };
     }
 
@@ -264,8 +295,8 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
     default: {
       return {
         isQualityCheck: isQuality,
-        badgeLabel: isQuality ? "Photo Quality Check" : "Upload Failed",
-        title: isQuality ? "Quality Check Required" : "Submission Failed",
+        badgeLabel: isQuality ? "Photo Coach • Quality" : "Upload Failed",
+        title: isQuality ? "Photo Check Needed" : "Submission Failed",
         description:
           error.message ||
           "We could not process this worksheet photo. Please check your connection and try again.",
@@ -288,86 +319,217 @@ export function QualityErrorCard({
   onRetry,
 }: QualityErrorCardProps) {
   const [isInspecting, setIsInspecting] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [showAllTips, setShowAllTips] = useState(false);
+
+  const thumbnailRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
   const presentation = useMemo(() => resolveErrorPresentation(error), [error]);
   const IconComponent = presentation.icon;
+
+  const handleCloseInspect = () => {
+    setIsInspecting(false);
+    thumbnailRef.current?.focus();
+  };
+
+  // Handle escape, focus trapping, and focus restoration for inspect modal
+  useEffect(() => {
+    if (!isInspecting) return;
+
+    // Focus close button on mount
+    const timeoutId = setTimeout(() => {
+      closeButtonRef.current?.focus();
+    }, 50);
+
+    // Prevent body scrolling while modal is open
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        handleCloseInspect();
+        return;
+      }
+
+      if (e.key === "Tab" && modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length === 0) return;
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
+        } else if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement?.focus();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      clearTimeout(timeoutId);
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isInspecting]);
+
+  const visibleTips =
+    showAllTips || presentation.tips.length <= 2
+      ? presentation.tips
+      : presentation.tips.slice(0, 2);
 
   return (
     <div
       role="alert"
-      className="flex flex-col gap-3.5 p-3.5 sm:p-4 rounded-xl border border-destructive/25 bg-destructive/5 text-foreground animate-in fade-in-50 duration-200"
+      className={cn(
+        "flex flex-col gap-3.5 p-3.5 sm:p-4 rounded-xl border text-foreground animate-in fade-in-50 duration-200 shadow-warm-sm",
+        presentation.isQualityCheck
+          ? "border-warning/35 bg-warning/8 dark:bg-warning/10"
+          : "border-destructive/30 bg-destructive/5 dark:bg-destructive/10"
+      )}
     >
       {/* Header section with badge & thumbnail */}
       <div className="flex items-start gap-3">
         {/* Compact captured thumbnail if available */}
         {previewUrl ? (
-          <div className="relative shrink-0 group">
-            <div className="relative w-16 h-20 sm:w-20 sm:h-24 rounded-lg overflow-hidden border border-destructive/30 bg-muted shadow-2xs">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={previewUrl}
-                alt="Captured worksheet preview"
-                className="w-full h-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => setIsInspecting(true)}
-                aria-label="Inspect captured photo"
-                className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity cursor-pointer text-white"
-              >
-                <Eye className="size-4" />
-              </button>
-            </div>
-            <span className="block text-[10px] text-center text-muted-foreground mt-1 font-medium">
+          <div className="relative shrink-0 flex flex-col items-center">
+            <button
+              ref={thumbnailRef}
+              type="button"
+              onClick={() => setIsInspecting(true)}
+              aria-label="Enlarge captured worksheet photo to inspect quality"
+              className={cn(
+                "relative w-20 h-24 sm:w-20 sm:h-26 rounded-lg overflow-hidden bg-muted shadow-2xs group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 text-left border transition-all",
+                presentation.isQualityCheck
+                  ? "border-warning/40 hover:border-warning/60 focus-visible:ring-warning"
+                  : "border-destructive/30 hover:border-destructive/50 focus-visible:ring-destructive"
+              )}
+            >
+              {imageError ? (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-muted text-muted-foreground p-1 text-center">
+                  <ImageOff className="size-4 mb-0.5" aria-hidden="true" />
+                  <span className="text-[10px] leading-tight font-medium">No preview</span>
+                </div>
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={previewUrl}
+                  alt="Captured worksheet preview thumbnail"
+                  onError={() => setImageError(true)}
+                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                />
+              )}
+              {/* Persistent tap-to-zoom affordance (accessible on touchscreens) */}
+              <div className="absolute inset-x-0 bottom-0 bg-black/65 backdrop-blur-xs text-white text-[11px] font-medium py-1 px-1 flex items-center justify-center gap-1 transition-colors group-hover:bg-black/80">
+                <Eye className="size-3.5 shrink-0" aria-hidden="true" />
+                <span>Tap to zoom</span>
+              </div>
+            </button>
+            <span className="block text-xs text-center text-muted-foreground mt-1 font-medium">
               Your photo
             </span>
           </div>
         ) : (
-          <div className="size-9 rounded-lg bg-destructive/15 text-destructive flex items-center justify-center shrink-0 mt-0.5 border border-destructive/25">
+          <div
+            className={cn(
+              "size-10 rounded-lg flex items-center justify-center shrink-0 mt-0.5 border",
+              presentation.isQualityCheck
+                ? "bg-warning/15 text-warning-foreground border-warning/30"
+                : "bg-destructive/15 text-destructive border-destructive/25"
+            )}
+          >
             <IconComponent className="size-5" aria-hidden="true" />
           </div>
         )}
 
         {/* Text information */}
         <div className="space-y-1.5 min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Badge
-              variant="outline"
-              className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 border-destructive/30 text-destructive bg-destructive/10"
-            >
-              {presentation.badgeLabel}
-            </Badge>
-          </div>
-
           <h4 className="text-sm sm:text-base font-semibold text-foreground tracking-tight leading-snug">
             {presentation.title}
           </h4>
 
-          <p className="text-xs text-muted-foreground leading-relaxed">
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
             {presentation.description}
           </p>
         </div>
       </div>
 
-      {/* Actionable Tips box */}
+      {/* Actionable Tips box with progressive disclosure */}
       {presentation.tips.length > 0 && (
-        <div className="rounded-lg bg-background/80 dark:bg-card/80 border border-destructive/15 p-3 space-y-1.5">
+        <div
+          className={cn(
+            "rounded-lg border p-3 sm:p-3.5 space-y-2",
+            presentation.isQualityCheck
+              ? "bg-background/95 dark:bg-card/95 border-warning/25 shadow-2xs"
+              : "bg-background/90 dark:bg-card/90 border-destructive/20 shadow-2xs"
+          )}
+        >
           <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-            <Lightbulb className="size-3.5 text-amber-500 shrink-0" aria-hidden="true" />
-            <span>How to pass this check:</span>
+            <Lightbulb
+              className={cn(
+                "size-4 shrink-0",
+                presentation.isQualityCheck ? "text-warning" : "text-destructive"
+              )}
+              aria-hidden="true"
+            />
+            <span>
+              {presentation.isQualityCheck ? "Tips for a clear scan:" : "Suggested steps:"}
+            </span>
           </div>
-          <ul className="space-y-1 text-xs text-muted-foreground pl-0.5">
-            {presentation.tips.map((tip, idx) => (
-              <li key={idx} className="flex items-start gap-1.5">
-                <span className="text-destructive font-bold select-none">•</span>
+          <ul className="space-y-1.5 text-xs text-muted-foreground pl-0.5">
+            {visibleTips.map((tip, idx) => (
+              <li key={idx} className="flex items-start gap-2">
+                <span
+                  className={cn(
+                    "font-bold select-none text-xs leading-relaxed",
+                    presentation.isQualityCheck ? "text-warning" : "text-destructive"
+                  )}
+                  aria-hidden="true"
+                >
+                  •
+                </span>
                 <span className="leading-relaxed">{tip}</span>
               </li>
             ))}
           </ul>
+          {presentation.tips.length > 2 && (
+            <div className="pt-0.5">
+              <button
+                type="button"
+                onClick={() => setShowAllTips((prev) => !prev)}
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-sm"
+                aria-expanded={showAllTips}
+              >
+                <span>
+                  {showAllTips
+                    ? "Show fewer tips"
+                    : `+${presentation.tips.length - 2} more tips`}
+                </span>
+                {showAllTips ? (
+                  <ChevronUp className="size-3" aria-hidden="true" />
+                ) : (
+                  <ChevronDown className="size-3" aria-hidden="true" />
+                )}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* Action buttons */}
-      <div className="flex items-center gap-2 pt-1 border-t border-destructive/15 justify-end flex-wrap">
+      <div
+        className={cn(
+          "flex items-center gap-2 pt-2.5 border-t justify-end flex-wrap",
+          presentation.isQualityCheck ? "border-warning/20" : "border-destructive/20"
+        )}
+      >
         {presentation.isQualityCheck ? (
           <>
             {onReview && (
@@ -375,7 +537,7 @@ export function QualityErrorCard({
                 type="button"
                 variant="outline"
                 onClick={onReview}
-                className="h-9 px-3.5 text-xs sm:text-sm font-medium border-border/80 hover:bg-accent cursor-pointer"
+                className="h-9 px-3.5 text-xs sm:text-sm font-medium border-border hover:bg-accent cursor-pointer"
               >
                 Back to Review
               </Button>
@@ -383,11 +545,10 @@ export function QualityErrorCard({
             <Button
               ref={retryRef}
               type="button"
-              variant="destructive"
               onClick={onRetake}
-              className="h-9 px-4 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer shadow-xs"
+              className="h-9 px-4 text-xs sm:text-sm font-medium gap-2 cursor-pointer shadow-warm-sm"
             >
-              <Camera className="size-3.5" aria-hidden="true" />
+              <Camera className="size-4" aria-hidden="true" />
               Retake Photo
             </Button>
           </>
@@ -398,7 +559,7 @@ export function QualityErrorCard({
                 type="button"
                 variant="outline"
                 onClick={onReview}
-                className="h-9 px-3.5 text-xs sm:text-sm font-medium border-border/80 hover:bg-accent cursor-pointer"
+                className="h-9 px-3.5 text-xs sm:text-sm font-medium border-border hover:bg-accent cursor-pointer"
               >
                 Back to Review
               </Button>
@@ -407,22 +568,20 @@ export function QualityErrorCard({
               <Button
                 ref={retryRef}
                 type="button"
-                variant="destructive"
                 onClick={onRetry}
-                className="h-9 px-3.5 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
+                className="h-9 px-4 text-xs sm:text-sm font-medium gap-2 cursor-pointer shadow-warm-sm"
               >
-                <RotateCcw className="size-3.5" aria-hidden="true" />
+                <RotateCcw className="size-4" aria-hidden="true" />
                 Retry Upload
               </Button>
             ) : (
               <Button
                 ref={retryRef}
                 type="button"
-                variant="destructive"
                 onClick={onRetake}
-                className="h-9 px-4 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer shadow-xs"
+                className="h-9 px-4 text-xs sm:text-sm font-medium gap-2 cursor-pointer shadow-warm-sm"
               >
-                <Camera className="size-3.5" aria-hidden="true" />
+                <Camera className="size-4" aria-hidden="true" />
                 Retake Photo
               </Button>
             )}
@@ -430,39 +589,62 @@ export function QualityErrorCard({
         )}
       </div>
 
-      {/* Inspect photo modal overlay */}
+      {/* Inspect photo accessible modal overlay */}
       {isInspecting && previewUrl && (
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Enlarged captured photo"
+          aria-labelledby="inspect-photo-title"
+          aria-describedby="inspect-photo-desc"
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex flex-col items-center justify-center p-4 animate-in fade-in-50 duration-150"
-          onClick={() => setIsInspecting(false)}
+          onClick={handleCloseInspect}
         >
           <div
+            ref={modalRef}
             className="relative max-w-lg w-full max-h-[85vh] bg-background rounded-xl overflow-hidden shadow-2xl flex flex-col border border-border"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-3 border-b border-border bg-muted/40">
-              <span className="text-xs font-semibold text-foreground">
+            <div className="flex items-center justify-between p-3.5 border-b border-border bg-muted/40">
+              <span id="inspect-photo-title" className="text-sm font-semibold text-foreground">
                 Captured Worksheet Photo
               </span>
               <button
+                ref={closeButtonRef}
                 type="button"
-                onClick={() => setIsInspecting(false)}
-                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
-                aria-label="Close enlarged preview"
+                onClick={handleCloseInspect}
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary min-w-[36px] min-h-[36px] flex items-center justify-center transition-colors"
+                aria-label="Close enlarged preview (Press Escape)"
               >
-                <X className="size-4" />
+                <X className="size-4" aria-hidden="true" />
               </button>
             </div>
-            <div className="p-2 flex items-center justify-center overflow-auto max-h-[70vh] bg-muted/20">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={previewUrl}
-                alt="Enlarged captured worksheet"
-                className="max-h-[65vh] w-auto object-contain rounded-md"
-              />
+            <div className="p-3 flex items-center justify-center overflow-auto max-h-[66vh] bg-muted/20">
+              {imageError ? (
+                <div className="flex flex-col items-center justify-center py-12 px-4 text-center text-muted-foreground gap-2">
+                  <ImageOff className="size-8 text-muted-foreground/60" aria-hidden="true" />
+                  <p className="text-xs">Image preview could not be loaded.</p>
+                </div>
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={previewUrl}
+                  alt="Enlarged captured worksheet photo for quality verification"
+                  onError={() => setImageError(true)}
+                  className="max-h-[60vh] w-auto object-contain rounded-md shadow-xs"
+                />
+              )}
+            </div>
+            <div className="p-3 border-t border-border bg-background flex justify-between items-center text-xs text-muted-foreground">
+              <span id="inspect-photo-desc">Check lighting, focus, and page alignment</span>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleCloseInspect}
+                className="h-8 px-3 text-xs cursor-pointer"
+              >
+                Done
+              </Button>
             </div>
           </div>
         </div>

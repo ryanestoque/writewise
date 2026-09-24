@@ -471,7 +471,7 @@ function UploadFlow({
             <DialogTitle className="text-base sm:text-lg font-semibold text-foreground">
               Upload Student Worksheet
             </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground mt-0.5">
+            <DialogDescription className="sr-only">
               Upload student cursive worksheets for automated assessment and feedback.
             </DialogDescription>
           </div>
