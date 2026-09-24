@@ -36,6 +36,10 @@ import { useStudents } from "@/lib/hooks/use-students";
 import { useUploadSubmission } from "@/lib/hooks/use-submissions";
 import { rotateImageFile } from "@/lib/utils/image";
 import {
+  QualityErrorCard,
+  type QualityError,
+} from "@/components/submissions/quality-error-card";
+import {
   UploadCloudIcon,
   CameraIcon,
   FileImageIcon,
@@ -46,7 +50,6 @@ import {
   XIcon,
   Loader2Icon,
   AlertCircleIcon,
-  RotateCcwIcon,
   RotateCwIcon,
   CheckIcon,
   Scan,
@@ -70,10 +73,7 @@ interface QuickUploadDialogProps {
 
 type Step = 1 | 2 | 3 | 4 | 5;
 
-interface UploadError {
-  code: string;
-  message: string;
-}
+type UploadError = QualityError;
 
 /** Combobox choice representation */
 interface Choice {
@@ -99,49 +99,6 @@ const PROCESSING_STAGES = [
     detail: "Evaluating consistency, slant, spacing, and baseline.",
   },
 ] as const;
-
-function isQualityGateError(code: string): boolean {
-  return [
-    "QUALITY_GATE_RESOLUTION",
-    "QUALITY_GATE_BLUR",
-    "QUALITY_GATE_BRIGHTNESS",
-    "QUALITY_GATE_CONTRAST",
-    "SEGMENTATION_COUNT_MISMATCH",
-    "UNSUPPORTED_FILE_TYPE",
-    "FILE_TOO_LARGE",
-  ].includes(code);
-}
-
-function errorMessageFor(error: UploadError): string {
-  switch (error.code) {
-    case "UNSUPPORTED_FILE_TYPE":
-      return "That file isn't a supported image. Please choose a JPEG or PNG.";
-    case "FILE_TOO_LARGE":
-      return "The image is too large. Please use a file 15 MB or smaller.";
-    case "NOT_FOUND":
-      return "The activity or student wasn't found. It may have been removed.";
-    case "VALIDATION_ERROR":
-      return "Something's off with the selected activity or student. Please try again.";
-    case "QUALITY_GATE_RESOLUTION":
-      return "The photo needs more detail to assess cursive strokes clearly. Move a little closer and retake it.";
-    case "QUALITY_GATE_BLUR":
-      return "The photo is a bit blurry. Hold the camera steady and retake it.";
-    case "QUALITY_GATE_BRIGHTNESS":
-      return "The photo is too dark or washed out. Try adjusting the lighting and retake it.";
-    case "QUALITY_GATE_CONTRAST":
-      return "The pencil strokes are faint against the paper. Try adjusting the lighting or angle and retake it.";
-    case "SEGMENTATION_COUNT_MISMATCH":
-      return "The handwritten words couldn't be matched to the activity sentence. Please check that the student followed the prompt and retake.";
-    case "UNAUTHORIZED":
-      return "Your session has expired. Please sign in again.";
-    case "FORBIDDEN":
-      return "You don't have permission to upload submissions for this class.";
-    case "MODEL_INFERENCE_ERROR":
-      return "The assessment system encountered an issue. Please try submitting again shortly.";
-    default:
-      return "Upload failed. Please check your connection and try again.";
-  }
-}
 
 function subscribeTouch(callback: () => void) {
   if (typeof window === "undefined") return () => {};
@@ -1144,59 +1101,16 @@ function UploadFlow({
               </>
             )}
 
-            {/* Inline error banner (step 4 failure) */}
+            {/* Inline error card with rich quality feedback (step 4 failure) */}
             {step === 4 && uploadError && (
-              <div
-                role="alert"
-                className="flex flex-col gap-3 p-4 rounded-xl border border-destructive/20 bg-destructive/10 text-destructive"
-              >
-                <div className="flex items-start gap-3">
-                  <AlertCircleIcon className="size-5 shrink-0 mt-0.5" />
-                  <div className="space-y-1 min-w-0">
-                    <p className="text-sm font-semibold text-destructive">
-                      {isQualityGateError(uploadError.code)
-                        ? "Photo Quality Check"
-                        : "Upload Failed"}
-                    </p>
-                    <p className="text-xs text-destructive/90 leading-relaxed">
-                      {errorMessageFor(uploadError)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 pt-2 border-t border-destructive/15 justify-end">
-                  {isQualityGateError(uploadError.code) ? (
-                    <Button
-                      ref={retryButtonRef}
-                      variant="destructive"
-                      onClick={handleRetakePhoto}
-                      className="shrink-0 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
-                    >
-                      <CameraIcon className="size-3.5" />
-                      Retake Photo
-                    </Button>
-                  ) : (
-                    <>
-                      <Button
-                        variant="outline"
-                        onClick={() => setStep(3)}
-                        className="border-destructive/30 hover:bg-destructive/10 text-destructive shrink-0 h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium cursor-pointer"
-                      >
-                        Back to Review
-                      </Button>
-                      <Button
-                        ref={retryButtonRef}
-                        variant="destructive"
-                        onClick={handleSubmit}
-                        className="shrink-0 h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
-                      >
-                        <RotateCcwIcon className="size-3.5" />
-                        Retry Upload
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
+              <QualityErrorCard
+                error={uploadError}
+                previewUrl={previewUrl}
+                retryRef={retryButtonRef}
+                onRetake={handleRetakePhoto}
+                onReview={() => setStep(3)}
+                onRetry={handleSubmit}
+              />
             )}
 
             {/* Step 5 — Success & Continuous Class Upload Flow */}
