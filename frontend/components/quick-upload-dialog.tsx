@@ -1118,7 +1118,7 @@ function UploadFlow({
 
                   {previewUrl && (
                     <div
-                      className={`relative w-full rounded-xl overflow-hidden bg-muted/40 border border-border flex items-center justify-center transition-[aspect-ratio,max-height] duration-200 ${
+                      className={`relative w-full rounded-xl overflow-hidden bg-muted/40 border border-border flex items-center justify-center transition-[aspect-ratio,max-height] duration-200 touch-pan-y ${
                         isPortrait
                           ? "aspect-3/4 max-h-[380px] sm:max-h-[440px]"
                           : "aspect-4/3 max-h-[300px] sm:max-h-[360px]"
@@ -1132,11 +1132,12 @@ function UploadFlow({
                             ? `Handwriting worksheet preview for ${selectedStudent.full_name}`
                             : "Handwriting worksheet preview"
                         }
+                        draggable={false}
                         onLoad={(e) => {
                           const img = e.currentTarget;
                           setIsPortrait(img.naturalHeight >= img.naturalWidth);
                         }}
-                        className="size-full object-contain"
+                        className="size-full object-contain pointer-events-none select-none"
                       />
                     </div>
                   )}

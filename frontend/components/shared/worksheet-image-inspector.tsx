@@ -325,28 +325,37 @@ export function WorksheetImageInspector({
       clientY: e.clientY,
     });
 
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      // Safe fallback if pointer capture unsupported
-    }
-
     const count = activePointersRef.current.size;
 
     if (count === 2) {
       // Two-finger gesture -> initialize pinch-to-zoom
       setIsDragging(false);
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        // Safe fallback if pointer capture unsupported
+      }
       const pts = Array.from(activePointersRef.current.values());
       const dist = Math.hypot(pts[0].clientX - pts[1].clientX, pts[0].clientY - pts[1].clientY);
       pinchStartDistRef.current = dist;
       pinchStartScaleRef.current = zoomScale;
-    } else if (count === 1 && zoomScale > 1) {
-      // Single cursor/finger pan
-      setIsDragging(true);
-      setDragStart({
-        x: e.clientX - panOffset.x,
-        y: e.clientY - panOffset.y,
-      });
+    } else if (count === 1) {
+      // For single pointer: only capture pointer and drag when actively zoomed or loupe is active.
+      // When at 1x fit zoom, allow native vertical swipe gestures to scroll the page.
+      if (zoomScale > 1 || isLoupeActive) {
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId);
+        } catch {
+          // Safe fallback if pointer capture unsupported
+        }
+        if (zoomScale > 1) {
+          setIsDragging(true);
+          setDragStart({
+            x: e.clientX - panOffset.x,
+            y: e.clientY - panOffset.y,
+          });
+        }
+      }
     }
   };
 
@@ -698,7 +707,8 @@ export function WorksheetImageInspector({
           setLoupeState((prev) => ({ ...prev, visible: false }));
         }}
         className={cn(
-          "relative w-full mx-auto rounded-xl sm:rounded-2xl border border-border/80 bg-muted/30 dark:bg-muted/20 overflow-hidden transition-all flex items-center justify-center shadow-warm select-none touch-none",
+          "relative w-full mx-auto rounded-xl sm:rounded-2xl border border-border/80 bg-muted/30 dark:bg-muted/20 overflow-hidden transition-all flex items-center justify-center shadow-warm select-none",
+          isLoupeActive || zoomScale > 1 ? "touch-none" : "touch-pan-y",
           "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           aspectRatioClass,
           isLoupeActive
@@ -730,6 +740,7 @@ export function WorksheetImageInspector({
                 alt={altText}
                 loading="lazy"
                 decoding="async"
+                draggable={false}
                 onError={() => {
                   if (imageUrl) setFailedImageUrl(imageUrl);
                 }}
@@ -738,7 +749,7 @@ export function WorksheetImageInspector({
                     ? "contrast(1.4) brightness(0.92) saturate(0.6)"
                     : "none",
                 }}
-                className="size-full object-contain pointer-events-none drop-shadow-2xs"
+                className="size-full object-contain pointer-events-none select-none drop-shadow-2xs"
               />
               {/* Custom Overlays / Slots (e.g. CV guide-line grid, bounding boxes) */}
               <InspectorContext.Provider value={inspectorContextValue}>

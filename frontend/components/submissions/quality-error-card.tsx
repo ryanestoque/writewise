@@ -662,7 +662,7 @@ export function QualityErrorCard({
               </DialogDescription>
             </DialogHeader>
 
-            <div className="p-3 flex items-center justify-center overflow-auto max-h-[66vh] bg-muted/20">
+            <div className="p-3 flex items-center justify-center overflow-auto max-h-[66vh] bg-muted/20 touch-pan-y">
               {imageError ? (
                 <div className="flex flex-col items-center justify-center py-12 px-4 text-center text-muted-foreground gap-2">
                   <ImageOff className="size-8 text-muted-foreground/60" aria-hidden="true" />
@@ -673,8 +673,9 @@ export function QualityErrorCard({
                 <img
                   src={previewUrl}
                   alt="Enlarged captured worksheet photo for quality verification"
+                  draggable={false}
                   onError={() => setImageError(true)}
-                  className="max-h-[60vh] w-auto object-contain rounded-md shadow-xs"
+                  className="max-h-[60vh] w-auto object-contain rounded-md shadow-xs select-none"
                 />
               )}
             </div>
