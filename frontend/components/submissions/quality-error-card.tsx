@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -68,13 +68,11 @@ export function isQualityGateErrorCode(code: string): boolean {
     "QUALITY_GATE_BLUR",
     "QUALITY_GATE_BRIGHTNESS",
     "QUALITY_GATE_CONTRAST",
-    "SEGMENTATION_COUNT_MISMATCH",
     "QUALITY_GATE_LIGHTING",
     "QUALITY_GATE_SKEW",
     "QUALITY_GATE_OCCLUDED",
     "QUALITY_GATE_NO_TEXT",
-    "UNSUPPORTED_FILE_TYPE",
-    "FILE_TOO_LARGE",
+    "SEGMENTATION_COUNT_MISMATCH",
   ].includes(code);
 }
 
@@ -83,6 +81,7 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
   const isQuality = isQualityGateErrorCode(code);
 
   switch (code) {
+    case "QUALITY_GATE_LIGHTING":
     case "QUALITY_GATE_BRIGHTNESS": {
       const threshold = typeof details?.threshold === "number" ? details.threshold : null;
       const measured = typeof details?.measured_value === "number" ? details.measured_value : null;
@@ -330,6 +329,7 @@ export function QualityErrorCard({
   onRetry,
   retryLabel,
 }: QualityErrorCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
   const [isInspecting, setIsInspecting] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [showAllTips, setShowAllTips] = useState(false);
@@ -341,28 +341,49 @@ export function QualityErrorCard({
   const hasTechnicalDetails =
     typeof error.details?.measured_value === "number" ||
     typeof error.details?.threshold === "number" ||
+    typeof error.details?.detected_words === "number" ||
+    typeof error.details?.expected_words === "number" ||
     Boolean(error.details?.submission_id);
 
   const visibleTips =
-    showAllTips || presentation.tips.length <= 2
+    showAllTips || presentation.tips.length <= 1
       ? presentation.tips
-      : presentation.tips.slice(0, 2);
+      : presentation.tips.slice(0, 1);
 
   const handleRetakeClick = useCallback(() => {
     const topTip = presentation.tips[0];
     onRetake(topTip ? { tip: topTip, badgeLabel: presentation.badgeLabel } : undefined);
   }, [onRetake, presentation.tips, presentation.badgeLabel]);
 
-  // Keyboard shortcut: Press R to retake photo when error card is active and modal isn't open
+  // Keyboard shortcut: Press R to retake photo when error card is active and modal isn't open.
+  // Complies with WCAG 2.1 SC 2.1.4: ignores modifier keys (prevents hijacking Ctrl+R/Cmd+R)
+  // and only triggers when not editing text and focus is within card (or default document focus).
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        (e.key === "r" || e.key === "R") &&
-        !["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement)?.tagName) &&
-        !isInspecting
-      ) {
-        e.preventDefault();
-        handleRetakeClick();
+      // Never intercept browser commands or shortcuts with modifiers (e.g. Ctrl+R reload, Cmd+R, Alt+R)
+      if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) {
+        return;
+      }
+
+      if (e.key === "r" || e.key === "R") {
+        const target = e.target as HTMLElement | null;
+        if (!target) return;
+        if (
+          ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) ||
+          target.isContentEditable
+        ) {
+          return;
+        }
+        if (isInspecting) return;
+
+        // Scoped execution: only fire if focus is within card, or active element is body
+        if (
+          cardRef.current &&
+          (cardRef.current.contains(target) || document.activeElement === document.body)
+        ) {
+          e.preventDefault();
+          handleRetakeClick();
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -371,14 +392,21 @@ export function QualityErrorCard({
 
   return (
     <div
-      role="alert"
+      ref={cardRef}
+      role="region"
+      aria-labelledby="quality-error-card-title"
       className={cn(
-        "flex flex-col gap-3.5 p-4 rounded-xl border text-foreground animate-in fade-in-50 duration-200 shadow-warm-sm",
+        "flex flex-col gap-3.5 p-4 rounded-xl border text-foreground animate-in fade-in-50 duration-200 motion-reduce:animate-none shadow-warm-sm",
         presentation.isQualityCheck
           ? "border-warning/35 bg-warning/8 dark:bg-warning/10"
           : "border-destructive/30 bg-destructive/5 dark:bg-destructive/10"
       )}
     >
+      {/* Screen-reader polite announcement on error render */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {presentation.isQualityCheck ? "Quality check warning: " : "Submission error: "}
+        {presentation.title}. {presentation.description}
+      </div>
       {/* Header section with badge & thumbnail */}
       <div className="flex items-start gap-3">
         {/* Compact captured thumbnail if available */}
@@ -435,7 +463,10 @@ export function QualityErrorCard({
         {/* Text information */}
         <div className="space-y-1.5 min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h4 className="text-sm sm:text-base font-semibold text-foreground tracking-tight leading-snug">
+            <h4
+              id="quality-error-card-title"
+              className="text-sm sm:text-base font-semibold text-foreground tracking-tight leading-snug"
+            >
               {presentation.title}
             </h4>
             {presentation.badgeLabel && (
@@ -469,15 +500,15 @@ export function QualityErrorCard({
               <button
                 type="button"
                 onClick={() => setShowTechDetails((prev) => !prev)}
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-sm"
+                className="inline-flex items-center gap-1.5 py-1.5 px-2 -ml-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-md min-h-[38px] sm:min-h-0"
                 aria-expanded={showTechDetails}
                 aria-controls="technical-diagnostic-details"
               >
                 <span>{showTechDetails ? "Hide advanced details" : "Show advanced details"}</span>
                 {showTechDetails ? (
-                  <ChevronUp className="size-3" aria-hidden="true" />
+                  <ChevronUp className="size-3.5" aria-hidden="true" />
                 ) : (
-                  <ChevronDown className="size-3" aria-hidden="true" />
+                  <ChevronDown className="size-3.5" aria-hidden="true" />
                 )}
               </button>
               {showTechDetails && (
@@ -498,6 +529,22 @@ export function QualityErrorCard({
                       <span className="font-sans">Threshold:</span>
                       <span className="font-semibold text-foreground tabular-nums">
                         {Number(error.details.threshold).toFixed(1)}
+                      </span>
+                    </div>
+                  )}
+                  {typeof error.details?.detected_words === "number" && (
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="font-sans">Detected Words:</span>
+                      <span className="font-semibold text-foreground tabular-nums">
+                        {error.details.detected_words}
+                      </span>
+                    </div>
+                  )}
+                  {typeof error.details?.expected_words === "number" && (
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="font-sans">Expected Words:</span>
+                      <span className="font-semibold text-foreground tabular-nums">
+                        {error.details.expected_words}
                       </span>
                     </div>
                   )}
@@ -530,7 +577,9 @@ export function QualityErrorCard({
             <Lightbulb
               className={cn(
                 "size-4 shrink-0",
-                presentation.isQualityCheck ? "text-warning" : "text-destructive"
+                presentation.isQualityCheck
+                  ? "text-warning-foreground dark:text-warning"
+                  : "text-destructive"
               )}
               aria-hidden="true"
             />
@@ -538,13 +587,19 @@ export function QualityErrorCard({
               {presentation.isQualityCheck ? "Tips for a clear scan:" : "Suggested steps:"}
             </span>
           </div>
-          <ul className="space-y-1.5 text-xs text-muted-foreground pl-0.5">
+          <ul
+            id="remediation-tips-list"
+            role="list"
+            className="space-y-1.5 text-xs text-muted-foreground pl-0.5"
+          >
             {visibleTips.map((tip, idx) => (
               <li key={idx} className="flex items-start gap-2">
                 <span
                   className={cn(
                     "font-bold select-none text-xs leading-relaxed",
-                    presentation.isQualityCheck ? "text-warning" : "text-destructive"
+                    presentation.isQualityCheck
+                      ? "text-warning-foreground dark:text-warning"
+                      : "text-destructive"
                   )}
                   aria-hidden="true"
                 >
@@ -554,23 +609,24 @@ export function QualityErrorCard({
               </li>
             ))}
           </ul>
-          {presentation.tips.length > 2 && (
+          {presentation.tips.length > 1 && (
             <div className="pt-0.5">
               <button
                 type="button"
                 onClick={() => setShowAllTips((prev) => !prev)}
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-sm"
+                className="inline-flex items-center gap-1.5 py-1.5 px-2 -ml-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-md min-h-[38px] sm:min-h-0"
                 aria-expanded={showAllTips}
+                aria-controls="remediation-tips-list"
               >
                 <span>
                   {showAllTips
                     ? "Show fewer tips"
-                    : `+${presentation.tips.length - 2} more tips`}
+                    : `+${presentation.tips.length - 1} more tips`}
                 </span>
                 {showAllTips ? (
-                  <ChevronUp className="size-3" aria-hidden="true" />
+                  <ChevronUp className="size-3.5" aria-hidden="true" />
                 ) : (
-                  <ChevronDown className="size-3" aria-hidden="true" />
+                  <ChevronDown className="size-3.5" aria-hidden="true" />
                 )}
               </button>
             </div>
@@ -578,10 +634,10 @@ export function QualityErrorCard({
         </div>
       )}
 
-      {/* Action buttons - full-width stacked on mobile for thumb ergonomics, right-aligned on desktop */}
+      {/* Action buttons - natural DOM and visual hierarchy across viewports */}
       <div
         className={cn(
-          "flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 pt-3 border-t sm:justify-end",
+          "flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-3 border-t sm:justify-end",
           presentation.isQualityCheck ? "border-warning/20" : "border-destructive/20"
         )}
       >
@@ -684,10 +740,9 @@ export function QualityErrorCard({
               <span>Check lighting, focus, and page alignment</span>
               <Button
                 type="button"
-                size="sm"
                 variant="outline"
                 onClick={() => setIsInspecting(false)}
-                className="h-8 px-3 text-xs cursor-pointer"
+                className="h-10 sm:h-8 px-4 sm:px-3 text-xs font-medium cursor-pointer"
               >
                 Done
               </Button>
