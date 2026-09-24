@@ -136,4 +136,3 @@ class TestExifStripping:
         result_img = Image.open(io.BytesIO(result))
         assert result_img.size == (200, 100)
         assert result_img.info.get("exif", b"") == b"" or len(result_img.info.get("exif", b"")) == 0
-

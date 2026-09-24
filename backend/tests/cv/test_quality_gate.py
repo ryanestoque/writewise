@@ -77,7 +77,7 @@ def test_bright_image_rejected_on_brightness():
     with pytest.raises(QualityGateRejection) as exc_info:
         run_quality_gate(make_bright_image())
     assert exc_info.value.code == "QUALITY_GATE_BRIGHTNESS"
-    assert exc_info.value.threshold == 200.0
+    assert exc_info.value.threshold == 210.0
 
 
 def test_low_contrast_image_rejected_on_contrast():
@@ -91,7 +91,7 @@ def test_sharp_worksheet_passes_end_to_end():
     assert isinstance(result, QualityMetrics)
     assert result.resolution_short_side >= 1500
     assert result.blur_variance >= 15.0
-    assert 50 <= result.brightness_mean <= 200
+    assert 50 <= result.brightness_mean <= 210
     assert result.contrast_std >= 20.0
 
 

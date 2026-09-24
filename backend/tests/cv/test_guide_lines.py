@@ -46,3 +46,24 @@ def test_extracts_correct_y_coordinates():
         assert top < mid < base
         assert 30 < (mid - top) < 100
         assert 30 < (base - mid) < 100
+
+
+def test_detect_and_deskew_high_resolution():
+    """High resolution image (e.g. 12MP photo) with ruling spacing > 150px is grouped correctly."""
+    # 4000x5200 image with line_spacing=180px and row_gap=1000px
+    image_bytes = make_3line_worksheet(
+        width=4000,
+        height=5200,
+        angle_deg=0.0,
+        line_spacing=180,
+        row_gap=1000,
+    )
+    preprocessed = preprocess(image_bytes)
+    result = detect_and_deskew(preprocessed)
+
+    # All 4 rulings should be detected, not fragmented by a hardcoded 150px threshold
+    assert len(result.baseline_y) == 4
+    for top, mid, base in zip(result.topline_y, result.midline_y, result.baseline_y):
+        assert top < mid < base
+        assert 140 < (mid - top) < 220
+        assert 140 < (base - mid) < 220

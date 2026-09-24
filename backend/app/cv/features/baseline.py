@@ -7,6 +7,8 @@ from typing import Optional, Tuple
 
 import numpy as np
 
+from app.cv.features.utils import get_ink_mask
+
 
 def compute_baseline_deviation(
     word_bbox: Tuple[int, int, int, int],
@@ -36,10 +38,8 @@ def compute_baseline_deviation(
     norm_unit = max(1.0, float(unit_height))
 
     if binary_crop is not None and binary_crop.size > 0:
-        ink_ys, _ = np.where(binary_crop == 0)
-        if len(ink_ys) == 0:
-            # Try inverted binary (> 128 is ink)
-            ink_ys, _ = np.where(binary_crop > 128)
+        ink_mask = get_ink_mask(binary_crop)
+        ink_ys, _ = np.where(ink_mask)
 
         if len(ink_ys) > 0:
             y_bottom = bbox_y + int(np.max(ink_ys))

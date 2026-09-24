@@ -49,3 +49,18 @@ def test_slant_fallback_on_blank_or_horizontal_strokes():
     horizontal = np.full((80, 100), 255, dtype=np.uint8)
     cv2.line(horizontal, (10, 40), (90, 40), 0, 3)
     assert compute_word_slant(horizontal) == 0.0
+
+
+def test_slant_with_pipeline_inverted_crop():
+    """Pipeline binary crops use THRESH_BINARY_INV (paper=0, ink=255)."""
+    # Create inverted binary crop with 15 deg lean
+    crop = np.full((80, 100), 0, dtype=np.uint8)
+    cx, cy = 50, 40
+    length = 50
+    rad = np.radians(90.0 - 15.0)
+    dx = int(length / 2 * np.cos(rad))
+    dy = int(length / 2 * np.sin(rad))
+    cv2.line(crop, (cx - dx, cy + dy), (cx + dx, cy - dy), 255, 3)
+
+    slant = compute_word_slant(crop, reference_perpendicular_deg=90.0)
+    assert abs(slant - 15.0) <= 3.0

@@ -34,3 +34,16 @@ def test_baseline_deviation_with_binary_crop():
     )
     # y_bottom = 440 + 50 = 490. diff = |490 - 500| = 10. ratio = 10/50 = 0.20
     assert deviation == 0.20
+
+
+def test_baseline_deviation_with_pipeline_inverted_crop():
+    """Pipeline binary crops use THRESH_BINARY_INV (paper=0, ink=255)."""
+    # Crop height 60, ink down to row 50 (relative to bbox_y=440) -> bottom ink y = 490
+    crop = np.full((60, 80), 0, dtype=np.uint8)
+    crop[10:51, 10:70] = 255  # ink down to index 50
+    bbox = (100, 440, 80, 60)
+    deviation = compute_baseline_deviation(
+        word_bbox=bbox, baseline_y=500, unit_height=50.0, binary_crop=crop
+    )
+    # y_bottom = 440 + 50 = 490. diff = |490 - 500| = 10. ratio = 10/50 = 0.20
+    assert deviation == 0.20

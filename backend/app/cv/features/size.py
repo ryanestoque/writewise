@@ -7,6 +7,8 @@ from typing import Tuple
 
 import numpy as np
 
+from app.cv.features.utils import get_ink_mask
+
 
 def compute_size_ratio(
     binary_crop: np.ndarray,
@@ -42,10 +44,8 @@ def compute_size_ratio(
         return round(float(min(bbox_h, norm_unit) / norm_unit), 2)
 
     # Identify ink pixels
-    if np.mean(binary_crop == 0) > 0.5:
-        ink_ys, _ = np.where(binary_crop == 0)
-    else:
-        ink_ys, _ = np.where(binary_crop < 128)
+    ink_mask = get_ink_mask(binary_crop)
+    ink_ys, _ = np.where(ink_mask)
 
     if len(ink_ys) == 0:
         return round(float(min(bbox_h, norm_unit) / norm_unit), 2)

@@ -9,7 +9,7 @@ import numpy as np
 
 # Tuned so each generator's JPEG-encoded output sits clearly on the correct
 # side of quality_gate.py's thresholds (RESOLUTION_MIN_SHORT_SIDE=1500,
-# BLUR_VARIANCE_MIN=15.0, BRIGHTNESS range 50-200, CONTRAST_STD_MIN=20.0).
+# BLUR_VARIANCE_MIN=15.0, BRIGHTNESS range 50-210, CONTRAST_STD_MIN=20.0).
 _SHARP_BG = 190
 _SHARP_INK = 30
 _DARK_BG = 20
@@ -103,7 +103,13 @@ def make_small_image(width: int = 800, height: int = 600) -> bytes:
     return buf.tobytes()
 
 
-def make_3line_worksheet(width: int = 2000, height: int = 2600, angle_deg: float = 0.0) -> bytes:
+def make_3line_worksheet(
+    width: int = 2000,
+    height: int = 2600,
+    angle_deg: float = 0.0,
+    line_spacing: int = 60,
+    row_gap: int = 400,
+) -> bytes:
     """Generate a worksheet with 3-line ruling (topline, midline, baseline) and rotation.
 
     Simulates Grade 3 paper where each writing row has 3 printed lines.
@@ -111,8 +117,6 @@ def make_3line_worksheet(width: int = 2000, height: int = 2600, angle_deg: float
     img = np.full((height, width), _SHARP_BG, dtype=np.uint8)
 
     n_rows = 4
-    row_gap = 400
-    line_spacing = 60
 
     start_y = 400
     for i in range(n_rows):

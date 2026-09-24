@@ -103,10 +103,11 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
         groups = []
         current_group = [peaks[0]]
 
-        # Use a dynamic threshold based on median gap if possible, or a fixed reasonable one
-        # Max distance between lines in a 3-line ruling is usually < 150px on a 2600px image
+        # Scale grouping distance with image height so high-resolution photos
+        # (e.g. 12MP–48MP phone cameras where ruling spacing > 150px) are not fragmented.
+        grouping_threshold = max(150, int(h * 0.06))
         for i in range(1, len(peaks)):
-            if peaks[i] - current_group[-1] < 150:
+            if peaks[i] - current_group[-1] < grouping_threshold:
                 current_group.append(peaks[i])
             else:
                 groups.append(current_group)

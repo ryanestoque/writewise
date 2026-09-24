@@ -55,3 +55,20 @@ def test_size_ratio_small_writing():
         unit_height=40.0,
     )
     assert ratio == 0.50
+
+
+def test_size_ratio_with_pipeline_inverted_crop():
+    """Pipeline binary crops use THRESH_BINARY_INV (paper=0, ink=255)."""
+    # Core ink is only 20px tall in a 40px unit zone -> ratio = 0.50
+    crop = np.full((40, 60), 0, dtype=np.uint8)
+    crop[20:40, 10:50] = 255  # ink only in lower 20px
+    bbox = (100, 460, 60, 40)
+
+    ratio = compute_size_ratio(
+        binary_crop=crop,
+        word_bbox=bbox,
+        midline_y=460,
+        baseline_y=500,
+        unit_height=40.0,
+    )
+    assert ratio == 0.50

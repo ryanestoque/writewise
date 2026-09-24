@@ -8,6 +8,8 @@ from typing import List
 import cv2
 import numpy as np
 
+from app.cv.features.utils import get_ink_mask
+
 
 def compute_word_slant(
     binary_crop: np.ndarray,
@@ -34,12 +36,8 @@ def compute_word_slant(
         return 0.0
 
     # Ensure ink is foreground (255) for HoughLinesP
-    if np.mean(binary_crop == 0) > 0.5:
-        # Inverted: ink was 255
-        ink_img = (binary_crop == 0).astype(np.uint8) * 255
-    else:
-        # Standard Otsu: paper 255, ink 0
-        ink_img = (binary_crop < 128).astype(np.uint8) * 255
+    ink_mask = get_ink_mask(binary_crop)
+    ink_img = ink_mask.astype(np.uint8) * 255
 
     # If ink image has virtually no ink, return 0.0
     if np.count_nonzero(ink_img) < 10:
