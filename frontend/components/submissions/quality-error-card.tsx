@@ -25,6 +25,8 @@ import {
   ChevronUp,
   ImageOff,
   Contrast,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 
 export interface QualityErrorDetails {
@@ -335,6 +337,133 @@ export function QualityErrorCard({
   const [showAllTips, setShowAllTips] = useState(false);
   const [showTechDetails, setShowTechDetails] = useState(false);
 
+  // Inspection modal magnification & pan states
+  const [zoomScale, setZoomScale] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const panStartRef = useRef({ x: 0, y: 0 });
+  const pinchStartDistRef = useRef<number | null>(null);
+  const pinchStartScaleRef = useRef(1);
+
+  const resetZoomAndPan = useCallback(() => {
+    setZoomScale(1);
+    setPanOffset({ x: 0, y: 0 });
+    setIsDragging(false);
+  }, []);
+
+  const openInspectionModal = useCallback(() => {
+    resetZoomAndPan();
+    setIsInspecting(true);
+  }, [resetZoomAndPan]);
+
+  const closeInspectionModal = useCallback(() => {
+    resetZoomAndPan();
+    setIsInspecting(false);
+  }, [resetZoomAndPan]);
+
+  const handleZoomIn = useCallback(() => {
+    setZoomScale((prev) => Math.min(3, +(prev + 0.5).toFixed(1)));
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setZoomScale((prev) => {
+      const next = Math.max(1, +(prev - 0.5).toFixed(1));
+      if (next === 1) setPanOffset({ x: 0, y: 0 });
+      return next;
+    });
+  }, []);
+
+  const handleResetZoom = useCallback(() => {
+    setZoomScale(1);
+    setPanOffset({ x: 0, y: 0 });
+  }, []);
+
+  const handleToggleZoom = useCallback(() => {
+    setZoomScale((prev) => {
+      if (prev > 1) {
+        setPanOffset({ x: 0, y: 0 });
+        return 1;
+      }
+      return 2;
+    });
+  }, []);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoomScale <= 1) return;
+    setIsDragging(true);
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
+    panStartRef.current = { ...panOffset };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || zoomScale <= 1) return;
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+    const maxPan = 180 * (zoomScale - 1);
+    setPanOffset({
+      x: Math.max(-maxPan, Math.min(maxPan, panStartRef.current.x + dx)),
+      y: Math.max(-maxPan, Math.min(maxPan, panStartRef.current.y + dy)),
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      pinchStartDistRef.current = dist;
+      pinchStartScaleRef.current = zoomScale;
+    } else if (e.touches.length === 1 && zoomScale > 1) {
+      setIsDragging(true);
+      dragStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      panStartRef.current = { ...panOffset };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && pinchStartDistRef.current !== null) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const ratio = dist / pinchStartDistRef.current;
+      const nextScale = Math.min(3, Math.max(1, +(pinchStartScaleRef.current * ratio).toFixed(2)));
+      setZoomScale(nextScale);
+      if (nextScale === 1) setPanOffset({ x: 0, y: 0 });
+    } else if (e.touches.length === 1 && isDragging && zoomScale > 1) {
+      const dx = e.touches[0].clientX - dragStartRef.current.x;
+      const dy = e.touches[0].clientY - dragStartRef.current.y;
+      const maxPan = 180 * (zoomScale - 1);
+      setPanOffset({
+        x: Math.max(-maxPan, Math.min(maxPan, panStartRef.current.x + dx)),
+        y: Math.max(-maxPan, Math.min(maxPan, panStartRef.current.y + dy)),
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    pinchStartDistRef.current = null;
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.deltaY < 0) {
+      setZoomScale((prev) => Math.min(3, +(prev + 0.25).toFixed(2)));
+    } else if (e.deltaY > 0) {
+      setZoomScale((prev) => {
+        const next = Math.max(1, +(prev - 0.25).toFixed(2));
+        if (next === 1) setPanOffset({ x: 0, y: 0 });
+        return next;
+      });
+    }
+  };
+
   const presentation = useMemo(() => resolveErrorPresentation(error), [error]);
   const IconComponent = presentation.icon;
 
@@ -355,9 +484,9 @@ export function QualityErrorCard({
     onRetake(topTip ? { tip: topTip, badgeLabel: presentation.badgeLabel } : undefined);
   }, [onRetake, presentation.tips, presentation.badgeLabel]);
 
-  // Keyboard shortcut: Press R to retake photo when error card is active and modal isn't open.
+  // Keyboard shortcut: Press R to retake photo; [+] / [-] / [0] to zoom when inspecting.
   // Complies with WCAG 2.1 SC 2.1.4: ignores modifier keys (prevents hijacking Ctrl+R/Cmd+R)
-  // and only triggers when not editing text and focus is within card (or default document focus).
+  // and only triggers when not editing text.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Never intercept browser commands or shortcuts with modifiers (e.g. Ctrl+R reload, Cmd+R, Alt+R)
@@ -365,30 +494,54 @@ export function QualityErrorCard({
         return;
       }
 
-      if (e.key === "r" || e.key === "R") {
-        const target = e.target as HTMLElement | null;
-        if (!target) return;
-        if (
-          ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) ||
-          target.isContentEditable
-        ) {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      // Inside inspection modal: allow R to retake, and +/-/0 for zoom controls
+      if (isInspecting) {
+        if (e.key === "r" || e.key === "R") {
+          e.preventDefault();
+          closeInspectionModal();
+          handleRetakeClick();
           return;
         }
-        if (isInspecting) return;
-
-        // Scoped execution: only fire if focus is within card, or active element is body
-        if (
-          cardRef.current &&
-          (cardRef.current.contains(target) || document.activeElement === document.body)
-        ) {
+        if (e.key === "+" || e.key === "=") {
           e.preventDefault();
-          handleRetakeClick();
+          handleZoomIn();
+          return;
+        }
+        if (e.key === "-" || e.key === "_") {
+          e.preventDefault();
+          handleZoomOut();
+          return;
+        }
+        if (e.key === "0") {
+          e.preventDefault();
+          handleResetZoom();
+          return;
+        }
+      } else {
+        // Scoped execution for card: only fire if focus is within card, or active element is body
+        if (e.key === "r" || e.key === "R") {
+          if (
+            cardRef.current &&
+            (cardRef.current.contains(target) || document.activeElement === document.body)
+          ) {
+            e.preventDefault();
+            handleRetakeClick();
+          }
         }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleRetakeClick, isInspecting]);
+  }, [handleRetakeClick, isInspecting, handleZoomIn, handleZoomOut, handleResetZoom, closeInspectionModal]);
 
   return (
     <div
@@ -414,7 +567,7 @@ export function QualityErrorCard({
           <div className="relative shrink-0 flex flex-col items-center">
             <button
               type="button"
-              onClick={() => setIsInspecting(true)}
+              onClick={openInspectionModal}
               aria-label="Enlarge captured worksheet photo to inspect quality"
               className={cn(
                 "relative w-20 h-24 sm:w-20 sm:h-26 rounded-lg overflow-hidden bg-muted shadow-2xs group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 text-left border transition-all",
@@ -702,50 +855,171 @@ export function QualityErrorCard({
         )}
       </div>
 
-      {/* Inspect photo modal via Radix / Base UI Dialog */}
+      {/* Inspect photo modal with interactive zoom, pan, and direct remediation */}
       {previewUrl && (
-        <Dialog open={isInspecting} onOpenChange={setIsInspecting}>
+        <Dialog
+          open={isInspecting}
+          onOpenChange={(open) => {
+            if (!open) resetZoomAndPan();
+            setIsInspecting(open);
+          }}
+        >
           <DialogContent
             showCloseButton
-            className="w-[calc(100%-2rem)] max-w-lg sm:max-w-lg p-0 gap-0 overflow-hidden"
+            className="w-[calc(100%-1.5rem)] max-w-3xl sm:max-w-3xl p-0 gap-0 overflow-hidden border border-border shadow-warm-lg"
           >
-            <DialogHeader className="p-3.5 border-b border-border bg-muted/40">
-              <DialogTitle className="text-sm font-semibold text-foreground">
-                Captured Worksheet Photo
-              </DialogTitle>
+            {/* Modal Header: Title and Zoom Toolbar */}
+            <DialogHeader className="p-3 sm:p-3.5 border-b border-border bg-muted/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+              <div className="flex items-center gap-2">
+                <DialogTitle className="text-sm sm:text-base font-semibold text-foreground">
+                  Captured Worksheet Photo
+                </DialogTitle>
+              </div>
               <DialogDescription className="sr-only">
-                Enlarged captured worksheet photo for quality verification
+                Inspect captured cursive worksheet photo for quality verification, stroke clarity, and paper alignment
               </DialogDescription>
+
+              {/* Zoom & Inspection Controls */}
+              {!imageError && (
+                <div className="flex items-center gap-1 sm:self-center pr-6 sm:pr-8">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleZoomOut}
+                    disabled={zoomScale <= 1}
+                    aria-label="Zoom out photo"
+                    className="h-7 w-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground"
+                  >
+                    <ZoomOut className="size-3.5" aria-hidden="true" />
+                  </Button>
+
+                  <span
+                    aria-live="polite"
+                    className="text-xs font-mono font-medium text-muted-foreground w-12 text-center select-none"
+                  >
+                    {Math.round(zoomScale * 100)}%
+                  </span>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleZoomIn}
+                    disabled={zoomScale >= 3}
+                    aria-label="Zoom in photo"
+                    className="h-7 w-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground"
+                  >
+                    <ZoomIn className="size-3.5" aria-hidden="true" />
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetZoom}
+                    disabled={zoomScale === 1 && panOffset.x === 0 && panOffset.y === 0}
+                    aria-label="Reset zoom to fit"
+                    className="h-7 px-2 text-[11px] font-medium cursor-pointer text-muted-foreground hover:text-foreground"
+                  >
+                    <RotateCcw className="size-3 mr-1" aria-hidden="true" />
+                    Fit
+                  </Button>
+                </div>
+              )}
             </DialogHeader>
 
-            <div className="p-3 flex items-center justify-center overflow-auto max-h-[66vh] bg-muted/20 touch-pan-y">
+            {/* Interactive Image Canvas */}
+            <div
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onWheel={handleWheel}
+              className={cn(
+                "relative h-[52vh] sm:h-[60vh] max-h-[600px] w-full flex items-center justify-center overflow-hidden bg-neutral-900/5 dark:bg-black/40 select-none",
+                zoomScale > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : "cursor-zoom-in"
+              )}
+            >
               {imageError ? (
-                <div className="flex flex-col items-center justify-center py-12 px-4 text-center text-muted-foreground gap-2">
+                <div className="flex flex-col items-center justify-center py-12 px-4 text-center text-muted-foreground gap-3">
                   <ImageOff className="size-8 text-muted-foreground/60" aria-hidden="true" />
                   <p className="text-xs">Image preview could not be loaded.</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setImageError(false)}
+                    className="h-8 px-3 text-xs gap-1.5 cursor-pointer"
+                  >
+                    <RotateCcw className="size-3.5" aria-hidden="true" />
+                    Retry Loading
+                  </Button>
                 </div>
               ) : (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={previewUrl}
-                  alt="Enlarged captured worksheet photo for quality verification"
+                  alt="Captured cursive worksheet photo under quality review"
                   draggable={false}
+                  onDoubleClick={handleToggleZoom}
                   onError={() => setImageError(true)}
-                  className="max-h-[60vh] w-auto object-contain rounded-md shadow-xs select-none"
+                  style={{
+                    transform: `translate3d(${panOffset.x}px, ${panOffset.y}px, 0px) scale(${zoomScale})`,
+                    transition: isDragging ? "none" : "transform 150ms ease-out",
+                  }}
+                  className="max-h-[50vh] sm:max-h-[58vh] w-auto max-w-full object-contain rounded-md shadow-xs select-none touch-none"
                 />
+              )}
+
+              {/* Floating hint pill when zoomed */}
+              {!imageError && (
+                <div className="absolute bottom-2 left-2 pointer-events-none bg-black/60 backdrop-blur-xs text-white text-[11px] px-2 py-0.5 rounded-full flex items-center gap-1.5 shadow-2xs">
+                  {zoomScale > 1 ? (
+                    <span>Drag or swipe to pan details</span>
+                  ) : (
+                    <span>Double-click or pinch to zoom (max 300%)</span>
+                  )}
+                </div>
               )}
             </div>
 
-            <DialogFooter className="p-3 border-t border-border bg-background flex flex-row justify-between items-center text-xs text-muted-foreground">
-              <span>Check lighting, focus, and page alignment</span>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsInspecting(false)}
-                className="h-10 sm:h-8 px-4 sm:px-3 text-xs font-medium cursor-pointer"
-              >
-                Done
-              </Button>
+            {/* Modal Footer: Targeted Diagnostic Advice & Direct Remediation Action */}
+            <DialogFooter className="p-3 sm:p-3.5 border-t border-border bg-background flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Lightbulb className="size-3.5 shrink-0 text-amber-500" aria-hidden="true" />
+                <span className="line-clamp-1 sm:line-clamp-none">
+                  {presentation.tips[0] || "Check lighting, focus, and line clarity"}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeInspectionModal}
+                  className="flex-1 sm:flex-initial h-9 px-3.5 text-xs font-medium cursor-pointer"
+                >
+                  Done
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    closeInspectionModal();
+                    handleRetakeClick();
+                  }}
+                  className="flex-1 sm:flex-initial h-9 px-4 text-xs sm:text-sm font-medium gap-1.5 bg-[#1b6b63] hover:bg-[#145049] text-white shadow-warm-sm cursor-pointer"
+                >
+                  <Camera className="size-3.5" aria-hidden="true" />
+                  Retake Photo
+                  <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.2 rounded bg-white/20 text-[10px] font-sans">
+                    R
+                  </kbd>
+                </Button>
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>
