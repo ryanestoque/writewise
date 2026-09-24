@@ -29,6 +29,9 @@ def test_deskew_corrects_angle():
 
     # If correctly deskewed, the y-coordinates should match the known generated spacing
     assert len(result.baseline_y) > 0
+    assert abs(result.deskew_angle) > 1.0
+    assert result.color is not None
+    assert result.deskewed_image_bytes is not None
 
 
 def test_extracts_correct_y_coordinates():
@@ -67,3 +70,24 @@ def test_detect_and_deskew_high_resolution():
         assert top < mid < base
         assert 140 < (mid - top) < 220
         assert 140 < (base - mid) < 220
+
+
+def test_detect_and_deskew_rejects_spurious_edge_peaks():
+    """Detect and deskew must reject noise peaks at image border with absurd spacing."""
+    import numpy as np
+
+    from app.cv.preprocessing import PreprocessResult
+
+    # 4064x3048 binary image with spurious noise peaks at the extreme bottom edge (5px spacing)
+    h, w = 4064, 3048
+    binary = np.zeros((h, w), dtype=np.uint8)
+    binary[3947, :] = 255
+    binary[3952, :] = 255
+    binary[4008, :] = 255
+
+    prep = PreprocessResult(gray=binary, denoised=binary, binary=binary, otsu_threshold=100.0)
+    result = detect_and_deskew(prep)
+
+    # Spurious bottom noise (5px spacing) must NOT be accepted as a ruling
+    assert 4008 not in result.baseline_y
+    assert len(result.baseline_y) == 0

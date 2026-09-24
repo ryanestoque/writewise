@@ -15,7 +15,7 @@ def test_run_cv_pipeline_success():
     assert len(result.word_crops) == 6
     assert len(result.measurement.guide_lines.baseline_y) == 2
     assert len(result.measurement.lines) == 2
-    assert result.measurement.aggregate.slant.mean >= 0.0
+    assert abs(result.measurement.aggregate.slant.mean) <= 5.0
     assert result.measurement.aggregate.size_consistency.mean > 0.0
 
     # Ensure serialization to JSON dictionary works

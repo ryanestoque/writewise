@@ -15,6 +15,7 @@ Deskew is NOT part of this stage — it depends on guide-line detection
 """
 
 from dataclasses import dataclass
+from typing import Optional
 
 import cv2
 import numpy as np
@@ -31,12 +32,14 @@ class PreprocessResult:
       feature extraction (§6) — all operate on binarized images
     - ``otsu_threshold``: the threshold value Otsu auto-selected;
       useful for logging/diagnostics, not consumed by later stages
+    - ``color``: original BGR image for deskewed storage persistence
     """
 
     gray: np.ndarray  # Single-channel uint8, same HxW as input
     denoised: np.ndarray  # After median blur, single-channel uint8
     binary: np.ndarray  # After Otsu threshold — 0 (background) or 255 (ink)
     otsu_threshold: float  # The binarization cutoff Otsu chose
+    color: Optional[np.ndarray] = None  # Original BGR image if available
 
 
 # Median blur kernel size — must be odd.  3×3 is the smallest useful
@@ -76,15 +79,29 @@ def preprocess(image_bytes: bytes) -> PreprocessResult:
     # 2. Denoise — median blur, edge-preserving
     denoised = cv2.medianBlur(gray, _MEDIAN_KSIZE)
 
-    # 3. Otsu threshold — THRESH_BINARY_INV so ink pixels = 255,
+    # 3. Background illumination normalization:
+    # Estimate background illumination to handle camera and hand shadows across desk captures.
+    # Dividing by estimated background levels out lighting gradients so faint strokes and guidelines
+    # are preserved without turning shadows into false ink.
+    k_size = int(max(image.shape[:2]) * 0.015)
+    if k_size % 2 == 0:
+        k_size += 1
+    k_size = max(31, k_size)
+    bg = cv2.morphologyEx(
+        denoised, cv2.MORPH_DILATE, cv2.getStructuringElement(cv2.MORPH_RECT, (k_size, k_size))
+    )
+    norm = cv2.divide(denoised, bg, scale=255)
+
+    # 4. Otsu threshold on normalized image — THRESH_BINARY_INV so ink pixels = 255,
     #    background = 0.  This is what cv2.findContours,
     #    cv2.HoughLinesP, and column projection profiles expect
     #    (white foreground on black background).
-    otsu_thresh, binary = cv2.threshold(denoised, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    otsu_thresh, binary = cv2.threshold(norm, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
     return PreprocessResult(
         gray=gray,
         denoised=denoised,
         binary=binary,
         otsu_threshold=float(otsu_thresh),
+        color=image,
     )

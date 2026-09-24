@@ -51,6 +51,7 @@ class GuideLinesData:
     baseline_y: List[int]
     midline_y: List[int]
     topline_y: List[int]
+    deskew_angle: float = 0.0
 
 
 @dataclass

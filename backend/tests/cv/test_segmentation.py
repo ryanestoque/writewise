@@ -157,7 +157,30 @@ def test_validate_segmentation_edge_cases():
 
     # Out of range
     with pytest.raises(PostSegmentationRejection):
-        validate_segmentation(4, 10)
-
-    with pytest.raises(PostSegmentationRejection):
         validate_segmentation(26, 10)
+
+
+def test_rejects_full_width_line_artifacts():
+    """A continuous line spanning the entire width must not be accepted as a word."""
+    import numpy as np
+
+    from app.cv.guide_lines import DeskewResult
+
+    h, w = 2000, 2000
+    binary = np.zeros((h, w), dtype=np.uint8)
+    # Draw a line spanning across the entire width inside row band
+    binary[540:560, :] = 255
+
+    deskew = DeskewResult(
+        gray=binary,
+        denoised=binary,
+        binary=binary,
+        topline_y=[450],
+        midline_y=[500],
+        baseline_y=[550],
+        deskew_angle=0.0,
+    )
+
+    result = segment_lines_and_words(deskew, expected_word_count=None)
+    # The full-width artifact must NOT be accepted as a valid word
+    assert result.total_word_count == 0

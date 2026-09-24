@@ -4,7 +4,7 @@ Detects the 3-line ruling (topline, midline, baseline) and deskews the image.
 """
 
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 import cv2
 import numpy as np
@@ -22,6 +22,9 @@ class DeskewResult:
     baseline_y: List[int]
     midline_y: List[int]
     topline_y: List[int]
+    deskew_angle: float = 0.0
+    color: Optional[np.ndarray] = None
+    deskewed_image_bytes: Optional[bytes] = None
 
 
 def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
@@ -71,6 +74,20 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
     )
     binary = cv2.warpAffine(preprocessed.binary, M, (w, h), flags=cv2.INTER_NEAREST, borderValue=0)
 
+    # Deskew color image for storage persistence when tilted
+    deskewed_color = None
+    deskewed_bytes = None
+    if preprocessed.color is not None:
+        if abs(deskew_angle) >= 0.1:
+            deskewed_color = cv2.warpAffine(
+                preprocessed.color, M, (w, h), flags=cv2.INTER_LINEAR, borderValue=(255, 255, 255)
+            )
+            success, enc = cv2.imencode(".jpg", deskewed_color, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
+            if success:
+                deskewed_bytes = enc.tobytes()
+        else:
+            deskewed_color = preprocessed.color
+
     # 3. Find line Y-coordinates in deskewed image
     row_proj = np.sum(binary, axis=1) / 255.0  # number of ink pixels per row
 
@@ -92,34 +109,48 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
     if in_peak:
         peaks.append((peak_start + len(row_proj) - 1) // 2)
 
-    # Group peaks into rows (topline, midline, baseline)
+    # Group and validate rulings (topline, midline, baseline)
     # A standard Grade 3 worksheet has a repeating 3-line ruling.
-    # The gap between lines in a ruling is much smaller than the gap between rulings.
+    # Geometry validation ensures border noise, shadows, or absurd spacing (<20px / 5px)
+    # are never accepted as handwriting guidelines.
     baseline_y = []
     midline_y = []
     topline_y = []
 
-    if peaks:
-        groups = []
-        current_group = [peaks[0]]
+    min_line_spacing = max(20, int(h * 0.012))
+    max_total_span = int(h * 0.35)
+    margin_guard = max(10, int(h * 0.01))
 
-        # Scale grouping distance with image height so high-resolution photos
-        # (e.g. 12MP–48MP phone cameras where ruling spacing > 150px) are not fragmented.
-        grouping_threshold = max(150, int(h * 0.06))
-        for i in range(1, len(peaks)):
-            if peaks[i] - current_group[-1] < grouping_threshold:
-                current_group.append(peaks[i])
-            else:
-                groups.append(current_group)
-                current_group = [peaks[i]]
-        groups.append(current_group)
+    if len(peaks) >= 3:
+        i = 0
+        while i <= len(peaks) - 3:
+            t = peaks[i]
+            m = peaks[i + 1]
+            b = peaks[i + 2]
 
-        for g in groups:
-            if len(g) >= 3:
-                # Assuming top-down order (smallest Y to largest Y)
-                topline_y.append(g[-3])
-                midline_y.append(g[-2])
-                baseline_y.append(g[-1])
+            sp1 = m - t
+            sp2 = b - m
+
+            if (
+                sp1 >= min_line_spacing
+                and sp2 >= min_line_spacing
+                and (b - t) <= max_total_span
+                and (0.35 <= (sp1 / sp2) <= 2.8)
+                and t >= margin_guard
+                and b <= (h - margin_guard)
+            ):
+                topline_y.append(t)
+                midline_y.append(m)
+                baseline_y.append(b)
+
+                avg_sp = (sp1 + sp2) / 2.0
+                # On continuously ruled paper where base of row N is top of row N+1, advance by 2
+                if (i + 3 < len(peaks)) and (peaks[i + 3] - b < avg_sp * 1.6):
+                    i += 2
+                else:
+                    i += 3
+                continue
+            i += 1
 
     return DeskewResult(
         gray=gray,
@@ -128,4 +159,7 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
         baseline_y=baseline_y,
         midline_y=midline_y,
         topline_y=topline_y,
+        deskew_angle=deskew_angle,
+        color=deskewed_color,
+        deskewed_image_bytes=deskewed_bytes,
     )

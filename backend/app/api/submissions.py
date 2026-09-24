@@ -220,9 +220,18 @@ async def create_submission(
     image_path = f"{student_id}/{submission_id}.jpg"
 
     # 9. Upload to Supabase Storage (service-role key, bypasses RLS)
+    # When the worksheet image was deskewed (rotated to level horizontal guide lines),
+    # upload the deskewed image so coordinates match 1:1 with the displayed image.
+    image_to_upload = (
+        pipeline_result.deskewed_image_bytes
+        if pipeline_result
+        and pipeline_result.deskewed_image_bytes
+        and abs(pipeline_result.deskew_angle) >= 0.1
+        else hardened_bytes
+    )
     storage_res = supabase_client.storage.from_("submission-images").upload(
         path=image_path,
-        file=hardened_bytes,
+        file=image_to_upload,
         file_options={"content-type": "image/jpeg"},
     )
     # The supabase-py storage client raises on failure, but check defensively

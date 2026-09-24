@@ -110,6 +110,7 @@ def extract_features(
         baseline_y=deskew.baseline_y,
         midline_y=deskew.midline_y,
         topline_y=deskew.topline_y,
+        deskew_angle=round(deskew.deskew_angle, 2),
     )
 
     return MeasurementData(

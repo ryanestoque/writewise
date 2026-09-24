@@ -23,6 +23,8 @@ class CVPipelineResult:
 
     measurement: MeasurementData
     word_crops: List[np.ndarray]  # Deskewed grayscale crops for CNN (§7)
+    deskewed_image_bytes: Optional[bytes] = None
+    deskew_angle: float = 0.0
 
 
 def run_cv_pipeline(
@@ -77,4 +79,6 @@ def run_cv_pipeline(
     return CVPipelineResult(
         measurement=measurement,
         word_crops=word_crops,
+        deskewed_image_bytes=deskew.deskewed_image_bytes,
+        deskew_angle=deskew.deskew_angle,
     )

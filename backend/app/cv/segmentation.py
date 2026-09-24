@@ -186,14 +186,17 @@ def segment_lines_and_words(
         for gy in (top_y, mid_y, base_y):
             rel_y = gy - band_top
             if 0 <= rel_y < proj_mask.shape[0]:
-                y_min_line = max(0, rel_y - 2)
-                y_max_line = min(proj_mask.shape[0], rel_y + 3)
+                y_min_line = max(0, rel_y - 3)
+                y_max_line = min(proj_mask.shape[0], rel_y + 4)
                 proj_mask[y_min_line:y_max_line, :] = 0
 
         # Vertical ink projection across columns
         proj = np.sum(proj_mask > 0, axis=0)
 
-        ink_runs = _find_ink_runs(proj, ink_threshold=1, min_run_width=2)
+        band_height = band_bottom - band_top
+        ink_threshold = max(2, int(0.03 * band_height))
+        min_run_width = max(2, int(0.04 * unit_height))
+        ink_runs = _find_ink_runs(proj, ink_threshold=ink_threshold, min_run_width=min_run_width)
 
         if not ink_runs:
             line_segments.append(
@@ -244,7 +247,9 @@ def segment_lines_and_words(
         current_word_runs = [ink_runs[0]]
         current_word_intra_gaps: List[int] = []
 
-        def _create_word_segment(runs: List[Tuple[int, int]], intra_gaps: List[int]) -> WordSegment:
+        def _create_word_segment(
+            runs: List[Tuple[int, int]], intra_gaps: List[int]
+        ) -> Optional[WordSegment]:
             word_x1 = runs[0][0]
             word_x2 = runs[-1][1]
 
@@ -261,6 +266,22 @@ def segment_lines_and_words(
                 bbox_y = int(band_top)
                 bbox_w = int(word_x2 - word_x1)
                 bbox_h = int(band_bottom - band_top)
+
+            # Filter out full-width line artifacts (uncut ruling remnants or borders)
+            if bbox_w > int(img_w * 0.85) or (bbox_w / max(1, bbox_h) > 15.0):
+                return None
+
+            # Filter out tiny dust / noise specks
+            min_w = max(10, int(0.12 * unit_height))
+            min_h = max(8, int(0.10 * unit_height))
+            if bbox_w < min_w or bbox_h < min_h:
+                return None
+
+            # Safe boundary clamping
+            bbox_x = max(0, min(img_w - 1, bbox_x))
+            bbox_y = max(0, min(img_h - 1, bbox_y))
+            bbox_w = max(1, min(img_w - bbox_x, bbox_w))
+            bbox_h = max(1, min(img_h - bbox_y, bbox_h))
 
             gray_crop = deskew.gray[bbox_y : bbox_y + bbox_h, bbox_x : bbox_x + bbox_w]
             binary_crop = deskew.binary[bbox_y : bbox_y + bbox_h, bbox_x : bbox_x + bbox_w]
@@ -279,11 +300,11 @@ def segment_lines_and_words(
             if g_idx in word_boundaries:
                 # Finish current word
                 word_seg = _create_word_segment(current_word_runs, current_word_intra_gaps)
-                line_all_intra_gaps.extend(word_seg.intra_word_gaps)
-                words_in_line.append(word_seg)
-
-                line_raw_word_gaps.append(g_width)
-                line_word_gaps.append(round(g_width / unit_height, 3))
+                if word_seg is not None:
+                    line_all_intra_gaps.extend(word_seg.intra_word_gaps)
+                    words_in_line.append(word_seg)
+                    line_raw_word_gaps.append(g_width)
+                    line_word_gaps.append(round(g_width / unit_height, 3))
 
                 # Start next word
                 current_word_runs = [ink_runs[g_idx + 1]]
@@ -295,8 +316,9 @@ def segment_lines_and_words(
         # Add the final word in the line
         if current_word_runs:
             word_seg = _create_word_segment(current_word_runs, current_word_intra_gaps)
-            line_all_intra_gaps.extend(word_seg.intra_word_gaps)
-            words_in_line.append(word_seg)
+            if word_seg is not None:
+                line_all_intra_gaps.extend(word_seg.intra_word_gaps)
+                words_in_line.append(word_seg)
 
         line_segments.append(
             LineSegment(
