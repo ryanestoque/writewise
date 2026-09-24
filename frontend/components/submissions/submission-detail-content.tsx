@@ -772,8 +772,8 @@ export function SubmissionDetailContent({
               className="flex-1 flex flex-col min-h-0"
               aspectRatioClass={
                 variant === "page"
-                  ? "aspect-4/3 sm:aspect-3/2 lg:aspect-4/3 min-h-[280px] sm:min-h-[320px] lg:min-h-[320px]"
-                  : "aspect-4/3 sm:aspect-3/2 lg:aspect-auto lg:flex-1 min-h-[260px] sm:min-h-[280px] lg:min-h-0"
+                  ? "max-h-[min(640px,calc(100dvh-12rem))] min-h-[280px] sm:min-h-[320px]"
+                  : "max-h-[min(540px,calc(100dvh-14rem))] min-h-[260px] sm:min-h-[280px] lg:flex-1"
               }
             >
               {diagnosticOverlay ? (

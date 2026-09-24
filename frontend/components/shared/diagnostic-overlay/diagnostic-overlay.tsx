@@ -70,8 +70,13 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
 }: DiagnosticOverlayProps) {
   const inspectorContext = useInspectorContext();
   const effectiveZoom = zoomScale ?? inspectorContext.zoomScale ?? 1;
+  const panOffset = inspectorContext.panOffset ?? { x: 0, y: 0 };
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+  const [viewportSize, setViewportSize] = useState<{
     width: number;
     height: number;
   } | null>(null);
@@ -125,30 +130,45 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
     }
   }, [selectedAnnotation, naturalSize, effectiveZoom]);
 
-  // Measure container dimensions with ResizeObserver for exact letterbox compensation
+  // Measure container dimensions with ResizeObserver for exact letterbox compensation and visible viewport boundaries
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
+    const viewportEl =
+      inspectorContext.viewportRef?.current ??
+      el.closest<HTMLElement>('[role="region"]');
+
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        const roundedW = Math.round(width);
-        const roundedH = Math.round(height);
+        const roundedW = Math.round(entry.contentRect.width);
+        const roundedH = Math.round(entry.contentRect.height);
         if (roundedW > 0 && roundedH > 0) {
-          setContainerSize((prev) => {
-            if (prev && prev.width === roundedW && prev.height === roundedH) {
-              return prev;
-            }
-            return { width: roundedW, height: roundedH };
-          });
+          if (entry.target === el) {
+            setContainerSize((prev) => {
+              if (prev && prev.width === roundedW && prev.height === roundedH) {
+                return prev;
+              }
+              return { width: roundedW, height: roundedH };
+            });
+          } else {
+            setViewportSize((prev) => {
+              if (prev && prev.width === roundedW && prev.height === roundedH) {
+                return prev;
+              }
+              return { width: roundedW, height: roundedH };
+            });
+          }
         }
       }
     });
 
     observer.observe(el);
+    if (viewportEl) {
+      observer.observe(viewportEl);
+    }
     return () => observer.disconnect();
-  }, []);
+  }, [inspectorContext.viewportRef]);
 
   // Load natural dimensions of the image so SVG viewBox aligns 1:1 with pixel coordinates
   useEffect(() => {
@@ -361,7 +381,10 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
         imageHeight={naturalSize.height}
         containerWidth={containerSize?.width}
         containerHeight={containerSize?.height}
+        viewportWidth={viewportSize?.width}
+        viewportHeight={viewportSize?.height}
         zoomScale={effectiveZoom}
+        panOffset={panOffset}
         onDismiss={() => {
           setHoveredAnnotation(null);
           onSelectAnnotation?.(null);

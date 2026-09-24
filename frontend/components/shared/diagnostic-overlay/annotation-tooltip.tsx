@@ -13,7 +13,10 @@ interface AnnotationTooltipProps {
   imageHeight: number;
   containerWidth?: number;
   containerHeight?: number;
+  viewportWidth?: number;
+  viewportHeight?: number;
   zoomScale?: number;
+  panOffset?: { x: number; y: number };
   onDismiss?: () => void;
 }
 
@@ -31,7 +34,10 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
   imageHeight,
   containerWidth,
   containerHeight,
+  viewportWidth,
+  viewportHeight,
   zoomScale = 1,
+  panOffset = { x: 0, y: 0 },
   onDismiss,
 }: AnnotationTooltipProps) {
   if (!hover || imageWidth <= 0 || imageHeight <= 0) return null;
@@ -45,51 +51,83 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
   let topPos: string;
   let isNearTop = false;
   let caretOffset = 0;
+  let isOffscreen = false;
 
   if (containerWidth && containerHeight && containerWidth > 0 && containerHeight > 0) {
+    const containerW = containerWidth;
+    const containerH = containerHeight;
+    const viewportW = viewportWidth && viewportWidth > 0 ? viewportWidth : containerW;
+    const viewportH = viewportHeight && viewportHeight > 0 ? viewportHeight : containerH;
+
     // Calculate exact rendered image box inside object-contain
-    const containerRatio = containerWidth / containerHeight;
+    const containerRatio = containerW / containerH;
     const imgRatio = imageWidth / imageHeight;
 
-    let renderedW = containerWidth;
-    let renderedH = containerHeight;
+    let renderedW = containerW;
+    let renderedH = containerH;
     let offsetX = 0;
     let offsetY = 0;
 
     if (containerRatio > imgRatio) {
       // Container is wider -> pillarbox (left/right margins)
-      renderedW = containerHeight * imgRatio;
-      offsetX = (containerWidth - renderedW) / 2;
+      renderedW = containerH * imgRatio;
+      offsetX = (containerW - renderedW) / 2;
     } else {
       // Container is taller -> letterbox (top/bottom margins)
-      renderedH = containerWidth / imgRatio;
-      offsetY = (containerHeight - renderedH) / 2;
+      renderedH = containerW / imgRatio;
+      offsetY = (containerH - renderedH) / 2;
     }
 
     const pixelX = offsetX + (x / imageWidth) * renderedW;
     const pixelY = offsetY + (y / imageHeight) * renderedH;
 
-    // Tooltip width is 240px on mobile (w-60) and 256px on sm+ (sm:w-64). Clamp within rendered bounds
-    const baseHalfWidth = containerWidth < 640 ? 120 : 128;
-    const halfWidth = baseHalfWidth * counterScale;
-    const imageMinX = offsetX + halfWidth + 8;
-    const imageMaxX = offsetX + renderedW - halfWidth - 8;
-    const minX = Math.max(halfWidth + 12, imageMinX <= imageMaxX ? imageMinX : containerWidth / 2);
-    const maxX = Math.min(containerWidth - halfWidth - 12, imageMinX <= imageMaxX ? imageMaxX : containerWidth / 2);
-    const clampedX = Math.max(minX, Math.min(maxX, pixelX));
+    // Map local pixel coordinates to visible viewport screen coordinates
+    // Accounting for center-origin scaling and pan translation
+    const targetScreenX = viewportW / 2 + panOffset.x + (pixelX - containerW / 2) * effectiveZoom;
+    const targetScreenY = viewportH / 2 + panOffset.y + (pixelY - containerH / 2) * effectiveZoom;
 
-    isNearTop = pixelY < 125 * counterScale;
-    leftPos = `${clampedX}px`;
+    // Fade out cleanly if target stroke has panned far out of visible viewport
+    isOffscreen =
+      targetScreenX < -80 ||
+      targetScreenX > viewportW + 80 ||
+      targetScreenY < -80 ||
+      targetScreenY > viewportH + 80;
+
+    // Tooltip physical width on screen: 240px on mobile (<640px) or 256px on sm+, bounded by viewport
+    const baseCardWidth = viewportW < 640 ? 240 : 256;
+    const cardWidth = Math.min(baseCardWidth, Math.max(180, viewportW - 24));
+    const cardHalfWidth = cardWidth / 2;
+    const margin = 12;
+
+    // Allowed screen range for the card center to ensure card is 100% within the visible frame
+    const minCenterX = cardHalfWidth + margin;
+    const maxCenterX = viewportW - cardHalfWidth - margin;
+
+    let clampedCenterX_screen: number;
+    if (minCenterX <= maxCenterX) {
+      clampedCenterX_screen = Math.max(minCenterX, Math.min(maxCenterX, targetScreenX));
+    } else {
+      clampedCenterX_screen = viewportW / 2;
+    }
+
+    // Invert the clamped screen center back into local coordinates of the transformed container
+    const clampedLocalX =
+      containerW / 2 + (clampedCenterX_screen - viewportW / 2 - panOffset.x) / effectiveZoom;
+
+    // Pointer caret offset relative to the card's horizontal center
+    const deltaScreenX = targetScreenX - clampedCenterX_screen;
+    const maxCaretOffset = cardHalfWidth - 20;
+    caretOffset = Math.max(-maxCaretOffset, Math.min(maxCaretOffset, deltaScreenX));
+
+    // Vertical placement: Flip below if insufficient headroom above target
+    isNearTop = targetScreenY < 140;
+    leftPos = `${clampedLocalX}px`;
     topPos = `${pixelY}px`;
-
-    // Horizontal relative offset for the pointer caret, clamped safely inside card's rounded corners
-    const rawCaretOffset = (pixelX - clampedX) / counterScale;
-    caretOffset = Math.max(-100, Math.min(100, rawCaretOffset));
   } else {
     // Fallback to percentage offset inside relative container
-    const leftPct = Math.max(8, Math.min(92, (x / imageWidth) * 100));
-    const topPct = Math.max(8, Math.min(92, (y / imageHeight) * 100));
-    isNearTop = topPct < 25;
+    const leftPct = Math.max(12, Math.min(88, (x / imageWidth) * 100));
+    const topPct = Math.max(12, Math.min(88, (y / imageHeight) * 100));
+    isNearTop = topPct < 30;
     leftPos = `${leftPct}%`;
     topPos = `${topPct}%`;
     caretOffset = 0;
@@ -99,7 +137,10 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
     <div
       role="tooltip"
       id="diagnostic-annotation-tooltip"
-      className="absolute pointer-events-none z-30 transition-[opacity,transform] duration-150 motion-reduce:transition-none"
+      className={cn(
+        "absolute pointer-events-none z-30 transition-[opacity,transform] duration-150 motion-reduce:transition-none",
+        isOffscreen && "opacity-0 invisible"
+      )}
       style={{
         left: leftPos,
         top: topPos,

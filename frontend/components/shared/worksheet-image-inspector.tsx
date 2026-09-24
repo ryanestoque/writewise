@@ -28,6 +28,7 @@ export interface InspectorContextValue {
   panOffset: { x: number; y: number };
   isHighContrast: boolean;
   centerPoint?: (point: { x: number; y: number; imageWidth: number; imageHeight: number }) => void;
+  viewportRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export const InspectorContext = createContext<InspectorContextValue>({
@@ -63,8 +64,10 @@ export interface WorksheetImageInspectorProps {
   showShortcutsLegend?: boolean;
   /** Additional container classes */
   className?: string;
-  /** Custom aspect ratio / height classes */
+  /** Custom aspect ratio / height classes (optional, defaults to dynamic auto-fit) */
   aspectRatioClass?: string;
+  /** Whether to dynamically match image's natural aspect ratio (defaults to true) */
+  autoAspectRatio?: boolean;
 }
 
 export function WorksheetImageInspector({
@@ -79,8 +82,13 @@ export function WorksheetImageInspector({
   showShortcutsLegend = true,
   children,
   className,
-  aspectRatioClass = "aspect-4/3 sm:aspect-3/2 max-h-[420px]",
+  aspectRatioClass,
+  autoAspectRatio = true,
 }: WorksheetImageInspectorProps) {
+  const [naturalDimensions, setNaturalDimensions] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
   const [zoomScale, setZoomScale] = useState<number>(1);
   const [isLoupeActive, setIsLoupeActive] = useState<boolean>(false);
   const [isHighContrast, setIsHighContrast] = useState<boolean>(false);
@@ -112,6 +120,49 @@ export function WorksheetImageInspector({
   });
   const [accessibilityNotice, setAccessibilityNotice] = useState<string>("");
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
+
+  const [prevImageUrl, setPrevImageUrl] = useState<string | null | undefined>(imageUrl);
+  if (prevImageUrl !== imageUrl) {
+    setPrevImageUrl(imageUrl);
+    setNaturalDimensions(null);
+  }
+
+  // Track natural image dimensions to dynamically eliminate letterbox/pillarbox empty space
+  useEffect(() => {
+    if (!imageUrl) return;
+
+    let active = true;
+    const img = new Image();
+    img.onload = () => {
+      if (active && img.naturalWidth > 0 && img.naturalHeight > 0) {
+        setNaturalDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+      }
+    };
+    img.onerror = () => {
+      if (active) setNaturalDimensions(null);
+    };
+    img.src = imageUrl;
+
+    return () => {
+      active = false;
+    };
+  }, [imageUrl]);
+
+  const imgRatio = naturalDimensions
+    ? naturalDimensions.width / naturalDimensions.height
+    : 3 / 4;
+
+  const dynamicAspectStyle = autoAspectRatio
+    ? {
+        aspectRatio: `${naturalDimensions ? naturalDimensions.width : 3} / ${
+          naturalDimensions ? naturalDimensions.height : 4
+        }`,
+        maxWidth:
+          imgRatio < 1
+            ? `min(100%, calc(min(640px, calc(100dvh - 12rem)) * ${imgRatio}))`
+            : "100%",
+      }
+    : undefined;
 
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const containerRectRef = useRef<DOMRect | null>(null);
@@ -233,6 +284,7 @@ export function WorksheetImageInspector({
       panOffset,
       isHighContrast,
       centerPoint,
+      viewportRef: imageContainerRef,
     }),
     [zoomScale, panOffset, isHighContrast, centerPoint]
   );
@@ -706,11 +758,12 @@ export function WorksheetImageInspector({
           setIsDragging(false);
           setLoupeState((prev) => ({ ...prev, visible: false }));
         }}
+        style={dynamicAspectStyle}
         className={cn(
-          "relative w-full mx-auto rounded-xl sm:rounded-2xl border border-border/80 bg-muted/30 dark:bg-muted/20 overflow-hidden transition-all flex items-center justify-center shadow-warm select-none",
+          "relative w-full mx-auto rounded-xl sm:rounded-2xl border border-border/80 bg-muted/30 dark:bg-muted/20 overflow-hidden transition-[aspect-ratio,max-width,max-height] duration-200 flex items-center justify-center shadow-warm select-none",
           isLoupeActive || zoomScale > 1 ? "touch-none" : "touch-pan-y",
           "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-          aspectRatioClass,
+          aspectRatioClass ?? "max-h-[min(640px,calc(100dvh-12rem))] min-h-[280px] sm:min-h-[320px]",
           isLoupeActive
             ? "cursor-crosshair"
             : zoomScale > 1
@@ -721,7 +774,7 @@ export function WorksheetImageInspector({
         )}
       >
         {isLoading ? (
-          <Skeleton className="size-full min-h-[260px] rounded-none" />
+          <Skeleton className="size-full min-h-[280px] sm:min-h-[320px] rounded-none" />
         ) : imageUrl && !hasImageError && !isError ? (
           <div
             className="size-full flex items-center justify-center p-2 motion-reduce:!transition-none"
@@ -741,6 +794,15 @@ export function WorksheetImageInspector({
                 loading="lazy"
                 decoding="async"
                 draggable={false}
+                onLoad={(e) => {
+                  const img = e.currentTarget;
+                  if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+                    setNaturalDimensions({
+                      width: img.naturalWidth,
+                      height: img.naturalHeight,
+                    });
+                  }
+                }}
                 onError={() => {
                   if (imageUrl) setFailedImageUrl(imageUrl);
                 }}
