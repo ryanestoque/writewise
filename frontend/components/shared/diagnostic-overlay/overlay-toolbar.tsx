@@ -303,7 +303,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
     visible;
 
   return (
-    <div ref={toolbarRef} className="flex flex-col gap-1.5 min-w-0 max-w-full">
+    <div ref={toolbarRef} className="@container flex flex-col gap-1.5 min-w-0 max-w-full">
       {/* Screen reader live region for practice area navigation announcements (WCAG 4.1.3) */}
       <div
         role="status"
@@ -316,19 +316,19 @@ export const OverlayToolbar = memo(function OverlayToolbar({
 
       <div
         className={cn(
-          "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-xl bg-muted/40 border border-border/70 backdrop-blur-xs text-xs min-w-0 max-w-full",
+          "flex flex-col @min-[540px]:flex-row @min-[540px]:items-center @min-[540px]:justify-between gap-1.5 @min-[540px]:gap-2 p-1.5 @min-[540px]:p-2 rounded-xl bg-muted/40 border border-border/70 backdrop-blur-xs text-xs min-w-0 max-w-full",
           className
         )}
       >
-        {/* Tier 1 / Primary Controls: Rubric Selector (+ Reset) + Mobile Master Switch */}
-        <div className="flex items-center justify-between gap-1.5 min-w-0 w-full sm:w-auto sm:flex-1">
+        {/* Tier 1 / Primary Controls: Rubric Selector (+ Reset) + Mobile/Compact Master Switch */}
+        <div className="flex items-center justify-between gap-1.5 min-w-0 w-full @min-[540px]:w-auto @min-[540px]:flex-1">
           {variant === "compact" ? (
-            <div className="flex items-center gap-1.5 min-w-0 flex-1 sm:flex-initial">
+            <div className="flex items-center gap-1.5 min-w-0 flex-1 @min-[540px]:flex-initial">
               <DropdownMenu>
                 <DropdownMenuTrigger
                   disabled={!visible}
                   className={cn(
-                    "inline-flex items-center gap-1.5 bg-surface dark:bg-card px-2.5 py-1.5 sm:py-1 rounded-lg border border-border/70 text-xs shadow-2xs min-w-0 shrink-0 sm:shrink cursor-pointer hover:bg-muted/70 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation",
+                    "inline-flex items-center gap-1.5 bg-surface dark:bg-card px-2.5 py-1.5 @min-[540px]:py-1 rounded-lg border border-border/70 text-xs shadow-2xs min-w-0 shrink-0 overflow-hidden cursor-pointer hover:bg-muted/70 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation",
                     !visible && "opacity-50 cursor-not-allowed"
                   )}
                   aria-label={`Current guide: ${activeCriterion === "all" ? "All Guides" : activeFilterMeta.label}. Click to select a diagnostic criterion.`}
@@ -338,7 +338,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                     const Icon = activeFilterMeta.icon;
                     return <Icon className="size-3 text-brand-700 dark:text-brand-300 shrink-0" aria-hidden="true" />;
                   })()}
-                  <span className="font-semibold text-foreground truncate max-w-[160px] sm:max-w-none">
+                  <span className="font-semibold text-foreground truncate min-w-0 max-w-[120px] @min-[380px]:max-w-[160px] @min-[600px]:max-w-none">
                     {activeCriterion === "all" ? "All Guides" : activeFilterMeta.label}
                   </span>
                   {attentionCounts[activeCriterion] > 0 && (
@@ -395,12 +395,12 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   variant="ghost"
                   size="sm"
                   onClick={() => onChangeCriterion("all")}
-                  className="h-8 sm:h-7 px-2 text-xs sm:text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors touch-manipulation shrink-0 flex items-center justify-center gap-1"
+                  className="h-8 @min-[540px]:h-7 px-2 text-xs @min-[540px]:text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors touch-manipulation shrink-0 flex items-center justify-center gap-1"
                   title="Reset to show all guides"
                   aria-label="Reset to show all guides"
                 >
-                  <X className="size-3.5 sm:size-3" aria-hidden="true" />
-                  <span className="hidden sm:inline">Show All</span>
+                  <X className="size-3.5 @min-[540px]:size-3" aria-hidden="true" />
+                  <span className="hidden @min-[380px]:inline">Show All</span>
                 </Button>
               )}
             </div>
@@ -413,7 +413,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                     filterScrollRef.current?.scrollBy({ left: -80, behavior: "smooth" });
                   }}
                   aria-label="Scroll to see earlier criteria filters"
-                  className="sm:hidden absolute left-0 z-10 flex size-8 min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-background/95 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
+                  className="@min-[640px]:hidden absolute left-0 z-10 flex size-8 min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-background/95 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
                 >
                   <ChevronLeft className="size-4" aria-hidden="true" />
                 </button>
@@ -424,14 +424,14 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 role="group"
                 aria-label="Worksheet diagnostic criteria filters"
                 className={cn(
-                  "flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth py-0.5 min-w-0 flex-1 sm:flex-wrap sm:overflow-visible transition-[mask-image]",
+                  "flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth py-0.5 min-w-0 flex-1 @min-[640px]:flex-wrap @min-[640px]:overflow-visible transition-[mask-image]",
                   canScrollLeft && canScrollRight
-                    ? "[mask-image:linear-gradient(to_right,transparent,black_14px,black_calc(100%-14px),transparent)] sm:[mask-image:none]"
+                    ? "[mask-image:linear-gradient(to_right,transparent,black_14px,black_calc(100%-14px),transparent)] @min-[640px]:[mask-image:none]"
                     : canScrollRight
-                      ? "[mask-image:linear-gradient(to_right,black_86%,transparent_100%)] sm:[mask-image:none]"
+                      ? "[mask-image:linear-gradient(to_right,black_86%,transparent_100%)] @min-[640px]:[mask-image:none]"
                       : canScrollLeft
-                        ? "[mask-image:linear-gradient(to_left,black_86%,transparent_100%)] sm:[mask-image:none]"
-                        : "sm:[mask-image:none]"
+                        ? "[mask-image:linear-gradient(to_left,black_86%,transparent_100%)] @min-[640px]:[mask-image:none]"
+                        : "@min-[640px]:[mask-image:none]"
                 )}
               >
                 {FILTERS.map((item) => {
@@ -450,7 +450,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                       onClick={() => onChangeCriterion(item.id)}
                       aria-pressed={isSelected}
                       className={cn(
-                        "shrink-0 h-9 sm:h-8 px-2.5 sm:px-2 text-xs sm:text-[11px] font-medium rounded-lg gap-1.5 transition-all cursor-pointer touch-manipulation",
+                        "shrink-0 h-9 @min-[540px]:h-8 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium rounded-lg gap-1.5 transition-all cursor-pointer touch-manipulation",
                         isSelected
                           ? "bg-brand-600 hover:bg-brand-700 text-white shadow-2xs font-semibold"
                           : "hover:bg-muted text-muted-foreground hover:text-foreground",
@@ -458,8 +458,8 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                       )}
                     >
                       <Icon className="size-3 shrink-0" aria-hidden="true" />
-                      <span className="hidden min-[400px]:inline">{item.label}</span>
-                      <span className="min-[400px]:hidden">{item.shortLabel ?? item.label}</span>
+                      <span className="hidden @min-[400px]:inline">{item.label}</span>
+                      <span className="inline @min-[400px]:hidden">{item.shortLabel ?? item.label}</span>
                       {isWeakest && !isSelected && count > 0 && (
                         <span
                           role="img"
@@ -496,7 +496,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                     filterScrollRef.current?.scrollBy({ left: 80, behavior: "smooth" });
                   }}
                   aria-label="Scroll to see more criteria filters"
-                  className="sm:hidden absolute right-0 z-10 flex size-8 min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-background/95 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
+                  className="@min-[640px]:hidden absolute right-0 z-10 flex size-8 min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-background/95 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
                 >
                   <ChevronRight className="size-4" aria-hidden="true" />
                 </button>
@@ -504,8 +504,8 @@ export const OverlayToolbar = memo(function OverlayToolbar({
             </div>
           )}
 
-          {/* Master Switch on Mobile (aligned to the right on Row 1) */}
-          <div className="flex sm:hidden items-center gap-1.5 shrink-0 pl-1">
+          {/* Master Switch on Compact / Row-1 layout (aligned to the right on Row 1) */}
+          <div className="flex @min-[540px]:hidden items-center gap-1.5 shrink-0 pl-1">
             <Switch
               id="toggle-diagnostic-overlay-mobile"
               aria-label="Toggle handwriting diagnostic overlay"
@@ -516,9 +516,9 @@ export const OverlayToolbar = memo(function OverlayToolbar({
           </div>
         </div>
 
-        {/* Tier 2 / Secondary Controls: Stepper, Guideline Toggle, Legend, & Desktop Switch */}
+        {/* Tier 2 / Secondary Controls: Stepper, Guideline Toggle, Legend, & Expanded Switch */}
         {hasSecondaryControls && (
-          <div className="flex items-center justify-between sm:justify-end gap-1.5 pt-1.5 sm:pt-0 border-t border-border/50 sm:border-t-0 sm:pl-2 sm:border-l sm:border-border/60 w-full sm:w-auto shrink-0">
+          <div className="flex items-center justify-between @min-[540px]:justify-end gap-1.5 pt-1.5 @min-[540px]:pt-0 border-t border-border/50 @min-[540px]:border-t-0 @min-[540px]:pl-2 @min-[540px]:border-l @min-[540px]:border-border/60 w-full @min-[540px]:w-auto shrink-0 min-w-0">
             {/* Sequential Practice Area Stepper */}
             {visible && attentionItems.length > 0 ? (
               <div
@@ -526,7 +526,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 aria-label="Practice areas sequential navigation stepper"
                 className="flex items-center gap-1 bg-background/80 dark:bg-card/80 rounded-lg px-2 py-0.5 border border-border/70 text-xs shrink-0 shadow-2xs"
               >
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hidden lg:inline select-none">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hidden @min-[600px]:inline select-none">
                   Focus
                 </span>
                 <Button
@@ -535,11 +535,11 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   size="sm"
                   disabled={!visible}
                   onClick={handlePrevAttention}
-                  className="relative size-8 sm:size-7 p-0 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
+                  className="relative size-8 @min-[540px]:size-7 p-0 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
                   aria-label="Previous practice area (Key: Alt+[ or [)"
                   title="Previous practice area (Alt+[ or [)"
                 >
-                  <ChevronLeft className="size-4 sm:size-3" aria-hidden="true" />
+                  <ChevronLeft className="size-4 @min-[540px]:size-3" aria-hidden="true" />
                 </Button>
                 <span className="tabular-nums font-semibold text-foreground px-1 text-[11px] select-none">
                   {currentIndex >= 0 ? currentIndex + 1 : 1}
@@ -552,19 +552,19 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   size="sm"
                   disabled={!visible}
                   onClick={handleNextAttention}
-                  className="relative size-8 sm:size-7 p-0 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
+                  className="relative size-8 @min-[540px]:size-7 p-0 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
                   aria-label="Next practice area (Key: Alt+] or ])"
                   title="Next practice area (Alt+] or ])"
                 >
-                  <ChevronRight className="size-4 sm:size-3" aria-hidden="true" />
+                  <ChevronRight className="size-4 @min-[540px]:size-3" aria-hidden="true" />
                 </Button>
               </div>
             ) : (
-              <div className="sm:hidden" />
+              <div className="@min-[540px]:hidden" />
             )}
 
-            {/* Utility buttons (Lines & Legend) + Desktop Switch */}
-            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            {/* Utility buttons (Lines & Legend) + Expanded Switch */}
+            <div className="flex items-center gap-1 @min-[540px]:gap-1.5 shrink-0">
               {hasGuideLines && onToggleGuideLines && (
                 <Button
                   type="button"
@@ -572,7 +572,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   size="sm"
                   onClick={onToggleGuideLines}
                   className={cn(
-                    "h-8 sm:h-7 px-2.5 sm:px-2 text-[11px] font-medium rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+                    "h-8 @min-[540px]:h-7 px-2.5 @min-[540px]:px-2 text-[11px] font-medium rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
                     showGuideLines
                       ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200 font-semibold"
                       : "text-muted-foreground hover:text-foreground"
@@ -585,7 +585,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                     <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.6" strokeDasharray="2 2" />
                     <line x1="1" y1="10" x2="13" y2="10" stroke="currentColor" strokeWidth="1.5" />
                   </svg>
-                  <span className="hidden xl:inline">Lines</span>
+                  <span className="hidden @min-[640px]:inline">Lines</span>
                 </Button>
               )}
 
@@ -596,7 +596,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   size="sm"
                   onClick={() => setShowLegend((prev) => !prev)}
                   className={cn(
-                    "relative h-8 sm:h-7 px-2 text-[11px] font-medium rounded-lg gap-1 cursor-pointer transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1",
+                    "relative h-8 @min-[540px]:h-7 px-2 text-[11px] font-medium rounded-lg gap-1 cursor-pointer transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1",
                     showLegend
                       ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200 font-semibold"
                       : "text-muted-foreground hover:text-foreground"
@@ -606,22 +606,22 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   aria-label="Toggle diagnostic symbols legend"
                 >
                   <HelpCircle className="size-3.5" aria-hidden="true" />
-                  <span className="hidden xl:inline">Legend</span>
+                  <span className="hidden @min-[640px]:inline">Legend</span>
                 </Button>
               )}
 
-              {/* Desktop Switch with Label */}
-              <div className="hidden sm:flex items-center gap-1.5 pl-2 border-l border-border/60 shrink-0">
+              {/* Expanded Switch with Label */}
+              <div className="hidden @min-[540px]:flex items-center gap-1.5 pl-2 border-l border-border/60 shrink-0">
                 <Switch
                   id="toggle-diagnostic-overlay-desktop"
                   aria-label="Toggle handwriting diagnostic overlay"
                   checked={visible}
                   onCheckedChange={onToggleVisible}
-                  className="cursor-pointer scale-90 sm:scale-75 touch-manipulation"
+                  className="cursor-pointer scale-90 @min-[540px]:scale-75 touch-manipulation"
                 />
                 <Label
                   htmlFor="toggle-diagnostic-overlay-desktop"
-                  className="text-xs sm:text-[11px] font-medium text-muted-foreground cursor-pointer select-none whitespace-nowrap hidden xl:inline"
+                  className="text-xs @min-[540px]:text-[11px] font-medium text-muted-foreground cursor-pointer select-none whitespace-nowrap hidden @min-[640px]:inline"
                 >
                   {visible ? "Overlay on" : "Overlay off"}
                 </Label>
