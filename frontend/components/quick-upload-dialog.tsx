@@ -192,6 +192,7 @@ function UploadFlow({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [rotationDegrees, setRotationDegrees] = useState(0);
+  const [isPortrait, setIsPortrait] = useState(true);
   const [isRotating, setIsRotating] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadError, setUploadError] = useState<UploadError | null>(null);
@@ -302,6 +303,7 @@ function UploadFlow({
     }
     originalFileRef.current = null;
     setRotationDegrees(0);
+    setIsPortrait(true);
     setSelectedFile(null);
     setPreviewUrl(null);
     setUploadError(null);
@@ -354,6 +356,7 @@ function UploadFlow({
 
     originalFileRef.current = file;
     setRotationDegrees(0);
+    setIsPortrait(true);
     setSelectedFile(file);
     const url = URL.createObjectURL(file);
     previewUrlRef.current = url;
@@ -378,6 +381,7 @@ function UploadFlow({
       setPreviewUrl(newUrl);
       setSelectedFile(rotatedFile);
       setRotationDegrees(nextDegrees);
+      setIsPortrait((prev) => !prev);
     } catch {
       toast.error("Failed to rotate photo. Please try again.");
     } finally {
@@ -1113,7 +1117,13 @@ function UploadFlow({
                   </div>
 
                   {previewUrl && (
-                    <div className="relative aspect-4/3 w-full rounded-xl overflow-hidden bg-muted/40 border border-border flex items-center justify-center">
+                    <div
+                      className={`relative w-full rounded-xl overflow-hidden bg-muted/40 border border-border flex items-center justify-center transition-[aspect-ratio,max-height] duration-200 ${
+                        isPortrait
+                          ? "aspect-3/4 max-h-[380px] sm:max-h-[440px]"
+                          : "aspect-4/3 max-h-[300px] sm:max-h-[360px]"
+                      }`}
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={previewUrl}
@@ -1122,6 +1132,10 @@ function UploadFlow({
                             ? `Handwriting worksheet preview for ${selectedStudent.full_name}`
                             : "Handwriting worksheet preview"
                         }
+                        onLoad={(e) => {
+                          const img = e.currentTarget;
+                          setIsPortrait(img.naturalHeight >= img.naturalWidth);
+                        }}
                         className="size-full object-contain"
                       />
                     </div>
