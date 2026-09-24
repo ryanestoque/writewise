@@ -172,6 +172,9 @@ function ParentUploadFlow({
   const [isDragging, setIsDragging] = useState(false);
   const [showTips, setShowTips] = useState(false);
   const [uploadError, setUploadError] = useState<UploadError | null>(null);
+  const [lastRetakeTip, setLastRetakeTip] = useState<{ tip: string; badgeLabel?: string } | null>(
+    null
+  );
   const [processingStageIndex, setProcessingStageIndex] = useState(0);
 
   const { data: activities, isLoading: activitiesLoading } =
@@ -253,14 +256,18 @@ function ParentUploadFlow({
     }
   };
 
-  const handleRetakePhoto = () => {
+  const handleRetakePhoto = (tipInfo?: { tip: string; badgeLabel?: string }) => {
     handleClearFile();
     setUploadError(null);
+    if (tipInfo) {
+      setLastRetakeTip(tipInfo);
+    }
     setStep(2);
   };
 
   const handleFileChange = (file: File | undefined) => {
     if (!file) return;
+    setLastRetakeTip(null);
 
     if (!ACCEPTED_MIME_TYPES.includes(file.type)) {
       toast.error("Please select a JPEG or PNG image.");
@@ -631,6 +638,27 @@ function ParentUploadFlow({
                   </div>
                 )}
 
+                {/* Persistent Retake Guidance Banner */}
+                {lastRetakeTip && (
+                  <div className="flex items-start gap-2.5 p-3 rounded-xl bg-warning/10 border border-warning/25 text-foreground text-xs animate-in fade-in-50 duration-200">
+                    <LightbulbIcon className="size-4 text-warning shrink-0 mt-0.5" aria-hidden="true" />
+                    <div className="flex-1 space-y-0.5">
+                      <p className="font-semibold text-foreground">
+                        Tip for this retake{lastRetakeTip.badgeLabel ? ` (${lastRetakeTip.badgeLabel})` : ""}:
+                      </p>
+                      <p className="text-muted-foreground leading-relaxed">{lastRetakeTip.tip}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setLastRetakeTip(null)}
+                      className="text-muted-foreground hover:text-foreground shrink-0 p-0.5 rounded cursor-pointer"
+                      aria-label="Dismiss tip"
+                    >
+                      <XIcon className="size-3.5" />
+                    </button>
+                  </div>
+                )}
+
                 {/* Hidden File Inputs */}
                 <input
                   type="file"
@@ -965,6 +993,7 @@ function ParentUploadFlow({
                 retryRef={retryButtonRef}
                 onRetake={handleRetakePhoto}
                 onReview={() => setStep(3)}
+                reviewLabel="Back to Review"
                 onRetry={handleSubmit}
               />
             )}

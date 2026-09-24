@@ -1,7 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
   AlertCircle,
@@ -12,11 +20,11 @@ import {
   Maximize2,
   FileQuestion,
   Eye,
-  X,
   Lightbulb,
   ChevronDown,
   ChevronUp,
   ImageOff,
+  Contrast,
 } from "lucide-react";
 
 export interface QualityErrorDetails {
@@ -38,9 +46,11 @@ export interface QualityErrorCardProps {
   error: QualityError;
   previewUrl?: string | null;
   retryRef?: React.Ref<HTMLButtonElement>;
-  onRetake: () => void;
+  onRetake: (tipInfo?: { tip: string; badgeLabel?: string }) => void;
   onReview?: () => void;
+  reviewLabel?: string;
   onRetry?: () => void;
+  retryLabel?: string;
 }
 
 interface ErrorPresentation {
@@ -80,7 +90,7 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
       if ((threshold !== null && threshold <= 50) || (measured !== null && measured < 50)) {
         return {
           isQualityCheck: true,
-          badgeLabel: "Photo Coach • Lighting",
+          badgeLabel: "Lighting",
           title: "Lighting Is Too Dim",
           description:
             "The photo doesn't have enough light to clearly distinguish cursive pencil strokes from the page ruling.",
@@ -96,7 +106,7 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
       if ((threshold !== null && threshold >= 200) || (measured !== null && measured > 200)) {
         return {
           isQualityCheck: true,
-          badgeLabel: "Photo Coach • Glare",
+          badgeLabel: "Glare",
           title: "Worksheet Washed Out by Glare",
           description:
             "Direct overhead lighting or flash glare washed out the page, obscuring the pencil marks and guidelines.",
@@ -111,7 +121,7 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
 
       return {
         isQualityCheck: true,
-        badgeLabel: "Photo Coach • Lighting",
+        badgeLabel: "Lighting",
         title: "Lighting Needs a Quick Adjustment",
         description:
           "Heavy shadows or strong glare obscured the cursive strokes and penmanship ruling.",
@@ -126,7 +136,7 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
     case "QUALITY_GATE_CONTRAST": {
       return {
         isQualityCheck: true,
-        badgeLabel: "Photo Coach • Contrast",
+        badgeLabel: "Contrast",
         title: "Pencil Strokes Too Faint",
         description:
           "The pencil marks blend into the paper background, making it hard to trace continuous cursive strokes.",
@@ -135,14 +145,14 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
           "Check if table or window glare is reflecting off the shiny graphite.",
           "If the writing is very light, have the student trace firmly with a #2 or 2B pencil.",
         ],
-        icon: SunMedium,
+        icon: Contrast,
       };
     }
 
     case "QUALITY_GATE_BLUR": {
       return {
         isQualityCheck: true,
-        badgeLabel: "Photo Coach • Sharpness",
+        badgeLabel: "Sharpness",
         title: "Photo Is Blurry or Unfocused",
         description:
           "Camera movement or slight defocus softened the stroke edges needed for geometric evaluation.",
@@ -158,7 +168,7 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
     case "QUALITY_GATE_RESOLUTION": {
       return {
         isQualityCheck: true,
-        badgeLabel: "Photo Coach • Framing",
+        badgeLabel: "Framing",
         title: "Move Closer for More Detail",
         description:
           "The captured image does not meet the minimum resolution needed to measure letter formations accurately.",
@@ -178,7 +188,7 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
 
       return {
         isQualityCheck: true,
-        badgeLabel: "Photo Coach • Word Count",
+        badgeLabel: "Word Count",
         title: hasCounts
           ? `Detected ${detected} of ${expected} Words`
           : "Word Count Mismatch",
@@ -197,7 +207,7 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
     case "QUALITY_GATE_SKEW": {
       return {
         isQualityCheck: true,
-        badgeLabel: "Photo Coach • Angle",
+        badgeLabel: "Angle",
         title: "Worksheet Captured at an Angle",
         description: "The page was tilted too steeply for automated line deskewing.",
         tips: [
@@ -211,7 +221,7 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
     case "QUALITY_GATE_OCCLUDED": {
       return {
         isQualityCheck: true,
-        badgeLabel: "Photo Coach • Coverage",
+        badgeLabel: "Coverage",
         title: "Worksheet Partially Covered",
         description: "Part of the writing area or page margin appears obscured or cut off.",
         tips: [
@@ -225,7 +235,7 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
     case "QUALITY_GATE_NO_TEXT": {
       return {
         isQualityCheck: true,
-        badgeLabel: "Photo Coach • Handwriting",
+        badgeLabel: "Handwriting",
         title: "No Handwriting Detected",
         description: "The page was clear, but no handwritten cursive strokes were found in the guideline zone.",
         tips: [
@@ -295,7 +305,7 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
     default: {
       return {
         isQualityCheck: isQuality,
-        badgeLabel: isQuality ? "Photo Coach • Quality" : "Upload Failed",
+        badgeLabel: isQuality ? "Quality Check" : "Upload Failed",
         title: isQuality ? "Photo Check Needed" : "Submission Failed",
         description:
           error.message ||
@@ -316,80 +326,54 @@ export function QualityErrorCard({
   retryRef,
   onRetake,
   onReview,
+  reviewLabel,
   onRetry,
+  retryLabel,
 }: QualityErrorCardProps) {
   const [isInspecting, setIsInspecting] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [showAllTips, setShowAllTips] = useState(false);
-
-  const thumbnailRef = useRef<HTMLButtonElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const [showTechDetails, setShowTechDetails] = useState(false);
 
   const presentation = useMemo(() => resolveErrorPresentation(error), [error]);
   const IconComponent = presentation.icon;
 
-  const handleCloseInspect = () => {
-    setIsInspecting(false);
-    thumbnailRef.current?.focus();
-  };
-
-  // Handle escape, focus trapping, and focus restoration for inspect modal
-  useEffect(() => {
-    if (!isInspecting) return;
-
-    // Focus close button on mount
-    const timeoutId = setTimeout(() => {
-      closeButtonRef.current?.focus();
-    }, 50);
-
-    // Prevent body scrolling while modal is open
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        handleCloseInspect();
-        return;
-      }
-
-      if (e.key === "Tab" && modalRef.current) {
-        const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        if (focusableElements.length === 0) return;
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
-
-        if (!e.shiftKey && document.activeElement === lastElement) {
-          e.preventDefault();
-          firstElement?.focus();
-        } else if (e.shiftKey && document.activeElement === firstElement) {
-          e.preventDefault();
-          lastElement?.focus();
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      clearTimeout(timeoutId);
-      document.body.style.overflow = originalOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isInspecting]);
+  const hasTechnicalDetails =
+    typeof error.details?.measured_value === "number" ||
+    typeof error.details?.threshold === "number" ||
+    Boolean(error.details?.submission_id);
 
   const visibleTips =
     showAllTips || presentation.tips.length <= 2
       ? presentation.tips
       : presentation.tips.slice(0, 2);
 
+  const handleRetakeClick = useCallback(() => {
+    const topTip = presentation.tips[0];
+    onRetake(topTip ? { tip: topTip, badgeLabel: presentation.badgeLabel } : undefined);
+  }, [onRetake, presentation.tips, presentation.badgeLabel]);
+
+  // Keyboard shortcut: Press R to retake photo when error card is active and modal isn't open
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.key === "r" || e.key === "R") &&
+        !["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement)?.tagName) &&
+        !isInspecting
+      ) {
+        e.preventDefault();
+        handleRetakeClick();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleRetakeClick, isInspecting]);
+
   return (
     <div
       role="alert"
       className={cn(
-        "flex flex-col gap-3.5 p-3.5 sm:p-4 rounded-xl border text-foreground animate-in fade-in-50 duration-200 shadow-warm-sm",
+        "flex flex-col gap-3.5 p-4 rounded-xl border text-foreground animate-in fade-in-50 duration-200 shadow-warm-sm",
         presentation.isQualityCheck
           ? "border-warning/35 bg-warning/8 dark:bg-warning/10"
           : "border-destructive/30 bg-destructive/5 dark:bg-destructive/10"
@@ -401,7 +385,6 @@ export function QualityErrorCard({
         {previewUrl ? (
           <div className="relative shrink-0 flex flex-col items-center">
             <button
-              ref={thumbnailRef}
               type="button"
               onClick={() => setIsInspecting(true)}
               aria-label="Enlarge captured worksheet photo to inspect quality"
@@ -426,10 +409,10 @@ export function QualityErrorCard({
                   className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
                 />
               )}
-              {/* Persistent tap-to-zoom affordance (accessible on touchscreens) */}
-              <div className="absolute inset-x-0 bottom-0 bg-black/65 backdrop-blur-xs text-white text-[11px] font-medium py-1 px-1 flex items-center justify-center gap-1 transition-colors group-hover:bg-black/80">
-                <Eye className="size-3.5 shrink-0" aria-hidden="true" />
-                <span>Tap to zoom</span>
+              {/* Floating zoom indicator - non-obstructive corner pill */}
+              <div className="absolute bottom-1 right-1 bg-black/70 backdrop-blur-xs text-white text-[10px] font-medium py-0.5 px-1.5 rounded flex items-center gap-1 transition-all group-hover:bg-black/85 group-hover:scale-105 shadow-2xs">
+                <Eye className="size-3 shrink-0" aria-hidden="true" />
+                <span>Zoom</span>
               </div>
             </button>
             <span className="block text-xs text-center text-muted-foreground mt-1 font-medium">
@@ -451,24 +434,96 @@ export function QualityErrorCard({
 
         {/* Text information */}
         <div className="space-y-1.5 min-w-0 flex-1">
-          <h4 className="text-sm sm:text-base font-semibold text-foreground tracking-tight leading-snug">
-            {presentation.title}
-          </h4>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h4 className="text-sm sm:text-base font-semibold text-foreground tracking-tight leading-snug">
+              {presentation.title}
+            </h4>
+            {presentation.badgeLabel && (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium border",
+                  presentation.isQualityCheck
+                    ? "bg-warning/15 text-warning-foreground border-warning/30"
+                    : "bg-destructive/15 text-destructive border-destructive/25"
+                )}
+              >
+                <span
+                  className={cn(
+                    "size-1.5 rounded-full shrink-0",
+                    presentation.isQualityCheck ? "bg-warning" : "bg-destructive"
+                  )}
+                  aria-hidden="true"
+                />
+                {presentation.badgeLabel}
+              </span>
+            )}
+          </div>
 
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
             {presentation.description}
           </p>
+
+          {/* Technical diagnostic disclosure (for teachers & calibration) */}
+          {hasTechnicalDetails && (
+            <div className="pt-0.5">
+              <button
+                type="button"
+                onClick={() => setShowTechDetails((prev) => !prev)}
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-sm"
+                aria-expanded={showTechDetails}
+                aria-controls="technical-diagnostic-details"
+              >
+                <span>{showTechDetails ? "Hide advanced details" : "Show advanced details"}</span>
+                {showTechDetails ? (
+                  <ChevronUp className="size-3" aria-hidden="true" />
+                ) : (
+                  <ChevronDown className="size-3" aria-hidden="true" />
+                )}
+              </button>
+              {showTechDetails && (
+                <div
+                  id="technical-diagnostic-details"
+                  className="mt-1.5 p-2.5 rounded-lg bg-muted/60 text-[11px] font-mono text-muted-foreground space-y-1"
+                >
+                  {typeof error.details?.measured_value === "number" && (
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="font-sans">Measured:</span>
+                      <span className="font-semibold text-foreground tabular-nums">
+                        {Number(error.details.measured_value).toFixed(1)}
+                      </span>
+                    </div>
+                  )}
+                  {typeof error.details?.threshold === "number" && (
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="font-sans">Threshold:</span>
+                      <span className="font-semibold text-foreground tabular-nums">
+                        {Number(error.details.threshold).toFixed(1)}
+                      </span>
+                    </div>
+                  )}
+                  {typeof error.details?.submission_id === "string" && (
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="font-sans">Submission:</span>
+                      <span className="truncate max-w-[160px] select-all">
+                        {error.details.submission_id}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Actionable Tips box with progressive disclosure */}
+      {/* Actionable Tips box - flattened integrated callout without nested card border */}
       {presentation.tips.length > 0 && (
         <div
           className={cn(
-            "rounded-lg border p-3 sm:p-3.5 space-y-2",
+            "rounded-lg p-3 sm:p-3.5 space-y-2 border-0",
             presentation.isQualityCheck
-              ? "bg-background/95 dark:bg-card/95 border-warning/25 shadow-2xs"
-              : "bg-background/90 dark:bg-card/90 border-destructive/20 shadow-2xs"
+              ? "bg-warning/10 dark:bg-warning/15"
+              : "bg-destructive/10 dark:bg-destructive/15"
           )}
         >
           <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
@@ -523,10 +578,10 @@ export function QualityErrorCard({
         </div>
       )}
 
-      {/* Action buttons */}
+      {/* Action buttons - full-width stacked on mobile for thumb ergonomics, right-aligned on desktop */}
       <div
         className={cn(
-          "flex items-center gap-2 pt-2.5 border-t justify-end flex-wrap",
+          "flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 pt-3 border-t sm:justify-end",
           presentation.isQualityCheck ? "border-warning/20" : "border-destructive/20"
         )}
       >
@@ -537,16 +592,17 @@ export function QualityErrorCard({
                 type="button"
                 variant="outline"
                 onClick={onReview}
-                className="h-9 px-3.5 text-xs sm:text-sm font-medium border-border hover:bg-accent cursor-pointer"
+                className="w-full sm:w-auto h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium border-border hover:bg-accent cursor-pointer"
               >
-                Back to Review
+                {reviewLabel ?? "Back to Review"}
               </Button>
             )}
             <Button
               ref={retryRef}
               type="button"
-              onClick={onRetake}
-              className="h-9 px-4 text-xs sm:text-sm font-medium gap-2 cursor-pointer shadow-warm-sm"
+              onClick={handleRetakeClick}
+              title="Retake photo (or press R)"
+              className="w-full sm:w-auto h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-2 cursor-pointer shadow-warm-sm"
             >
               <Camera className="size-4" aria-hidden="true" />
               Retake Photo
@@ -559,9 +615,9 @@ export function QualityErrorCard({
                 type="button"
                 variant="outline"
                 onClick={onReview}
-                className="h-9 px-3.5 text-xs sm:text-sm font-medium border-border hover:bg-accent cursor-pointer"
+                className="w-full sm:w-auto h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium border-border hover:bg-accent cursor-pointer"
               >
-                Back to Review
+                {reviewLabel ?? "Back to Review"}
               </Button>
             )}
             {onRetry ? (
@@ -569,17 +625,18 @@ export function QualityErrorCard({
                 ref={retryRef}
                 type="button"
                 onClick={onRetry}
-                className="h-9 px-4 text-xs sm:text-sm font-medium gap-2 cursor-pointer shadow-warm-sm"
+                className="w-full sm:w-auto h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-2 cursor-pointer shadow-warm-sm"
               >
                 <RotateCcw className="size-4" aria-hidden="true" />
-                Retry Upload
+                {retryLabel ?? "Retry Upload"}
               </Button>
             ) : (
               <Button
                 ref={retryRef}
                 type="button"
-                onClick={onRetake}
-                className="h-9 px-4 text-xs sm:text-sm font-medium gap-2 cursor-pointer shadow-warm-sm"
+                onClick={handleRetakeClick}
+                title="Retake photo (or press R)"
+                className="w-full sm:w-auto h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-2 cursor-pointer shadow-warm-sm"
               >
                 <Camera className="size-4" aria-hidden="true" />
                 Retake Photo
@@ -589,35 +646,22 @@ export function QualityErrorCard({
         )}
       </div>
 
-      {/* Inspect photo accessible modal overlay */}
-      {isInspecting && previewUrl && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="inspect-photo-title"
-          aria-describedby="inspect-photo-desc"
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex flex-col items-center justify-center p-4 animate-in fade-in-50 duration-150"
-          onClick={handleCloseInspect}
-        >
-          <div
-            ref={modalRef}
-            className="relative max-w-lg w-full max-h-[85vh] bg-background rounded-xl overflow-hidden shadow-2xl flex flex-col border border-border"
-            onClick={(e) => e.stopPropagation()}
+      {/* Inspect photo modal via Radix / Base UI Dialog */}
+      {previewUrl && (
+        <Dialog open={isInspecting} onOpenChange={setIsInspecting}>
+          <DialogContent
+            showCloseButton
+            className="w-[calc(100%-2rem)] max-w-lg sm:max-w-lg p-0 gap-0 overflow-hidden"
           >
-            <div className="flex items-center justify-between p-3.5 border-b border-border bg-muted/40">
-              <span id="inspect-photo-title" className="text-sm font-semibold text-foreground">
+            <DialogHeader className="p-3.5 border-b border-border bg-muted/40">
+              <DialogTitle className="text-sm font-semibold text-foreground">
                 Captured Worksheet Photo
-              </span>
-              <button
-                ref={closeButtonRef}
-                type="button"
-                onClick={handleCloseInspect}
-                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary min-w-[36px] min-h-[36px] flex items-center justify-center transition-colors"
-                aria-label="Close enlarged preview (Press Escape)"
-              >
-                <X className="size-4" aria-hidden="true" />
-              </button>
-            </div>
+              </DialogTitle>
+              <DialogDescription className="sr-only">
+                Enlarged captured worksheet photo for quality verification
+              </DialogDescription>
+            </DialogHeader>
+
             <div className="p-3 flex items-center justify-center overflow-auto max-h-[66vh] bg-muted/20">
               {imageError ? (
                 <div className="flex flex-col items-center justify-center py-12 px-4 text-center text-muted-foreground gap-2">
@@ -634,20 +678,21 @@ export function QualityErrorCard({
                 />
               )}
             </div>
-            <div className="p-3 border-t border-border bg-background flex justify-between items-center text-xs text-muted-foreground">
-              <span id="inspect-photo-desc">Check lighting, focus, and page alignment</span>
+
+            <DialogFooter className="p-3 border-t border-border bg-background flex flex-row justify-between items-center text-xs text-muted-foreground">
+              <span>Check lighting, focus, and page alignment</span>
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={handleCloseInspect}
+                onClick={() => setIsInspecting(false)}
                 className="h-8 px-3 text-xs cursor-pointer"
               >
                 Done
               </Button>
-            </div>
-          </div>
-        </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
