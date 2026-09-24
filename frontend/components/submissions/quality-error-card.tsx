@@ -610,11 +610,11 @@ export function QualityErrorCard({
             ))}
           </ul>
           {presentation.tips.length > 1 && (
-            <div className="pt-0.5">
+            <div className="pt-0.5 flex justify-center">
               <button
                 type="button"
                 onClick={() => setShowAllTips((prev) => !prev)}
-                className="inline-flex items-center gap-1.5 py-1.5 px-2 -ml-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-md min-h-[38px] sm:min-h-0"
+                className="inline-flex items-center justify-center gap-1.5 py-1.5 px-3 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-md min-h-[38px] sm:min-h-0"
                 aria-expanded={showAllTips}
                 aria-controls="remediation-tips-list"
               >
