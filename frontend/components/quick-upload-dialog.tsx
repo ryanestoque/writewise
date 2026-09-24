@@ -60,6 +60,7 @@ import {
   Plus,
   ChevronDownIcon,
   ShieldCheckIcon,
+  Video,
 } from "lucide-react";
 
 interface QuickUploadDialogProps {
@@ -181,9 +182,13 @@ function UploadFlow({
   const previewUrlRef = useRef<string | null>(null);
   const originalFileRef = useRef<File | null>(null);
   const dropzoneRef = useRef<HTMLDivElement>(null);
+  const browseButtonRef = useRef<HTMLButtonElement>(null);
+  const takePhotoButtonRef = useRef<HTMLButtonElement>(null);
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   const retryButtonRef = useRef<HTMLButtonElement>(null);
   const uploadNextButtonRef = useRef<HTMLButtonElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const [step, setStep] = useState<Step>(1);
   const [showTips, setShowTips] = useState(false);
@@ -207,6 +212,9 @@ function UploadFlow({
   const [lastRetakeTip, setLastRetakeTip] = useState<{ tip: string; badgeLabel?: string } | null>(
     null
   );
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
 
   const { data: activities } = useActivities();
   const { data: students } = useStudents();
@@ -240,10 +248,42 @@ function UploadFlow({
     };
   }, [isUploading]);
 
-  // Programmatic focus steering upon step transitions
+  // Derived state: live camera is only active while on step 2
+  const isLiveCamera = step === 2 && isCameraActive;
+
+  // Stop camera helper (called from user click / capture / clear actions)
+  const handleStopDesktopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setIsCameraActive(false);
+  };
+
+  // Re-attach stream whenever camera becomes active and video element mounts
+  useEffect(() => {
+    if (isLiveCamera && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [isLiveCamera]);
+
+  // Stop camera stream tracks when step changes away from step 2
+  useEffect(() => {
+    if (step !== 2 && streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  }, [step]);
+
+  // Programmatic focus steering upon step transitions (WCAG 2.4.3)
   useEffect(() => {
     if (step === 2) {
-      dropzoneRef.current?.focus();
+      if (isMobile) {
+        takePhotoButtonRef.current?.focus();
+      } else {
+        browseButtonRef.current?.focus();
+      }
     } else if (step === 3) {
       submitButtonRef.current?.focus();
     } else if (step === 4 && uploadError) {
@@ -251,14 +291,18 @@ function UploadFlow({
     } else if (step === 5) {
       uploadNextButtonRef.current?.focus();
     }
-  }, [step, uploadError]);
+  }, [step, uploadError, isMobile]);
 
-  // Cleanup object URL on unmount to prevent browser memory leaks
+  // Cleanup object URL & camera tracks on unmount to prevent browser leaks
   useEffect(() => {
     return () => {
       if (previewUrlRef.current) {
         URL.revokeObjectURL(previewUrlRef.current);
         previewUrlRef.current = null;
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
       }
     };
   }, []);
@@ -297,6 +341,7 @@ function UploadFlow({
   }, [students, studentChoice, prefilledStudentId]);
 
   const handleClearFile = () => {
+    handleStopDesktopCamera();
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
       previewUrlRef.current = null;
@@ -315,6 +360,7 @@ function UploadFlow({
   };
 
   const handleRetakePhoto = (tipInfo?: { tip: string; badgeLabel?: string }) => {
+    handleStopDesktopCamera();
     handleClearFile();
     setUploadError(null);
     if (tipInfo) {
@@ -324,6 +370,7 @@ function UploadFlow({
   };
 
   const handleNextUpload = () => {
+    handleStopDesktopCamera();
     handleClearFile();
     setUploadError(null);
     setLastRetakeTip(null);
@@ -337,6 +384,7 @@ function UploadFlow({
 
   const handleFileChange = (file: File | undefined) => {
     if (!file) return;
+    handleStopDesktopCamera();
     setLastRetakeTip(null);
 
     if (!ACCEPTED_MIME_TYPES.includes(file.type)) {
@@ -363,6 +411,132 @@ function UploadFlow({
     setPreviewUrl(url);
     setUploadError(null);
     setStep(3);
+  };
+
+  // Keep a stable ref for handleFileChange to use in the paste event listener
+  const handleFileChangeRef = useRef(handleFileChange);
+  useEffect(() => {
+    handleFileChangeRef.current = handleFileChange;
+  });
+
+  // Clipboard paste support on Step 2 (e.g. Snipping Tool or copied images)
+  useEffect(() => {
+    if (step !== 2) return;
+
+    const handlePaste = (e: ClipboardEvent) => {
+      // Don't hijack paste if user is typing in a form input or combobox
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.getAttribute("contenteditable") === "true")
+      ) {
+        return;
+      }
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith("image/")) {
+          const file = items[i].getAsFile();
+          if (file) {
+            e.preventDefault();
+            toast.info("Image pasted from clipboard.");
+            handleFileChangeRef.current(file);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [step]);
+
+  // Start live webcam / document camera stream on desktop
+  const handleStartDesktopCamera = async (deviceId?: string) => {
+    if (!navigator?.mediaDevices?.getUserMedia) {
+      toast.error("Camera access is not supported by your browser.");
+      return;
+    }
+
+    try {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+
+      const activeDevId = deviceId || selectedDeviceId;
+      const constraints: MediaStreamConstraints = {
+        video: activeDevId
+          ? { deviceId: { exact: activeDevId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+          : { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false,
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+      setIsCameraActive(true);
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play().catch(() => {});
+      }
+
+      // Enumerate available video input devices (e.g. document camera vs webcam)
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevs = devices.filter((d) => d.kind === "videoinput");
+      setVideoDevices(videoDevs);
+      if (!activeDevId && videoDevs.length > 0) {
+        setSelectedDeviceId(videoDevs[0].deviceId);
+      }
+    } catch {
+      toast.error("Camera access denied or unavailable. Please check browser permissions.");
+      handleStopDesktopCamera();
+    }
+  };
+
+  const handleSwitchCamera = (deviceId: string) => {
+    setSelectedDeviceId(deviceId);
+    handleStartDesktopCamera(deviceId);
+  };
+
+  const handleCaptureFrame = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth || 1920;
+      canvas.height = video.videoHeight || 1080;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        toast.error("Could not capture frame from camera.");
+        return;
+      }
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            toast.error("Failed to generate photo from camera frame.");
+            return;
+          }
+          const file = new File(
+            [blob],
+            `worksheet_camera_${Date.now()}.jpg`,
+            { type: "image/jpeg" }
+          );
+          handleStopDesktopCamera();
+          handleFileChange(file);
+        },
+        "image/jpeg",
+        0.92
+      );
+    } catch {
+      toast.error("Failed to capture image. Please try again.");
+    }
   };
 
   const handleRotateClockwise = async () => {
@@ -797,7 +971,14 @@ function UploadFlow({
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 text-muted-foreground shrink-0 max-w-[50%] truncate font-medium">
+                  <div
+                    className="flex items-center gap-1 text-muted-foreground shrink-0 max-w-[50%] truncate font-medium cursor-help"
+                    title={
+                      selectedActivity?.target_text
+                        ? `Activity prompt: "${selectedActivity.target_text}"`
+                        : "Activity"
+                    }
+                  >
                     <span className="truncate">
                       {selectedActivity?.target_text ?? "Activity"}
                     </span>
@@ -848,102 +1029,217 @@ function UploadFlow({
                   onChange={(e) => handleFileChange(e.target.files?.[0])}
                 />
 
-                {/* Interactive Dropzone with Keyboard Activation (Top Centerpiece) */}
-                <div
-                  ref={dropzoneRef}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={
-                    isMobile
-                      ? "Worksheet photo upload dropzone. Take a photo or choose from library."
-                      : "Worksheet photo upload dropzone. Drop an image or press Enter or Space to choose a file."
-                  }
-                  onClick={() => fileInputRef.current?.click()}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      fileInputRef.current?.click();
-                    }
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setIsDragging(true);
-                  }}
-                  onDragLeave={() => setIsDragging(false)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setIsDragging(false);
-                    handleFileChange(e.dataTransfer.files?.[0]);
-                  }}
-                  className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-all text-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 shadow-warm ${
-                    isDragging
-                      ? "border-primary bg-primary/5 scale-[0.99]"
-                      : "border-border bg-card hover:border-primary/60 hover:bg-muted/10"
-                  }`}
-                >
-                  <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-2.5">
-                    {isMobile ? (
-                      <CameraIcon className="size-6" />
-                    ) : (
-                      <UploadCloudIcon className="size-6" />
-                    )}
-                  </div>
-                  <p className="text-sm sm:text-base font-semibold text-foreground">
-                    {isMobile
-                      ? "Capture or upload worksheet photo"
-                      : "Upload worksheet photo"}
-                  </p>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                    {isMobile
-                      ? "Supports JPEG or PNG (up to 15MB) \u00B7 Take a photo or choose from library"
-                      : "Supports JPEG or PNG (up to 15MB) \u00B7 Drag & drop or press Enter"}
-                  </p>
+                {/* Live Desktop / Document Camera Viewfinder */}
+                {isLiveCamera ? (
+                  <div className="relative rounded-2xl border border-border bg-black/95 overflow-hidden flex flex-col items-center justify-center p-3 shadow-warm animate-in fade-in duration-200 motion-reduce:animate-none">
+                    <div className="relative w-full aspect-4/3 max-h-[340px] rounded-xl overflow-hidden bg-black flex items-center justify-center">
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="size-full object-contain"
+                      />
+                      {/* Cursive Penmanship Framing Overlay on Live Camera */}
+                      <div
+                        className="absolute inset-x-8 top-1/2 -translate-y-1/2 flex flex-col justify-between h-20 opacity-40 pointer-events-none select-none"
+                        aria-hidden="true"
+                      >
+                        <div className="w-full h-px bg-white/60" />
+                        <div className="w-full border-b border-dashed border-white/70" />
+                        <div className="w-full h-0.5 bg-white/90" />
+                      </div>
+                      {/* Viewfinder Corner Framing */}
+                      <div className="absolute top-3 left-3 size-4 pointer-events-none" aria-hidden="true">
+                        <span className="absolute top-0 left-0 w-full h-0.5 bg-white/80 rounded-full" />
+                        <span className="absolute top-0 left-0 h-full w-0.5 bg-white/80 rounded-full" />
+                      </div>
+                      <div className="absolute top-3 right-3 size-4 pointer-events-none" aria-hidden="true">
+                        <span className="absolute top-0 right-0 w-full h-0.5 bg-white/80 rounded-full" />
+                        <span className="absolute top-0 right-0 h-full w-0.5 bg-white/80 rounded-full" />
+                      </div>
+                      <div className="absolute bottom-3 left-3 size-4 pointer-events-none" aria-hidden="true">
+                        <span className="absolute bottom-0 left-0 w-full h-0.5 bg-white/80 rounded-full" />
+                        <span className="absolute bottom-0 left-0 h-full w-0.5 bg-white/80 rounded-full" />
+                      </div>
+                      <div className="absolute bottom-3 right-3 size-4 pointer-events-none" aria-hidden="true">
+                        <span className="absolute bottom-0 right-0 w-full h-0.5 bg-white/80 rounded-full" />
+                        <span className="absolute bottom-0 right-0 h-full w-0.5 bg-white/80 rounded-full" />
+                      </div>
+                    </div>
 
-                  {/* Action Triggers */}
-                  {isMobile ? (
-                    <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-2 w-full max-w-xs mt-4">
-                      <Button
-                        type="button"
-                        variant="default"
-                        className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          cameraInputRef.current?.click();
-                        }}
-                      >
-                        <CameraIcon className="size-3.5" />
-                        Take Photo
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full bg-background hover:bg-muted cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          fileInputRef.current?.click();
-                        }}
-                      >
-                        <FileImageIcon className="size-3.5 text-muted-foreground" />
-                        Photo Library
-                      </Button>
+                    {/* Camera Controls Bar */}
+                    <div className="flex items-center justify-between w-full pt-3 px-1 gap-2">
+                      {videoDevices.length > 1 ? (
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <label htmlFor="camera-select" className="sr-only">Select camera input</label>
+                          <select
+                            id="camera-select"
+                            value={selectedDeviceId}
+                            onChange={(e) => handleSwitchCamera(e.target.value)}
+                            className="text-xs bg-muted/80 text-foreground border border-border rounded-lg px-2 py-1 max-w-[150px] truncate cursor-pointer"
+                          >
+                            {videoDevices.map((dev, idx) => (
+                              <option key={dev.deviceId || idx} value={dev.deviceId}>
+                                {dev.label || `Camera ${idx + 1}`}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground flex items-center gap-1.5 pl-1">
+                          <span className="size-2 rounded-full bg-success animate-pulse" />
+                          Live Viewfinder
+                        </span>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs cursor-pointer"
+                          onClick={handleStopDesktopCamera}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="default"
+                          size="sm"
+                          className="h-8 text-xs font-semibold gap-1.5 shadow-warm cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
+                          onClick={handleCaptureFrame}
+                        >
+                          <CameraIcon className="size-3.5" />
+                          Capture Photo
+                        </Button>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="w-full max-w-xs mt-4">
-                      <Button
-                        type="button"
-                        variant="default"
-                        className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          fileInputRef.current?.click();
-                        }}
-                      >
-                        <FileImageIcon className="size-3.5" />
-                        Browse Files
-                      </Button>
+                  </div>
+                ) : (
+                  /* Standard Dropzone Centerpiece with Penmanship Guidelines and Clean Semantics (WCAG 4.1.2) */
+                  <div
+                    ref={dropzoneRef}
+                    aria-label="Worksheet photo upload dropzone"
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsDragging(false);
+                      handleFileChange(e.dataTransfer.files?.[0]);
+                    }}
+                    className={`group relative flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-all text-center shadow-warm overflow-hidden ${
+                      isDragging
+                        ? "border-primary bg-primary/5 scale-[0.99]"
+                        : "border-border bg-card hover:border-primary/60 hover:bg-muted/10"
+                    }`}
+                  >
+                    {/* Viewfinder Corner Framing Brackets */}
+                    <div className="absolute top-2.5 left-2.5 size-3 pointer-events-none" aria-hidden="true">
+                      <span className="absolute top-0 left-0 w-full h-0.5 bg-border/80 group-hover:bg-primary/60 transition-colors rounded-full" />
+                      <span className="absolute top-0 left-0 h-full w-0.5 bg-border/80 group-hover:bg-primary/60 transition-colors rounded-full" />
                     </div>
-                  )}
-                </div>
+                    <div className="absolute top-2.5 right-2.5 size-3 pointer-events-none" aria-hidden="true">
+                      <span className="absolute top-0 right-0 w-full h-0.5 bg-border/80 group-hover:bg-primary/60 transition-colors rounded-full" />
+                      <span className="absolute top-0 right-0 h-full w-0.5 bg-border/80 group-hover:bg-primary/60 transition-colors rounded-full" />
+                    </div>
+                    <div className="absolute bottom-2.5 left-2.5 size-3 pointer-events-none" aria-hidden="true">
+                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-border/80 group-hover:bg-primary/60 transition-colors rounded-full" />
+                      <span className="absolute bottom-0 left-0 h-full w-0.5 bg-border/80 group-hover:bg-primary/60 transition-colors rounded-full" />
+                    </div>
+                    <div className="absolute bottom-2.5 right-2.5 size-3 pointer-events-none" aria-hidden="true">
+                      <span className="absolute bottom-0 right-0 w-full h-0.5 bg-border/80 group-hover:bg-primary/60 transition-colors rounded-full" />
+                      <span className="absolute bottom-0 right-0 h-full w-0.5 bg-border/80 group-hover:bg-primary/60 transition-colors rounded-full" />
+                    </div>
+
+                    {/* Decorative Cursive Penmanship Guidelines Background (DESIGN.md signature component) */}
+                    <div
+                      className="absolute inset-x-8 top-1/2 -translate-y-1/2 flex flex-col justify-between h-20 opacity-30 dark:opacity-20 pointer-events-none select-none transition-opacity group-hover:opacity-40"
+                      aria-hidden="true"
+                    >
+                      {/* Headline */}
+                      <div className="w-full h-px bg-primary/40" />
+                      {/* Dotted Midline */}
+                      <div className="w-full border-b border-dashed border-primary/50" />
+                      {/* Baseline */}
+                      <div className="w-full h-0.5 bg-primary/60" />
+                    </div>
+
+                    <div className="relative z-10 flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-2.5 transition-transform group-hover:scale-105">
+                      {isMobile ? (
+                        <CameraIcon className="size-6" />
+                      ) : (
+                        <UploadCloudIcon className="size-6" />
+                      )}
+                    </div>
+                    <p className="relative z-10 text-sm sm:text-base font-semibold text-foreground">
+                      {isMobile
+                        ? "Capture or upload worksheet photo"
+                        : "Upload worksheet photo"}
+                    </p>
+                    <p className="relative z-10 text-xs sm:text-sm text-muted-foreground mt-1">
+                      {isMobile
+                        ? "Supports JPEG or PNG (up to 15MB) · Take a photo or choose from library"
+                        : "Supports JPEG or PNG (up to 15MB) · Drag & drop or choose an option"}
+                    </p>
+
+                    {/* Action Triggers */}
+                    {isMobile ? (
+                      <div className="relative z-10 grid grid-cols-1 min-[480px]:grid-cols-2 gap-2 w-full max-w-xs mt-4">
+                        <Button
+                          ref={takePhotoButtonRef}
+                          type="button"
+                          variant="default"
+                          className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
+                          onClick={() => cameraInputRef.current?.click()}
+                        >
+                          <CameraIcon className="size-3.5" />
+                          Take Photo
+                        </Button>
+                        <Button
+                          ref={browseButtonRef}
+                          type="button"
+                          variant="outline"
+                          className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full bg-background hover:bg-muted cursor-pointer"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <FileImageIcon className="size-3.5 text-muted-foreground" />
+                          Photo Library
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="relative z-10 flex flex-col sm:flex-row items-center gap-2 w-full max-w-xs sm:max-w-sm mt-4">
+                        <Button
+                          ref={browseButtonRef}
+                          type="button"
+                          variant="default"
+                          className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <FileImageIcon className="size-3.5" />
+                          Browse Files
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full bg-background hover:bg-muted cursor-pointer"
+                          onClick={() => handleStartDesktopCamera()}
+                        >
+                          <Video className="size-3.5 text-primary" />
+                          Use Camera / Doc Cam
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Desktop Clipboard Paste Hint */}
+                    <p className="relative z-10 text-[11px] text-muted-foreground/80 mt-2 hidden sm:block">
+                      Tip: You can also paste an image directly with <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border text-[10px] font-mono">Ctrl+V</kbd>
+                    </p>
+                  </div>
+                )}
 
                 {/* Subtle Privacy Notice Footnote */}
                 <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground pt-0.5">
@@ -1040,7 +1336,14 @@ function UploadFlow({
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 text-muted-foreground shrink-0 max-w-[50%] truncate font-medium">
+                  <div
+                    className="flex items-center gap-1 text-muted-foreground shrink-0 max-w-[50%] truncate font-medium cursor-help"
+                    title={
+                      selectedActivity?.target_text
+                        ? `Activity prompt: "${selectedActivity.target_text}"`
+                        : "Activity"
+                    }
+                  >
                     <span className="truncate">
                       {selectedActivity?.target_text ?? "Activity"}
                     </span>
