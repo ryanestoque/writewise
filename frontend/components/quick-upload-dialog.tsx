@@ -960,8 +960,8 @@ function UploadFlow({
             {step === 2 && (
               <>
                 {/* Context Header: Active Student & Activity */}
-                <div className="flex items-center justify-between gap-2 p-2.5 px-3 rounded-xl bg-muted/40 border border-border/80 text-xs">
-                  <div className="flex items-center gap-1.5 min-w-0 truncate">
+                <div className="flex items-center justify-between gap-2 p-2.5 px-3 rounded-xl bg-muted/40 border border-border/80 text-xs flex-wrap min-[380px]:flex-nowrap">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
                     <span className="font-semibold text-foreground truncate">
                       {selectedStudent?.full_name ?? "Student"}
                     </span>
@@ -972,7 +972,7 @@ function UploadFlow({
                     )}
                   </div>
                   <div
-                    className="flex items-center gap-1 text-muted-foreground shrink-0 max-w-[50%] truncate font-medium cursor-help"
+                    className="flex items-center gap-1 text-muted-foreground shrink-0 max-w-full min-[380px]:max-w-[50%] truncate font-medium cursor-help"
                     title={
                       selectedActivity?.target_text
                         ? `Activity prompt: "${selectedActivity.target_text}"`
@@ -1077,7 +1077,7 @@ function UploadFlow({
                             id="camera-select"
                             value={selectedDeviceId}
                             onChange={(e) => handleSwitchCamera(e.target.value)}
-                            className="text-xs bg-muted/80 text-foreground border border-border rounded-lg px-2 py-1 max-w-[150px] truncate cursor-pointer"
+                            className="text-xs bg-muted/80 text-foreground border border-border rounded-lg px-2 py-1 max-w-[150px] truncate cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                           >
                             {videoDevices.map((dev, idx) => (
                               <option key={dev.deviceId || idx} value={dev.deviceId}>
@@ -1325,8 +1325,8 @@ function UploadFlow({
             {step === 3 && selectedFile && (
               <>
                 {/* Context Header: Active Student & Activity */}
-                <div className="flex items-center justify-between gap-2 p-2.5 px-3 rounded-xl bg-muted/40 border border-border/80 text-xs">
-                  <div className="flex items-center gap-1.5 min-w-0 truncate">
+                <div className="flex items-center justify-between gap-2 p-2.5 px-3 rounded-xl bg-muted/40 border border-border/80 text-xs flex-wrap min-[380px]:flex-nowrap">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
                     <span className="font-semibold text-foreground truncate">
                       {selectedStudent?.full_name ?? "Student"}
                     </span>
@@ -1337,7 +1337,7 @@ function UploadFlow({
                     )}
                   </div>
                   <div
-                    className="flex items-center gap-1 text-muted-foreground shrink-0 max-w-[50%] truncate font-medium cursor-help"
+                    className="flex items-center gap-1 text-muted-foreground shrink-0 max-w-full min-[380px]:max-w-[50%] truncate font-medium cursor-help"
                     title={
                       selectedActivity?.target_text
                         ? `Activity prompt: "${selectedActivity.target_text}"`

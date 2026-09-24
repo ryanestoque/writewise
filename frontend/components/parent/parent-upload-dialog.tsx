@@ -631,9 +631,9 @@ function ParentUploadFlow({
 
                 {/* Reassurance banner for re-attempts */}
                 {priorSubmission?.status === "completed" && (
-                  <div className="flex items-center gap-2 p-2.5 px-3 rounded-xl bg-brand-50/80 dark:bg-brand-950/40 border border-brand-200/70 dark:border-brand-800/50 text-[11px] sm:text-xs text-brand-900 dark:text-brand-200">
+                  <div className="flex items-center gap-2 p-2.5 px-3 rounded-xl bg-primary/10 border border-primary/20 text-[11px] sm:text-xs text-foreground">
                     <CheckCircle2Icon
-                      className="size-4 shrink-0 text-brand-600 dark:text-brand-400"
+                      className="size-4 shrink-0 text-primary"
                       aria-hidden="true"
                     />
                     <span>
@@ -684,23 +684,10 @@ function ParentUploadFlow({
                   onChange={(e) => handleFileChange(e.target.files?.[0])}
                 />
 
-                {/* Interactive Dropzone with Keyboard Activation */}
+                {/* Dropzone Container (Clean Non-Interactive Wrapper, WCAG 4.1.2) */}
                 <div
                   ref={dropzoneRef}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={
-                    isMobile
-                      ? "Worksheet photo upload dropzone. Take a photo or choose from library."
-                      : "Worksheet photo upload dropzone. Drop an image or press Enter or Space to choose a file."
-                  }
-                  onClick={() => fileInputRef.current?.click()}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      fileInputRef.current?.click();
-                    }
-                  }}
+                  aria-label="Worksheet photo upload dropzone"
                   onDragOver={(e) => {
                     e.preventDefault();
                     setIsDragging(true);
@@ -711,7 +698,7 @@ function ParentUploadFlow({
                     setIsDragging(false);
                     handleFileChange(e.dataTransfer.files?.[0]);
                   }}
-                  className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-all text-center cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 shadow-warm ${
+                  className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-all text-center shadow-warm ${
                     isDragging
                       ? "border-primary bg-primary/5 scale-[0.99]"
                       : "border-border bg-card hover:border-primary/60 hover:bg-muted/10"
@@ -735,17 +722,14 @@ function ParentUploadFlow({
                       : "Supports JPEG or PNG (up to 15MB) · Drag & drop or browse"}
                   </p>
 
-                  {/* Mobile Camera / Library Action Triggers */}
+                  {/* Action Triggers */}
                   {isMobile ? (
                     <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-2 w-full max-w-xs mt-4">
                       <Button
                         type="button"
                         variant="default"
                         className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          cameraInputRef.current?.click();
-                        }}
+                        onClick={() => cameraInputRef.current?.click()}
                       >
                         <CameraIcon className="size-3.5" aria-hidden="true" />
                         Take Photo
@@ -754,10 +738,7 @@ function ParentUploadFlow({
                         type="button"
                         variant="outline"
                         className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full bg-background hover:bg-muted cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          fileInputRef.current?.click();
-                        }}
+                        onClick={() => fileInputRef.current?.click()}
                       >
                         <FileImageIcon
                           className="size-3.5 text-muted-foreground"
@@ -772,10 +753,7 @@ function ParentUploadFlow({
                         type="button"
                         variant="default"
                         className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          fileInputRef.current?.click();
-                        }}
+                        onClick={() => fileInputRef.current?.click()}
                       >
                         <FileImageIcon className="size-3.5" aria-hidden="true" />
                         Browse Files

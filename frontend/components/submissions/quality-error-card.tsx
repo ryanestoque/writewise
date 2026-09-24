@@ -345,8 +345,39 @@ export function QualityErrorCard({
   const panStartRef = useRef({ x: 0, y: 0 });
   const pinchStartDistRef = useRef<number | null>(null);
   const pinchStartScaleRef = useRef(1);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const rafIdRef = useRef<number | null>(null);
+
+  const getMaxPan = useCallback((scale: number) => {
+    if (scale <= 1) return { x: 0, y: 0 };
+    if (imgRef.current && canvasRef.current) {
+      const renderedWidth = imgRef.current.offsetWidth * scale;
+      const renderedHeight = imgRef.current.offsetHeight * scale;
+      const canvasWidth = canvasRef.current.clientWidth;
+      const canvasHeight = canvasRef.current.clientHeight;
+      const maxPanX = Math.max(60, (renderedWidth - canvasWidth) / 2 + 40);
+      const maxPanY = Math.max(60, (renderedHeight - canvasHeight) / 2 + 40);
+      return { x: maxPanX, y: maxPanY };
+    }
+    return { x: 200 * (scale - 1), y: 240 * (scale - 1) };
+  }, []);
+
+  const schedulePanUpdate = useCallback((newPan: { x: number; y: number }) => {
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+    }
+    rafIdRef.current = requestAnimationFrame(() => {
+      setPanOffset(newPan);
+      rafIdRef.current = null;
+    });
+  }, []);
 
   const resetZoomAndPan = useCallback(() => {
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
     setZoomScale(1);
     setPanOffset({ x: 0, y: 0 });
     setIsDragging(false);
@@ -400,10 +431,10 @@ export function QualityErrorCard({
     if (!isDragging || zoomScale <= 1) return;
     const dx = e.clientX - dragStartRef.current.x;
     const dy = e.clientY - dragStartRef.current.y;
-    const maxPan = 180 * (zoomScale - 1);
-    setPanOffset({
-      x: Math.max(-maxPan, Math.min(maxPan, panStartRef.current.x + dx)),
-      y: Math.max(-maxPan, Math.min(maxPan, panStartRef.current.y + dy)),
+    const bounds = getMaxPan(zoomScale);
+    schedulePanUpdate({
+      x: Math.max(-bounds.x, Math.min(bounds.x, panStartRef.current.x + dx)),
+      y: Math.max(-bounds.y, Math.min(bounds.y, panStartRef.current.y + dy)),
     });
   };
 
@@ -439,10 +470,10 @@ export function QualityErrorCard({
     } else if (e.touches.length === 1 && isDragging && zoomScale > 1) {
       const dx = e.touches[0].clientX - dragStartRef.current.x;
       const dy = e.touches[0].clientY - dragStartRef.current.y;
-      const maxPan = 180 * (zoomScale - 1);
-      setPanOffset({
-        x: Math.max(-maxPan, Math.min(maxPan, panStartRef.current.x + dx)),
-        y: Math.max(-maxPan, Math.min(maxPan, panStartRef.current.y + dy)),
+      const bounds = getMaxPan(zoomScale);
+      schedulePanUpdate({
+        x: Math.max(-bounds.x, Math.min(bounds.x, panStartRef.current.x + dx)),
+        y: Math.max(-bounds.y, Math.min(bounds.y, panStartRef.current.y + dy)),
       });
     }
   };
@@ -484,9 +515,8 @@ export function QualityErrorCard({
     onRetake(topTip ? { tip: topTip, badgeLabel: presentation.badgeLabel } : undefined);
   }, [onRetake, presentation.tips, presentation.badgeLabel]);
 
-  // Keyboard shortcut: Press R to retake photo; [+] / [-] / [0] to zoom when inspecting.
-  // Complies with WCAG 2.1 SC 2.1.4: ignores modifier keys (prevents hijacking Ctrl+R/Cmd+R)
-  // and only triggers when not editing text.
+  // Keyboard shortcut: Press R to retake photo; [+] / [-] / [0] to zoom; Arrow keys to pan when inspecting.
+  // Complies with WCAG 2.1 SC 2.1.1 (Keyboard) and SC 2.1.4 (Character Key Shortcuts).
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Never intercept browser commands or shortcuts with modifiers (e.g. Ctrl+R reload, Cmd+R, Alt+R)
@@ -503,7 +533,7 @@ export function QualityErrorCard({
         return;
       }
 
-      // Inside inspection modal: allow R to retake, and +/-/0 for zoom controls
+      // Inside inspection modal: allow R to retake, +/-/0 for zoom controls, and Arrow keys to pan
       if (isInspecting) {
         if (e.key === "r" || e.key === "R") {
           e.preventDefault();
@@ -526,6 +556,24 @@ export function QualityErrorCard({
           handleResetZoom();
           return;
         }
+        if (
+          ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key) &&
+          zoomScale > 1
+        ) {
+          e.preventDefault();
+          const step = 40;
+          const bounds = getMaxPan(zoomScale);
+          setPanOffset((prev) => {
+            let nextX = prev.x;
+            let nextY = prev.y;
+            if (e.key === "ArrowUp") nextY = Math.min(bounds.y, prev.y + step);
+            if (e.key === "ArrowDown") nextY = Math.max(-bounds.y, prev.y - step);
+            if (e.key === "ArrowLeft") nextX = Math.min(bounds.x, prev.x + step);
+            if (e.key === "ArrowRight") nextX = Math.max(-bounds.x, prev.x - step);
+            return { x: nextX, y: nextY };
+          });
+          return;
+        }
       } else {
         // Scoped execution for card: only fire if focus is within card, or active element is body
         if (e.key === "r" || e.key === "R") {
@@ -539,9 +587,24 @@ export function QualityErrorCard({
         }
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleRetakeClick, isInspecting, handleZoomIn, handleZoomOut, handleResetZoom, closeInspectionModal]);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
+  }, [
+    handleRetakeClick,
+    isInspecting,
+    zoomScale,
+    handleZoomIn,
+    handleZoomOut,
+    handleResetZoom,
+    closeInspectionModal,
+    getMaxPan,
+  ]);
 
   return (
     <div
@@ -568,6 +631,7 @@ export function QualityErrorCard({
             <button
               type="button"
               onClick={openInspectionModal}
+              aria-haspopup="dialog"
               aria-label="Enlarge captured worksheet photo to inspect quality"
               className={cn(
                 "relative w-20 h-24 sm:w-20 sm:h-26 rounded-lg overflow-hidden bg-muted shadow-2xs group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 text-left border transition-all",
@@ -866,11 +930,11 @@ export function QualityErrorCard({
         >
           <DialogContent
             showCloseButton
-            className="w-[calc(100%-1.5rem)] max-w-3xl sm:max-w-3xl p-0 gap-0 overflow-hidden border border-border shadow-warm-lg"
+            className="w-[calc(100%-1.5rem)] max-w-3xl sm:max-w-3xl p-0 gap-0 overflow-hidden flex flex-col max-h-[min(92dvh,calc(100vh-2rem))] border border-border shadow-warm-lg"
           >
             {/* Modal Header: Title and Zoom Toolbar */}
-            <DialogHeader className="p-3 sm:p-3.5 border-b border-border bg-muted/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
-              <div className="flex items-center gap-2">
+            <DialogHeader className="p-3 sm:p-3.5 border-b border-border bg-muted/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 shrink-0">
+              <div className="flex items-center gap-2 pr-10 sm:pr-0">
                 <DialogTitle className="text-sm sm:text-base font-semibold text-foreground">
                   Captured Worksheet Photo
                 </DialogTitle>
@@ -889,17 +953,17 @@ export function QualityErrorCard({
                     onClick={handleZoomOut}
                     disabled={zoomScale <= 1}
                     aria-label="Zoom out photo"
-                    className="h-7 w-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground"
+                    className="h-9 w-9 sm:h-7 sm:w-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground"
                   >
-                    <ZoomOut className="size-3.5" aria-hidden="true" />
+                    <ZoomOut className="size-4 sm:size-3.5" aria-hidden="true" />
                   </Button>
 
-                  <span
-                    aria-live="polite"
+                  <div
+                    aria-label={`Current zoom level: ${Math.round(zoomScale * 100)} percent`}
                     className="text-xs font-mono font-medium text-muted-foreground w-12 text-center select-none"
                   >
                     {Math.round(zoomScale * 100)}%
-                  </span>
+                  </div>
 
                   <Button
                     type="button"
@@ -908,9 +972,9 @@ export function QualityErrorCard({
                     onClick={handleZoomIn}
                     disabled={zoomScale >= 3}
                     aria-label="Zoom in photo"
-                    className="h-7 w-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground"
+                    className="h-9 w-9 sm:h-7 sm:w-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground"
                   >
-                    <ZoomIn className="size-3.5" aria-hidden="true" />
+                    <ZoomIn className="size-4 sm:size-3.5" aria-hidden="true" />
                   </Button>
 
                   <Button
@@ -920,9 +984,9 @@ export function QualityErrorCard({
                     onClick={handleResetZoom}
                     disabled={zoomScale === 1 && panOffset.x === 0 && panOffset.y === 0}
                     aria-label="Reset zoom to fit"
-                    className="h-7 px-2 text-[11px] font-medium cursor-pointer text-muted-foreground hover:text-foreground"
+                    className="h-9 sm:h-7 px-3 sm:px-2 text-xs sm:text-[11px] font-medium cursor-pointer text-muted-foreground hover:text-foreground"
                   >
-                    <RotateCcw className="size-3 mr-1" aria-hidden="true" />
+                    <RotateCcw className="size-3.5 sm:size-3 mr-1" aria-hidden="true" />
                     Fit
                   </Button>
                 </div>
@@ -931,6 +995,7 @@ export function QualityErrorCard({
 
             {/* Interactive Image Canvas */}
             <div
+              ref={canvasRef}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
@@ -939,8 +1004,11 @@ export function QualityErrorCard({
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
               onWheel={handleWheel}
+              tabIndex={0}
+              role="region"
+              aria-label="Worksheet photo magnification viewport. Use plus or minus to zoom, arrow keys to pan"
               className={cn(
-                "relative h-[52vh] sm:h-[60vh] max-h-[600px] w-full flex items-center justify-center overflow-hidden bg-neutral-900/5 dark:bg-black/40 select-none",
+                "relative flex-1 min-h-[220px] max-h-[58vh] sm:max-h-[60vh] w-full flex items-center justify-center overflow-hidden bg-muted/30 dark:bg-black/40 select-none touch-none outline-none focus-visible:ring-1 focus-visible:ring-ring/30",
                 zoomScale > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : "cursor-zoom-in"
               )}
             >
@@ -962,35 +1030,37 @@ export function QualityErrorCard({
               ) : (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
+                  ref={imgRef}
                   src={previewUrl}
                   alt="Captured cursive worksheet photo under quality review"
                   draggable={false}
+                  decoding="async"
                   onDoubleClick={handleToggleZoom}
                   onError={() => setImageError(true)}
                   style={{
                     transform: `translate3d(${panOffset.x}px, ${panOffset.y}px, 0px) scale(${zoomScale})`,
                     transition: isDragging ? "none" : "transform 150ms ease-out",
                   }}
-                  className="max-h-[50vh] sm:max-h-[58vh] w-auto max-w-full object-contain rounded-md shadow-xs select-none touch-none"
+                  className="max-h-full w-auto max-w-full object-contain rounded-md shadow-xs select-none touch-none motion-reduce:transition-none"
                 />
               )}
 
               {/* Floating hint pill when zoomed */}
               {!imageError && (
-                <div className="absolute bottom-2 left-2 pointer-events-none bg-black/60 backdrop-blur-xs text-white text-[11px] px-2 py-0.5 rounded-full flex items-center gap-1.5 shadow-2xs">
+                <div className="absolute bottom-2 left-2 pointer-events-none bg-black/70 backdrop-blur-xs text-white text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
                   {zoomScale > 1 ? (
-                    <span>Drag or swipe to pan details</span>
+                    <span>Drag, swipe, or use Arrow keys to pan</span>
                   ) : (
-                    <span>Double-click or pinch to zoom (max 300%)</span>
+                    <span>Double-click, pinch, or +/- to zoom (max 300%)</span>
                   )}
                 </div>
               )}
             </div>
 
             {/* Modal Footer: Targeted Diagnostic Advice & Direct Remediation Action */}
-            <DialogFooter className="p-3 sm:p-3.5 border-t border-border bg-background flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5">
+            <DialogFooter className="p-3 sm:p-3.5 border-t border-border bg-background flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 shrink-0">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Lightbulb className="size-3.5 shrink-0 text-amber-500" aria-hidden="true" />
+                <Lightbulb className="size-3.5 shrink-0 text-warning" aria-hidden="true" />
                 <span className="line-clamp-1 sm:line-clamp-none">
                   {presentation.tips[0] || "Check lighting, focus, and line clarity"}
                 </span>
@@ -1001,23 +1071,28 @@ export function QualityErrorCard({
                   type="button"
                   variant="outline"
                   onClick={closeInspectionModal}
-                  className="flex-1 sm:flex-initial h-9 px-3.5 text-xs font-medium cursor-pointer"
+                  className="flex-1 sm:flex-initial h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
                 >
                   Done
                 </Button>
                 <Button
                   type="button"
+                  variant="default"
                   onClick={() => {
                     closeInspectionModal();
                     handleRetakeClick();
                   }}
-                  className="flex-1 sm:flex-initial h-9 px-4 text-xs sm:text-sm font-medium gap-1.5 bg-[#1b6b63] hover:bg-[#145049] text-white shadow-warm-sm cursor-pointer"
+                  className="flex-1 sm:flex-initial h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-1.5 shadow-warm-sm cursor-pointer"
                 >
                   <Camera className="size-3.5" aria-hidden="true" />
-                  Retake Photo
-                  <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.2 rounded bg-white/20 text-[10px] font-sans">
+                  <span>Retake Photo</span>
+                  <kbd
+                    aria-hidden="true"
+                    className="hidden sm:inline-block ml-1 px-1.5 py-0.2 rounded bg-primary-foreground/20 text-[10px] font-sans"
+                  >
                     R
                   </kbd>
+                  <span className="sr-only"> (press R)</span>
                 </Button>
               </div>
             </DialogFooter>
