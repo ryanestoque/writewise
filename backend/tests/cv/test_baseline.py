@@ -6,22 +6,31 @@ from app.cv.features.baseline import compute_baseline_deviation
 def test_baseline_deviation_perfect_alignment():
     # Baseline at y=500, unit_height=50. Word bbox: (100, 450, 80, 50) -> bottom y = 500
     bbox = (100, 450, 80, 50)
-    deviation = compute_baseline_deviation(word_bbox=bbox, baseline_y=500, unit_height=50.0)
+    deviation, measured_y = compute_baseline_deviation(
+        word_bbox=bbox, baseline_y=500, unit_height=50.0
+    )
     assert deviation == 0.0
+    assert measured_y == 500
 
 
 def test_baseline_deviation_floating_above():
     # Baseline at y=500, unit_height=50. Word bottom at y=490 -> diff = 10 -> ratio = 10/50 = 0.20
     bbox = (100, 440, 80, 50)  # y_bottom = 490
-    deviation = compute_baseline_deviation(word_bbox=bbox, baseline_y=500, unit_height=50.0)
+    deviation, measured_y = compute_baseline_deviation(
+        word_bbox=bbox, baseline_y=500, unit_height=50.0
+    )
     assert deviation == 0.20
+    assert measured_y == 490
 
 
 def test_baseline_deviation_dipping_below():
     # Baseline at y=500, unit_height=50. Word bottom at y=510 -> diff = 10 -> ratio = 10/50 = 0.20
     bbox = (100, 460, 80, 50)  # y_bottom = 510
-    deviation = compute_baseline_deviation(word_bbox=bbox, baseline_y=500, unit_height=50.0)
+    deviation, measured_y = compute_baseline_deviation(
+        word_bbox=bbox, baseline_y=500, unit_height=50.0
+    )
     assert deviation == 0.20
+    assert measured_y == 510
 
 
 def test_baseline_deviation_with_binary_crop():
@@ -29,11 +38,12 @@ def test_baseline_deviation_with_binary_crop():
     crop = np.full((60, 80), 255, dtype=np.uint8)
     crop[10:51, 10:70] = 0  # ink down to index 50
     bbox = (100, 440, 80, 60)
-    deviation = compute_baseline_deviation(
+    deviation, measured_y = compute_baseline_deviation(
         word_bbox=bbox, baseline_y=500, unit_height=50.0, binary_crop=crop
     )
     # y_bottom = 440 + 50 = 490. diff = |490 - 500| = 10. ratio = 10/50 = 0.20
     assert deviation == 0.20
+    assert measured_y == 490
 
 
 def test_baseline_deviation_with_pipeline_inverted_crop():
@@ -42,11 +52,12 @@ def test_baseline_deviation_with_pipeline_inverted_crop():
     crop = np.full((60, 80), 0, dtype=np.uint8)
     crop[10:51, 10:70] = 255  # ink down to index 50
     bbox = (100, 440, 80, 60)
-    deviation = compute_baseline_deviation(
+    deviation, measured_y = compute_baseline_deviation(
         word_bbox=bbox, baseline_y=500, unit_height=50.0, binary_crop=crop
     )
     # y_bottom = 440 + 50 = 490. diff = |490 - 500| = 10. ratio = 10/50 = 0.20
     assert deviation == 0.20
+    assert measured_y == 490
 
 
 def test_baseline_deviation_ignores_descender_tails():
@@ -64,9 +75,10 @@ def test_baseline_deviation_ignores_descender_tails():
 
     bbox = (100, 450, 100, 120)
     # Baseline at y=500, unit_height=50.
-    deviation = compute_baseline_deviation(
+    deviation, measured_y = compute_baseline_deviation(
         word_bbox=bbox, baseline_y=500, unit_height=50.0, binary_crop=crop
     )
-    # Letter body rests at y=450+50=500 -> diff should be 0.0 (or <= 0.05), NOT 60/50 = 1.20!
+    # Letter body rests at y=450+50=500 -> diff should be <= 0.05, measured_y near 500 (NOT 560!)
     assert deviation <= 0.05
+    assert abs(measured_y - 500) <= 2
 

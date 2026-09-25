@@ -98,7 +98,7 @@ export const BaselineLayer = memo(function BaselineLayer({
       {annotations.map((ann, idx) => {
         const [x, y, w, h] = ann.bbox;
         const isAttention = ann.severity === "needs_attention";
-        const wordBottomY = y + h;
+        const wordBottomY = ann.measured_y ?? (y + h);
 
         if (!isAttention && !isSpotlight) return null;
 

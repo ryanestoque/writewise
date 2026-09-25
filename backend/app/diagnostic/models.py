@@ -18,6 +18,7 @@ class BaselineAnnotation(BaseModel):
     deviation_ratio: float
     severity: Severity
     note: str
+    measured_y: int | None = None
 
 
 class BaselineOverlay(BaseModel):

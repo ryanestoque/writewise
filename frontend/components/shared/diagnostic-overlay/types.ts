@@ -21,6 +21,7 @@ export interface BaselineAnnotation {
   deviation_ratio: number;
   severity: Severity;
   note: string;
+  measured_y?: number;
 }
 
 export interface BaselineOverlay {

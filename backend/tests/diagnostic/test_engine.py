@@ -19,6 +19,7 @@ def make_sample_raw_output():
                         "baseline_deviation_ratio": 0.04,
                         "size_ratio": 0.95,
                         "letter_formation_score": 82.0,
+                        "measured_baseline_y": 420,
                     },
                     {
                         "word_index": 1,
@@ -59,7 +60,9 @@ def test_generate_diagnostic_overlay_structure():
     assert len(overlay["baseline"]["guide_lines"]["baseline_y"]) == 2
     assert len(overlay["baseline"]["annotations"]) == 2
     assert overlay["baseline"]["annotations"][0]["severity"] == "normal"
+    assert overlay["baseline"]["annotations"][0]["measured_y"] == 420
     assert overlay["baseline"]["annotations"][1]["severity"] == "needs_attention"
+    assert overlay["baseline"]["annotations"][1]["measured_y"] is None
 
     # Check spacing
     assert len(overlay["spacing"]["annotations"]) == 1

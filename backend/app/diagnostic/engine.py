@@ -75,6 +75,7 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
                         deviation_ratio=round(drift, 3),
                         severity=b_sev,
                         note=b_note,
+                        measured_y=word.get("measured_baseline_y"),
                     )
                 )
 

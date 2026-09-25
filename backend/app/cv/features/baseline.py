@@ -15,8 +15,8 @@ def compute_baseline_deviation(
     baseline_y: int,
     unit_height: float,
     binary_crop: Optional[np.ndarray] = None,
-) -> float:
-    """Compute normalized baseline deviation ratio for a single word.
+) -> Tuple[float, int]:
+    """Compute normalized baseline deviation ratio and resting baseline y.
 
     Parameters
     ----------
@@ -31,8 +31,9 @@ def compute_baseline_deviation(
 
     Returns
     -------
-    float
-        Deviation ratio relative to unit height (e.g. 0.05).
+    Tuple[float, int]
+        (deviation_ratio, measured_y) where deviation_ratio is relative to unit height
+        and measured_y is the absolute Y-coordinate of the word's resting baseline.
     """
     _bbox_x, bbox_y, _bbox_w, bbox_h = word_bbox
     norm_unit = max(1.0, float(unit_height))
@@ -62,4 +63,4 @@ def compute_baseline_deviation(
 
     deviation_pixels = abs(y_bottom - baseline_y)
     deviation_ratio = deviation_pixels / norm_unit
-    return round(float(deviation_ratio), 2)
+    return round(float(deviation_ratio), 2), int(y_bottom)

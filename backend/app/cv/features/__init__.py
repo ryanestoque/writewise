@@ -53,7 +53,7 @@ def extract_features(
             all_slants.append(slant_deg)
 
             # §6.3 Baseline Deviation
-            base_dev = compute_baseline_deviation(
+            base_dev, measured_base_y = compute_baseline_deviation(
                 word_bbox=word.bbox,
                 baseline_y=line.baseline_y,
                 unit_height=unit_height,
@@ -78,6 +78,7 @@ def extract_features(
                     slant_deg=slant_deg,
                     baseline_deviation_ratio=base_dev,
                     size_ratio=size_rat,
+                    measured_baseline_y=measured_base_y,
                 )
             )
 
