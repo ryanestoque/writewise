@@ -139,6 +139,30 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
       inspectorContext.viewportRef?.current ??
       el.closest<HTMLElement>('[role="region"]');
 
+    // Immediate synchronous measurement on mount/layout settling
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      const roundedW = Math.round(rect.width);
+      const roundedH = Math.round(rect.height);
+      setContainerSize((prev) =>
+        prev && prev.width === roundedW && prev.height === roundedH
+          ? prev
+          : { width: roundedW, height: roundedH }
+      );
+    }
+    if (viewportEl) {
+      const vRect = viewportEl.getBoundingClientRect();
+      if (vRect.width > 0 && vRect.height > 0) {
+        const roundedW = Math.round(vRect.width);
+        const roundedH = Math.round(vRect.height);
+        setViewportSize((prev) =>
+          prev && prev.width === roundedW && prev.height === roundedH
+            ? prev
+            : { width: roundedW, height: roundedH }
+        );
+      }
+    }
+
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const roundedW = Math.round(entry.contentRect.width);
@@ -168,7 +192,7 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
       observer.observe(viewportEl);
     }
     return () => observer.disconnect();
-  }, [inspectorContext.viewportRef]);
+  }, [naturalSize, inspectorContext.viewportRef]);
 
   // Load natural dimensions of the image so SVG viewBox aligns 1:1 with pixel coordinates
   useEffect(() => {

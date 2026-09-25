@@ -1,7 +1,6 @@
 "use client";
 
-import { memo, useEffect, useLayoutEffect, useState, useRef, useCallback } from "react";
-import { createPortal } from "react-dom";
+import { memo, useLayoutEffect, useState, useRef } from "react";
 import type { ActiveAnnotationHover } from "./types";
 import { OVERLAY_COLORS } from "./constants";
 
@@ -30,9 +29,6 @@ const CRITERION_LABELS: Record<string, string> = {
   letter_formation: "Letter Formation",
 };
 
-// Safely check if we're in a browser environment
-const canUseDOM = typeof window !== "undefined" && typeof document !== "undefined";
-
 export const AnnotationTooltip = memo(function AnnotationTooltip({
   hover,
   imageWidth,
@@ -45,80 +41,34 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
   panOffset = { x: 0, y: 0 },
   onDismiss,
 }: AnnotationTooltipProps) {
-  // Track the overlay container's screen rect for fixed positioning.
   const overlayRef = useRef<HTMLSpanElement>(null);
-  const [screenRect, setScreenRect] = useState<{
-    overlayLeft: number;
-    overlayTop: number;
-    overlayWidth: number;
-    overlayHeight: number;
+  const [measuredFallback, setMeasuredFallback] = useState<{
+    width: number;
+    height: number;
   } | null>(null);
 
-  // Measure the overlay container's screen rect synchronously before paint
-  // so the tooltip never flickers or goes missing for a frame.
-  const measureRef = useCallback(() => {
-    const anchor = overlayRef.current;
-    if (!anchor) return;
-    // Walk to the overlay container (the absolute inset-0 parent div from DiagnosticOverlay)
-    const overlayContainer = anchor.parentElement;
-    if (!overlayContainer) return;
-
-    const rect = overlayContainer.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
-      setScreenRect((prev) => {
-        if (
-          prev &&
-          Math.abs(prev.overlayLeft - rect.left) < 0.5 &&
-          Math.abs(prev.overlayTop - rect.top) < 0.5 &&
-          Math.abs(prev.overlayWidth - rect.width) < 0.5 &&
-          Math.abs(prev.overlayHeight - rect.height) < 0.5
-        ) {
-          return prev;
-        }
-        return {
-          overlayLeft: rect.left,
-          overlayTop: rect.top,
-          overlayWidth: rect.width,
-          overlayHeight: rect.height,
-        };
-      });
-    }
-  }, []);
-
-  // Synchronous measurement before paint — prevents flash of missing tooltip
+  // If containerWidth/containerHeight wasn't provided or measured by parent yet,
+  // synchronously measure parent element on mount/render
   useLayoutEffect(() => {
-    measureRef();
-  }, [hover, zoomScale, panOffset.x, panOffset.y, containerWidth, containerHeight, measureRef]);
-
-  // Also track scroll/resize to keep fixed position accurate
-  useEffect(() => {
-    if (!hover || !canUseDOM) return;
-    const handler = () => measureRef();
-    window.addEventListener("scroll", handler, { capture: true, passive: true });
-    window.addEventListener("resize", handler, { passive: true });
-    // Also use rAF for continuous updates during animations
-    let rafId: number | null = null;
-    const rafLoop = () => {
-      measureRef();
-      rafId = requestAnimationFrame(rafLoop);
-    };
-    // Run rAF loop for the first ~300ms to catch layout settling and CSS transitions
-    rafId = requestAnimationFrame(rafLoop);
-    const timeoutId = setTimeout(() => {
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-        rafId = null;
+    if (containerWidth && containerHeight && containerWidth > 0 && containerHeight > 0) {
+      return;
+    }
+    const anchor = overlayRef.current;
+    const parent = anchor?.parentElement;
+    if (parent) {
+      const rect = parent.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setMeasuredFallback((prev) => {
+          const w = Math.round(rect.width);
+          const h = Math.round(rect.height);
+          if (prev && prev.width === w && prev.height === h) return prev;
+          return { width: w, height: h };
+        });
       }
-    }, 300);
-    return () => {
-      window.removeEventListener("scroll", handler, { capture: true });
-      window.removeEventListener("resize", handler);
-      if (rafId !== null) cancelAnimationFrame(rafId);
-      clearTimeout(timeoutId);
-    };
-  }, [hover, measureRef]);
+    }
+  }, [containerWidth, containerHeight, hover]);
 
-  // Always render the anchor span so we can measure; everything below handles the tooltip
+  // Always keep an anchor element so we can measure parent context if hover is null
   if (!hover || imageWidth <= 0 || imageHeight <= 0) {
     return (
       <span
@@ -132,25 +82,29 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
   const { title, note, severity, criterion, x, y } = hover;
   const isAttention = severity === "needs_attention";
   const effectiveZoom = zoomScale && zoomScale > 0 ? zoomScale : 1;
+  const counterScale = 1 / effectiveZoom;
 
-  // Compute the tooltip's fixed screen position
-  let screenX = 0;
-  let screenY = 0;
+  const resolvedContainerW =
+    (containerWidth && containerWidth > 0 ? containerWidth : measuredFallback?.width) ?? 0;
+  const resolvedContainerH =
+    (containerHeight && containerHeight > 0 ? containerHeight : measuredFallback?.height) ?? 0;
+  const resolvedViewportW =
+    (viewportWidth && viewportWidth > 0 ? viewportWidth : resolvedContainerW) || 320;
+  const resolvedViewportH =
+    (viewportHeight && viewportHeight > 0 ? viewportHeight : resolvedContainerH) || 400;
+
+  let leftPos: string;
+  let topPos: string;
+  let isNearTop = false;
+  let caretOffset = 0;
   let isOffscreen = false;
   let cardWidth = 256;
-  let hasValidPosition = false;
 
-  if (
-    containerWidth &&
-    containerHeight &&
-    containerWidth > 0 &&
-    containerHeight > 0 &&
-    screenRect
-  ) {
-    const containerW = containerWidth;
-    const containerH = containerHeight;
-    const viewportW = viewportWidth && viewportWidth > 0 ? viewportWidth : containerW;
-    const viewportH = viewportHeight && viewportHeight > 0 ? viewportHeight : containerH;
+  if (resolvedContainerW > 0 && resolvedContainerH > 0) {
+    const containerW = resolvedContainerW;
+    const containerH = resolvedContainerH;
+    const viewportW = resolvedViewportW;
+    const viewportH = resolvedViewportH;
 
     // Calculate exact rendered image box inside object-contain
     const containerRatio = containerW / containerH;
@@ -162,9 +116,11 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
     let offsetY = 0;
 
     if (containerRatio > imgRatio) {
+      // Container is wider than image -> pillarbox (left/right margins)
       renderedW = containerH * imgRatio;
       offsetX = (containerW - renderedW) / 2;
     } else {
+      // Container is taller than image -> letterbox (top/bottom margins)
       renderedH = containerW / imgRatio;
       offsetY = (containerH - renderedH) / 2;
     }
@@ -172,121 +128,63 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
     const pixelX = offsetX + (x / imageWidth) * renderedW;
     const pixelY = offsetY + (y / imageHeight) * renderedH;
 
-    // The overlay's getBoundingClientRect includes all ancestor CSS transforms
-    // (zoom scale + pan translate), so we can directly map local overlay coords
-    // to screen coords using proportional interpolation.
-    screenX = screenRect.overlayLeft + (pixelX / containerW) * screenRect.overlayWidth;
-    screenY = screenRect.overlayTop + (pixelY / containerH) * screenRect.overlayHeight;
-
-    // Fade out if target panned far offscreen
+    // Target annotation point in visible viewport coordinates
+    // Account for zoom center-scaling and pan offset
     const targetViewportX =
       viewportW / 2 + panOffset.x + (pixelX - containerW / 2) * effectiveZoom;
     const targetViewportY =
       viewportH / 2 + panOffset.y + (pixelY - containerH / 2) * effectiveZoom;
+
+    // Fade out cleanly if target stroke has panned far outside visible viewport
     isOffscreen =
-      targetViewportX < -80 ||
-      targetViewportX > viewportW + 80 ||
-      targetViewportY < -80 ||
-      targetViewportY > viewportH + 80;
+      targetViewportX < -100 ||
+      targetViewportX > viewportW + 100 ||
+      targetViewportY < -100 ||
+      targetViewportY > viewportH + 100;
 
-    // Card width: clamp to browser viewport since we're using fixed positioning
-    const winW = canUseDOM ? window.innerWidth : 1024;
-    const baseCardWidth = winW < 640 ? 240 : 256;
-    cardWidth = Math.min(baseCardWidth, Math.max(180, winW - 24));
-    hasValidPosition = true;
-  }
+    // Fluid card width: dynamically scale down for narrow containers
+    const baseCardWidth = viewportW < 640 ? 240 : 256;
+    cardWidth = Math.min(baseCardWidth, Math.max(190, viewportW - 24));
+    const cardHalfWidth = cardWidth / 2;
+    const margin = 12;
 
-  // If we can't compute a valid position, fall back to the old absolute approach
-  // inside the overlay container (may clip, but at least visible)
-  if (!hasValidPosition) {
-    const counterScale = 1 / effectiveZoom;
-    const leftPct = Math.max(12, Math.min(88, (x / imageWidth) * 100));
-    const topPct = Math.max(12, Math.min(88, (y / imageHeight) * 100));
-    const isNearTop = topPct < 30;
+    // Clamp tooltip center horizontally within the visible viewport bounds
+    const minCenterX = cardHalfWidth + margin;
+    const maxCenterX = viewportW - cardHalfWidth - margin;
 
-    return (
-      <>
-        <span
-          ref={overlayRef}
-          className="absolute top-0 left-0 size-0 pointer-events-none"
-          aria-hidden="true"
-        />
-        <div
-          role="tooltip"
-          id="diagnostic-annotation-tooltip"
-          className="absolute pointer-events-none z-30 transition-[opacity,transform] duration-150 motion-reduce:transition-none"
-          style={{
-            left: `${leftPct}%`,
-            top: `${topPct}%`,
-            transform: `translate3d(-50%, ${isNearTop ? "8px" : "calc(-100% - 8px)"}, 0) scale(${counterScale})`,
-            transformOrigin: isNearTop ? "top center" : "bottom center",
-          }}
-        >
-          <TooltipCard
-            title={title}
-            note={note}
-            isAttention={isAttention}
-            criterion={criterion}
-            cardWidth={256}
-            caretOffset={0}
-            isNearTop={isNearTop}
-            onDismiss={onDismiss}
-          />
-        </div>
-      </>
-    );
-  }
+    let clampedViewportX: number;
+    if (minCenterX <= maxCenterX) {
+      clampedViewportX = Math.max(minCenterX, Math.min(maxCenterX, targetViewportX));
+    } else {
+      clampedViewportX = viewportW / 2;
+    }
 
-  const cardHalfWidth = cardWidth / 2;
-  const margin = 12;
-  const winW = canUseDOM ? window.innerWidth : 1024;
+    // Invert the clamped viewport center back into local coordinates of the transformed container
+    const clampedLocalX =
+      containerW / 2 + (clampedViewportX - viewportW / 2 - panOffset.x) / effectiveZoom;
 
-  // Clamp tooltip center horizontally to stay within browser viewport
-  const minCenterX = cardHalfWidth + margin;
-  const maxCenterX = winW - cardHalfWidth - margin;
-  let clampedScreenX: number;
-  if (minCenterX <= maxCenterX) {
-    clampedScreenX = Math.max(minCenterX, Math.min(maxCenterX, screenX));
+    // Caret offset: visual horizontal distance from card center to the pin
+    // Note: because the card is counter-scaled by scale(1 / effectiveZoom), 1px inside the card
+    // directly equals 1px on the screen.
+    const deltaViewportX = targetViewportX - clampedViewportX;
+    const maxCaretOffset = Math.max(0, cardHalfWidth - 22);
+    caretOffset = Math.max(-maxCaretOffset, Math.min(maxCaretOffset, deltaViewportX));
+
+    // Vertical placement: flip below if pin is within 140px of top of viewport
+    isNearTop = targetViewportY < 140;
+
+    leftPos = `${clampedLocalX}px`;
+    topPos = `${pixelY}px`;
   } else {
-    clampedScreenX = winW / 2;
+    // Defensive fallback if measurements are somehow not yet settled
+    const leftPct = Math.max(15, Math.min(85, (x / imageWidth) * 100));
+    const topPct = Math.max(15, Math.min(85, (y / imageHeight) * 100));
+    isNearTop = topPct < 30;
+    cardWidth = 240;
+    leftPos = `${leftPct}%`;
+    topPos = `${topPct}%`;
+    caretOffset = 0;
   }
-
-  // Caret offset: visual distance from tooltip center to annotation
-  const deltaScreenX = screenX - clampedScreenX;
-  const maxCaretOffset = cardHalfWidth - 20;
-  const caretOffset = Math.max(-maxCaretOffset, Math.min(maxCaretOffset, deltaScreenX));
-
-  // Vertical placement
-  const isNearTop = screenY < 160;
-  const tooltipY = isNearTop ? screenY + 12 : screenY - 12;
-
-  const tooltipContent = (
-    <div
-      role="tooltip"
-      id="diagnostic-annotation-tooltip"
-      className={cn(
-        "fixed pointer-events-none z-[9999] transition-[opacity,transform] duration-150 motion-reduce:transition-none",
-        isOffscreen && "opacity-0 invisible"
-      )}
-      style={{
-        left: `${clampedScreenX}px`,
-        top: `${tooltipY}px`,
-        transform: `translate3d(-50%, ${isNearTop ? "0%" : "-100%"}, 0)`,
-        transformOrigin: isNearTop ? "top center" : "bottom center",
-      }}
-    >
-      <TooltipCard
-        title={title}
-        note={note}
-        isAttention={isAttention}
-        criterion={criterion}
-        cardWidth={cardWidth}
-        caretOffset={caretOffset}
-        isNearTop={isNearTop}
-        onDismiss={onDismiss}
-      />
-    </div>
-  );
 
   return (
     <>
@@ -295,13 +193,37 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
         className="absolute top-0 left-0 size-0 pointer-events-none"
         aria-hidden="true"
       />
-      {canUseDOM ? createPortal(tooltipContent, document.body) : null}
+      <div
+        role="tooltip"
+        id="diagnostic-annotation-tooltip"
+        className={cn(
+          "absolute pointer-events-none z-30 transition-[opacity,transform] duration-150 motion-reduce:transition-none",
+          isOffscreen && "opacity-0 invisible"
+        )}
+        style={{
+          left: leftPos,
+          top: topPos,
+          transform: `translate3d(-50%, ${isNearTop ? "10px" : "calc(-100% - 10px)"}, 0) scale(${counterScale})`,
+          transformOrigin: isNearTop ? "top center" : "bottom center",
+        }}
+      >
+        <TooltipCard
+          title={title}
+          note={note}
+          isAttention={isAttention}
+          criterion={criterion}
+          cardWidth={cardWidth}
+          caretOffset={caretOffset}
+          isNearTop={isNearTop}
+          onDismiss={onDismiss}
+        />
+      </div>
     </>
   );
 });
 
 /* -------------------------------------------------------------------------- */
-/*  Extracted card UI — shared between portal and fallback paths              */
+/*  Extracted card UI                                                         */
 /* -------------------------------------------------------------------------- */
 
 interface TooltipCardProps {
@@ -327,7 +249,7 @@ function TooltipCard({
 }: TooltipCardProps) {
   return (
     <>
-      {/* Directional Caret Stem */}
+      {/* Directional Caret Stem pointing to the active stroke coordinate */}
       <div
         className="absolute pointer-events-none -translate-x-1/2 z-40"
         style={{
@@ -411,7 +333,7 @@ function TooltipCard({
         </div>
 
         <p className="text-xs font-semibold leading-snug">{title}</p>
-        <p className="text-xs text-muted-foreground leading-relaxed mt-1">
+        <p className="text-xs text-muted-foreground leading-relaxed mt-1 break-words">
           {note}
         </p>
       </div>
