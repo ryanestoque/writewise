@@ -195,16 +195,18 @@ export const BaselineLayer = memo(function BaselineLayer({
 
             {/* Deviation Indicator Indicator Dot */}
             {isAttention && (
-              <circle
-                cx={x + w / 2}
-                cy={wordBottomY}
-                r={5.5 * hitScale}
-                fill={strokeColor}
-                stroke="#ffffff"
-                strokeWidth={2}
-                vectorEffect="non-scaling-stroke"
-                className="transition-transform group-hover:scale-125 group-focus-visible:scale-125 motion-reduce:transform-none"
-              />
+              <g transform={`translate(${x + w / 2}, ${wordBottomY})`}>
+                <circle
+                  cx={0}
+                  cy={0}
+                  r={5.5 * hitScale}
+                  fill={strokeColor}
+                  stroke="#ffffff"
+                  strokeWidth={2}
+                  vectorEffect="non-scaling-stroke"
+                  className="transition-transform group-hover:scale-125 group-focus-visible:scale-125 motion-reduce:transform-none"
+                />
+              </g>
             )}
           </g>
         );

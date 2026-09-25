@@ -142,16 +142,18 @@ export const SlantLayer = memo(function SlantLayer({
             />
 
             {/* Vector Origin/Top Anchor Dot */}
-            <circle
-              cx={x2}
-              cy={y2}
-              r={(isAttention ? 5 : 4) * hitScale}
-              fill={slantColor}
-              stroke="#ffffff"
-              strokeWidth={1.5}
-              vectorEffect="non-scaling-stroke"
-              className="transition-transform group-hover:scale-125 group-focus-visible:scale-125 motion-reduce:transform-none"
-            />
+            <g transform={`translate(${x2}, ${y2})`}>
+              <circle
+                cx={0}
+                cy={0}
+                r={(isAttention ? 5 : 4) * hitScale}
+                fill={slantColor}
+                stroke="#ffffff"
+                strokeWidth={1.5}
+                vectorEffect="non-scaling-stroke"
+                className="transition-transform group-hover:scale-125 group-focus-visible:scale-125 motion-reduce:transform-none"
+              />
+            </g>
 
             {/* Angle pill in spotlight mode */}
             {isSpotlight && (
