@@ -865,17 +865,29 @@ export function QualityErrorCard({
                 type="button"
                 variant="outline"
                 onClick={onReview}
-                className="w-full sm:w-auto h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium border-border hover:bg-accent cursor-pointer"
+                className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium border-border hover:bg-accent cursor-pointer touch-manipulation"
               >
                 {reviewLabel ?? "Back to Review"}
               </Button>
             )}
+            {onRetry && (
+              <Button
+                ref={retryRef}
+                type="button"
+                variant="outline"
+                onClick={onRetry}
+                className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium gap-2 border-border hover:bg-accent cursor-pointer touch-manipulation shadow-warm-xs"
+              >
+                <RotateCcw className="size-4" aria-hidden="true" />
+                {retryLabel ?? "Retry Upload"}
+              </Button>
+            )}
             <Button
-              ref={retryRef}
+              ref={!onRetry ? retryRef : undefined}
               type="button"
               onClick={handleRetakeClick}
               title="Retake photo (or press R)"
-              className="w-full sm:w-auto h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-2 cursor-pointer shadow-warm-sm"
+              className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-2 cursor-pointer touch-manipulation shadow-warm-sm"
             >
               <Camera className="size-4" aria-hidden="true" />
               Retake Photo
@@ -888,7 +900,7 @@ export function QualityErrorCard({
                 type="button"
                 variant="outline"
                 onClick={onReview}
-                className="w-full sm:w-auto h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium border-border hover:bg-accent cursor-pointer"
+                className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium border-border hover:bg-accent cursor-pointer touch-manipulation"
               >
                 {reviewLabel ?? "Back to Review"}
               </Button>
@@ -898,7 +910,7 @@ export function QualityErrorCard({
                 ref={retryRef}
                 type="button"
                 onClick={onRetry}
-                className="w-full sm:w-auto h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-2 cursor-pointer shadow-warm-sm"
+                className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-2 cursor-pointer touch-manipulation shadow-warm-sm"
               >
                 <RotateCcw className="size-4" aria-hidden="true" />
                 {retryLabel ?? "Retry Upload"}
@@ -909,7 +921,7 @@ export function QualityErrorCard({
                 type="button"
                 onClick={handleRetakeClick}
                 title="Retake photo (or press R)"
-                className="w-full sm:w-auto h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-2 cursor-pointer shadow-warm-sm"
+                className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-2 cursor-pointer touch-manipulation shadow-warm-sm"
               >
                 <Camera className="size-4" aria-hidden="true" />
                 Retake Photo
