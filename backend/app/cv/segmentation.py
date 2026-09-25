@@ -163,19 +163,29 @@ def segment_lines_and_words(
         line_height = max(1, base_y - top_y)
 
         # §5.1: Row band calculation with ascender/descender margin
-        ascender_pad = int(0.4 * line_height)
-        descender_pad = int(0.4 * line_height)
+        ascender_pad = int(0.40 * line_height)
+        descender_pad = int(0.45 * line_height)
 
         band_top = max(0, top_y - ascender_pad)
         band_bottom = min(img_h, base_y + descender_pad)
 
         # Bound by adjacent lines if present
         if i > 0:
+            prev_mid = deskew.midline_y[i - 1]
             prev_base = deskew.baseline_y[i - 1]
-            band_top = max(band_top, (prev_base + top_y) // 2)
+            if prev_base < top_y:
+                band_top = max(band_top, (prev_base + top_y) // 2)
+            else:
+                # On continuous paper (prev_base == top_y), ascenders can reach into previous row's lower zone up to prev_mid
+                band_top = max(band_top, prev_mid)
         if i < n_rulings - 1:
+            next_mid = deskew.midline_y[i + 1]
             next_top = deskew.topline_y[i + 1]
-            band_bottom = min(band_bottom, (base_y + next_top) // 2)
+            if next_top > base_y:
+                band_bottom = min(band_bottom, (base_y + next_top) // 2)
+            else:
+                # On continuous paper (base_y == next_top), descenders can reach into next row's upper zone up to next_mid
+                band_bottom = min(band_bottom, next_mid)
 
         if band_bottom <= band_top:
             continue
@@ -338,6 +348,16 @@ def segment_lines_and_words(
                 return None
             if bbox_x < int(0.01 * img_w) or (bbox_x + bbox_w) > int(0.99 * img_w):
                 return None
+
+            # 6. Candidate must intersect the ruling line's core zone (between midline and baseline).
+            # Every valid cursive word has letter bodies resting in the core zone.
+            # Stray ascenders from below or descender tails from above lack body ink in this line's core zone.
+            core_y1 = max(0, mid_y - band_top - int(0.05 * unit_height))
+            core_y2 = min(proj_mask.shape[0], base_y - band_top + int(0.05 * unit_height))
+            if core_y2 > core_y1:
+                core_ink = np.sum(word_ink[core_y1:core_y2, :] > 0)
+                if core_ink < max(12, int(0.03 * (unit_height**2))):
+                    return None
 
             # Safe boundary clamping
             bbox_x = max(0, min(img_w - 1, bbox_x))

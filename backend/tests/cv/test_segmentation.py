@@ -223,3 +223,53 @@ def test_segment_lines_and_words_rejects_vertical_margin_and_empty_rulings():
     assert len(result.lines[1].words) == 1
     assert result.lines[0].words == []
     assert result.lines[2].words == []
+
+
+def test_continuous_ruling_preserves_descenders_without_ghost_words():
+    """On continuous ruled paper where base_y[i] == topline_y[i+1], descenders
+    must remain attached to row i and must not spawn false words on empty row i+1.
+    """
+    import cv2
+    import numpy as np
+
+    from app.cv.guide_lines import DeskewResult
+
+    h, w = 2000, 2000
+    binary = np.zeros((h, w), dtype=np.uint8)
+
+    # 2 continuous rulings:
+    # Row 0: top=400, mid=500, base=600
+    # Row 1: top=600, mid=700, base=800 (empty row)
+    toplines = [400, 600]
+    midlines = [500, 700]
+    baselines = [600, 800]
+
+    # Draw word 'quick' on Row 0:
+    # Body between 490 and 605
+    # Letter 'q' has descender extending down to y=685 (inside Row 1 ascender space, above Row 1 midline 700)
+    for x in range(300, 700, 15):
+        cv2.line(binary, (x, 505), (x + 8, 602), 255, thickness=4)
+    # Descender stroke at x=330 down to y=685:
+    cv2.line(binary, (330, 602), (330, 685), 255, thickness=4)
+
+    deskew = DeskewResult(
+        gray=binary,
+        denoised=binary,
+        binary=binary,
+        topline_y=toplines,
+        midline_y=midlines,
+        baseline_y=baselines,
+        deskew_angle=0.0,
+    )
+
+    result = segment_lines_and_words(deskew, expected_word_count=1)
+
+    assert result.total_word_count == 1
+    assert len(result.lines[0].words) == 1
+    assert len(result.lines[1].words) == 0
+
+    word = result.lines[0].words[0]
+    bx, by, bw, bh = word.bbox
+    # Bounding box must encompass the descender (reaching beyond y=675)
+    assert by + bh >= 680
+
