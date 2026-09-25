@@ -1,9 +1,7 @@
 "use client";
 
-import { memo, useLayoutEffect, useState, useRef } from "react";
+import { memo } from "react";
 import type { ActiveAnnotationHover } from "./types";
-import { OVERLAY_COLORS } from "./constants";
-
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { AlertCircle, CheckCircle2, X } from "lucide-react";
@@ -41,42 +39,8 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
   panOffset = { x: 0, y: 0 },
   onDismiss,
 }: AnnotationTooltipProps) {
-  const overlayRef = useRef<HTMLSpanElement>(null);
-  const [measuredFallback, setMeasuredFallback] = useState<{
-    width: number;
-    height: number;
-  } | null>(null);
-
-  // If containerWidth/containerHeight wasn't provided or measured by parent yet,
-  // synchronously measure parent element on mount/render
-  useLayoutEffect(() => {
-    if (containerWidth && containerHeight && containerWidth > 0 && containerHeight > 0) {
-      return;
-    }
-    const anchor = overlayRef.current;
-    const parent = anchor?.parentElement;
-    if (parent) {
-      const rect = parent.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        setMeasuredFallback((prev) => {
-          const w = Math.round(rect.width);
-          const h = Math.round(rect.height);
-          if (prev && prev.width === w && prev.height === h) return prev;
-          return { width: w, height: h };
-        });
-      }
-    }
-  }, [containerWidth, containerHeight, hover]);
-
-  // Always keep an anchor element so we can measure parent context if hover is null
   if (!hover || imageWidth <= 0 || imageHeight <= 0) {
-    return (
-      <span
-        ref={overlayRef}
-        className="absolute top-0 left-0 size-0 pointer-events-none"
-        aria-hidden="true"
-      />
-    );
+    return null;
   }
 
   const { title, note, severity, criterion, x, y } = hover;
@@ -84,10 +48,8 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
   const effectiveZoom = zoomScale && zoomScale > 0 ? zoomScale : 1;
   const counterScale = 1 / effectiveZoom;
 
-  const resolvedContainerW =
-    (containerWidth && containerWidth > 0 ? containerWidth : measuredFallback?.width) ?? 0;
-  const resolvedContainerH =
-    (containerHeight && containerHeight > 0 ? containerHeight : measuredFallback?.height) ?? 0;
+  const resolvedContainerW = containerWidth && containerWidth > 0 ? containerWidth : 0;
+  const resolvedContainerH = containerHeight && containerHeight > 0 ? containerHeight : 0;
   const resolvedViewportW =
     (viewportWidth && viewportWidth > 0 ? viewportWidth : resolvedContainerW) || 320;
   const resolvedViewportH =
@@ -135,12 +97,12 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
     const targetViewportY =
       viewportH / 2 + panOffset.y + (pixelY - containerH / 2) * effectiveZoom;
 
-    // Fade out cleanly if target stroke has panned far outside visible viewport
+    // Fade out cleanly if target stroke has panned outside visible viewport bounds
     isOffscreen =
-      targetViewportX < -100 ||
-      targetViewportX > viewportW + 100 ||
-      targetViewportY < -100 ||
-      targetViewportY > viewportH + 100;
+      targetViewportX < -30 ||
+      targetViewportX > viewportW + 30 ||
+      targetViewportY < -30 ||
+      targetViewportY > viewportH + 30;
 
     // Fluid card width: dynamically scale down for narrow containers
     const baseCardWidth = viewportW < 640 ? 240 : 256;
@@ -170,8 +132,16 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
     const maxCaretOffset = Math.max(0, cardHalfWidth - 22);
     caretOffset = Math.max(-maxCaretOffset, Math.min(maxCaretOffset, deltaViewportX));
 
-    // Vertical placement: flip below if pin is within 140px of top of viewport
-    isNearTop = targetViewportY < 140;
+    // Vertical placement: place below if pin is near top or space above is constrained
+    const spaceAbove = targetViewportY;
+    const spaceBelow = viewportH - targetViewportY;
+    if (spaceAbove >= 135) {
+      isNearTop = false;
+    } else if (spaceBelow >= 135) {
+      isNearTop = true;
+    } else {
+      isNearTop = spaceBelow > spaceAbove;
+    }
 
     leftPos = `${clampedLocalX}px`;
     topPos = `${pixelY}px`;
@@ -187,38 +157,34 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
   }
 
   return (
-    <>
-      <span
-        ref={overlayRef}
-        className="absolute top-0 left-0 size-0 pointer-events-none"
-        aria-hidden="true"
+    <div
+      role="region"
+      aria-label="Diagnostic annotation details"
+      aria-live="polite"
+      aria-atomic="true"
+      id="diagnostic-annotation-tooltip"
+      className={cn(
+        "absolute pointer-events-none z-30 transition-opacity duration-150 motion-reduce:transition-none",
+        isOffscreen && "opacity-0 invisible"
+      )}
+      style={{
+        left: leftPos,
+        top: topPos,
+        transform: `translate3d(-50%, ${isNearTop ? "10px" : "calc(-100% - 10px)"}, 0) scale(${counterScale})`,
+        transformOrigin: isNearTop ? "top center" : "bottom center",
+      }}
+    >
+      <TooltipCard
+        title={title}
+        note={note}
+        isAttention={isAttention}
+        criterion={criterion}
+        cardWidth={cardWidth}
+        caretOffset={caretOffset}
+        isNearTop={isNearTop}
+        onDismiss={onDismiss}
       />
-      <div
-        role="tooltip"
-        id="diagnostic-annotation-tooltip"
-        className={cn(
-          "absolute pointer-events-none z-30 transition-[opacity,transform] duration-150 motion-reduce:transition-none",
-          isOffscreen && "opacity-0 invisible"
-        )}
-        style={{
-          left: leftPos,
-          top: topPos,
-          transform: `translate3d(-50%, ${isNearTop ? "10px" : "calc(-100% - 10px)"}, 0) scale(${counterScale})`,
-          transformOrigin: isNearTop ? "top center" : "bottom center",
-        }}
-      >
-        <TooltipCard
-          title={title}
-          note={note}
-          isAttention={isAttention}
-          criterion={criterion}
-          cardWidth={cardWidth}
-          caretOffset={caretOffset}
-          isNearTop={isNearTop}
-          onDismiss={onDismiss}
-        />
-      </div>
-    </>
+    </div>
   );
 });
 
@@ -267,7 +233,7 @@ function TooltipCard({
             d={isNearTop ? "M0 7 L7 0 L14 7" : "M0 0 L7 7 L14 0"}
             fill="currentColor"
             className={cn(
-              "text-white/95 dark:text-card/95",
+              "text-popover/95",
               isAttention
                 ? "stroke-destructive/40 dark:stroke-destructive/50"
                 : "stroke-brand-600/40 dark:stroke-brand-500/50"
@@ -282,35 +248,36 @@ function TooltipCard({
         style={{ maxWidth: `${cardWidth}px`, width: `${cardWidth}px` }}
         className={cn(
           "p-2.5 rounded-xl shadow-warm border backdrop-blur-md transition-colors select-text pointer-events-auto relative",
-          "bg-white/95 dark:bg-card/95 text-foreground",
+          "bg-popover/95 text-popover-foreground",
           isAttention
             ? "border-destructive/40 dark:border-destructive/50 ring-2 ring-destructive/10"
             : "border-brand-600/40 dark:border-brand-500/50 ring-2 ring-brand-600/10"
         )}
       >
-        <div className="flex items-center gap-1.5 mb-1">
+        <div className="flex items-center gap-1.5 mb-1 min-w-0">
           {isAttention ? (
             <AlertCircle
-              className="size-3.5 shrink-0"
-              style={{ color: OVERLAY_COLORS.needs_attention.stroke }}
+              className="size-3.5 shrink-0 text-destructive dark:text-destructive"
               aria-hidden="true"
             />
           ) : (
             <CheckCircle2
-              className="size-3.5 shrink-0"
-              style={{ color: OVERLAY_COLORS.proficient.stroke }}
+              className="size-3.5 shrink-0 text-brand-600 dark:text-brand-400"
               aria-hidden="true"
             />
           )}
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span
+            className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground min-w-0 flex-1 truncate"
+            title={CRITERION_LABELS[criterion] ?? criterion}
+          >
             {CRITERION_LABELS[criterion] ?? criterion}
           </span>
           <Badge
             variant={isAttention ? "outline" : "secondary"}
             className={cn(
-              "ml-auto text-[11px] px-1.5 py-0 h-4.5 font-medium border",
+              "ml-auto text-[11px] px-1.5 py-0 h-4.5 font-medium border shrink-0",
               isAttention
-                ? "border-band-1/40 text-band-1-text dark:text-destructive bg-band-1/15 dark:bg-band-1/25"
+                ? "border-destructive/30 text-destructive dark:text-destructive bg-destructive/10 dark:bg-destructive/20"
                 : "border-brand-300 dark:border-brand-800 text-brand-800 dark:text-brand-300 bg-brand-50/90 dark:bg-brand-950/60"
             )}
           >
@@ -323,7 +290,7 @@ function TooltipCard({
                 e.stopPropagation();
                 onDismiss();
               }}
-              className="relative size-7 min-h-[40px] min-w-[40px] sm:min-h-[28px] sm:min-w-[28px] sm:size-6 rounded-md p-0 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer pointer-events-auto touch-manipulation shrink-0 ml-1 hover:bg-muted/80 transition-colors after:absolute after:-inset-1.5 sm:after:hidden after:content-['']"
+              className="relative size-7 min-h-[40px] min-w-[40px] sm:min-h-[28px] sm:min-w-[28px] sm:size-6 rounded-md p-0 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer pointer-events-auto touch-manipulation shrink-0 ml-1 hover:bg-muted/80 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 sm:after:hidden after:content-['']"
               aria-label="Dismiss annotation details"
               title="Close annotation details"
             >
@@ -332,7 +299,9 @@ function TooltipCard({
           )}
         </div>
 
-        <p className="text-xs font-semibold leading-snug">{title}</p>
+        <p className="text-xs font-semibold leading-snug break-words line-clamp-2">
+          {title}
+        </p>
         <p className="text-xs text-muted-foreground leading-relaxed mt-1 break-words">
           {note}
         </p>
