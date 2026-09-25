@@ -163,7 +163,7 @@ Use these pre-seeded accounts to test and explore the system:
 ## 7. Running the Manual E2E Tests
 
 If you are performing quality assurance or manual verification:
-1. Open [`docs/manual_tests/9-17-2026.md`](./manual_tests/9-17-2026.md).
+1. Open the latest test guide in [`docs/manual_tests/9-25-2026.md`](./manual_tests/9-25-2026.md).
 2. Follow each test procedure starting from **Section 1: Authentication & Route Protection**.
 3. Record `[x] Pass` or `[x] Fail` and any observations in the test document.
 
