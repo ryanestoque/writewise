@@ -246,7 +246,7 @@ def test_continuous_ruling_preserves_descenders_without_ghost_words():
 
     # Draw word 'quick' on Row 0:
     # Body between 490 and 605
-    # Letter 'q' has descender extending down to y=685 (inside Row 1 ascender space, above Row 1 midline 700)
+    # Letter 'q' descender extends to y=685 (Row 1 ascender space, above Row 1 mid 700)
     for x in range(300, 700, 15):
         cv2.line(binary, (x, 505), (x + 8, 602), 255, thickness=4)
     # Descender stroke at x=330 down to y=685:

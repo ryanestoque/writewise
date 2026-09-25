@@ -171,20 +171,15 @@ def segment_lines_and_words(
 
         # Bound by adjacent lines if present
         if i > 0:
-            prev_mid = deskew.midline_y[i - 1]
             prev_base = deskew.baseline_y[i - 1]
-            if prev_base < top_y:
-                band_top = max(band_top, (prev_base + top_y) // 2)
-            else:
-                # On continuous paper (prev_base == top_y), ascenders can reach into previous row's lower zone up to prev_mid
-                band_top = max(band_top, prev_mid)
+            band_top = max(band_top, (prev_base + top_y) // 2)
         if i < n_rulings - 1:
             next_mid = deskew.midline_y[i + 1]
             next_top = deskew.topline_y[i + 1]
             if next_top > base_y:
                 band_bottom = min(band_bottom, (base_y + next_top) // 2)
             else:
-                # On continuous paper (base_y == next_top), descenders can reach into next row's upper zone up to next_mid
+                # Continuous paper: descenders reach into next row's upper zone up to next_mid
                 band_bottom = min(band_bottom, next_mid)
 
         if band_bottom <= band_top:
@@ -195,6 +190,10 @@ def segment_lines_and_words(
 
         # §5.2: Create a projection mask by ignoring the continuous horizontal guide line rows
         proj_mask = band_binary.copy()
+
+        # Suppress extreme border extremities (shadows/page edges touching image margins)
+        proj_mask[:, : int(0.01 * img_w)] = 0
+        proj_mask[:, int(0.99 * img_w) :] = 0
         line_mask_half = max(3, int(0.08 * unit_height))
         for gy in (top_y, mid_y, base_y):
             rel_y = gy - band_top
@@ -349,9 +348,9 @@ def segment_lines_and_words(
             if bbox_x < int(0.01 * img_w) or (bbox_x + bbox_w) > int(0.99 * img_w):
                 return None
 
-            # 6. Candidate must intersect the ruling line's core zone (between midline and baseline).
+            # 6. Candidate must intersect the ruling line's core zone.
             # Every valid cursive word has letter bodies resting in the core zone.
-            # Stray ascenders from below or descender tails from above lack body ink in this line's core zone.
+            # Stray ascenders or descender tails lack body ink in this line's core zone.
             core_y1 = max(0, mid_y - band_top - int(0.05 * unit_height))
             core_y2 = min(proj_mask.shape[0], base_y - band_top + int(0.05 * unit_height))
             if core_y2 > core_y1:

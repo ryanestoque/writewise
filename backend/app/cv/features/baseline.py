@@ -51,7 +51,7 @@ def compute_baseline_deviation(
 
             if len(col_bottoms) > 0:
                 # 60th percentile represents the common bottom shelf of letter bodies
-                # without being thrown off by descender loops (which occupy only 10-25% of word width)
+                # without being thrown off by descender loops (occupying 10-25% of width)
                 y_bottom = bbox_y + int(np.percentile(col_bottoms, 60))
             else:
                 y_bottom = bbox_y + int(np.max(ink_ys))
