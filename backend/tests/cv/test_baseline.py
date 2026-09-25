@@ -47,3 +47,26 @@ def test_baseline_deviation_with_pipeline_inverted_crop():
     )
     # y_bottom = 440 + 50 = 490. diff = |490 - 500| = 10. ratio = 10/50 = 0.20
     assert deviation == 0.20
+
+
+def test_baseline_deviation_ignores_descender_tails():
+    """Words with descenders (q, f, g, y, p) must measure the letter-body baseline
+    alignment, not the bottom of the descender loop.
+    """
+    # Crop height 120, width 100.
+    # Letter body sits on baseline y=500 (row 50 in crop, bbox_y=450).
+    # Letter 'q' has descender extending down to row 110 (y=560).
+    crop = np.full((120, 100), 0, dtype=np.uint8)
+    # Most columns (x=20..95) have ink ending at row 50:
+    crop[10:51, 20:95] = 255
+    # Descender column (x=10..15) extends down to row 110:
+    crop[10:111, 10:16] = 255
+
+    bbox = (100, 450, 100, 120)
+    # Baseline at y=500, unit_height=50.
+    deviation = compute_baseline_deviation(
+        word_bbox=bbox, baseline_y=500, unit_height=50.0, binary_crop=crop
+    )
+    # Letter body rests at y=450+50=500 -> diff should be 0.0 (or <= 0.05), NOT 60/50 = 1.20!
+    assert deviation <= 0.05
+

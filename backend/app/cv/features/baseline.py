@@ -39,10 +39,22 @@ def compute_baseline_deviation(
 
     if binary_crop is not None and binary_crop.size > 0:
         ink_mask = get_ink_mask(binary_crop)
-        ink_ys, _ = np.where(ink_mask)
+        ink_ys, ink_xs = np.where(ink_mask)
 
         if len(ink_ys) > 0:
-            y_bottom = bbox_y + int(np.max(ink_ys))
+            # Find the bottom-most ink pixel in each ink-containing column
+            # to prevent isolated descender loops (q, f, g, y, p) from dominating the baseline
+            col_bottoms = []
+            unique_xs = np.unique(ink_xs)
+            for x in unique_xs:
+                col_bottoms.append(int(np.max(ink_ys[ink_xs == x])))
+
+            if len(col_bottoms) > 0:
+                # 60th percentile represents the common bottom shelf of letter bodies
+                # without being thrown off by descender loops (which occupy only 10-25% of word width)
+                y_bottom = bbox_y + int(np.percentile(col_bottoms, 60))
+            else:
+                y_bottom = bbox_y + int(np.max(ink_ys))
         else:
             y_bottom = bbox_y + bbox_h
     else:
