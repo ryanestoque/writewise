@@ -303,6 +303,7 @@ function LoginForm() {
         } else {
           setFormError("Something went wrong. Please try again.");
         }
+        setPassword("");
         setIsLoading(false);
         return;
       }
