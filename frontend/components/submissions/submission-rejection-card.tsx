@@ -56,6 +56,20 @@ export const REJECTION_GUIDE: Record<string, RejectionDetail> = {
     advice:
       "Move the camera closer to fill the frame with the worksheet page before taking the photo.",
   },
+  QUALITY_GATE_NO_GUIDELINES: {
+    title: "No 3-Line Guidelines Found",
+    description:
+      "WriteWise requires standard 3-line penmanship paper (topline, midline, baseline) to measure letter size consistency and baseline alignment.",
+    advice:
+      "Please have the student write the assigned activity on standard 3-line Grade 3 penmanship paper before uploading.",
+  },
+  QUALITY_GATE_OFF_GUIDELINES: {
+    title: "Handwriting Outside Guidelines",
+    description:
+      "Handwriting was detected on the page, but it was written in the margins, header, or outside the 3-line guide rulings.",
+    advice:
+      "Ensure the student writes directly between the designated 3-line penmanship guidelines rather than in the margins or white space.",
+  },
   QUALITY_GATE_SCRIPT_NOT_CURSIVE: {
     title: "Printed Handwriting Detected",
     description:

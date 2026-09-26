@@ -94,6 +94,12 @@ Deskew is **not** part of this stage — it depends on guide-line detection (§4
 
 ## 5. Segmentation
 
+### 5.0 Guideline Presence Gate
+WriteWise requires standard 3-line penmanship ruling (topline, midline, baseline) to measure letter size consistency and baseline alignment. If guide-line detection (§4) finds zero valid rulings:
+- Inspect inner image area for handwriting ink presence ($\ge 250$ stroke pixels).
+- If cursive handwriting exists on unruled or plain paper, reject immediately with code `QUALITY_GATE_NO_GUIDELINES` (`422 Unprocessable Entity`).
+- If no handwriting ink is present either, fall through to word segmentation mismatch ("No handwriting detected").
+
 ### 5.1 Line Segmentation
 Each text line's row band is defined directly from consecutive detected baselines (post-deskew) — not from an ink-density row projection. This is more robust than ink-based detection because it doesn't depend on how much or how consistently the student wrote on a given line.
 
@@ -104,6 +110,11 @@ Within each line's row band:
 3. Classify a gap as a **word boundary** if its width ≥ **2.5–3× the median gap width** in that line; narrower gaps are treated as within-word.
 
 Using the line's own median as the reference (rather than a fixed pixel count) keeps this working across different handwriting sizes and photo resolutions without hardcoding pixel values. **The 2.5–3× multiplier is a tunable constant** — recalibrate once real Phase 1 photos are available.
+
+### 5.2b Off-Guideline Placement Gate
+If 3-line guidelines were detected on the page, but the student placed their writing in headers, margins, or white space outside the ruling bands:
+- Compute stroke ink mass inside guideline bands vs. outside guideline bands (with printed ruling remnants suppressed).
+- If $\ge 65\%$ of page handwriting ink is outside the guideline bands and 0 (or insufficient) words are detected inside the ruling core, reject with code `QUALITY_GATE_OFF_GUIDELINES` (`422 Unprocessable Entity`).
 
 ### 5.3 Post-Segmentation Gate
 A technically-fine photo can still yield unusable segmentation output — a blank/unfinished worksheet, the wrong sheet photographed, or handwriting too faint to have survived the quality gate but too faint to segment. Since the expected word count is already known from the Activity's target text:

@@ -3,7 +3,13 @@ import pytest
 from app.cv.pipeline import CVPipelineResult, run_cv_pipeline
 from app.cv.quality_gate import QualityGateRejection
 from app.cv.segmentation import PostSegmentationRejection
-from tests.synthetic import make_blurry_image, make_printed_worksheet, make_segmented_worksheet
+from tests.synthetic import (
+    make_blurry_image,
+    make_off_guidelines_worksheet,
+    make_printed_worksheet,
+    make_segmented_worksheet,
+    make_unruled_worksheet,
+)
 
 
 def test_run_cv_pipeline_success():
@@ -47,4 +53,26 @@ def test_run_cv_pipeline_fails_script_guard():
         run_cv_pipeline(img_bytes, expected_word_count=6)
 
     assert exc_info.value.code == "QUALITY_GATE_SCRIPT_NOT_CURSIVE"
+
+
+def test_run_cv_pipeline_fails_no_guidelines():
+    # Unruled worksheet with cursive handwriting triggers QUALITY_GATE_NO_GUIDELINES
+    img_bytes = make_unruled_worksheet(words_count=3)
+    with pytest.raises(PostSegmentationRejection) as exc_info:
+        run_cv_pipeline(img_bytes, expected_word_count=3)
+
+    assert exc_info.value.code == "QUALITY_GATE_NO_GUIDELINES"
+    assert "No 3-line penmanship guidelines detected" in exc_info.value.message
+
+
+def test_run_cv_pipeline_fails_off_guidelines():
+    # Worksheet with 3-line guidelines, but writing in the margin
+    # triggers QUALITY_GATE_OFF_GUIDELINES
+    img_bytes = make_off_guidelines_worksheet(words_count=3)
+    with pytest.raises(PostSegmentationRejection) as exc_info:
+        run_cv_pipeline(img_bytes, expected_word_count=3)
+
+    assert exc_info.value.code == "QUALITY_GATE_OFF_GUIDELINES"
+    assert "outside the 3-line guidelines" in exc_info.value.message
+
 

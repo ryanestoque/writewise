@@ -254,6 +254,16 @@ export function getRejectionSummary(code: string | null): {
         label: "Low resolution",
         detail: "Move closer so worksheet fills the frame",
       };
+    case "QUALITY_GATE_NO_GUIDELINES":
+      return {
+        label: "Missing guidelines",
+        detail: "Use standard 3-line penmanship paper",
+      };
+    case "QUALITY_GATE_OFF_GUIDELINES":
+      return {
+        label: "Writing outside guidelines",
+        detail: "Write inside the 3-line ruled lines",
+      };
     case "QUALITY_GATE_SCRIPT_NOT_CURSIVE":
       return {
         label: "Printed handwriting detected",

@@ -74,6 +74,8 @@ export function isQualityGateErrorCode(code: string): boolean {
     "QUALITY_GATE_SKEW",
     "QUALITY_GATE_OCCLUDED",
     "QUALITY_GATE_NO_TEXT",
+    "QUALITY_GATE_NO_GUIDELINES",
+    "QUALITY_GATE_OFF_GUIDELINES",
     "QUALITY_GATE_SCRIPT_NOT_CURSIVE",
     "SEGMENTATION_COUNT_MISMATCH",
   ].includes(code);
@@ -243,6 +245,38 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
         tips: [
           "Make sure the student has written on the worksheet before scanning.",
           "Frame the camera directly on the completed guideline rows.",
+        ],
+        icon: FileQuestion,
+      };
+    }
+
+    case "QUALITY_GATE_NO_GUIDELINES": {
+      return {
+        isQualityCheck: true,
+        badgeLabel: "Missing Guidelines",
+        title: "No 3-Line Guidelines Found",
+        description:
+          "WriteWise requires standard 3-line penmanship paper (topline, midline, baseline) to measure letter size consistency and baseline alignment.",
+        tips: [
+          "Use standard 3-line Grade 3 penmanship paper with top, middle, and base rulings.",
+          "Avoid using blank bond paper, unruled sketchpads, or single-line notebooks.",
+          "Ensure the printed guidelines are clearly visible across the page.",
+        ],
+        icon: FileQuestion,
+      };
+    }
+
+    case "QUALITY_GATE_OFF_GUIDELINES": {
+      return {
+        isQualityCheck: true,
+        badgeLabel: "Guideline Placement",
+        title: "Writing Outside Guidelines",
+        description:
+          "Handwriting was detected on the sheet, but it was written in margins or outside the 3-line penmanship ruling.",
+        tips: [
+          "Write between the printed 3-line guidelines rather than in the margins or header.",
+          "Rest lowercase letter bodies on the solid baseline.",
+          "Align letters so ascenders touch the topline and descenders extend below the baseline.",
         ],
         icon: FileQuestion,
       };

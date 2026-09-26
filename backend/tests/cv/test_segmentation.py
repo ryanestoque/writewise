@@ -132,7 +132,9 @@ def test_single_word_per_line():
 
 
 def test_empty_rulings_result():
-    """When no rulings are detected, segmentation returns 0 words without crashing."""
+    """When no rulings are detected, segmentation returns 0 words when unguided,
+    or raises QUALITY_GATE_NO_GUIDELINES when guidelines validation is enabled.
+    """
     img_bytes = make_segmented_worksheet(num_lines=1, words_per_line=1)
     preprocessed = preprocess(img_bytes)
     deskewed = detect_and_deskew(preprocessed)
@@ -141,9 +143,13 @@ def test_empty_rulings_result():
     deskewed.midline_y = []
     deskewed.topline_y = []
 
-    result = segment_lines_and_words(deskewed)
+    result = segment_lines_and_words(deskewed, validate_guidelines=False)
     assert result.total_word_count == 0
     assert result.lines == []
+
+    with pytest.raises(PostSegmentationRejection) as exc_info:
+        segment_lines_and_words(deskewed, validate_guidelines=True)
+    assert exc_info.value.code == "QUALITY_GATE_NO_GUIDELINES"
 
 
 def test_validate_segmentation_edge_cases():

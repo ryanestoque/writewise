@@ -214,6 +214,7 @@ def segment_lines_and_words(
     expected_word_count: Optional[int] = None,
     word_gap_multiplier: float = 2.5,
     validate_script: bool = True,
+    validate_guidelines: bool = True,
 ) -> SegmentationResult:
     """Segment deskewed worksheet image into text lines and word crops.
 
@@ -229,6 +230,8 @@ def segment_lines_and_words(
         from intra-word (letter) gaps (§5.2).
     validate_script : bool, default=True
         Whether to enforce cursive connectivity validation (§5.4).
+    validate_guidelines : bool, default=True
+        Whether to enforce guideline presence and off-guidelines validation (§5.0, §5.2b).
 
     Returns
     -------
@@ -242,6 +245,33 @@ def segment_lines_and_words(
     """
     img_h, img_w = deskew.binary.shape
     n_rulings = len(deskew.baseline_y)
+
+    # §5.0 Guideline Presence Gate:
+    # If no 3-line penmanship rulings were detected on the page, check whether handwriting exists.
+    # If cursive handwriting was submitted on unruled or plain paper,
+    # reject with QUALITY_GATE_NO_GUIDELINES.
+    if validate_guidelines and n_rulings == 0:
+        inner_binary = deskew.binary[
+            int(0.02 * img_h) : int(0.98 * img_h),
+            int(0.02 * img_w) : int(0.98 * img_w),
+        ]
+        ink_cleaned = cv2.morphologyEx(
+            inner_binary,
+            cv2.MORPH_OPEN,
+            cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2)),
+        )
+        total_ink_pixels = int(np.sum(ink_cleaned > 0))
+        if total_ink_pixels >= 250:
+            raise PostSegmentationRejection(
+                code="QUALITY_GATE_NO_GUIDELINES",
+                message=(
+                    "No 3-line penmanship guidelines detected on the worksheet. "
+                    "WriteWise requires standard 3-line ruled paper (topline, midline, baseline) "
+                    "to evaluate letter sizing and alignment."
+                ),
+                detected_words=0,
+                expected_words=expected_word_count or 0,
+            )
 
     line_segments: List[LineSegment] = []
     total_words = 0
@@ -507,6 +537,63 @@ def segment_lines_and_words(
             )
         )
         total_words += len(words_in_line)
+
+    # §5.2b Off-guidelines placement check:
+    # If guidelines exist but insufficient words were found inside them, check whether handwriting
+    # ink was placed outside the ruling bands (e.g. in margins, headers, or blank white space).
+    if validate_guidelines and n_rulings > 0:
+        min_expected = (
+            math.ceil(expected_word_count * 0.5)
+            if (expected_word_count and expected_word_count > 0)
+            else 1
+        )
+        if total_words < min_expected:
+            bands_mask = np.zeros((img_h, img_w), dtype=np.uint8)
+            for seg in line_segments:
+                b_top, b_bottom = seg.row_band
+                bands_mask[b_top:b_bottom, :] = 255
+
+            inner_mask = np.zeros((img_h, img_w), dtype=np.uint8)
+            inner_mask[
+                int(0.02 * img_h) : int(0.98 * img_h),
+                int(0.02 * img_w) : int(0.98 * img_w),
+            ] = 255
+
+            cleaned_binary = cv2.morphologyEx(
+                deskew.binary,
+                cv2.MORPH_OPEN,
+                cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2)),
+            )
+
+            # Suppress ruling line horizontal remnants so printed lines don't inflate outside ink
+            h_len = max(35, int(img_w * 0.05))
+            h_rulings = cv2.morphologyEx(
+                cleaned_binary,
+                cv2.MORPH_OPEN,
+                cv2.getStructuringElement(cv2.MORPH_RECT, (h_len, 1)),
+            )
+            stroke_only = cleaned_binary.copy()
+            if np.any(h_rulings):
+                stroke_only[h_rulings > 0] = 0
+
+            outside_ink = int(np.sum((stroke_only > 0) & (inner_mask > 0) & (bands_mask == 0)))
+            inside_ink = int(np.sum((stroke_only > 0) & (inner_mask > 0) & (bands_mask > 0)))
+            total_stroke_ink = outside_ink + inside_ink
+
+            if (
+                outside_ink >= 400
+                and total_stroke_ink > 0
+                and (outside_ink / total_stroke_ink >= 0.65)
+            ):
+                raise PostSegmentationRejection(
+                    code="QUALITY_GATE_OFF_GUIDELINES",
+                    message=(
+                        "Handwriting was detected outside the 3-line guidelines. "
+                        "Please write inside the ruled penmanship lines."
+                    ),
+                    detected_words=total_words,
+                    expected_words=expected_word_count or 0,
+                )
 
     # §5.3: Post-segmentation gate check
     if expected_word_count is not None:

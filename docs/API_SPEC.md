@@ -68,6 +68,8 @@ The frontend branches on `error.code`, never on parsing `message` text (ARCHITEC
 | `QUALITY_GATE_BRIGHTNESS` | 422 | CV_PIPELINE §2 |
 | `QUALITY_GATE_CONTRAST` | 422 | CV_PIPELINE §2 |
 | `QUALITY_GATE_RESOLUTION` | 422 | CV_PIPELINE §2 |
+| `QUALITY_GATE_NO_GUIDELINES` | 422 | CV_PIPELINE §5.0 (unruled / blank paper with cursive writing but missing 3-line rulings) |
+| `QUALITY_GATE_OFF_GUIDELINES` | 422 | CV_PIPELINE §5.2b (handwriting detected outside ruled penmanship guideline bands) |
 | `QUALITY_GATE_SCRIPT_NOT_CURSIVE` | 422 | CV_PIPELINE §5.4 (post-segmentation cursive connectivity check: printed handwriting rejected) |
 | `SEGMENTATION_COUNT_MISMATCH` | 422 | CV_PIPELINE §5.3 (post-segmentation gate) |
 | `MANUAL_SCORE_ALREADY_EXISTS` | 409 | `manual_score.submission_id` is `unique` (DATABASE §9) — no re-grade flow (§3.3) |
