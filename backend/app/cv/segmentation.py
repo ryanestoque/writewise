@@ -95,6 +95,95 @@ def validate_segmentation(detected_words: int, expected_words: int) -> None:
         )
 
 
+def validate_cursive_script(
+    lines: List[LineSegment],
+    detected_words: int,
+    expected_words: Optional[int] = None,
+    min_connectivity_threshold: float = 0.40,
+) -> None:
+    """Validate that handwriting exhibits continuous cursive stroke connectivity (CV_PIPELINE §5.4).
+
+    In cursive penmanship, characters within a word are joined by continuous
+    ligatures across the core ruling zone, producing connected ink components
+    that span the majority of the word width. In printed (manuscript) handwriting,
+    each letter is an isolated glyph, resulting in disconnected components.
+
+    Parameters
+    ----------
+    lines : List[LineSegment]
+        Segmented writing lines containing words and their crops.
+    detected_words : int
+        Total words detected across all lines.
+    expected_words : Optional[int]
+        Target expected words from activity prompt text if available.
+    min_connectivity_threshold : float, default=0.40
+        Minimum ratio of maximum connected component width to word bounding box width.
+
+    Raises
+    ------
+    PostSegmentationRejection
+        If handwriting appears to be printed rather than cursive
+        (code "QUALITY_GATE_SCRIPT_NOT_CURSIVE").
+    """
+    word_ratios: List[float] = []
+
+    for line in lines:
+        unit_h = max(1.0, float(line.baseline_y - line.midline_y))
+        line_mask_half = max(3, int(0.08 * unit_h))
+        # Words must be wide enough to contain multiple characters (>= 1.1x guideline height)
+        min_word_w = int(1.1 * unit_h)
+
+        for w in line.words:
+            if w.bbox[2] < min_word_w:
+                continue
+
+            crop = w.binary_crop.copy()
+            ink = (crop > 0).astype(np.uint8)
+
+            # Suppress ruling lines to prevent them from acting as false ligatures
+            for gy in (line.topline_y, line.midline_y, line.baseline_y):
+                rel_y = gy - w.bbox[1]
+                y1 = max(0, rel_y - line_mask_half)
+                y2 = min(crop.shape[0], rel_y + line_mask_half + 1)
+                if y1 < crop.shape[0] and y2 > 0:
+                    ink[y1:y2, :] = 0
+
+            n_cc, _, stats, _ = cv2.connectedComponentsWithStats(ink)
+            if n_cc <= 1:
+                continue
+
+            min_area = max(15, int(0.02 * (unit_h**2)))
+            valid_stats = [s for s in stats[1:] if s[cv2.CC_STAT_AREA] >= min_area]
+            if not valid_stats:
+                continue
+
+            max_cc_w = max(s[cv2.CC_STAT_WIDTH] for s in valid_stats)
+            ratio = max_cc_w / max(1, w.bbox[2])
+            word_ratios.append(ratio)
+
+    if len(word_ratios) >= 1:
+        mean_ratio = float(np.mean(word_ratios))
+        failing_count = sum(1 for r in word_ratios if r < min_connectivity_threshold)
+        failing_fraction = failing_count / len(word_ratios)
+
+        if (len(word_ratios) == 1 and mean_ratio < 0.35) or (
+            len(word_ratios) >= 2
+            and (mean_ratio < min_connectivity_threshold or failing_fraction >= 0.70)
+        ):
+            exp_words = expected_words if expected_words is not None else detected_words
+            raise PostSegmentationRejection(
+                code="QUALITY_GATE_SCRIPT_NOT_CURSIVE",
+                message=(
+                    "Handwriting appears to be printed rather than cursive. "
+                    "WriteWise assesses cursive penmanship. "
+                    "Please complete the activity in continuous cursive handwriting."
+                ),
+                detected_words=detected_words,
+                expected_words=exp_words,
+            )
+
+
+
 def _find_ink_runs(
     proj: np.ndarray, ink_threshold: int = 1, min_run_width: int = 2
 ) -> List[Tuple[int, int]]:
@@ -124,6 +213,7 @@ def segment_lines_and_words(
     deskew: DeskewResult,
     expected_word_count: Optional[int] = None,
     word_gap_multiplier: float = 2.5,
+    validate_script: bool = True,
 ) -> SegmentationResult:
     """Segment deskewed worksheet image into text lines and word crops.
 
@@ -137,6 +227,8 @@ def segment_lines_and_words(
     word_gap_multiplier : float, default=2.5
         Multiplier on median column-gap width to differentiate word boundaries
         from intra-word (letter) gaps (§5.2).
+    validate_script : bool, default=True
+        Whether to enforce cursive connectivity validation (§5.4).
 
     Returns
     -------
@@ -419,6 +511,14 @@ def segment_lines_and_words(
     # §5.3: Post-segmentation gate check
     if expected_word_count is not None:
         validate_segmentation(
+            detected_words=total_words,
+            expected_words=expected_word_count,
+        )
+
+    # §5.4: Post-segmentation script check (print vs. cursive)
+    if validate_script and total_words > 0:
+        validate_cursive_script(
+            lines=line_segments,
             detected_words=total_words,
             expected_words=expected_word_count,
         )

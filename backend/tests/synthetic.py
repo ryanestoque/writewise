@@ -150,11 +150,12 @@ def make_segmented_worksheet(
     letter_width: int = 25,
     letter_gap: int = 12,
     word_gap: int = 70,
+    with_ligatures: bool = True,
 ) -> bytes:
     """Generate a synthetic worksheet with known multi-word ruling for segmentation testing.
 
     Each word consists of vertical strokes (simulating cursive letter stems)
-    separated by `letter_gap`. Words are separated by `word_gap`.
+    separated by `letter_gap` and connected by cursive ligatures. Words are separated by `word_gap`.
     """
     img = np.full((height, width), _SHARP_BG, dtype=np.uint8)
 
@@ -186,8 +187,44 @@ def make_segmented_worksheet(
                 )
                 current_x += letter_width
                 if letter_idx < letters_per_word - 1:
+                    if with_ligatures:
+                        # Draw authentic baseline cursive ligature connecting adjacent letters
+                        cv2.line(
+                            img,
+                            (current_x - 4, base_y - 15),
+                            (current_x + letter_gap + 4, base_y - 15),
+                            _SHARP_INK,
+                            thickness=3,
+                        )
                     current_x += letter_gap
             current_x += word_gap
 
     _, buf = cv2.imencode(".jpg", img)
     return buf.tobytes()
+
+
+def make_printed_worksheet(
+    width: int = 2000,
+    height: int = 2600,
+    num_lines: int = 2,
+    words_per_line: int = 3,
+    letters_per_word: int = 4,
+    letter_width: int = 25,
+    letter_gap: int = 12,
+    word_gap: int = 70,
+) -> bytes:
+    """Generate a synthetic worksheet with disconnected printed handwriting
+    (no cursive ligatures).
+    """
+    return make_segmented_worksheet(
+        width=width,
+        height=height,
+        num_lines=num_lines,
+        words_per_line=words_per_line,
+        letters_per_word=letters_per_word,
+        letter_width=letter_width,
+        letter_gap=letter_gap,
+        word_gap=word_gap,
+        with_ligatures=False,
+    )
+

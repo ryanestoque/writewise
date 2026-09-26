@@ -10,6 +10,7 @@ from app.cv.segmentation import (
     validate_segmentation,
 )
 from tests.synthetic import (
+    make_printed_worksheet,
     make_segmented_worksheet,
 )
 
@@ -207,6 +208,7 @@ def test_segment_lines_and_words_rejects_vertical_margin_and_empty_rulings():
     # Draw 1 real cursive-like word on ruling 1 (x=600 to 1100, y=1350 to 1600)
     for x in range(600, 1100, 15):
         cv2.line(binary, (x, 1380), (x + 10, 1590), 255, thickness=4)
+    cv2.line(binary, (600, 1550), (1100, 1550), 255, thickness=4)
 
     deskew = DeskewResult(
         gray=binary,
@@ -251,6 +253,8 @@ def test_continuous_ruling_preserves_descenders_without_ghost_words():
         cv2.line(binary, (x, 505), (x + 8, 602), 255, thickness=4)
     # Descender stroke at x=330 down to y=685:
     cv2.line(binary, (330, 602), (330, 685), 255, thickness=4)
+    # Cursive connecting stroke:
+    cv2.line(binary, (300, 580), (700, 580), 255, thickness=4)
 
     deskew = DeskewResult(
         gray=binary,
@@ -272,4 +276,28 @@ def test_continuous_ruling_preserves_descenders_without_ghost_words():
     bx, by, bw, bh = word.bbox
     # Bounding box must encompass the descender (reaching beyond y=675)
     assert by + bh >= 680
+
+
+def test_printed_worksheet_rejected_with_script_code():
+    """Worksheets with printed (disconnected) handwriting are rejected at post-segmentation."""
+    img_bytes = make_printed_worksheet(num_lines=2, words_per_line=3)
+    preprocessed = preprocess(img_bytes)
+    deskewed = detect_and_deskew(preprocessed)
+
+    with pytest.raises(PostSegmentationRejection) as exc_info:
+        segment_lines_and_words(deskewed, expected_word_count=6)
+
+    assert exc_info.value.code == "QUALITY_GATE_SCRIPT_NOT_CURSIVE"
+    assert "printed rather than cursive" in exc_info.value.message
+
+
+def test_cursive_worksheet_passes_script_validation():
+    """Worksheets with cursive ligatures pass post-segmentation script validation."""
+    img_bytes = make_segmented_worksheet(num_lines=2, words_per_line=3, with_ligatures=True)
+    preprocessed = preprocess(img_bytes)
+    deskewed = detect_and_deskew(preprocessed)
+
+    result = segment_lines_and_words(deskewed, expected_word_count=6)
+    assert result.total_word_count == 6
+
 

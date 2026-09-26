@@ -456,6 +456,40 @@ class TestCreateSubmission:
         )
         assert len(meas_res.data) == 0
 
+    def test_printed_upload_rejected_with_script_code(
+        self, client, test_activity, test_student, cleanup_submissions
+    ):
+        """Uploading a printed (non-cursive) worksheet is rejected
+        with QUALITY_GATE_SCRIPT_NOT_CURSIVE.
+        """
+        from tests.synthetic import make_printed_worksheet
+
+        printed_bytes = make_printed_worksheet(num_lines=2, words_per_line=3)
+        response = client.post(
+            "/api/submissions",
+            data={
+                "activity_id": test_activity["id"],
+                "student_id": test_student["id"],
+            },
+            files={"image": ("printed.jpg", io.BytesIO(printed_bytes), "image/jpeg")},
+        )
+        assert response.status_code == 422
+        error = response.json()["error"]
+        assert error["code"] == "QUALITY_GATE_SCRIPT_NOT_CURSIVE"
+        submission_id = error["details"]["submission_id"]
+        cleanup_submissions.append(
+            {
+                "id": submission_id,
+                "image_path": f"{test_student['id']}/{submission_id}.jpg",
+            }
+        )
+
+        db_res = supabase_client.table("submission").select("*").eq("id", submission_id).execute()
+        assert len(db_res.data) == 1
+        assert db_res.data[0]["status"] == "rejected"
+        assert db_res.data[0]["rejection_code"] == "QUALITY_GATE_SCRIPT_NOT_CURSIVE"
+
+
     def test_model_inference_error_returns_500(
         self, client, test_activity, test_student, monkeypatch
     ):

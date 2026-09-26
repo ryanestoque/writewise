@@ -3,7 +3,7 @@ import pytest
 from app.cv.pipeline import CVPipelineResult, run_cv_pipeline
 from app.cv.quality_gate import QualityGateRejection
 from app.cv.segmentation import PostSegmentationRejection
-from tests.synthetic import make_blurry_image, make_segmented_worksheet
+from tests.synthetic import make_blurry_image, make_printed_worksheet, make_segmented_worksheet
 
 
 def test_run_cv_pipeline_success():
@@ -38,3 +38,13 @@ def test_run_cv_pipeline_fails_post_segmentation_gate():
     img_bytes = make_segmented_worksheet(num_lines=2, words_per_line=3)
     with pytest.raises(PostSegmentationRejection):
         run_cv_pipeline(img_bytes, expected_word_count=100)
+
+
+def test_run_cv_pipeline_fails_script_guard():
+    # Printed worksheet triggers QUALITY_GATE_SCRIPT_NOT_CURSIVE
+    img_bytes = make_printed_worksheet(num_lines=2, words_per_line=3)
+    with pytest.raises(PostSegmentationRejection) as exc_info:
+        run_cv_pipeline(img_bytes, expected_word_count=6)
+
+    assert exc_info.value.code == "QUALITY_GATE_SCRIPT_NOT_CURSIVE"
+

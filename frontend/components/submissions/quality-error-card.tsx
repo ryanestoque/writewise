@@ -74,6 +74,7 @@ export function isQualityGateErrorCode(code: string): boolean {
     "QUALITY_GATE_SKEW",
     "QUALITY_GATE_OCCLUDED",
     "QUALITY_GATE_NO_TEXT",
+    "QUALITY_GATE_SCRIPT_NOT_CURSIVE",
     "SEGMENTATION_COUNT_MISMATCH",
   ].includes(code);
 }
@@ -242,6 +243,22 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
         tips: [
           "Make sure the student has written on the worksheet before scanning.",
           "Frame the camera directly on the completed guideline rows.",
+        ],
+        icon: FileQuestion,
+      };
+    }
+
+    case "QUALITY_GATE_SCRIPT_NOT_CURSIVE": {
+      return {
+        isQualityCheck: true,
+        badgeLabel: "Script Style",
+        title: "Printed Handwriting Detected",
+        description:
+          "The worksheet appears to be written in printed (manuscript) handwriting. WriteWise specifically evaluates continuous cursive penmanship.",
+        tips: [
+          "Ensure the student completes the worksheet using connected cursive letters.",
+          "Check for continuous entry and exit loops connecting characters within each word.",
+          "Avoid uploading printed, block, or manuscript handwriting.",
         ],
         icon: FileQuestion,
       };

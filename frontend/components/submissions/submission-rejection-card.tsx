@@ -56,6 +56,13 @@ export const REJECTION_GUIDE: Record<string, RejectionDetail> = {
     advice:
       "Move the camera closer to fill the frame with the worksheet page before taking the photo.",
   },
+  QUALITY_GATE_SCRIPT_NOT_CURSIVE: {
+    title: "Printed Handwriting Detected",
+    description:
+      "The worksheet appears to be written in printed (manuscript) handwriting. WriteWise specifically evaluates continuous cursive penmanship.",
+    advice:
+      "Ask the student to write the activity using connected cursive strokes and proper entry/exit loops before re-uploading.",
+  },
   SEGMENTATION_COUNT_MISMATCH: {
     title: "Word Count Mismatch",
     description:

@@ -254,6 +254,11 @@ export function getRejectionSummary(code: string | null): {
         label: "Low resolution",
         detail: "Move closer so worksheet fills the frame",
       };
+    case "QUALITY_GATE_SCRIPT_NOT_CURSIVE":
+      return {
+        label: "Printed handwriting detected",
+        detail: "Please write in continuous cursive penmanship",
+      };
     case "SEGMENTATION_COUNT_MISMATCH":
       return {
         label: "Word count mismatch",

@@ -50,7 +50,8 @@ def run_cv_pipeline(
     QualityGateRejection
         If image fails blur, brightness, contrast, or resolution checks.
     PostSegmentationRejection
-        If detected word count deviates significantly from expected count.
+        If detected word count deviates significantly from expected count,
+        or if handwriting is printed rather than cursive (QUALITY_GATE_SCRIPT_NOT_CURSIVE).
     """
     # 1. Stage 1: Quality Gate
     run_quality_gate(image_bytes)

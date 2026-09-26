@@ -111,6 +111,13 @@ A technically-fine photo can still yield unusable segmentation output — a blan
 - Compare detected word count to expected word count.
 - If detected count is wildly off (e.g., less than half of expected, or zero), reject — reusing the same rejected-`Submission` pattern as the quality gate (§2), not a separate failure path.
 
+### 5.4 Script Validation Check (Cursive Connectivity Gate)
+WriteWise specifically evaluates cursive penmanship. To prevent printed (manuscript) handwriting from proceeding to scoring:
+- Measure horizontal stroke connectivity across qualifying multi-letter words (ruling lines masked out to prevent guide lines from acting as false ligatures).
+- In cursive handwriting, characters within a word are joined by continuous entry/exit ligatures across the core ruling zone, producing connected components that span the majority of the word bounding box ($\ge 60\%-100\%$).
+- In printed handwriting, each letter is an isolated glyph, resulting in disconnected components ($\le 35\%$).
+- If average connectivity ratio $< 0.40$ or $\ge 70\%$ of qualifying words fail the connectivity threshold, reject with code `QUALITY_GATE_SCRIPT_NOT_CURSIVE` (`422 Unprocessable Entity`), persisting a rejected `Submission` row.
+
 ---
 
 ## 6. Feature Extraction
