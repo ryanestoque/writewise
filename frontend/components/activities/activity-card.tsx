@@ -365,7 +365,7 @@ export const ActivityCard = memo(function ActivityCard({
                   aria-valuetext={`${completedCount} completed, ${processingCount} processing, ${rejectedCount} rejected of ${totalStudents} students`}
                   aria-label={`Submission progress: ${completedCount} completed, ${processingCount} processing, ${rejectedCount} rejected out of ${totalStudents} students`}
                   onClick={(e) => e.stopPropagation()}
-                  className="group/progress w-full py-0.5 cursor-help focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-full"
+                  className="group/progress w-full py-2 -my-1.5 cursor-help focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-full touch-manipulation"
                 >
                   <div className="w-full bg-muted/60 dark:bg-muted/40 h-2 rounded-full overflow-hidden flex shadow-warm-sm group-hover/progress:brightness-95 transition-all">
                     {completedCount > 0 && (

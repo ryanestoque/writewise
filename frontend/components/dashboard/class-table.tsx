@@ -440,7 +440,7 @@ export function ClassTable({
                       <Tooltip>
                         <TooltipTrigger
                           className={cn(
-                            "inline-flex items-center gap-0.5 cursor-pointer bg-transparent border-0 p-0 text-inherit font-inherit",
+                            "w-full h-full inline-flex items-center gap-0.5 cursor-pointer bg-transparent border-0 p-0 text-inherit font-inherit",
                             col.isNumeric ? "justify-end" : "justify-start"
                           )}
                         >

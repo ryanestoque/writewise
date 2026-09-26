@@ -401,6 +401,7 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
       {/* Floating HTML Diagnostic Tooltip Popover */}
       <AnnotationTooltip
         hover={activeAnnotation}
+        isPinned={Boolean(selectedAnnotation && activeAnnotation?.id === selectedAnnotation.id)}
         imageWidth={naturalSize.width}
         imageHeight={naturalSize.height}
         containerWidth={containerSize?.width}

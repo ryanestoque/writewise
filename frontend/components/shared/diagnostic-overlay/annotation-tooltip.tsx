@@ -8,6 +8,7 @@ import { AlertCircle, CheckCircle2, X } from "lucide-react";
 
 interface AnnotationTooltipProps {
   hover: ActiveAnnotationHover | null;
+  isPinned?: boolean;
   imageWidth: number;
   imageHeight: number;
   containerWidth?: number;
@@ -29,6 +30,7 @@ const CRITERION_LABELS: Record<string, string> = {
 
 export const AnnotationTooltip = memo(function AnnotationTooltip({
   hover,
+  isPinned = false,
   imageWidth,
   imageHeight,
   containerWidth,
@@ -170,7 +172,7 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
       style={{
         left: leftPos,
         top: topPos,
-        transform: `translate3d(-50%, ${isNearTop ? "10px" : "calc(-100% - 10px)"}, 0) scale(${counterScale})`,
+        transform: `translate3d(-50%, ${isNearTop ? "14px" : "calc(-100% - 14px)"}, 0) scale(${counterScale})`,
         transformOrigin: isNearTop ? "top center" : "bottom center",
       }}
     >
@@ -182,6 +184,7 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
         cardWidth={cardWidth}
         caretOffset={caretOffset}
         isNearTop={isNearTop}
+        isPinned={isPinned}
         onDismiss={onDismiss}
       />
     </div>
@@ -200,6 +203,7 @@ interface TooltipCardProps {
   cardWidth: number;
   caretOffset: number;
   isNearTop: boolean;
+  isPinned: boolean;
   onDismiss?: () => void;
 }
 
@@ -211,6 +215,7 @@ function TooltipCard({
   cardWidth,
   caretOffset,
   isNearTop,
+  isPinned,
   onDismiss,
 }: TooltipCardProps) {
   return (
@@ -247,7 +252,8 @@ function TooltipCard({
       <div
         style={{ maxWidth: `${cardWidth}px`, width: `${cardWidth}px` }}
         className={cn(
-          "p-2.5 rounded-xl shadow-warm border backdrop-blur-md transition-colors select-text pointer-events-auto relative",
+          "p-2.5 rounded-xl shadow-warm border backdrop-blur-md transition-colors relative",
+          isPinned ? "pointer-events-auto select-text" : "pointer-events-none select-none",
           "bg-popover/95 text-popover-foreground",
           isAttention
             ? "border-destructive/40 dark:border-destructive/50 ring-2 ring-destructive/10"
@@ -283,7 +289,7 @@ function TooltipCard({
           >
             {isAttention ? "Needs Attention" : "Consistent"}
           </Badge>
-          {onDismiss && (
+          {isPinned && onDismiss && (
             <button
               type="button"
               onClick={(e) => {
@@ -291,7 +297,7 @@ function TooltipCard({
                 onDismiss();
               }}
               className="relative size-7 min-h-[40px] min-w-[40px] sm:min-h-[28px] sm:min-w-[28px] sm:size-6 rounded-md p-0 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer pointer-events-auto touch-manipulation shrink-0 ml-1 hover:bg-muted/80 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 sm:after:hidden after:content-['']"
-              aria-label="Dismiss annotation details"
+              aria-label="Dismiss pinned annotation details"
               title="Close annotation details"
             >
               <X className="size-3.5" aria-hidden="true" />
@@ -305,6 +311,12 @@ function TooltipCard({
         <p className="text-xs text-muted-foreground leading-relaxed mt-1 break-words">
           {note}
         </p>
+
+        {!isPinned && (
+          <div className="mt-1.5 pt-1 border-t border-border/40 text-[10px] text-muted-foreground/75 flex items-center justify-between">
+            <span>Click to pin details</span>
+          </div>
+        )}
       </div>
     </>
   );

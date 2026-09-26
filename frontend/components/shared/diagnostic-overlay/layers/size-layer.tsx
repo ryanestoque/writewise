@@ -123,7 +123,7 @@ export const SizeLayer = memo(function SizeLayer({
               strokeDasharray={`${6 * hitScale} ${3 * hitScale}`}
               rx={4 * hitScale}
               className={`transition-opacity stroke-brand-700 dark:stroke-brand-400 pointer-events-none ${
-                isActive ? "opacity-100" : "opacity-0 group-focus-visible:opacity-100"
+                isActive ? "opacity-100" : "opacity-0 group-hover:opacity-75 group-focus-visible:opacity-100"
               }`}
             />
 

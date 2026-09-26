@@ -124,7 +124,7 @@ export const SlantLayer = memo(function SlantLayer({
               strokeLinecap="round"
               strokeOpacity={0.6}
               className={`transition-opacity stroke-brand-700 dark:stroke-brand-400 pointer-events-none ${
-                isActive ? "opacity-100" : "opacity-0 group-focus-visible:opacity-100"
+                isActive ? "opacity-100" : "opacity-0 group-hover:opacity-75 group-focus-visible:opacity-100"
               }`}
             />
 

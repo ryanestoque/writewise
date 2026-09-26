@@ -127,7 +127,7 @@ export const SpacingLayer = memo(function SpacingLayer({
               strokeDasharray={`${4 * hitScale} ${2 * hitScale}`}
               rx={3 * hitScale}
               className={`transition-opacity stroke-brand-700 dark:stroke-brand-400 pointer-events-none ${
-                isActive ? "opacity-100" : "opacity-0 group-focus-visible:opacity-100"
+                isActive ? "opacity-100" : "opacity-0 group-hover:opacity-75 group-focus-visible:opacity-100"
               }`}
             />
 
