@@ -343,6 +343,35 @@ export function SubmissionDetailContent({
     return gl as GuideLines;
   }, [submission.measurement?.raw_output]);
 
+  // Extract active line bounds from raw_output words for fallback guideline overlay
+  const fallbackLineBounds = useMemo(() => {
+    const raw = submission.measurement?.raw_output;
+    if (!raw || typeof raw !== "object") return undefined;
+    const lines = (raw as Record<string, unknown>).lines;
+    if (!Array.isArray(lines)) return undefined;
+    const bounds: Record<number, { minX: number; maxX: number }> = {};
+    for (const line of lines) {
+      if (!line || typeof line !== "object") continue;
+      const lIdx = (line as Record<string, unknown>).line_index;
+      const words = (line as Record<string, unknown>).words;
+      if (typeof lIdx !== "number" || !Array.isArray(words) || words.length === 0) continue;
+      let minX = Infinity;
+      let maxX = -Infinity;
+      for (const w of words) {
+        if (!w || typeof w !== "object") continue;
+        const bbox = (w as Record<string, unknown>).bbox;
+        if (!Array.isArray(bbox) || bbox.length < 4) continue;
+        const [x, , width] = bbox as number[];
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x + width);
+      }
+      if (minX !== Infinity && maxX !== -Infinity) {
+        bounds[lIdx] = { minX, maxX };
+      }
+    }
+    return Object.keys(bounds).length > 0 ? bounds : undefined;
+  }, [submission.measurement?.raw_output]);
+
   // Extract diagnostic overlay data (DATABASE §8, DESIGN §7.4)
   const diagnosticOverlay = useMemo((): DiagnosticOverlayData | null => {
     return extractDiagnosticOverlay(submission.measurement);
@@ -790,6 +819,7 @@ export function SubmissionDetailContent({
                   guideLines={guideLines}
                   imageUrl={imageUrl}
                   visible={showGuideLines}
+                  lineBounds={fallbackLineBounds}
                 />
               )}
             </WorksheetImageInspector>
