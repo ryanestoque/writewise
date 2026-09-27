@@ -772,3 +772,164 @@ class TestDeleteSubmissionTeacher:
         response = client.delete("/api/submissions/not-a-uuid")
         assert response.status_code == 400
         assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+class TestBatchDeleteSubmissions:
+    def test_teacher_batch_delete_success(self, client, test_activity, test_student):
+        """Teacher can batch delete multiple submissions for a roster student."""
+        sub1 = (
+            supabase_client.table("submission")
+            .insert(
+                {
+                    "activity_id": test_activity["id"],
+                    "student_id": test_student["id"],
+                    "image_path": f"{test_student['id']}/test_batch_1.jpg",
+                    "status": "completed",
+                    "uploader_id": TEST_TEACHER_ID,
+                    "uploader_role": "teacher",
+                }
+            )
+            .execute()
+            .data[0]
+        )
+        sub2 = (
+            supabase_client.table("submission")
+            .insert(
+                {
+                    "activity_id": test_activity["id"],
+                    "student_id": test_student["id"],
+                    "image_path": f"{test_student['id']}/test_batch_2.jpg",
+                    "status": "completed",
+                    "uploader_id": TEST_TEACHER_ID,
+                    "uploader_role": "teacher",
+                }
+            )
+            .execute()
+            .data[0]
+        )
+
+        # Insert dummy measurements
+        supabase_client.table("measurement").insert(
+            [
+                {"submission_id": sub1["id"], "raw_output": {}},
+                {"submission_id": sub2["id"], "raw_output": {}},
+            ]
+        ).execute()
+
+        try:
+            # Call POST /api/submissions/batch-delete
+            response = client.post(
+                "/api/submissions/batch-delete",
+                json={"submission_ids": [sub1["id"], sub2["id"]]},
+            )
+            assert response.status_code == 200
+            data = response.json()
+            assert data["deleted_count"] == 2
+            assert set(data["deleted_ids"]) == {sub1["id"], sub2["id"]}
+
+            # Verify DB records are gone
+            check_subs = (
+                supabase_client.table("submission")
+                .select("id")
+                .in_("id", [sub1["id"], sub2["id"]])
+                .execute()
+            )
+            assert len(check_subs.data) == 0
+
+            check_meas = (
+                supabase_client.table("measurement")
+                .select("id")
+                .in_("submission_id", [sub1["id"], sub2["id"]])
+                .execute()
+            )
+            assert len(check_meas.data) == 0
+        finally:
+            supabase_client.table("measurement").delete().in_(
+                "submission_id", [sub1["id"], sub2["id"]]
+            ).execute()
+            supabase_client.table("submission").delete().in_(
+                "id", [sub1["id"], sub2["id"]]
+            ).execute()
+
+
+    def test_teacher_batch_delete_non_roster_student_forbidden(
+        self, client, test_activity, test_student
+    ):
+        """Teacher cannot batch delete submissions containing a non-roster student."""
+        other_student = (
+            supabase_client.table("student")
+            .insert({"full_name": "Batch Other Student", "section": "Other Section"})
+            .execute()
+            .data[0]
+        )
+        sub_allowed = (
+            supabase_client.table("submission")
+            .insert(
+                {
+                    "activity_id": test_activity["id"],
+                    "student_id": test_student["id"],
+                    "image_path": f"{test_student['id']}/allowed.jpg",
+                    "status": "completed",
+                    "uploader_id": TEST_TEACHER_ID,
+                    "uploader_role": "teacher",
+                }
+            )
+            .execute()
+            .data[0]
+        )
+        sub_forbidden = (
+            supabase_client.table("submission")
+            .insert(
+                {
+                    "activity_id": test_activity["id"],
+                    "student_id": other_student["id"],
+                    "image_path": f"{other_student['id']}/forbidden.jpg",
+                    "status": "completed",
+                    "uploader_id": TEST_TEACHER_ID,
+                    "uploader_role": "teacher",
+                }
+            )
+            .execute()
+            .data[0]
+        )
+
+        try:
+            response = client.post(
+                "/api/submissions/batch-delete",
+                json={"submission_ids": [sub_allowed["id"], sub_forbidden["id"]]},
+            )
+            assert response.status_code == 403
+            assert response.json()["error"]["code"] == "NOT_ROSTER_TEACHER"
+
+            # Verify neither was deleted because batch was aborted
+            check = (
+                supabase_client.table("submission")
+                .select("id")
+                .in_("id", [sub_allowed["id"], sub_forbidden["id"]])
+                .execute()
+            )
+            assert len(check.data) == 2
+        finally:
+            supabase_client.table("submission").delete().in_(
+                "id", [sub_allowed["id"], sub_forbidden["id"]]
+            ).execute()
+            supabase_client.table("student").delete().eq("id", other_student["id"]).execute()
+
+    def test_batch_delete_empty_list_rejected(self, client):
+        """Submitting an empty submission_ids list returns 400."""
+        response = client.post(
+            "/api/submissions/batch-delete",
+            json={"submission_ids": []},
+        )
+        assert response.status_code == 400
+        assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+    def test_batch_delete_invalid_uuid_rejected(self, client):
+        """Submitting invalid UUIDs returns 400."""
+        response = client.post(
+            "/api/submissions/batch-delete",
+            json={"submission_ids": ["not-a-valid-uuid"]},
+        )
+        assert response.status_code == 400
+        assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+

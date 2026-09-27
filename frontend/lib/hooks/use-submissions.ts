@@ -267,3 +267,42 @@ export function useDeleteSubmission() {
   });
 }
 
+export function useBatchDeleteSubmissions() {
+
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (submissionIds: string[]) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      if (!token) {
+        throw new Error("No active session");
+      }
+
+      const response = await fetch("/api/submissions/batch-delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ submission_ids: submissionIds }),
+      });
+
+      return handleApiResponse<{ deleted_count: number; deleted_ids: string[] }>(
+        response
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-scores"] });
+      queryClient.invalidateQueries({ queryKey: ["student-trend"] });
+      queryClient.invalidateQueries({ queryKey: ["parent-child-latest-scores"] });
+      queryClient.invalidateQueries({ queryKey: ["parent-child-score-history"] });
+      queryClient.invalidateQueries({ queryKey: ["parent-take-home-activities"] });
+      queryClient.invalidateQueries({ queryKey: ["parent-child-submission"] });
+      queryClient.invalidateQueries({ queryKey: ["parent-all-submissions"] });
+    },
+  });
+}

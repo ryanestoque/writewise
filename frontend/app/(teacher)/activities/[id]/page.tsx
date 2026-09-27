@@ -12,6 +12,8 @@ import { useStudents } from "@/lib/hooks/use-students";
 import {
   type Submission,
   useSubmissions,
+  useDeleteSubmission,
+  useBatchDeleteSubmissions,
 } from "@/lib/hooks/use-submissions";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import { EditActivityDialog } from "@/components/activities/edit-activity-dialog";
@@ -20,6 +22,18 @@ import { CreateActivityDialog } from "@/components/activities/create-activity-di
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { FloatingActionBar } from "@/components/ui/floating-action-bar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
 import {
@@ -49,6 +63,8 @@ import {
   GraduationCap,
   Layers,
   Check,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getWordCount } from "@/lib/utils/formatters";
@@ -117,6 +133,21 @@ export default function ActivityDetailPage({
     Map<string, Submission>
   >(new Map());
 
+  // Batch deletion selection state
+  const [selectedSubmissionIds, setSelectedSubmissionIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [isBatchDeleteDialogOpen, setIsBatchDeleteDialogOpen] = useState(false);
+  const [singleAttemptToDelete, setSingleAttemptToDelete] =
+    useState<Submission | null>(null);
+  const [studentBatchToDelete, setStudentBatchToDelete] = useState<{
+    studentName: string;
+    submissions: Submission[];
+  } | null>(null);
+
+  const deleteSingleMutation = useDeleteSubmission();
+  const batchDeleteMutation = useBatchDeleteSubmissions();
+
   // Shortcut key listener for '/' and 'U'
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -139,11 +170,14 @@ export default function ActivityDetailPage({
       ) {
         e.preventDefault();
         openUpload({ activityId: id });
+      } else if (e.key === "Escape" && selectedSubmissionIds.size > 0) {
+        e.preventDefault();
+        setSelectedSubmissionIds(new Set());
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [id, openUpload]);
+  }, [id, openUpload, selectedSubmissionIds.size]);
 
   // Roster Metrics: Unique enrolled students with submissions
   const submittedStudentIds = useMemo(() => {
@@ -484,6 +518,153 @@ export default function ActivityDetailPage({
     []
   );
 
+  // All selectable submission IDs in current view
+  const allSelectableSubmissionIds = useMemo(() => {
+    if (viewMode === "grouped") {
+      return filteredAndSortedGroups.flatMap((g) =>
+        g.allSubmissions.map((s) => s.id)
+      );
+    }
+    return filteredAndSortedSubmissions.map((s) => s.id);
+  }, [viewMode, filteredAndSortedGroups, filteredAndSortedSubmissions]);
+
+  const totalVisibleAttemptsCount = useMemo(() => {
+    if (viewMode === "grouped") {
+      return filteredAndSortedGroups.reduce((acc, g) => acc + g.attemptCount, 0);
+    }
+    return filteredAndSortedSubmissions.length;
+  }, [viewMode, filteredAndSortedGroups, filteredAndSortedSubmissions]);
+
+  const selectedStudentsCount = useMemo(() => {
+    if (viewMode !== "grouped") return 0;
+    return filteredAndSortedGroups.filter((g) =>
+      g.allSubmissions.some((s) => selectedSubmissionIds.has(s.id))
+    ).length;
+  }, [viewMode, filteredAndSortedGroups, selectedSubmissionIds]);
+
+  const allVisibleSelected = useMemo(
+    () =>
+      allSelectableSubmissionIds.length > 0 &&
+      allSelectableSubmissionIds.every((id) => selectedSubmissionIds.has(id)),
+    [allSelectableSubmissionIds, selectedSubmissionIds]
+  );
+
+  const someVisibleSelected = useMemo(
+    () =>
+      selectedSubmissionIds.size > 0 &&
+      !allVisibleSelected &&
+      allSelectableSubmissionIds.some((id) => selectedSubmissionIds.has(id)),
+    [allSelectableSubmissionIds, selectedSubmissionIds, allVisibleSelected]
+  );
+
+  const handleToggleSelectSubmission = useCallback((sub: Submission) => {
+    setSelectedSubmissionIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(sub.id)) {
+        next.delete(sub.id);
+      } else {
+        next.add(sub.id);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleToggleSelectGroup = useCallback((groupSubmissions: Submission[]) => {
+    const ids = groupSubmissions.map((s) => s.id);
+    setSelectedSubmissionIds((prev) => {
+      const next = new Set(prev);
+      const allIn = ids.every((id) => next.has(id));
+      if (allIn) {
+        ids.forEach((id) => next.delete(id));
+      } else {
+        ids.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedSubmissionIds(new Set());
+  }, []);
+
+  const handleToggleSelectAll = useCallback(() => {
+    if (allVisibleSelected) {
+      clearSelection();
+    } else {
+      setSelectedSubmissionIds(new Set(allSelectableSubmissionIds));
+    }
+  }, [allVisibleSelected, clearSelection, allSelectableSubmissionIds]);
+
+  const handleBatchDeleteConfirm = async () => {
+    if (selectedSubmissionIds.size === 0) return;
+    try {
+      const result = await batchDeleteMutation.mutateAsync(
+        Array.from(selectedSubmissionIds)
+      );
+      toast.success(
+        `Deleted ${result.deleted_count} ${result.deleted_count === 1 ? "attempt" : "attempts"}.`
+      );
+      clearSelection();
+      setIsBatchDeleteDialogOpen(false);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete selected attempts."
+      );
+    }
+  };
+
+  const handleDeleteSingleAttemptPrompt = useCallback((sub: Submission) => {
+    setSingleAttemptToDelete(sub);
+  }, []);
+
+  const handleDeleteAllStudentAttemptsPrompt = useCallback(
+    (studentName: string, subs: Submission[]) => {
+      setStudentBatchToDelete({ studentName, submissions: subs });
+    },
+    []
+  );
+
+  const handleConfirmDeleteSingleAttempt = async () => {
+    if (!singleAttemptToDelete) return;
+    const targetId = singleAttemptToDelete.id;
+    try {
+      await deleteSingleMutation.mutateAsync(targetId);
+      toast.success("Attempt deleted.");
+      setSelectedSubmissionIds((prev) => {
+        const next = new Set(prev);
+        next.delete(targetId);
+        return next;
+      });
+      setSingleAttemptToDelete(null);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete attempt."
+      );
+    }
+  };
+
+  const handleConfirmDeleteStudentBatch = async () => {
+    if (!studentBatchToDelete) return;
+    const ids = studentBatchToDelete.submissions.map((s) => s.id);
+    const sName = studentBatchToDelete.studentName;
+    try {
+      const result = await batchDeleteMutation.mutateAsync(ids);
+      toast.success(
+        `Deleted ${result.deleted_count} ${result.deleted_count === 1 ? "attempt" : "attempts"} for ${sName}.`
+      );
+      setSelectedSubmissionIds((prev) => {
+        const next = new Set(prev);
+        ids.forEach((id) => next.delete(id));
+        return next;
+      });
+      setStudentBatchToDelete(null);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete student attempts."
+      );
+    }
+  };
+
   if (error) {
     return (
       <div className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
@@ -664,43 +845,76 @@ export default function ActivityDetailPage({
             )}
           </div>
 
-          {/* View Mode Switcher (Grouped by Student vs All Scans) */}
+          {/* Controls: Select All & View Mode Switcher */}
           {submissions && submissions.length > 0 && (
-            <div
-              role="radiogroup"
-              aria-label="Submission display grouping"
-              className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-lg border border-border/60 self-start sm:self-auto shrink-0"
-            >
-              <button
-                type="button"
-                role="radio"
-                aria-checked={viewMode === "grouped"}
-                onClick={() => setViewMode("grouped")}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] sm:min-h-[28px] text-xs font-medium rounded-md transition-all cursor-pointer",
-                  viewMode === "grouped"
-                    ? "bg-background text-foreground shadow-xs font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
+            <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
+              {/* Select All Checkbox Header Control */}
+              {allSelectableSubmissionIds.length > 0 && (
+                <div className="flex items-center gap-2 px-2.5 py-1.5 min-h-[36px] sm:min-h-[28px] bg-surface dark:bg-card border border-border/70 rounded-lg text-xs shadow-2xs">
+                  <Checkbox
+                    checked={allVisibleSelected}
+                    indeterminate={someVisibleSelected}
+                    onCheckedChange={handleToggleSelectAll}
+                    aria-label="Select all visible attempts"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleToggleSelectAll}
+                    className="font-medium text-foreground cursor-pointer hover:text-primary transition-colors select-none text-xs"
+                  >
+                    {selectedSubmissionIds.size > 0
+                      ? `${selectedSubmissionIds.size} of ${totalVisibleAttemptsCount} Selected`
+                      : "Select All"}
+                  </button>
+                  {selectedSubmissionIds.size > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearSelection}
+                      className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 ml-1 cursor-pointer transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* View Mode Switcher (Grouped by Student vs All Scans) */}
+              <div
+                role="radiogroup"
+                aria-label="Submission display grouping"
+                className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-lg border border-border/60"
               >
-                <GraduationCap className="size-3.5" />
-                <span>By Student</span>
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={viewMode === "all"}
-                onClick={() => setViewMode("all")}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] sm:min-h-[28px] text-xs font-medium rounded-md transition-all cursor-pointer",
-                  viewMode === "all"
-                    ? "bg-background text-foreground shadow-xs font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Layers className="size-3.5" />
-                <span>All Scans</span>
-              </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={viewMode === "grouped"}
+                  onClick={() => setViewMode("grouped")}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] sm:min-h-[28px] text-xs font-medium rounded-md transition-all cursor-pointer",
+                    viewMode === "grouped"
+                      ? "bg-background text-foreground shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <GraduationCap className="size-3.5" />
+                  <span>By Student</span>
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={viewMode === "all"}
+                  onClick={() => setViewMode("all")}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] sm:min-h-[28px] text-xs font-medium rounded-md transition-all cursor-pointer",
+                    viewMode === "all"
+                      ? "bg-background text-foreground shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Layers className="size-3.5" />
+                  <span>All Scans</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -964,6 +1178,14 @@ export default function ActivityDetailPage({
                     attemptOverrides.get(group.studentId) ??
                     group.latestSubmission;
 
+                  const groupAttemptIds = group.allSubmissions.map((s) => s.id);
+                  const isGroupSelected =
+                    groupAttemptIds.length > 0 &&
+                    groupAttemptIds.every((id) => selectedSubmissionIds.has(id));
+                  const isGroupIndeterminate =
+                    !isGroupSelected &&
+                    groupAttemptIds.some((id) => selectedSubmissionIds.has(id));
+
                   return (
                     <SubmissionCard
                       key={group.studentId}
@@ -974,6 +1196,15 @@ export default function ActivityDetailPage({
                       onSelectAttempt={handleSelectAttempt}
                       onSelect={handleSelectSubmission}
                       onReupload={handleReupload}
+                      isSelected={isGroupSelected}
+                      isIndeterminate={isGroupIndeterminate}
+                      onToggleSelect={() =>
+                        handleToggleSelectGroup(group.allSubmissions)
+                      }
+                      onDeleteSingleAttempt={handleDeleteSingleAttemptPrompt}
+                      onDeleteAllStudentAttempts={
+                        handleDeleteAllStudentAttemptsPrompt
+                      }
                     />
                   );
                 })
@@ -984,6 +1215,9 @@ export default function ActivityDetailPage({
                     studentName={sub.student?.full_name ?? "Unknown Student"}
                     onSelect={handleSelectSubmission}
                     onReupload={handleReupload}
+                    isSelected={selectedSubmissionIds.has(sub.id)}
+                    onToggleSelect={handleToggleSelectSubmission}
+                    onDeleteSingleAttempt={handleDeleteSingleAttemptPrompt}
                   />
                 ))}
           </div>
@@ -1014,6 +1248,163 @@ export default function ActivityDetailPage({
         open={!!deletingActivity}
         onOpenChange={(open) => !open && setDeletingActivity(null)}
       />
+
+      {/* Floating Batch Actions Bar */}
+      <FloatingActionBar
+        selectedCount={selectedSubmissionIds.size}
+        totalCount={totalVisibleAttemptsCount}
+        itemLabel={{ singular: "attempt", plural: "attempts" }}
+        allSelected={allVisibleSelected}
+        onSelectAll={handleToggleSelectAll}
+        onClearSelection={clearSelection}
+        ariaLabel="Batch attempt actions"
+      >
+        {selectedStudentsCount > 0 && (
+          <span className="text-xs text-muted-foreground hidden sm:inline mr-1">
+            ({selectedStudentsCount}{" "}
+            {selectedStudentsCount === 1 ? "student" : "students"})
+          </span>
+        )}
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => setIsBatchDeleteDialogOpen(true)}
+          disabled={batchDeleteMutation.isPending}
+          className="h-8 rounded-full text-xs font-semibold gap-1.5 px-3.5 cursor-pointer shadow-xs"
+        >
+          <Trash2 className="size-3.5" />
+          <span>Delete Attempts</span>
+        </Button>
+      </FloatingActionBar>
+
+      {/* Batch Delete Confirmation Alert Dialog */}
+      <AlertDialog
+        open={isBatchDeleteDialogOpen}
+        onOpenChange={setIsBatchDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete {selectedSubmissionIds.size}{" "}
+              {selectedSubmissionIds.size === 1 ? "attempt" : "attempts"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the uploaded worksheet{" "}
+              {selectedSubmissionIds.size === 1 ? "photo" : "photos"}, computer
+              vision analysis, and recorded rubric scores for the selected{" "}
+              {selectedSubmissionIds.size === 1 ? "attempt" : "attempts"}. This
+              action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={batchDeleteMutation.isPending}
+              onClick={() => setIsBatchDeleteDialogOpen(false)}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={batchDeleteMutation.isPending}
+              onClick={handleBatchDeleteConfirm}
+            >
+              {batchDeleteMutation.isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin mr-1.5" />
+                  Deleting...
+                </>
+              ) : (
+                `Delete ${selectedSubmissionIds.size} ${
+                  selectedSubmissionIds.size === 1 ? "Attempt" : "Attempts"
+                }`
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Single Attempt Delete Confirmation Dialog */}
+      <AlertDialog
+        open={!!singleAttemptToDelete}
+        onOpenChange={(open) => !open && setSingleAttemptToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this attempt?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this uploaded worksheet photo,
+              computer vision analysis, and recorded rubric scores. This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={deleteSingleMutation.isPending}
+              onClick={() => setSingleAttemptToDelete(null)}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deleteSingleMutation.isPending}
+              onClick={handleConfirmDeleteSingleAttempt}
+            >
+              {deleteSingleMutation.isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin mr-1.5" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Attempt"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Student All Attempts Delete Confirmation Dialog */}
+      <AlertDialog
+        open={!!studentBatchToDelete}
+        onOpenChange={(open) => !open && setStudentBatchToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete all {studentBatchToDelete?.submissions.length} attempts for{" "}
+              {studentBatchToDelete?.studentName}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all{" "}
+              {studentBatchToDelete?.submissions.length} uploaded worksheet
+              photos, computer vision analysis, and recorded rubric scores for{" "}
+              {studentBatchToDelete?.studentName} on this activity. This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={batchDeleteMutation.isPending}
+              onClick={() => setStudentBatchToDelete(null)}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={batchDeleteMutation.isPending}
+              onClick={handleConfirmDeleteStudentBatch}
+            >
+              {batchDeleteMutation.isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin mr-1.5" />
+                  Deleting...
+                </>
+              ) : (
+                `Delete All ${studentBatchToDelete?.submissions.length} Attempts`
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

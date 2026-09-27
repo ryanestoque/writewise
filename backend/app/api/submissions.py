@@ -37,6 +37,9 @@ class ManualScoreRequest(BaseModel):
     spacing_band: ScoreBandEnum
     slant_band: ScoreBandEnum
     baseline_alignment_band: ScoreBandEnum
+class BatchDeleteSubmissionsRequest(BaseModel):
+    submission_ids: list[str]
+
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -718,3 +721,171 @@ async def delete_submission(
         )
 
     return {"id": submission_id, "deleted": True}
+
+
+@router.post("/batch-delete", status_code=status.HTTP_200_OK)
+async def batch_delete_submissions(
+    body: BatchDeleteSubmissionsRequest,
+    caller: dict = Depends(get_current_user),
+):
+    caller_id = caller.get("sub")
+    caller_role = caller.get("role")
+
+    # 1. Validate payload length
+    if not body.submission_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "VALIDATION_ERROR",
+                "message": "submission_ids list cannot be empty.",
+                "details": {},
+            },
+        )
+
+    if len(body.submission_ids) > 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "VALIDATION_ERROR",
+                "message": "Cannot delete more than 100 submissions in a single batch.",
+                "details": {},
+            },
+        )
+
+    # 2. Validate UUID format
+    validated_ids: list[str] = []
+    for sid in body.submission_ids:
+        try:
+            uuid.UUID(sid)
+            validated_ids.append(sid)
+        except (ValueError, TypeError):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "code": "VALIDATION_ERROR",
+                    "message": f"Invalid UUID: {sid}",
+                    "details": {"invalid_id": sid},
+                },
+            )
+
+    unique_ids = list(dict.fromkeys(validated_ids))
+
+    # 3. Fetch submissions
+    sub_res = (
+        supabase_client.table("submission")
+        .select("id, student_id, uploader_id, uploader_role, image_path")
+        .in_("id", unique_ids)
+        .execute()
+    )
+    submissions = sub_res.data or []
+    if not submissions:
+        return {"deleted_count": 0, "deleted_ids": []}
+
+    student_ids = list({s["student_id"] for s in submissions})
+
+    # 4. Role-based authorization
+    if caller_role == "teacher":
+        roster_check = (
+            supabase_client.table("teacher_student")
+            .select("student_id")
+            .eq("teacher_id", caller_id)
+            .in_("student_id", student_ids)
+            .execute()
+        )
+        linked_students = {row["student_id"] for row in (roster_check.data or [])}
+        unauthorized_students = set(student_ids) - linked_students
+        if unauthorized_students:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "code": "NOT_ROSTER_TEACHER",
+                    "message": "You can only delete submissions for students on your roster.",
+                    "details": {},
+                },
+            )
+    elif caller_role == "parent":
+        for sub in submissions:
+            if sub["uploader_id"] != caller_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail={
+                        "code": "NOT_SUBMISSION_UPLOADER",
+                        "message": "Parents can only delete submissions they personally uploaded.",
+                        "details": {},
+                    },
+                )
+        parent_check = (
+            supabase_client.table("student_parent")
+            .select("student_id")
+            .eq("parent_id", caller_id)
+            .in_("student_id", student_ids)
+            .execute()
+        )
+        linked_children = {row["student_id"] for row in (parent_check.data or [])}
+        if set(student_ids) - linked_children:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "code": "NOT_CHILD_PARENT",
+                    "message": "You are not linked to all selected students.",
+                    "details": {},
+                },
+            )
+
+        found_ids = [s["id"] for s in submissions]
+        score_check = (
+            supabase_client.table("manual_score")
+            .select("submission_id")
+            .in_("submission_id", found_ids)
+            .execute()
+        )
+        if score_check.data:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "code": "SUBMISSION_ALREADY_GRADED",
+                    "message": (
+                        "One or more selected worksheets have already been graded by the teacher "
+                        "and cannot be deleted."
+                    ),
+                    "details": {},
+                },
+            )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "FORBIDDEN",
+                "message": "Unauthorized role for submission deletion.",
+                "details": {},
+            },
+        )
+
+    found_ids = [s["id"] for s in submissions]
+    image_paths = [s["image_path"] for s in submissions if s.get("image_path")]
+
+    # 5. Delete Storage assets
+    if image_paths:
+        try:
+            supabase_client.storage.from_("submission-images").remove(image_paths)
+        except Exception as exc:
+            logger.warning("Failed to delete storage assets during batch deletion: %s", exc)
+
+    # 6. Delete DB records
+    try:
+        supabase_client.table("manual_score").delete().in_("submission_id", found_ids).execute()
+        supabase_client.table("measurement").delete().in_("submission_id", found_ids).execute()
+        supabase_client.table("submission").delete().in_("id", found_ids).execute()
+    except Exception as exc:
+        logger.error("Failed to batch delete submission records: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "code": "INTERNAL_ERROR",
+                "message": "Failed to delete submissions.",
+                "details": {"error": str(exc)},
+            },
+        )
+
+    return {"deleted_count": len(found_ids), "deleted_ids": found_ids}
+

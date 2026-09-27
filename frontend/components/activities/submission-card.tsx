@@ -11,6 +11,7 @@ import {
 import { formatDate, getRelativeTime } from "@/lib/utils/formatters";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
@@ -35,6 +36,7 @@ import {
   Camera,
   ArrowRight,
   Clock,
+  Trash2,
 } from "lucide-react";
 
 export interface SubmissionCardProps {
@@ -45,6 +47,11 @@ export interface SubmissionCardProps {
   onSelect: (sub: Submission) => void;
   onReupload: (studentId?: string) => void;
   onSelectAttempt?: (studentId: string, sub: Submission) => void;
+  isSelected?: boolean;
+  isIndeterminate?: boolean;
+  onToggleSelect?: (sub: Submission) => void;
+  onDeleteSingleAttempt?: (sub: Submission) => void;
+  onDeleteAllStudentAttempts?: (studentName: string, subs: Submission[]) => void;
 }
 
 /**
@@ -59,6 +66,11 @@ export const SubmissionCard = memo(function SubmissionCard({
   onSelect,
   onReupload,
   onSelectAttempt,
+  isSelected = false,
+  isIndeterminate = false,
+  onToggleSelect,
+  onDeleteSingleAttempt,
+  onDeleteAllStudentAttempts,
 }: SubmissionCardProps) {
   const { data: imageUrl } = useSubmissionImageUrl(submission.image_path);
   const [imageError, setImageError] = useState(false);
@@ -113,7 +125,14 @@ export const SubmissionCard = memo(function SubmissionCard({
   const showImage = Boolean(imageUrl && !imageError);
 
   return (
-    <article className="group relative flex flex-col justify-between bg-surface dark:bg-card border border-border hover:border-brand-300 dark:hover:border-brand-800 rounded-xl sm:rounded-2xl shadow-warm hover:shadow-md transition-all duration-200 overflow-hidden text-left">
+    <article
+      className={cn(
+        "group relative flex flex-col justify-between bg-surface dark:bg-card border rounded-xl sm:rounded-2xl shadow-warm hover:shadow-md transition-all duration-200 overflow-hidden text-left",
+        isSelected || isIndeterminate
+          ? "border-primary ring-2 ring-primary/25 bg-primary/[0.02]"
+          : "border-border hover:border-brand-300 dark:hover:border-brand-800"
+      )}
+    >
       {/* Photo Thumbnail & Clickable Hero */}
       <div className="aspect-4/3 bg-muted/40 dark:bg-muted/20 relative overflow-hidden p-2 flex items-center justify-center border-b border-border/40">
         {/* Main Photo Click Target */}
@@ -159,49 +178,116 @@ export const SubmissionCard = memo(function SubmissionCard({
                 <span>{attemptCount} Attempts</span>
                 <ChevronDown className="size-3 opacity-60" aria-hidden="true" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56 z-50">
+              <DropdownMenuContent align="start" className="w-64 z-50">
                 <div className="text-xs text-muted-foreground font-medium px-2.5 py-1.5">
                   Submission History ({attemptCount} attempts)
                 </div>
                 <DropdownMenuSeparator />
-                {allSubmissions.map((sub, idx) => {
-                  const attemptNum = attemptCount - idx;
-                  const isCurrent = sub.id === submission.id;
-                  const isLatest = idx === 0;
-                  const subConfig = statusConfig[sub.status];
+                <div className="space-y-0.5">
+                  {allSubmissions.map((sub, idx) => {
+                    const attemptNum = attemptCount - idx;
+                    const isCurrent = sub.id === submission.id;
+                    const isLatest = idx === 0;
+                    const subConfig = statusConfig[sub.status];
 
-                  return (
-                    <DropdownMenuItem
-                      key={sub.id}
-                      onClick={() =>
-                        onSelectAttempt?.(submission.student_id, sub)
-                      }
-                      className="cursor-pointer text-xs flex items-center justify-between gap-2 min-h-[44px] sm:min-h-[36px]"
-                    >
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span
-                          className={`size-1.5 rounded-full shrink-0 ${subConfig.dotClass}`}
-                        />
-                        <span className="font-medium truncate">
-                          Attempt {attemptNum} {isLatest && "(Latest)"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-muted-foreground shrink-0">
-                        <span className="text-[11px]">
-                          {getRelativeTime(sub.created_at)}
-                        </span>
-                        {isCurrent && (
-                          <Check
-                            className="size-3.5 text-primary stroke-[2.5]"
-                            aria-hidden="true"
-                          />
+                    return (
+                      <div
+                        key={sub.id}
+                        className={cn(
+                          "group/item flex items-center justify-between gap-1 px-2 py-1.5 rounded-md text-xs transition-colors",
+                          isCurrent
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "hover:bg-muted/70 text-foreground"
+                        )}
+                      >
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onSelectAttempt?.(submission.student_id, sub)
+                          }
+                          className="flex-1 flex items-center justify-between gap-2 min-w-0 text-left cursor-pointer focus-visible:outline-hidden focus-visible:underline"
+                        >
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span
+                              className={`size-1.5 rounded-full shrink-0 ${subConfig.dotClass}`}
+                            />
+                            <span className="truncate">
+                              Attempt {attemptNum} {isLatest && "(Latest)"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-muted-foreground shrink-0">
+                            <span className="text-[11px]">
+                              {getRelativeTime(sub.created_at)}
+                            </span>
+                            {isCurrent && (
+                              <Check
+                                className="size-3.5 text-primary stroke-[2.5]"
+                                aria-hidden="true"
+                              />
+                            )}
+                          </div>
+                        </button>
+
+                        {onDeleteSingleAttempt && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteSingleAttempt(sub);
+                            }}
+                            title={`Delete Attempt ${attemptNum}`}
+                            aria-label={`Delete Attempt ${attemptNum}`}
+                            className="size-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-70 group-hover/item:opacity-100 focus-visible:opacity-100 cursor-pointer shrink-0 ml-1"
+                          >
+                            <Trash2 className="size-3" />
+                          </button>
                         )}
                       </div>
+                    );
+                  })}
+                </div>
+
+                {onDeleteAllStudentAttempts && allSubmissions.length > 1 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() =>
+                        onDeleteAllStudentAttempts(studentName, allSubmissions)
+                      }
+                      className="cursor-pointer text-xs text-destructive focus:text-destructive focus:bg-destructive/10 flex items-center gap-2 py-2"
+                    >
+                      <Trash2 className="size-3.5 shrink-0" />
+                      <span>Delete all {attemptCount} attempts</span>
                     </DropdownMenuItem>
-                  );
-                })}
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
+          </div>
+        )}
+
+        {/* Selection Checkbox */}
+        {onToggleSelect && (
+          <div
+            className="absolute top-2.5 right-2.5 z-20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className={cn(
+                "inline-flex items-center justify-center p-1 rounded-md transition-all shadow-2xs backdrop-blur-xs",
+                isSelected
+                  ? "bg-background/95 dark:bg-card/95"
+                  : "bg-background/85 dark:bg-card/85 hover:bg-background opacity-80 group-hover:opacity-100 hover:opacity-100"
+              )}
+            >
+              <Checkbox
+                checked={isSelected}
+                indeterminate={isIndeterminate}
+                onCheckedChange={() => onToggleSelect(submission)}
+                aria-label={`Select ${hasMultipleAttempts ? `all ${attemptCount} attempts for ${studentName}` : `attempt by ${studentName}`}`}
+                className="size-4"
+              />
+            </div>
           </div>
         )}
 
