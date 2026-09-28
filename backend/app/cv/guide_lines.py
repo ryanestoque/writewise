@@ -91,15 +91,15 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
     # 3. Find line Y-coordinates in deskewed image
     # Extract true horizontal line structures before finding row projection peaks
     # to prevent wide cursive handwriting words from being misidentified as guidelines.
-    k_w = max(40, int(w * 0.08))
+    k_w = max(30, int(w * 0.035))
     h_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (k_w, 1))
     h_only = cv2.morphologyEx(binary, cv2.MORPH_OPEN, h_kernel)
 
     row_proj = np.sum(h_only, axis=1) / 255.0  # number of guideline ink pixels per row
 
     # Find peaks (rows with many guideline ink pixels)
-    peak_threshold = max(50, int(w * 0.08))
-    min_line_spacing = max(20, int(h * 0.012))
+    peak_threshold = max(50, int(w * 0.05))
+    min_line_spacing = max(25, int(h * 0.020))
     max_total_span = int(h * 0.35)
     margin_guard = max(15, int(h * 0.02))
 
@@ -132,12 +132,11 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
     # A standard Grade 3 worksheet has a repeating 3-line ruling.
     # Geometry validation ensures border noise, shadows, or absurd spacing (<20px / 5px)
     # are never accepted as handwriting guidelines.
-    baseline_y = []
-    midline_y = []
-    topline_y = []
-
-    if len(peaks) >= 3:
-        i = 0
+    def _group_rulings(start_offset: int) -> tuple[List[int], List[int], List[int]]:
+        r_top, r_mid, r_base = [], [], []
+        if len(peaks) < 3:
+            return r_top, r_mid, r_base
+        i = start_offset
         while i <= len(peaks) - 3:
             t = peaks[i]
             m = peaks[i + 1]
@@ -154,9 +153,9 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
                 and t >= margin_guard
                 and b <= (h - margin_guard)
             ):
-                topline_y.append(t)
-                midline_y.append(m)
-                baseline_y.append(b)
+                r_top.append(t)
+                r_mid.append(m)
+                r_base.append(b)
 
                 avg_sp = (sp1 + sp2) / 2.0
                 # On continuously ruled paper where base of row N is top of row N+1, advance by 2
@@ -166,6 +165,68 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
                     i += 3
                 continue
             i += 1
+        return r_top, r_mid, r_base
+
+    top0, mid0, base0 = _group_rulings(0)
+    top1, mid1, base1 = _group_rulings(1)
+
+    # On continuous paper (e.g. blue-red-blue), determine if row 0 starts at peak 0 or peak 1
+    # by selecting the phase whose midlines match red guidelines or have higher core zone ink.
+    if len(base1) >= 2 and len(base0) >= 2:
+        score0, score1 = 0.0, 0.0
+        if deskewed_color is not None:
+            r0 = [
+                float(
+                    np.mean(
+                        deskewed_color[
+                            max(0, m - 2) : min(h, m + 3), int(w * 0.2) : int(w * 0.8), 2
+                        ]
+                    )
+                    - np.mean(
+                        deskewed_color[
+                            max(0, m - 2) : min(h, m + 3), int(w * 0.2) : int(w * 0.8), 0
+                        ]
+                    )
+                )
+                for m in mid0
+            ]
+            r1 = [
+                float(
+                    np.mean(
+                        deskewed_color[
+                            max(0, m - 2) : min(h, m + 3), int(w * 0.2) : int(w * 0.8), 2
+                        ]
+                    )
+                    - np.mean(
+                        deskewed_color[
+                            max(0, m - 2) : min(h, m + 3), int(w * 0.2) : int(w * 0.8), 0
+                        ]
+                    )
+                )
+                for m in mid1
+            ]
+            score0, score1 = float(np.mean(r0)), float(np.mean(r1))
+            if score1 > score0 + 5.0:
+                topline_y, midline_y, baseline_y = top1, mid1, base1
+            else:
+                topline_y, midline_y, baseline_y = top0, mid0, base0
+        else:
+            ink0 = [
+                float(np.sum(binary[m:b, int(w * 0.1) : int(w * 0.9)] > 0))
+                for m, b in zip(mid0, base0)
+            ]
+            ink1 = [
+                float(np.sum(binary[m:b, int(w * 0.1) : int(w * 0.9)] > 0))
+                for m, b in zip(mid1, base1)
+            ]
+            if np.mean(ink1) > np.mean(ink0) * 1.5:
+                topline_y, midline_y, baseline_y = top1, mid1, base1
+            else:
+                topline_y, midline_y, baseline_y = top0, mid0, base0
+    elif len(base1) > len(base0):
+        topline_y, midline_y, baseline_y = top1, mid1, base1
+    else:
+        topline_y, midline_y, baseline_y = top0, mid0, base0
 
     # Filter rulings for global spacing consistency across the page.
     # Hand-ruled or printed worksheets have uniform line height; noise clusters

@@ -183,7 +183,6 @@ def validate_cursive_script(
             )
 
 
-
 def _find_ink_runs(
     proj: np.ndarray, ink_threshold: int = 1, min_run_width: int = 2
 ) -> List[Tuple[int, int]]:
@@ -212,7 +211,7 @@ def _find_ink_runs(
 def segment_lines_and_words(
     deskew: DeskewResult,
     expected_word_count: Optional[int] = None,
-    word_gap_multiplier: float = 2.5,
+    word_gap_multiplier: float = 2.0,
     validate_script: bool = True,
     validate_guidelines: bool = True,
 ) -> SegmentationResult:
@@ -368,7 +367,7 @@ def segment_lines_and_words(
         # Vertical ink projection across columns
         proj = np.sum(proj_mask > 0, axis=0)
 
-        ink_threshold = max(2, int(0.04 * band_height))
+        ink_threshold = max(3, int(0.07 * band_height))
         min_run_width = max(2, int(0.04 * unit_height))
         ink_runs = _find_ink_runs(proj, ink_threshold=ink_threshold, min_run_width=min_run_width)
 
@@ -398,7 +397,7 @@ def segment_lines_and_words(
 
         # Classify gaps into word boundaries vs intra-word gaps (§5.2)
         word_boundaries: List[int] = []
-        min_word_gap = max(25.0, 0.35 * unit_height)
+        min_word_gap = max(20.0, 0.22 * unit_height)
         if gaps:
             gap_widths = [g[2] for g in gaps]
             if len(gap_widths) == 1:
@@ -488,6 +487,12 @@ def segment_lines_and_words(
 
             gray_crop = deskew.gray[bbox_y : bbox_y + bbox_h, bbox_x : bbox_x + bbox_w]
             binary_crop = deskew.binary[bbox_y : bbox_y + bbox_h, bbox_x : bbox_x + bbox_w]
+
+            # 7. Filter out faint ghost text (bleed-through from reverse side of paper)
+            if np.any(binary_crop > 0):
+                mean_ink_gray = float(np.mean(gray_crop[binary_crop > 0]))
+                if mean_ink_gray > 125 and ink_pixel_count < int(0.15 * (unit_height**2)):
+                    return None
 
             norm_intra = [round(g / unit_height, 3) for g in intra_gaps]
             return WordSegment(
