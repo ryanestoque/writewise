@@ -312,6 +312,14 @@ function TooltipCard({
           {note}
         </p>
 
+        {criterion === "letter_formation" && isAttention && (
+          <p className="text-[10.5px] font-medium text-destructive dark:text-rose-400 mt-1.5 flex items-center gap-1.5">
+            <span className="inline-block size-1.5 rounded-full bg-destructive animate-pulse shrink-0" />
+            <span>Highlighted zones show stroke irregularities flagged by the CNN.</span>
+          </p>
+        )}
+
+
         {!isPinned && (
           <div className="mt-1.5 pt-1 border-t border-border/40 text-[10px] text-muted-foreground/75 flex items-center justify-between">
             <span>Click to pin details</span>

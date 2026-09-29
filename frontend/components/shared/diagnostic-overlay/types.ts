@@ -79,7 +79,9 @@ export interface FormationAnnotation {
   band: string;
   severity: Severity;
   note: string;
+  saliency_polygons?: [number, number][][];
 }
+
 
 export interface FormationOverlay {
   annotations: FormationAnnotation[];

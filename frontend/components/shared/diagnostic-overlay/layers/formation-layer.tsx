@@ -130,9 +130,28 @@ export const FormationLayer = memo(function FormationLayer({
               }`}
             />
 
+            {/* Saliency Defect Polygons (Grad-CAM XAI) */}
+            {ann.saliency_polygons?.map((poly, pIdx) => {
+              const pointsStr = poly.map(([px, py]) => `${px},${py}`).join(" ");
+              return (
+                <polygon
+                  key={`saliency-${id}-${pIdx}`}
+                  points={pointsStr}
+                  className={`pointer-events-none transition-all duration-300 ${
+                    isActive
+                      ? "fill-rose-500/30 stroke-rose-600 stroke-[2] animate-pulse"
+                      : isSpotlight
+                      ? "fill-rose-500/20 stroke-rose-400/80 stroke-[1.5]"
+                      : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 fill-rose-500/20 stroke-rose-400/80 stroke-[1.5]"
+                  } motion-reduce:animate-none`}
+                />
+              );
+            })}
+
             {/* Penmanship stroke underline */}
             <rect
               x={x}
+
               y={underlineY}
               width={w}
               height={Math.max(4 * hitScale, (isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal) * hitScale)}
