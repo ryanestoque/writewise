@@ -73,3 +73,20 @@ class TestRunLetterFormationInference:
         ]
         result = run_letter_formation_inference(crops)
         assert len(result.word_scores) == 3
+
+    def test_stub_inference_includes_saliency_polygons(self):
+        crops = [_make_fake_crop() for _ in range(10)]
+        result = run_letter_formation_inference(crops)
+        has_attention = False
+        for ws in result.word_scores:
+            assert hasattr(ws, "saliency_polygons")
+            assert isinstance(ws.saliency_polygons, list)
+            if ws.letter_formation_score < 65.0:
+                has_attention = True
+                assert len(ws.saliency_polygons) >= 1
+                poly = ws.saliency_polygons[0]
+                assert len(poly) >= 3
+                for pt in poly:
+                    assert len(pt) == 2
+        assert has_attention, "Expected at least one attention word across 10 stub samples"
+

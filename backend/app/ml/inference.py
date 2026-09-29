@@ -62,7 +62,10 @@ def _clamp(value: float, min_val: float = 0.0, max_val: float = 100.0) -> float:
     return max(min_val, min(max_val, value))
 
 
-def _run_stub_inference(word_crops: list[np.ndarray]) -> LetterFormationResult:
+def _run_stub_inference(
+    word_crops: list[np.ndarray],
+    word_bboxes: list[list[int]] | None = None,
+) -> LetterFormationResult:
     """Return deterministic plausible scores without a real model (TESTING §3.2)."""
     rng = np.random.default_rng(_STUB_SEED)
 
@@ -73,7 +76,28 @@ def _run_stub_inference(word_crops: list[np.ndarray]) -> LetterFormationResult:
         raw_score = float(rng.normal(_STUB_CENTER, _STUB_SPREAD))
         clamped = _clamp(raw_score)
         scores.append(clamped)
-        word_scores.append(WordFormationScore(word_index=i, letter_formation_score=clamped))
+
+        saliency_polygons: list[list[list[int]]] = []
+        if clamped < 65.0:
+            # Deterministic synthetic polygon within the word crop / bbox
+            bbox = word_bboxes[i] if word_bboxes and i < len(word_bboxes) else [0, 0, 96, 96]
+            bx, by, bw, bh = bbox
+            cx, cy = bx + bw // 2, by + bh // 2
+            rx, ry = max(4, bw // 6), max(4, bh // 4)
+            saliency_polygons.append([
+                [cx, cy - ry],
+                [cx + rx, cy],
+                [cx, cy + ry],
+                [cx - rx, cy],
+            ])
+
+        word_scores.append(
+            WordFormationScore(
+                word_index=i,
+                letter_formation_score=clamped,
+                saliency_polygons=saliency_polygons,
+            )
+        )
 
     if scores:
         mean = float(np.mean(scores))
@@ -87,6 +111,7 @@ def _run_stub_inference(word_crops: list[np.ndarray]) -> LetterFormationResult:
         aggregate_mean=mean,
         aggregate_std=std,
     )
+
 
 
 def _run_real_inference(model: Any, word_crops: list[np.ndarray]) -> LetterFormationResult:
@@ -118,6 +143,7 @@ def _run_real_inference(model: Any, word_crops: list[np.ndarray]) -> LetterForma
 
 def run_letter_formation_inference(
     word_crops: list[np.ndarray],
+    word_bboxes: list[list[int]] | None = None,
 ) -> LetterFormationResult:
     """Run letter-formation inference on word crops from the CV pipeline.
 
@@ -125,6 +151,8 @@ def run_letter_formation_inference(
     ----------
     word_crops : list[np.ndarray]
         Deskewed grayscale word crops from CV_PIPELINE §7's handoff.
+    word_bboxes : list[list[int]] | None, optional
+        Bounding boxes [x, y, w, h] in canvas coordinates for each word crop.
 
     Returns
     -------
@@ -141,9 +169,10 @@ def run_letter_formation_inference(
 
     try:
         if is_stub_mode():
-            return _run_stub_inference(word_crops)
+            return _run_stub_inference(word_crops, word_bboxes)
 
         model = get_model()
+
         if model is None:
             raise ModelInferenceError(
                 "Model is None but stub mode is not active — this should not happen. "

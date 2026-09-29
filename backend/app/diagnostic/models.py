@@ -76,6 +76,8 @@ class FormationAnnotation(BaseModel):
     band: str
     severity: Severity
     note: str
+    saliency_polygons: list[list[list[int]]] = Field(default_factory=list)
+
 
 
 class FormationOverlay(BaseModel):

@@ -4,7 +4,7 @@ Extends the CV pipeline's MeasurementData with per-word letter_formation_score
 and aggregate letter_formation {mean, std}.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -13,6 +13,8 @@ class WordFormationScore:
 
     word_index: int
     letter_formation_score: float  # clamped [0, 100]
+    saliency_polygons: list[list[list[int]]] = field(default_factory=list)
+
 
 
 @dataclass
