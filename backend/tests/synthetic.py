@@ -325,5 +325,3 @@ def make_off_guidelines_worksheet(
 
     _, buf = cv2.imencode(".jpg", img)
     return buf.tobytes()
-
-

@@ -37,9 +37,10 @@ class ManualScoreRequest(BaseModel):
     spacing_band: ScoreBandEnum
     slant_band: ScoreBandEnum
     baseline_alignment_band: ScoreBandEnum
+
+
 class BatchDeleteSubmissionsRequest(BaseModel):
     submission_ids: list[str]
-
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -888,4 +889,3 @@ async def batch_delete_submissions(
         )
 
     return {"deleted_count": len(found_ids), "deleted_ids": found_ids}
-

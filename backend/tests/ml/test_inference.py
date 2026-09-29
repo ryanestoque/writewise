@@ -89,4 +89,3 @@ class TestRunLetterFormationInference:
                 for pt in poly:
                     assert len(pt) == 2
         assert has_attention, "Expected at least one attention word across 10 stub samples"
-

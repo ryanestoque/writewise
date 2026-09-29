@@ -84,12 +84,14 @@ def _run_stub_inference(
             bx, by, bw, bh = bbox
             cx, cy = bx + bw // 2, by + bh // 2
             rx, ry = max(4, bw // 6), max(4, bh // 4)
-            saliency_polygons.append([
-                [cx, cy - ry],
-                [cx + rx, cy],
-                [cx, cy + ry],
-                [cx - rx, cy],
-            ])
+            saliency_polygons.append(
+                [
+                    [cx, cy - ry],
+                    [cx + rx, cy],
+                    [cx, cy + ry],
+                    [cx - rx, cy],
+                ]
+            )
 
         word_scores.append(
             WordFormationScore(
@@ -111,7 +113,6 @@ def _run_stub_inference(
         aggregate_mean=mean,
         aggregate_std=std,
     )
-
 
 
 def _extract_saliency_polygons_from_heatmap(
@@ -314,4 +315,3 @@ def run_letter_formation_inference(
         raise ModelInferenceError(
             f"CNN inference failed on {len(word_crops)} word crops: {exc}"
         ) from exc
-

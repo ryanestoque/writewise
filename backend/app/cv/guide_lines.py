@@ -158,11 +158,32 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
                 r_base.append(b)
 
                 avg_sp = (sp1 + sp2) / 2.0
-                # On continuously ruled paper where base of row N is top of row N+1, advance by 2
-                if (i + 3 < len(peaks)) and (peaks[i + 3] - b < avg_sp * 1.6):
-                    i += 2
-                else:
-                    i += 3
+                # Determine if next row is continuous (shared baseline i+=2) or distinct (i+=3).
+                # On distinct 3-line paper, peak i+3 is top, peak i+4 is mid, peak i+5 is base.
+                # On continuous paper, peak i+2 is shared, peak i+3 is mid, peak i+4 is base.
+                advance = 3
+                if i + 4 < len(peaks):
+                    c_sp1 = peaks[i + 3] - peaks[i + 2]
+                    c_sp2 = peaks[i + 4] - peaks[i + 3]
+                    # Continuous grid requires both c_sp1 and c_sp2 to match line spacing
+                    if (
+                        abs(c_sp1 - avg_sp) <= 0.15 * avg_sp
+                        and abs(c_sp2 - avg_sp) <= 0.15 * avg_sp
+                    ):
+                        if i + 5 < len(peaks):
+                            d_sp1 = peaks[i + 4] - peaks[i + 3]
+                            d_sp2 = peaks[i + 5] - peaks[i + 4]
+                            if (
+                                abs(d_sp1 - avg_sp) <= 0.20 * avg_sp
+                                and abs(d_sp2 - avg_sp) <= 0.20 * avg_sp
+                            ):
+                                advance = 3
+                            else:
+                                advance = 2
+                        else:
+                            advance = 2
+
+                i += advance
                 continue
             i += 1
         return r_top, r_mid, r_base

@@ -79,7 +79,6 @@ class FormationAnnotation(BaseModel):
     saliency_polygons: list[list[list[int]]] = Field(default_factory=list)
 
 
-
 class FormationOverlay(BaseModel):
     annotations: list[FormationAnnotation] = Field(default_factory=list)
 

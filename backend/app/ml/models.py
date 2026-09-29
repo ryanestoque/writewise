@@ -16,7 +16,6 @@ class WordFormationScore:
     saliency_polygons: list[list[list[int]]] = field(default_factory=list)
 
 
-
 @dataclass
 class LetterFormationResult:
     """Aggregate CNN inference result for a submission's word crops."""

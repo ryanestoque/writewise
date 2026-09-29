@@ -96,9 +96,7 @@ def test_diagnostic_engine_passes_saliency_polygons_to_formation_annotation():
                         "word_index": 0,
                         "bbox": [50, 70, 80, 40],
                         "letter_formation_score": 45.0,
-                        "saliency_polygons": [
-                            [[60, 80], [70, 80], [65, 95]]
-                        ],
+                        "saliency_polygons": [[[60, 80], [70, 80], [65, 95]]],
                     }
                 ],
             }
@@ -111,4 +109,3 @@ def test_diagnostic_engine_passes_saliency_polygons_to_formation_annotation():
     assert len(formation) == 1
     assert formation[0]["saliency_polygons"] == [[[60, 80], [70, 80], [65, 95]]]
     assert formation[0]["severity"] == "needs_attention"
-

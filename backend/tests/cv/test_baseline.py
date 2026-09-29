@@ -81,4 +81,3 @@ def test_baseline_deviation_ignores_descender_tails():
     # Letter body rests at y=450+50=500 -> diff should be <= 0.05, measured_y near 500 (NOT 560!)
     assert deviation <= 0.05
     assert abs(measured_y - 500) <= 2
-

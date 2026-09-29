@@ -131,7 +131,6 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
                     )
                 )
 
-
             # Spacing between consecutive words
             for gap_idx, gap_ratio in enumerate(word_gaps):
                 if gap_idx + 1 < len(words):

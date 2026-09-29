@@ -489,7 +489,6 @@ class TestCreateSubmission:
         assert db_res.data[0]["status"] == "rejected"
         assert db_res.data[0]["rejection_code"] == "QUALITY_GATE_SCRIPT_NOT_CURSIVE"
 
-
     def test_model_inference_error_returns_500(
         self, client, test_activity, test_student, monkeypatch
     ):
@@ -851,7 +850,6 @@ class TestBatchDeleteSubmissions:
                 "id", [sub1["id"], sub2["id"]]
             ).execute()
 
-
     def test_teacher_batch_delete_non_roster_student_forbidden(
         self, client, test_activity, test_student
     ):
@@ -932,4 +930,3 @@ class TestBatchDeleteSubmissions:
         )
         assert response.status_code == 400
         assert response.json()["error"]["code"] == "VALIDATION_ERROR"
-

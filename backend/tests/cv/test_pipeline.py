@@ -74,5 +74,3 @@ def test_run_cv_pipeline_fails_off_guidelines():
 
     assert exc_info.value.code == "QUALITY_GATE_OFF_GUIDELINES"
     assert "outside the 3-line guidelines" in exc_info.value.message
-
-

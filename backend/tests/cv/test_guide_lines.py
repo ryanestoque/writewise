@@ -121,3 +121,30 @@ def test_detect_and_deskew_rejects_cursive_handwriting_as_guideline_peak():
     assert result.topline_y[0] == 1000
     assert result.midline_y[0] == 1200
     assert result.baseline_y[0] == 1400
+
+
+def test_detect_and_deskew_no_overlapping_phantom_rulings():
+    """Distinct 3-line rows with inter-row gaps must not produce phantom interlaced rulings."""
+    import cv2
+    import numpy as np
+
+    from app.cv.preprocessing import PreprocessResult
+
+    h, w = 2000, 2000
+    binary = np.zeros((h, w), dtype=np.uint8)
+
+    # 2 distinct 3-line rulings (each having Blue, Red, Blue) with 80px inter-row gap
+    # Row 0: 400, 460, 520
+    # Row 1: 600, 660, 720
+    for y in [400, 460, 520, 600, 660, 720]:
+        cv2.line(binary, (100, y), (w - 100, y), 255, thickness=3)
+
+    prep = PreprocessResult(gray=binary, denoised=binary, binary=binary, otsu_threshold=100.0)
+    result = detect_and_deskew(prep)
+
+    # Exactly 2 rulings should be detected, NOT 3 (no phantom at (520, 600, 660))
+    assert len(result.baseline_y) == 2
+    assert result.topline_y == [400, 600]
+    assert result.midline_y == [460, 660]
+    assert result.baseline_y == [520, 720]
+

@@ -307,3 +307,45 @@ def test_cursive_worksheet_passes_script_validation():
     assert result.total_word_count == 6
 
 
+def test_cursive_intra_word_letter_gaps_not_oversegmented():
+    """When cursive words have small stroke fissures and letter connector gaps (~0.5x unit height),
+    they must not be split into separate words if a clear larger word gap exists.
+    """
+    import cv2
+    import numpy as np
+
+    from app.cv.guide_lines import DeskewResult
+
+    h, w = 1200, 1600
+    binary = np.zeros((h, w), dtype=np.uint8)
+    top_y, mid_y, base_y = 300, 360, 420
+
+    # Draw 3 guide lines
+    cv2.line(binary, (50, top_y), (w - 50, top_y), 255, thickness=2)
+    cv2.line(binary, (50, mid_y), (w - 50, mid_y), 255, thickness=2)
+    cv2.line(binary, (50, base_y), (w - 50, base_y), 255, thickness=2)
+
+    # Draw 2 cursive words with letter stems and realistic small fissures:
+    # Word 1: stems at x=100, 145, 190 (intra-word letter gap = 30px, ~0.50x unit_h)
+    # Plus tiny 2px stroke fissure at x=107 and x=152 (which collapses median_gap to ~2px)
+    # Word Gap: 120px (~2.00x unit_h) -> next word starts at x=325
+    # Word 2: stems at x=325, 370, 415 (intra-word letter gap = 30px, ~0.50x unit_h)
+    for stem_x in [100, 145, 190, 325, 370, 415]:
+        cv2.rectangle(binary, (stem_x, mid_y + 5), (stem_x + 6, base_y - 2), 255, thickness=-1)
+        # 2px fissure
+        cv2.rectangle(binary, (stem_x + 9, mid_y + 5), (stem_x + 15, base_y - 2), 255, thickness=-1)
+
+    deskew = DeskewResult(
+        gray=255 - binary,
+        denoised=255 - binary,
+        binary=binary,
+        topline_y=[top_y],
+        midline_y=[mid_y],
+        baseline_y=[base_y],
+        deskew_angle=0.0,
+    )
+
+    result = segment_lines_and_words(deskew, expected_word_count=2, validate_script=False)
+    assert result.total_word_count == 2
+    assert len(result.lines[0].words) == 2
+    assert len(result.lines[0].word_gaps) == 1

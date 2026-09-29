@@ -211,7 +211,7 @@ def _find_ink_runs(
 def segment_lines_and_words(
     deskew: DeskewResult,
     expected_word_count: Optional[int] = None,
-    word_gap_multiplier: float = 2.0,
+    word_gap_multiplier: float = 2.5,
     validate_script: bool = True,
     validate_guidelines: bool = True,
 ) -> SegmentationResult:
@@ -397,20 +397,43 @@ def segment_lines_and_words(
 
         # Classify gaps into word boundaries vs intra-word gaps (§5.2)
         word_boundaries: List[int] = []
-        min_word_gap = max(20.0, 0.22 * unit_height)
+        # In Grade 3 cursive penmanship, word gaps are at least ~0.70x guideline unit height,
+        # whereas intra-word letter connectors and ligatures are <= 0.55x.
+        min_word_gap = max(35.0, 0.70 * unit_height)
         if gaps:
             gap_widths = [g[2] for g in gaps]
-            if len(gap_widths) == 1:
-                # If there is only 1 gap, check against guideline reference height
-                if gap_widths[0] >= min_word_gap:
-                    word_boundaries.append(0)
-            else:
-                median_gap = float(np.median(gap_widths))
-                split_threshold = max(word_gap_multiplier * median_gap, min_word_gap)
+            # Exclude tiny noise fissures (< 0.08 * unit_height) when
+            # computing median intra-word gap
+            min_fissure = max(4, int(0.08 * unit_height))
+            non_fissure_gaps = [w for w in gap_widths if w >= min_fissure]
 
-                for g_idx, g_width in enumerate(gap_widths):
-                    if g_width >= split_threshold:
-                        word_boundaries.append(g_idx)
+            # Intra-word reference gap (gaps smaller than the minimum word gap)
+            intra_candidates = [w for w in non_fissure_gaps if w < min_word_gap]
+            if intra_candidates:
+                baseline_intra_gap = float(np.median(intra_candidates))
+            elif non_fissure_gaps:
+                baseline_intra_gap = float(np.min(non_fissure_gaps))
+            else:
+                baseline_intra_gap = float(np.median(gap_widths))
+
+            split_threshold = max(word_gap_multiplier * baseline_intra_gap, min_word_gap)
+
+            # Candidate word boundaries must exceed both split_threshold and min_word_gap
+            candidate_indices = [
+                g_idx for g_idx, g_width in enumerate(gap_widths) if g_width >= split_threshold
+            ]
+
+            # If expected_word_count is known and this is a single active line,
+            # constrain to at most expected_word_count - 1 widest boundaries
+            if expected_word_count and expected_word_count > 1 and n_rulings == 1:
+                max_boundaries = expected_word_count - 1
+                if len(candidate_indices) > max_boundaries:
+                    sorted_by_width = sorted(
+                        candidate_indices, key=lambda idx: gap_widths[idx], reverse=True
+                    )
+                    candidate_indices = sorted(sorted_by_width[:max_boundaries])
+
+            word_boundaries = candidate_indices
 
         # Group ink runs into words
         words_in_line: List[WordSegment] = []
