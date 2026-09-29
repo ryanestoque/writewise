@@ -106,7 +106,16 @@ CV_PIPELINE.md's schema shape stays uniform — `letter_formation_score` added p
 
 What *does* differ is the `ScoreProvider`'s internal logic per criterion: for the four OpenCV criteria, it applies the threshold-mapping function derived from calibration analysis. For letter formation, it's an **identity passthrough** — the "raw" value already is the score. Same schema shape, different logic per criterion — consistent with `ScoreProvider` already being described in ARCHITECTURE §10 as a per-criterion abstraction, not a new pattern.
 
+### 6.6 Explainable AI (XAI) via Grad-CAM Defect Saliency
+To explain why a word crop received a low formation score ($y < 75$, "Needs Attention") without resorting to fragile character-level cuts on connected cursive ligatures, deployed inference runs Gradient-weighted Class Activation Mapping (Grad-CAM) using `tf.GradientTape`:
+1. **Target Feature Map:** The final convolutional layer of MobileNetV2 (`Conv_1` / `out_relu`, shape $3 \times 3 \times 1280$).
+2. **Defect Gradient:** Gradients of the negative score $-y$ are extracted and pooled spatially into neuron weights $\alpha_k$.
+3. **Activation Mask:** $L_{\text{defect}} = \text{ReLU}\left(-\sum_k \alpha_k A^k\right)$, isolating the specific stroke anomalies that penalized the prediction.
+4. **Vector Polygon Approximation:** The activation mask is upsampled, smoothed, thresholded, and simplified via `cv2.approxPolyDP` into canvas-space polygon coordinates (`saliency_polygons`).
+5. **Zero Raster Overhead:** Delivering vector polygon points in the diagnostic overlay JSON avoids heavy image uploads/downloads, providing instant, responsive SVG rendering at 200% zoom.
+
 ---
+
 
 ## 7. Training Operations
 
