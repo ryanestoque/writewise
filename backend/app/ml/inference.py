@@ -114,8 +114,120 @@ def _run_stub_inference(
 
 
 
-def _run_real_inference(model: Any, word_crops: list[np.ndarray]) -> LetterFormationResult:
-    """Run real CNN inference on word crops."""
+def _extract_saliency_polygons_from_heatmap(
+    heatmap: np.ndarray,
+    bbox: list[int] | tuple[int, int, int, int] | None = None,
+) -> list[list[list[int]]]:
+    """Convert a normalized [0, 1] 2D heatmap into simplified canvas polygons."""
+    max_val = float(np.max(heatmap))
+    if max_val < 0.3:
+        return []
+
+    # Threshold top 35% activation
+    thresh_val = max(0.4, max_val * 0.65)
+    binary = ((heatmap >= thresh_val) * 255).astype(np.uint8)
+
+    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    polygons: list[list[list[int]]] = []
+
+    x0 = int(bbox[0]) if bbox else 0
+    y0 = int(bbox[1]) if bbox else 0
+
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area < 16:  # ignore tiny speckles
+            continue
+        epsilon = 0.03 * cv2.arcLength(cnt, True)
+        approx = cv2.approxPolyDP(cnt, epsilon, True)
+        if len(approx) < 3:
+            continue
+
+        poly: list[list[int]] = []
+        for pt in approx:
+            px, py = int(pt[0][0]), int(pt[0][1])
+            poly.append([px + x0, py + y0])
+        polygons.append(poly)
+
+    return polygons
+
+
+def _compute_gradcam_saliency(
+    model: Any,
+    preprocessed_crop: np.ndarray,
+    bbox: list[int] | None = None,
+) -> list[list[list[int]]]:
+    """Compute defect saliency polygons using Grad-CAM on MobileNetV2."""
+    if model is None:
+        return []
+
+    try:
+        import tensorflow as tf
+
+        # Find target conv layer (Conv_1 or out_relu in MobileNetV2)
+        target_layer = None
+        for name in ["Conv_1", "out_relu", "top_conv"]:
+            try:
+                target_layer = model.get_layer(name)
+                break
+            except (ValueError, AttributeError):
+                continue
+
+        if target_layer is None:
+            # Fall back to last 4D conv layer
+            for layer in reversed(getattr(model, "layers", [])):
+                if len(getattr(layer, "output_shape", ())) == 4:
+                    target_layer = layer
+                    break
+
+        if target_layer is None:
+            return []
+
+        grad_model = tf.keras.models.Model(
+            inputs=[model.inputs],
+            outputs=[target_layer.output, model.output],
+        )
+
+        input_tensor = tf.expand_dims(preprocessed_crop, axis=0)
+        with tf.GradientTape() as tape:
+            conv_outputs, predictions = grad_model(input_tensor)
+            score = predictions[0][0]
+            # Negative gradient: features pulling score down
+            loss = -score
+
+        grads = tape.gradient(loss, conv_outputs)
+        if grads is None:
+            return []
+
+        pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+        conv_outputs = conv_outputs[0]
+
+        # Linear combination of feature maps
+        cam = tf.reduce_sum(tf.multiply(pooled_grads, conv_outputs), axis=-1)
+        cam = tf.maximum(cam, 0)  # ReLU
+        cam_np = cam.numpy()
+
+        cam_max = float(np.max(cam_np))
+        if cam_max > 0:
+            cam_np = cam_np / cam_max
+
+        # Upsample to crop dimensions
+        h = bbox[3] if bbox else _INPUT_SIZE
+        w = bbox[2] if bbox else _INPUT_SIZE
+        resized_cam = cv2.resize(cam_np, (w, h), interpolation=cv2.INTER_LINEAR)
+        blurred_cam = cv2.GaussianBlur(resized_cam, (3, 3), 0)
+
+        return _extract_saliency_polygons_from_heatmap(blurred_cam, bbox)
+    except Exception as exc:
+        logger.warning("Grad-CAM computation encountered an error, falling back to []: %s", exc)
+        return []
+
+
+def _run_real_inference(
+    model: Any,
+    word_crops: list[np.ndarray],
+    word_bboxes: list[list[int]] | None = None,
+) -> LetterFormationResult:
+    """Run real CNN inference on word crops with Grad-CAM saliency."""
     preprocessed = np.array([_preprocess_crop(crop) for crop in word_crops])
 
     # Batch prediction
@@ -129,7 +241,23 @@ def _run_real_inference(model: Any, word_crops: list[np.ndarray]) -> LetterForma
         raw_score = float(pred[0]) if hasattr(pred, "__len__") and len(pred) > 0 else float(pred)
         clamped = _clamp(raw_score)
         scores.append(clamped)
-        word_scores.append(WordFormationScore(word_index=i, letter_formation_score=clamped))
+
+        saliency_polygons: list[list[list[int]]] = []
+        if clamped < 75.0:
+            bbox = word_bboxes[i] if word_bboxes and i < len(word_bboxes) else None
+            saliency_polygons = _compute_gradcam_saliency(
+                model=model,
+                preprocessed_crop=preprocessed[i],
+                bbox=bbox,
+            )
+
+        word_scores.append(
+            WordFormationScore(
+                word_index=i,
+                letter_formation_score=clamped,
+                saliency_polygons=saliency_polygons,
+            )
+        )
 
     mean = float(np.mean(scores))
     std = float(np.std(scores))
@@ -172,14 +300,13 @@ def run_letter_formation_inference(
             return _run_stub_inference(word_crops, word_bboxes)
 
         model = get_model()
-
         if model is None:
             raise ModelInferenceError(
                 "Model is None but stub mode is not active — this should not happen. "
                 "Check that load_model() was called at startup."
             )
 
-        return _run_real_inference(model, word_crops)
+        return _run_real_inference(model, word_crops, word_bboxes)
 
     except ModelInferenceError:
         raise
@@ -187,3 +314,4 @@ def run_letter_formation_inference(
         raise ModelInferenceError(
             f"CNN inference failed on {len(word_crops)} word crops: {exc}"
         ) from exc
+
