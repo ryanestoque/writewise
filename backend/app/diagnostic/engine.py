@@ -114,6 +114,7 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
 
                 # 4. Letter Formation
                 score = word.get("letter_formation_score")
+                saliency_polys = word.get("saliency_polygons") or []
                 f_sev, band, f_note = evaluate_letter_formation(score)
                 if f_sev == "needs_attention":
                     attention_counts["letter_formation"] += 1
@@ -126,8 +127,10 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
                         band=band,
                         severity=f_sev,
                         note=f_note,
+                        saliency_polygons=saliency_polys,
                     )
                 )
+
 
             # Spacing between consecutive words
             for gap_idx, gap_ratio in enumerate(word_gaps):

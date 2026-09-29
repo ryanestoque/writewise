@@ -83,3 +83,32 @@ def test_generate_diagnostic_overlay_resilient_on_empty_input():
     overlay = generate_diagnostic_overlay(empty_raw)
     assert overlay["summary"]["attention_item_count"] == 0
     assert len(overlay["baseline"]["annotations"]) == 0
+
+
+def test_diagnostic_engine_passes_saliency_polygons_to_formation_annotation():
+    raw_output = {
+        "guide_lines": {"baseline_y": [100], "midline_y": [80], "topline_y": [60]},
+        "lines": [
+            {
+                "line_index": 0,
+                "words": [
+                    {
+                        "word_index": 0,
+                        "bbox": [50, 70, 80, 40],
+                        "letter_formation_score": 45.0,
+                        "saliency_polygons": [
+                            [[60, 80], [70, 80], [65, 95]]
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+
+    overlay = generate_diagnostic_overlay(raw_output)
+    formation = overlay["letter_formation"]["annotations"]
+
+    assert len(formation) == 1
+    assert formation[0]["saliency_polygons"] == [[[60, 80], [70, 80], [65, 95]]]
+    assert formation[0]["severity"] == "needs_attention"
+
