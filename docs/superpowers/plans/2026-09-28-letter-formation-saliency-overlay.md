@@ -34,7 +34,7 @@
 - Produces: `FormationAnnotation.saliency_polygons: list[list[list[int]]]`
 - Modifies: `_run_stub_inference(word_crops)` to attach synthetic polygon vertices for attention words.
 
-- [ ] **Step 1: Write the failing test for stub saliency polygons**
+- [x] **Step 1: Write the failing test for stub saliency polygons**
 
 In `backend/tests/test_ml.py`:
 ```python
@@ -57,12 +57,12 @@ def test_stub_inference_includes_saliency_polygons_for_attention_words():
                 assert len(pt) == 2
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest backend/tests/test_ml.py -k test_stub_inference_includes_saliency_polygons_for_attention_words`  
 Expected: FAIL with `AttributeError` or missing `saliency_polygons` attribute.
 
-- [ ] **Step 3: Update `WordFormationScore` and `FormationAnnotation` models**
+- [x] **Step 3: Update `WordFormationScore` and `FormationAnnotation` models**
 
 In `backend/app/ml/models.py`:
 ```python
@@ -93,7 +93,7 @@ class FormationAnnotation(BaseModel):
     )
 ```
 
-- [ ] **Step 4: Update `_run_stub_inference()` in `backend/app/ml/inference.py`**
+- [x] **Step 4: Update `_run_stub_inference()` in `backend/app/ml/inference.py`**
 
 Add deterministic synthetic polygon generation for attention words:
 ```python
@@ -127,12 +127,12 @@ def _run_stub_inference(word_crops: list[np.ndarray]) -> LetterFormationResult:
         )
 ```
 
-- [ ] **Step 5: Run tests and verify they pass**
+- [x] **Step 5: Run tests and verify they pass**
 
 Run: `uv run pytest backend/tests/test_ml.py`  
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend/app/ml/models.py backend/app/diagnostic/models.py backend/app/ml/inference.py backend/tests/test_ml.py
@@ -151,7 +151,7 @@ git commit -m "feat(ml): add saliency_polygons to formation scores and stub infe
 - Produces: `_compute_gradcam_saliency(model: Any, preprocessed_crop: np.ndarray, word_bbox: list[int] | None = None) -> list[list[list[int]]]`
 - Integrates: Call inside `_run_real_inference(model, word_crops, word_bboxes)` for words with score $< 75.0$.
 
-- [ ] **Step 1: Write unit tests for `_compute_gradcam_saliency` and contour extraction**
+- [x] **Step 1: Write unit tests for `_compute_gradcam_saliency` and contour extraction**
 
 Create `backend/tests/test_ml_gradcam.py`:
 ```python
@@ -182,12 +182,12 @@ def test_extract_saliency_polygons_empty_on_cold_heatmap():
     assert polygons == []
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest backend/tests/test_ml_gradcam.py`  
 Expected: FAIL with `ImportError` (`_extract_saliency_polygons_from_heatmap` not defined).
 
-- [ ] **Step 3: Implement `_extract_saliency_polygons_from_heatmap` and `_compute_gradcam_saliency`**
+- [x] **Step 3: Implement `_extract_saliency_polygons_from_heatmap` and `_compute_gradcam_saliency`**
 
 In `backend/app/ml/inference.py`:
 ```python
@@ -296,16 +296,16 @@ def _compute_gradcam_saliency(
         return []
 ```
 
-- [ ] **Step 4: Update `_run_real_inference()` and `run_letter_formation_inference()` signature**
+- [x] **Step 4: Update `_run_real_inference()` and `run_letter_formation_inference()` signature**
 
 Accept optional `word_bboxes: list[list[int]] | None = None` in `run_letter_formation_inference()`. For words scoring $< 75.0$, invoke `_compute_gradcam_saliency()`.
 
-- [ ] **Step 5: Run tests and verify they pass**
+- [x] **Step 5: Run tests and verify they pass**
 
 Run: `uv run pytest backend/tests/test_ml_gradcam.py backend/tests/test_ml.py`  
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend/app/ml/inference.py backend/tests/test_ml_gradcam.py
@@ -324,7 +324,7 @@ git commit -m "feat(ml): implement Grad-CAM defect saliency and polygon extracti
 - Consumes: `raw_output["lines"][l]["words"][w]["saliency_polygons"]`
 - Produces: `FormationAnnotation(..., saliency_polygons=...)`
 
-- [ ] **Step 1: Write test for diagnostic engine saliency pass-through**
+- [x] **Step 1: Write test for diagnostic engine saliency pass-through**
 
 In `backend/tests/test_diagnostic.py`:
 ```python
@@ -358,12 +358,12 @@ def test_diagnostic_engine_passes_saliency_polygons_to_formation_annotation():
     assert formation[0]["severity"] == "needs_attention"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest backend/tests/test_diagnostic.py -k test_diagnostic_engine_passes_saliency_polygons_to_formation_annotation`  
 Expected: FAIL (`saliency_polygons` is empty or not mapped).
 
-- [ ] **Step 3: Update `backend/app/diagnostic/engine.py`**
+- [x] **Step 3: Update `backend/app/diagnostic/engine.py`**
 
 In `generate_diagnostic_overlay()` around line 90:
 ```python
@@ -383,17 +383,17 @@ formation_annotations.append(
 )
 ```
 
-- [ ] **Step 4: Run diagnostic tests**
+- [x] **Step 4: Run diagnostic tests**
 
 Run: `uv run pytest backend/tests/test_diagnostic.py`  
 Expected: PASS
 
-- [ ] **Step 5: Run linter and formatting check**
+- [x] **Step 5: Run linter and formatting check**
 
 Run: `uv run ruff check .`  
 Expected: Clean with 0 errors.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend/app/diagnostic/engine.py backend/tests/test_diagnostic.py
@@ -413,7 +413,7 @@ git commit -m "feat(diagnostic): pass saliency polygons into formation overlay a
 - Updates `FormationAnnotation.saliency_polygons?: [number, number][][]`
 - Renders SVG `<polygon>` elements with responsive styling and accessibility attributes.
 
-- [ ] **Step 1: Update TypeScript interface in `types.ts`**
+- [x] **Step 1: Update TypeScript interface in `types.ts`**
 
 In `frontend/components/shared/diagnostic-overlay/types.ts`:
 ```typescript
@@ -429,7 +429,7 @@ export interface FormationAnnotation {
 }
 ```
 
-- [ ] **Step 2: Update `FormationLayer` in `formation-layer.tsx` to render polygons**
+- [x] **Step 2: Update `FormationLayer` in `formation-layer.tsx` to render polygons**
 
 Add saliency polygons inside the annotation group:
 ```tsx
@@ -452,7 +452,7 @@ Add saliency polygons inside the annotation group:
 })}
 ```
 
-- [ ] **Step 3: Update `AnnotationTooltip` in `annotation-tooltip.tsx` for XAI explanation**
+- [x] **Step 3: Update `AnnotationTooltip` in `annotation-tooltip.tsx` for XAI explanation**
 
 When `criterion === "letter_formation"` and `severity === "needs_attention"`, include an XAI subtitle:
 ```tsx
@@ -463,12 +463,12 @@ When `criterion === "letter_formation"` and `severity === "needs_attention"`, in
 )}
 ```
 
-- [ ] **Step 4: Run frontend typecheck and linter**
+- [x] **Step 4: Run frontend typecheck and linter**
 
 Run: `npx tsc --noEmit` and `npx eslint .` inside `frontend/`  
 Expected: 0 errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/components/shared/diagnostic-overlay/types.ts frontend/components/shared/diagnostic-overlay/layers/formation-layer.tsx frontend/components/shared/diagnostic-overlay/annotation-tooltip.tsx
@@ -483,21 +483,21 @@ git commit -m "feat(overlay): render Grad-CAM saliency polygons in SVG formation
 - Modify: `docs/ML_PIPELINE.md`
 - Run: Full backend pytest and frontend checks
 
-- [ ] **Step 1: Document Grad-CAM XAI in `docs/ML_PIPELINE.md`**
+- [x] **Step 1: Document Grad-CAM XAI in `docs/ML_PIPELINE.md`**
 
 Add section 6.6 "Grad-CAM Saliency Extraction for Regression" detailing the math, `tf.GradientTape` usage, and vector polygon simplification.
 
-- [ ] **Step 2: Run full backend test suite**
+- [x] **Step 2: Run full backend test suite**
 
 Run: `uv run pytest backend/tests/`  
 Expected: All tests pass.
 
-- [ ] **Step 3: Run full frontend validation**
+- [x] **Step 3: Run full frontend validation**
 
 Run: `npm --prefix frontend run build` (or `npx tsc --noEmit`)  
 Expected: Build passes with zero type errors.
 
-- [ ] **Step 4: Final commit**
+- [x] **Step 4: Final commit**
 
 ```bash
 git add docs/ML_PIPELINE.md
