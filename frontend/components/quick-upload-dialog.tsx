@@ -556,7 +556,8 @@ function UploadFlow({
       setSelectedFile(rotatedFile);
       setRotationDegrees(nextDegrees);
       setIsPortrait((prev) => !prev);
-    } catch {
+    } catch (err) {
+      console.error("Failed to rotate photo:", err);
       toast.error("Failed to rotate photo. Please try again.");
     } finally {
       setIsRotating(false);
