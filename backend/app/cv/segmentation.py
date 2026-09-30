@@ -140,7 +140,7 @@ def validate_cursive_script(
 
     for line in lines:
         unit_h = max(1.0, float(line.baseline_y - line.midline_y))
-        line_mask_half = max(3, int(0.08 * unit_h))
+        line_mask_half = max(2, int(0.04 * unit_h))
         # Words must be wide enough to contain multiple characters (>= 1.1x guideline height)
         min_word_w = int(1.1 * unit_h)
 
@@ -326,7 +326,7 @@ def segment_lines_and_words(
         # Suppress extreme border extremities (shadows/page edges touching image margins)
         proj_mask[:, : int(0.01 * img_w)] = 0
         proj_mask[:, int(0.99 * img_w) :] = 0
-        line_mask_half = max(3, int(0.08 * unit_height))
+        line_mask_half = max(2, int(0.04 * unit_height))
         for gy in (top_y, mid_y, base_y):
             rel_y = gy - band_top
             y_min_line = max(0, rel_y - line_mask_half)
@@ -378,7 +378,7 @@ def segment_lines_and_words(
         # Vertical ink projection across columns
         proj = np.sum(proj_mask > 0, axis=0)
 
-        ink_threshold = max(3, int(0.07 * band_height))
+        ink_threshold = max(3, int(0.05 * unit_height))
         min_run_width = max(2, int(0.04 * unit_height))
         ink_runs = _find_ink_runs(proj, ink_threshold=ink_threshold, min_run_width=min_run_width)
 
@@ -482,7 +482,11 @@ def segment_lines_and_words(
                 return None
 
             # 2. Filter out vertical margin lines (skinny and tall spanning line band)
-            if (bbox_h / max(1, bbox_w) > 2.5) and (bbox_h > int(0.50 * band_height)):
+            if (
+                (bbox_h / max(1, bbox_w) > 3.5)
+                and (bbox_h > int(0.75 * band_height))
+                and (bbox_w < int(0.15 * unit_height))
+            ):
                 return None
 
             # 3. Filter out low-density noise clouds across blank lines
