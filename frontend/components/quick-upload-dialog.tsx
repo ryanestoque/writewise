@@ -1455,8 +1455,6 @@ function UploadFlow({
                 previewUrl={previewUrl}
                 retryRef={retryButtonRef}
                 onRetake={handleRetakePhoto}
-                onReview={() => setStep(3)}
-                reviewLabel="Back to Review"
                 onRetry={handleSubmit}
               />
             )}

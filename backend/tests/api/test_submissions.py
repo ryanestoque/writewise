@@ -238,6 +238,64 @@ class TestCreateSubmission:
         assert db_overlay is not None
         assert "summary" in db_overlay
 
+    def test_submission_letter_formation_saliency_polygons_in_overlay(
+        self, client, test_activity, test_student, cleanup_submissions
+    ):
+        """Verify that letter formation saliency polygons are computed with true canvas bboxes,
+        persisted in raw_output, and passed into the diagnostic overlay."""
+        img_bytes = make_segmented_worksheet()
+        response = client.post(
+            "/api/submissions",
+            data={
+                "activity_id": test_activity["id"],
+                "student_id": test_student["id"],
+            },
+            files={"image": ("worksheet.jpg", img_bytes, "image/jpeg")},
+        )
+        assert response.status_code == 201
+        data = response.json()
+        sub_id = data["submission_id"]
+        cleanup_submissions.append(
+            {
+                "id": sub_id,
+                "image_path": f"{test_student['id']}/{sub_id}.jpg",
+            }
+        )
+
+        overlay = data["measurement"]["overlay"]
+        formation_ann = overlay["letter_formation"]["annotations"]
+        assert len(formation_ann) > 0
+
+        # Check raw_output from database
+        meas_res = (
+            supabase_client.table("measurement")
+            .select("raw_output, overlay")
+            .eq("submission_id", sub_id)
+            .execute()
+        )
+        assert len(meas_res.data) == 1
+        raw_output = meas_res.data[0]["raw_output"]
+
+        # Check raw_output has saliency_polygons for every word
+        all_words = [w for line in raw_output.get("lines", []) for w in line.get("words", [])]
+        assert len(all_words) > 0
+        for w in all_words:
+            assert "saliency_polygons" in w
+            assert isinstance(w["saliency_polygons"], list)
+
+        # Check that any attention annotation has non-empty saliency_polygons in canvas coordinates
+        attention_ann = [ann for ann in formation_ann if ann["severity"] == "needs_attention"]
+        assert len(attention_ann) >= 1
+        first_attn = attention_ann[0]
+        assert "saliency_polygons" in first_attn
+        assert len(first_attn["saliency_polygons"]) >= 1
+        poly = first_attn["saliency_polygons"][0]
+        assert len(poly) >= 3
+        bx, by, bw, bh = first_attn["bbox"]
+        for pt in poly:
+            assert bx <= pt[0] <= bx + bw
+            assert by <= pt[1] <= by + bh
+
     def test_successful_upload_calibrated_scoring(
         self, client, test_activity, test_student, cleanup_submissions, monkeypatch
     ):
@@ -496,7 +554,7 @@ class TestCreateSubmission:
         import app.api.submissions as submissions_module
         from app.ml.exceptions import ModelInferenceError
 
-        def mock_failing_inference(crops):
+        def mock_failing_inference(crops, *args, **kwargs):
             raise ModelInferenceError("Simulated CNN inference failure")
 
         monkeypatch.setattr(
