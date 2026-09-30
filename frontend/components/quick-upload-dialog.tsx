@@ -8,6 +8,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -201,12 +202,19 @@ function UploadFlow({
   const [isRotating, setIsRotating] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadError, setUploadError] = useState<UploadError | null>(null);
+  const router = useRouter();
   const [uploadedCount, setUploadedCount] = useState(0);
   const [submittedPairs, setSubmittedPairs] = useState<Set<string>>(new Set());
   const [lastSubmittedStudent, setLastSubmittedStudent] = useState<string | null>(
     null
   );
   const [lastSubmittedActivity, setLastSubmittedActivity] = useState<string | null>(
+    null
+  );
+  const [lastSubmittedSubmissionId, setLastSubmittedSubmissionId] = useState<string | null>(
+    null
+  );
+  const [lastSubmittedActivityId, setLastSubmittedActivityId] = useState<string | null>(
     null
   );
   const [lastRetakeTip, setLastRetakeTip] = useState<{ tip: string; badgeLabel?: string } | null>(
@@ -579,7 +587,13 @@ function UploadFlow({
         studentId,
       },
       {
-        onSuccess: () => {
+        onSuccess: (data: unknown) => {
+          const res = data as { submission_id?: string; id?: string };
+          const subId = res?.submission_id || res?.id || null;
+          if (subId) {
+            setLastSubmittedSubmissionId(subId);
+          }
+          setLastSubmittedActivityId(activityId);
           setUploadedCount((prev) => prev + 1);
           setSubmittedPairs((prev) =>
             new Set(prev).add(`${activityId}:${studentId}`)
@@ -598,6 +612,16 @@ function UploadFlow({
         },
       }
     );
+  };
+
+  const handleViewDiagnostic = () => {
+    const actId = prefilledActivityId ?? activityChoice?.value ?? lastSubmittedActivityId;
+    if (lastSubmittedSubmissionId && actId) {
+      onClose();
+      router.push(`/activities/${actId}/submissions/${lastSubmittedSubmissionId}`);
+    } else {
+      onClose();
+    }
   };
 
   const canProceed = Boolean(
@@ -1493,24 +1517,25 @@ function UploadFlow({
                   </Badge>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-xs pt-2">
+                <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-xs sm:max-w-sm pt-2">
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={handleViewDiagnostic}
+                    className="h-10 sm:h-9 text-xs sm:text-sm font-semibold gap-1.5 w-full shadow-warm bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
+                  >
+                    <ArrowRightIcon className="size-3.5" />
+                    View Diagnostic Results
+                  </Button>
                   <Button
                     ref={uploadNextButtonRef}
                     type="button"
-                    variant="default"
-                    onClick={handleNextUpload}
-                    className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
-                  >
-                    <Plus className="size-3.5" />
-                    Upload Next Student
-                  </Button>
-                  <Button
-                    type="button"
                     variant="outline"
-                    onClick={onClose}
-                    className="h-10 sm:h-9 text-xs sm:text-sm font-medium w-full cursor-pointer"
+                    onClick={handleNextUpload}
+                    className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full cursor-pointer bg-background hover:bg-muted"
                   >
-                    Done / View Roster
+                    <Plus className="size-3.5 text-muted-foreground" />
+                    Upload Next Student
                   </Button>
                 </div>
               </div>
