@@ -1,4 +1,5 @@
 import logging
+import statistics
 from typing import Any
 
 from app.diagnostic.models import (
@@ -17,6 +18,8 @@ from app.diagnostic.models import (
     SpacingOverlay,
 )
 from app.diagnostic.rules import (
+    SLANT_LINE_RANGE_MAX,
+    SLANT_LINE_STDEV_MAX,
     evaluate_baseline_drift,
     evaluate_letter_formation,
     evaluate_size_consistency,
@@ -56,6 +59,23 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
             line_idx = line.get("line_index", 0)
             words = line.get("words") or []
             word_gaps = line.get("word_gaps") or []
+
+            # Line-level slant statistics
+            line_slants = [
+                float(w["slant_deg"])
+                for w in words
+                if w.get("slant_deg") is not None
+            ]
+            line_median_slant: float | None = None
+            is_high_slant_variance = False
+
+            if line_slants:
+                line_median_slant = float(statistics.median(line_slants))
+                if len(line_slants) >= 2:
+                    std_slant = statistics.stdev(line_slants)
+                    range_slant = max(line_slants) - min(line_slants)
+                    if std_slant > SLANT_LINE_STDEV_MAX or range_slant > SLANT_LINE_RANGE_MAX:
+                        is_high_slant_variance = True
 
             # Word-level annotations
             for word in words:
@@ -97,7 +117,12 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
 
                 # 3. Slant
                 slant_deg = word.get("slant_deg", 0.0)
-                sl_sev, vector, sl_note = evaluate_slant(slant_deg, bbox)
+                sl_sev, vector, sl_note = evaluate_slant(
+                    slant_deg,
+                    bbox,
+                    line_median=line_median_slant,
+                    is_high_variance=is_high_slant_variance,
+                )
                 if sl_sev == "needs_attention":
                     attention_counts["slant"] += 1
                 slant_annotations.append(

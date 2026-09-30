@@ -43,10 +43,30 @@ def test_evaluate_slant():
     sev, vector, note = evaluate_slant(12.0, [100, 200, 80, 50])
     assert sev == "normal"
     assert len(vector) == 4
+    assert "consistent slant" in note.lower()
 
     sev, vector, note = evaluate_slant(35.0, [100, 200, 80, 50])
     assert sev == "needs_attention"
     assert "steep" in note.lower()
+
+    sev, vector, note = evaluate_slant(-10.0, [100, 200, 80, 50])
+    assert sev == "needs_attention"
+    assert "backward" in note.lower()
+
+    # High line variance tests
+    sev, vector, note = evaluate_slant(
+        26.0, [100, 200, 80, 50], line_median=3.0, is_high_variance=True
+    )
+    assert sev == "needs_attention"
+    assert "irregular slant" in note.lower()
+    assert "deviates" in note.lower()
+
+    # Normal word on high variance line
+    sev, vector, note = evaluate_slant(
+        3.0, [100, 200, 80, 50], line_median=3.0, is_high_variance=True
+    )
+    assert sev == "normal"
+    assert "acceptable slant" in note.lower()
 
 
 def test_evaluate_letter_formation():

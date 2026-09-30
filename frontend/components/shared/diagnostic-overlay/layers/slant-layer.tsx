@@ -51,7 +51,12 @@ export const SlantLayer = memo(function SlantLayer({
           ? OVERLAY_COLORS.needs_attention.stroke
           : OVERLAY_COLORS.proficient.stroke;
         const id = `slant-${ann.line_index}-${ann.word_index}`;
-        const title = isAttention ? "Irregular Slant" : "Consistent Slant";
+        const isConsistent = ann.note.toLowerCase().includes("consistent");
+        const title = isAttention
+          ? "Irregular Slant"
+          : isConsistent
+            ? "Consistent Slant"
+            : "Acceptable Slant";
         const hoverPayload = {
           id,
           criterion: "slant" as const,
@@ -79,7 +84,7 @@ export const SlantLayer = memo(function SlantLayer({
             tabIndex={isFocusable ? 0 : -1}
             aria-expanded={isActive}
             aria-describedby={isActive ? "diagnostic-annotation-tooltip" : undefined}
-            aria-label={`${isAttention ? "Needs attention: " : "Consistent: "} ${title}. ${ann.note}`}
+            aria-label={`${isAttention ? "Needs attention: " : isConsistent ? "Consistent: " : ""}${title}. ${ann.note}`}
             className="cursor-pointer pointer-events-auto group focus-visible:outline-hidden"
             onMouseEnter={() => onHoverAnnotation(hoverPayload)}
             onMouseLeave={() => onHoverAnnotation(null)}

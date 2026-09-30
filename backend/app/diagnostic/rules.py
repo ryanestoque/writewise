@@ -11,6 +11,11 @@ SIZE_RATIO_MIN = 0.75
 SIZE_RATIO_MAX = 1.25
 SLANT_MIN_DEG = -5.0
 SLANT_MAX_DEG = 30.0
+SLANT_STANDARD_MIN_DEG = 8.0
+SLANT_STANDARD_MAX_DEG = 16.0
+SLANT_LINE_STDEV_MAX = 8.0
+SLANT_LINE_RANGE_MAX = 12.0
+SLANT_OUTLIER_TOLERANCE_DEG = 6.0
 FORMATION_SCORE_THRESHOLD = 62.5
 
 
@@ -41,7 +46,12 @@ def evaluate_size_consistency(size_ratio: float) -> tuple[Severity, str]:
     return "normal", f"Letter size is consistent with guideline height ({ratio}×)"
 
 
-def evaluate_slant(slant_deg: float, bbox: list[int]) -> tuple[Severity, list[int], str]:
+def evaluate_slant(
+    slant_deg: float,
+    bbox: list[int],
+    line_median: float | None = None,
+    is_high_variance: bool = False,
+) -> tuple[Severity, list[int], str]:
     x, y, w, h = bbox
     cx = x + w // 2
     cy = y + h // 2
@@ -58,7 +68,23 @@ def evaluate_slant(slant_deg: float, bbox: list[int]) -> tuple[Severity, list[in
         return "needs_attention", vector, f"Steep forward slant ({angle}°)"
     if slant_deg < SLANT_MIN_DEG:
         return "needs_attention", vector, f"Backward slant ({angle}°)"
-    return "normal", vector, f"Standard cursive slant ({angle}°)"
+
+    # Inter-word variance check when line exhibits inconsistent slants
+    if is_high_variance and line_median is not None:
+        diff = abs(slant_deg - line_median)
+        if diff > SLANT_OUTLIER_TOLERANCE_DEG and not (
+            SLANT_STANDARD_MIN_DEG <= slant_deg <= SLANT_STANDARD_MAX_DEG
+        ):
+            diff_str = round(diff, 1)
+            med_str = round(line_median, 1)
+            note_msg = (
+                f"Irregular slant ({angle}°) — deviates by {diff_str}° "
+                f"from line slant ({med_str}°)"
+            )
+            return ("needs_attention", vector, note_msg)
+        return "normal", vector, f"Acceptable slant ({angle}°)"
+
+    return "normal", vector, f"Consistent slant ({angle}°)"
 
 
 def evaluate_letter_formation(score: float | None) -> tuple[Severity, str, str]:

@@ -109,3 +109,35 @@ def test_diagnostic_engine_passes_saliency_polygons_to_formation_annotation():
     assert len(formation) == 1
     assert formation[0]["saliency_polygons"] == [[[60, 80], [70, 80], [65, 95]]]
     assert formation[0]["severity"] == "needs_attention"
+
+
+def test_slant_inter_word_outlier_detection_in_line():
+    """Matches the user's scenario: [9°, 1°, 3°, 26°] on one line."""
+    raw_output = {
+        "guide_lines": {"baseline_y": [400], "midline_y": [350], "topline_y": [300]},
+        "lines": [
+            {
+                "line_index": 0,
+                "words": [
+                    {"word_index": 0, "bbox": [10, 340, 40, 60], "slant_deg": 9.0},
+                    {"word_index": 1, "bbox": [60, 340, 50, 60], "slant_deg": 1.0},
+                    {"word_index": 2, "bbox": [120, 340, 45, 60], "slant_deg": 3.0},
+                    {"word_index": 3, "bbox": [180, 340, 45, 60], "slant_deg": 26.0},
+                ],
+            }
+        ],
+    }
+
+    overlay = generate_diagnostic_overlay(raw_output)
+    slant_ann = overlay["slant"]["annotations"]
+
+    assert len(slant_ann) == 4
+    # The first 3 are close to the line median (6.0°)
+    assert slant_ann[0]["severity"] == "normal"
+    assert slant_ann[1]["severity"] == "normal"
+    assert slant_ann[2]["severity"] == "normal"
+
+    # Word 3 (26.0°) deviates sharply (> 6° from median 6.0°) on a high-variance line
+    assert slant_ann[3]["severity"] == "needs_attention"
+    assert "irregular slant" in slant_ann[3]["note"].lower()
+    assert "deviates" in slant_ann[3]["note"].lower()
