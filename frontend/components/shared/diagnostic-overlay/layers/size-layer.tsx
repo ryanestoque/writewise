@@ -42,6 +42,7 @@ export const SizeLayer = memo(function SizeLayer({
     >
       {annotations.map((ann, idx) => {
         const [x, y, w, h] = ann.bbox;
+        const [cx, cy, cw, ch] = ann.core_bbox ?? [x, y, w, h];
         const isAttention = ann.severity === "needs_attention";
 
         if (!isAttention && !isSpotlight) return null;
@@ -50,15 +51,18 @@ export const SizeLayer = memo(function SizeLayer({
           ? OVERLAY_COLORS.needs_attention.stroke
           : OVERLAY_COLORS.consistent.stroke;
         const id = `size-${ann.line_index}-${ann.word_index}`;
-        const title = isAttention ? "Letter Size Irregular" : "Proportional Letter Size";
+        const ratioPercent = Math.round(ann.size_ratio * 100);
+        const title = isAttention
+          ? `Letter Size Irregular (${ratioPercent}% of guide)`
+          : `Proportional Letter Size (${ratioPercent}% of guide)`;
         const hoverPayload = {
           id,
           criterion: "size_consistency" as const,
           title,
           note: ann.note,
           severity: ann.severity,
-          x: x + w / 2,
-          y: y - 8,
+          x: cx + cw / 2,
+          y: cy - 8,
         };
 
         const toggleAnnotation = () => {
@@ -69,7 +73,7 @@ export const SizeLayer = memo(function SizeLayer({
         const isActive = activeAnnotationId === id;
         const minHit = Math.max(36, 36 * hitScale);
         const hitW = Math.max(minHit, w);
-        const hitH = Math.max(minHit, h);
+        const hitH = Math.max(minHit, Math.max(h, ch));
 
         return (
           <g
@@ -101,22 +105,46 @@ export const SizeLayer = memo(function SizeLayer({
               }
             }}
           >
-            {/* Transparent padding to guarantee minimum 36x36px hit target (scaled for mobile screen pixels) */}
+            {/* Transparent padding to guarantee minimum 36x36px hit target */}
             <rect
               x={x - (hitW > w ? (hitW - w) / 2 : 0)}
-              y={y - (hitH > h ? (hitH - h) / 2 : 0)}
+              y={Math.min(y, cy) - (hitH > Math.max(h, ch) ? (hitH - Math.max(h, ch)) / 2 : 0)}
               width={hitW}
               height={hitH}
               fill="transparent"
               className="pointer-events-auto"
             />
 
-            {/* Keyboard Focus / Selection Highlight Ring (WCAG 2.4.7) */}
+            {/* Outer Word Extent Brackets (Subtle indication of full word bounds) */}
+            {ann.core_bbox && (
+              <g className="opacity-65 transition-opacity group-hover:opacity-90">
+                {/* Left side bracket */}
+                <path
+                  d={`M ${x + 6 * hitScale} ${y} L ${x} ${y} L ${x} ${y + h} L ${x + 6 * hitScale} ${y + h}`}
+                  fill="none"
+                  stroke={boxColor}
+                  strokeWidth={2.0}
+                  vectorEffect="non-scaling-stroke"
+                  strokeDasharray={`${4 * hitScale} ${2 * hitScale}`}
+                />
+                {/* Right side bracket */}
+                <path
+                  d={`M ${x + w - 6 * hitScale} ${y} L ${x + w} ${y} L ${x + w} ${y + h} L ${x + w - 6 * hitScale} ${y + h}`}
+                  fill="none"
+                  stroke={boxColor}
+                  strokeWidth={2.0}
+                  vectorEffect="non-scaling-stroke"
+                  strokeDasharray={`${4 * hitScale} ${2 * hitScale}`}
+                />
+              </g>
+            )}
+
+            {/* Keyboard Focus / Selection Highlight Ring */}
             <rect
-              x={x - 2 * hitScale}
-              y={y - 2 * hitScale}
-              width={w + 4 * hitScale}
-              height={h + 4 * hitScale}
+              x={cx - 2 * hitScale}
+              y={cy - 2 * hitScale}
+              width={cw + 4 * hitScale}
+              height={ch + 4 * hitScale}
               fill="none"
               strokeWidth={3.5}
               vectorEffect="non-scaling-stroke"
@@ -127,26 +155,46 @@ export const SizeLayer = memo(function SizeLayer({
               }`}
             />
 
-            {/* Word Bounding Box */}
+            {/* Core Ruling Zone Box (Baseline to Midline Reference Band) */}
             <rect
-              x={x}
-              y={y}
-              width={w}
-              height={h}
+              x={cx}
+              y={cy}
+              width={cw}
+              height={ch}
               fill={boxColor}
-              fillOpacity={isAttention ? 0.16 : 0.06}
+              fillOpacity={isAttention ? 0.32 : 0.20}
               stroke={boxColor}
-              strokeWidth={isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal}
+              strokeWidth={isAttention ? 3.5 : 2.75}
               vectorEffect="non-scaling-stroke"
-              strokeDasharray={isAttention ? "none" : `${4 * hitScale} ${3 * hitScale}`}
-              rx={4 * hitScale}
+              strokeDasharray={isAttention ? "none" : `${5 * hitScale} ${3 * hitScale}`}
+              rx={3 * hitScale}
               className="transition-all"
+            />
+
+            {/* Top (Midline) and Bottom (Baseline) Guideline Accent Bars */}
+            <line
+              x1={cx}
+              y1={cy}
+              x2={cx + cw}
+              y2={cy}
+              stroke={boxColor}
+              strokeWidth={isAttention ? 3.5 : 2.5}
+              vectorEffect="non-scaling-stroke"
+            />
+            <line
+              x1={cx}
+              y1={cy + ch}
+              x2={cx + cw}
+              y2={cy + ch}
+              stroke={boxColor}
+              strokeWidth={isAttention ? 3.5 : 2.5}
+              vectorEffect="non-scaling-stroke"
             />
 
             {/* Corner Guide Accent on Attention */}
             {isAttention && (
               <path
-                d={`M ${x} ${y + 12 * hitScale} L ${x} ${y} L ${x + 12 * hitScale} ${y}`}
+                d={`M ${cx} ${cy + 10 * hitScale} L ${cx} ${cy} L ${cx + 10 * hitScale} ${cy}`}
                 fill="none"
                 stroke={boxColor}
                 strokeWidth={3}
@@ -160,3 +208,4 @@ export const SizeLayer = memo(function SizeLayer({
     </g>
   );
 });
+

@@ -51,6 +51,7 @@ export interface SizeAnnotation {
   size_ratio: number;
   severity: Severity;
   note: string;
+  core_bbox?: [number, number, number, number] | null;
 }
 
 export interface SizeOverlay {

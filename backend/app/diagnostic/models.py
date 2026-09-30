@@ -48,6 +48,7 @@ class SizeAnnotation(BaseModel):
     size_ratio: float
     severity: Severity
     note: str
+    core_bbox: list[int] | None = None
 
 
 class SizeOverlay(BaseModel):

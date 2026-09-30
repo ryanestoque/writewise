@@ -388,3 +388,51 @@ def test_cursive_intra_word_letter_gaps_not_oversegmented():
     assert result.total_word_count == 2
     assert len(result.lines[0].words) == 2
     assert len(result.lines[0].word_gaps) == 1
+
+
+def test_non_continuous_ruling_preserves_descenders():
+    """On standard ruled paper with interline gap (next_top > base_y), descenders
+    like 'g' or 'y' must not be truncated at (base_y + next_top) // 2.
+    """
+    import cv2
+    import numpy as np
+
+    from app.cv.guide_lines import DeskewResult
+
+    h, w = 1200, 1200
+    binary = np.zeros((h, w), dtype=np.uint8)
+
+    # 2 rulings with interline space:
+    # Row 0: top=200, mid=260, base=320 (unit_height = 60, line_height = 120)
+    # Interline gap between base_y=320 and next_top=360 is 40px
+    # Row 1: top=360, mid=420, base=480 (empty)
+    toplines = [200, 360]
+    midlines = [260, 420]
+    baselines = [320, 480]
+
+    # Draw word 'joy' on Row 0:
+    # Core body between y=262 and y=318 from x=200 to x=350
+    for x in range(200, 350, 10):
+        cv2.line(binary, (x, 265), (x + 6, 318), 255, thickness=3)
+    # Descender for 'y' extending down to y=380 (60px below baseline, past next_top 360)
+    cv2.line(binary, (330, 318), (330, 380), 255, thickness=4)
+
+    deskew = DeskewResult(
+        gray=binary,
+        denoised=binary,
+        binary=binary,
+        topline_y=toplines,
+        midline_y=midlines,
+        baseline_y=baselines,
+        deskew_angle=0.0,
+    )
+
+    result = segment_lines_and_words(deskew, expected_word_count=1, validate_script=False)
+
+    assert result.total_word_count == 1
+    assert len(result.lines[0].words) == 1
+    word = result.lines[0].words[0]
+    bx, by, bw, bh = word.bbox
+    # Descender reached y=380; bounding box must not be clamped at (320+360)//2 = 340
+    assert (by + bh) >= 375, f"Word bbox bottom {by + bh} severed descender extending to 380"
+

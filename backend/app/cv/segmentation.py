@@ -296,7 +296,7 @@ def segment_lines_and_words(
 
         # §5.1: Row band calculation with ascender/descender margin
         ascender_pad = int(0.40 * line_height)
-        descender_pad = int(0.45 * line_height)
+        descender_pad = int(max(0.60 * line_height, 0.85 * unit_height))
 
         band_top = max(0, top_y - ascender_pad)
         band_bottom = min(img_h, base_y + descender_pad)
@@ -309,7 +309,10 @@ def segment_lines_and_words(
             next_mid = deskew.midline_y[i + 1]
             next_top = deskew.topline_y[i + 1]
             if next_top > base_y:
-                band_bottom = min(band_bottom, (base_y + next_top) // 2)
+                # Allow descender margin to reach toward next_mid rather than prematurely
+                # truncating midway through the blank inter-ruling gap.
+                max_descender_reach = min(next_mid, base_y + descender_pad)
+                band_bottom = min(band_bottom, max_descender_reach)
             else:
                 # Continuous paper: descenders reach into next row's upper zone up to next_mid
                 band_bottom = min(band_bottom, next_mid)

@@ -104,6 +104,17 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
                 sz_sev, sz_note = evaluate_size_consistency(size_ratio)
                 if sz_sev == "needs_attention":
                     attention_counts["size_consistency"] += 1
+
+                core_bbox: list[int] | None = None
+                if (
+                    line_idx < len(guide_lines.midline_y)
+                    and line_idx < len(guide_lines.baseline_y)
+                ):
+                    mid_y = guide_lines.midline_y[line_idx]
+                    base_y = guide_lines.baseline_y[line_idx]
+                    if base_y > mid_y:
+                        core_bbox = [bbox[0], mid_y, bbox[2], base_y - mid_y]
+
                 size_annotations.append(
                     SizeAnnotation(
                         line_index=line_idx,
@@ -112,6 +123,7 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
                         size_ratio=round(size_ratio, 2),
                         severity=sz_sev,
                         note=sz_note,
+                        core_bbox=core_bbox,
                     )
                 )
 
