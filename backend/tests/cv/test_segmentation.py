@@ -100,6 +100,21 @@ def test_post_segmentation_gate_mismatch_too_many():
     assert err.expected_words == 2
 
 
+def test_post_segmentation_gate_single_word_strict_rejection():
+    """Post-segmentation gate rejects multi-word detection when 1 word is expected."""
+    img_bytes = make_segmented_worksheet(num_lines=1, words_per_line=2)
+    preprocessed = preprocess(img_bytes)
+    deskewed = detect_and_deskew(preprocessed)
+
+    with pytest.raises(PostSegmentationRejection) as exc_info:
+        segment_lines_and_words(deskewed, expected_word_count=1)
+
+    err = exc_info.value
+    assert err.code == "SEGMENTATION_COUNT_MISMATCH"
+    assert err.detected_words == 2
+    assert err.expected_words == 1
+
+
 def test_post_segmentation_gate_zero_words():
     """Post-segmentation gate rejects if no words detected when some were expected."""
     # 3-line ruling without any handwriting ink
@@ -158,13 +173,37 @@ def test_validate_segmentation_edge_cases():
     validate_segmentation(0, 0)
     validate_segmentation(5, -1)
 
-    # Within valid ratio [0.5, 2.5]
-    validate_segmentation(5, 10)  # ceil(10 * 0.5) = 5
-    validate_segmentation(25, 10)  # ceil(10 * 2.5) = 25
+    # N=4 prompt ("the quick brown fox"):
+    # 2 words ("the quick") must be rejected as incomplete
+    with pytest.raises(PostSegmentationRejection) as exc_info:
+        validate_segmentation(detected_words=2, expected_words=4)
+    assert exc_info.value.code == "SEGMENTATION_COUNT_MISMATCH"
+    assert exc_info.value.detected_words == 2
+    assert exc_info.value.expected_words == 4
 
-    # Out of range
+    # 3, 4, 5 words for N=4 are allowed
+    validate_segmentation(3, 4)
+    validate_segmentation(4, 4)
+    validate_segmentation(5, 4)
+
+    # 6+ words for N=4 must be rejected
     with pytest.raises(PostSegmentationRejection):
-        validate_segmentation(26, 10)
+        validate_segmentation(6, 4)
+
+    # N=2 prompt: 1 word must be rejected (50% incomplete)
+    with pytest.raises(PostSegmentationRejection):
+        validate_segmentation(1, 2)
+    validate_segmentation(2, 2)
+    validate_segmentation(3, 2)
+
+    # N=10 prompt: [8, 13] allowed, outside rejected
+    validate_segmentation(8, 10)
+    validate_segmentation(10, 10)
+    validate_segmentation(13, 10)
+    with pytest.raises(PostSegmentationRejection):
+        validate_segmentation(7, 10)
+    with pytest.raises(PostSegmentationRejection):
+        validate_segmentation(14, 10)
 
 
 def test_rejects_full_width_line_artifacts():

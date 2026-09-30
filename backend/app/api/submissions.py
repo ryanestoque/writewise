@@ -204,9 +204,7 @@ async def create_submission(
     if not rejection:
         try:
             word_bboxes = [
-                word.bbox
-                for line in pipeline_result.measurement.lines
-                for word in line.words
+                word.bbox for line in pipeline_result.measurement.lines for word in line.words
             ]
             ml_result = run_letter_formation_inference(
                 pipeline_result.word_crops,
@@ -313,9 +311,7 @@ async def create_submission(
         for word in line.get("words", []):
             if crop_idx < len(ml_result.word_scores):
                 ws = ml_result.word_scores[crop_idx]
-                word["letter_formation_score"] = round(
-                    ws.letter_formation_score, 2
-                )
+                word["letter_formation_score"] = round(ws.letter_formation_score, 2)
                 word["saliency_polygons"] = ws.saliency_polygons
             else:
                 word["letter_formation_score"] = None

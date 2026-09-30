@@ -128,6 +128,8 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
         else:
             peaks.append(peak_center)
 
+    peaks = [p for p in peaks if margin_guard <= p <= (h - margin_guard)]
+
     # Group and validate rulings (topline, midline, baseline)
     # A standard Grade 3 worksheet has a repeating 3-line ruling.
     # Geometry validation ensures border noise, shadows, or absurd spacing (<20px / 5px)
@@ -159,29 +161,19 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
 
                 avg_sp = (sp1 + sp2) / 2.0
                 # Determine if next row is continuous (shared baseline i+=2) or distinct (i+=3).
-                # On distinct 3-line paper, peak i+3 is top, peak i+4 is mid, peak i+5 is base.
-                # On continuous paper, peak i+2 is shared, peak i+3 is mid, peak i+4 is base.
+                # On distinct 3-line paper, an inter-row gap separates row N's baseline and
+                # row N+1's topline.
+                # On continuous paper, peak i+2 is shared (base of row N is top of row N+1).
                 advance = 3
                 if i + 4 < len(peaks):
                     c_sp1 = peaks[i + 3] - peaks[i + 2]
                     c_sp2 = peaks[i + 4] - peaks[i + 3]
-                    # Continuous grid requires both c_sp1 and c_sp2 to match line spacing
+                    # Continuous grid requires the next ruling spacings to continue uniformly
                     if (
-                        abs(c_sp1 - avg_sp) <= 0.15 * avg_sp
-                        and abs(c_sp2 - avg_sp) <= 0.15 * avg_sp
+                        abs(c_sp1 - avg_sp) <= 0.20 * avg_sp
+                        and abs(c_sp2 - avg_sp) <= 0.20 * avg_sp
                     ):
-                        if i + 5 < len(peaks):
-                            d_sp1 = peaks[i + 4] - peaks[i + 3]
-                            d_sp2 = peaks[i + 5] - peaks[i + 4]
-                            if (
-                                abs(d_sp1 - avg_sp) <= 0.20 * avg_sp
-                                and abs(d_sp2 - avg_sp) <= 0.20 * avg_sp
-                            ):
-                                advance = 3
-                            else:
-                                advance = 2
-                        else:
-                            advance = 2
+                        advance = 2
 
                 i += advance
                 continue
@@ -227,10 +219,24 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
                 for m in mid1
             ]
             score0, score1 = float(np.mean(r0)), float(np.mean(r1))
-            if score1 > score0 + 5.0:
-                topline_y, midline_y, baseline_y = top1, mid1, base1
+            if abs(score1 - score0) >= 5.0:
+                if score1 > score0:
+                    topline_y, midline_y, baseline_y = top1, mid1, base1
+                else:
+                    topline_y, midline_y, baseline_y = top0, mid0, base0
             else:
-                topline_y, midline_y, baseline_y = top0, mid0, base0
+                ink0 = [
+                    float(np.sum(binary[m:b, int(w * 0.1) : int(w * 0.9)] > 0))
+                    for m, b in zip(mid0, base0)
+                ]
+                ink1 = [
+                    float(np.sum(binary[m:b, int(w * 0.1) : int(w * 0.9)] > 0))
+                    for m, b in zip(mid1, base1)
+                ]
+                if np.mean(ink1) > np.mean(ink0) * 1.5:
+                    topline_y, midline_y, baseline_y = top1, mid1, base1
+                else:
+                    topline_y, midline_y, baseline_y = top0, mid0, base0
         else:
             ink0 = [
                 float(np.sum(binary[m:b, int(w * 0.1) : int(w * 0.9)] > 0))

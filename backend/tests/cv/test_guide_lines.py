@@ -148,3 +148,29 @@ def test_detect_and_deskew_no_overlapping_phantom_rulings():
     assert result.midline_y == [460, 660]
     assert result.baseline_y == [520, 720]
 
+
+def test_detect_and_deskew_continuous_rulings_detected_correctly():
+    """Continuous 3-line rulings (where base of row N is top of row N+1) must not skip rows."""
+    import cv2
+    import numpy as np
+
+    from app.cv.preprocessing import PreprocessResult
+
+    h, w = 2000, 2000
+    binary = np.zeros((h, w), dtype=np.uint8)
+
+    # 3 continuous rulings with uniform 60px line spacing:
+    # Row 0: 400, 460, 520
+    # Row 1: 520, 580, 640
+    # Row 2: 640, 700, 760
+    for y in [400, 460, 520, 580, 640, 700, 760]:
+        cv2.line(binary, (100, y), (w - 100, y), 255, thickness=3)
+
+    prep = PreprocessResult(gray=binary, denoised=binary, binary=binary, otsu_threshold=100.0)
+    result = detect_and_deskew(prep)
+
+    # All 3 continuous rulings must be detected
+    assert len(result.baseline_y) == 3
+    assert result.topline_y == [400, 520, 640]
+    assert result.midline_y == [460, 580, 700]
+    assert result.baseline_y == [520, 640, 760]

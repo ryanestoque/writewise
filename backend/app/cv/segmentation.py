@@ -80,8 +80,19 @@ def validate_segmentation(detected_words: int, expected_words: int) -> None:
             expected_words=expected_words,
         )
 
-    min_allowed = math.ceil(expected_words * 0.5)
-    max_allowed = math.ceil(expected_words * 2.5)
+    if expected_words == 1:
+        min_allowed = 1
+        max_allowed = 1
+    elif expected_words == 2:
+        min_allowed = 2
+        max_allowed = 3
+    else:
+        # For 3+ words, allow at most 1 word difference for short prompts (<= 5 words),
+        # and up to 20-25% variance for longer sentences.
+        slack_under = max(1, math.floor(expected_words * 0.20))
+        slack_over = max(1, math.ceil(expected_words * 0.25))
+        min_allowed = max(2, expected_words - slack_under)
+        max_allowed = expected_words + slack_over
 
     if detected_words < min_allowed or detected_words > max_allowed:
         raise PostSegmentationRejection(
