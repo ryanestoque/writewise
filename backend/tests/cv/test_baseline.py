@@ -81,3 +81,30 @@ def test_baseline_deviation_ignores_descender_tails():
     # Letter body rests at y=450+50=500 -> diff should be <= 0.05, measured_y near 500 (NOT 560!)
     assert deviation <= 0.05
     assert abs(measured_y - 500) <= 2
+
+
+def test_baseline_deviation_ignores_adjacent_lower_guideline():
+    """Words with descenders whose bounding box reaches an adjacent printed ruling line
+    below the baseline must not lock onto the lower guideline.
+    """
+    # Bbox: (100, 450, 100, 120). baseline_y=500 -> baseline_local = 50.
+    # unit_height=50.0.
+    crop = np.full((120, 100), 0, dtype=np.uint8)
+
+    # Letter body 't-o-d-a' (cols 20..75) rests at row 50:
+    crop[10:51, 20:76] = 255
+    # Descender 'y' (cols 76..95) extends down to row 110:
+    crop[10:111, 76:96] = 255
+    # Printed ruling line below baseline at row 110 across ALL columns (cols 0..99):
+    crop[108:112, 0:100] = 255
+
+    bbox = (100, 450, 100, 120)
+    deviation, measured_y = compute_baseline_deviation(
+        word_bbox=bbox, baseline_y=500, unit_height=50.0, binary_crop=crop
+    )
+
+    # Resting letter body baseline is at y=500.
+    # Should NOT lock onto lower guideline at y=560 (measured_y should be ~500, deviation <= 0.05).
+    assert deviation <= 0.05
+    assert abs(measured_y - 500) <= 2
+
