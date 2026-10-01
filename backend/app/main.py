@@ -10,6 +10,7 @@ from app.api.activities import router as activities_router
 from app.api.students import router as students_router
 from app.api.submissions import router as submissions_router
 from app.core.config import settings
+from app.ml.htr import load_htr_model
 from app.ml.model import is_stub_mode, load_model
 
 logger = logging.getLogger(__name__)
@@ -17,8 +18,9 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan: load CNN model at startup (ML_PIPELINE §8)."""
+    """Application lifespan: load CNN and HTR models at startup (ML_PIPELINE §8)."""
     load_model()
+    load_htr_model()
     yield
 
 

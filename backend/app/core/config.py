@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     SUPABASE_DB_URL: str
     MODEL_STORAGE_BUCKET: str = "model-artifacts"
     MODEL_ARTIFACT_PATH: str
+    HTR_MODEL_ARTIFACT_PATH: str = ""
     SCORING_ENGINE: str = "manual"
     CORS_ALLOWED_ORIGINS: str
     ENVIRONMENT: str = "dev"

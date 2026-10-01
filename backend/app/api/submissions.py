@@ -14,6 +14,7 @@ from app.cv.quality_gate import QualityGateRejection
 from app.cv.segmentation import PostSegmentationRejection
 from app.diagnostic.engine import generate_diagnostic_overlay
 from app.ml.exceptions import ModelInferenceError
+from app.ml.htr import verify_target_text
 from app.ml.inference import run_letter_formation_inference
 from app.scoring import get_score_provider
 
@@ -199,7 +200,28 @@ async def create_submission(
             },
         }
 
-    # 6b. Run CNN inference for letter formation on valid pipelines (ML_PIPELINE §8, §11)
+    # 6b. Run HTR text verification against target prompt
+    if not rejection and pipeline_result and pipeline_result.word_crops and target_text:
+        is_match, detected_text, similarity = verify_target_text(
+            pipeline_result.word_crops,
+            target_text=target_text,
+            similarity_threshold=0.40,
+        )
+        if not is_match:
+            rejection = {
+                "code": "TARGET_TEXT_MISMATCH",
+                "message": (
+                    f"Worksheet text does not match expected activity prompt: "
+                    f"detected '{detected_text}', expected '{target_text}'."
+                ),
+                "details": {
+                    "detected_text": detected_text,
+                    "expected_text": target_text,
+                    "similarity": round(similarity, 3),
+                },
+            }
+
+    # 6c. Run CNN inference for letter formation on valid pipelines (ML_PIPELINE §8, §11)
     ml_result = None
     if not rejection:
         try:
