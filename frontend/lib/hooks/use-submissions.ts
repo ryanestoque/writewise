@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "../supabase/client";
-import { handleApiResponse } from "../utils/api-error";
+import { getAuthToken } from "../supabase/auth-helper";
+import { handleApiResponse, ApiError } from "../utils/api-error";
 
 export type ScoreBand =
   | "needs_improvement"
@@ -140,12 +141,7 @@ export function useUploadSubmission() {
       activityId: string;
       studentId: string;
     }) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      if (!token) {
-        throw new Error("No active session");
-      }
+      const token = await getAuthToken(supabase);
 
       const formData = new FormData();
       formData.append("image", image);
@@ -154,13 +150,27 @@ export function useUploadSubmission() {
 
       // No Content-Type header — let the browser set multipart/form-data
       // with the correct boundary automatically.
-      const response = await fetch("/api/submissions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
+      let response: Response;
+      try {
+        response = await fetch("/api/submissions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        });
+      } catch (networkErr) {
+        throw new ApiError({
+          code: "NETWORK_ERROR",
+          message:
+            networkErr instanceof Error && networkErr.name === "AbortError"
+              ? "Upload timed out. Please try again."
+              : "Unable to reach the server. Please check your internet connection or dev tunnel.",
+          details: {
+            originalError: networkErr instanceof Error ? networkErr.message : String(networkErr),
+          },
+        });
+      }
 
       return handleApiResponse(response);
     },
@@ -207,12 +217,7 @@ export function useSubmitManualScore() {
       submissionId: string;
       scores: ManualScorePayload;
     }) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      if (!token) {
-        throw new Error("No active session");
-      }
+      const token = await getAuthToken(supabase);
 
       const response = await fetch(`/api/submissions/${submissionId}/manual-score`, {
         method: "PATCH",
@@ -239,12 +244,7 @@ export function useDeleteSubmission() {
 
   return useMutation({
     mutationFn: async (submissionId: string) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      if (!token) {
-        throw new Error("No active session");
-      }
+      const token = await getAuthToken(supabase);
 
       const response = await fetch(`/api/submissions/${submissionId}`, {
         method: "DELETE",
@@ -275,12 +275,7 @@ export function useBatchDeleteSubmissions() {
 
   return useMutation({
     mutationFn: async (submissionIds: string[]) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      if (!token) {
-        throw new Error("No active session");
-      }
+      const token = await getAuthToken(supabase);
 
       const response = await fetch("/api/submissions/batch-delete", {
         method: "POST",

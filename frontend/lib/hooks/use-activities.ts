@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "../supabase/client";
+import { getAuthToken } from "../supabase/auth-helper";
 import { handleApiResponse } from "../utils/api-error";
 
 export interface ActivitySubmissionSummary {
@@ -70,12 +71,7 @@ export function useCreateActivity() {
       target_text: string;
       is_take_home?: boolean;
     }) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      if (!token) {
-        throw new Error("No active session");
-      }
+      const token = await getAuthToken(supabase);
 
       const response = await fetch("/api/activities", {
         method: "POST",
@@ -109,12 +105,7 @@ export function useUpdateActivity() {
         is_take_home?: boolean;
       };
     }) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      if (!token) {
-        throw new Error("No active session");
-      }
+      const token = await getAuthToken(supabase);
 
       const response = await fetch(`/api/activities/${id}`, {
         method: "PATCH",
@@ -140,12 +131,7 @@ export function useDeleteActivity() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      if (!token) {
-        throw new Error("No active session");
-      }
+      const token = await getAuthToken(supabase);
 
       const response = await fetch(`/api/activities/${id}`, {
         method: "DELETE",
@@ -168,12 +154,7 @@ export function useToggleArchive() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      if (!token) {
-        throw new Error("No active session");
-      }
+      const token = await getAuthToken(supabase);
 
       const response = await fetch(`/api/activities/${id}/archive`, {
         method: "PATCH",
@@ -194,12 +175,7 @@ export function useBulkArchive() {
 
   return useMutation({
     mutationFn: async (payload: { ids: string[]; archived: boolean }) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      if (!token) {
-        throw new Error("No active session");
-      }
+      const token = await getAuthToken(supabase);
 
       const response = await fetch("/api/activities/bulk-archive", {
         method: "POST",

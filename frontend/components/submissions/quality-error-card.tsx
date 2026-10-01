@@ -29,6 +29,7 @@ import {
   ZoomIn,
   ZoomOut,
   ScanText,
+  WifiOff,
 } from "lucide-react";
 
 export interface QualityErrorDetails {
@@ -379,6 +380,23 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
       };
     }
 
+    case "NETWORK_ERROR": {
+      return {
+        isQualityCheck: false,
+        badgeLabel: "Network Error",
+        title: "Connection Failed",
+        description:
+          error.message ||
+          "Unable to connect to WriteWise. Please check your internet connection or dev tunnel.",
+        tips: [
+          "Check your Wi-Fi or mobile data signal.",
+          "If using a dev tunnel, verify the tunnel connection is active.",
+          "Click 'Retry Upload' below to re-send without losing your photo.",
+        ],
+        icon: WifiOff,
+      };
+    }
+
     default: {
       return {
         isQualityCheck: isQuality,
@@ -386,11 +404,18 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
         title: isQuality ? "Photo Check Needed" : "Submission Failed",
         description:
           error.message ||
-          "We could not process this worksheet photo. Please check your connection and try again.",
-        tips: [
-          "Ensure the worksheet is flat, well-lit, and in focus.",
-          "Check your network connection and retry.",
-        ],
+          (isQuality
+            ? "We could not process this worksheet photo. Please retake the photo following the tips below."
+            : "An unexpected error occurred during upload. Please check your connection and try again."),
+        tips: isQuality
+          ? [
+              "Ensure the worksheet is flat, well-lit, and in focus.",
+              "Hold camera flat directly above the paper.",
+            ]
+          : [
+              "Check your network connection and click 'Retry Upload'.",
+              "If the problem persists, try taking a new photo or refreshing.",
+            ],
         icon: AlertCircle,
       };
     }

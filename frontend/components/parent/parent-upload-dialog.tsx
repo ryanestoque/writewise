@@ -352,10 +352,18 @@ function ParentUploadFlow({
           setStep(5);
         },
         onError: (err) => {
-          const error =
-            err && typeof err === "object" && "code" in err
-              ? (err as UploadError)
-              : { code: "INTERNAL_ERROR", message: "Upload failed." };
+          console.error("Submission upload failed:", err);
+          let error: UploadError;
+          if (err && typeof err === "object" && "code" in err) {
+            error = err as UploadError;
+          } else if (err instanceof Error) {
+            error = {
+              code: "INTERNAL_ERROR",
+              message: err.message || "Upload failed. Please try again.",
+            };
+          } else {
+            error = { code: "INTERNAL_ERROR", message: "Upload failed. Please try again." };
+          }
           setUploadError(error);
         },
       }

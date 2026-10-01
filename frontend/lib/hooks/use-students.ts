@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "../supabase/client";
+import { getAuthToken } from "../supabase/auth-helper";
 import { handleApiResponse } from "../utils/api-error";
 
 // Define the basic types based on the schema and API specs
@@ -50,12 +51,7 @@ export function useCreateStudent() {
 
   return useMutation({
     mutationFn: async (studentData: { full_name: string; section: string; parent_email?: string }) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      if (!token) {
-        throw new Error("No active session");
-      }
+      const token = await getAuthToken(supabase);
 
       const response = await fetch("/api/students", {
         method: "POST",
@@ -80,12 +76,7 @@ export function useUpdateStudent() {
 
   return useMutation({
     mutationFn: async ({ id, data: updateData }: { id: string; data: { full_name?: string; section?: string; parent_email?: string | null } }) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      if (!token) {
-        throw new Error("No active session");
-      }
+      const token = await getAuthToken(supabase);
 
       const response = await fetch(`/api/students/${id}`, {
         method: "PATCH",
@@ -116,12 +107,7 @@ export function useRemoveStudent() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      if (!token) {
-        throw new Error("No active session");
-      }
+      const token = await getAuthToken(supabase);
 
       const response = await fetch(`/api/students/${id}/teacher-link`, {
         method: "DELETE",
@@ -149,12 +135,7 @@ export function useResendParentInvite() {
 
   return useMutation({
     mutationFn: async (studentId: string) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      if (!token) {
-        throw new Error("No active session");
-      }
+      const token = await getAuthToken(supabase);
 
       const response = await fetch(`/api/students/${studentId}/resend-invite`, {
         method: "POST",
