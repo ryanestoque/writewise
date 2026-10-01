@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Inter, Poppins, Cedarville_Cursive } from "next/font/google";
+import { Inter, Poppins } from "next/font/google";
+import localFont from "next/font/local";
 import { cn } from "@/lib/utils";
 import { Providers } from "@/components/providers";
 
@@ -12,10 +13,10 @@ const poppins = Poppins({
   variable: "--font-heading",
 });
 
-const cedarvilleCursive = Cedarville_Cursive({
-  weight: "400",
-  subsets: ["latin"],
+const learningCurve = localFont({
+  src: "./fonts/LearningCurve.ttf",
   variable: "--font-cursive",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -36,7 +37,7 @@ export default function RootLayout({
         "antialiased",
         inter.variable,
         poppins.variable,
-        cedarvilleCursive.variable,
+        learningCurve.variable,
         "font-sans"
       )}
     >

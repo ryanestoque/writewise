@@ -271,4 +271,12 @@
   }
 }
 
+/* Thickened Cursive Penmanship Preview Stroke */
+.font-cursive {
+  font-weight: 500;
+  -webkit-text-stroke: 0.3px currentColor;
+  paint-order: stroke fill;
+}
+
+
 
