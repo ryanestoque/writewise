@@ -86,3 +86,22 @@ class TestVerifyTargetText:
         is_match, detected_text, sim = verify_target_text(crops, "the quick brown fox")
         assert is_match is True
         assert sim == 1.0
+
+    def test_word_level_similarity_rejects_garbled_word(self):
+        """Verify that garbled outputs are rejected."""
+        # 57% global similarity but 'Sloagy' vs 'Ibag' is weak
+        target = "Saara Eliana Ibag"
+        garbled = "baoria Eliarar Sloagy"
+        sim = levenshtein_similarity(garbled, target)
+        # 0.571 < 0.65 threshold
+        assert sim < 0.65
+
+    def test_verify_target_text_threshold_check(self):
+        """Test that similarity threshold 0.65 is enforced."""
+        # Exact match -> 1.0 >= 0.65
+        assert levenshtein_similarity("Saara Eliana Ibag", "Saara Eliana Ibag") >= 0.65
+        # Minor typo -> >= 0.65
+        assert levenshtein_similarity("Saara Eliana Ibaq", "Saara Eliana Ibag") >= 0.65
+        # Severe garble -> < 0.65
+        assert levenshtein_similarity("baoria Eliarar Sloagy", "Saara Eliana Ibag") < 0.65
+

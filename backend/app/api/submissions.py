@@ -14,7 +14,7 @@ from app.cv.quality_gate import QualityGateRejection
 from app.cv.segmentation import PostSegmentationRejection
 from app.diagnostic.engine import generate_diagnostic_overlay
 from app.ml.exceptions import ModelInferenceError
-from app.ml.htr import verify_target_text
+from app.ml.htr import predict_word_text, verify_target_text
 from app.ml.inference import run_letter_formation_inference
 from app.scoring import get_score_provider
 
@@ -201,12 +201,35 @@ async def create_submission(
         }
 
     # 6b. Run HTR text verification against target prompt
+    htr_detected_text: str | None = None
+    htr_similarity: float | None = None
+    word_transcriptions: list[str] = []
+
+    if pipeline_result and pipeline_result.word_crops:
+        has_masks = len(pipeline_result.binary_crops) == len(pipeline_result.word_crops)
+        masks = pipeline_result.binary_crops if has_masks else None
+        if masks:
+            word_transcriptions = [
+                predict_word_text(crop, binary_mask=mask)
+                for crop, mask in zip(pipeline_result.word_crops, masks)
+            ]
+        else:
+            word_transcriptions = [predict_word_text(crop) for crop in pipeline_result.word_crops]
+        htr_detected_text = " ".join(w for w in word_transcriptions if w)
+
+    if rejection and rejection["code"] == "SEGMENTATION_COUNT_MISMATCH" and htr_detected_text:
+        rejection["details"]["detected_text"] = htr_detected_text
+
     if not rejection and pipeline_result and pipeline_result.word_crops and target_text:
         is_match, detected_text, similarity = verify_target_text(
             pipeline_result.word_crops,
             target_text=target_text,
-            similarity_threshold=0.40,
+            binary_masks=pipeline_result.binary_crops if pipeline_result.binary_crops else None,
+            similarity_threshold=0.65,
         )
+        htr_detected_text = detected_text
+        htr_similarity = round(similarity, 3)
+
         if not is_match:
             rejection = {
                 "code": "TARGET_TEXT_MISMATCH",
@@ -326,7 +349,7 @@ async def create_submission(
     aggregate = measurement_data.aggregate
     raw_output = measurement_data.to_dict()
 
-    # Attach per-word letter_formation_score to lines/words in raw_output
+    # Attach per-word letter_formation_score and HTR transcription to lines/words in raw_output
     # and add letter_formation to aggregate in raw_output (ML_PIPELINE §11)
     crop_idx = 0
     for line in raw_output.get("lines", []):
@@ -338,7 +361,15 @@ async def create_submission(
             else:
                 word["letter_formation_score"] = None
                 word["saliency_polygons"] = []
+
+            if crop_idx < len(word_transcriptions):
+                word["transcription"] = word_transcriptions[crop_idx]
+
             crop_idx += 1
+
+    if htr_detected_text:
+        raw_output["detected_text"] = htr_detected_text
+        raw_output["transcription_similarity"] = htr_similarity
 
     if "aggregate" in raw_output:
         raw_output["aggregate"]["letter_formation"] = {

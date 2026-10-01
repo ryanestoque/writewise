@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertCircle,
   Camera,
@@ -27,6 +28,7 @@ import {
   Contrast,
   ZoomIn,
   ZoomOut,
+  ScanText,
 } from "lucide-react";
 
 export interface QualityErrorDetails {
@@ -34,6 +36,9 @@ export interface QualityErrorDetails {
   threshold?: number;
   detected_words?: number;
   expected_words?: number;
+  detected_text?: string;
+  expected_text?: string;
+  similarity?: number;
   submission_id?: string;
   [key: string]: unknown;
 }
@@ -76,6 +81,7 @@ export function isQualityGateErrorCode(code: string): boolean {
     "QUALITY_GATE_OFF_GUIDELINES",
     "QUALITY_GATE_SCRIPT_NOT_CURSIVE",
     "SEGMENTATION_COUNT_MISMATCH",
+    "TARGET_TEXT_MISMATCH",
   ].includes(code);
 }
 
@@ -293,6 +299,27 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
           "Avoid uploading printed, block, or manuscript handwriting.",
         ],
         icon: FileQuestion,
+      };
+    }
+
+    case "TARGET_TEXT_MISMATCH": {
+      const detected = typeof details?.detected_text === "string" ? details.detected_text : null;
+      const expected = typeof details?.expected_text === "string" ? details.expected_text : null;
+
+      return {
+        isQualityCheck: true,
+        badgeLabel: "Text Verification",
+        title: "Worksheet Text Doesn't Match Activity Prompt",
+        description:
+          detected && expected
+            ? `The continuous cursive strokes were transcribed, but the content differs from the assigned prompt.`
+            : "The transcribed handwriting on the page couldn't be matched to the assigned sentence prompt.",
+        tips: [
+          "Check that the student wrote the exact assigned prompt sentence.",
+          "Ensure writing is clear and connected so letters can be recognized accurately.",
+          "Confirm that the correct activity was selected for this student.",
+        ],
+        icon: ScanText,
       };
     }
 
@@ -826,6 +853,57 @@ export function QualityErrorCard({
           )}
         </div>
       </div>
+
+      {/* Recognized Text Comparison Callout */}
+      {(typeof error.details?.detected_text === "string" ||
+        typeof error.details?.expected_text === "string") && (
+        <div className="rounded-xl border border-border/80 bg-card p-3 sm:p-3.5 space-y-2.5 shadow-2xs">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <ScanText className="size-4 text-primary shrink-0" aria-hidden="true" />
+              Handwriting Recognition Output
+            </span>
+            {typeof error.details?.similarity === "number" && (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-[10px] px-2 py-0.5 font-semibold",
+                  error.details.similarity >= 0.8
+                    ? "bg-success/10 text-success border-success/30"
+                    : error.details.similarity >= 0.4
+                    ? "bg-warning/10 text-warning border-warning/30"
+                    : "bg-destructive/10 text-destructive border-destructive/30"
+                )}
+              >
+                {Math.round(error.details.similarity * 100)}% Prompt Match
+              </Badge>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            {typeof error.details?.detected_text === "string" && (
+              <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
+                  Recognized Cursive Text
+                </span>
+                <p className="font-mono text-xs text-foreground font-medium italic break-words">
+                  &quot;{error.details.detected_text || "<no text recognized>"}&quot;
+                </p>
+              </div>
+            )}
+            {typeof error.details?.expected_text === "string" && (
+              <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
+                  Assigned Activity Prompt
+                </span>
+                <p className="font-mono text-xs text-foreground font-medium italic break-words">
+                  &quot;{error.details.expected_text}&quot;
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Actionable Tips box - flattened integrated callout without nested card border */}
       {presentation.tips.length > 0 && (

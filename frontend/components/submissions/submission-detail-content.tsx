@@ -42,6 +42,7 @@ import {
   Edit3,
   Trash2,
   Loader2,
+  ScanText,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -445,6 +446,16 @@ export function SubmissionDetailContent({
     return null;
   }, [activityTargetText, submission.activity?.target_text]);
 
+  const detectedText = useMemo(() => {
+    const raw = submission.measurement?.raw_output as Record<string, unknown> | undefined;
+    return typeof raw?.detected_text === "string" ? raw.detected_text : null;
+  }, [submission.measurement?.raw_output]);
+
+  const transcriptionSimilarity = useMemo(() => {
+    const raw = submission.measurement?.raw_output as Record<string, unknown> | undefined;
+    return typeof raw?.transcription_similarity === "number" ? raw.transcription_similarity : null;
+  }, [submission.measurement?.raw_output]);
+
   // Memoize criteria lists to prevent re-computation on every render
   const criteria = useMemo(() => {
     if (submission.status === "rejected") return [];
@@ -824,14 +835,44 @@ export function SubmissionDetailContent({
               )}
             </WorksheetImageInspector>
 
-            {/* Target prompt card */}
-            <div className="shrink-0 flex items-center justify-between gap-2.5 p-2 sm:p-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs text-muted-foreground flex-wrap">
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <span className="font-semibold text-foreground shrink-0 text-xs">Target prompt:</span>
-                <span className="font-medium text-foreground bg-background/80 dark:bg-card/80 px-2.5 py-1 rounded-lg border border-border/60 truncate max-w-full text-xs">
-                  {resolvedTargetText ? `"${resolvedTargetText}"` : "Cursive Penmanship Practice"}
-                </span>
+            {/* Target prompt & recognized text card */}
+            <div className="shrink-0 space-y-2 p-2.5 sm:p-3 rounded-xl bg-card border border-border/70 text-xs text-muted-foreground shadow-2xs">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className="font-semibold text-foreground shrink-0 text-xs">Target prompt:</span>
+                  <span className="font-medium text-foreground bg-muted/60 px-2.5 py-1 rounded-lg border border-border/60 truncate max-w-full text-xs font-mono">
+                    {resolvedTargetText ? `"${resolvedTargetText}"` : "Cursive Penmanship Practice"}
+                  </span>
+                </div>
               </div>
+
+              {detectedText && (
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40 flex-wrap">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <ScanText className="size-3.5 text-primary shrink-0" aria-hidden="true" />
+                    <span className="font-semibold text-foreground shrink-0 text-xs">AI Cursive Recognition:</span>
+                    <span className="font-medium text-foreground italic bg-primary/5 dark:bg-primary/10 px-2.5 py-1 rounded-lg border border-primary/20 truncate max-w-full text-xs font-mono">
+                      &quot;{detectedText}&quot;
+                    </span>
+                  </div>
+                  {transcriptionSimilarity !== null && (
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-[10px] px-2 py-0.5 font-semibold shrink-0",
+                        transcriptionSimilarity >= 0.8
+                          ? "bg-success/10 text-success border-success/30"
+                          : transcriptionSimilarity >= 0.65
+                          ? "bg-warning/10 text-warning border-warning/30"
+                          : "bg-destructive/10 text-destructive border-destructive/30"
+                      )}
+                      title={`Levenshtein similarity to target prompt: ${Math.round(transcriptionSimilarity * 100)}%`}
+                    >
+                      {Math.round(transcriptionSimilarity * 100)}% Prompt Match
+                    </Badge>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

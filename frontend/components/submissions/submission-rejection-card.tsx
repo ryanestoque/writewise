@@ -119,6 +119,13 @@ export const REJECTION_GUIDE: Record<string, RejectionDetail> = {
     advice:
       "Verify the student used a dark pencil or pen and that the writing area is in frame.",
   },
+  TARGET_TEXT_MISMATCH: {
+    title: "Worksheet Text Doesn't Match Activity Prompt",
+    description:
+      "The transcribed cursive handwriting on the page does not match the assigned activity prompt sentence.",
+    advice:
+      "Check that the student wrote the assigned prompt sentence, and ensure strokes are clear and connected.",
+  },
 };
 
 export interface SubmissionRejectionCardProps {
@@ -155,6 +162,53 @@ export function SubmissionRejectionCard({
     };
   }, [submission.rejection_code, submission.uploader_role]);
 
+  const detailMessage = useMemo(() => {
+    if (!submission.rejection_details) return null;
+    if (typeof submission.rejection_details === "string") {
+      const trimmed = submission.rejection_details.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
+    if (
+      typeof submission.rejection_details === "object" &&
+      submission.rejection_details !== null
+    ) {
+      const details = submission.rejection_details as Record<string, unknown>;
+      if (typeof details.message === "string" && details.message.trim().length > 0) {
+        return details.message.trim();
+      }
+      if (typeof details.error === "string" && details.error.trim().length > 0) {
+        return details.error.trim();
+      }
+    }
+    return null;
+  }, [submission.rejection_details]);
+
+  const structuredDetails = useMemo(() => {
+    if (
+      !submission.rejection_details ||
+      typeof submission.rejection_details !== "object" ||
+      submission.rejection_details === null
+    ) {
+      return null;
+    }
+    const d = submission.rejection_details as Record<string, unknown>;
+    const detectedWords = typeof d.detected_words === "number" ? d.detected_words : undefined;
+    const expectedWords = typeof d.expected_words === "number" ? d.expected_words : undefined;
+    const detectedText = typeof d.detected_text === "string" ? d.detected_text : undefined;
+    const expectedText = typeof d.expected_text === "string" ? d.expected_text : undefined;
+    const similarity = typeof d.similarity === "number" ? d.similarity : undefined;
+
+    if (
+      detectedWords !== undefined ||
+      expectedWords !== undefined ||
+      detectedText !== undefined ||
+      expectedText !== undefined
+    ) {
+      return { detectedWords, expectedWords, detectedText, expectedText, similarity };
+    }
+    return null;
+  }, [submission.rejection_details]);
+
   return (
     <div className="space-y-3.5">
       <Alert
@@ -180,8 +234,56 @@ export function SubmissionRejectionCard({
           </div>
         </div>
 
-        <AlertDescription className="!text-foreground/90 text-xs sm:text-sm leading-relaxed font-sans">
-          {rejectionInfo.description}
+        <AlertDescription className="!text-foreground/90 text-xs sm:text-sm leading-relaxed font-sans space-y-2">
+          <p>{rejectionInfo.description}</p>
+          {detailMessage && detailMessage !== rejectionInfo.description && (
+            <p className="font-mono text-xs text-muted-foreground bg-background/60 p-2 rounded-md border border-destructive/20 italic">
+              {detailMessage}
+            </p>
+          )}
+
+          {structuredDetails && (
+            <div className="space-y-1.5 pt-0.5">
+              {typeof structuredDetails.detectedWords === "number" &&
+                typeof structuredDetails.expectedWords === "number" && (
+                  <div className="inline-flex items-center gap-2 text-xs font-mono text-muted-foreground bg-background/60 px-2.5 py-1 rounded-md border border-destructive/20">
+                    <span>
+                      Detected: <strong className="text-foreground">{structuredDetails.detectedWords}</strong> words
+                    </span>
+                    <span className="text-muted-foreground/60">•</span>
+                    <span>
+                      Expected: <strong className="text-foreground">{structuredDetails.expectedWords}</strong> words
+                    </span>
+                  </div>
+                )}
+
+              {(typeof structuredDetails.detectedText === "string" ||
+                typeof structuredDetails.expectedText === "string") && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                  {typeof structuredDetails.detectedText === "string" && (
+                    <div className="p-2 rounded-lg bg-background/60 border border-destructive/20 space-y-0.5">
+                      <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
+                        Recognized Text
+                      </span>
+                      <p className="font-mono text-xs text-foreground font-medium italic break-words">
+                        &quot;{structuredDetails.detectedText || "<no text recognized>"}&quot;
+                      </p>
+                    </div>
+                  )}
+                  {typeof structuredDetails.expectedText === "string" && (
+                    <div className="p-2 rounded-lg bg-background/60 border border-destructive/20 space-y-0.5">
+                      <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
+                        Assigned Prompt
+                      </span>
+                      <p className="font-mono text-xs text-foreground font-medium italic break-words">
+                        &quot;{structuredDetails.expectedText}&quot;
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </AlertDescription>
 
         <div className="rounded-lg sm:rounded-xl bg-background/95 dark:bg-card/90 border border-destructive/20 p-3 space-y-1.5 shadow-2xs">

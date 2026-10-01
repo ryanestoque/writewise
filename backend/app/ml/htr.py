@@ -102,7 +102,10 @@ def get_htr_model() -> Any:
 
 
 def preprocess_word_crop_htr(
-    crop: np.ndarray, target_width: int = HTR_IMAGE_WIDTH, target_height: int = HTR_IMAGE_HEIGHT
+    crop: np.ndarray,
+    binary_mask: Optional[np.ndarray] = None,
+    target_width: int = HTR_IMAGE_WIDTH,
+    target_height: int = HTR_IMAGE_HEIGHT,
 ) -> np.ndarray:
     """Preprocess a single word crop for SimpleHTR inference.
 
@@ -113,6 +116,9 @@ def preprocess_word_crop_htr(
     ----------
     crop : np.ndarray
         Grayscale or binary crop.
+    binary_mask : Optional[np.ndarray], default=None
+        Optional binary mask (ink > 0) to isolate handwriting strokes and eliminate
+        horizontal notebook ruling lines and paper shadows.
     target_width : int, default=128
         Target image width.
     target_height : int, default=32
@@ -130,9 +136,18 @@ def preprocess_word_crop_htr(
     if h == 0 or w == 0:
         return np.ones((target_width, target_height, 1), dtype=np.float32)
 
-    # Binarize/normalize background to pure white (255) and ink to black (0)
-    # matching the IAM Words training distribution across diverse photo lighting
-    _, crop = cv2.threshold(crop, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    # If binary mask is provided (where ink > 0), isolate ink strokes on white background
+    # to prevent blue/red notebook lines from creating solid black bars after Otsu
+    if binary_mask is not None and binary_mask.shape[:2] == (h, w):
+        isolated = np.where(binary_mask > 0, crop, 255).astype(np.uint8)
+        _, crop = cv2.threshold(isolated, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    else:
+        # Background illumination normalization to remove paper shadows & suppress guidelines
+        k_size = max(15, int(max(h, w) * 0.1))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (k_size, k_size))
+        bg = cv2.morphologyEx(crop, cv2.MORPH_DILATE, kernel)
+        norm = cv2.divide(crop, bg, scale=255)
+        _, crop = cv2.threshold(norm, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     # Scale to target height preserving aspect ratio
     scale = target_height / max(h, 1)
@@ -182,14 +197,19 @@ def ctc_greedy_decode(probs: np.ndarray, vocabulary: list[str]) -> str:
     return "".join(chars).strip()
 
 
-
-def predict_word_text(crop: np.ndarray, vocabulary: Optional[list[str]] = None) -> str:
+def predict_word_text(
+    crop: np.ndarray,
+    binary_mask: Optional[np.ndarray] = None,
+    vocabulary: Optional[list[str]] = None,
+) -> str:
     """Transcribe a single word crop using the HTR model.
 
     Parameters
     ----------
     crop : np.ndarray
         Word crop image.
+    binary_mask : Optional[np.ndarray], default=None
+        Binary mask to isolate ink from background rulings.
     vocabulary : Optional[list[str]]
         Vocabulary list. Defaults to DEFAULT_VOCABULARY.
 
@@ -204,7 +224,7 @@ def predict_word_text(crop: np.ndarray, vocabulary: Optional[list[str]] = None) 
         # In stub mode, return placeholder
         return ""
 
-    processed = preprocess_word_crop_htr(crop)
+    processed = preprocess_word_crop_htr(crop, binary_mask=binary_mask)
     batch_input = np.expand_dims(processed, axis=0)
 
     preds = _htr_model.predict(batch_input, verbose=0)[0]
@@ -244,18 +264,27 @@ def levenshtein_similarity(str1: str, str2: str) -> float:
 def verify_target_text(
     word_crops: list[np.ndarray],
     target_text: str,
-    similarity_threshold: float = 0.40,
+    binary_masks: Optional[list[np.ndarray]] = None,
+    similarity_threshold: float = 0.65,
+    min_word_similarity: float = 0.60,
 ) -> Tuple[bool, str, float]:
     """Transcribe word crops and verify match against expected activity target text.
+
+    Uses both global Levenshtein distance and word-level alignment to prevent
+    garbled submissions from passing.
 
     Parameters
     ----------
     word_crops : list[np.ndarray]
         List of segmented word crops.
     target_text : str
-        Expected prompt text (e.g. "the quick brown fox").
-    similarity_threshold : float, default=0.40
-        Minimum Levenshtein similarity to pass.
+        Expected prompt text (e.g. "Saara Eliana Ibag").
+    binary_masks : Optional[list[np.ndarray]]
+        Corresponding binary stroke masks without ruling lines.
+    similarity_threshold : float, default=0.65
+        Minimum combined similarity score to pass.
+    min_word_similarity : float, default=0.60
+        Minimum required similarity for individual matching words.
 
     Returns
     -------
@@ -266,13 +295,41 @@ def verify_target_text(
         # Stub mode: accept by default
         return True, target_text, 1.0
 
-    detected_words = [predict_word_text(crop) for crop in word_crops]
+    has_valid_masks = binary_masks is not None and len(binary_masks) == len(word_crops)
+    masks = binary_masks if has_valid_masks else [None] * len(word_crops)
+    detected_words = [
+        predict_word_text(crop, binary_mask=mask)
+        for crop, mask in zip(word_crops, masks)
+    ]
     detected_text = " ".join(w for w in detected_words if w)
 
     if not detected_text:
         return True, "", 1.0
 
-    similarity = levenshtein_similarity(detected_text, target_text)
-    is_match = similarity >= similarity_threshold
+    det_words = [w for w in detected_text.lower().strip().split() if w]
+    tgt_words = [w for w in target_text.lower().strip().split() if w]
 
-    return is_match, detected_text, similarity
+    global_sim = levenshtein_similarity(detected_text, target_text)
+
+    if not det_words or not tgt_words:
+        return global_sim >= similarity_threshold, detected_text, round(global_sim, 3)
+
+    # Word-by-word alignment check
+    word_sims = []
+    min_len = min(len(det_words), len(tgt_words))
+    for i in range(min_len):
+        w_sim = levenshtein_similarity(det_words[i], tgt_words[i])
+        word_sims.append(w_sim)
+
+    count_penalty = min(len(det_words), len(tgt_words)) / max(len(det_words), len(tgt_words))
+    avg_word_sim = (sum(word_sims) / max(len(tgt_words), 1)) * count_penalty
+
+    # Combined score: 50% global Levenshtein + 50% word-level average
+    combined_similarity = round(0.5 * global_sim + 0.5 * avg_word_sim, 3)
+
+    # Pass only if combined score meets threshold AND individual words meet min_word_similarity
+    has_weak_word = any(w < min_word_similarity for w in word_sims)
+    is_match = (combined_similarity >= similarity_threshold) and not has_weak_word
+
+    return is_match, detected_text, combined_similarity
+

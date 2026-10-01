@@ -4,7 +4,7 @@ Executes Stages 1 through 6 synchronously on an input worksheet image and return
 both structured measurement data and CNN handoff word crops.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Optional
 
 import numpy as np
@@ -23,6 +23,7 @@ class CVPipelineResult:
 
     measurement: MeasurementData
     word_crops: List[np.ndarray]  # Deskewed grayscale crops for CNN (§7)
+    binary_crops: List[np.ndarray] = field(default_factory=list)
     deskewed_image_bytes: Optional[bytes] = None
     deskew_angle: float = 0.0
 
@@ -71,15 +72,18 @@ def run_cv_pipeline(
     # 5. Stage 5: Feature Extraction & Output Assembly
     measurement = extract_features(segmentation, deskew)
 
-    # Collect grayscale crops for CNN handoff (§7)
+    # Collect grayscale and binary crops for CNN handoff (§7)
     word_crops: List[np.ndarray] = []
+    binary_crops: List[np.ndarray] = []
     for line in segmentation.lines:
         for word in line.words:
             word_crops.append(word.gray_crop)
+            binary_crops.append(word.binary_crop)
 
     return CVPipelineResult(
         measurement=measurement,
         word_crops=word_crops,
+        binary_crops=binary_crops,
         deskewed_image_bytes=deskew.deskewed_image_bytes,
         deskew_angle=deskew.deskew_angle,
     )

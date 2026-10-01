@@ -38,6 +38,7 @@ export interface Submission {
   uploader_id: string;
   uploader_role: "teacher" | "parent";
   rejection_code: string | null;
+  rejection_details?: string | Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
   student: {
@@ -81,7 +82,7 @@ export function useSubmissions(activityId: string) {
         .from("submission")
         .select(
           `id, activity_id, student_id, image_path, status, uploader_id,
-           uploader_role, rejection_code, created_at, updated_at,
+           uploader_role, rejection_code, rejection_details, created_at, updated_at,
            student:student_id(full_name),
            activity:activity_id(target_text),
            measurement(
