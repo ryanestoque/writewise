@@ -72,6 +72,7 @@ The frontend branches on `error.code`, never on parsing `message` text (ARCHITEC
 | `QUALITY_GATE_OFF_GUIDELINES` | 422 | CV_PIPELINE §5.2b (handwriting detected outside ruled penmanship guideline bands) |
 | `QUALITY_GATE_SCRIPT_NOT_CURSIVE` | 422 | CV_PIPELINE §5.4 (post-segmentation cursive connectivity check: printed handwriting rejected) |
 | `SEGMENTATION_COUNT_MISMATCH` | 422 | CV_PIPELINE §5.3 (post-segmentation gate) |
+| `TARGET_TEXT_MISMATCH` | 422 | CV_PIPELINE §7b (HTR target text verification — detected text does not match activity target) |
 | `MANUAL_SCORE_ALREADY_EXISTS` | 409 | `manual_score.submission_id` is `unique` (DATABASE §9) — no re-grade flow (§3.3) |
 | `NOT_ROSTER_TEACHER` | 403 | Attempt deletion — caller is a teacher, but the student is not on their roster (§3.3) |
 | `NOT_SUBMISSION_UPLOADER` | 403 | Attempt deletion — caller is a parent, but was not the original uploader of this submission (§3.3) |
@@ -257,17 +258,21 @@ An empty `ids` array is a valid no-op (`updated: [], skipped: []`).
 image: <binary file>
 activity_id: "33333333-..."
 student_id: "22222222-..."
+bypass_text_check: false (optional)
 ```
 
 - **Accepted MIME types:** `image/jpeg`, `image/png` only. Anything else → `400 UNSUPPORTED_FILE_TYPE`, checked before the quality gate even runs (this is a format check, not a quality check — it doesn't share the quality-gate's error codes).
 - **Max file size:** 15 MB. Over this → `400 FILE_TOO_LARGE`. Chosen as generous headroom above a typical phone photo (2–8 MB) without inviting a pathological upload that stalls the synchronous request past CV_PIPELINE §10 / ML_PIPELINE §8's combined ~8s processing budget.
+- `bypass_text_check` (optional, boolean, default `false`): If `true`, skips HTR target text verification (CV_PIPELINE §7b) even if the HTR model detects a mismatch. Allows teachers to override false-positive HTR rejections when the handwriting is legitimate but the model misreads it. Ignored if the HTR model is in stub mode.
 - `uploader_id` / `uploader_role` are derived from the caller's JWT (§2.5), never accepted from the request body.
 
-This request runs the full synchronous pipeline: upload hardening (magic-byte check, decompression-bomb cap, EXIF strip — SECURITY.md §4) → quality gate → preprocessing → segmentation → post-segmentation gate → CV feature extraction → CNN inference → score computation (ARCHITECTURE §8).
+This request runs the full synchronous pipeline: upload hardening (magic-byte check, decompression-bomb cap, EXIF strip — SECURITY.md §4) → quality gate → preprocessing → segmentation → post-segmentation gate → target text verification (HTR, CV_PIPELINE §7b) → CV feature extraction → CNN inference → score computation (ARCHITECTURE §8).
 
-**Rejection (quality gate or post-segmentation gate failure) — `422 Unprocessable Entity`:**
+**Rejection (quality gate, post-segmentation gate, or HTR target text mismatch failure) — `422 Unprocessable Entity`:**
 
 The request was well-formed, but the photo's *content* couldn't be processed. Per ARCHITECTURE §8, the submission is still persisted (`status = 'rejected'`) even though the HTTP call fails — `error.details.submission_id` gives the frontend a reference to that record.
+
+For `TARGET_TEXT_MISMATCH`, details include `detected_text` and `similarity_score`. The teacher can retry the submission with `bypass_text_check=true` to force processing if the rejection was a false positive.
 
 ```json
 {
