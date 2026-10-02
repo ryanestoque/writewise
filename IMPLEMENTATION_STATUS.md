@@ -2,15 +2,15 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-09-23
+**Last updated:** 2026-10-02
 
 ## Summary
 
 | Phase | Done / Total |
 |---|---|
 | Phase 0 — Setup | 13 / 18 |
-| Phase 1 — Teacher Tooling & Raw CV Pipeline | 18 / 18 |
-| Between Phases — Calibration | 4 / 7 *(+3 code-ready)* |
+| Phase 1 — Teacher Tooling & Raw CV Pipeline | 20 / 20 |
+| Between Phases — Calibration | 5 / 8 *(+3 code-ready)* |
 | Phase 2 — Calibrated Scoring & Full System | 13 / 14 |
 
 *(Update this table whenever you check off an item below.)*
@@ -78,6 +78,8 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Feature extraction — size consistency | Done | | CV_PIPELINE §6.4 |
 | CNN handoff crop generation | Done | | CV_PIPELINE §7 |
 | Output schema persisted to `measurement` | Done | | CV_PIPELINE §8, DATABASE §8 |
+| HTR target text verification | Done | | CTC model + cursive-aware Levenshtein verification in `app/ml/htr.py`; integrated in submission pipeline; `bypass_text_check` override; stub mode for dev/test | CV_PIPELINE §7b, ADR 0003 |
+| Stroke skeleton tracing & letter zoning | Done | | SVG vector paths + letter zone segmentation in `app/cv/tracing.py`; consumed by diagnostic overlay | CV_PIPELINE §10 |
 
 ---
 
@@ -92,6 +94,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | ML Stage 1 — CCC dataset prep (format conversion, split) | Done | | ML_PIPELINE §2 |
 | ML Stage 1 — fine-tuning (two-phase) | Done | | ML_PIPELINE §4 |
 | ML Stage 1 — evaluation (Accuracy/Precision/Recall/F1) | Done | | ML_PIPELINE §5 |
+| HTR model fine-tuning (SimpleHTR on IAM Words) | Done | | Training notebook `training/train_htr.ipynb`; artifact `simplehtr_iam.keras` uploaded to Storage | ML_PIPELINE §9, ADR 0003 |
 | ML Stage 2 — regression-head training/calibration | Code Complete | Training script ready (`training/stage2_calibrate.py`); blocked on Phase 1 paired data | ML_PIPELINE §6 |
 | Export combined inference artifact (`.keras`) | Code Complete | Exporter ready (`training/export_model.py`); blocked on Stage 2 execution | ML_PIPELINE §7 |
 
