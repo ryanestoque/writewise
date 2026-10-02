@@ -51,7 +51,6 @@ class TestCTCDecoding:
         assert decoded == "abc"
 
 
-
 class TestLevenshteinSimilarity:
     """Tests for string similarity calculation."""
 
@@ -104,4 +103,3 @@ class TestVerifyTargetText:
         assert levenshtein_similarity("Saara Eliana Ibaq", "Saara Eliana Ibag") >= 0.65
         # Severe garble -> < 0.65
         assert levenshtein_similarity("baoria Eliarar Sloagy", "Saara Eliana Ibag") < 0.65
-

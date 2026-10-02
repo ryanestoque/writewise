@@ -107,4 +107,3 @@ def test_baseline_deviation_ignores_adjacent_lower_guideline():
     # Should NOT lock onto lower guideline at y=560 (measured_y should be ~500, deviation <= 0.05).
     assert deviation <= 0.05
     assert abs(measured_y - 500) <= 2
-

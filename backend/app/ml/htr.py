@@ -75,9 +75,7 @@ def load_htr_model() -> None:
 
         from app.core.supabase import supabase_client
 
-        response = supabase_client.storage.from_(settings.MODEL_STORAGE_BUCKET).download(
-            htr_path
-        )
+        response = supabase_client.storage.from_(settings.MODEL_STORAGE_BUCKET).download(htr_path)
 
         with tempfile.NamedTemporaryFile(suffix=".keras", delete=False) as tmp:
             tmp.write(response)
@@ -160,7 +158,7 @@ def preprocess_word_crop_htr(
 
     # Transpose so time/sequence axis (width) is first: (128, 32, 1)
     transposed = np.transpose(padded, (1, 0))
-    normalized = (transposed.astype(np.float32) / 255.0)
+    normalized = transposed.astype(np.float32) / 255.0
 
     return np.expand_dims(normalized, axis=-1)
 
@@ -251,9 +249,9 @@ def levenshtein_similarity(str1: str, str2: str) -> float:
         for j in range(1, len2 + 1):
             cost = 0 if s1[i - 1] == s2[j - 1] else 1
             dp[i][j] = min(
-                dp[i - 1][j] + 1,      # deletion
-                dp[i][j - 1] + 1,      # insertion
-                dp[i - 1][j - 1] + cost  # substitution
+                dp[i - 1][j] + 1,  # deletion
+                dp[i][j - 1] + 1,  # insertion
+                dp[i - 1][j - 1] + cost,  # substitution
             )
 
     edit_distance = dp[len1][len2]
@@ -298,8 +296,7 @@ def verify_target_text(
     has_valid_masks = binary_masks is not None and len(binary_masks) == len(word_crops)
     masks = binary_masks if has_valid_masks else [None] * len(word_crops)
     detected_words = [
-        predict_word_text(crop, binary_mask=mask)
-        for crop, mask in zip(word_crops, masks)
+        predict_word_text(crop, binary_mask=mask) for crop, mask in zip(word_crops, masks)
     ]
     detected_text = " ".join(w for w in detected_words if w)
 
@@ -332,4 +329,3 @@ def verify_target_text(
     is_match = (combined_similarity >= similarity_threshold) and not has_weak_word
 
     return is_match, detected_text, combined_similarity
-

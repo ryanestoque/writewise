@@ -78,8 +78,7 @@ def evaluate_slant(
             diff_str = round(diff, 1)
             med_str = round(line_median, 1)
             note_msg = (
-                f"Irregular slant ({angle}°) — deviates by {diff_str}° "
-                f"from line slant ({med_str}°)"
+                f"Irregular slant ({angle}°) — deviates by {diff_str}° from line slant ({med_str}°)"
             )
             return ("needs_attention", vector, note_msg)
         return "normal", vector, f"Acceptable slant ({angle}°)"

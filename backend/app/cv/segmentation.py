@@ -286,6 +286,32 @@ def segment_lines_and_words(
     line_segments: List[LineSegment] = []
     total_words = 0
 
+    # Detect and mask vertical margin lines (common on notebook/worksheet pages)
+    v_margin_mask = np.zeros((img_h, img_w), dtype=np.uint8)
+    v_lines = cv2.HoughLinesP(
+        deskew.binary,
+        rho=1,
+        theta=np.pi / 180,
+        threshold=max(30, int(img_h * 0.10)),
+        minLineLength=max(50, int(img_h * 0.15)),
+        maxLineGap=max(15, int(img_h * 0.05)),
+    )
+    if v_lines is not None:
+        for line in v_lines:
+            x1, y1, x2, y2 = line.flatten()
+            angle = abs(np.degrees(np.arctan2(y2 - y1, x2 - x1)))
+            if 75 <= angle <= 105:
+                mean_x = (x1 + x2) / 2
+                # Standard margin lines are near the left (or right) edges of the paper
+                if mean_x < 0.35 * img_w or mean_x > 0.65 * img_w:
+                    line_th = max(5, int(img_w * 0.022))
+                    cv2.line(v_margin_mask, (x1, y1), (x2, y2), 255, thickness=line_th)
+        if np.any(v_margin_mask):
+            dilate_w = max(3, int(img_w * 0.010))
+            v_margin_mask = cv2.dilate(
+                v_margin_mask, cv2.getStructuringElement(cv2.MORPH_RECT, (dilate_w, 1))
+            )
+
     for i in range(n_rulings):
         top_y = deskew.topline_y[i]
         mid_y = deskew.midline_y[i]
@@ -329,7 +355,12 @@ def segment_lines_and_words(
         # Suppress extreme border extremities (shadows/page edges touching image margins)
         proj_mask[:, : int(0.01 * img_w)] = 0
         proj_mask[:, int(0.99 * img_w) :] = 0
-        line_mask_half = max(2, int(0.04 * unit_height))
+
+        # Suppress vertical margin lines
+        if np.any(v_margin_mask):
+            proj_mask[v_margin_mask[band_top:band_bottom, :] > 0] = 0
+
+        line_mask_half = max(3, int(0.06 * unit_height))
         for gy in (top_y, mid_y, base_y):
             rel_y = gy - band_top
             y_min_line = max(0, rel_y - line_mask_half)
@@ -338,12 +369,12 @@ def segment_lines_and_words(
                 proj_mask[y_min_line:y_max_line, :] = 0
 
         # Suppress wide horizontal ruling remnants that survive row slicing
-        h_len = max(35, int(unit_height * 0.45))
+        h_len = max(35, int(unit_height * 0.40))
         h_lines = cv2.morphologyEx(
             proj_mask, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (h_len, 1))
         )
         if np.any(h_lines):
-            dilate_v = max(3, int(unit_height * 0.05))
+            dilate_v = max(4, int(unit_height * 0.08))
             if dilate_v % 2 == 0:
                 dilate_v += 1
             h_lines_dil = cv2.dilate(
@@ -425,12 +456,11 @@ def segment_lines_and_words(
             intra_candidates = [w for w in non_fissure_gaps if w < min_word_gap]
             if intra_candidates:
                 baseline_intra_gap = float(np.median(intra_candidates))
-            elif non_fissure_gaps:
-                baseline_intra_gap = float(np.min(non_fissure_gaps))
+                split_threshold = max(word_gap_multiplier * baseline_intra_gap, min_word_gap)
             else:
-                baseline_intra_gap = float(np.median(gap_widths))
-
-            split_threshold = max(word_gap_multiplier * baseline_intra_gap, min_word_gap)
+                # When no small intra-word gaps exist (e.g. cursive words with continuous
+                # ligatures), any gap that meets or exceeds min_word_gap is a word boundary.
+                split_threshold = min_word_gap
 
             # Candidate word boundaries must exceed both split_threshold and min_word_gap
             candidate_indices = [
@@ -485,16 +515,12 @@ def segment_lines_and_words(
                 return None
 
             # 2. Filter out vertical margin lines (skinny and tall spanning line band)
-            if (
-                (bbox_h / max(1, bbox_w) > 3.5)
-                and (bbox_h > int(0.75 * band_height))
-                and (bbox_w < int(0.15 * unit_height))
-            ):
+            if (bbox_h / max(1, bbox_w) > 3.0) and (bbox_h > int(0.65 * band_height)):
                 return None
 
             # 3. Filter out low-density noise clouds across blank lines
             density = ink_pixel_count / max(1, bbox_w * bbox_h)
-            if bbox_w > int(0.7 * unit_height) and density < 0.05:
+            if bbox_w > int(0.5 * unit_height) and density < 0.08:
                 return None
 
             # 4. Filter out tiny dust / noise specks

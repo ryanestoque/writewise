@@ -93,4 +93,3 @@ def compute_baseline_deviation(
     deviation_pixels = abs(y_bottom - baseline_y)
     deviation_ratio = deviation_pixels / norm_unit
     return round(float(deviation_ratio), 2), int(y_bottom)
-

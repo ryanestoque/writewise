@@ -436,3 +436,54 @@ def test_non_continuous_ruling_preserves_descenders():
     # Descender reached y=380; bounding box must not be clamped at (320+360)//2 = 340
     assert (by + bh) >= 375, f"Word bbox bottom {by + bh} severed descender extending to 380"
 
+
+def test_vertical_notebook_margin_suppressed_on_multi_line_page():
+    """A vertical margin line (typical of school notebooks) crossing multiple rows
+    must not create false-positive words on empty rows or merge into cursive words.
+    """
+    import cv2
+    import numpy as np
+
+    from app.cv.guide_lines import DeskewResult
+
+    h, w = 900, 1000
+    binary = np.zeros((h, w), dtype=np.uint8)
+
+    toplines = [150, 350, 550]
+    midlines = [200, 400, 600]
+    baselines = [250, 450, 650]
+
+    # Draw horizontal guidelines
+    for t, m, b in zip(toplines, midlines, baselines):
+        cv2.line(binary, (50, t), (w - 50, t), 255, thickness=2)
+        cv2.line(binary, (50, m), (w - 50, m), 255, thickness=2)
+        cv2.line(binary, (50, b), (w - 50, b), 255, thickness=2)
+
+    # Draw a vertical notebook margin line at x ~ 120 spanning from y=50 to y=850
+    # with a slight 2-degree tilt
+    cv2.line(binary, (115, 50), (135, 850), 255, thickness=6)
+
+    # Draw a single cursive word 'banana' on Row 1 (y: 350 -> 450), between x=300 and x=550
+    for x in range(300, 550, 6):
+        cv2.line(binary, (x, 405), (x + 4, 448), 255, thickness=3)
+
+    deskew = DeskewResult(
+        gray=255 - binary,
+        denoised=255 - binary,
+        binary=binary,
+        topline_y=toplines,
+        midline_y=midlines,
+        baseline_y=baselines,
+        deskew_angle=0.0,
+    )
+
+    result = segment_lines_and_words(deskew, expected_word_count=1, validate_script=False)
+
+    assert result.total_word_count == 1
+    assert len(result.lines[0].words) == 0, "Row 0 should have 0 words (margin line ignored)"
+    assert len(result.lines[1].words) == 1, "Row 1 should have exactly 1 word ('banana')"
+    assert len(result.lines[2].words) == 0, "Row 2 should have 0 words (margin line ignored)"
+
+    word = result.lines[1].words[0]
+    bx, by, bw, bh = word.bbox
+    assert bx >= 280, f"Word bbox x={bx} erroneously included vertical margin line at x ~ 120"

@@ -61,11 +61,7 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
             word_gaps = line.get("word_gaps") or []
 
             # Line-level slant statistics
-            line_slants = [
-                float(w["slant_deg"])
-                for w in words
-                if w.get("slant_deg") is not None
-            ]
+            line_slants = [float(w["slant_deg"]) for w in words if w.get("slant_deg") is not None]
             line_median_slant: float | None = None
             is_high_slant_variance = False
 
@@ -106,10 +102,7 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
                     attention_counts["size_consistency"] += 1
 
                 core_bbox: list[int] | None = None
-                if (
-                    line_idx < len(guide_lines.midline_y)
-                    and line_idx < len(guide_lines.baseline_y)
-                ):
+                if line_idx < len(guide_lines.midline_y) and line_idx < len(guide_lines.baseline_y):
                     mid_y = guide_lines.midline_y[line_idx]
                     base_y = guide_lines.baseline_y[line_idx]
                     if base_y > mid_y:
