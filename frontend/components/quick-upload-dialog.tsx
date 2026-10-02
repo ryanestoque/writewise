@@ -572,7 +572,7 @@ function UploadFlow({
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (bypassTextCheck = false) => {
     const activityId = prefilledActivityId ?? activityChoice?.value;
     const studentId = prefilledStudentId ?? studentChoice?.value;
     if (!selectedFile || !activityId || !studentId) return;
@@ -585,6 +585,7 @@ function UploadFlow({
         image: selectedFile,
         activityId,
         studentId,
+        bypassTextCheck,
       },
       {
         onSuccess: (data: unknown) => {
@@ -620,6 +621,14 @@ function UploadFlow({
         },
       }
     );
+  };
+
+  const handleRetryUpload = () => {
+    handleSubmit(false);
+  };
+
+  const handleProceedAnyway = () => {
+    handleSubmit(true);
   };
 
   const handleViewDiagnostic = () => {
@@ -1488,7 +1497,8 @@ function UploadFlow({
                 previewUrl={previewUrl}
                 retryRef={retryButtonRef}
                 onRetake={handleRetakePhoto}
-                onRetry={handleSubmit}
+                onRetry={handleRetryUpload}
+                onProceedAnyway={handleProceedAnyway}
               />
             )}
 
@@ -1599,7 +1609,7 @@ function UploadFlow({
             <Button
               ref={submitButtonRef}
               disabled={uploadMutation.isPending}
-              onClick={handleSubmit}
+              onClick={handleRetryUpload}
               className="gap-2 h-10 sm:h-9 px-5 text-xs sm:text-sm font-semibold shadow-warm cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               <CheckCircle2Icon className="size-4" />

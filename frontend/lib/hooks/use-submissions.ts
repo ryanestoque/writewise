@@ -136,10 +136,12 @@ export function useUploadSubmission() {
       image,
       activityId,
       studentId,
+      bypassTextCheck = false,
     }: {
       image: File;
       activityId: string;
       studentId: string;
+      bypassTextCheck?: boolean;
     }) => {
       const token = await getAuthToken(supabase);
 
@@ -147,6 +149,9 @@ export function useUploadSubmission() {
       formData.append("image", image);
       formData.append("activity_id", activityId);
       formData.append("student_id", studentId);
+      if (bypassTextCheck) {
+        formData.append("bypass_text_check", "true");
+      }
 
       // No Content-Type header — let the browser set multipart/form-data
       // with the correct boundary automatically.

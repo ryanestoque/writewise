@@ -321,7 +321,7 @@ function ParentUploadFlow({
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (bypassTextCheck = false) => {
     if (!selectedFile || !selectedActivityId || !childId) return;
 
     setStep(4);
@@ -332,6 +332,7 @@ function ParentUploadFlow({
         image: selectedFile,
         activityId: selectedActivityId,
         studentId: childId,
+        bypassTextCheck,
       },
       {
         onSuccess: () => {
@@ -368,6 +369,14 @@ function ParentUploadFlow({
         },
       }
     );
+  };
+
+  const handleRetryUpload = () => {
+    handleSubmit(false);
+  };
+
+  const handleProceedAnyway = () => {
+    handleSubmit(true);
   };
 
   const isStepNavigable = (targetStep: Step): boolean => {
@@ -994,7 +1003,8 @@ function ParentUploadFlow({
                 previewUrl={previewUrl}
                 retryRef={retryButtonRef}
                 onRetake={handleRetakePhoto}
-                onRetry={handleSubmit}
+                onRetry={handleRetryUpload}
+                onProceedAnyway={handleProceedAnyway}
               />
             )}
 
@@ -1082,7 +1092,7 @@ function ParentUploadFlow({
             <Button
               ref={submitButtonRef}
               disabled={uploadMutation.isPending}
-              onClick={handleSubmit}
+              onClick={handleRetryUpload}
               className="gap-2 h-10 sm:h-9 px-5 text-xs sm:text-sm font-semibold shadow-warm cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               <CheckCircle2Icon className="size-4" aria-hidden="true" />

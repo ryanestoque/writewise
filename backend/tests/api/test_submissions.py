@@ -238,6 +238,60 @@ class TestCreateSubmission:
         assert db_overlay is not None
         assert "summary" in db_overlay
 
+    def test_submission_bypass_target_text_mismatch(
+        self, client, test_activity, test_student, cleanup_submissions, monkeypatch
+    ):
+        """Verify that passing bypass_text_check=True bypasses TARGET_TEXT_MISMATCH rejection."""
+        import app.api.submissions as subs_module
+
+        # Mock verify_target_text to return a mismatch
+        monkeypatch.setattr(
+            subs_module,
+            "verify_target_text",
+            lambda *args, **kwargs: (False, "bevenex", 0.29),
+        )
+
+        img_bytes = make_segmented_worksheet()
+
+        # Without bypass_text_check -> 422 TARGET_TEXT_MISMATCH
+        res_rejected = client.post(
+            "/api/submissions",
+            data={
+                "activity_id": test_activity["id"],
+                "student_id": test_student["id"],
+            },
+            files={"image": ("worksheet.jpg", img_bytes, "image/jpeg")},
+        )
+        assert res_rejected.status_code == 422
+        assert res_rejected.json()["error"]["code"] == "TARGET_TEXT_MISMATCH"
+        rejected_sub_id = res_rejected.json()["error"]["details"]["submission_id"]
+        cleanup_submissions.append(
+            {
+                "id": rejected_sub_id,
+                "image_path": f"{test_student['id']}/{rejected_sub_id}.jpg",
+            }
+        )
+
+        # With bypass_text_check=True -> 201 Success
+        res_bypassed = client.post(
+            "/api/submissions",
+            data={
+                "activity_id": test_activity["id"],
+                "student_id": test_student["id"],
+                "bypass_text_check": "true",
+            },
+            files={"image": ("worksheet.jpg", img_bytes, "image/jpeg")},
+        )
+        assert res_bypassed.status_code == 201
+        data = res_bypassed.json()
+        sub_id = data["submission_id"]
+        cleanup_submissions.append(
+            {
+                "id": sub_id,
+                "image_path": f"{test_student['id']}/{sub_id}.jpg",
+            }
+        )
+
     def test_submission_letter_formation_saliency_polygons_in_overlay(
         self, client, test_activity, test_student, cleanup_submissions
     ):

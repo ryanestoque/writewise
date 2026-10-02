@@ -49,6 +49,7 @@ async def create_submission(
     image: UploadFile = File(...),
     activity_id: str = Form(...),
     student_id: str = Form(...),
+    bypass_text_check: bool = Form(False),
     caller: dict = Depends(get_current_user),
 ):
     caller_id = caller.get("sub")
@@ -230,7 +231,7 @@ async def create_submission(
         htr_detected_text = detected_text
         htr_similarity = round(similarity, 3)
 
-        if not is_match:
+        if not is_match and not bypass_text_check:
             rejection = {
                 "code": "TARGET_TEXT_MISMATCH",
                 "message": (

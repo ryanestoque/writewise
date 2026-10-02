@@ -30,6 +30,7 @@ import {
   ZoomOut,
   ScanText,
   WifiOff,
+  CheckCircle,
 } from "lucide-react";
 
 export interface QualityErrorDetails {
@@ -57,6 +58,7 @@ export interface QualityErrorCardProps {
   onRetake: (tipInfo?: { tip: string; badgeLabel?: string }) => void;
   onRetry?: () => void;
   retryLabel?: string;
+  onProceedAnyway?: () => void;
 }
 
 interface ErrorPresentation {
@@ -429,6 +431,7 @@ export function QualityErrorCard({
   onRetake,
   onRetry,
   retryLabel,
+  onProceedAnyway,
 }: QualityErrorCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isInspecting, setIsInspecting] = useState(false);
@@ -1004,13 +1007,35 @@ export function QualityErrorCard({
       {/* Action buttons - natural DOM and visual hierarchy across viewports */}
       <div
         className={cn(
-          "flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-3 border-t sm:justify-end",
+          "flex flex-col sm:flex-row-reverse sm:items-center gap-2 pt-3 border-t sm:justify-start",
           presentation.isQualityCheck ? "border-warning/20" : "border-destructive/20"
         )}
       >
-        {onRetry && (
+        <Button
+          ref={retryRef}
+          type="button"
+          onClick={handleRetakeClick}
+          title="Retake photo (or press R)"
+          className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-4 text-xs sm:text-sm font-semibold gap-2 cursor-pointer touch-manipulation shadow-warm-sm"
+        >
+          <Camera className="size-4" aria-hidden="true" />
+          Retake Photo
+        </Button>
+
+        {error.code === "TARGET_TEXT_MISMATCH" && onProceedAnyway && (
           <Button
-            ref={retryRef}
+            type="button"
+            variant="outline"
+            onClick={onProceedAnyway}
+            className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-2 border-border hover:bg-accent text-foreground cursor-pointer touch-manipulation shadow-warm-xs"
+          >
+            <CheckCircle className="size-4 text-primary" aria-hidden="true" />
+            Proceed Anyway
+          </Button>
+        )}
+
+        {error.code !== "TARGET_TEXT_MISMATCH" && onRetry && (
+          <Button
             type="button"
             variant="outline"
             onClick={onRetry}
@@ -1020,16 +1045,6 @@ export function QualityErrorCard({
             {retryLabel ?? "Retry Upload"}
           </Button>
         )}
-        <Button
-          ref={!onRetry ? retryRef : undefined}
-          type="button"
-          onClick={handleRetakeClick}
-          title="Retake photo (or press R)"
-          className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-2 cursor-pointer touch-manipulation shadow-warm-sm"
-        >
-          <Camera className="size-4" aria-hidden="true" />
-          Retake Photo
-        </Button>
       </div>
 
       {/* Inspect photo modal with interactive zoom, pan, and direct remediation */}
