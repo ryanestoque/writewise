@@ -22,6 +22,7 @@ training/
 ├── evaluate_stage1.py       # Step 3: Stage 1 evaluation metrics
 ├── stage2_calibrate.py      # Step 4: Regression head (needs paired data)
 ├── export_model.py          # Step 5: Combine into deployable artifact
+├── train_htr.ipynb          # HTR: Fine-tune SimpleHTR on IAM Words (Colab)
 ├── data/                    # Gitignored — dataset files
 │   ├── raw/                 # Raw CCC download (.chr files)
 │   └── processed/           # Output of convert_ccc.py (.npy files)
@@ -39,6 +40,16 @@ training/
 5. **Download checkpoint** — save the `.keras` file from Drive to your local machine
 6. **Evaluate:** `python evaluate_stage1.py --checkpoint <path>` — check `results/stage1_evaluation/summary.json`
 7. **Target:** >=90% accuracy on CCC test set (PRD §11)
+
+### HTR Model (Target Text Verification)
+
+Separate from the scoring CNN pipeline above — this trains the SimpleHTR model used to verify that uploaded handwriting matches the activity's target text (see ADR 0003).
+
+1. **Open** `train_htr.ipynb` in Google Colab, connect to GPU runtime
+2. **Train** — the notebook handles IAM Words dataset loading, preprocessing, and CTC model training
+3. **Download** the resulting `.keras` artifact (e.g., `simplehtr_iam.keras`)
+4. **Upload to Supabase Storage** — upload to the `model-artifacts` bucket alongside the scoring CNN artifact
+5. **Set env var** — set `HTR_MODEL_ARTIFACT_PATH=simplehtr_iam.keras` in the backend `.env` / Railway dashboard
 
 ### Stage 2 (Calibration & Production Export)
 
