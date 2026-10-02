@@ -79,6 +79,7 @@ TECH_STACK.md §8 is the source of truth for the **full list** of required varia
 2. Railway's own service URL (`NEXT_PUBLIC_API_BASE_URL`'s prod value) only exists **after** the Railway service is created and gets its first deploy — so Railway env vars get filled before Vercel's Production env vars
 3. `CORS_ALLOWED_ORIGINS` (Railway) needs the Vercel URL — so it's filled *after* Vercel's project exists, meaning it's the one Railway var that gets revisited/added slightly out of the initial batch
 4. `MODEL_ARTIFACT_PATH` doesn't need a real value until a trained model actually exists (§10) — this can lag behind every other variable without blocking anything else
+5. `HTR_MODEL_ARTIFACT_PATH` similarly doesn't need a real value until the HTR model is trained and uploaded (see ML_PIPELINE.md §9) — empty or omitted in dev activates stub mode, which is the intended local behavior.
 
 ---
 
