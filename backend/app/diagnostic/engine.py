@@ -9,6 +9,7 @@ from app.diagnostic.models import (
     FormationAnnotation,
     FormationOverlay,
     GuideLinesData,
+    LetterZoneModel,
     OverlaySummary,
     SizeAnnotation,
     SizeOverlay,
@@ -142,9 +143,25 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
                     )
                 )
 
-                # 4. Letter Formation
+                # 4. Letter Formation & Stroke Tracing
                 score = word.get("letter_formation_score")
                 saliency_polys = word.get("saliency_polygons") or []
+                stroke_paths = word.get("stroke_paths") or []
+                raw_lz = word.get("letter_zones") or []
+                transcription = word.get("transcription")
+
+                letter_zones: list[LetterZoneModel] = []
+                for lz in raw_lz:
+                    if isinstance(lz, dict):
+                        letter_zones.append(
+                            LetterZoneModel(
+                                char=lz.get("char", ""),
+                                bbox=lz.get("bbox", [0, 0, 0, 0]),
+                                confidence=lz.get("confidence"),
+                                peak_t=lz.get("peak_t"),
+                            )
+                        )
+
                 f_sev, band, f_note = evaluate_letter_formation(score)
                 if f_sev == "needs_attention":
                     attention_counts["letter_formation"] += 1
@@ -158,6 +175,9 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
                         severity=f_sev,
                         note=f_note,
                         saliency_polygons=saliency_polys,
+                        stroke_paths=stroke_paths,
+                        letter_zones=letter_zones,
+                        transcription=transcription,
                     )
                 )
 

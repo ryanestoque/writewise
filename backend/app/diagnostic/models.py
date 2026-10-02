@@ -69,6 +69,13 @@ class SlantOverlay(BaseModel):
     annotations: list[SlantAnnotation] = Field(default_factory=list)
 
 
+class LetterZoneModel(BaseModel):
+    char: str
+    bbox: list[int]
+    confidence: float | None = None
+    peak_t: int | None = None
+
+
 class FormationAnnotation(BaseModel):
     line_index: int
     word_index: int
@@ -78,6 +85,9 @@ class FormationAnnotation(BaseModel):
     severity: Severity
     note: str
     saliency_polygons: list[list[list[int]]] = Field(default_factory=list)
+    stroke_paths: list[str] = Field(default_factory=list)
+    letter_zones: list[LetterZoneModel] = Field(default_factory=list)
+    transcription: str | None = None
 
 
 class FormationOverlay(BaseModel):

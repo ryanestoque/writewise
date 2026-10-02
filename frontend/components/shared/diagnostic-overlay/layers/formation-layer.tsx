@@ -17,6 +17,15 @@ interface FormationLayerProps {
   onHoverAnnotation: HoverAnnotationCallback;
 }
 
+const LETTER_ZONE_PALETTE = [
+  { fill: "rgba(52, 211, 153, 0.18)", stroke: "#10b981", text: "#065f46" }, // Emerald
+  { fill: "rgba(56, 189, 248, 0.18)", stroke: "#0284c7", text: "#075985" }, // Sky
+  { fill: "rgba(168, 85, 247, 0.18)", stroke: "#9333ea", text: "#581c87" }, // Purple
+  { fill: "rgba(251, 191, 36, 0.18)", stroke: "#d97706", text: "#78350f" }, // Amber
+  { fill: "rgba(249, 115, 22, 0.18)", stroke: "#ea580c", text: "#7c2d12" }, // Orange
+  { fill: "rgba(244, 63, 94, 0.18)", stroke: "#e11d48", text: "#881337" },  // Rose
+];
+
 export const FormationLayer = memo(function FormationLayer({
   data,
   activeCriterion,
@@ -70,13 +79,13 @@ export const FormationLayer = memo(function FormationLayer({
           onHoverAnnotation((prev) => (prev?.id === id ? null : hoverPayload));
         };
 
-        // Only add tab stops to attention items in All Guides, or all items in Spotlight mode
         const isFocusable = isSpotlight || isAttention;
         const isActive = activeAnnotationId === id;
         const hitH = Math.max(36, 36 * hitScale);
         const hitW = Math.max(hitH, w);
         const badgeW = 34 * hitScale;
         const badgeH = 20 * hitScale;
+        const strokeW = Math.max(2, 2.5 * hitScale);
 
         return (
           <g
@@ -108,7 +117,70 @@ export const FormationLayer = memo(function FormationLayer({
               }
             }}
           >
-            {/* Generous touch hit target (scaled to maintain minimum 36px physical screen pixels on mobile) */}
+            {/* Centerline SVG Pen Strokes Trace */}
+            {ann.stroke_paths?.map((pCmd, pIdx) => (
+              <path
+                key={`stroke-${id}-${pIdx}`}
+                d={pCmd}
+                fill="none"
+                stroke="#06b6d4" // Neon Cyan
+                strokeWidth={strokeW}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="pointer-events-none transition-all duration-200 drop-shadow-xs opacity-90 group-hover:opacity-100"
+              />
+            ))}
+
+            {/* Letter-by-Letter Segmentation Zones & Character Badges */}
+            {isSpotlight &&
+              ann.letter_zones?.map((lz, lzIdx) => {
+                const [lzX, lzY, lzW, lzH] = lz.bbox;
+                const styleMeta = LETTER_ZONE_PALETTE[lzIdx % LETTER_ZONE_PALETTE.length];
+                const letterBadgeSize = Math.max(16, 18 * hitScale);
+
+                return (
+                  <g key={`lz-${id}-${lzIdx}`} className="pointer-events-none">
+                    {/* Letter Zone Translucent Box & Border */}
+                    <rect
+                      x={lzX}
+                      y={lzY}
+                      width={lzW}
+                      height={lzH}
+                      fill={styleMeta.fill}
+                      stroke={styleMeta.stroke}
+                      strokeWidth={1.2 * hitScale}
+                      strokeDasharray="3 2"
+                      rx={3 * hitScale}
+                    />
+
+                    {/* Character Label Badge */}
+                    <g transform={`translate(${lzX + lzW / 2}, ${lzY - 4 * hitScale})`}>
+                      <rect
+                        x={-letterBadgeSize / 2}
+                        y={-letterBadgeSize / 2}
+                        width={letterBadgeSize}
+                        height={letterBadgeSize}
+                        rx={letterBadgeSize / 4}
+                        fill={styleMeta.stroke}
+                        className="drop-shadow-xs"
+                      />
+                      <text
+                        x={0}
+                        y={3 * hitScale}
+                        textAnchor="middle"
+                        fill="#ffffff"
+                        fontSize={11 * hitScale}
+                        fontWeight="700"
+                        fontFamily="system-ui, sans-serif"
+                      >
+                        {lz.char}
+                      </text>
+                    </g>
+                  </g>
+                );
+              })}
+
+            {/* Touch Hit Target */}
             <rect
               x={x - (hitW > w ? (hitW - w) / 2 : 0)}
               y={underlineY - hitH / 2}
@@ -118,7 +190,7 @@ export const FormationLayer = memo(function FormationLayer({
               className="pointer-events-auto"
             />
 
-            {/* Keyboard Focus / Selection Highlight Indicator (WCAG 2.4.7) */}
+            {/* Selection Highlight Indicator */}
             <rect
               x={x - 2 * hitScale}
               y={underlineY - 1 * hitScale}
@@ -151,7 +223,6 @@ export const FormationLayer = memo(function FormationLayer({
             {/* Penmanship stroke underline */}
             <rect
               x={x}
-
               y={underlineY}
               width={w}
               height={Math.max(4 * hitScale, (isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal) * hitScale)}

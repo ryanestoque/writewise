@@ -15,6 +15,7 @@ from app.cv.models import (
     WordMeasurement,
 )
 from app.cv.segmentation import SegmentationResult
+from app.cv.tracing import extract_stroke_svg_paths
 
 
 def extract_features(
@@ -71,6 +72,9 @@ def extract_features(
             )
             all_size_ratios.append(size_rat)
 
+            # Stroke centerline SVG path extraction for visual overlay
+            stroke_paths = extract_stroke_svg_paths(word.binary_crop, list(word.bbox))
+
             words_in_line.append(
                 WordMeasurement(
                     word_index=word.word_index,
@@ -79,6 +83,7 @@ def extract_features(
                     baseline_deviation_ratio=base_dev,
                     size_ratio=size_rat,
                     measured_baseline_y=measured_base_y,
+                    stroke_paths=stroke_paths,
                 )
             )
 

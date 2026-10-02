@@ -1,6 +1,6 @@
 """CV Pipeline §8: Output Schema Data Models."""
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional
 
 
@@ -33,6 +33,7 @@ class WordMeasurement:
     baseline_deviation_ratio: float
     size_ratio: float
     measured_baseline_y: Optional[int] = None
+    stroke_paths: List[str] = field(default_factory=list)
 
 
 @dataclass

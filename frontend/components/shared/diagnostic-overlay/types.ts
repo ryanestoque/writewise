@@ -72,6 +72,13 @@ export interface SlantOverlay {
   annotations: SlantAnnotation[];
 }
 
+export interface LetterZone {
+  char: string;
+  bbox: [number, number, number, number];
+  confidence?: number;
+  peak_t?: number;
+}
+
 export interface FormationAnnotation {
   line_index: number;
   word_index: number;
@@ -81,6 +88,9 @@ export interface FormationAnnotation {
   severity: Severity;
   note: string;
   saliency_polygons?: [number, number][][];
+  stroke_paths?: string[];
+  letter_zones?: LetterZone[];
+  transcription?: string | null;
 }
 
 

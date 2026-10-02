@@ -99,6 +99,84 @@ def get_htr_model() -> Any:
     return _htr_model
 
 
+def suppress_notebook_rulings(
+    crop: np.ndarray,
+    binary_mask: Optional[np.ndarray] = None,
+) -> np.ndarray:
+    """Suppress 3-line blue-red notebook ruling lines from a word crop.
+
+    Uses HSV color filtering (if BGR image) and morphological horizontal line extraction
+    with vertical stroke intersection preservation to erase ruling line artifacts while
+    preserving cursive handwriting loops and stems.
+
+    Parameters
+    ----------
+    crop : np.ndarray
+        Grayscale (HxW) or BGR (HxWx3) image crop.
+    binary_mask : Optional[np.ndarray], default=None
+        Optional binary mask (ink > 0) to assist line extraction.
+
+    Returns
+    -------
+    np.ndarray
+        Cleaned single-channel grayscale crop (HxW, uint8).
+    """
+    if crop is None or crop.size == 0:
+        return crop
+
+    if len(crop.shape) == 3 and crop.shape[2] == 3:
+        # BGR image: use HSV color channel analysis to detect blue and red ruling lines
+        hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+        # Blue lines: H in [80, 135], S > 40, V > 50
+        blue_mask = cv2.inRange(hsv, (80, 40, 50), (135, 255, 255))
+        # Red lines: H in [0, 15] or [165, 180], S > 40, V > 50
+        red_mask1 = cv2.inRange(hsv, (0, 40, 50), (15, 255, 255))
+        red_mask2 = cv2.inRange(hsv, (165, 40, 50), (180, 255, 255))
+        color_ruling_mask = blue_mask | red_mask1 | red_mask2
+
+        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+        # Neutralize color ruling pixels to white background if they are not very dark stroke pixels
+        dark_stroke_mask = gray < 60
+        ruling_pixels = (color_ruling_mask > 0) & (~dark_stroke_mask)
+        gray[ruling_pixels] = 255
+    else:
+        gray = crop.copy()
+
+    h, w = gray.shape[:2]
+    if h < 5 or w < 10:
+        return gray
+
+    # Obtain binary image for structural line detection
+    if binary_mask is not None and binary_mask.shape[:2] == (h, w):
+        bin_img = (binary_mask > 0).astype(np.uint8) * 255
+    else:
+        _, bin_img = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+    # Detect horizontal lines spanning at least 15% of crop width
+    line_k_w = max(10, int(w * 0.15))
+    h_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (line_k_w, 1))
+    horizontal_lines = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, h_kernel)
+
+    if not np.any(horizontal_lines > 0):
+        return gray
+
+    # Detect vertical/diagonal strokes to protect intersections (stem of l, t, b, h, etc.)
+    v_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 3))
+    vertical_strokes = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, v_kernel)
+
+    # Pure ruling line pixels (horizontal line minus vertical stroke elements)
+    ruling_mask = cv2.subtract(horizontal_lines, vertical_strokes)
+
+    if np.any(ruling_mask > 0):
+        # Replace ruling line pixels with local white background
+        gray[ruling_mask > 0] = 255
+        # Apply subtle vertical closing to bridge micro-gaps at stroke-line intersections
+        v_close_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 2))
+        gray = cv2.morphologyEx(gray, cv2.MORPH_CLOSE, v_close_kernel)
+
+    return gray
+
+
 def preprocess_word_crop_htr(
     crop: np.ndarray,
     binary_mask: Optional[np.ndarray] = None,
@@ -127,6 +205,9 @@ def preprocess_word_crop_htr(
     np.ndarray
         Preprocessed image of shape (target_width, target_height, 1) normalized to float32.
     """
+    # 0. Suppress notebook ruling lines before thresholding and aspect-ratio scaling
+    crop = suppress_notebook_rulings(crop, binary_mask=binary_mask)
+
     if len(crop.shape) == 3:
         crop = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
 
@@ -229,8 +310,33 @@ def predict_word_text(
     return ctc_greedy_decode(preds, vocab)
 
 
+# Standard cursive loop/stroke confusion pairs between elementary handwriting and IAM adult priors
+CURSIVE_CONFUSION_PAIRS: set[tuple[str, str]] = {
+    ("a", "e"),
+    ("e", "a"),
+    ("a", "o"),
+    ("o", "a"),
+    ("n", "v"),
+    ("v", "n"),
+    ("n", "u"),
+    ("u", "n"),
+    ("m", "n"),
+    ("n", "m"),
+    ("l", "t"),
+    ("t", "l"),
+    ("i", "e"),
+    ("e", "i"),
+    ("r", "v"),
+    ("v", "r"),
+}
+
+
 def levenshtein_similarity(str1: str, str2: str) -> float:
-    """Compute normalized Levenshtein similarity between two strings in [0.0, 1.0]."""
+    """Compute normalized Levenshtein similarity between two strings in [0.0, 1.0].
+
+    Incorporates cursive character confusion pair tolerance (e.g. 'a' vs 'e', 'n' vs 'v')
+    to prevent minor student handwriting loop ambiguities from triggering prompt rejection.
+    """
     s1, s2 = str1.lower().strip(), str2.lower().strip()
     if not s1 and not s2:
         return 1.0
@@ -238,24 +344,31 @@ def levenshtein_similarity(str1: str, str2: str) -> float:
         return 0.0
 
     len1, len2 = len(s1), len(s2)
-    dp = np.zeros((len1 + 1, len2 + 1), dtype=int)
+    dp = np.zeros((len1 + 1, len2 + 1), dtype=np.float32)
 
     for i in range(len1 + 1):
-        dp[i][0] = i
+        dp[i][0] = float(i)
     for j in range(len2 + 1):
-        dp[0][j] = j
+        dp[0][j] = float(j)
 
     for i in range(1, len1 + 1):
         for j in range(1, len2 + 1):
-            cost = 0 if s1[i - 1] == s2[j - 1] else 1
+            c1, c2 = s1[i - 1], s2[j - 1]
+            if c1 == c2:
+                cost = 0.0
+            elif (c1, c2) in CURSIVE_CONFUSION_PAIRS:
+                cost = 0.25
+            else:
+                cost = 1.0
+
             dp[i][j] = min(
-                dp[i - 1][j] + 1,  # deletion
-                dp[i][j - 1] + 1,  # insertion
+                dp[i - 1][j] + 1.0,  # deletion
+                dp[i][j - 1] + 1.0,  # insertion
                 dp[i - 1][j - 1] + cost,  # substitution
             )
 
-    edit_distance = dp[len1][len2]
-    max_len = max(len1, len2)
+    edit_distance = float(dp[len1][len2])
+    max_len = float(max(len1, len2))
     return max(0.0, 1.0 - (edit_distance / max_len))
 
 

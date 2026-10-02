@@ -8,6 +8,7 @@ from app.ml.htr import (
     is_htr_stub_mode,
     levenshtein_similarity,
     preprocess_word_crop_htr,
+    suppress_notebook_rulings,
     verify_target_text,
 )
 
@@ -16,6 +17,18 @@ def _make_fake_crop(width: int = 100, height: int = 40) -> np.ndarray:
     """Create a synthetic grayscale word crop."""
     rng = np.random.default_rng(42)
     return rng.integers(0, 256, size=(height, width), dtype=np.uint8)
+
+
+def _make_crop_with_rulings(width: int = 100, height: int = 40) -> np.ndarray:
+    """Create a synthetic grayscale crop with 3 ruling lines crossing a vertical stroke."""
+    crop = np.full((height, width), 255, dtype=np.uint8)
+    # Add vertical handwriting stem in center
+    crop[5:35, width // 2 : width // 2 + 2] = 0
+    # Add 3 horizontal ruling lines across entire width
+    crop[8, :] = 50  # Topline
+    crop[20, :] = 50  # Midline
+    crop[32, :] = 50  # Baseline
+    return crop
 
 
 class TestHTRPreprocessing:
@@ -32,6 +45,36 @@ class TestHTRPreprocessing:
         crop = np.zeros((0, 0), dtype=np.uint8)
         processed = preprocess_word_crop_htr(crop, target_width=128, target_height=32)
         assert processed.shape == (128, 32, 1)
+
+    def test_suppress_notebook_rulings_removes_lines(self):
+        crop = _make_crop_with_rulings(100, 40)
+        cleaned = suppress_notebook_rulings(crop)
+
+        # Check that lines away from vertical stem were suppressed (reset to background > 200)
+        assert cleaned[8, 10] > 200
+        assert cleaned[20, 10] > 200
+        assert cleaned[32, 10] > 200
+
+        # Check that vertical stem continuity is preserved at row 15 (between lines)
+        assert cleaned[15, 50] < 100
+
+    def test_suppress_notebook_rulings_color(self):
+        # BGR crop with blue midline and red topline/baseline
+        crop = np.full((40, 100, 3), 255, dtype=np.uint8)
+        # Vertical dark graphite stroke
+        crop[5:35, 49:51] = (30, 30, 30)
+        # Blue line (BGR: 255, 100, 0)
+        crop[8, :] = (255, 100, 0)
+        # Red line (BGR: 0, 0, 255)
+        crop[32, :] = (0, 0, 255)
+
+        cleaned = suppress_notebook_rulings(crop)
+
+        # Check ruling line suppression away from stroke
+        assert cleaned[8, 10] > 200
+        assert cleaned[32, 10] > 200
+        # Check vertical stroke preserved
+        assert cleaned[15, 50] < 100
 
 
 class TestCTCDecoding:
@@ -74,6 +117,12 @@ class TestLevenshteinSimilarity:
     def test_empty_strings(self):
         assert levenshtein_similarity("", "") == 1.0
         assert levenshtein_similarity("fox", "") == 0.0
+
+    def test_cursive_ambiguity_tolerance(self):
+        """Verify cursive loop ambiguities ('bavenee' vs 'banana') pass."""
+        sim = levenshtein_similarity("bavenee", "banana")
+        # Should achieve >= 0.70 similarity (75%)
+        assert sim >= 0.70
 
 
 class TestVerifyTargetText:
