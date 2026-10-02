@@ -25,6 +25,7 @@ Scoped to what's actually plausible for a 30-student, one-school academic pilot 
 5. **Incidental privacy leakage via the image itself** — not an attacker scenario, but a real one: a phone photo of a worksheet can carry embedded EXIF GPS metadata — i.e., a photo of a child's schoolwork silently embedding where it was taken (§5).
 6. **Insider/dev-team over-access** — four students having casual access to real children's names, sections, and images for a thesis project is itself a risk surface, not just an assumption to leave unstated (§3).
 7. **Data lingering past its purpose** — no retention/deletion policy existed anywhere prior to this document (§7.3).
+8. **Tampered model artifact** — both the scoring CNN and the HTR model are `.keras` files downloaded from Supabase Storage at container startup. A compromised Storage bucket or a malicious model file could execute arbitrary code during `tf.keras.models.load_model()`. Mitigated by: Storage bucket is private (no public access), only the two named key-holders have write access to `writewise-prod` Storage (§2.1), and the model files are uploaded manually by the team — never by user input or an automated pipeline.
 
 **Explicitly out of scope**, given architecture and pilot scale: DDoS/high-volume abuse (no public signup surface), sophisticated/targeted nation-state-style attacks, and payment/financial data (none exists in this system).
 
