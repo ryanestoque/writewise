@@ -53,6 +53,8 @@ ML_PIPELINE.md §8 has the deployed container **fail startup entirely** if the m
 
 **Decision:** `app.ml.inference.run_letter_formation_inference` is swapped for a deterministic stub in every test run — returns a fixed, in-range score per word crop, no real forward pass, no real artifact required. The app's startup lifespan event (which downloads and loads the real model) is skipped entirely in test mode via a new `ENVIRONMENT=test` value — see §10, this is one line of new scope on top of TECH_STACK.md §8.3's existing `dev`/`prod` values.
 
+**HTR model mocking** follows the same pattern: `app.ml.htr` uses a module-level singleton loaded at startup. In `ENVIRONMENT=test`, it activates stub mode automatically — `verify_target_text()` returns `(True, target_text, 1.0)` for all inputs, and `predict_word_text()` returns an empty string. Unlike the CNN mock (which prevents startup failure), the HTR stub is the module's own built-in fallback — no test-specific patching needed. This also applies in dev when `HTR_MODEL_ARTIFACT_PATH` is empty or unset.
+
 > **Why mock rather than require a real model in CI:** this unblocks integration-test writing from day one instead of gating it behind a September milestone, keeps CI fast and deterministic, and correctly stays in this document's lane (§1) — integration tests verify the pipeline is *wired together correctly*, not that the model's judgment is *good*, which is ML_PIPELINE §5/§10's separate, offline job. The real model gets exercised for real for the first time in an actual Railway deployment, exactly where ML_PIPELINE §8's fail-loud behavior is designed to catch a genuine problem.
 
 ### 3.3 CI Job Steps
@@ -102,6 +104,16 @@ Per ML_PIPELINE.md §10: Stage 2 has no equivalent ground truth the way CV_PIPEL
 
 Stage 1's real evaluation (CCC held-out test set, Accuracy/Precision/Recall/F1) stays exactly where ML_PIPELINE.md §5 puts it — offline, in `training/`, run once after fine-tuning, not a CI check. It answers a different question than this section does (§1).
 
+### 4.2b HTR / Target Text Verification Tests (`backend/app/ml/htr.py`)
+
+| Function | Ground-truth test |
+|---|---|
+| `suppress_notebook_rulings()` | Synthetic image with colored horizontal lines → lines removed, vertical strokes preserved |
+| `preprocess_word_crop_htr()` | Known input dimensions → output shape `(128, 32, 1)`, values in `[0, 1]` |
+| `ctc_greedy_decode()` | Known probability matrix → expected decoded string (tests blank collapsing and repeated-character merging) |
+| `levenshtein_similarity()` | Known string pairs → expected similarity scores; confusion pairs (`a`↔`e`) → reduced penalty verified |
+| `verify_target_text()` in stub mode | Returns `(True, target_text, 1.0)` regardless of input |
+
 ### 4.3 Scoring Layer Tests (`backend/app/scoring/`)
 
 - **`ManualScoreProvider`:** trivial by design (ARCHITECTURE §10) — test that it returns exactly the `manual_score` values it was given, unmodified.
@@ -119,6 +131,9 @@ Covers ARCHITECTURE.md §8's synchronous pipeline end-to-end: upload → quality
 |---|---|
 | Valid submission, `SCORING_ENGINE=manual` | `201`, `scores.*` and `overlay` all `null` (API_SPEC §3.3) |
 | Valid submission, `SCORING_ENGINE=calibrated` | `201`, `scores.*` populated via mocked-formula `CalibratedScoreProvider` |
+| Valid submission, HTR text matches target | `201`, submission proceeds to scoring |
+| Valid submission, HTR text does not match target | `422 TARGET_TEXT_MISMATCH`, rejected `Submission` row persisted |
+| Submission with `bypass_text_check=true` despite HTR mismatch | `201`, submission proceeds despite mismatch |
 | Blurry / dark / low-contrast / low-resolution image | `422`, matching `QUALITY_GATE_*` code, `submission` row persisted with `status = 'rejected'` |
 | Word count wildly off from `activity.target_text` | `422 SEGMENTATION_COUNT_MISMATCH` |
 | Wrong MIME type | `400 UNSUPPORTED_FILE_TYPE` |
