@@ -141,32 +141,59 @@ Per ARCHITECTURE, the exported artifact is downloaded from Supabase Storage and 
 
 ---
 
-## 9. Module Structure
+---
+
+## 9. HTR Model — Target Text Verification
+
+A second, separate model artifact alongside the scoring CNN — a lightweight CTC-based Handwritten Text Recognition (HTR) model used to verify that uploaded handwriting matches the activity's target prompt. Full design rationale in **ADR 0003**.
+
+### 9.1 Architecture
+SimpleHTR — a CTC sequence model trained on the IAM Words dataset. Input: 128×32 grayscale image (width-first, single channel). Output: character probability sequence decoded via CTC greedy best-path. Vocabulary: 79 characters (78 printable + `[UNK]`).
+
+### 9.2 Deployment
+Same pattern as the scoring CNN (§8): `.keras` artifact downloaded from Supabase Storage at container startup, kept resident in memory as a module-level singleton (`backend/app/ml/htr.py`).
+
+**Key difference from the scoring CNN:** a failed HTR model load **does not** crash the container. It falls back to stub mode (all submissions pass verification). This is intentional — target text verification is a quality gate enhancement, not core scoring functionality. The scoring CNN, by contrast, *must* crash on failed load (AGENTS.md §6 Rule #13) because it is core functionality.
+
+### 9.3 Integration Point
+Called by `cv/pipeline.py` after the post-segmentation gate (CV_PIPELINE.md §7b), before feature extraction. See CV_PIPELINE.md §7b for the full step sequence.
+
+### 9.4 Training
+Fine-tuned from a pretrained SimpleHTR checkpoint on cursive word samples. Training notebook: `training/train_htr.ipynb`. Artifact: `simplehtr_iam.keras`, uploaded to the `model-artifacts` Supabase Storage bucket alongside the scoring CNN artifact.
+
+---
+
+## 10. Module Structure
 
 Training code and deployed inference code are **not the same thing, deployed to the same place** — training never touches the Railway container (§7).
 
 ```
 backend/app/ml/
-├── model.py         # loads the .keras artifact once at startup, keeps it resident in memory
-└── inference.py      # run_letter_formation_inference(word_crops) → per-word scores + aggregate
+├── __init__.py      # model loading orchestration at startup
+├── model.py         # loads the scoring .keras artifact once at startup
+├── inference.py      # run_letter_formation_inference(word_crops) → per-word scores + aggregate
+├── htr.py            # HTR model: load, preprocess, CTC inference, target text verification
+├── models.py         # Pydantic response models for ML outputs
+└── exceptions.py     # ModelInferenceError
 
 training/                # repo root, NOT under backend/app — never deployed
 ├── stage1_finetune.ipynb   # Colab notebook, CCC fine-tuning + §5 evaluation
 ├── stage2_calibrate.py     # regression head training on Phase 1 paired data
-└── export_model.py          # combines both into the single deployable artifact
+├── export_model.py          # combines both into the single deployable artifact
+└── train_htr.ipynb          # HTR: Fine-tune SimpleHTR on IAM Words (Colab)
 ```
 
-`inference.py` exposes a plain function (not a class), same convention as CV_PIPELINE.md's stages — takes the word crops CV_PIPELINE.md's pipeline already produced, returns data in the shape §11 defines. A specific exception type, `ModelInferenceError`, is raised on failure and caught at the same API layer into the existing standardized error envelope — no new error-handling pattern introduced here.
+`inference.py` exposes a plain function (not a class), same convention as CV_PIPELINE.md's stages — takes the word crops CV_PIPELINE.md's pipeline already produced, returns data in the shape §12 defines. A specific exception type, `ModelInferenceError`, is raised on failure and caught at the same API layer into the existing standardized error envelope — no new error-handling pattern introduced here.
 
 ---
 
-## 10. Testing Strategy
+## 11. Testing Strategy
 
 See **TESTING.md §4.2** — the single source of truth for Stage 2's shape/plumbing test approach and how it fits into the full CI suite, including how CI mocks CNN inference entirely (TESTING.md §3.2) so tests don't block on a trained model existing. Stage 1's real evaluation (CCC held-out test set, §5 above) stays offline and unchanged. (Superseded here; this section previously held the CI-testing content directly.)
 
 ---
 
-## 11. Output Schema (extends CV_PIPELINE.md §8)
+## 12. Output Schema (extends CV_PIPELINE.md §8)
 
 Adds to the existing `Measurement` JSON — same structure, new fields:
 
@@ -202,7 +229,7 @@ Adds to the existing `Measurement` JSON — same structure, new fields:
 
 ---
 
-## 12. Known Risks & Open Items
+## 13. Known Risks & Open Items
 
 - **Weak-labeling limitation (§6.2)** — per-word letter-formation scores are an unverified interpolation from a submission-level teacher score, not individually verified ground truth. State this plainly wherever per-word scores reach a teacher or parent.
 - **MobileNetV2 vs. EfficientNet-B0 (§3)** — a close call decided in favor of team familiarity and documentation availability over a possible small accuracy edge. Worth revisiting only if Stage 1's held-out evaluation (§5) comes in well under the 90% target PRD §11 sets.
