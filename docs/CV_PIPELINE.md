@@ -39,11 +39,19 @@ Worksheet photo
 7. Post-Segmentation Gate ─────── reject (detected word count vs. target text)
       │
       ▼
+7b. Target Text Verification ──── reject (HTR-detected text ≠ target text)
+    (HTR model, cursive-aware Levenshtein — see ADR 0003)
+      │
+      ▼
 8. Feature Extraction (slant, spacing, baseline, size — per word, on binarized image)
       │
       ▼
 9. Output Assembly ──┬── Raw measurement JSON (→ Measurement record)
-                      └── Grayscale word crops (→ CNN inference, ML_PIPELINE.md)
+                     └── Grayscale word crops (→ CNN inference, ML_PIPELINE.md)
+      │
+      ▼
+10. Stroke Tracing ──┬── SVG vector stroke paths (→ letter tracing overlay)
+                     └── Letter zone segmentation (→ diagnostic feedback)
 ```
 
 **Step 0 is out of this document's scope, deliberately.** Magic-byte file-signature validation, the decompression-bomb pixel-dimension cap, and unconditional EXIF stripping are security/privacy controls, not data-quality checks — they're specified in full in SECURITY.md §4 and run in ARCHITECTURE.md §8's step 1, before this pipeline (and its own Quality Gate, §2) ever sees the file. Listed here only so the full upload-to-response path is visible in one diagram.
@@ -173,6 +181,25 @@ This crop format is the full extent of this document's involvement with the CNN 
 
 ---
 
+### 7b. Target Text Verification (HTR)
+
+Before passing word crops to CNN scoring, the pipeline verifies that the student actually wrote the target words specified in the activity — not different words or garbled scribbles. Full architectural rationale is in **ADR 0003** (`docs/adr/0003-htr-and-target-text-verification.md`); this section covers the pipeline integration only.
+
+**Step sequence** (runs after post-segmentation gate, before feature extraction):
+
+1. **Ruling line suppression** — HSV color filtering (blue/red notebook lines) + morphological horizontal line extraction, preserving vertical stroke intersections. Prevents guide lines from being read as text.
+2. **Preprocessing** — each word crop is resized to 32px height (aspect-ratio preserved), padded to 128×32 with white background, normalized to [0, 1]. Matches the fixed input shape of the CTC sequence model.
+3. **CTC inference** — a lightweight SimpleHTR model (separate `.keras` artifact from the scoring CNN, loaded at startup from Supabase Storage) transcribes each word crop independently via greedy best-path decoding.
+4. **Cursive-aware Levenshtein verification** — a custom similarity metric with reduced penalty (0.25 instead of 1.0) for known cursive confusion pairs (`a`↔`e`, `n`↔`u`, `l`↔`t`, etc.). Combined score = 50% global string similarity + 50% word-level average. Passes if ≥ 0.65 combined and no individual word < 0.60.
+
+**Rejection:** submissions failing verification are rejected with error code `TARGET_TEXT_MISMATCH` (422), following the same rejected-`Submission` persistence pattern as the quality gate (§2) and post-segmentation gate (§5.3).
+
+**Bypass:** the submission endpoint accepts an optional `bypass_text_check` flag (API_SPEC §3.3) allowing teachers to override HTR rejection when the handwriting is legitimate but the model misreads it.
+
+**Stub mode:** in `ENVIRONMENT=test` or dev without `HTR_MODEL_ARTIFACT_PATH` configured, the HTR model falls back to a deterministic stub that accepts all submissions — unblocking development and CI without requiring a real model artifact. Unlike the scoring CNN (AGENTS.md §6 Rule #13), this graceful fallback is intentional: target text verification is a quality gate enhancement, not core scoring.
+
+---
+
 ## 8. Output Schema
 
 Stored as the `Measurement` record's raw JSON. Single unified structure — Phase 1's raw-measurement display, Phase 2's diagnostic overlay rendering, and the scoring engine (ARCHITECTURE.md §10) all read from this same shape, rather than each stage inventing its own partial output.
@@ -227,15 +254,31 @@ backend/app/cv/
 │   ├── spacing.py         # §6.2
 │   ├── baseline.py        # §6.3
 │   └── size.py             # §6.4
-└── pipeline.py             # orchestrator — chains stages, assembles §8 output
+├── pipeline.py             # orchestrator — chains stages, assembles §8 output
+└── tracing.py              # §10 — stroke skeleton, SVG paths, letter zoning
 ```
 
-- Each stage is a **plain function**, not a class — takes an image array (or the prior stage's structured output) in, returns structured data out. No shared mutable pipeline-object state between stages. This keeps every stage trivially unit-testable in isolation (see §11): `compute_slant(word_image)` can be tested standalone with a synthetic input and an expected angle, no pipeline scaffolding required.
+- Each stage is a **plain function**, not a class — takes an image array (or the prior stage's structured output) in, returns structured data out. No shared mutable pipeline-object state between stages. This keeps every stage trivially unit-testable in isolation (see §12): `compute_slant(word_image)` can be tested standalone with a synthetic input and an expected angle, no pipeline scaffolding required.
 - Errors are specific exception types raised from the relevant stage — `QualityGateRejection`, `SegmentationFailure`, etc. — caught once at the API layer and converted into ARCHITECTURE.md's standardized JSON error envelope (`{ error: { code, message, details } }`). Both gates in this pipeline (§2, §5.3) plug directly into error handling that already exists elsewhere in the system.
 
 ---
 
-## 10. Performance Budget
+## 10. Stroke Tracing & Letter Zoning
+
+Post-pipeline module (`backend/app/cv/tracing.py`) that generates explainable visual feedback artifacts from word crops, consumed by the diagnostic overlay engine (`backend/app/diagnostic/`).
+
+### 10.1 Morphological Skeleton
+Converts binary word crops into 1-pixel-wide stroke skeletons via iterative morphological thinning. The skeleton represents the pen's centerline path — used for SVG vector stroke rendering at arbitrary zoom levels without rasterization artifacts.
+
+### 10.2 SVG Path Extraction
+Traces the skeleton into ordered contour paths, simplified via `cv2.approxPolyDP`, and exported as canvas-space polyline coordinates. The frontend renders these as `<polyline>` SVG elements, enabling the letter tracing overlay to show the exact stroke path the student produced.
+
+### 10.3 Letter Zone Segmentation
+Segments a cursive word crop into approximate letter zones using vertical stroke-density projection. Each zone is a `LetterZone` with a character label (from the activity's target text), bounding box, and optional confidence. This provides spatially-anchored letter-level feedback without requiring the fragile full letter segmentation this pipeline deliberately avoids (§1, §5).
+
+---
+
+## 11. Performance Budget
 
 **Target: under 5 seconds** for the full CV portion of this document (quality gate through feature extraction) on a typical single-worksheet photo. This does not include CNN inference time, which is `ML_PIPELINE.md`'s budget to define separately.
 
@@ -243,13 +286,13 @@ This number matters beyond raw UX: DESIGN.md's loading state is simulated/timed 
 
 ---
 
-## 11. Testing Strategy
+## 12. Testing Strategy
 
 See **TESTING.md §4.1** — the single source of truth for this pipeline's unit test strategy (synthetic, ground-truth-asserting images, generated at test-run time) and how it fits into the full CI suite. (Superseded here; this section previously held that content directly.)
 
 ---
 
-## 12. Known Risks & Open Items
+## 13. Known Risks & Open Items
 
 - **Tunable constants** — the word-gap multiplier (§5.2, 2.5–3×) and all four quality-gate thresholds (§2) are starting defaults, not empirically validated. Flag for recalibration once real Phase 1 photos are flowing.
 - **Letter-spacing approximation** — §6.2's within-word gap measurement is a rhythm/regularity proxy, not verified letter boundaries. Document this limitation wherever letter-spacing numbers are surfaced to teachers/parents.
