@@ -27,11 +27,13 @@ writewise/
 │   ├── app/
 │   │   ├── api/             # route handlers
 │   │   ├── cv/               # OpenCV pipeline + quality gate
-│   │   ├── ml/                 # CNN inference wrapper, model loader
+│   │   ├── diagnostic/       # diagnostic overlay engine (measurement → feedback)
+│   │   ├── ml/                 # CNN inference, HTR text recognition, model loaders
 │   │   ├── scoring/             # ManualScoreProvider / CalibratedScoreProvider
 │   │   └── core/                  # config, auth, error handling
 │   └── tests/                # pytest suite, mirrors app/ structure
 ├── supabase/migrations/       # versioned SQL — schema + RLS + Storage policies
+├── training/                  # offline model training scripts + HTR fine-tuning (never deployed)
 ├── research/                  # offline scripts (dataset export/anonymization)
 ├── ml/                        # training notebooks/artifacts (CCC/C-Cube fine-tuning), never deployed
 └── .github/workflows/         # CI (test-gating only, not deploy)
@@ -110,7 +112,7 @@ Full detail → `TESTING.md`.
 10. No automated dependency bots. Updates are manual and deliberate.
 11. Dataset export/anonymization happens only via `research/export_dataset.py`, run locally with the service-role key — never an in-app endpoint, never ad hoc SQL.
 12. No app-level rate limiting — this is a documented accepted risk at pilot scale, not a gap to opportunistically "fix."
-13. The CNN model loads from Supabase Storage at container startup. Never bundle it in git; a failed load should crash startup loudly, not degrade silently.
+13. The CNN model loads from Supabase Storage at container startup. Never bundle it in git; a failed load should crash startup loudly, not degrade silently. *(This applies to the scoring CNN artifact. The HTR model (`app/ml/htr.py`) follows a different pattern by design: it falls back to stub mode on failed load rather than crashing, because target text verification is a quality gate enhancement, not core scoring functionality. See ADR 0003.)*
 14. The CV/CNN pipeline stays in-process inside the single FastAPI service — never split into a separate microservice.
 15. Single Uvicorn worker only — never add multi-worker (would duplicate the resident CNN model in memory).
 
