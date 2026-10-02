@@ -130,6 +130,9 @@ def segment_word_letter_zones(
 ) -> List[LetterZone]:
     """Segment word crop into letter zones relative to the absolute worksheet canvas.
 
+    Uses vertical projection profile with 1D Gaussian smoothing to find natural
+    cursive ligature valleys between connected characters.
+
     Parameters
     ----------
     binary_crop : np.ndarray
@@ -169,21 +172,49 @@ def segment_word_letter_zones(
     h_crop, w_crop = binary_crop.shape[:2]
     scale_x = w_box / float(w_crop)
 
-    # Vertical projection profile to find ink start/end and ligature valleys
+    # 1. Compute vertical projection profile (ink column density)
     proj = np.sum(binary_crop > 0, axis=0).astype(float)
     non_zero = np.where(proj > 0)[0]
     if len(non_zero) == 0:
-        ink_x_min, ink_x_max = 0, w_crop
+        x_start, x_end = 0, w_crop
     else:
-        ink_x_min, ink_x_max = int(non_zero[0]), int(non_zero[-1])
+        x_start, x_end = int(non_zero[0]), int(non_zero[-1])
 
-    ink_w = max(1, ink_x_max - ink_x_min)
-    char_crop_w = ink_w / float(n_letters)
+    span = max(1, x_end - x_start)
 
-    zones = []
+    # 2. Smooth vertical projection with 1D Gaussian blur to locate ligature valleys
+    kernel_size = max(5, int(w_crop * 0.04))
+    if kernel_size % 2 == 0:
+        kernel_size += 1
+    smoothed = cv2.GaussianBlur(proj.reshape(1, -1), (kernel_size, 1), 0).flatten()
+
+    # 3. Proportionally partition word span and snap boundaries to local projection minima (valleys)
+    initial_char_w = span / float(n_letters)
+    boundaries = [x_start]
+
+    curr_x = x_start
+    for i in range(n_letters - 1):
+        target_split = curr_x + initial_char_w
+        search_radius = int(initial_char_w * 0.30)
+        search_start = max(curr_x + 5, int(target_split - search_radius))
+        search_end = min(w_crop - 1, int(target_split + search_radius))
+
+        if search_end > search_start:
+            local_min_offset = int(np.argmin(smoothed[search_start:search_end]))
+            snapped_split = search_start + local_min_offset
+        else:
+            snapped_split = int(round(target_split))
+
+        boundaries.append(snapped_split)
+        curr_x = snapped_split
+
+    boundaries.append(x_end)
+
+    # 4. Construct LetterZone objects in absolute canvas coordinates
+    zones: List[LetterZone] = []
     for i, char in enumerate(expected_text):
-        c_min_crop = int(ink_x_min + i * char_crop_w)
-        c_max_crop = int(ink_x_min + (i + 1) * char_crop_w)
+        c_min_crop = boundaries[i]
+        c_max_crop = boundaries[i + 1]
 
         canvas_x = int(round(x0 + c_min_crop * scale_x))
         canvas_w = max(1, int(round((c_max_crop - c_min_crop) * scale_x)))
@@ -197,3 +228,4 @@ def segment_word_letter_zones(
         )
 
     return zones
+

@@ -12,6 +12,7 @@ from app.core.supabase import supabase_client
 from app.cv.pipeline import run_cv_pipeline
 from app.cv.quality_gate import QualityGateRejection
 from app.cv.segmentation import PostSegmentationRejection
+from app.cv.tracing import segment_word_letter_zones
 from app.diagnostic.engine import generate_diagnostic_overlay
 from app.ml.exceptions import ModelInferenceError
 from app.ml.htr import predict_word_text, verify_target_text
@@ -350,8 +351,9 @@ async def create_submission(
     aggregate = measurement_data.aggregate
     raw_output = measurement_data.to_dict()
 
-    # Attach per-word letter_formation_score and HTR transcription to lines/words in raw_output
+    # Attach per-word scores, HTR transcriptions, and letter_zones to lines/words in raw_output
     # and add letter_formation to aggregate in raw_output (ML_PIPELINE §11)
+    target_words = target_text.split() if target_text else []
     crop_idx = 0
     for line in raw_output.get("lines", []):
         for word in line.get("words", []):
@@ -363,8 +365,40 @@ async def create_submission(
                 word["letter_formation_score"] = None
                 word["saliency_polygons"] = []
 
+            expected_word_text = None
+            if crop_idx < len(target_words):
+                expected_word_text = target_words[crop_idx]
+            elif crop_idx < len(word_transcriptions):
+                expected_word_text = word_transcriptions[crop_idx]
+
             if crop_idx < len(word_transcriptions):
                 word["transcription"] = word_transcriptions[crop_idx]
+
+            # Generate letter zones for letter-level tracing overlay
+            binary_crop = (
+                pipeline_result.binary_crops[crop_idx]
+                if pipeline_result
+                and pipeline_result.binary_crops
+                and crop_idx < len(pipeline_result.binary_crops)
+                else None
+            )
+            if expected_word_text and word.get("bbox"):
+                zones = segment_word_letter_zones(
+                    binary_crop=binary_crop,
+                    word_bbox=word["bbox"],
+                    expected_text=expected_word_text,
+                )
+                word["letter_zones"] = [
+                    {
+                        "char": z.char,
+                        "bbox": z.bbox,
+                        "confidence": z.confidence,
+                        "peak_t": z.peak_t,
+                    }
+                    for z in zones
+                ]
+            else:
+                word["letter_zones"] = []
 
             crop_idx += 1
 
