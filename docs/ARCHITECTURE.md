@@ -54,12 +54,14 @@ writewise/
 │   ├── app/
 │   │   ├── api/          # route handlers
 │   │   ├── cv/            # OpenCV pipeline + quality gate
-│   │   ├── ml/             # CNN inference wrapper, model loader
+│   │   ├── diagnostic/    # diagnostic overlay engine (measurement → feedback)
+│   │   ├── ml/             # CNN inference, HTR text recognition, model loaders
 │   │   ├── scoring/         # ManualScoreProvider / CalibratedScoreProvider
 │   │   └── core/              # config, auth, error handling
 │   └── tests/
 ├── supabase/            # SQL migrations (schema + RLS + Storage policies)
 │   └── migrations/
+├── training/            # offline model training scripts + HTR fine-tuning (never deployed)
 ├── research/             # offline scripts (dataset export/anonymization)
 ├── ml/                   # model training notebooks/artifacts (CCC/C-Cube fine-tuning)
 └── .github/workflows/     # CI (test-gating, not deploy)
@@ -250,3 +252,23 @@ Things this document deliberately left as assumptions worth checking as the buil
 - **Parent email reliability** (§5) — the teacher-invite flow assumes parents check and can act on an invite email. If this proves unreliable at Matina Aplaya Elementary during Phase 1, the provisioning flow will need revisiting.
 - **Teacher account creation** (§5) — not yet fully specified; needs a decision on who provisions the first teacher accounts before Phase 1 launch.
 - **Relative-unit measurement validity** (§8) — normalized/relative units avoid the camera-distance problem, but should be sanity-checked against the calibration data once Phase 1 is collecting it, to confirm the normalization approach doesn't introduce its own bias (e.g. sensitivity to which reference letter/measure is used for normalization).
+
+---
+
+## 18. Diagnostic Engine
+
+The diagnostic engine (`backend/app/diagnostic/`) is a pure-functional Python module that transforms raw CV/ML pipeline measurements (CV_PIPELINE.md §8, ML_PIPELINE.md §11) into the human-readable feedback rendered in both Teacher and Parent portals. It is intentionally separated from signal processing (`app/cv/`) and scoring (`app/scoring/`) — it consumes their outputs but never modifies them.
+
+**Module structure:**
+
+```
+backend/app/diagnostic/
+├── __init__.py
+├── models.py      # Pydantic models for typed overlay/annotation shapes
+├── rules.py       # threshold-to-band mapping, coaching tip selection
+└── engine.py      # generate_diagnostic_overlay(raw_output) → overlay JSON
+```
+
+**How it fits:** the submission-upload endpoint (`app/api/submissions.py`) calls `generate_diagnostic_overlay()` synchronously after scoring completes, persisting the result as the `measurement.overlay` JSON field (DATABASE.md §8). The frontend reads this field via direct Supabase reads (RLS-gated) and renders it as an interactive SVG overlay — no additional API call needed.
+
+**Design rationale:** keeping diagnostic logic as a deterministic function with its own typed models (not inline in the API handler or mixed into CV code) means the overlay output is independently testable and the coaching-tip rules can evolve without touching pipeline or scoring code.
