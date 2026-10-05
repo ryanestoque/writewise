@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { QuickUploadDialog } from "@/components/quick-upload-dialog";
 import { RubricReferenceDialog } from "@/components/rubric-reference-dialog";
+import { CursiveGuideDialog } from "@/components/cursive-guide-dialog";
 import { ShortcutsDialog } from "@/components/shortcuts-dialog";
 import {
   AlertDialog,
@@ -28,6 +29,10 @@ interface TeacherModalsContextValue {
   rubricOpen: boolean;
   setRubricOpen: (open: boolean) => void;
   openRubric: () => void;
+
+  cursiveGuideOpen: boolean;
+  setCursiveGuideOpen: (open: boolean) => void;
+  openCursiveGuide: () => void;
 
   shortcutsOpen: boolean;
   setShortcutsOpen: (open: boolean) => void;
@@ -55,6 +60,7 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
     studentId?: string;
   }>({});
   const [rubricOpen, setRubricOpen] = useState(false);
+  const [cursiveGuideOpen, setCursiveGuideOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -70,10 +76,11 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
     []
   );
   const openRubric = useCallback(() => setRubricOpen(true), []);
+  const openCursiveGuide = useCallback(() => setCursiveGuideOpen(true), []);
   const openShortcuts = useCallback(() => setShortcutsOpen(true), []);
   const openSignOut = useCallback(() => setSignOutOpen(true), []);
 
-  // Global hotkeys for educator efficiency (⌘K / Ctrl+K and ?)
+  // Global hotkeys for educator efficiency (⌘K / Ctrl+K, Alt+R, Alt+C, and ?)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -104,6 +111,18 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
       ) {
         e.preventDefault();
         setRubricOpen((prev) => !prev);
+      }
+
+      // Alt+C (Option+C) -> Toggle DepEd cursive alphabet guide
+      // Note: On macOS, Option+C produces the character "ç" (e.key === "ç"), so we check e.code === "KeyC" as well.
+      if (
+        e.altKey &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        (e.key.toLowerCase() === "c" || e.code === "KeyC")
+      ) {
+        e.preventDefault();
+        setCursiveGuideOpen((prev) => !prev);
       }
 
       // ? (Shift + /) -> Open keyboard shortcuts dialog
@@ -148,6 +167,9 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
         rubricOpen,
         setRubricOpen,
         openRubric,
+        cursiveGuideOpen,
+        setCursiveGuideOpen,
+        openCursiveGuide,
         shortcutsOpen,
         setShortcutsOpen,
         openShortcuts,
@@ -169,6 +191,7 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
         prefilledStudentId={uploadPrefill.studentId}
       />
       <RubricReferenceDialog open={rubricOpen} onOpenChange={setRubricOpen} />
+      <CursiveGuideDialog open={cursiveGuideOpen} onOpenChange={setCursiveGuideOpen} />
       <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
 
       <AlertDialog open={signOutOpen} onOpenChange={setSignOutOpen}>

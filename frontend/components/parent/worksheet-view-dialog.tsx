@@ -253,11 +253,10 @@ export function WorksheetViewDialog({
                 <button
                   type="button"
                   onClick={() => setShowGuideLines((prev) => !prev)}
-                  className={`self-start px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer flex items-center gap-1.5 min-h-[40px] sm:min-h-[36px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 ${
-                    showGuideLines
+                  className={`self-start px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer flex items-center gap-1.5 min-h-[40px] sm:min-h-[36px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 ${showGuideLines
                       ? "bg-brand-100 text-brand-900 border-brand-300 dark:bg-brand-950 dark:text-brand-200 dark:border-brand-800"
                       : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted/70 hover:text-foreground"
-                  }`}
+                    }`}
                   aria-pressed={showGuideLines}
                   aria-label={showGuideLines ? "Hide detected guide lines on worksheet" : "Show detected guide lines on worksheet"}
                   title={showGuideLines ? "Hide detected guide lines" : "Show detected guide lines on worksheet"}

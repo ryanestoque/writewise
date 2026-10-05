@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { createClient } from "@/lib/supabase/client";
 import type { LinkedChild } from "@/lib/hooks/use-parent-data";
-import { Loader2, LogOut, Settings, Upload, Users } from "lucide-react";
+import { Loader2, LogOut, PenTool, Settings, Upload, Users } from "lucide-react";
 import { toast } from "sonner";
 
 interface ParentNavProps {
@@ -42,6 +42,7 @@ interface ParentNavProps {
   linkedChildren: LinkedChild[];
   onChildChange: (childId: string) => void;
   onUploadClick?: () => void;
+  onCursiveGuideClick?: () => void;
   hasActivities?: boolean;
 }
 
@@ -51,6 +52,7 @@ export function ParentNav({
   linkedChildren,
   onChildChange,
   onUploadClick,
+  onCursiveGuideClick,
   hasActivities = false,
 }: ParentNavProps) {
   const router = useRouter();
@@ -147,6 +149,20 @@ export function ParentNav({
 
           {/* Right: Upload utility button + User menu */}
           <div className="flex items-center gap-2 shrink-0">
+            {onCursiveGuideClick && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3 sm:px-2.5 gap-1.5 font-medium border-border/80 hover:bg-muted/50 text-foreground cursor-pointer shadow-2xs touch-manipulation"
+                onClick={onCursiveGuideClick}
+                aria-label="Open Cursive Letter Guide (DepEd Grade 3 Standard)"
+                title="Cursive Letter Guide"
+              >
+                <PenTool className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                <span className="hidden sm:inline">Cursive Guide</span>
+              </Button>
+            )}
+
             {onUploadClick && hasActivities && (
               <Button
                 variant="outline"
@@ -186,6 +202,15 @@ export function ParentNav({
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
+                  {onCursiveGuideClick && (
+                    <DropdownMenuItem
+                      onClick={onCursiveGuideClick}
+                      className="cursor-pointer gap-2 py-2 text-xs"
+                    >
+                      <PenTool className="size-3.5 text-muted-foreground" />
+                      <span>Cursive Letter Guide</span>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
                     render={<Link href="/parent-settings" />}
                     className="cursor-pointer gap-2 py-2 text-xs"

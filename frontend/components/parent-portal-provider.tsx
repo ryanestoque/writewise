@@ -10,6 +10,7 @@ import {
 } from "react";
 import { ParentNav } from "@/components/parent-nav";
 import { ParentUploadDialog } from "@/components/parent/parent-upload-dialog";
+import { CursiveGuideDialog } from "@/components/cursive-guide-dialog";
 import {
   useLinkedChildren,
   useTakeHomeActivities,
@@ -26,6 +27,9 @@ interface ParentPortalContextValue {
   setUploadOpen: (open: boolean) => void;
   prefilledActivityId: string | undefined;
   openUploadDialog: (activityId?: string) => void;
+  cursiveGuideOpen: boolean;
+  setCursiveGuideOpen: (open: boolean) => void;
+  openCursiveGuide: () => void;
 }
 
 const ParentPortalContext = createContext<ParentPortalContextValue | null>(null);
@@ -50,6 +54,7 @@ export function ParentPortalProvider({
   const { data: linkedChildren, isLoading } = useLinkedChildren();
   const [selectedChildIdState, setSelectedChildId] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [cursiveGuideOpen, setCursiveGuideOpen] = useState(false);
   const [prefilledActivityId, setPrefilledActivityId] = useState<string | undefined>();
 
   // Derive the active selected child without cascading effect renders
@@ -69,6 +74,10 @@ export function ParentPortalProvider({
     setUploadOpen(true);
   }, []);
 
+  const openCursiveGuide = useCallback(() => {
+    setCursiveGuideOpen(true);
+  }, []);
+
   const contextValue: ParentPortalContextValue = useMemo(
     () => ({
       selectedChildId,
@@ -80,6 +89,9 @@ export function ParentPortalProvider({
       setUploadOpen,
       prefilledActivityId,
       openUploadDialog,
+      cursiveGuideOpen,
+      setCursiveGuideOpen,
+      openCursiveGuide,
     }),
     [
       selectedChildId,
@@ -89,6 +101,8 @@ export function ParentPortalProvider({
       uploadOpen,
       prefilledActivityId,
       openUploadDialog,
+      cursiveGuideOpen,
+      openCursiveGuide,
     ]
   );
 
@@ -101,6 +115,7 @@ export function ParentPortalProvider({
           linkedChildren={linkedChildren ?? []}
           onChildChange={setSelectedChildId}
           onUploadClick={() => openUploadDialog()}
+          onCursiveGuideClick={openCursiveGuide}
           hasActivities={hasActivities}
         />
         <main className="flex-1 min-w-0 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
@@ -108,7 +123,7 @@ export function ParentPortalProvider({
         </main>
       </div>
 
-      {/* Global Parent Upload Dialog */}
+      {/* Global Parent Modals: Upload & DepEd Cursive Guide */}
       {selectedChildId && selectedChild && (
         <ParentUploadDialog
           open={uploadOpen}
@@ -121,6 +136,11 @@ export function ParentPortalProvider({
           prefilledActivityId={prefilledActivityId}
         />
       )}
+
+      <CursiveGuideDialog
+        open={cursiveGuideOpen}
+        onOpenChange={setCursiveGuideOpen}
+      />
     </ParentPortalContext.Provider>
   );
 }

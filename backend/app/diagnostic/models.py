@@ -88,6 +88,7 @@ class FormationAnnotation(BaseModel):
     stroke_paths: list[str] = Field(default_factory=list)
     letter_zones: list[LetterZoneModel] = Field(default_factory=list)
     transcription: str | None = None
+    casing_note: str | None = None
 
 
 class FormationOverlay(BaseModel):

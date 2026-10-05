@@ -187,6 +187,34 @@ class TestCreateSubmission:
         # Verify raw_output lines contain letter_formation_score per word
         raw_output = meas["raw_output"]
         assert "lines" in raw_output
+
+    def test_casing_mismatch_recorded(self):
+        """Verify casing_note is preserved in FormationAnnotation via
+        generate_diagnostic_overlay.
+        """
+        from app.diagnostic.engine import generate_diagnostic_overlay
+
+        raw_output = {
+            "lines": [
+                {
+                    "line_index": 0,
+                    "words": [
+                        {
+                            "word_index": 0,
+                            "bbox": [10, 10, 50, 30],
+                            "letter_formation_score": 75.0,
+                            "transcription": "the",
+                            "casing_note": "Prompt expects 'The', but recognized 'the'.",
+                        }
+                    ],
+                }
+            ]
+        }
+        overlay = generate_diagnostic_overlay(raw_output)
+        assert "letter_formation" in overlay
+        annotations = overlay["letter_formation"]["annotations"]
+        assert len(annotations) == 1
+        assert annotations[0]["casing_note"] == "Prompt expects 'The', but recognized 'the'."
         for line in raw_output["lines"]:
             for word in line["words"]:
                 assert "letter_formation_score" in word

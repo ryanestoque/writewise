@@ -59,11 +59,12 @@ const FormationWordItem = memo(function FormationWordItem({
       ? `Letter Formation (${ann.band})`
       : "Letter Formation Developing"
     : "Clear Letter Formation";
+  const noteText = ann.casing_note ? `${ann.note} (${ann.casing_note})` : ann.note;
   const hoverPayload = {
     id,
     criterion: "letter_formation" as const,
     title,
-    note: ann.note,
+    note: noteText,
     severity: ann.severity,
     x: x + w / 2,
     y: underlineY + 10,
@@ -190,9 +191,8 @@ const FormationWordItem = memo(function FormationWordItem({
         width={w + 4 * hitScale}
         height={4 * hitScale}
         rx={2 * hitScale}
-        className={`transition-opacity fill-brand-700 dark:fill-brand-400 pointer-events-none ${
-          isActive ? "opacity-100" : "opacity-0 group-hover:opacity-75 group-focus-visible:opacity-100"
-        }`}
+        className={`transition-opacity fill-brand-700 dark:fill-brand-400 pointer-events-none ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-75 group-focus-visible:opacity-100"
+          }`}
       />
 
       {/* Penmanship stroke underline */}

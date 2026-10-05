@@ -24,6 +24,7 @@ import {
   SettingsIcon,
   LogOutIcon,
   BookOpenIcon,
+  PenToolIcon,
   UploadCloudIcon,
   ChevronsUpDownIcon,
   GraduationCapIcon,
@@ -79,8 +80,15 @@ function getInitials(name: string): string {
 export function TeacherSidebar({ user }: TeacherSidebarProps) {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
-  const { openUpload, openRubric, openSignOut, uploadOpen, rubricOpen } =
-    useTeacherModals();
+  const {
+    openUpload,
+    openRubric,
+    openCursiveGuide,
+    openSignOut,
+    uploadOpen,
+    rubricOpen,
+    cursiveGuideOpen,
+  } = useTeacherModals();
 
   const handleNavClick = () => {
     if (isMobile) {
@@ -275,6 +283,41 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                     </div>
                     <Kbd className="text-[10px] h-4 px-1.5 font-mono font-medium text-muted-foreground bg-muted/80 border border-border/50 shrink-0 group-data-[collapsible=icon]:hidden">
                       Alt+R
+                    </Kbd>
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* DepEd Cursive Alphabet Guide Modal Trigger */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => {
+                    if (isMobile) setOpenMobile(false);
+                    openCursiveGuide();
+                  }}
+                  isActive={cursiveGuideOpen}
+                  aria-haspopup="dialog"
+                  aria-expanded={cursiveGuideOpen}
+                  aria-controls={cursiveGuideOpen ? "cursive-guide-dialog" : undefined}
+                  aria-label="Cursive Alphabet Guide (DepEd Grade 3 Standard Modal)"
+                  tooltip={{
+                    children: (
+                      <div className="flex items-center gap-1.5">
+                        <span>Cursive Guide</span>
+                        <Kbd className="text-xs h-4.5 px-1 font-mono font-normal">Alt+C</Kbd>
+                      </div>
+                    ),
+                  }}
+                  className="h-10 sm:h-9.5 cursor-pointer"
+                  id="open-cursive-guide"
+                >
+                  <div className="flex items-center justify-between w-full min-w-0">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <PenToolIcon className="size-4 shrink-0" aria-hidden="true" />
+                      <span className="truncate group-data-[collapsible=icon]:hidden">Cursive Guide</span>
+                    </div>
+                    <Kbd className="text-[10px] h-4 px-1.5 font-mono font-medium text-muted-foreground bg-muted/80 border border-border/50 shrink-0 group-data-[collapsible=icon]:hidden">
+                      Alt+C
                     </Kbd>
                   </div>
                 </SidebarMenuButton>

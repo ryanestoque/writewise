@@ -313,20 +313,20 @@ export function SubmissionDetailContent({
 
   const hasCalibratedScores = Boolean(
     measurement &&
-      (measurement.composite_score !== null ||
-        measurement.letter_formation_score !== null ||
-        measurement.size_consistency_score !== null ||
-        measurement.spacing_score !== null ||
-        measurement.slant_score !== null ||
-        measurement.baseline_alignment_score !== null)
+    (measurement.composite_score !== null ||
+      measurement.letter_formation_score !== null ||
+      measurement.size_consistency_score !== null ||
+      measurement.spacing_score !== null ||
+      measurement.slant_score !== null ||
+      measurement.baseline_alignment_score !== null)
   );
 
   const isUuid = (text?: string | null): boolean =>
     Boolean(
       text &&
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-          text.trim()
-        )
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        text.trim()
+      )
     );
 
   // Extract guide-line coordinates from the CV pipeline's raw_output (CV_PIPELINE §4)
@@ -456,6 +456,37 @@ export function SubmissionDetailContent({
     return typeof raw?.transcription_similarity === "number" ? raw.transcription_similarity : null;
   }, [submission.measurement?.raw_output]);
 
+  const casingMismatches = useMemo(() => {
+    const raw = submission.measurement?.raw_output as Record<string, unknown> | undefined;
+    if (Array.isArray(raw?.casing_mismatches) && raw.casing_mismatches.length > 0) {
+      return raw.casing_mismatches as Array<{ expected: string; detected: string; note?: string }>;
+    }
+    if (resolvedTargetText && detectedText && resolvedTargetText !== detectedText) {
+      const tgtWords = resolvedTargetText.trim().split(/\s+/);
+      const detWords = detectedText.trim().split(/\s+/);
+      const mismatches: Array<{ expected: string; detected: string; note?: string }> = [];
+      const minLen = Math.min(tgtWords.length, detWords.length);
+      for (let i = 0; i < minLen; i++) {
+        const tw = tgtWords[i];
+        const dw = detWords[i];
+        if (tw !== dw && tw.toLowerCase() === dw.toLowerCase()) {
+          mismatches.push({ expected: tw, detected: dw });
+        } else if (
+          tw.length > 0 &&
+          dw.length > 0 &&
+          tw[0] === tw[0].toUpperCase() &&
+          tw[0] !== tw[0].toLowerCase() &&
+          dw[0] === dw[0].toLowerCase() &&
+          tw[0].toLowerCase() === dw[0].toLowerCase()
+        ) {
+          mismatches.push({ expected: tw, detected: dw });
+        }
+      }
+      return mismatches;
+    }
+    return [];
+  }, [submission.measurement?.raw_output, resolvedTargetText, detectedText]);
+
   // Memoize criteria lists to prevent re-computation on every render
   const criteria = useMemo(() => {
     if (submission.status === "rejected") return [];
@@ -504,10 +535,10 @@ export function SubmissionDetailContent({
 
   const isDesktopGuideRendered = Boolean(
     selectedCriterion &&
-      activeCriterionInfo &&
-      (hasCalibratedScores ||
-        phase1Tab === "metrics" ||
-        (phase1Tab === "rubric" && submission.manual_score && !isEditingRubric))
+    activeCriterionInfo &&
+    (hasCalibratedScores ||
+      phase1Tab === "metrics" ||
+      (phase1Tab === "rubric" && submission.manual_score && !isEditingRubric))
   );
 
   // Reusable actions toolbar (Delete attempt + student navigation carousel)
@@ -863,14 +894,29 @@ export function SubmissionDetailContent({
                         transcriptionSimilarity >= 0.8
                           ? "bg-success/10 text-success border-success/30"
                           : transcriptionSimilarity >= 0.65
-                          ? "bg-warning/10 text-warning border-warning/30"
-                          : "bg-destructive/10 text-destructive border-destructive/30"
+                            ? "bg-warning/10 text-warning border-warning/30"
+                            : "bg-destructive/10 text-destructive border-destructive/30"
                       )}
                       title={`Levenshtein similarity to target prompt: ${Math.round(transcriptionSimilarity * 100)}%`}
                     >
                       {Math.round(transcriptionSimilarity * 100)}% Prompt Match
                     </Badge>
                   )}
+                </div>
+              )}
+
+              {casingMismatches.length > 0 && (
+                <div className="flex items-start gap-1.5 pt-2 border-t border-border/40 text-xs text-warning bg-warning/5 dark:bg-warning/10 p-2 rounded-lg border border-warning/20">
+                  <Info className="size-3.5 text-warning shrink-0 mt-0.5" aria-hidden="true" />
+                  <span className="font-medium leading-tight text-warning">
+                    <strong className="font-semibold">Capitalization Note:</strong>{" "}
+                    {casingMismatches.map((m, idx) => (
+                      <span key={idx}>
+                        {idx > 0 && ", "}
+                        expected &quot;{m.expected}&quot;, recognized &quot;{m.detected}&quot;
+                      </span>
+                    ))}
+                  </span>
                 </div>
               )}
             </div>
@@ -971,16 +1017,14 @@ export function SubmissionDetailContent({
                                       : inlineId
                                     : undefined
                                 }
-                                aria-label={`${c.name}: ${
-                                  c.score !== null && c.score !== undefined
+                                aria-label={`${c.name}: ${c.score !== null && c.score !== undefined
                                     ? `${Math.round(c.score)}%`
                                     : "Unrated"
-                                } (${band.band}). Tap to focus coaching tip.`}
-                                className={`w-full flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[40px] sm:min-h-0 touch-manipulation ${
-                                  isSelected
+                                  } (${band.band}). Tap to focus coaching tip.`}
+                                className={`w-full flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[40px] sm:min-h-0 touch-manipulation ${isSelected
                                     ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
                                     : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
-                                }`}
+                                  }`}
                               >
                                 <div className="min-w-0 pr-2">
                                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -1079,11 +1123,10 @@ export function SubmissionDetailContent({
                             document.getElementById("phase1-tab-rubric")?.focus();
                           }
                         }}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
-                          phase1Tab === "rubric"
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${phase1Tab === "rubric"
                             ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                             : "text-muted-foreground hover:text-foreground"
-                        }`}
+                          }`}
                       >
                         <Award className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                         <span>Rubric Rating</span>
@@ -1108,11 +1151,10 @@ export function SubmissionDetailContent({
                             document.getElementById("phase1-tab-metrics")?.focus();
                           }
                         }}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
-                          phase1Tab === "metrics"
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${phase1Tab === "metrics"
                             ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                             : "text-muted-foreground hover:text-foreground"
-                        }`}
+                          }`}
                       >
                         <SlidersHorizontal className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                         <span>CV Metrics</span>

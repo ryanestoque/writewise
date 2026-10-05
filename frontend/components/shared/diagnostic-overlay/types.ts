@@ -91,6 +91,7 @@ export interface FormationAnnotation {
   stroke_paths?: string[];
   letter_zones?: LetterZone[];
   transcription?: string | null;
+  casing_note?: string;
 }
 
 

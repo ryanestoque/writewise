@@ -1,6 +1,7 @@
 import logging
 import uuid
 from enum import Enum
+from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel
@@ -354,6 +355,7 @@ async def create_submission(
     # Attach per-word scores, HTR transcriptions, and letter_zones to lines/words in raw_output
     # and add letter_formation to aggregate in raw_output (ML_PIPELINE §11)
     target_words = target_text.split() if target_text else []
+    casing_mismatches: list[dict[str, Any]] = []
     crop_idx = 0
     for line in raw_output.get("lines", []):
         for word in line.get("words", []):
@@ -372,7 +374,46 @@ async def create_submission(
                 expected_word_text = word_transcriptions[crop_idx]
 
             if crop_idx < len(word_transcriptions):
-                word["transcription"] = word_transcriptions[crop_idx]
+                transcribed = word_transcriptions[crop_idx]
+                word["transcription"] = transcribed
+                if expected_word_text:
+                    is_case_diff = (
+                        transcribed != expected_word_text
+                        and transcribed.lower() == expected_word_text.lower()
+                    )
+                    is_initial_cap_diff = (
+                        len(transcribed) > 0
+                        and len(expected_word_text) > 0
+                        and expected_word_text[0].isupper()
+                        and transcribed[0].islower()
+                        and expected_word_text[0].lower() == transcribed[0].lower()
+                    )
+                    if is_case_diff:
+                        casing_note = (
+                            f"Prompt expects '{expected_word_text}', "
+                            f"but recognized '{transcribed}'."
+                        )
+                        word["casing_note"] = casing_note
+                        casing_mismatches.append({
+                            "word_index": crop_idx,
+                            "expected": expected_word_text,
+                            "detected": transcribed,
+                            "note": casing_note,
+                        })
+                    elif is_initial_cap_diff:
+                        exp_char = expected_word_text[0]
+                        det_char = transcribed[0]
+                        casing_note = (
+                            f"Expected capital '{exp_char}' in '{expected_word_text}', "
+                            f"but recognized lowercase '{det_char}'."
+                        )
+                        word["casing_note"] = casing_note
+                        casing_mismatches.append({
+                            "word_index": crop_idx,
+                            "expected": expected_word_text,
+                            "detected": transcribed,
+                            "note": casing_note,
+                        })
 
             # Generate letter zones for letter-level tracing overlay
             binary_crop = (
@@ -405,6 +446,9 @@ async def create_submission(
     if htr_detected_text:
         raw_output["detected_text"] = htr_detected_text
         raw_output["transcription_similarity"] = htr_similarity
+
+    if casing_mismatches:
+        raw_output["casing_mismatches"] = casing_mismatches
 
     if "aggregate" in raw_output:
         raw_output["aggregate"]["letter_formation"] = {

@@ -48,6 +48,11 @@ const shortcuts: ShortcutItem[] = [
     description: "Toggle Rubric Reference Guide (5 Diagnostic Criteria)",
   },
   {
+    category: "Worksheet & Assessment",
+    keys: ["Alt", "C"],
+    description: "Toggle DepEd Cursive Alphabet Guide (Grade 3 Standard)",
+  },
+  {
     category: "Dialogs & Actions",
     keys: ["?"],
     description: "Open keyboard shortcuts guide",

@@ -149,6 +149,7 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
                 stroke_paths = word.get("stroke_paths") or []
                 raw_lz = word.get("letter_zones") or []
                 transcription = word.get("transcription")
+                casing_note = word.get("casing_note")
 
                 letter_zones: list[LetterZoneModel] = []
                 for lz in raw_lz:
@@ -178,6 +179,7 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
                         stroke_paths=stroke_paths,
                         letter_zones=letter_zones,
                         transcription=transcription,
+                        casing_note=casing_note,
                     )
                 )
 

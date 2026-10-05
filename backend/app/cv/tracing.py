@@ -308,3 +308,4 @@ def segment_word_letter_zones(
 
     return zones
 
+
