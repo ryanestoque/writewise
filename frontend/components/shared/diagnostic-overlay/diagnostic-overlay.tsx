@@ -57,6 +57,7 @@ interface DiagnosticOverlayProps {
   zoomScale?: number;
   selectedAnnotation?: ActiveAnnotationHover | null;
   onSelectAnnotation?: (annotation: ActiveAnnotationHover | null) => void;
+  showGuideLines?: boolean;
 }
 
 export const DiagnosticOverlay = memo(function DiagnosticOverlay({
@@ -67,6 +68,7 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
   zoomScale,
   selectedAnnotation,
   onSelectAnnotation,
+  showGuideLines = true,
 }: DiagnosticOverlayProps) {
   const inspectorContext = useInspectorContext();
   const effectiveZoom = zoomScale ?? inspectorContext.zoomScale ?? 1;
@@ -363,6 +365,7 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
             hitScale={hitScale}
             activeAnnotationId={activeAnnotation?.id}
             onHoverAnnotation={handleHoverAnnotation}
+            showGuideLines={showGuideLines}
           />
         )}
 

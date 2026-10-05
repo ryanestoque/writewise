@@ -132,6 +132,7 @@ const FormationWordItem = memo(function FormationWordItem({
           const [lzX, lzY, lzW, lzH] = lz.bbox;
           const styleMeta = LETTER_ZONE_PALETTE[lzIdx % LETTER_ZONE_PALETTE.length];
           const letterBadgeSize = Math.max(16, 18 * hitScale);
+          const badgeY = Math.max(letterBadgeSize / 2 + 2 * hitScale, lzY - 4 * hitScale);
 
           return (
             <g key={`lz-${id}-${lzIdx}`} className="pointer-events-none">
@@ -149,7 +150,7 @@ const FormationWordItem = memo(function FormationWordItem({
               />
 
               {/* Character Label Badge */}
-              <g transform={`translate(${lzX + lzW / 2}, ${lzY - 4 * hitScale})`}>
+              <g transform={`translate(${lzX + lzW / 2}, ${badgeY})`}>
                 <rect
                   x={-letterBadgeSize / 2}
                   y={-letterBadgeSize / 2}
@@ -160,7 +161,8 @@ const FormationWordItem = memo(function FormationWordItem({
                 />
                 <text
                   x={0}
-                  y={3 * hitScale}
+                  y={0}
+                  dominantBaseline="central"
                   textAnchor="middle"
                   fill="#ffffff"
                   fontSize={11 * hitScale}

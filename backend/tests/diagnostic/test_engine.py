@@ -82,6 +82,7 @@ def test_generate_diagnostic_overlay_resilient_on_empty_input():
     empty_raw = {"guide_lines": {}, "lines": []}
     overlay = generate_diagnostic_overlay(empty_raw)
     assert overlay["summary"]["attention_item_count"] == 0
+    assert overlay["summary"]["weakest_criterion"] == "none"
     assert len(overlay["baseline"]["annotations"]) == 0
 
 

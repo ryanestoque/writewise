@@ -215,7 +215,7 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
 
         overlay = DiagnosticOverlay(
             summary=OverlaySummary(
-                weakest_criterion=weakest,
+                weakest_criterion=weakest if total_attention > 0 else "none",
                 attention_item_count=total_attention,
             ),
             baseline=BaselineOverlay(

@@ -16,6 +16,7 @@ interface BaselineLayerProps {
   hitScale?: number;
   activeAnnotationId?: string | null;
   onHoverAnnotation: HoverAnnotationCallback;
+  showGuideLines?: boolean;
 }
 
 export const BaselineLayer = memo(function BaselineLayer({
@@ -25,6 +26,7 @@ export const BaselineLayer = memo(function BaselineLayer({
   hitScale = 1,
   activeAnnotationId,
   onHoverAnnotation,
+  showGuideLines = true,
 }: BaselineLayerProps) {
   const isSpotlight = activeCriterion === "baseline_alignment";
   const isDimmed = activeCriterion !== "all" && !isSpotlight;
@@ -67,7 +69,7 @@ export const BaselineLayer = memo(function BaselineLayer({
       }}
     >
       {/* 1. Traditional 3-line Penmanship Guidelines bounded to cursive writing */}
-      {baseline_y.map((baseY, idx) => {
+      {showGuideLines && baseline_y.map((baseY, idx) => {
         const bounds = activeLineBounds.get(idx);
         // If annotations exist, only render guidelines on lines with cursive handwriting
         if (!bounds && activeLineBounds.size > 0) return null;

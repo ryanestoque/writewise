@@ -239,6 +239,7 @@ export function WorksheetViewDialog({
                     activeCriterion={activeCriterion}
                     selectedAnnotation={selectedAttentionItem}
                     onSelectAnnotation={setSelectedAttentionItem}
+                    showGuideLines={showGuideLines}
                   />
                 ) : (
                   <GuideLineOverlay

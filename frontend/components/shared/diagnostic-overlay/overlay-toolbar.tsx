@@ -542,7 +542,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   <ChevronLeft className="size-4 @min-[540px]:size-3" aria-hidden="true" />
                 </Button>
                 <span className="tabular-nums font-semibold text-foreground px-1 text-[11px] select-none">
-                  {currentIndex >= 0 ? currentIndex + 1 : 1}
+                  {currentIndex >= 0 ? currentIndex + 1 : "—"}
                   <span className="text-muted-foreground font-normal"> / </span>
                   {attentionItems.length}
                 </span>

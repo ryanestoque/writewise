@@ -855,6 +855,7 @@ export function SubmissionDetailContent({
                   activeCriterion={activeOverlayCriterion}
                   selectedAnnotation={selectedAttentionItem}
                   onSelectAnnotation={setSelectedAttentionItem}
+                  showGuideLines={showGuideLines}
                 />
               ) : (
                 <GuideLineOverlay

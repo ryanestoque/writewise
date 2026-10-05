@@ -53,6 +53,16 @@ const shortcuts: ShortcutItem[] = [
     description: "Toggle DepEd Cursive Alphabet Guide (Grade 3 Standard)",
   },
   {
+    category: "Worksheet & Assessment",
+    keys: ["[", "]"],
+    description: "Step through diagnostic practice areas (or Alt+[ / Alt+])",
+  },
+  {
+    category: "Worksheet & Assessment",
+    keys: ["Esc"],
+    description: "Dismiss active handwriting annotation tooltip",
+  },
+  {
     category: "Dialogs & Actions",
     keys: ["?"],
     description: "Open keyboard shortcuts guide",
