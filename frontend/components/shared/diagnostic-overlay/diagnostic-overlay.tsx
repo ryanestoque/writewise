@@ -163,35 +163,46 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
       }
     }
 
+    let rafId: number | null = null;
     const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const roundedW = Math.round(entry.contentRect.width);
-        const roundedH = Math.round(entry.contentRect.height);
-        if (roundedW > 0 && roundedH > 0) {
-          if (entry.target === el) {
-            setContainerSize((prev) => {
-              if (prev && prev.width === roundedW && prev.height === roundedH) {
-                return prev;
-              }
-              return { width: roundedW, height: roundedH };
-            });
-          } else {
-            setViewportSize((prev) => {
-              if (prev && prev.width === roundedW && prev.height === roundedH) {
-                return prev;
-              }
-              return { width: roundedW, height: roundedH };
-            });
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+      rafId = requestAnimationFrame(() => {
+        for (const entry of entries) {
+          const roundedW = Math.round(entry.contentRect.width);
+          const roundedH = Math.round(entry.contentRect.height);
+          if (roundedW > 0 && roundedH > 0) {
+            if (entry.target === el) {
+              setContainerSize((prev) => {
+                if (prev && prev.width === roundedW && prev.height === roundedH) {
+                  return prev;
+                }
+                return { width: roundedW, height: roundedH };
+              });
+            } else {
+              setViewportSize((prev) => {
+                if (prev && prev.width === roundedW && prev.height === roundedH) {
+                  return prev;
+                }
+                return { width: roundedW, height: roundedH };
+              });
+            }
           }
         }
-      }
+      });
     });
 
     observer.observe(el);
     if (viewportEl) {
       observer.observe(viewportEl);
     }
-    return () => observer.disconnect();
+    return () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+      observer.disconnect();
+    };
   }, [naturalSize, inspectorContext.viewportRef]);
 
   // Load natural dimensions of the image so SVG viewBox aligns 1:1 with pixel coordinates
@@ -282,7 +293,7 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
     if (!naturalSize) return 1;
     if (!containerSize || containerSize.width <= 0 || containerSize.height <= 0) {
       // Sensible initial estimate before ResizeObserver fires (typical viewport ~480px)
-      return Math.max(1, naturalSize.width / 480);
+      return Math.round(Math.max(1, naturalSize.width / 480) * 4) / 4;
     }
     const imgRatio = naturalSize.width / naturalSize.height;
     const containerRatio = containerSize.width / containerSize.height;
@@ -291,7 +302,9 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
       // Container is wider than image (pillarboxed) -> height fills container
       renderedW = containerSize.height * imgRatio;
     }
-    return Math.max(1, naturalSize.width / Math.max(renderedW, 1));
+    const rawScale = Math.max(1, naturalSize.width / Math.max(renderedW, 1));
+    // Quantize hitScale to 0.25 increments to prevent continuous re-rendering churn during sidebar transitions
+    return Math.round(rawScale * 4) / 4;
   }, [naturalSize, containerSize]);
 
   if (!visible || !overlay) return null;
