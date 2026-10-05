@@ -391,8 +391,8 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
           error.message ||
           "Unable to connect to WriteWise. Please check your internet connection or dev tunnel.",
         tips: [
+          "Reload the page.",
           "Check your Wi-Fi or mobile data signal.",
-          "If using a dev tunnel, verify the tunnel connection is active.",
           "Click 'Retry Upload' below to re-send without losing your photo.",
         ],
         icon: WifiOff,

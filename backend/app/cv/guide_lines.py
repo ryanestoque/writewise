@@ -95,7 +95,16 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
     h_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (k_w, 1))
     h_only = cv2.morphologyEx(binary, cv2.MORPH_OPEN, h_kernel)
 
-    row_proj = np.sum(h_only, axis=1) / 255.0  # number of guideline ink pixels per row
+    # If color image is available, extract faint red ruling lines via HSV color space
+    # (ADR 0003) on Grade 3 blue-red-blue paper where red midlines are faint in grayscale.
+    if deskewed_color is not None:
+        hsv = cv2.cvtColor(deskewed_color, cv2.COLOR_BGR2HSV)
+        red_mask1 = cv2.inRange(hsv, (0, 15, 50), (15, 255, 255))
+        red_mask2 = cv2.inRange(hsv, (160, 15, 50), (180, 255, 255))
+        h_red = cv2.morphologyEx(red_mask1 | red_mask2, cv2.MORPH_OPEN, h_kernel)
+        h_only = cv2.bitwise_or(h_only, h_red)
+
+    row_proj = np.sum(h_only > 0, axis=1)  # number of guideline ink pixels per row
 
     # Find peaks (rows with many guideline ink pixels)
     peak_threshold = max(50, int(w * 0.05))
@@ -103,11 +112,22 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
     max_total_span = int(h * 0.35)
     margin_guard = max(15, int(h * 0.02))
 
+    # Filter out candidate rows whose horizontal ink span is too narrow (< 25% of image width)
+    # to avoid wide cursive handwriting words or crossbars triggering guideline peaks.
+    min_span = int(w * 0.25)
+    filtered_row_proj = np.zeros(h, dtype=np.float32)
+    for y in range(h):
+        if row_proj[y] >= peak_threshold:
+            window_mask = h_only[max(0, y - 3) : min(h, y + 4), :]
+            nonzeros = np.where(window_mask > 0)[1]
+            if len(nonzeros) > 0 and (nonzeros[-1] - nonzeros[0]) >= min_span:
+                filtered_row_proj[y] = float(row_proj[y])
+
     peaks = []
     in_peak = False
     peak_start = 0
-    for y, val in enumerate(row_proj):
-        if val > peak_threshold:
+    for y, val in enumerate(filtered_row_proj):
+        if val > 0:
             if not in_peak:
                 in_peak = True
                 peak_start = y
@@ -116,14 +136,14 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
                 in_peak = False
                 peak_center = (peak_start + y - 1) // 2
                 if peaks and (peak_center - peaks[-1]) < min_line_spacing:
-                    if row_proj[peak_center] > row_proj[peaks[-1]]:
+                    if filtered_row_proj[peak_center] > filtered_row_proj[peaks[-1]]:
                         peaks[-1] = peak_center
                 else:
                     peaks.append(peak_center)
     if in_peak:
-        peak_center = (peak_start + len(row_proj) - 1) // 2
+        peak_center = (peak_start + len(filtered_row_proj) - 1) // 2
         if peaks and (peak_center - peaks[-1]) < min_line_spacing:
-            if row_proj[peak_center] > row_proj[peaks[-1]]:
+            if filtered_row_proj[peak_center] > filtered_row_proj[peaks[-1]]:
                 peaks[-1] = peak_center
         else:
             peaks.append(peak_center)

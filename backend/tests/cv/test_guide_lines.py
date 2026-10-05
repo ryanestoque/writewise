@@ -174,3 +174,34 @@ def test_detect_and_deskew_continuous_rulings_detected_correctly():
     assert result.topline_y == [400, 520, 640]
     assert result.midline_y == [460, 580, 700]
     assert result.baseline_y == [520, 640, 760]
+
+
+def test_detect_and_deskew_faint_red_midlines_in_color_image():
+    """Faint red midlines (high R, low B) must be preserved in color images."""
+    import cv2
+    import numpy as np
+
+    from app.cv.preprocessing import preprocess
+
+    h, w = 2000, 2000
+    # Create white paper background (BGR = 155, 155, 155)
+    color = np.full((h, w, 3), 155, dtype=np.uint8)
+
+    # 1 ruling with Blue Top (400), Faint Red Mid (500), Blue Base (600)
+    # Blue top line (R=110, G=125, B=145)
+    cv2.line(color, (100, 400), (w - 100, 400), (145, 125, 110), thickness=4)
+    # Faint red midline (R=160, G=140, B=135) — faint in standard grayscale
+    cv2.line(color, (100, 500), (w - 100, 500), (135, 140, 160), thickness=4)
+    # Blue baseline (R=110, G=125, B=145)
+    cv2.line(color, (100, 600), (w - 100, 600), (145, 125, 110), thickness=4)
+
+    # Encode as JPEG bytes and preprocess
+    _, img_bytes = cv2.imencode(".jpg", color)
+    prep = preprocess(img_bytes.tobytes())
+    result = detect_and_deskew(prep)
+
+    assert len(result.baseline_y) == 1
+    assert result.topline_y[0] == 400
+    assert result.midline_y[0] == 500
+    assert result.baseline_y[0] == 600
+
