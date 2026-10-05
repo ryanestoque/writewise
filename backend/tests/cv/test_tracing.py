@@ -47,3 +47,37 @@ def test_segment_word_letter_zones():
     assert zones[1].char == "a"
     assert zones[2].char == "t"
     assert zones[0].bbox[0] >= 50
+
+
+def test_suppress_guidelines_preserving_strokes():
+    from app.cv.tracing import suppress_guidelines_preserving_strokes
+
+    img = np.zeros((40, 100), dtype=np.uint8)
+    # Horizontal guideline across row y=20 (canvas y=220, bbox y0=200)
+    img[20, :] = 255
+    # Vertical stroke crossing guideline at x=50 (y from 5 to 35)
+    img[5:35, 50] = 255
+
+    cleaned = suppress_guidelines_preserving_strokes(img, [100, 200, 100, 40], guideline_ys=[220])
+
+    # Isolated horizontal guideline at x=10 should be removed (0)
+    assert cleaned[20, 10] == 0
+    # Crossing vertical stroke at x=50 should be preserved (255)
+    assert cleaned[20, 50] == 255
+    assert cleaned[10, 50] == 255
+
+
+def test_extract_stroke_svg_paths_with_guideline_suppression():
+    img = np.zeros((40, 100), dtype=np.uint8)
+    # Horizontal guideline across row y=20 (canvas y=220, bbox y0=200)
+    img[20, :] = 255
+    # Vertical stroke crossing guideline at x=50 (y from 5 to 35)
+    img[5:35, 50] = 255
+
+    paths = extract_stroke_svg_paths(img, [100, 200, 100, 40], guideline_ys=[220])
+    # Should extract stroke paths (for vertical stroke) but not a long horizontal path
+    assert isinstance(paths, list)
+    # Ensure no path spans across the full width x=0 to x=99 at y=220
+    for p in paths:
+        assert "M 100 220 L 199 220" not in p
+

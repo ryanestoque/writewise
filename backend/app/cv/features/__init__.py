@@ -73,7 +73,11 @@ def extract_features(
             all_size_ratios.append(size_rat)
 
             # Stroke centerline SVG path extraction for visual overlay
-            stroke_paths = extract_stroke_svg_paths(word.binary_crop, list(word.bbox))
+            stroke_paths = extract_stroke_svg_paths(
+                word.binary_crop,
+                list(word.bbox),
+                guideline_ys=[line.topline_y, line.midline_y, line.baseline_y],
+            )
 
             words_in_line.append(
                 WordMeasurement(

@@ -47,10 +47,82 @@ def morphological_skeleton(binary_inv: np.ndarray) -> np.ndarray:
     return skeleton
 
 
+def suppress_guidelines_preserving_strokes(
+    binary_crop: np.ndarray,
+    word_bbox: List[int],
+    guideline_ys: Optional[List[int]] = None,
+    tolerance_px: int = 2,
+) -> np.ndarray:
+    """Suppress preprinted notebook guidelines from binary crop while preserving strokes.
+
+    Parameters
+    ----------
+    binary_crop : np.ndarray
+        Binarized crop where ink > 0.
+    word_bbox : List[int]
+        Word bounding box [x0, y0, w, h] in canvas coordinates.
+    guideline_ys : Optional[List[int]]
+        Absolute Y-coordinates of detected guidelines on the canvas.
+    tolerance_px : int
+        Vertical half-width (in pixels) around guideline Y to examine.
+
+    Returns
+    -------
+    np.ndarray
+        Cleaned binary crop with guidelines suppressed and crossing strokes preserved.
+    """
+    if binary_crop is None or binary_crop.size == 0:
+        return binary_crop
+
+    cleaned = binary_crop.copy()
+    if not guideline_ys or len(word_bbox) < 4:
+        return cleaned
+
+    h_crop, w_crop = cleaned.shape[:2]
+    y0 = word_bbox[1]
+
+    for gy in guideline_ys:
+        rel_y = gy - y0
+        if rel_y + tolerance_px < 0 or rel_y - tolerance_px >= h_crop:
+            continue
+
+        band_y1 = max(0, rel_y - tolerance_px)
+        band_y2 = min(h_crop, rel_y + tolerance_px + 1)
+
+        win_top_y1 = max(0, rel_y - tolerance_px - 4)
+        win_top_y2 = max(0, rel_y - tolerance_px)
+
+        win_bot_y1 = min(h_crop, rel_y + tolerance_px + 1)
+        win_bot_y2 = min(h_crop, rel_y + tolerance_px + 5)
+
+        for y in range(band_y1, band_y2):
+            for x in range(w_crop):
+                if cleaned[y, x] == 0:
+                    continue
+
+                x_min = max(0, x - 2)
+                x_max = min(w_crop, x + 3)
+
+                has_ink_above = (
+                    win_top_y2 > win_top_y1
+                    and np.any(cleaned[win_top_y1:win_top_y2, x_min:x_max] > 0)
+                )
+                has_ink_below = (
+                    win_bot_y2 > win_bot_y1
+                    and np.any(cleaned[win_bot_y1:win_bot_y2, x_min:x_max] > 0)
+                )
+
+                if not (has_ink_above and has_ink_below):
+                    cleaned[y, x] = 0
+
+    return cleaned
+
+
 def extract_stroke_svg_paths(
     binary_crop: np.ndarray,
     word_bbox: List[int],
     epsilon_factor: float = 0.015,
+    guideline_ys: Optional[List[int]] = None,
 ) -> List[str]:
     """Convert binary crop ink strokes into SVG path strings ("M x y L x y ...").
     Parameters
@@ -61,6 +133,8 @@ def extract_stroke_svg_paths(
         Word bounding box [x0, y0, width, height] on the worksheet canvas.
     epsilon_factor : float
         Polyline simplification factor for Douglas-Peucker algorithm.
+    guideline_ys : Optional[List[int]]
+        Absolute Y-coordinates of detected guidelines on the canvas to suppress.
 
     Returns
     -------
@@ -75,6 +149,11 @@ def extract_stroke_svg_paths(
 
     if h_crop == 0 or w_crop == 0 or cv2.countNonZero(binary_crop) == 0:
         return []
+
+    if guideline_ys:
+        binary_crop = suppress_guidelines_preserving_strokes(
+            binary_crop, word_bbox, guideline_ys
+        )
 
     # Calculate scale factor if crop dimensions differ slightly from bbox dimensions
     scale_x = w_box / float(w_crop)
