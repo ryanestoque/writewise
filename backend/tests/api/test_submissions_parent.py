@@ -72,7 +72,7 @@ def linked_student():
     """Create a student linked to both TEST_TEACHER_ID and TEST_PARENT_ID."""
     student_res = (
         supabase_client.table("student")
-        .insert({"full_name": "Test Parent Child", "section": "Grade 3 - Parent"})
+        .insert({"full_name": "Test Parent Child", "section": "Section - Parent"})
         .execute()
     )
     student = student_res.data[0]
@@ -104,7 +104,7 @@ def unlinked_student():
     """Create a student linked only to teacher, NOT to TEST_PARENT_ID."""
     student_res = (
         supabase_client.table("student")
-        .insert({"full_name": "Unlinked Child", "section": "Grade 3 - Other"})
+        .insert({"full_name": "Unlinked Child", "section": "Section - Other"})
         .execute()
     )
     student = student_res.data[0]

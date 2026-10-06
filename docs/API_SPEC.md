@@ -107,7 +107,7 @@ Request:
 ```json
 {
   "full_name": "Juan Dela Cruz",
-  "section": "Grade 3 - Sampaguita",
+  "section": "Sampaguita",
   "parent_email": "parent@example.com"
 }
 ```
@@ -118,7 +118,7 @@ Response (`201 Created`):
 {
   "id": "22222222-2222-2222-2222-222222222222",
   "full_name": "Juan Dela Cruz",
-  "section": "Grade 3 - Sampaguita",
+  "section": "Sampaguita",
   "parent_email": "parent@example.com",
   "parent_invited": true,
   "parent_invite_error": null,
@@ -140,7 +140,7 @@ Request (all fields optional):
 ```json
 {
   "full_name": "Juan D. Cruz",
-  "section": "Grade 3 - Rosal",
+  "section": "Rosal",
   "parent_email": "parent@example.com"
 }
 ```

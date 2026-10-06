@@ -96,7 +96,7 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
     h_only = cv2.morphologyEx(binary, cv2.MORPH_OPEN, h_kernel)
 
     # If color image is available, extract faint red ruling lines via HSV color space
-    # (ADR 0003) on Grade 3 blue-red-blue paper where red midlines are faint in grayscale.
+    # (ADR 0003) on blue-red-blue paper where red midlines are faint in grayscale.
     if deskewed_color is not None:
         hsv = cv2.cvtColor(deskewed_color, cv2.COLOR_BGR2HSV)
         red_mask1 = cv2.inRange(hsv, (0, 15, 50), (15, 255, 255))
@@ -151,7 +151,7 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
     peaks = [p for p in peaks if margin_guard <= p <= (h - margin_guard)]
 
     # Group and validate rulings (topline, midline, baseline)
-    # A standard Grade 3 worksheet has a repeating 3-line ruling.
+    # A standard worksheet has a repeating 3-line ruling.
     # Geometry validation ensures border noise, shadows, or absurd spacing (<20px / 5px)
     # are never accepted as handwriting guidelines.
     def _group_rulings(start_offset: int) -> tuple[List[int], List[int], List[int]]:

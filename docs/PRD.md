@@ -38,7 +38,7 @@ Standard OCR is not a substitute: OCR transcribes text and discards the physical
 |---|---|---|
 | **Teacher** | Basic education teacher (primary user) | Creates handwriting activities, uploads/reviews student submissions, views class-wide results and diagnostics, manages their class roster |
 | **Parent/Guardian** | Parent of an enrolled student | Views their own child's assessment history and progress dashboard; can upload their child's completed sheet for a teacher-assigned activity |
-| **Student** | Grade 3 learner (minor) | No account, no direct system access. Exists only as a roster record a teacher creates and links submissions to. All interaction happens on paper. |
+| **Student** | Learner (minor) | No account, no direct system access. Exists only as a roster record a teacher creates and links submissions to. All interaction happens on paper. |
 
 There is no separate admin role for the pilot — the teacher setting up the class is the local admin. (Flagged as a future enhancement if the system expands beyond one school.)
 
@@ -220,7 +220,7 @@ The program has not issued specific required thresholds, so the following are pr
 - **Timeline risk:** ~9-10 weeks from Phase 1 launch to defense is tight for a system with an embedded validation study; parallel-track development is the mitigation, but slippage in Phase 1 data collection directly threatens the October defense date.
 - **Calibration risk:** if the correlation between raw CV measurements and teacher scores comes out weak, the rubric-to-threshold mapping may need rework, which would cascade into Phase 2 timing.
 - **Image quality assumption:** the system assumes clear, well-oriented photos; poor lighting, skew, or low resolution will degrade both segmentation and CNN accuracy.
-- **Generalization risk:** the CNN's Stage 1 classifier is fine-tuned on CCC/C-Cube, a public dataset of individual cursive characters, not on the actual Grade 3 handwriting samples — real student handwriting may behave differently than the training distribution, which is exactly why Phase 1's calibration step exists.
+- **Generalization risk:** the CNN's Stage 1 classifier is fine-tuned on CCC/C-Cube, a public dataset of individual cursive characters, not on the actual handwriting samples — real student handwriting may behave differently than the training distribution, which is exactly why Phase 1's calibration step exists.
 
 ---
 

@@ -156,7 +156,7 @@ Use these pre-seeded accounts to test and explore the system:
 | **Teacher** | `teacher.santos@example.com` | `password123` | [`http://localhost:3000/dashboard`](http://localhost:3000/dashboard) |
 | **Parent** | `parent.seed@example.com` | `password123` | [`http://localhost:3000/progress`](http://localhost:3000/progress) |
 
-*Linked student record: **Juan Dela Cruz** (Grade 3 - Sampaguita).*
+*Linked student record: **Juan Dela Cruz** (Sampaguita).*
 
 ---
 

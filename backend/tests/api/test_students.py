@@ -48,7 +48,7 @@ def confirmed_parent():
 
 
 def test_create_student(client, cleanup_students):
-    payload = {"full_name": "Test Student Python", "section": "Grade 3 - Test"}
+    payload = {"full_name": "Test Student Python", "section": "Section - Test"}
     response = client.post("/api/students", json=payload)
     assert response.status_code == 200
     data = response.json()
@@ -76,7 +76,7 @@ def test_create_student(client, cleanup_students):
 def test_create_student_with_parent_email(client, cleanup_students):
     payload = {
         "full_name": "Test Student With Parent",
-        "section": "Grade 3 - Parent",
+        "section": "Section - Parent",
         "parent_email": "parent_test_student@example.com",
     }
     response = client.post("/api/students", json=payload)
@@ -98,24 +98,24 @@ def test_create_student_with_parent_email(client, cleanup_students):
 
 def test_update_student(client, cleanup_students):
     # 1. Create a student to update
-    payload = {"full_name": "To Be Updated", "section": "Grade 3 - A"}
+    payload = {"full_name": "To Be Updated", "section": "Section - A"}
     create_res = client.post("/api/students", json=payload)
     student_id = create_res.json()["id"]
     cleanup_students.append(student_id)
 
     # 2. Update it
-    update_payload = {"full_name": "Updated Name", "section": "Grade 3 - B"}
+    update_payload = {"full_name": "Updated Name", "section": "Section - B"}
     response = client.patch(f"/api/students/{student_id}", json=update_payload)
     assert response.status_code == 200
     data = response.json()
     assert data["full_name"] == "Updated Name"
-    assert data["section"] == "Grade 3 - B"
+    assert data["section"] == "Section - B"
     assert data["parent_email"] is None
 
 
 def test_update_student_parent_email(client, cleanup_students):
     # 1. Create a student
-    payload = {"full_name": "Student Parent Edit", "section": "Grade 3 - C"}
+    payload = {"full_name": "Student Parent Edit", "section": "Section - C"}
     create_res = client.post("/api/students", json=payload)
     student_id = create_res.json()["id"]
     cleanup_students.append(student_id)
@@ -151,7 +151,7 @@ def test_update_student_not_found(client):
 def test_remove_student_link(client, cleanup_students):
     # 1. Create a student
     create_res = client.post(
-        "/api/students", json={"full_name": "To Be Removed", "section": "Grade 3 - C"}
+        "/api/students", json={"full_name": "To Be Removed", "section": "Section - C"}
     )
     student_id = create_res.json()["id"]
     cleanup_students.append(student_id)
@@ -178,7 +178,7 @@ def test_remove_student_link(client, cleanup_students):
 def test_create_student_with_existing_parent_email(client, cleanup_students, confirmed_parent):
     payload = {
         "full_name": "Sibling of Stephen",
-        "section": "Grade 3 - Sibling",
+        "section": "Section - Sibling",
         "parent_email": confirmed_parent["email"],
     }
     response = client.post("/api/students", json=payload)
@@ -203,7 +203,7 @@ def test_resend_parent_invite(client, cleanup_students, confirmed_parent):
     # 1. Create student with parent email
     payload = {
         "full_name": "Resend Test Student",
-        "section": "Grade 3 - Resend",
+        "section": "Section - Resend",
         "parent_email": confirmed_parent["email"],
     }
     create_res = client.post("/api/students", json=payload)
@@ -219,7 +219,7 @@ def test_resend_parent_invite(client, cleanup_students, confirmed_parent):
     assert resend_data["parent_status"] == "active"
 
     # 3. Resend for student without parent email -> 400
-    no_email_payload = {"full_name": "No Email Student", "section": "Grade 3 - X"}
+    no_email_payload = {"full_name": "No Email Student", "section": "Section - X"}
     no_email_res = client.post("/api/students", json=no_email_payload)
     no_email_id = no_email_res.json()["id"]
     cleanup_students.append(no_email_id)

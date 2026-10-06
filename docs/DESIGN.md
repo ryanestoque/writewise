@@ -42,7 +42,7 @@ Three principles run through the whole system:
 | Satisfactory | `band-3` | `#7C9B6E` (sage) | On track |
 | Excellent | `band-4` | `#4A8B5C` (forest) | Strong |
 
-> **Why not red-to-green:** the classic traffic-light gradient is the most familiar pattern, but it also reads as pass/fail — and this tool assesses a skill a Grade 3 student is still developing, not a test they passed or failed. A parent checking this repeatedly over a school term shouldn't see red on their kid's work. **Color is never the only signal** — every band indicator anywhere in the product pairs its color with the band's text label (see §10, Accessibility).
+> **Why not red-to-green:** the classic traffic-light gradient is the most familiar pattern, but it also reads as pass/fail — and this tool assesses a skill a student is still developing, not a test they passed or failed. A parent checking this repeatedly over a school term shouldn't see red on their kid's work. **Color is never the only signal** — every band indicator anywhere in the product pairs its color with the band's text label (see §10, Accessibility).
 
 **Neutrals.** A cool-leaning warm-gray, not the cream-and-terracotta combination common in generic "warm brand" defaults — chosen to pair cleanly with the teal accent instead of competing with it.
 

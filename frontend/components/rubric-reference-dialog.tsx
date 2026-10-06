@@ -491,7 +491,7 @@ export function RubricReferenceDialog({
           </div>
 
           <DialogDescription className="sr-only">
-            Objective criteria and scoring bands for Grade 3 cursive handwriting assessment.
+            Objective criteria and scoring bands for cursive handwriting assessment.
           </DialogDescription>
 
           {/* Quick Search with Live Region */}

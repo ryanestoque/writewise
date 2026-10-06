@@ -12,7 +12,7 @@ web
 
 **Secondary user: Parents/Guardians** — parents of enrolled students who view their own child's assessment history, progress dashboard, and latest diagnostic feedback, and can upload a completed take-home worksheet. Same device profile as teachers.
 
-**Students** (Grade 3 learners, minors) — no account, no direct system access. They exist only as roster records a teacher creates and links submissions to. All student interaction happens on paper.
+**Students** (Learners, minors) — no account, no direct system access. They exist only as roster records a teacher creates and links submissions to. All student interaction happens on paper.
 
 There is no separate admin role for the pilot. The teacher setting up the class is the local admin.
 

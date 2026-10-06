@@ -12,7 +12,7 @@
 WriteWise evaluates cursive handwriting worksheets against five criteria, with **Letter Formation** being the primary non-geometric criterion. Unlike slant, spacing, baseline alignment, and size consistency (which are solved by deterministic OpenCV algorithms in ADR 0001), letter formation requires deep representation learning to recognize cursive stroke aesthetics, curvature, and topological correctness.
 
 However, developing the machine learning component presents unique challenges:
-1. **Scarcity of Paired Rubric Data at Launch:** Real Grade 3 worksheets with verified multi-teacher rubric scores do not exist prior to Phase 1 data collection.
+1. **Scarcity of Paired Rubric Data at Launch:** Real worksheets with verified multi-teacher rubric scores do not exist prior to Phase 1 data collection.
 2. **Computational Budget & Deployment Constraints:** The system runs on a lean single-worker container on Railway (CPU inference, 512MB–1GB RAM target) and must execute in < 2 seconds per submission.
 3. **Continuous Integration & Local Testability:** CI environments and local developer setups cannot require downloading or hosting multi-megabyte model artifacts just to run test suites.
 4. **Separation of Training vs. Serving:** Training involves GPU acceleration (Colab), large raw datasets (CCC/C-Cube), and specialized data science libraries (`scikit-learn`, `matplotlib`) that must never bloat the production backend service.

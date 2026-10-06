@@ -51,7 +51,7 @@ The computer vision subsystem needed an architectural design that solves the fol
 ### Decision 2: Printed Guideline Normalization Reference (`baseline_y - midline_y`)
 - **Chosen Approach:** All ratios (baseline deviation, size consistency, gap spacing) are normalized against the detected printed ruling unit height:
   $$\text{unit\_height} = \max(1.0, \text{baseline\_y} - \text{midline\_y})$$
-- **Rationale:** Normalizing against handwriting-derived dimensions (e.g. average letter height) creates circular dependency (evaluating handwriting quality using that same handwriting as ground truth). Grade 3 practice paper has printed baseline/midline ruling, providing an objective, camera-scale-invariant baseline.
+- **Rationale:** Normalizing against handwriting-derived dimensions (e.g. average letter height) creates circular dependency (evaluating handwriting quality using that same handwriting as ground truth). Practice paper has printed baseline/midline ruling, providing an objective, camera-scale-invariant baseline.
 
 ### Decision 3: Hough Stroke-Filtering with Neutral Fallback for Slant Angle
 - **Chosen Approach:** Use Probabilistic Hough Transform (`cv2.HoughLinesP`) on the word crop, filtered strictly to near-vertical strokes ($45^\circ \le \theta \le 135^\circ$), measuring angle deviation relative to vertical. If no near-vertical strokes are detected (e.g., punctuation or purely round letters), the word falls back to `0.0°` (neutral vertical).
@@ -105,4 +105,4 @@ The computer vision subsystem needed an architectural design that solves the fol
 
 ### Negative / Known Limitations
 - **Letter Spacing is a Rhythm Proxy:** Column-gap projection inside words identifies candidate inter-letter gaps, not verified character boundaries. Surfaced in UI documentation as a spacing regularity index.
-- **Guideline Dependency:** Relies on visible 3-line ruling (standard for Grade 3 target demographic). Blank plain paper requires separate guideline synthesis in future roadmap.
+- **Guideline Dependency:** Relies on visible 3-line ruling (standard for target demographic). Blank plain paper requires separate guideline synthesis in future roadmap.

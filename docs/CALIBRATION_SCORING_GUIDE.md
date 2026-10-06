@@ -6,7 +6,7 @@ This guide details how **Spearman's Rank Correlation Coefficient ($\rho$)** is a
 
 ## 1. Executive Summary & Problem Context
 
-WriteWise assesses Grade 3 cursive handwriting across five core criteria:
+WriteWise assesses cursive handwriting across five core criteria:
 1. **Letter Formation** (CNN classification & regression)
 2. **Size Consistency** (OpenCV guideline height ratio)
 3. **Spacing** (OpenCV word & letter gap ratios)

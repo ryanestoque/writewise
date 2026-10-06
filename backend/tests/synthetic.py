@@ -112,7 +112,7 @@ def make_3line_worksheet(
 ) -> bytes:
     """Generate a worksheet with 3-line ruling (topline, midline, baseline) and rotation.
 
-    Simulates Grade 3 paper where each writing row has 3 printed lines.
+    Simulates paper where each writing row has 3 printed lines.
     """
     img = np.full((height, width), _SHARP_BG, dtype=np.uint8)
 

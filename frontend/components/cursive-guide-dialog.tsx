@@ -93,7 +93,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
       "Loop backward and pull straight down along slant to baseline.",
       "Climb back to dotted midline, form small right-hand loop, and finish with a high horizontal bridge."
     ],
-    coachingTip: "Crucial Grade 3 join: The lowercase 'b' bridge must connect directly to the next letter from the midline without dipping to the baseline.",
+    coachingTip: "Crucial join: The lowercase 'b' bridge must connect directly to the next letter from the midline without dipping to the baseline.",
     commonPitfall: "Dropping the exit bridge down to the baseline, which erroneously turns 'b' into an 'l' or 'lo'.",
     practiceWords: ["ball", "bird", "blue", "book"],
     keywords: ["b", "ball", "ascender", "tall", "loop", "bridge", "high joiner"],
@@ -890,7 +890,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
         <div className="pt-2 flex items-center gap-2 flex-wrap text-xs">
           <span className="font-semibold text-muted-foreground flex items-center gap-1">
             <BookOpenIcon className="size-3.5 text-primary" aria-hidden="true" />
-            Grade 3 Practice Words:
+            Practice Words:
           </span>
           <div className="flex items-center gap-1.5 flex-wrap">
             {activeLetter.practiceWords.map((word) => (

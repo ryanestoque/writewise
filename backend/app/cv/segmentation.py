@@ -442,7 +442,7 @@ def segment_lines_and_words(
 
         # Classify gaps into word boundaries vs intra-word gaps (§5.2)
         word_boundaries: List[int] = []
-        # In Grade 3 cursive penmanship, word gaps are at least ~0.70x guideline unit height,
+        # In cursive penmanship, word gaps are at least ~0.70x guideline unit height,
         # whereas intra-word letter connectors and ligatures are <= 0.55x.
         min_word_gap = max(35.0, 0.70 * unit_height)
         if gaps:

@@ -1,7 +1,7 @@
 # WriteWise — Expert Rubric & Criteria Validation Instrument
 
 **Study Title:**  
-*WriteWise: Automated Assessment and Diagnostic Feedback System for Grade 3 Cursive Handwriting Using Computer Vision and Deep Learning*
+*WriteWise: Automated Assessment and Diagnostic Feedback System for Cursive Handwriting Using Computer Vision and Deep Learning*
 
 **Researchers:**  
 Ryan Christopher B. Estoque, John Lawrence V. Monleon, James David B. Asoy, Saara Eliana G. Ibag  
@@ -16,7 +16,7 @@ Dear Expert Evaluator,
 
 Thank you for agreeing to participate as a content and domain validator for **WriteWise**. 
 
-WriteWise is an automated educational assessment system designed to assist Grade 3 teachers in evaluating cursive handwriting worksheets. The system employs **Computer Vision (OpenCV)** and a **Fine-Tuned Convolutional Neural Network (CNN)** to assess handwritten submissions across five foundational penmanship criteria, generating objective diagnostic feedback for both teachers and parents.
+WriteWise is an automated educational assessment system designed to assist teachers in evaluating cursive handwriting worksheets. The system employs **Computer Vision (OpenCV)** and a **Fine-Tuned Convolutional Neural Network (CNN)** to assess handwritten submissions across five foundational penmanship criteria, generating objective diagnostic feedback for both teachers and parents.
 
 Before pilot deployment and empirical calibration with classroom teachers, this validation instrument aims to establish the **Content Validity**, **Curricular Alignment (DepEd Elementary Penmanship Standards)**, **Clarity**, and **Developmental Appropriateness** of our diagnostic criteria and four-tier rubric rating scale.
 
@@ -42,7 +42,7 @@ Please provide your professional background information:
 
 ## 3. Operational Definitions of the Five (5) Cursive Criteria
 
-WriteWise evaluates Grade 3 student cursive worksheets written on standard **3-line penmanship paper** (top headline, dashed midline, bottom baseline) against the following five dimensions:
+WriteWise evaluates student cursive worksheets written on standard **3-line penmanship paper** (top headline, dashed midline, bottom baseline) against the following five dimensions:
 
 1. **Letter Formation (CNN Evaluation):**  
    Evaluates the structural correctness of cursive letters—including proper entry and exit strokes, correct curvature of loops (e.g., in *l*, *f*, *h*, *g*, *y*), complete closures (e.g., in *a*, *o*, *d*), and smooth cursive ligatures (connectors between letters).
@@ -51,7 +51,7 @@ WriteWise evaluates Grade 3 student cursive worksheets written on standard **3-l
 3. **Spacing Regularity (OpenCV Evaluation):**  
    Evaluates rhythmic horizontal distance and separation. Combines inter-word spacing (distinct, consistent pauses between words) and intra-word spacing (uniform rhythm and connection gaps between adjacent cursive letters).
 4. **Slant Uniformity (OpenCV Evaluation):**  
-   Evaluates stroke tilt consistency. Grade 3 cursive penmanship encourages a steady forward slant (~60°–68° from horizontal, or ~10°–15° forward tilt from vertical). Evaluates whether letters maintain a parallel, uniform direction rather than fluctuating between vertical, forward, or backward slants.
+   Evaluates stroke tilt consistency. Cursive penmanship encourages a steady forward slant (~60°–68° from horizontal, or ~10°–15° forward tilt from vertical). Evaluates whether letters maintain a parallel, uniform direction rather than fluctuating between vertical, forward, or backward slants.
 5. **Baseline Alignment (OpenCV Evaluation):**  
    Evaluates whether the base of each letter and word rests stably on the bottom guideline without floating above or sinking below the line.
 
@@ -67,14 +67,14 @@ Please rate each statement based on your professional judgment using the 5-point
 | **4** | **Agree (A)** | The criterion/rubric element fulfills the requirement with satisfactory clarity and pedagogical validity; minor refinement optional. |
 | **3** | **Neutral / Undecided (N)** | The criterion/rubric element is acceptable but requires moderate clarification or adjustments. |
 | **2** | **Disagree (D)** | The criterion/rubric element does not adequately fulfill the pedagogical requirement; substantial revision needed. |
-| **1** | **Strongly Disagree (SD)** | The criterion/rubric element is invalid, inappropriate, or irrelevant for Grade 3 cursive penmanship. |
+| **1** | **Strongly Disagree (SD)** | The criterion/rubric element is invalid, inappropriate, or irrelevant for cursive penmanship. |
 
 ---
 
 ## 5. Part I: Criteria Content Validity Matrix
 
 Please rate each criterion across five core measurement dimensions:
-- **C1. Construct Relevance:** Aligned with Grade 3 cursive handwriting competencies (DepEd curriculum).
+- **C1. Construct Relevance:** Aligned with cursive handwriting competencies (DepEd curriculum).
 - **C2. Clarity of Definition:** Clear, unambiguous, and understandable for teachers.
 - **C3. Developmental Appropriateness:** Realistic and fair expectations for 8–9 year old learners.
 - **C4. Objectivity & Observability:** Observable and capable of being consistently scored without personal bias.
@@ -85,9 +85,9 @@ Please rate each criterion across five core measurement dimensions:
 
 | Statement / Indicator | 5 (SA) | 4 (A) | 3 (N) | 2 (D) | 1 (SD) |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| 1. Letter formation is an essential construct for Grade 3 cursive penmanship evaluation. | [ ] | [ ] | [ ] | [ ] | [ ] |
+| 1. Letter formation is an essential construct for cursive penmanship evaluation. | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 2. The operational definition clearly distinguishes correct loops, closures, and connectors. | [ ] | [ ] | [ ] | [ ] | [ ] |
-| 3. The expectations for letter shape accuracy are developmentally appropriate for Grade 3. | [ ] | [ ] | [ ] | [ ] | [ ] |
+| 3. The expectations for letter shape accuracy are developmentally appropriate. | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 4. The criterion can be evaluated objectively across varied cursive letterforms. | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 5. Feedback on letter formation provides clear pedagogical direction for student remediation. | [ ] | [ ] | [ ] | [ ] | [ ] |
 
@@ -121,7 +121,7 @@ Please rate each criterion across five core measurement dimensions:
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | 1. Spacing between words and letters is a critical component of handwriting legibility. | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 2. The separation between word-level gaps and character-level rhythm is clearly defined. | [ ] | [ ] | [ ] | [ ] | [ ] |
-| 3. The expected spacing rhythm is appropriate for beginning cursive writers in Grade 3. | [ ] | [ ] | [ ] | [ ] | [ ] |
+| 3. The expected spacing rhythm is appropriate for beginning cursive writers. | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 4. The criteria can distinguish between accidental crowded strokes and natural letter spacing. | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 5. Feedback on spacing assists teachers in pinpointing letter crowding or excessive gaps. | [ ] | [ ] | [ ] | [ ] | [ ] |
 
@@ -155,7 +155,7 @@ Please rate each criterion across five core measurement dimensions:
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | 1. Baseline alignment is an indispensable indicator of handwriting stability and legibility. | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 2. The measurement of vertical deviation from the bottom baseline ruling is clear. | [ ] | [ ] | [ ] | [ ] | [ ] |
-| 3. The expectations for line adherence accommodate normal Grade 3 fine-motor dexterity. | [ ] | [ ] | [ ] | [ ] | [ ] |
+| 3. The expectations for line adherence accommodate normal fine-motor dexterity. | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 4. The criterion objectively detects floating words or words drooping below the baseline. | [ ] | [ ] | [ ] | [ ] | [ ] |
 | 5. Feedback on baseline adherence directs students toward better page grounding and spatial discipline. | [ ] | [ ] | [ ] | [ ] | [ ] |
 
@@ -173,7 +173,7 @@ WriteWise maps all criteria to a **4-tier qualitative performance scale**, each 
 | :--- | :---: | :--- |
 | **Needs Improvement** | `12.5%` | The student demonstrates significant difficulty. Strokes are incomplete, inconsistent, or frequently violate ruling guidelines. Requires intensive, guided penmanship tracing. |
 | **Developing** | `37.5%` | Basic cursive letter structures are emerging. Inconsistencies in size, slant, or spacing are frequent but the writing is partially legible. Needs targeted practice. |
-| **Satisfactory** | `62.5%` | Writing exhibits good control and consistency with only minor deviations in slant, spacing, or size. Meets expected Grade 3 proficiency. |
+| **Satisfactory** | `62.5%` | Writing exhibits good control and consistency with only minor deviations in slant, spacing, or size. Meets expected proficiency. |
 | **Excellent** | `87.5%` | Writing shows outstanding fluency, consistent forward slant, steady rhythm, and disciplined baseline and midline adherence. |
 
 ### Validation of the Rubric Rating Scale & Aggregation:
@@ -216,7 +216,7 @@ Please check the box that best represents your overall professional assessment o
 - [ ] **[ 1 ] Accepted Without Revisions:** The criteria and rubric are fully validated and ready for deployment in the calibration study and classroom assessment.
 - [ ] **[ 2 ] Accepted With Minor Revisions:** The criteria and rubric are pedagogically sound; suggested minor adjustments in descriptors or remarks should be incorporated.
 - [ ] **[ 3 ] Re-Evaluation Required After Major Revisions:** Substantial changes in criteria weighting, definitions, or performance levels are recommended before use.
-- [ ] **[ 4 ] Not Recommended:** The instrument does not adequately measure Grade 3 cursive penmanship.
+- [ ] **[ 4 ] Not Recommended:** The instrument does not adequately measure cursive penmanship.
 
 ---
 

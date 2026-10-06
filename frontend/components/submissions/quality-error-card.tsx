@@ -265,7 +265,7 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
         description:
           "WriteWise requires standard 3-line penmanship paper (topline, midline, baseline) to measure letter size consistency and baseline alignment.",
         tips: [
-          "Use standard 3-line Grade 3 penmanship paper with top, middle, and base rulings.",
+          "Use standard 3-line penmanship paper with top, middle, and base rulings.",
           "Avoid using blank bond paper, unruled sketchpads, or single-line notebooks.",
           "Ensure the printed guidelines are clearly visible across the page.",
         ],

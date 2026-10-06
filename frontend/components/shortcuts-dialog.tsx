@@ -50,7 +50,7 @@ const shortcuts: ShortcutItem[] = [
   {
     category: "Worksheet & Assessment",
     keys: ["Alt", "C"],
-    description: "Toggle Cursive Alphabet Guide (Grade 3 Standard)",
+    description: "Toggle Cursive Alphabet Guide (Standard)",
   },
   {
     category: "Worksheet & Assessment",

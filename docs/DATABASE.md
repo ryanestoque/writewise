@@ -583,7 +583,7 @@ values ('11111111-1111-1111-1111-111111111111', 'teacher.santos@example.com',
 -- public.teacher row.
 
 insert into public.student (id, full_name, section)
-values ('22222222-2222-2222-2222-222222222222', 'Juan Dela Cruz', 'Grade 3 - Sampaguita');
+values ('22222222-2222-2222-2222-222222222222', 'Juan Dela Cruz', 'Sampaguita');
 
 insert into public.teacher_student (teacher_id, student_id)
 values ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222');

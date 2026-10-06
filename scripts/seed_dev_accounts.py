@@ -3,7 +3,7 @@
 Creates:
 - Teacher: teacher.santos@example.com / password123 (Ms. Santos)
 - Parent: parent.seed@example.com / password123 (Seed Parent)
-- Student: Juan Dela Cruz (Grade 3 - Sampaguita) linked to both.
+- Student: Juan Dela Cruz (Sampaguita) linked to both.
 """
 
 import os
@@ -29,7 +29,7 @@ PARENT_NAME = "Seed Parent"
 
 STUDENT_ID = "22222222-2222-2222-2222-222222222222"
 STUDENT_NAME = "Juan Dela Cruz"
-STUDENT_SECTION = "Grade 3 - Sampaguita"
+STUDENT_SECTION = "Sampaguita"
 
 
 def get_existing_user(email: str):

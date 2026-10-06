@@ -29,7 +29,7 @@ Full problem statement, goals, and scope: [`PRD.md`](./PRD.md).
 |---|---|---|
 | **Teacher** | Basic education teacher | Creates handwriting activities, uploads/reviews submissions, views class-wide results and per-student diagnostics, manages their roster |
 | **Parent/Guardian** | Parent of an enrolled student | Views their own child's progress and diagnostic feedback; can upload a completed sheet for a take-home activity |
-| **Student** | Grade 3 learner (minor) | No account, no direct access — exists only as a roster record; all interaction happens on paper |
+| **Student** | Learner (minor) | No account, no direct access — exists only as a roster record; all interaction happens on paper |
 
 Access is strictly scoped: a parent only ever sees their own child's record, a teacher only their own class roster.
 

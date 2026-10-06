@@ -58,7 +58,7 @@ TECH_STACK.md already establishes the mechanics — `.env`/`.env.local` gitignor
 
 | Setting | Decision | Rationale |
 |---|---|---|
-| **Password minimum length** | 10 characters | Supabase's 6-char default is thin for accounts guarding real children's data; 10 is readable for a Grade 3 teacher setting up on a phone but well past trivially-crackable. |
+| **Password minimum length** | 10 characters | Supabase's 6-char default is thin for accounts guarding real children's data; 10 is readable for a teacher setting up on a phone but well past trivially-crackable. |
 | **Leaked-password protection** | Enabled (Supabase Auth's HaveIBeenPwned-backed check) | Zero engineering cost — one config toggle — and a genuinely strong, citable line for the ISO/IEC 25010 security writeup, versus "we used the defaults." |
 | **Complexity rules (symbols/mixed-case required)** | Not added | Modern guidance treats these as weaker than length alone — they push users toward predictable substitutions (`Password1!`) rather than genuinely stronger passwords. |
 | **Session (JWT) expiry** | Supabase default (1 hour, transparently renewed via refresh token) | No reason to deviate; renewal is invisible to the user. |

@@ -61,7 +61,7 @@ export const REJECTION_GUIDE: Record<string, RejectionDetail> = {
     description:
       "WriteWise requires standard 3-line penmanship paper (topline, midline, baseline) to measure letter size consistency and baseline alignment.",
     advice:
-      "Please have the student write the assigned activity on standard 3-line Grade 3 penmanship paper before uploading.",
+      "Please have the student write the assigned activity on standard 3-line penmanship paper before uploading.",
   },
   QUALITY_GATE_OFF_GUIDELINES: {
     title: "Handwriting Outside Guidelines",

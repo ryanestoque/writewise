@@ -306,7 +306,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                   aria-haspopup="dialog"
                   aria-expanded={cursiveGuideOpen}
                   aria-controls={cursiveGuideOpen ? "cursive-guide-dialog" : undefined}
-                  aria-label="Cursive Alphabet Guide (Grade 3 Standard Modal)"
+                  aria-label="Cursive Alphabet Guide (Standard Modal)"
                   tooltip={{
                     children: (
                       <div className="flex items-center gap-1.5">
