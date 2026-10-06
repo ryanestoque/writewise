@@ -104,55 +104,55 @@ const COLUMNS: Array<{
     field: "fullName",
     label: "Student Name",
     shortLabel: "Student",
-    description: "Student full name and assigned section",
+    description: "Student full name and section",
   },
   {
     field: "section",
     label: "Section",
     shortLabel: "Section",
-    description: "Class section roster",
+    description: "Class section",
   },
   {
     field: "letter_formation",
     label: "Letter Formation",
     shortLabel: "Letter Form.",
     isNumeric: true,
-    description: "Proper cursive loops and complete stroke closures (target 100%)",
+    description: "Cursive loops and stroke closures",
   },
   {
     field: "size_consistency",
     label: "Size Consistency",
     shortLabel: "Size Cons.",
     isNumeric: true,
-    description: "Proportion and height across 3-line penmanship ruling",
+    description: "Letter heights on 3-line ruling",
   },
   {
     field: "spacing",
-    label: "Spacing Regularity",
+    label: "Spacing",
     shortLabel: "Spacing",
     isNumeric: true,
-    description: "Inter-word rhythm and character separation spacing",
+    description: "Inter-word and letter spacing",
   },
   {
     field: "slant",
     label: "Slant Angle",
     shortLabel: "Slant",
     isNumeric: true,
-    description: "Uniform forward slant tilt (target 60°–68° angle)",
+    description: "Forward slant consistency (60°–68°)",
   },
   {
     field: "baseline_alignment",
     label: "Baseline Alignment",
     shortLabel: "Baseline",
     isNumeric: true,
-    description: "Letters resting stably along bottom ruling baseline",
+    description: "Alignment along the baseline ruling",
   },
   {
     field: "composite",
-    label: "Overall Composite",
+    label: "Overall Score",
     shortLabel: "Overall",
     isNumeric: true,
-    description: "Equal-weighted average across all 5 diagnostic criteria",
+    description: "Average across all 5 criteria",
   },
 ];
 
@@ -249,10 +249,10 @@ export function ClassTable({
 
     return [
       { id: "all", label: "All Tiers", count: counts.all },
-      { id: "needs_improvement", label: "Needs Improvement (<25%)", count: counts.needs_improvement },
-      { id: "developing", label: "Developing (25–49%)", count: counts.developing },
-      { id: "satisfactory", label: "Satisfactory (50–74%)", count: counts.satisfactory },
-      { id: "excellent", label: "Excellent (≥75%)", count: counts.excellent },
+      { id: "needs_improvement", label: "Needs Improvement", count: counts.needs_improvement },
+      { id: "developing", label: "Developing", count: counts.developing },
+      { id: "satisfactory", label: "Satisfactory", count: counts.satisfactory },
+      { id: "excellent", label: "Excellent", count: counts.excellent },
       { id: "unrated", label: "Unrated", count: counts.unrated },
     ];
   }, [students]);
@@ -348,7 +348,7 @@ export function ClassTable({
           <EmptyHeader>
             <EmptyTitle>No Students on Roster</EmptyTitle>
             <EmptyDescription>
-              Add your students to start assigning activities and tracking handwriting diagnostics.
+              Add students to your roster to start tracking handwriting scores.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
@@ -480,7 +480,7 @@ export function ClassTable({
                     <div className="flex flex-col items-center justify-center space-y-2">
                       <SearchX className="size-8 text-muted-foreground/60" />
                       <p className="text-sm font-semibold text-foreground">No students match your filter</p>
-                      <p className="text-xs text-muted-foreground">Try clearing your search query or changing selected section.</p>
+                      <p className="text-xs text-muted-foreground">Try clearing your search or filters.</p>
                       <button
                         type="button"
                         onClick={() => {

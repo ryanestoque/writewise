@@ -16,7 +16,6 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   LayersIcon,
-  CompassIcon,
   RotateCcwIcon,
   CheckCircle2Icon,
   AlertTriangleIcon,
@@ -726,9 +725,6 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
     setSelectedLetterId(CURSIVE_ALPHABET[nextIndex].id);
   }, [activeLetter.id]);
 
-  const handlePrint = () => {
-    window.print();
-  };
 
   const handlePrintDetail = () => {
     setIsPrintingDetail(true);
@@ -798,17 +794,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
               </div>
             </div>
 
-            {/* Print Classroom Poster Action */}
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 h-8 px-2.5 sm:px-3 text-xs font-medium text-foreground bg-muted/70 hover:bg-muted border border-border/70 rounded-lg transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-              aria-label="Print DepEd Cursive Reference Sheet"
-              title="Print Classroom Poster / Study Sheet"
-            >
-              <PrinterIcon className="size-3.5 text-muted-foreground" aria-hidden="true" />
-              <span className="hidden sm:inline">Print Poster</span>
-            </button>
+
           </div>
 
           <DialogDescription className="sr-only">

@@ -90,15 +90,15 @@ const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
 const PROCESSING_STAGES = [
   {
     title: "Checking image quality…",
-    detail: "Verifying lighting, focus, and guideline alignment.",
+    detail: "Verifying focus, lighting, and alignment.",
   },
   {
-    title: "Analyzing cursive handwriting…",
-    detail: "Segmenting words and measuring letter stroke geometry.",
+    title: "Analyzing handwriting…",
+    detail: "Evaluating letter formation, spacing, and slant.",
   },
   {
-    title: "Calculating diagnostic scores…",
-    detail: "Evaluating consistency, slant, spacing, and baseline.",
+    title: "Calculating scores…",
+    detail: "Finalizing criteria breakdown.",
   },
 ] as const;
 

@@ -97,7 +97,7 @@ export function RawMeasurementsTable({
     } else {
       formationBenchmark = {
         status: "qualitative",
-        label: "Phase 1 Rubric",
+        label: "Teacher Rubric",
         badgeClass: "bg-brand-50 text-brand-800 border-brand-300 dark:bg-brand-950/60 dark:text-brand-300 dark:border-brand-800",
         dotClass: "bg-brand-600",
       };
@@ -189,25 +189,25 @@ export function RawMeasurementsTable({
                 measurement.letter_formation_std,
                 "%"
               )
-            : "Phase 1 Rubric",
+            : "Teacher Rubric",
         description:
-          "Cursive stroke aesthetics and loop closures evaluated via Teacher Rubric in Phase 1 (automated via fine-tuned CNN in Phase 2).",
+          "Cursive stroke curvature, loop closures, and connection smoothness.",
         benchmark: formationBenchmark,
         targetText: "Qualitative Cursive Loops",
         subDetails: [
           {
-            label: "Evaluation model",
+            label: "Scoring method",
             value:
               measurement?.letter_formation_mean != null
-                ? "CNN Calibrated (Phase 2)"
-                : "Teacher Rubric (Phase 1)",
+                ? "Automated Model"
+                : "Teacher Rubric",
           },
           {
-            label: "Formation quality",
+            label: "Formation score",
             value:
               measurement?.letter_formation_mean != null
                 ? formatMetric(measurement.letter_formation_mean, null, "%")
-                : "Qualitative Rubric",
+                : "Rubric Graded",
           },
         ],
       },

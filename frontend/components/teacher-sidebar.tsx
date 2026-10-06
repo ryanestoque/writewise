@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -77,9 +78,15 @@ function getInitials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+const emptySubscribe = () => () => {};
+const getAltKeySnapshot = () => (typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent) ? "⌥" : "Alt");
+const getAltKeyServerSnapshot = () => "Alt";
+
 export function TeacherSidebar({ user }: TeacherSidebarProps) {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
+  const altKey = useSyncExternalStore(emptySubscribe, getAltKeySnapshot, getAltKeyServerSnapshot);
+
   const {
     openUpload,
     openRubric,
@@ -146,10 +153,10 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
             }}
             aria-haspopup="dialog"
             aria-expanded={uploadOpen}
-            className="flex items-center justify-center gap-2 w-full h-9.5 px-3 rounded-xl bg-sidebar-primary text-sidebar-primary-foreground font-medium text-xs shadow-xs hover:bg-sidebar-primary/90 transition-colors cursor-pointer group/cta focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
+            className="flex items-center justify-center gap-2 w-full h-10 sm:h-9 px-3 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-medium text-xs shadow-xs hover:bg-sidebar-primary/90 transition-colors cursor-pointer group/cta focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
             id="quick-upload-worksheet"
           >
-            <UploadCloudIcon className="size-4 shrink-0 transition-transform group-hover/cta:-translate-y-0.5" />
+            <UploadCloudIcon className="size-4 shrink-0 transition-transform group-hover/cta:-translate-y-0.5" aria-hidden="true" />
             <span>Upload Worksheet</span>
           </button>
         </div>
@@ -167,11 +174,11 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                   aria-label="Upload cursive worksheets (⌘K / Ctrl+K)"
                   aria-haspopup="dialog"
                   aria-expanded={uploadOpen}
-                  className="flex aspect-square size-8.5 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 transition-colors shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
+                  className="flex aspect-square size-10 sm:size-8.5 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 transition-colors shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
                 />
               }
             >
-              <UploadCloudIcon className="size-4" />
+              <UploadCloudIcon className="size-4" aria-hidden="true" />
             </TooltipTrigger>
             <TooltipContent side="right" align="center" className="flex items-center gap-1.5">
               <span>Upload & Scan Worksheets</span>
@@ -208,7 +215,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                       className="h-10 sm:h-9.5"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <item.icon className="size-4 shrink-0" />
+                        <item.icon className="size-4 shrink-0" aria-hidden="true" />
                         <span className="truncate group-data-[collapsible=icon]:hidden">{item.title}</span>
                       </div>
                     </SidebarMenuButton>
@@ -245,7 +252,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                       className="h-10 sm:h-9.5"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <item.icon className="size-4 shrink-0" />
+                        <item.icon className="size-4 shrink-0" aria-hidden="true" />
                         <span className="truncate group-data-[collapsible=icon]:hidden">{item.title}</span>
                       </div>
                     </SidebarMenuButton>
@@ -269,7 +276,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                     children: (
                       <div className="flex items-center gap-1.5">
                         <span>Rubric Guide</span>
-                        <Kbd className="text-xs h-4.5 px-1 font-mono font-normal">Alt+R</Kbd>
+                        <Kbd className="text-xs h-4.5 px-1 font-mono font-normal">{altKey}+R</Kbd>
                       </div>
                     ),
                   }}
@@ -282,7 +289,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                       <span className="truncate group-data-[collapsible=icon]:hidden">Rubric Guide</span>
                     </div>
                     <Kbd className="text-[10px] h-4 px-1.5 font-mono font-medium text-muted-foreground bg-muted/80 border border-border/50 shrink-0 group-data-[collapsible=icon]:hidden">
-                      Alt+R
+                      {altKey}+R
                     </Kbd>
                   </div>
                 </SidebarMenuButton>
@@ -304,7 +311,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                     children: (
                       <div className="flex items-center gap-1.5">
                         <span>Cursive Guide</span>
-                        <Kbd className="text-xs h-4.5 px-1 font-mono font-normal">Alt+C</Kbd>
+                        <Kbd className="text-xs h-4.5 px-1 font-mono font-normal">{altKey}+C</Kbd>
                       </div>
                     ),
                   }}
@@ -317,7 +324,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                       <span className="truncate group-data-[collapsible=icon]:hidden">Cursive Guide</span>
                     </div>
                     <Kbd className="text-[10px] h-4 px-1.5 font-mono font-medium text-muted-foreground bg-muted/80 border border-border/50 shrink-0 group-data-[collapsible=icon]:hidden">
-                      Alt+C
+                      {altKey}+C
                     </Kbd>
                   </div>
                 </SidebarMenuButton>

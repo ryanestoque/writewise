@@ -126,7 +126,7 @@ export function StudentDrillDownDrawer({
                   <div className="flex items-center gap-2">
                     <Award className="size-4 text-brand-600 dark:text-brand-400" />
                     <h3 className="font-heading text-sm font-semibold text-foreground">
-                      Latest Diagnostic Assessment
+                      Latest Assessment
                     </h3>
                   </div>
                   {latestSubmission && (
@@ -145,7 +145,7 @@ export function StudentDrillDownDrawer({
                   <div className="p-4 rounded-xl border border-brand-200/80 dark:border-brand-900 bg-brand-50/40 dark:bg-brand-950/20 space-y-2.5">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-foreground">
-                        Overall Score (Composite)
+                        Overall Score
                       </span>
                       <BandBadge score={student.scores.composite} size="default" />
                     </div>
@@ -154,7 +154,7 @@ export function StudentDrillDownDrawer({
                 ) : (
                   <div className="p-4 rounded-xl border border-dashed border-border bg-muted/20 text-center py-6">
                     <p className="text-xs font-medium text-muted-foreground">
-                      No graded submissions recorded yet for this student.
+                      No graded submissions yet.
                     </p>
                   </div>
                 )}
@@ -201,7 +201,7 @@ export function StudentDrillDownDrawer({
                 <div className="flex items-center gap-2">
                   <TrendingUp className="size-4 text-brand-600 dark:text-brand-400" />
                   <h3 className="font-heading text-sm font-semibold text-foreground">
-                    Progress Trajectory Trend
+                    Score Trend
                   </h3>
                 </div>
 
@@ -216,15 +216,14 @@ export function StudentDrillDownDrawer({
                   <div className="flex items-center gap-2">
                     <History className="size-4 text-brand-600 dark:text-brand-400" />
                     <h3 className="font-heading text-sm font-semibold text-foreground">
-                      Submission History ({history.length})
+                      Submissions ({history.length})
                     </h3>
                   </div>
-                  <span className="text-[11px] text-muted-foreground">Click to inspect</span>
                 </div>
 
                 {history.length === 0 ? (
                   <div className="p-6 rounded-xl border border-dashed border-border text-center text-xs text-muted-foreground">
-                    No submissions recorded yet.
+                    No submissions yet.
                   </div>
                 ) : (
                   <div className="space-y-2">

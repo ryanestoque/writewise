@@ -101,7 +101,7 @@ export default function DashboardPage() {
             onClick={handleExportCSV}
             disabled={isLoading || !data?.students?.length}
             className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] flex-1 sm:flex-none border-border text-foreground hover:bg-muted text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer"
-            title="Export class diagnostic assessment matrix as CSV"
+            title="Export scores as CSV"
           >
             <Download className="w-4 h-4 mr-1.5 text-muted-foreground shrink-0" />
             <span>Export CSV</span>
@@ -118,7 +118,7 @@ export default function DashboardPage() {
                 isRefetching ? "animate-spin" : ""
               }`}
             />
-            <span>Refresh Data</span>
+            <span>Refresh</span>
           </Button>
         </div>
       </div>
@@ -146,13 +146,8 @@ export default function DashboardPage() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-heading text-sm font-semibold text-foreground uppercase tracking-wider text-muted-foreground/90">
-            Class Performance Averages
+            Class Averages
           </h2>
-          {data?.classAverages.scoreSource === "manual" && (
-            <span className="text-[11px] text-muted-foreground hidden sm:inline">
-              Derived from teacher rubric assessments (Phase 1 calibration)
-            </span>
-          )}
         </div>
 
         <SummaryCards
@@ -165,11 +160,8 @@ export default function DashboardPage() {
       <section className="space-y-3 pt-2">
         <div className="flex items-center justify-between">
           <h2 className="font-heading text-sm font-semibold text-foreground uppercase tracking-wider text-muted-foreground/90">
-            Student Assessment Matrix
+            Students
           </h2>
-          <span className="text-[11px] text-muted-foreground hidden sm:inline">
-            Sort by any criterion to identify areas needing guided intervention
-          </span>
         </div>
 
         <ClassTable

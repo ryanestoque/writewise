@@ -32,8 +32,7 @@ interface RubricReferenceDialogProps {
 interface CriterionItem {
   id: string;
   name: string;
-  engine: "CNN" | "OpenCV";
-  engineType: "neural" | "cv";
+  category: string;
   icon: typeof PenToolIcon;
   target: string;
   targetLabel: string;
@@ -47,77 +46,72 @@ const criteria: CriterionItem[] = [
   {
     id: "formation",
     name: "Letter Formation",
-    engine: "CNN",
-    engineType: "neural",
+    category: "Shape & Joins",
     icon: PenToolIcon,
     target: "Clear loops, proper cursive joins, legible character structure",
     targetLabel: "Morphology & Joins",
     classroomStandard: "Proper cursive loops and joining strokes without print-hybrid breaks",
     description:
-      "Assesses stroke geometry, loop closure, and cursive joinery against the CCC cursive benchmark dataset using a fine-tuned CNN.",
+      "Evaluates letter shape, loop closure, and proper cursive connections between characters.",
     diagnosticFocus:
       "Malformed loops, disconnected joins, ambiguous letterforms, and irregular stroke transitions.",
-    keywords: ["formation", "letter", "cnn", "loops", "joins", "neural", "morphology", "ccc", "cursive"],
+    keywords: ["formation", "letter", "loops", "joins", "morphology", "cursive"],
   },
   {
     id: "slant",
     name: "Slant Angle",
-    engine: "OpenCV",
-    engineType: "cv",
+    category: "Inclination",
     icon: CompassIcon,
     target: "Standard ~68° forward slant (60°–75° from horizontal baseline)",
     targetLabel: "60°–75° Slant (~68° Std)",
     classroomStandard: "Consistent forward lean (~68°) across all tall letters and ascenders",
     description:
-      "Measures stroke orientation across ascending and descending stems using contour angle detection and line fitting relative to baseline.",
+      "Measures stroke angle and forward lean across letters relative to the writing baseline.",
     diagnosticFocus:
       "Erratic tilt fluctuations, vertical rigidity (<60°), or excessive over-slanting (>75°).",
-    keywords: ["slant", "angle", "opencv", "degree", "tilt", "inclination", "contour", "lean"],
+    keywords: ["slant", "angle", "degree", "tilt", "inclination", "lean"],
   },
   {
     id: "spacing",
     name: "Spacing & Rhythm",
-    engine: "OpenCV",
-    engineType: "cv",
+    category: "Gaps & Margins",
     icon: SpaceIcon,
     target: "Uniform letter gaps & ~1 letter width between words",
     targetLabel: "Uniform 1-Letter Gaps",
     classroomStandard: "Uniform 1-letter finger space between words; even gaps between letters",
     description:
-      "Analyzes horizontal connected component distances, intra-word letter rhythm, and inter-word margin consistency.",
+      "Measures horizontal spacing between letters within words and consistent finger spacing between words.",
     diagnosticFocus:
       "Cramped letter joins, irregular word gaps, or disjointed stroke gaps within words.",
-    keywords: ["spacing", "rhythm", "opencv", "gap", "distance", "connected", "margin", "finger space"],
+    keywords: ["spacing", "rhythm", "gap", "distance", "margin", "finger space"],
   },
   {
     id: "baseline",
     name: "Baseline Alignment",
-    engine: "OpenCV",
-    engineType: "cv",
+    category: "Guideline Placement",
     icon: MoveVerticalIcon,
     target: "±2px deviation from writing guideline",
     targetLabel: "±2px Guideline Deviation",
     classroomStandard: "Letters resting flat on the bottom line without sagging or floating",
     description:
-      "Detects worksheet guidelines and measures vertical baseline variance across each written word and line.",
+      "Evaluates vertical placement of letters along the bottom writing guideline.",
     diagnosticFocus:
       "Undulating words, sagging letters, or floating text drifting off the bottom guide line.",
-    keywords: ["baseline", "alignment", "opencv", "guideline", "variance", "drift", "undulating"],
+    keywords: ["baseline", "alignment", "guideline", "variance", "drift", "undulating"],
   },
   {
     id: "size",
     name: "Size Consistency",
-    engine: "OpenCV",
-    engineType: "cv",
+    category: "Vertical Scale",
     icon: ScalingIcon,
     target: "2:1 ratio for ascenders/descenders vs. x-height",
     targetLabel: "2:1 Ascender/x-Height Ratio",
     classroomStandard: "Tall letters (l, b, h) touching headline; short letters (a, c, e) reaching dotted midline",
     description:
-      "Calculates the ratio of lowercase body height (x-height) to ascender and descender heights across consecutive words.",
+      "Calculates the height ratio of lowercase letter bodies relative to tall ascenders and descenders.",
     diagnosticFocus:
       "Disproportionate lowercase letters, stunted ascender loops, or uneven vertical scale.",
-    keywords: ["size", "consistency", "opencv", "ratio", "ascender", "descender", "x-height", "scale"],
+    keywords: ["size", "consistency", "ratio", "ascender", "descender", "x-height", "scale"],
   },
 ];
 

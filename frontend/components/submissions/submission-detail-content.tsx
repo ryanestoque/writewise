@@ -948,10 +948,10 @@ export function SubmissionDetailContent({
                 </div>
                 <div className="space-y-1 max-w-sm mx-auto">
                   <h3 className="text-sm font-heading font-semibold text-foreground">
-                    Analyzing Handwriting Worksheet
+                    Analyzing Handwriting
                   </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    OpenCV quality verification passed. The CNN model is evaluating letter formation, spacing, and baseline stability.
+                    Evaluating letter formation, spacing, slant, and baseline alignment.
                   </p>
                 </div>
               </div>
@@ -966,7 +966,7 @@ export function SubmissionDetailContent({
                     <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-surface dark:bg-card border border-border shadow-xs">
                       <div className="space-y-0.5">
                         <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                          Composite Assessment
+                          Overall Score
                         </h3>
                         <div className="flex items-center gap-2">
                           <span className="text-xl sm:text-2xl font-sans font-bold text-foreground tabular-nums">
@@ -992,11 +992,8 @@ export function SubmissionDetailContent({
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                          5-Criterion Breakdown
+                          Criteria Breakdown
                         </h3>
-                        <span className="text-xs text-muted-foreground">
-                          Tap to focus coaching tip
-                        </span>
                       </div>
 
                       <div className="space-y-1">
@@ -1082,10 +1079,6 @@ export function SubmissionDetailContent({
                                   aria-label={`${c.name} coaching tip`}
                                   className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none"
                                 >
-                                  <div className="flex items-center gap-1 text-[11px] font-semibold text-brand-800 dark:text-brand-300">
-                                    <Info className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                                    <h4 className="font-semibold text-brand-800 dark:text-brand-300">Diagnostic Goal:</h4>
-                                  </div>
                                   <p className="text-[11px] text-foreground/80 leading-relaxed">
                                     {activeCriterionInfo.rubricGoal}
                                   </p>
@@ -1318,10 +1311,6 @@ export function SubmissionDetailContent({
                                         aria-label={`${criterion.shortName} coaching tip`}
                                         className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none"
                                       >
-                                        <div className="flex items-center gap-1 text-[11px] font-semibold text-brand-800 dark:text-brand-300">
-                                          <Info className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                                          <h4 className="font-semibold text-brand-800 dark:text-brand-300">Diagnostic Goal:</h4>
-                                        </div>
                                         <p className="text-[11px] text-foreground/80 leading-relaxed">
                                           {activeCriterionInfo.rubricGoal}
                                         </p>
@@ -1399,11 +1388,8 @@ export function SubmissionDetailContent({
                     <div className="flex items-center justify-between text-xs font-semibold text-brand-900 dark:text-brand-200">
                       <h3 className="flex items-center gap-1.5 font-semibold text-brand-900 dark:text-brand-200">
                         <Info className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                        <span>{selectedCriterion} Diagnostic Guide</span>
+                        <span>{selectedCriterion} Guide</span>
                       </h3>
-                      <span className="text-[10px] text-brand-700 dark:text-brand-300 font-medium">
-                        Criterion Guide
-                      </span>
                     </div>
                     <p className="text-[11px] sm:text-xs text-foreground/85 leading-snug">
                       {activeCriterionInfo.rubricGoal}
@@ -1411,7 +1397,7 @@ export function SubmissionDetailContent({
                     <div className="pt-1 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1.5 text-[11px] sm:text-xs text-brand-800 dark:text-brand-300">
                       <Eye className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
                       <span className="leading-normal">
-                        <strong>Coaching tip:</strong> {activeCriterionInfo.coachingTip}
+                        <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
                       </span>
                     </div>
                   </div>

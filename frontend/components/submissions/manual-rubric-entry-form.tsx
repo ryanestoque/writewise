@@ -32,39 +32,39 @@ export const CRITERIA_GUIDE: Record<
 > = {
   "Letter Formation": {
     rubricGoal:
-      "Evaluates ascender loop closures (b, d, h, k, l) and descender loops (g, j, p, q, y, z) via Teacher Rubric in Phase 1 (automated via fine-tuned CNN in Phase 2).",
+      "Check loop closures on tall/descending stems (b, d, g, l) and smooth cursive connections.",
     coachingTip:
-      "Guide the student to connect cursive loops smoothly without disjointed strokes or incomplete oval closures.",
+      "Encourage continuous strokes without lifting the pencil inside letter loops.",
   },
   "Size Consistency": {
     rubricGoal:
-      "Evaluates letter proportion relative to 3-line penmanship guidelines (headline, midline, baseline).",
+      "Check that short letters reach the dotted midline and tall letters touch the headline.",
     coachingTip:
-      "Ensure lowercase x-height letters (a, c, e, m, n, o, r, s, u, v, w, x) reach precisely up to the dotted midline.",
+      "Remind student that lowercase bodies (a, c, e, o) should stay below the dotted midline.",
   },
   Spacing: {
     rubricGoal:
-      "Measures inter-word gaps and consistent spacing between connected cursive characters.",
+      "Check even gaps between letters and about one letter width between words.",
     coachingTip:
-      "Standard handwriting spacing should equal approximately one lowercase 'o' between letters and a two-finger gap between words.",
+      "Aim for a one-finger space between words to prevent crowding.",
   },
   "Slant Angle": {
     rubricGoal:
-      "Measures cursive stroke tilt consistency against the standard 6.0°–15.0° forward slant angle relative to vertical guideline perpendicular (75.0°–84.0° from horizontal baseline).",
+      "Check consistent ~68° forward lean across all letters and stems.",
     coachingTip:
-      "Encourage the student to keep paper angled at 30°–45° on their desk to maintain parallel, uniform forward slant.",
+      "Angling the paper slightly on the desk helps maintain a steady forward lean.",
   },
   Slant: {
     rubricGoal:
-      "Measures cursive stroke tilt consistency against the standard 6.0°–15.0° forward slant angle relative to vertical guideline perpendicular (75.0°–84.0° from horizontal baseline).",
+      "Check consistent ~68° forward lean across all letters and stems.",
     coachingTip:
-      "Encourage the student to keep paper angled at 30°–45° on their desk to maintain parallel, uniform forward slant.",
+      "Angling the paper slightly on the desk helps maintain a steady forward lean.",
   },
   "Baseline Alignment": {
     rubricGoal:
-      "Evaluates stroke drift along the bottom solid ruling line across every word.",
+      "Check that letters rest evenly along the solid bottom guideline.",
     coachingTip:
-      "Check that letters rest stably on the baseline without floating upward or sinking beneath the bottom guideline.",
+      "Watch for words that float above or sag below the baseline ruling.",
   },
 };
 
@@ -577,13 +577,14 @@ export function ManualRubricEntryForm({
           </Badge>
         </div>
 
-        {/* Second Row: Subtitle and Mode Switcher */}
-        <div className="flex flex-col @[440px]:flex-row @[440px]:items-center justify-between gap-2">
-          <p className="text-[11px] text-muted-foreground leading-normal flex-1">
-            Evaluate student penmanship across 5 core criteria to finalize assessment scores.
-          </p>
+        {/* Second Row: Layout Mode Switcher */}
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5 shrink-0">
+            <SlidersHorizontal className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+            <span>Presets:</span>
+          </span>
 
-          <div className="flex items-center p-0.5 rounded-lg bg-muted/60 border border-border/80 shrink-0 self-start @[440px]:self-auto">
+          <div className="flex items-center p-0.5 rounded-lg bg-muted/60 border border-border/80 shrink-0">
             <button
               type="button"
               onClick={() => setLayoutMode("stepper")}
@@ -593,7 +594,7 @@ export function ManualRubricEntryForm({
                   : "text-muted-foreground hover:text-foreground"
               }`}
               aria-pressed={layoutMode === "stepper"}
-              title="Focus Stepper Mode (1 criterion at a time)"
+              title="Focus Mode (1 criterion at a time)"
             >
               <Layers className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
               <span>Focus</span>
@@ -607,7 +608,7 @@ export function ManualRubricEntryForm({
                   : "text-muted-foreground hover:text-foreground"
               }`}
               aria-pressed={layoutMode === "list"}
-              title="List Mode (show all 5 criteria)"
+              title="All Mode (show all 5 criteria)"
             >
               <LayoutList className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
               <span>All (5)</span>
@@ -618,21 +619,14 @@ export function ManualRubricEntryForm({
 
       {/* Quick Batch Presets Row */}
       <div className="space-y-1.5 pt-0.5 pb-0.5">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5 shrink-0">
-            <SlidersHorizontal className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-            <span>Batch Presets:</span>
-          </span>
-
-          {compositeRubric && (
-            <div className="flex items-center gap-1.5 text-[11px] shrink-0 font-sans tabular-nums">
-              <span className="text-muted-foreground hidden @[440px]:inline">Cumulative:</span>
-              <span className="font-semibold text-foreground">
-                {compositeRubric.totalPoints}/{compositeRubric.maxPoints} pts ({compositeRubric.avgPercentage}%)
-              </span>
-            </div>
-          )}
-        </div>
+        {compositeRubric && (
+          <div className="flex items-center justify-end gap-1.5 text-[11px] font-sans tabular-nums">
+            <span className="text-muted-foreground">Score:</span>
+            <span className="font-semibold text-foreground">
+              {compositeRubric.totalPoints}/{compositeRubric.maxPoints} pts ({compositeRubric.avgPercentage}%)
+            </span>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 @[440px]:grid-cols-4 gap-1.5 w-full">
           <button
@@ -688,25 +682,13 @@ export function ManualRubricEntryForm({
 
       {/* Keyboard Shortcuts Hint Bar */}
       {showKeyboardHelp && (
-        <div className="p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-[11px] text-brand-900 dark:text-brand-200 space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none">
-          <div className="flex items-center gap-1.5 font-semibold">
-            <Keyboard className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-            <span>Fast Keyboard Grading</span>
+        <div className="p-2 rounded-lg bg-muted/40 border border-border/70 text-[11px] text-muted-foreground flex items-center justify-between gap-2 flex-wrap animate-in fade-in-50 duration-150 motion-reduce:animate-none">
+          <div className="flex items-center gap-3">
+            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">1–4</kbd> Rate</span>
+            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Alt+1–4</kbd> Set all</span>
+            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">J/K</kbd> Prev/Next</span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px] text-brand-800 dark:text-brand-300">
-            <div><kbd className="px-1.5 py-0.5 rounded bg-background border border-brand-300 font-mono font-bold text-[11px]">1</kbd> Needs Imp.</div>
-            <div><kbd className="px-1.5 py-0.5 rounded bg-background border border-brand-300 font-mono font-bold text-[11px]">2</kbd> Developing</div>
-            <div><kbd className="px-1.5 py-0.5 rounded bg-background border border-brand-300 font-mono font-bold text-[11px]">3</kbd> Satisfactory</div>
-            <div><kbd className="px-1.5 py-0.5 rounded bg-background border border-brand-300 font-mono font-bold text-[11px]">4</kbd> Excellent</div>
-          </div>
-          <div className="pt-1 border-t border-brand-200/60 dark:border-brand-900/60 flex items-center justify-between gap-2 flex-wrap text-muted-foreground text-[10.5px]">
-            <span><kbd className="px-1 py-0.5 rounded bg-background border border-border font-mono text-[10px]">Alt+1</kbd> All Needs Imp.</span>
-            <span><kbd className="px-1 py-0.5 rounded bg-background border border-border font-mono text-[10px]">Alt+2</kbd> All Developing</span>
-            <span><kbd className="px-1 py-0.5 rounded bg-background border border-border font-mono text-[10px]">Alt+3</kbd> All Satisfactory</span>
-            <span><kbd className="px-1 py-0.5 rounded bg-background border border-border font-mono text-[10px]">Alt+4</kbd> All Excellent</span>
-            <span><kbd className="px-1 py-0.5 rounded bg-background border border-border font-mono text-[10px]">Ctrl+Enter</kbd> Submit</span>
-            <span><kbd className="px-1 py-0.5 rounded bg-background border border-border font-mono text-[10px]">J/K</kbd> Prev/Next</span>
-          </div>
+          <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Ctrl+Enter</kbd> Submit</span>
         </div>
       )}
 
@@ -869,18 +851,14 @@ export function ManualRubricEntryForm({
 
                 {/* Inline Pedagogical Coaching Guidance */}
                 {guide && (
-                  <div className="mt-2 p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1">
-                    <div className="flex items-center gap-1 text-[11px] font-semibold text-brand-800 dark:text-brand-300">
-                      <Info className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                      <span>Diagnostic Goal:</span>
-                    </div>
-                    <p className="text-[11px] text-foreground/80 leading-relaxed">
+                  <div className="mt-2 p-2.5 rounded-lg bg-brand-50/50 dark:bg-brand-950/30 border border-brand-200/70 dark:border-brand-900 text-xs space-y-1">
+                    <p className="text-[11px] text-foreground/85 leading-relaxed">
                       {guide.rubricGoal}
                     </p>
-                    <div className="pt-1 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1 text-[11px] text-brand-800 dark:text-brand-300">
+                    <div className="pt-1 border-t border-brand-200/50 dark:border-brand-900/50 flex items-start gap-1 text-[11px] text-muted-foreground">
                       <Eye className="size-3 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
                       <span className="leading-normal">
-                        <strong>Tip:</strong> {guide.coachingTip}
+                        <strong className="text-foreground">Tip:</strong> {guide.coachingTip}
                       </span>
                     </div>
                   </div>
