@@ -21,6 +21,7 @@ import {
   OverlayToolbar,
   DiagnosticFallbackBanner,
   extractDiagnosticOverlay,
+  getAttentionItems,
   type CriterionFilter,
   type DiagnosticOverlayData,
   type ActiveAnnotationHover,
@@ -807,7 +808,12 @@ export function SubmissionDetailContent({
                     activeCriterion={activeOverlayCriterion}
                     onChangeCriterion={(c) => {
                       setActiveOverlayCriterion(c);
-                      setSelectedAttentionItem(null);
+                      const items = getAttentionItems(diagnosticOverlay, c);
+                      if (c !== "all" && items.length > 0) {
+                        setSelectedAttentionItem(items[0]);
+                      } else {
+                        setSelectedAttentionItem(null);
+                      }
                       const name = CRITERION_FILTER_TO_NAME[c];
                       if (name) {
                         setSelectedCriterion(name);

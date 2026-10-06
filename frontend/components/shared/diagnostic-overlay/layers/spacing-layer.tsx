@@ -72,7 +72,7 @@ export const SpacingLayer = memo(function SpacingLayer({
         const minHit = Math.max(36, 36 * hitScale);
         const hitW = Math.max(minHit, width + 8);
         const hitH = Math.max(minHit, tickHeight * 2 + 8);
-        const badgeW = 34 * hitScale;
+        const badgeW = 62 * hitScale;
         const badgeH = 20 * hitScale;
 
         return (
@@ -190,14 +190,15 @@ export const SpacingLayer = memo(function SpacingLayer({
                 />
                 <text
                   x={0}
-                  y={4 * hitScale}
+                  y={0}
+                  dominantBaseline="central"
                   textAnchor="middle"
                   fill="#ffffff"
-                  fontSize={11 * hitScale}
+                  fontSize={10 * hitScale}
                   fontWeight="600"
                   fontFamily="system-ui, sans-serif"
                 >
-                  {gap_ratio}x
+                  {gap_ratio}× x-ht
                 </text>
               </g>
             )}

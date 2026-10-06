@@ -19,6 +19,7 @@ import {
   DiagnosticOverlay,
   OverlayToolbar,
   DiagnosticFallbackBanner,
+  getAttentionItems,
   type CriterionFilter,
   type DiagnosticOverlayData,
   type ActiveAnnotationHover,
@@ -211,7 +212,12 @@ export function WorksheetViewDialog({
                       activeCriterion={activeCriterion}
                       onChangeCriterion={(c) => {
                         setCriterionOverride(c);
-                        setSelectedAttentionItem(null);
+                        const items = getAttentionItems(overlay, c);
+                        if (c !== "all" && items.length > 0) {
+                          setSelectedAttentionItem(items[0]);
+                        } else {
+                          setSelectedAttentionItem(null);
+                        }
                       }}
                       selectedAttentionId={selectedAttentionItem?.id}
                       onSelectAttentionItem={setSelectedAttentionItem}

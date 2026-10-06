@@ -655,7 +655,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1 text-[11px]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1 text-[11px]">
             <div className="flex items-start gap-2">
               <div className="flex size-4 items-center justify-center rounded-xs bg-muted/60 border border-border/70 mt-0.5 shrink-0 p-0.5">
                 <svg width="12" height="12" viewBox="0 0 14 14" fill="none" className="shrink-0" aria-hidden="true">
@@ -694,6 +694,21 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 <p className="font-semibold text-foreground">Practice Areas (Terracotta)</p>
                 <p className="text-muted-foreground leading-snug">
                   Identified irregularities in stroke closure, baseline drift, spacing gaps, or slant tilt.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <div className="flex size-4 items-center justify-center rounded-xs bg-muted/60 border border-border/70 mt-0.5 shrink-0 p-0.5">
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" className="shrink-0" aria-hidden="true">
+                  <line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" strokeWidth="1" strokeDasharray="2 2" strokeOpacity="0.5" />
+                  <line x1="7" y1="13" x2="11" y2="2" stroke={OVERLAY_COLORS.proficient.stroke} strokeWidth="1.5" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">Cursive Slant (8°–16° Tilt)</p>
+                <p className="text-muted-foreground leading-snug">
+                  DepEd / Zaner-Bloser Grade 3 standard recommends an 8°–16° forward slant. Extreme tilts are flagged.
                 </p>
               </div>
             </div>

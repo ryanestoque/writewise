@@ -319,6 +319,13 @@ function TooltipCard({
           </p>
         )}
 
+        {criterion === "spacing" && (
+          <p className="text-[10.5px] font-medium text-muted-foreground mt-1.5 flex items-center gap-1.5">
+            <span className="inline-block size-1.5 rounded-full bg-violet-500 shrink-0" />
+            <span>Measured relative to midline ruling (x-height). Normal range: 1.2× – 3.0×.</span>
+          </p>
+        )}
+
 
         {!isPinned && (
           <div className="mt-1.5 pt-1 border-t border-border/40 text-[10px] text-muted-foreground/75 flex items-center justify-between">

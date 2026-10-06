@@ -96,7 +96,7 @@ export const BaselineLayer = memo(function BaselineLayer({
                 strokeWidth={1.5}
                 vectorEffect="non-scaling-stroke"
                 strokeDasharray={`${6 * hitScale} ${5 * hitScale}`}
-                strokeOpacity={isSpotlight ? 0.85 : 0.65}
+                strokeOpacity={isSpotlight ? 0.85 : 0.35}
               />
             )}
 
@@ -111,7 +111,7 @@ export const BaselineLayer = memo(function BaselineLayer({
                 stroke={OVERLAY_COLORS.guidelines.midline}
                 strokeWidth={1.75}
                 vectorEffect="non-scaling-stroke"
-                strokeOpacity={isSpotlight ? 0.95 : 0.75}
+                strokeOpacity={isSpotlight ? 0.95 : 0.40}
                 strokeDasharray={`${3 * hitScale} ${4 * hitScale}`}
               />
             )}
@@ -126,7 +126,7 @@ export const BaselineLayer = memo(function BaselineLayer({
               stroke={OVERLAY_COLORS.guidelines.baseline}
               strokeWidth={isSpotlight ? 3 : 2.5}
               vectorEffect="non-scaling-stroke"
-              strokeOpacity={isSpotlight ? 1.0 : 0.85}
+              strokeOpacity={isSpotlight ? 1.0 : 0.50}
             />
           </g>
         );
