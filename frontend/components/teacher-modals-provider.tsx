@@ -113,7 +113,7 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
         setRubricOpen((prev) => !prev);
       }
 
-      // Alt+C (Option+C) -> Toggle DepEd cursive alphabet guide
+      // Alt+C (Option+C) -> Toggle cursive alphabet guide
       // Note: On macOS, Option+C produces the character "ç" (e.key === "ç"), so we check e.code === "KeyC" as well.
       if (
         e.altKey &&

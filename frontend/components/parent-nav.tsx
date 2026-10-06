@@ -155,7 +155,7 @@ export function ParentNav({
                 size="sm"
                 className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3 sm:px-2.5 gap-1.5 font-medium border-border/80 hover:bg-muted/50 text-foreground cursor-pointer shadow-2xs touch-manipulation"
                 onClick={onCursiveGuideClick}
-                aria-label="Open Cursive Letter Guide (DepEd Grade 3 Standard)"
+                aria-label="Open Cursive Letter Guide (Grade 3 Standard)"
                 title="Cursive Letter Guide"
               >
                 <PenTool className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />

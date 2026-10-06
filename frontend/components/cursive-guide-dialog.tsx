@@ -9,6 +9,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   PenToolIcon,
   SearchIcon,
   XCircleIcon,
@@ -740,29 +746,223 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
   };
 
   const handleGridKeyDown = (e: React.KeyboardEvent) => {
-    if (!["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].includes(e.key)) return;
+    if (!["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
     e.preventDefault();
     
-    const focusable = Array.from(gridRef.current?.querySelectorAll("button[data-letter-id]") || []) as HTMLButtonElement[];
-    const index = focusable.findIndex(b => b === document.activeElement);
+    const index = filteredLetters.findIndex((l) => l.id === activeLetter.id);
     if (index === -1) return;
     
     let columns = 2; // mobile default
-    if (window.matchMedia("(min-width: 1024px)").matches) columns = 4; // lg and print
-    else if (window.matchMedia("(min-width: 640px)").matches) columns = 3; // sm
+    if (typeof window !== "undefined") {
+      if (window.matchMedia("(min-width: 1024px)").matches) columns = 4;
+      else if (window.matchMedia("(min-width: 640px)").matches) columns = 3;
+    }
 
     let nextIndex = index;
     if (e.key === "ArrowRight") nextIndex = index + 1;
     else if (e.key === "ArrowLeft") nextIndex = index - 1;
     else if (e.key === "ArrowDown") nextIndex = index + columns;
     else if (e.key === "ArrowUp") nextIndex = index - columns;
+    else if (e.key === "Home") nextIndex = 0;
+    else if (e.key === "End") nextIndex = filteredLetters.length - 1;
     
-    nextIndex = Math.max(0, Math.min(nextIndex, focusable.length - 1));
+    nextIndex = Math.max(0, Math.min(nextIndex, filteredLetters.length - 1));
     
-    const nextBtn = focusable[nextIndex];
-    nextBtn?.focus();
-    const newId = nextBtn.dataset.letterId;
-    if (newId) setSelectedLetterId(newId);
+    const targetLetter = filteredLetters[nextIndex];
+    if (targetLetter) {
+      setSelectedLetterId(targetLetter.id);
+      const targetBtn = gridRef.current?.querySelector(`button[data-letter-id="${targetLetter.id}"]`) as HTMLButtonElement | null;
+      targetBtn?.focus();
+    }
+  };
+
+  const renderSpotlightContent = (isMobileSheet = false) => {
+    if (!activeLetter) return null;
+    return (
+      <section
+        aria-label={`Detailed formation guide for Letter ${activeLetter.id}`}
+        className={cn(
+          "rounded-2xl border border-primary/25 bg-linear-to-b from-card via-card to-primary/5 shadow-xs space-y-4 p-4 sm:p-5",
+          isMobileSheet && "border-none shadow-none bg-transparent p-0"
+        )}
+      >
+        {/* Spotlight Header: Navigation + Title */}
+        <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-border/70">
+          <div className="flex items-center gap-2.5">
+            <span className="size-9 rounded-xl bg-primary text-primary-foreground font-heading font-bold text-lg flex items-center justify-center shadow-xs">
+              {activeLetter.id}
+            </span>
+            <div>
+              <h4 className="text-base font-heading font-semibold text-foreground flex items-center gap-2">
+                <span>{activeLetter.name}</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  ({activeLetter.zoneLabel} Letter{activeLetter.isHighJoiner ? " • High Joiner" : ""})
+                </span>
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                Elementary Standard ~{activeLetter.slantDegree}° Forward Slant • 2:1 Proportions
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={handlePrintDetail}
+              className="size-10 sm:size-8 sm:w-auto sm:px-3 rounded-lg border border-border/70 hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer print:hidden"
+              aria-label="Print this letter guide"
+              title="Print this letter guide"
+            >
+              <PrinterIcon className="size-4 sm:mr-1.5" />
+              <span className="hidden sm:inline text-xs font-medium">Print</span>
+            </button>
+            <button
+              type="button"
+              onClick={handlePrevLetter}
+              className="size-10 sm:size-8 rounded-lg border border-border/70 hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer print:hidden"
+              aria-label="Previous cursive letter"
+              title="Previous letter"
+            >
+              <ChevronLeftIcon className="size-4 sm:size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={handleNextLetter}
+              className="size-10 sm:size-8 rounded-lg border border-border/70 hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer print:hidden"
+              aria-label="Next cursive letter"
+              title="Next letter"
+            >
+              <ChevronRightIcon className="size-4 sm:size-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Large Visual Stroke Display on 3-Line Penmanship Ruling */}
+        <div className="w-full h-32 sm:h-36 rounded-xl border border-border/70 bg-background/90 dark:bg-surface/80 relative overflow-hidden flex items-center justify-center shadow-2xs">
+          <svg
+            viewBox="0 0 400 100"
+            preserveAspectRatio="none"
+            role="img"
+            className="w-full h-full select-none"
+            aria-label={`Detailed cursive stroke diagram for ${activeLetter.id}`}
+          >
+            <g aria-hidden="true">
+              {/* Ruling Lines */}
+              {/* Headline at y=25 */}
+              <line x1="10" y1="25" x2="390" y2="25" stroke="currentColor" className="text-slate-400 dark:text-slate-500" strokeWidth="1" strokeOpacity="0.7" />
+              <text x="14" y="21" fontSize="9" className="fill-slate-500 dark:fill-slate-400 font-sans font-medium">Headline</text>
+
+              {/* Midline at y=50 */}
+              <line x1="10" y1="50" x2="390" y2="50" stroke="currentColor" className="text-teal-600 dark:text-teal-400" strokeWidth="1.2" strokeDasharray="4 3" strokeOpacity="0.8" />
+              <text x="14" y="46" fontSize="9" className="fill-teal-600 dark:fill-teal-400 font-sans font-medium">Dotted Midline (x-Height)</text>
+
+              {/* Baseline at y=75 */}
+              <line x1="10" y1="75" x2="390" y2="75" stroke="currentColor" className="text-orange-600 dark:text-orange-400" strokeWidth="1.8" strokeOpacity="0.9" />
+              <text x="14" y="71" fontSize="9" className="fill-orange-600 dark:fill-orange-400 font-sans font-bold">Solid Baseline</text>
+
+              {/* Descender Line at y=90 */}
+              <line x1="10" y1="90" x2="390" y2="90" stroke="currentColor" className="text-slate-300 dark:text-slate-600" strokeWidth="0.8" strokeDasharray="2 2" strokeOpacity="0.5" />
+              <text x="14" y="96" fontSize="8" className="fill-slate-400 font-sans">Descender Zone</text>
+
+              {/* ~68° Slant Guideline */}
+              <line x1="170" y1="85" x2="210" y2="15" stroke="currentColor" className="text-primary" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+              <text x="212" y="20" fontSize="8" className="fill-primary font-sans font-semibold">~68° Slant</text>
+
+              {/* Big Cursive Letters on Baseline */}
+              <text
+                x="50%"
+                y="75"
+                dominantBaseline="alphabetic"
+                textAnchor="middle"
+                className="font-cursive fill-foreground"
+                style={{ fontSize: "56px", fontWeight: 500 }}
+              >
+                {activeLetter.upper} {activeLetter.lower}
+              </text>
+            </g>
+          </svg>
+        </div>
+
+        {/* Stroke Formation Steps (Uppercase & Lowercase) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          {/* Uppercase Steps */}
+          <div className="p-3.5 rounded-xl border border-border/70 bg-card space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+              <span className="size-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[11px] font-bold">
+                {activeLetter.upper}
+              </span>
+              <span>Capital Letter Formation ({activeLetter.upper})</span>
+            </div>
+            <ol className="space-y-1.5 text-xs text-muted-foreground list-decimal list-inside leading-relaxed">
+              {activeLetter.upperSteps.map((step, idx) => (
+                <li key={idx} className="pl-1">
+                  <span className="text-foreground/90">{step}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          {/* Lowercase Steps */}
+          <div className="p-3.5 rounded-xl border border-border/70 bg-card space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+              <span className="size-5 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 flex items-center justify-center text-[11px] font-bold">
+                {activeLetter.lower}
+              </span>
+              <span>Lowercase Letter Formation ({activeLetter.lower})</span>
+            </div>
+            <ol className="space-y-1.5 text-xs text-muted-foreground list-decimal list-inside leading-relaxed">
+              {activeLetter.lowerSteps.map((step, idx) => (
+                <li key={idx} className="pl-1">
+                  <span className="text-foreground/90">{step}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+
+        {/* Coaching Tip & Common Pitfall */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="p-3 rounded-xl border border-teal-500/20 bg-teal-500/5 dark:bg-teal-500/10 space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-teal-800 dark:text-teal-300">
+              <CheckCircle2Icon className="size-3.5 shrink-0" />
+              <span>Pedagogical Coaching Tip</span>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {activeLetter.coachingTip}
+            </p>
+          </div>
+
+          <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 dark:bg-amber-500/10 space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
+              <AlertTriangleIcon className="size-3.5 shrink-0" />
+              <span>Watch Out: Common Pitfall</span>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {activeLetter.commonPitfall}
+            </p>
+          </div>
+        </div>
+
+        {/* Practice Vocabulary Words */}
+        <div className="pt-2 flex items-center gap-2 flex-wrap text-xs">
+          <span className="font-semibold text-muted-foreground flex items-center gap-1">
+            <BookOpenIcon className="size-3.5 text-primary" aria-hidden="true" />
+            Grade 3 Practice Words:
+          </span>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {activeLetter.practiceWords.map((word) => (
+              <span
+                key={word}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border/80 bg-muted/40 font-medium text-foreground"
+              >
+                <span className="font-cursive text-sm text-primary">{word}</span>
+                <span className="text-[10px] text-muted-foreground font-sans">({word})</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
   };
 
   return (
@@ -793,12 +993,10 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                 </p>
               </div>
             </div>
-
-
           </div>
 
           <DialogDescription className="sr-only">
-            Interactive DepEd cursive handwriting guide showing uppercase and lowercase letter formations on 3-line ruling with stroke cues.
+            Interactive cursive handwriting guide showing uppercase and lowercase letter formations on 3-line ruling with stroke cues.
           </DialogDescription>
 
           {/* Search & Case / Zone Filters Bar */}
@@ -965,7 +1163,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-slate-700">
-                Department of Education (DepEd) Elementary Penmanship Standard
+                Elementary Penmanship Standard
               </p>
               <h1 className="text-xl font-bold font-serif">
                 Grade 3 Cursive Handwriting Alphabet Reference Sheet
@@ -988,12 +1186,11 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
           {/* Left: Grid View */}
           <div className={cn(
             "flex-1 overflow-y-auto overscroll-contain focus-visible:outline-none p-3.5 sm:p-5 space-y-5 print:p-4 print:space-y-4 md:border-r border-border/70",
-            isMobileDetailOpen ? "hidden md:block" : "block",
             isPrintingDetail ? "print:hidden" : ""
           )}>
-            {/* DepEd 3-Line Penmanship Ruling Key (Educational Legend) */}
+            {/* 3-Line Penmanship Ruling Key (Educational Legend) */}
             <section
-              aria-label="DepEd 3-Line Penmanship Geometry Legend"
+              aria-label="3-Line Penmanship Geometry Legend"
               className="p-3 sm:p-3.5 rounded-xl border border-border/70 bg-muted/20 dark:bg-card/40 space-y-2.5 print:hidden"
             >
               <div className="flex items-center justify-between flex-wrap gap-2">
@@ -1062,7 +1259,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                         : item.lower;
 
                     return (
-                      <div key={item.id} role="listitem" className="min-w-0">
+                      <div key={item.id} role="listitem" className="min-w-0 print:break-inside-avoid">
                         <button
                           type="button"
                           data-letter-id={item.id}
@@ -1074,7 +1271,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                           aria-pressed={isSelected}
                           aria-label={`Letter ${item.id}. Click to view detailed formation guide.`}
                           className={cn(
-                            "w-full relative group flex flex-col text-left rounded-xl border transition-all duration-150 overflow-hidden cursor-pointer select-none",
+                            "w-full relative group flex flex-col text-left rounded-xl border transition-all duration-150 overflow-hidden cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
                             "h-20 sm:h-24 print:h-20 print:border-black print:bg-white",
                             isSelected
                               ? "border-primary ring-2 ring-primary/40 bg-card shadow-sm dark:bg-card/90"
@@ -1106,207 +1303,32 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
             </section>
           </div>
 
-          {/* Right: Spotlight View (Desktop) / Mobile Modal */}
+          {/* Right: Spotlight View (Desktop) */}
           <div className={cn(
-            "w-full md:w-[420px] lg:w-[480px] shrink-0 bg-muted/20 overflow-y-auto p-4 sm:p-5",
-            isPrintingDetail ? "print:block print:w-full print:bg-white print:p-8" : "print:hidden",
-            isMobileDetailOpen ? "block" : "hidden md:block"
+            "hidden md:block w-[420px] lg:w-[480px] shrink-0 bg-muted/20 overflow-y-auto p-4 sm:p-5",
+            isPrintingDetail ? "print:block print:w-full print:bg-white print:p-8" : "print:hidden"
           )}>
-            {activeLetter && (
-              <section
-                aria-label={`Detailed formation guide for Letter ${activeLetter.id}`}
-                className="rounded-2xl border border-primary/25 bg-linear-to-b from-card via-card to-primary/5 shadow-xs space-y-4 p-4 sm:p-5"
-              >
-                {/* Mobile Back Button */}
-                <button
-                  type="button"
-                  onClick={() => setIsMobileDetailOpen(false)}
-                  className="md:hidden flex items-center justify-center gap-1.5 w-full h-10 mb-3 text-xs font-medium text-muted-foreground hover:text-foreground bg-muted/30 hover:bg-muted/50 border border-border/50 rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                >
-                  <ChevronLeftIcon className="size-4" />
-                  Back to alphabet grid
-                </button>
-
-                {/* Spotlight Header: Navigation + Title */}
-                <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-border/70">
-                  <div className="flex items-center gap-2.5">
-                    <span className="size-9 rounded-xl bg-primary text-primary-foreground font-heading font-bold text-lg flex items-center justify-center shadow-xs">
-                      {activeLetter.id}
-                    </span>
-                    <div>
-                      <h4 className="text-base font-heading font-semibold text-foreground flex items-center gap-2">
-                        <span>{activeLetter.name}</span>
-                        <span className="text-xs font-normal text-muted-foreground">
-                          ({activeLetter.zoneLabel} Letter{activeLetter.isHighJoiner ? " • High Joiner" : ""})
-                        </span>
-                      </h4>
-                      <p className="text-xs text-muted-foreground">
-                        DepEd Standard ~{activeLetter.slantDegree}° Forward Slant • 2:1 Proportions
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={handlePrintDetail}
-                      className="size-10 sm:size-8 sm:w-auto sm:px-3 rounded-lg border border-border/70 hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer print:hidden"
-                      aria-label="Print this letter guide"
-                      title="Print this letter guide"
-                    >
-                      <PrinterIcon className="size-4 sm:mr-1.5" />
-                      <span className="hidden sm:inline text-xs font-medium">Print</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handlePrevLetter}
-                      className="size-10 sm:size-8 rounded-lg border border-border/70 hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer print:hidden"
-                      aria-label="Previous cursive letter"
-                      title="Previous letter"
-                    >
-                      <ChevronLeftIcon className="size-4 sm:size-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleNextLetter}
-                      className="size-10 sm:size-8 rounded-lg border border-border/70 hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer print:hidden"
-                      aria-label="Next cursive letter"
-                      title="Next letter"
-                    >
-                      <ChevronRightIcon className="size-4 sm:size-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Large Visual Stroke Display on 3-Line Penmanship Ruling */}
-                <div className="w-full h-32 sm:h-36 rounded-xl border border-border/70 bg-background/90 dark:bg-surface/80 relative overflow-hidden flex items-center justify-center shadow-2xs">
-                  <svg
-                    viewBox="0 0 400 100"
-                    preserveAspectRatio="none"
-                    role="img"
-                    className="w-full h-full select-none"
-                    aria-label={`Detailed cursive stroke diagram for ${activeLetter.id}`}
-                  >
-                    <g aria-hidden="true">
-                      {/* Ruling Lines */}
-                      {/* Headline at y=25 */}
-                      <line x1="10" y1="25" x2="390" y2="25" stroke="currentColor" className="text-slate-400 dark:text-slate-500" strokeWidth="1" strokeOpacity="0.7" />
-                      <text x="14" y="21" fontSize="9" className="fill-slate-500 dark:fill-slate-400 font-sans font-medium">Headline</text>
-
-                      {/* Midline at y=50 */}
-                      <line x1="10" y1="50" x2="390" y2="50" stroke="currentColor" className="text-teal-600 dark:text-teal-400" strokeWidth="1.2" strokeDasharray="4 3" strokeOpacity="0.8" />
-                      <text x="14" y="46" fontSize="9" className="fill-teal-600 dark:fill-teal-400 font-sans font-medium">Dotted Midline (x-Height)</text>
-
-                      {/* Baseline at y=75 */}
-                      <line x1="10" y1="75" x2="390" y2="75" stroke="currentColor" className="text-orange-600 dark:text-orange-400" strokeWidth="1.8" strokeOpacity="0.9" />
-                      <text x="14" y="71" fontSize="9" className="fill-orange-600 dark:fill-orange-400 font-sans font-bold">Solid Baseline</text>
-
-                      {/* Descender Line at y=90 */}
-                      <line x1="10" y1="90" x2="390" y2="90" stroke="currentColor" className="text-slate-300 dark:text-slate-600" strokeWidth="0.8" strokeDasharray="2 2" strokeOpacity="0.5" />
-                      <text x="14" y="96" fontSize="8" className="fill-slate-400 font-sans">Descender Zone</text>
-
-                      {/* ~68° Slant Guideline */}
-                      <line x1="170" y1="85" x2="210" y2="15" stroke="currentColor" className="text-primary" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
-                      <text x="212" y="20" fontSize="8" className="fill-primary font-sans font-semibold">~68° Slant</text>
-
-                      {/* Big Cursive Letters on Baseline */}
-                      <text
-                        x="50%"
-                        y="75"
-                        dominantBaseline="alphabetic"
-                        textAnchor="middle"
-                        className="font-cursive fill-foreground"
-                        style={{ fontSize: "56px", fontWeight: 500 }}
-                      >
-                        {activeLetter.upper} {activeLetter.lower}
-                      </text>
-                    </g>
-                  </svg>
-                </div>
-
-                {/* Stroke Formation Steps (Uppercase & Lowercase) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  {/* Uppercase Steps */}
-                  <div className="p-3.5 rounded-xl border border-border/70 bg-card space-y-2">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                      <span className="size-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[11px] font-bold">
-                        {activeLetter.upper}
-                      </span>
-                      <span>Capital Letter Formation ({activeLetter.upper})</span>
-                    </div>
-                    <ol className="space-y-1.5 text-xs text-muted-foreground list-decimal list-inside leading-relaxed">
-                      {activeLetter.upperSteps.map((step, idx) => (
-                        <li key={idx} className="pl-1">
-                          <span className="text-foreground/90">{step}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-
-                  {/* Lowercase Steps */}
-                  <div className="p-3.5 rounded-xl border border-border/70 bg-card space-y-2">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                      <span className="size-5 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 flex items-center justify-center text-[11px] font-bold">
-                        {activeLetter.lower}
-                      </span>
-                      <span>Lowercase Letter Formation ({activeLetter.lower})</span>
-                    </div>
-                    <ol className="space-y-1.5 text-xs text-muted-foreground list-decimal list-inside leading-relaxed">
-                      {activeLetter.lowerSteps.map((step, idx) => (
-                        <li key={idx} className="pl-1">
-                          <span className="text-foreground/90">{step}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                </div>
-
-                {/* Coaching Tip & Common Pitfall */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="p-3 rounded-xl border border-teal-500/20 bg-teal-500/5 dark:bg-teal-500/10 space-y-1">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-teal-800 dark:text-teal-300">
-                      <CheckCircle2Icon className="size-3.5 shrink-0" />
-                      <span>DepEd Pedagogical Coaching Tip</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {activeLetter.coachingTip}
-                    </p>
-                  </div>
-
-                  <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 dark:bg-amber-500/10 space-y-1">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
-                      <AlertTriangleIcon className="size-3.5 shrink-0" />
-                      <span>Watch Out: Common Pitfall</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {activeLetter.commonPitfall}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Practice Vocabulary Words */}
-                <div className="pt-2 flex items-center gap-2 flex-wrap text-xs">
-                  <span className="font-semibold text-muted-foreground flex items-center gap-1">
-                    <BookOpenIcon className="size-3.5 text-primary" aria-hidden="true" />
-                    Grade 3 Practice Words:
-                  </span>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {activeLetter.practiceWords.map((word) => (
-                      <span
-                        key={word}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border/80 bg-muted/40 font-medium text-foreground"
-                      >
-                        <span className="font-cursive text-sm text-primary">{word}</span>
-                        <span className="text-[10px] text-muted-foreground font-sans">({word})</span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </section>
-            )}
+            {renderSpotlightContent(false)}
           </div>
         </div>
       </DialogContent>
+
+      {/* Mobile Drawer / Sheet View */}
+      {isMobileDetailOpen && (
+        <Sheet open={isMobileDetailOpen} onOpenChange={setIsMobileDetailOpen}>
+          <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl p-4 overflow-y-auto sm:hidden">
+            <SheetHeader className="p-0 pb-3 border-b border-border/70 flex flex-row items-center justify-between">
+              <SheetTitle className="text-base font-heading font-semibold">
+                Letter {activeLetter?.id} Detail Guide
+              </SheetTitle>
+            </SheetHeader>
+            <div className="pt-4 pb-6">
+              {renderSpotlightContent(true)}
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
     </Dialog>
   );
 }
+

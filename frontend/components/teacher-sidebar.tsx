@@ -295,7 +295,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* DepEd Cursive Alphabet Guide Modal Trigger */}
+              {/* Cursive Alphabet Guide Modal Trigger */}
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => {
@@ -306,7 +306,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                   aria-haspopup="dialog"
                   aria-expanded={cursiveGuideOpen}
                   aria-controls={cursiveGuideOpen ? "cursive-guide-dialog" : undefined}
-                  aria-label="Cursive Alphabet Guide (DepEd Grade 3 Standard Modal)"
+                  aria-label="Cursive Alphabet Guide (Grade 3 Standard Modal)"
                   tooltip={{
                     children: (
                       <div className="flex items-center gap-1.5">

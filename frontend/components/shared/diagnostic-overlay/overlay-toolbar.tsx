@@ -708,7 +708,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
               <div>
                 <p className="font-semibold text-foreground">Cursive Slant (8°–16° Tilt)</p>
                 <p className="text-muted-foreground leading-snug">
-                  DepEd / Zaner-Bloser Grade 3 standard recommends an 8°–16° forward slant. Extreme tilts are flagged.
+                  Zaner-Bloser Grade 3 standard recommends an 8°–16° forward slant. Extreme tilts are flagged.
                 </p>
               </div>
             </div>

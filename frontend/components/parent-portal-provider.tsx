@@ -123,7 +123,7 @@ export function ParentPortalProvider({
         </main>
       </div>
 
-      {/* Global Parent Modals: Upload & DepEd Cursive Guide */}
+      {/* Global Parent Modals: Upload & Cursive Guide */}
       {selectedChildId && selectedChild && (
         <ParentUploadDialog
           open={uploadOpen}
