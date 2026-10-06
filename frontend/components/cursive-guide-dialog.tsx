@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,9 +18,6 @@ import {
   PenToolIcon,
   SearchIcon,
   XCircleIcon,
-  PrinterIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   LayersIcon,
   RotateCcwIcon,
   CheckCircle2Icon,
@@ -56,7 +53,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "A",
     upper: "A",
     lower: "a",
-    name: "Letter A a",
+    name: "Letter Aa",
     zone: "midline",
     zoneLabel: "Midline",
     slantDegree: 68,
@@ -80,7 +77,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "B",
     upper: "B",
     lower: "b",
-    name: "Letter B b",
+    name: "Letter Bb",
     zone: "ascender",
     zoneLabel: "Ascender",
     isHighJoiner: true,
@@ -105,7 +102,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "C",
     upper: "C",
     lower: "c",
-    name: "Letter C c",
+    name: "Letter Cc",
     zone: "midline",
     zoneLabel: "Midline",
     slantDegree: 68,
@@ -129,7 +126,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "D",
     upper: "D",
     lower: "d",
-    name: "Letter D d",
+    name: "Letter Dd",
     zone: "ascender",
     zoneLabel: "Ascender",
     slantDegree: 68,
@@ -153,7 +150,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "E",
     upper: "E",
     lower: "e",
-    name: "Letter E e",
+    name: "Letter Ee",
     zone: "midline",
     zoneLabel: "Midline",
     slantDegree: 68,
@@ -177,7 +174,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "F",
     upper: "F",
     lower: "f",
-    name: "Letter F f",
+    name: "Letter Ff",
     zone: "ascender",
     zoneLabel: "Ascender",
     bothExtremes: true,
@@ -202,7 +199,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "G",
     upper: "G",
     lower: "g",
-    name: "Letter G g",
+    name: "Letter Gg",
     zone: "descender",
     zoneLabel: "Descender",
     slantDegree: 68,
@@ -226,7 +223,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "H",
     upper: "H",
     lower: "h",
-    name: "Letter H h",
+    name: "Letter Hh",
     zone: "ascender",
     zoneLabel: "Ascender",
     slantDegree: 68,
@@ -250,7 +247,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "I",
     upper: "I",
     lower: "i",
-    name: "Letter I i",
+    name: "Letter Ii",
     zone: "midline",
     zoneLabel: "Midline",
     slantDegree: 68,
@@ -273,7 +270,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "J",
     upper: "J",
     lower: "j",
-    name: "Letter J j",
+    name: "Letter Jj",
     zone: "descender",
     zoneLabel: "Descender",
     slantDegree: 68,
@@ -296,7 +293,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "K",
     upper: "K",
     lower: "k",
-    name: "Letter K k",
+    name: "Letter Kk",
     zone: "ascender",
     zoneLabel: "Ascender",
     slantDegree: 68,
@@ -320,7 +317,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "L",
     upper: "L",
     lower: "l",
-    name: "Letter L l",
+    name: "Letter Ll",
     zone: "ascender",
     zoneLabel: "Ascender",
     slantDegree: 68,
@@ -343,7 +340,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "M",
     upper: "M",
     lower: "m",
-    name: "Letter M m",
+    name: "Letter Mm",
     zone: "midline",
     zoneLabel: "Midline",
     slantDegree: 68,
@@ -367,7 +364,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "N",
     upper: "N",
     lower: "n",
-    name: "Letter N n",
+    name: "Letter Nn",
     zone: "midline",
     zoneLabel: "Midline",
     slantDegree: 68,
@@ -389,7 +386,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "O",
     upper: "O",
     lower: "o",
-    name: "Letter O o",
+    name: "Letter Oo",
     zone: "midline",
     zoneLabel: "Midline",
     isHighJoiner: true,
@@ -413,7 +410,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "P",
     upper: "P",
     lower: "p",
-    name: "Letter P p",
+    name: "Letter Pp",
     zone: "descender",
     zoneLabel: "Descender",
     slantDegree: 68,
@@ -436,7 +433,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "Q",
     upper: "Q",
     lower: "q",
-    name: "Letter Q q",
+    name: "Letter Qq",
     zone: "descender",
     zoneLabel: "Descender",
     slantDegree: 68,
@@ -459,7 +456,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "R",
     upper: "R",
     lower: "r",
-    name: "Letter R r",
+    name: "Letter Rr",
     zone: "midline",
     zoneLabel: "Midline",
     slantDegree: 68,
@@ -482,7 +479,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "S",
     upper: "S",
     lower: "s",
-    name: "Letter S s",
+    name: "Letter Ss",
     zone: "midline",
     zoneLabel: "Midline",
     slantDegree: 68,
@@ -505,7 +502,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "T",
     upper: "T",
     lower: "t",
-    name: "Letter T t",
+    name: "Letter Tt",
     zone: "ascender",
     zoneLabel: "Ascender",
     slantDegree: 68,
@@ -528,7 +525,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "U",
     upper: "U",
     lower: "u",
-    name: "Letter U u",
+    name: "Letter Uu",
     zone: "midline",
     zoneLabel: "Midline",
     slantDegree: 68,
@@ -550,7 +547,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "V",
     upper: "V",
     lower: "v",
-    name: "Letter V v",
+    name: "Letter Vv",
     zone: "midline",
     zoneLabel: "Midline",
     isHighJoiner: true,
@@ -573,7 +570,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "W",
     upper: "W",
     lower: "w",
-    name: "Letter W w",
+    name: "Letter Ww",
     zone: "midline",
     zoneLabel: "Midline",
     isHighJoiner: true,
@@ -596,7 +593,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "X",
     upper: "X",
     lower: "x",
-    name: "Letter X x",
+    name: "Letter Xx",
     zone: "midline",
     zoneLabel: "Midline",
     slantDegree: 68,
@@ -617,7 +614,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "Y",
     upper: "Y",
     lower: "y",
-    name: "Letter Y y",
+    name: "Letter Yy",
     zone: "descender",
     zoneLabel: "Descender",
     slantDegree: 68,
@@ -640,7 +637,7 @@ export const CURSIVE_ALPHABET: LetterGuideItem[] = [
     id: "Z",
     upper: "Z",
     lower: "z",
-    name: "Letter Z z",
+    name: "Letter Zz",
     zone: "descender",
     zoneLabel: "Descender",
     slantDegree: 68,
@@ -670,7 +667,6 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
   const [zoneFilter, setZoneFilter] = useState<"all" | "ascender" | "midline" | "descender" | "highJoiner">("all");
   const [selectedLetterId, setSelectedLetterId] = useState<string | null>("A");
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
-  const [isPrintingDetail, setIsPrintingDetail] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -717,28 +713,6 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
     if (!selectedLetterId) return filteredLetters[0] ?? CURSIVE_ALPHABET[0];
     return CURSIVE_ALPHABET.find((l) => l.id === selectedLetterId) ?? filteredLetters[0] ?? CURSIVE_ALPHABET[0];
   }, [selectedLetterId, filteredLetters]);
-
-  // Next / Prev navigation in spotlight
-  const handlePrevLetter = useCallback(() => {
-    const currentIndex = CURSIVE_ALPHABET.findIndex((l) => l.id === activeLetter.id);
-    const prevIndex = (currentIndex - 1 + CURSIVE_ALPHABET.length) % CURSIVE_ALPHABET.length;
-    setSelectedLetterId(CURSIVE_ALPHABET[prevIndex].id);
-  }, [activeLetter.id]);
-
-  const handleNextLetter = useCallback(() => {
-    const currentIndex = CURSIVE_ALPHABET.findIndex((l) => l.id === activeLetter.id);
-    const nextIndex = (currentIndex + 1) % CURSIVE_ALPHABET.length;
-    setSelectedLetterId(CURSIVE_ALPHABET[nextIndex].id);
-  }, [activeLetter.id]);
-
-
-  const handlePrintDetail = () => {
-    setIsPrintingDetail(true);
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => setIsPrintingDetail(false), 500);
-    }, 100);
-  };
 
   const handleClearSearch = () => {
     setSearchQuery("");
@@ -804,37 +778,6 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
               </p>
             </div>
           </div>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={handlePrintDetail}
-              className="size-10 sm:size-8 sm:w-auto sm:px-3 rounded-lg border border-border/70 hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer print:hidden"
-              aria-label="Print this letter guide"
-              title="Print this letter guide"
-            >
-              <PrinterIcon className="size-4 sm:mr-1.5" />
-              <span className="hidden sm:inline text-xs font-medium">Print</span>
-            </button>
-            <button
-              type="button"
-              onClick={handlePrevLetter}
-              className="size-10 sm:size-8 rounded-lg border border-border/70 hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer print:hidden"
-              aria-label="Previous cursive letter"
-              title="Previous letter"
-            >
-              <ChevronLeftIcon className="size-4 sm:size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={handleNextLetter}
-              className="size-10 sm:size-8 rounded-lg border border-border/70 hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer print:hidden"
-              aria-label="Next cursive letter"
-              title="Next letter"
-            >
-              <ChevronRightIcon className="size-4 sm:size-4" />
-            </button>
-          </div>
         </div>
 
         {/* Large Visual Stroke Display on 3-Line Penmanship Ruling */}
@@ -877,7 +820,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                 className="font-cursive fill-foreground"
                 style={{ fontSize: "56px", fontWeight: 500 }}
               >
-                {activeLetter.upper} {activeLetter.lower}
+                {activeLetter.upper}{activeLetter.lower}
               </text>
             </g>
           </svg>
@@ -1158,36 +1101,10 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
           </div>
         </DialogHeader>
 
-        {/* PRINT ONLY HEADER */}
-        <div className={cn("hidden p-6 pb-4 border-b border-black space-y-2 text-black", !isPrintingDetail && "print:block")}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-slate-700">
-                Elementary Penmanship Standard
-              </p>
-              <h1 className="text-xl font-bold font-serif">
-                Grade 3 Cursive Handwriting Alphabet Reference Sheet
-              </h1>
-            </div>
-            <div className="text-right text-xs">
-              <p className="font-semibold">WriteWise Pedagogical Tool</p>
-              <p className="text-slate-600">3-Line Ruling (2:1 Ratio, 60°–75° Slant)</p>
-            </div>
-          </div>
-          <div className="pt-2 text-xs grid grid-cols-3 gap-2 border-t border-slate-300">
-            <div><strong>Top Headline (Blue):</strong> Ascenders & Capitals</div>
-            <div><strong>Dotted Midline (Red):</strong> Lowercase x-Height</div>
-            <div><strong>Bottom Baseline (Blue):</strong> Writing Anchor Base</div>
-          </div>
-        </div>
-
         {/* Split Body */}
-        <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden print:block print:overflow-visible">
+        <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
           {/* Left: Grid View */}
-          <div className={cn(
-            "flex-1 overflow-y-auto overscroll-contain focus-visible:outline-none p-3.5 sm:p-5 space-y-5 print:p-4 print:space-y-4 md:border-r border-border/70",
-            isPrintingDetail ? "print:hidden" : ""
-          )}>
+          <div className="flex-1 overflow-y-auto overscroll-contain focus-visible:outline-none p-3.5 sm:p-5 space-y-5 md:border-r border-border/70">
             {/* 3-Line Penmanship Ruling Key (Educational Legend) */}
             <section
               aria-label="3-Line Penmanship Geometry Legend"
@@ -1253,7 +1170,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                     const isSelected = activeLetter.id === item.id;
                     const letterDisplayText =
                       caseFilter === "pairs"
-                        ? `${item.upper} ${item.lower}`
+                        ? `${item.upper}${item.lower}`
                         : caseFilter === "upper"
                         ? item.upper
                         : item.lower;
@@ -1280,7 +1197,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                         >
                           <div className="relative z-10 flex items-center justify-between px-3 pt-2 pb-0.5 min-w-0">
                             <span className="font-sans font-bold text-xs text-foreground/80 tracking-tight">
-                              {item.id} {item.lower}
+                              {item.id}{item.lower}
                             </span>
                           </div>
                           <div className="relative flex-1 w-full min-h-0 overflow-hidden flex items-center justify-center">
@@ -1304,10 +1221,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
           </div>
 
           {/* Right: Spotlight View (Desktop) */}
-          <div className={cn(
-            "hidden md:block w-[420px] lg:w-[480px] shrink-0 bg-muted/20 overflow-y-auto p-4 sm:p-5",
-            isPrintingDetail ? "print:block print:w-full print:bg-white print:p-8" : "print:hidden"
-          )}>
+          <div className="hidden md:block w-[420px] lg:w-[480px] shrink-0 bg-muted/20 overflow-y-auto p-4 sm:p-5">
             {renderSpotlightContent(false)}
           </div>
         </div>
