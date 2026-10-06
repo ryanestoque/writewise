@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  PenTool,
-  Ruler,
-  Space,
-  Italic,
-  AlignLeft,
-  BarChart3,
-} from "lucide-react";
+
 import type { ClassAverages } from "@/lib/hooks/use-dashboard";
 import { BandBadge } from "@/components/shared/band-badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,7 +15,6 @@ interface SummaryCardsProps {
 interface SummaryCardItem {
   key: keyof Omit<ClassAverages, "scoredStudentsCount" | "totalStudentsCount" | "scoreSource">;
   title: string;
-  icon: typeof PenTool;
   isHeadline?: boolean;
 }
 
@@ -30,33 +22,27 @@ const CARDS_CONFIG: SummaryCardItem[] = [
   {
     key: "composite",
     title: "Overall Composite",
-    icon: BarChart3,
     isHeadline: true,
   },
   {
     key: "letter_formation",
     title: "Letter Formation",
-    icon: PenTool,
   },
   {
     key: "size_consistency",
     title: "Size Consistency",
-    icon: Ruler,
   },
   {
     key: "spacing",
     title: "Spacing Regularity",
-    icon: Space,
   },
   {
     key: "slant",
     title: "Slant Angle",
-    icon: Italic,
   },
   {
     key: "baseline_alignment",
     title: "Baseline Alignment",
-    icon: AlignLeft,
   },
 ];
 
@@ -102,7 +88,6 @@ export function SummaryCards({
     >
       {CARDS_CONFIG.map((card) => {
         const score = averages?.[card.key] ?? null;
-        const Icon = card.icon;
 
         return (
           <div
@@ -118,16 +103,6 @@ export function SummaryCards({
               <span className="text-xs font-semibold text-muted-foreground line-clamp-1">
                 {card.title}
               </span>
-              <div
-                className={cn(
-                  "p-1.5 rounded-lg shrink-0",
-                  card.isHeadline
-                    ? "bg-brand-100 text-brand-700 dark:bg-brand-900/60 dark:text-brand-300"
-                    : "bg-muted/80 text-muted-foreground"
-                )}
-              >
-                <Icon className="size-3.5 sm:size-4" />
-              </div>
             </div>
 
             {/* Score Metric */}

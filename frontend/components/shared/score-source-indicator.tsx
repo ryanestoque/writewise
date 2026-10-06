@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { UserCheck, Cpu } from "lucide-react";
+
 import {
   Tooltip,
   TooltipContent,
@@ -30,12 +30,12 @@ export function ScoreSourceIndicator({
             className
           )}
         >
-          {isManual ? (
-            <UserCheck className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-          ) : (
-            <Cpu className="size-3.5 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
-          )}
-          {!compact && <span>{isManual ? "Teacher-assessed" : "Auto-calibrated"}</span>}
+          <span className={cn(
+            "font-medium",
+            isManual ? "text-brand-600 dark:text-brand-400" : "text-amber-600 dark:text-amber-400"
+          )}>
+            {compact ? (isManual ? "Teacher" : "Auto") : (isManual ? "Teacher-assessed" : "Auto-calibrated")}
+          </span>
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs max-w-xs leading-relaxed">
           {isManual

@@ -242,6 +242,8 @@ WriteWise avoids generic "AI magic" motifs in favor of grounded, domain-specific
 ### Named Rules
 **The Grounded Iconography Rule (No AI Glitter Tropes).** Generic "AI sparkle" icons (`Sparkles`, `Wand2`, `Sparkle`, "magic" stars) are strictly forbidden across WriteWise interfaces. Diagnostic and computational features must use grounded domain icons: `Cpu`/`ScanLine` for automated CV/CNN processing, `Layers`/`Scale` for rubrics and developmental bands, `BarChart3` for class distributions, and `Ruler`/`Compass` for geometric stroke measurements.
 
+**The Functional Iconography Rule.** No Lucide icons for non-interactable elements (e.g., headers, pill badges, stat cards). Rely on typography and visual hierarchy instead. Exceptions are strictly limited to empty states and explicit status/alert indicators (e.g., error warnings, success checkmarks).
+
 ## Do's and Don'ts
 
 ### Do:
@@ -259,4 +261,5 @@ WriteWise avoids generic "AI magic" motifs in favor of grounded, domain-specific
 - **Don't** invent random spacing values outside the 4px scale steps.
 - **Don't** build custom camera viewports when native mobile capture inputs are more reliable.
 - **Don't** use generic AI "sparkle" or "magic" icons (`Sparkles`, `Wand2`, `Sparkle`). Use grounded domain icons representing real measurements and pedagogy.
+- **Don't** use Lucide icons for non-interactable elements like headers, pill badges, and stat cards.
 
