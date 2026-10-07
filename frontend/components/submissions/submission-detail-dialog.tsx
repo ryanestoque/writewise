@@ -7,18 +7,12 @@ import {
 import type { Submission } from "@/lib/hooks/use-submissions";
 import {
   SubmissionDetailContent,
-  getInitials,
-  getAvatarColor,
-  AVATAR_PALETTES,
   formatDateFull,
   CRITERION_NAME_TO_FILTER,
   CRITERION_FILTER_TO_NAME,
 } from "./submission-detail-content";
 
 export {
-  getInitials,
-  getAvatarColor,
-  AVATAR_PALETTES,
   formatDateFull,
   CRITERION_NAME_TO_FILTER,
   CRITERION_FILTER_TO_NAME,

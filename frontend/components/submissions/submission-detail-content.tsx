@@ -31,7 +31,6 @@ import {
   CheckCircle2,
   Clock,
   User,
-  GraduationCap,
   FileText,
   ChevronLeft,
   ChevronRight,
@@ -68,30 +67,7 @@ import { SubmissionRejectionCard } from "./submission-rejection-card";
 import { RawMeasurementsTable } from "./raw-measurements-table";
 import { getScoreBandLabel } from "@/lib/utils/submission-status";
 
-export function getInitials(name: string): string {
-  if (!name) return "";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
 
-export const AVATAR_PALETTES = [
-  "bg-brand-100 text-brand-900 border-brand-300/70 dark:bg-brand-950/80 dark:text-brand-200 dark:border-brand-800",
-  "bg-emerald-100 text-emerald-900 border-emerald-300/70 dark:bg-emerald-950/80 dark:text-emerald-200 dark:border-emerald-800",
-  "bg-amber-100 text-amber-900 border-amber-300/70 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-800",
-  "bg-teal-100 text-teal-900 border-teal-300/70 dark:bg-teal-950/80 dark:text-teal-200 dark:border-teal-800",
-  "bg-slate-100 text-slate-800 border-slate-300/70 dark:bg-slate-850 dark:text-slate-200 dark:border-slate-700",
-  "bg-stone-100 text-stone-800 border-stone-300/70 dark:bg-stone-850 dark:text-stone-200 dark:border-stone-700",
-];
-
-export function getAvatarColor(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % AVATAR_PALETTES.length;
-  return AVATAR_PALETTES[index];
-}
 
 export function formatDateFull(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-US", {
@@ -611,29 +587,6 @@ export function SubmissionDetailContent({
       {/* Main Student Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 w-full">
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-          {/* Student Avatar */}
-          <div
-            className={cn(
-              "flex size-9 sm:size-10 items-center justify-center rounded-xl border text-sm font-bold shrink-0 select-none shadow-2xs",
-              submission.student?.full_name
-                ? getAvatarColor(submission.student.full_name)
-                : "bg-brand-100 text-brand-700 border-brand-200/60 dark:bg-brand-950 dark:text-brand-300 dark:border-brand-900"
-            )}
-            role="img"
-            aria-label={
-              submission.student?.full_name
-                ? `${submission.student.full_name}'s avatar`
-                : "Student avatar"
-            }
-          >
-            {submission.student?.full_name && getInitials(submission.student.full_name) ? (
-              <span aria-hidden="true" className="tracking-tight font-semibold text-xs sm:text-sm">
-                {getInitials(submission.student.full_name)}
-              </span>
-            ) : (
-              <GraduationCap className="size-4 sm:size-5" aria-hidden="true" />
-            )}
-          </div>
 
           {/* Student Name and Upload Metadata */}
           <div className="min-w-0 flex-1">

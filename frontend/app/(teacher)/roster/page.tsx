@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import {
@@ -58,31 +57,7 @@ import { toast } from "sonner";
 type SortField = "full_name" | "section" | "created_at";
 type SortDirection = "asc" | "desc";
 
-function getInitials(name: string) {
-  if (!name) return "";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
 
-// Consistent subtle avatar background based on student name
-const AVATAR_PALETTES = [
-  "bg-amber-100 text-amber-800 border-amber-200/60 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-900",
-  "bg-emerald-100 text-emerald-800 border-emerald-200/60 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-900",
-  "bg-blue-100 text-blue-800 border-blue-200/60 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-900",
-  "bg-purple-100 text-purple-800 border-purple-200/60 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-900",
-  "bg-brand-100 text-brand-800 border-brand-200/60 dark:bg-brand-950 dark:text-brand-300 dark:border-brand-900",
-  "bg-rose-100 text-rose-800 border-rose-200/60 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-900",
-];
-
-function getAvatarColor(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % AVATAR_PALETTES.length;
-  return AVATAR_PALETTES[index];
-}
 
 export default function RosterPage() {
   const queryClient = useQueryClient();
@@ -633,13 +608,7 @@ export default function RosterPage() {
 
                           {/* Name + Avatar + Parent Email */}
                           <TableCell className="text-foreground font-medium py-3">
-                            <div className="flex items-center gap-3">
-                              <Avatar size="sm" className={`border ${getAvatarColor(student.full_name)}`}>
-                                <AvatarFallback className="text-[11px] font-semibold bg-transparent">
-                                  {getInitials(student.full_name)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex flex-col min-w-0">
+                            <div className="flex flex-col min-w-0">
                                 <span className="font-medium text-foreground tracking-tight truncate">{student.full_name}</span>
                                 {student.parent_email ? (
                                   <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
@@ -679,7 +648,6 @@ export default function RosterPage() {
                                   </span>
                                 )}
                               </div>
-                            </div>
                           </TableCell>
 
                           {/* Section Badge */}
@@ -804,12 +772,6 @@ export default function RosterPage() {
                               aria-label={`Select ${student.full_name}`}
                             />
                           </div>
-
-                          <Avatar size="sm" className={`border ${getAvatarColor(student.full_name)} shrink-0`}>
-                            <AvatarFallback className="text-[11px] font-semibold bg-transparent">
-                              {getInitials(student.full_name)}
-                            </AvatarFallback>
-                          </Avatar>
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">

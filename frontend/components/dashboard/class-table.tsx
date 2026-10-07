@@ -13,7 +13,6 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Tooltip,
   TooltipTrigger,
@@ -60,30 +59,7 @@ interface ClassTableProps {
   className?: string;
 }
 
-function getInitials(name: string) {
-  if (!name) return "";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
 
-const AVATAR_PALETTES = [
-  "bg-brand-100 text-brand-900 border-brand-300/70 dark:bg-brand-950/80 dark:text-brand-200 dark:border-brand-800",
-  "bg-emerald-100 text-emerald-900 border-emerald-300/70 dark:bg-emerald-950/80 dark:text-emerald-200 dark:border-emerald-800",
-  "bg-amber-100 text-amber-900 border-amber-300/70 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-800",
-  "bg-teal-100 text-teal-900 border-teal-300/70 dark:bg-teal-950/80 dark:text-teal-200 dark:border-teal-800",
-  "bg-slate-100 text-slate-800 border-slate-300/70 dark:bg-slate-850 dark:text-slate-200 dark:border-slate-700",
-  "bg-stone-100 text-stone-800 border-stone-300/70 dark:bg-stone-850 dark:text-stone-200 dark:border-stone-700",
-];
-
-function getAvatarColor(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % AVATAR_PALETTES.length;
-  return AVATAR_PALETTES[index];
-}
 
 export type BandFilter =
   | "all"
@@ -519,23 +495,13 @@ export function ClassTable({
                     >
                       {/* Student Name */}
                       <TableCell className="py-3 px-4 font-medium">
-                        <div className="flex items-center gap-3">
-                          <Avatar
-                            className={cn(
-                              "size-8 border text-xs font-semibold shrink-0",
-                              getAvatarColor(student.fullName)
-                            )}
-                          >
-                            <AvatarFallback>{getInitials(student.fullName)}</AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <p className="text-xs font-semibold text-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors truncate">
-                              {student.fullName}
-                            </p>
-                            <p className="text-[11px] text-muted-foreground sm:hidden truncate">
-                              {student.section}
-                            </p>
-                          </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors truncate">
+                            {student.fullName}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground sm:hidden truncate">
+                            {student.section}
+                          </p>
                         </div>
                       </TableCell>
 

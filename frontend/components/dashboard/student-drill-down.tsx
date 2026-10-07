@@ -8,7 +8,6 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   type StudentScoreSummary,
@@ -29,7 +28,7 @@ import {
   Award,
   ChevronRight,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+
 
 interface StudentDrillDownProps {
   student: StudentScoreSummary | null;
@@ -38,30 +37,7 @@ interface StudentDrillDownProps {
   onOpenSubmission: (submissionId: string, activityId: string) => void;
 }
 
-function getInitials(name: string) {
-  if (!name) return "";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
 
-const AVATAR_PALETTES = [
-  "bg-amber-100 text-amber-900 border-amber-300/70 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-800",
-  "bg-emerald-100 text-emerald-900 border-emerald-300/70 dark:bg-emerald-950/80 dark:text-emerald-200 dark:border-emerald-800",
-  "bg-blue-100 text-blue-900 border-blue-300/70 dark:bg-blue-950/80 dark:text-blue-200 dark:border-blue-800",
-  "bg-purple-100 text-purple-900 border-purple-300/70 dark:bg-purple-950/80 dark:text-purple-200 dark:border-purple-800",
-  "bg-brand-100 text-brand-900 border-brand-300/70 dark:bg-brand-950/80 dark:text-brand-200 dark:border-brand-800",
-  "bg-rose-100 text-rose-900 border-rose-300/70 dark:bg-rose-950/80 dark:text-rose-200 dark:border-rose-800",
-];
-
-function getAvatarColor(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % AVATAR_PALETTES.length;
-  return AVATAR_PALETTES[index];
-}
 
 export function StudentDrillDownDrawer({
   student,
@@ -89,14 +65,6 @@ export function StudentDrillDownDrawer({
         {/* Drawer Header */}
         <SheetHeader className="p-5 sm:p-6 bg-card border-b border-border/80 shrink-0 space-y-3">
           <div className="flex items-start gap-3.5 pr-8">
-            <Avatar
-              className={cn(
-                "size-12 border text-sm font-semibold shrink-0 shadow-xs mt-0.5",
-                getAvatarColor(student.fullName)
-              )}
-            >
-              <AvatarFallback>{getInitials(student.fullName)}</AvatarFallback>
-            </Avatar>
             <div className="flex-1 min-w-0 space-y-1">
               <SheetTitle className="font-heading text-lg sm:text-xl font-bold text-foreground leading-snug break-words">
                 {student.fullName}
