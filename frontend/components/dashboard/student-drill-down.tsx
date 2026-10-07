@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   Sheet,
   SheetContent,
@@ -51,6 +51,17 @@ export function StudentDrillDownDrawer({
 }: StudentDrillDownProps) {
   const studentId = student?.studentId ?? null;
   const { data: history = [], isLoading } = useStudentScoreHistory(studentId);
+  const [accordionValue, setAccordionValue] = useState<string[]>([]);
+
+  const allCriteriaKeys = useMemo(() => RUBRIC_CRITERIA.map((c) => c.key), []);
+
+  const toggleExpandAll = () => {
+    if (accordionValue.length === allCriteriaKeys.length) {
+      setAccordionValue([]);
+    } else {
+      setAccordionValue(allCriteriaKeys);
+    }
+  };
 
   // Latest submission info
   const latestSubmission = useMemo(() => {
@@ -146,7 +157,7 @@ export function StudentDrillDownDrawer({
                   No Graded Worksheets Yet
                 </h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Once a handwriting submission is uploaded and evaluated for {student.fullName}, diagnostic breakdowns across all 5 criteria, score trend analytics, and past submissions will be displayed here automatically.
+                  Upload a handwriting worksheet for {student.fullName} to see diagnostic breakdowns and score trends here.
                 </p>
               </div>
             </div>
@@ -219,41 +230,64 @@ export function StudentDrillDownDrawer({
                   <h3 className="font-sans text-sm font-semibold text-foreground flex items-center gap-1.5">
                     <span>Diagnostic Breakdown</span>
                   </h3>
-                  {latestSubmission && (
-                    <span className="text-[11px] font-medium text-muted-foreground tabular-nums">
-                      {new Date(latestSubmission.submissionDate).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={toggleExpandAll}
+                      className="text-xs font-medium text-primary hover:underline cursor-pointer"
+                    >
+                      {accordionValue.length === allCriteriaKeys.length ? "Collapse all" : "Expand all"}
+                    </button>
+                    {latestSubmission && (
+                      <>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="text-[11px] font-medium text-muted-foreground tabular-nums">
+                          {new Date(latestSubmission.submissionDate).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   {/* Accessible Band Reference Legend Key */}
-                  <div className="p-2.5 rounded-lg bg-muted/20 border border-border/50 text-[11px] font-medium text-muted-foreground">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {RUBRIC_BANDS.map((band) => {
-                        let range = "";
-                        if (band.band === "needs_improvement") range = "0–24%";
-                        else if (band.band === "developing") range = "25–49%";
-                        else if (band.band === "satisfactory") range = "50–74%";
-                        else if (band.band === "excellent") range = "75–100%";
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 p-2.5 rounded-lg bg-muted/20 border border-border/50 text-[11px] font-medium text-muted-foreground">
+                    {RUBRIC_BANDS.map((band) => {
+                      let range = "";
+                      if (band.band === "needs_improvement") range = "0–24%";
+                      else if (band.band === "developing") range = "25–49%";
+                      else if (band.band === "satisfactory") range = "50–74%";
+                      else if (band.band === "excellent") range = "75–100%";
 
-                        return (
-                          <div key={band.band} className="flex items-center gap-1.5 min-w-0">
-                            <div className={`size-2 rounded-full shrink-0 ${band.dotColor}`} />
-                            <span className="truncate">
-                              {band.label}: <strong className="text-foreground font-semibold tabular-nums">{range}</strong>
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                      return (
+                        <div key={band.band} className="flex items-center gap-1.5">
+                          <div className={cn("size-2 rounded-full shrink-0", band.dotColor)} />
+                          <span>
+                            {band.label} <span className="opacity-70 tabular-nums">({range})</span>
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
 
-                  <Accordion className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border shadow-warm-xs">
+                  <Accordion
+                    multiple
+                    value={accordionValue}
+                    onValueChange={(val) =>
+                      setAccordionValue(
+                        Array.isArray(val)
+                          ? (val as string[])
+                          : val
+                          ? [val as string]
+                          : []
+                      )
+                    }
+                    className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border shadow-warm-xs"
+                  >
                     {RUBRIC_CRITERIA.map((criterion) => {
                       const score = student.scores[criterion.criterionKey];
                       const band =
@@ -263,31 +297,28 @@ export function StudentDrillDownDrawer({
                         band && DIAGNOSTIC_NOTES[criterion.criterionKey]?.[band];
 
                       return (
-                        <AccordionItem value={criterion.key} key={criterion.key} className="border-0 hover:bg-muted/15 transition-colors px-3.5 sm:px-4">
-                          <AccordionTrigger className="hover:no-underline py-3.5 sm:py-4">
-                            <div className="flex items-center justify-between w-full pr-4">
-                              <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
+                        <AccordionItem value={criterion.key} key={criterion.key} className="border-0 hover:bg-muted/15 transition-colors">
+                          <AccordionTrigger className="hover:no-underline px-3.5 sm:px-4 py-3 sm:py-3.5 items-center gap-3">
+                            <div className="flex items-center justify-between flex-1 min-w-0 pr-1">
+                              <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
                                 {criterion.shortName}
                               </span>
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center justify-end gap-2 w-20 shrink-0 text-right">
                                 {score !== null && (
                                   <>
-                                    <span className="font-sans text-xs font-semibold tabular-nums text-foreground">
+                                    <span className="font-sans text-xs font-bold tabular-nums text-foreground">
                                       {score.toFixed(1)}%
                                     </span>
-                                    <span className={cn("w-2 h-2 rounded-full shrink-0", getBandMeta(band).dotColor)} />
+                                    <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", getBandMeta(band).dotColor)} />
                                   </>
                                 )}
                               </div>
                             </div>
                           </AccordionTrigger>
 
-                          <div className="pb-3.5 sm:pb-4">
+                          <AccordionContent className="px-3.5 sm:px-4 pb-4 space-y-3 border-0">
                             <BandPositionBar score={score} showLabel={false} height="sm" />
-                          </div>
-
-                          {diagnosticNote && (
-                            <AccordionContent className="pb-4 border-0">
+                            {diagnosticNote && (
                               <div className="p-3 rounded-lg bg-muted/30 border border-border text-xs text-muted-foreground leading-relaxed">
                                 <div className="flex items-center gap-1.5 font-semibold text-foreground/90 mb-1">
                                   <Info className="size-3.5 text-primary shrink-0" />
@@ -295,8 +326,8 @@ export function StudentDrillDownDrawer({
                                 </div>
                                 <p className="text-muted-foreground">{diagnosticNote}</p>
                               </div>
-                            </AccordionContent>
-                          )}
+                            )}
+                          </AccordionContent>
                         </AccordionItem>
                       );
                     })}

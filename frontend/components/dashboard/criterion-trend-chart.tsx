@@ -109,6 +109,11 @@ export function CriterionTrendChart({
     activeCriteria.slant ||
     activeCriteria.baseline_alignment;
 
+  const hasActiveCriteria = useMemo(
+    () => Object.values(activeCriteria).some(Boolean),
+    [activeCriteria]
+  );
+
   const chartData = useMemo(() => {
     return history.map((item, idx) => {
       const date = new Date(item.submissionDate);
@@ -313,12 +318,30 @@ export function CriterionTrendChart({
           </p>
 
           {/* Chart Box with Accessible Region */}
-          <div
-            role="region"
-            aria-label="Cursive handwriting progress trend chart across 5 skills"
-            className="h-64 sm:h-72 w-full pt-1"
-          >
-            <ResponsiveContainer width="100%" height="100%">
+          {!hasActiveCriteria ? (
+            <div className="h-64 sm:h-72 w-full flex flex-col items-center justify-center p-6 rounded-xl border border-dashed border-border bg-muted/15 text-center space-y-3">
+              <Info className="size-6 text-muted-foreground/70" />
+              <div className="space-y-1 max-w-xs">
+                <p className="text-xs font-semibold text-foreground">No Criteria Lines Selected</p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Select one or more criteria from the filter dropdown above to view progress trend lines.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={resetCriteria}
+                className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-brand-700 transition-colors cursor-pointer"
+              >
+                Reset to default lines
+              </button>
+            </div>
+          ) : (
+            <div
+              role="region"
+              aria-label="Cursive handwriting progress trend chart across 5 skills"
+              className="h-64 sm:h-72 w-full pt-1"
+            >
+              <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={chartData}
                 margin={{ top: 12, right: 12, left: -16, bottom: 0 }}
@@ -441,6 +464,7 @@ export function CriterionTrendChart({
               </LineChart>
             </ResponsiveContainer>
           </div>
+          )}
 
           {/* Band Zones Legend */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 max-w-fit mx-auto pt-2 text-[11px] text-muted-foreground border-t border-border/50">
@@ -509,19 +533,19 @@ export function CriterionTrendChart({
                       </div>
                     </td>
                     <td className="py-2.5 px-3 text-right font-sans tabular-nums text-muted-foreground">
-                      {item.scores.letter_formation != null ? `${item.scores.letter_formation.toFixed(0)}%` : "—"}
+                      {item.scores.letter_formation != null ? `${item.scores.letter_formation.toFixed(1)}%` : "—"}
                     </td>
                     <td className="py-2.5 px-3 text-right font-sans tabular-nums text-muted-foreground">
-                      {item.scores.size_consistency != null ? `${item.scores.size_consistency.toFixed(0)}%` : "—"}
+                      {item.scores.size_consistency != null ? `${item.scores.size_consistency.toFixed(1)}%` : "—"}
                     </td>
                     <td className="py-2.5 px-3 text-right font-sans tabular-nums text-muted-foreground">
-                      {item.scores.spacing != null ? `${item.scores.spacing.toFixed(0)}%` : "—"}
+                      {item.scores.spacing != null ? `${item.scores.spacing.toFixed(1)}%` : "—"}
                     </td>
                     <td className="py-2.5 px-3 text-right font-sans tabular-nums text-muted-foreground">
-                      {item.scores.slant != null ? `${item.scores.slant.toFixed(0)}%` : "—"}
+                      {item.scores.slant != null ? `${item.scores.slant.toFixed(1)}%` : "—"}
                     </td>
                     <td className="py-2.5 px-3 text-right font-sans tabular-nums text-muted-foreground">
-                      {item.scores.baseline_alignment != null ? `${item.scores.baseline_alignment.toFixed(0)}%` : "—"}
+                      {item.scores.baseline_alignment != null ? `${item.scores.baseline_alignment.toFixed(1)}%` : "—"}
                     </td>
                   </tr>
                 );
