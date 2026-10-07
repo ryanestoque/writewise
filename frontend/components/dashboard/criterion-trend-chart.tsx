@@ -14,7 +14,8 @@ import {
 import type { StudentScoreHistoryItem } from "@/lib/hooks/use-dashboard";
 import { getBandFromScore, getBandMeta } from "@/lib/utils/scoring";
 import { BandBadge } from "@/components/shared/band-badge";
-import { LineChart as LineChartIcon, Info, Table2, SlidersHorizontal } from "lucide-react";
+import { LineChart as LineChartIcon, Info, Table2, SlidersHorizontal, Check, ChevronDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 import { CRITERION_CONFIG, CHART_BAND_AREAS, CHART_DOT_STROKE } from "@/lib/utils/chart-theme";
@@ -29,7 +30,6 @@ export function CriterionTrendChart({
   className,
 }: CriterionTrendChartProps) {
   const [viewMode, setViewMode] = useState<"chart" | "table">("chart");
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [activeCriteria, setActiveCriteria] = useState<Record<string, boolean>>({
     composite: true,
@@ -187,122 +187,70 @@ export function CriterionTrendChart({
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Controls Bar: Criteria Filter Pills + View Mode Toggle */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1 border-b border-border/50 pb-3">
+      {/* Controls Bar: Compact Popover Filter + View Mode Toggle */}
+      <div className="flex items-center justify-between gap-3 pt-1 border-b border-border/50 pb-3">
         {viewMode === "chart" ? (
-          <>
-            {/* Mobile Filter Toggle (sm:hidden) */}
-            <div className="sm:hidden w-full space-y-2">
-              <button
-                type="button"
-                onClick={() => setMobileFiltersOpen((prev) => !prev)}
-                aria-expanded={mobileFiltersOpen}
-                aria-controls="mobile-skills-filter-list"
-                className="w-full flex items-center justify-between px-3 py-2 min-h-[40px] rounded-lg border border-border/70 bg-card text-xs font-medium text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
-              >
-                <span className="flex items-center gap-1.5 truncate">
-                  <SlidersHorizontal className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-                  <span className="text-muted-foreground">Showing:</span>
-                  <span className="font-semibold truncate">
-                    {(() => {
-                      const activeLabels = CRITERION_CONFIG.filter((c) => activeCriteria[c.key]).map((c) => c.label);
-                      if (activeLabels.length === 0) return "None selected";
-                      if (activeLabels.length <= 2) return activeLabels.join(", ");
-                      return `${activeLabels.slice(0, 2).join(", ")} +${activeLabels.length - 2} more`;
-                    })()}
-                  </span>
-                </span>
-                <span className="text-[11px] text-brand-700 dark:text-brand-300 font-semibold shrink-0 ml-2">
-                  {mobileFiltersOpen ? "Done" : "Filter skills"}
-                </span>
-              </button>
-
-              {mobileFiltersOpen && (
-                <div id="mobile-skills-filter-list" className="p-2.5 rounded-xl border border-border/70 bg-muted/20 space-y-2">
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {CRITERION_CONFIG.map((c) => {
-                      const isSelected = activeCriteria[c.key];
-                      return (
-                        <button
-                          key={c.key}
-                          type="button"
-                          onClick={() => toggleCriterion(c.key)}
-                          aria-pressed={isSelected}
-                          className={cn(
-                            "inline-flex items-center gap-1.5 px-2.5 py-2 min-h-[40px] rounded-lg text-xs font-medium transition-all cursor-pointer border text-left",
-                            isSelected
-                              ? "bg-card border-brand-600/50 text-foreground font-semibold shadow-xs"
-                              : "bg-background/60 border-transparent text-muted-foreground opacity-70"
-                          )}
-                        >
-                          <span
-                            className="w-2.5 h-2.5 rounded-full shrink-0"
-                            style={{ backgroundColor: getCriterionColor(c) }}
-                            aria-hidden="true"
-                          />
-                          <span className="truncate">{c.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {isCustomized && (
-                    <button
-                      type="button"
-                      onClick={resetCriteria}
-                      className="w-full min-h-[40px] py-2 text-center text-xs text-brand-700 dark:text-brand-300 font-medium hover:underline cursor-pointer flex items-center justify-center"
-                    >
-                      Reset to default view
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Desktop Filter Pills (hidden sm:flex) */}
-            <div className="hidden sm:flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground mr-1">
-                <SlidersHorizontal className="size-3.5 text-brand-600 dark:text-brand-400" />
-                <span>Show:</span>
-              </div>
-              {CRITERION_CONFIG.map((c) => {
-                const isSelected = activeCriteria[c.key];
-                return (
+          <Popover>
+            <PopoverTrigger className="inline-flex items-center gap-2 px-3 py-1.5 min-h-[36px] rounded-lg border border-border/70 bg-card hover:bg-muted/50 text-xs font-medium text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 shadow-2xs">
+              <SlidersHorizontal className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+              <span className="text-muted-foreground hidden sm:inline">Showing:</span>
+              <span className="font-semibold truncate max-w-[150px] sm:max-w-[210px]">
+                {(() => {
+                  const activeLabels = CRITERION_CONFIG.filter((c) => activeCriteria[c.key]).map((c) => c.label);
+                  if (activeLabels.length === 0) return "None selected";
+                  if (activeLabels.length <= 2) return activeLabels.join(", ");
+                  return `${activeLabels.slice(0, 2).join(", ")} (+${activeLabels.length - 2})`;
+                })()}
+              </span>
+              <ChevronDown className="size-3.5 text-muted-foreground shrink-0 ml-0.5" />
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-64 p-3 rounded-2xl border border-border bg-popover text-popover-foreground shadow-lg space-y-2.5 z-50">
+              <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                <span className="text-xs font-semibold text-foreground">Filter Trend Lines</span>
+                {isCustomized && (
                   <button
-                    key={c.key}
                     type="button"
-                    onClick={() => toggleCriterion(c.key)}
-                    aria-pressed={isSelected}
-                    aria-label={`Toggle ${c.label} trend line`}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[40px] sm:min-h-[36px] rounded-lg text-xs font-medium transition-all cursor-pointer border focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
-                      isSelected
-                        ? "bg-card border-brand-600/40 text-foreground font-semibold shadow-xs"
-                        : "bg-muted/40 border-transparent text-muted-foreground hover:text-foreground opacity-70"
-                    )}
+                    onClick={resetCriteria}
+                    className="text-[11px] font-medium text-brand-700 dark:text-brand-300 hover:underline cursor-pointer"
                   >
-                    <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: getCriterionColor(c) }}
-                      aria-hidden="true"
-                    />
-                    <span>{c.label}</span>
+                    Reset default
                   </button>
-                );
-              })}
-              {isCustomized && (
-                <button
-                  type="button"
-                  onClick={resetCriteria}
-                  className="inline-flex items-center px-2.5 py-1.5 min-h-[40px] sm:min-h-[36px] text-xs text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:bg-brand-50/60 dark:hover:bg-brand-950/40 rounded-lg font-medium cursor-pointer transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
-                >
-                  Reset view
-                </button>
-              )}
-            </div>
-          </>
+                )}
+              </div>
+              <div className="space-y-1">
+                {CRITERION_CONFIG.map((c) => {
+                  const isSelected = activeCriteria[c.key];
+                  return (
+                    <button
+                      key={c.key}
+                      type="button"
+                      onClick={() => toggleCriterion(c.key)}
+                      aria-pressed={isSelected}
+                      className={cn(
+                        "w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer text-left",
+                        isSelected
+                          ? "bg-muted/70 text-foreground font-semibold"
+                          : "text-muted-foreground hover:bg-muted/30"
+                      )}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <span
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: getCriterionColor(c) }}
+                          aria-hidden="true"
+                        />
+                        <span className="truncate">{c.label}</span>
+                      </div>
+                      {isSelected && <Check className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 ml-2" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
         ) : (
-          <p className="text-xs text-muted-foreground font-medium">
-            Scores and feedback across all {history.length} completed worksheets.
+          <p className="text-xs text-muted-foreground font-medium truncate max-w-[240px] sm:max-w-none">
+            Scores across all {history.length} completed worksheets.
           </p>
         )}
 
@@ -495,7 +443,7 @@ export function CriterionTrendChart({
           </div>
 
           {/* Band Zones Legend */}
-          <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 pt-2 text-[11px] text-muted-foreground border-t border-border/50">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 max-w-fit mx-auto pt-2 text-[11px] text-muted-foreground border-t border-border/50">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-xs bg-band-4/60 border border-band-4/80" />
               <span>Excellent (75–100%)</span>

@@ -35,6 +35,26 @@ export default function DashboardPage() {
   const activeSubmission =
     activitySubmissions?.find((s) => s.id === selectedSubmissionId) ?? null;
 
+  // Student navigation for drawer pager
+  const currentStudentIndex =
+    data?.students && selectedStudent
+      ? data.students.findIndex((s) => s.studentId === selectedStudent.studentId)
+      : -1;
+
+  const hasPrevStudent = currentStudentIndex > 0;
+  const hasNextStudent =
+    data?.students
+      ? currentStudentIndex >= 0 && currentStudentIndex < data.students.length - 1
+      : false;
+
+  const handleNavigateStudent = (direction: "prev" | "next") => {
+    if (!data?.students || currentStudentIndex === -1) return;
+    const nextIndex = direction === "prev" ? currentStudentIndex - 1 : currentStudentIndex + 1;
+    if (nextIndex >= 0 && nextIndex < data.students.length) {
+      setSelectedStudent(data.students[nextIndex]);
+    }
+  };
+
   const handleSelectStudent = (student: StudentScoreSummary) => {
     setSelectedStudent(student);
     setIsDrawerOpen(true);
@@ -177,6 +197,11 @@ export default function DashboardPage() {
         open={isDrawerOpen}
         onOpenChange={setIsDrawerOpen}
         onOpenSubmission={handleOpenSubmission}
+        onNavigateStudent={handleNavigateStudent}
+        hasPrevStudent={hasPrevStudent}
+        hasNextStudent={hasNextStudent}
+        currentIndex={currentStudentIndex}
+        totalStudents={data?.students?.length ?? 0}
       />
 
       {/* Submission Detail Dialog */}

@@ -28,7 +28,6 @@ import {
   PenToolIcon,
   UploadCloudIcon,
   ChevronsUpDownIcon,
-  GraduationCapIcon,
 } from "lucide-react";
 import { BrandIcon } from "@/components/brand-logo";
 import { Kbd } from "@/components/ui/kbd";
@@ -78,7 +77,7 @@ function getInitials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-const emptySubscribe = () => () => {};
+const emptySubscribe = () => () => { };
 const getAltKeySnapshot = () => (typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent) ? "⌥" : "Alt");
 const getAltKeyServerSnapshot = () => "Alt";
 
@@ -382,9 +381,8 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                         {user.email}
                       </span>
                       {user.schoolName && (
-                        <span className="text-xs text-primary font-medium mt-0.5 flex items-center gap-1 truncate">
-                          <GraduationCapIcon className="size-3.5 shrink-0" />
-                          <span className="truncate">{user.schoolName}</span>
+                        <span className="text-xs text-primary font-medium mt-0.5 block truncate">
+                          {user.schoolName}
                         </span>
                       )}
                     </div>
