@@ -407,18 +407,13 @@ function ParentUploadFlow({
   return (
     <>
       <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-border/80">
-        <div className="flex items-center gap-2.5 pr-10 sm:pr-8">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
-            <UploadCloudIcon className="size-5" aria-hidden="true" />
-          </div>
-          <div className="min-w-0">
-            <DialogTitle className="text-base sm:text-lg font-semibold text-foreground truncate">
-              Upload Worksheet
-            </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
-              Submitting for <span className="font-medium text-foreground">{childName}</span>
-            </DialogDescription>
-          </div>
+        <div className="min-w-0 pr-10 sm:pr-8">
+          <DialogTitle className="text-base sm:text-lg font-semibold text-foreground truncate">
+            Upload Worksheet
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Submitting for {childName}
+          </DialogDescription>
         </div>
 
         {/* 3-Step Interactive Progress Stepper */}

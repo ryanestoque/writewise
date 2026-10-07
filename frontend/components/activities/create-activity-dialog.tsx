@@ -24,7 +24,6 @@ import {
 import { useCreateActivity } from "@/lib/hooks/use-activities";
 import {
   Loader2,
-  Plus,
   ClipboardList,
   Home,
   AlertTriangle,
@@ -141,25 +140,14 @@ export function CreateActivityDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[540px] max-h-[min(92dvh,calc(100vh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm border border-border/80 bg-surface dark:bg-card">
         <DialogHeader className="pb-3 sm:pb-4 shrink-0 text-left">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
-              {isDuplicate ? (
-                <Copy className="size-5" />
-              ) : (
-                <Plus className="size-5" />
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">
-                {isDuplicate ? "Duplicate Activity" : "Create Activity"}
-              </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                {isDuplicate
-                  ? "Create a new handwriting activity using this prompt as a template."
-                  : "Define the target text students will copy in cursive on ruled paper."}
-              </DialogDescription>
-            </div>
-          </div>
+          <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">
+            {isDuplicate ? "Duplicate Activity" : "Create Activity"}
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            {isDuplicate
+              ? "Create a new handwriting activity using this prompt as a template."
+              : "Define the target text students will copy in cursive on ruled paper."}
+          </DialogDescription>
         </DialogHeader>
 
         <form

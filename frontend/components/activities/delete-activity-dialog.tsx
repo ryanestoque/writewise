@@ -12,7 +12,7 @@ import {
   type Activity,
   useDeleteActivity,
 } from "@/lib/hooks/use-activities";
-import { Loader2, Trash2, AlertTriangle, AlertCircle } from "lucide-react";
+import { Loader2, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 interface DeleteActivityDialogProps {
@@ -49,31 +49,14 @@ export function DeleteActivityDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100%-1.5rem)] max-w-md p-5 sm:p-6 rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl border border-border/80 bg-surface dark:bg-card">
         <DialogHeader className="pb-3 text-left">
-          <div className="flex items-center gap-3">
-            <div
-              className={`flex size-10 items-center justify-center rounded-xl shrink-0 ${
-                hasSubmissions
-                  ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300"
-                  : "bg-destructive/10 text-destructive"
-              }`}
-            >
-              {hasSubmissions ? (
-                <AlertCircle className="size-5" />
-              ) : (
-                <Trash2 className="size-5" />
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">
-                {hasSubmissions ? "Cannot Delete Activity" : "Delete Activity"}
-              </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                {hasSubmissions
-                  ? "This activity contains existing student records."
-                  : "This action cannot be undone."}
-              </DialogDescription>
-            </div>
-          </div>
+          <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">
+            {hasSubmissions ? "Cannot Delete Activity" : "Delete Activity"}
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            {hasSubmissions
+              ? "This activity contains existing student records."
+              : "This action cannot be undone."}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 pt-2">

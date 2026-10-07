@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Kbd } from "@/components/ui/kbd";
-import { CommandIcon, KeyboardIcon } from "lucide-react";
+import { CommandIcon } from "lucide-react";
 
 interface ShortcutsDialogProps {
   open: boolean;
@@ -91,19 +91,12 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100%-1.5rem)] max-w-md max-h-[min(90dvh,calc(100vh-2rem))] p-0 overflow-hidden flex flex-col shadow-warm">
         <DialogHeader className="p-6 pb-4 border-b shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
-              <KeyboardIcon className="size-4" />
-            </div>
-            <div>
-              <DialogTitle className="text-base font-semibold">
-                Keyboard Shortcuts
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                Accelerators for fast teacher navigation in WriteWise.
-              </DialogDescription>
-            </div>
-          </div>
+          <DialogTitle className="text-base font-semibold">
+            Keyboard Shortcuts
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Accelerators for fast teacher navigation in WriteWise.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="p-6 space-y-5 flex-1 min-h-0 overflow-y-auto overscroll-contain">

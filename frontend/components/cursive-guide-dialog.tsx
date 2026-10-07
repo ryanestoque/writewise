@@ -15,7 +15,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import {
-  PenToolIcon,
   SearchIcon,
   XCircleIcon,
   LayersIcon,
@@ -918,24 +917,9 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
         {/* Streamlined Header: Title + Print + Search */}
         <DialogHeader className="p-3.5 sm:p-5 pb-3 sm:pb-3.5 border-b border-border/70 bg-background/95 backdrop-blur-xs shrink-0 space-y-3 print:hidden">
           <div className="flex items-center justify-between gap-3 min-w-0 pr-10 sm:pr-8">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div
-                className="size-8 sm:size-9 rounded-lg bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shrink-0 shadow-xs"
-                aria-hidden="true"
-              >
-                <PenToolIcon className="size-4 sm:size-4.5" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <DialogTitle className="text-base sm:text-lg font-heading font-semibold text-foreground tracking-tight truncate">
-                    Cursive Alphabet Guide
-                  </DialogTitle>
-                </div>
-                <p className="text-xs text-muted-foreground truncate hidden sm:block">
-                  Authentic 3-line elementary penmanship ruling, stroke formations, and joining standards.
-                </p>
-              </div>
-            </div>
+            <DialogTitle className="text-base sm:text-lg font-heading font-semibold text-foreground tracking-tight truncate">
+              Cursive Alphabet Guide
+            </DialogTitle>
           </div>
 
           <DialogDescription className="sr-only">

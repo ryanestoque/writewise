@@ -105,19 +105,12 @@ export function EditActivityDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[520px] max-h-[min(92dvh,calc(100vh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm border border-border/80 bg-surface dark:bg-card">
         <DialogHeader className="pb-3 sm:pb-4 shrink-0 text-left">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
-              <Edit3 className="size-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">
-                Edit Activity
-              </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                Update the target text or take-home assignment setting.
-              </DialogDescription>
-            </div>
-          </div>
+          <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">
+            Edit Activity
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Update the target text or take-home assignment setting.
+          </DialogDescription>
         </DialogHeader>
 
         <form

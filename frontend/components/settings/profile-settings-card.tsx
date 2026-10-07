@@ -11,7 +11,7 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { User, Lock, Loader2, Check } from "lucide-react";
+import { Lock, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface ProfileSettingsCardProps {
@@ -101,19 +101,9 @@ export function ProfileSettingsCard({
     <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-[280px_1fr] lg:grid-cols-[320px_1fr]">
       {/* Left Section Header */}
       <div>
-        <div className="flex items-start gap-3 md:flex-col md:gap-3">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
-            <User className="size-5" aria-hidden="true" />
-          </div>
-          <div>
-            <h2 className="font-heading text-lg font-semibold text-foreground">
-              Personal Information
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-              Update your display name and school affiliation across your classroom.
-            </p>
-          </div>
-        </div>
+        <h2 className="font-heading text-lg font-semibold text-foreground">
+          Personal Information
+        </h2>
       </div>
 
       {/* Right Form Card */}

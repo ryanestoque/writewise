@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { BookOpen, PenTool, Scaling, MoveHorizontal, Compass, AlignHorizontalJustifyStart, CheckCircle2 } from "lucide-react";
+import { PenTool, Scaling, MoveHorizontal, Compass, AlignHorizontalJustifyStart, CheckCircle2 } from "lucide-react";
 import { BandBadge } from "@/components/shared/band-badge";
 import { cn } from "@/lib/utils";
 
@@ -290,19 +290,12 @@ export function ParentRubricDialog({
       <DialogContent className="w-[calc(100%-1.5rem)] max-w-2xl max-h-[min(90dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
         {/* Header */}
         <DialogHeader className="p-5 sm:p-6 pb-4 border-b border-border bg-card/60">
-          <div className="flex items-start gap-3 mb-1 pr-6">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0 mt-0.5">
-              <BookOpen className="size-4.5" aria-hidden="true" />
-            </div>
-            <div className="space-y-0.5 min-w-0">
-              <DialogTitle className="font-heading text-lg sm:text-xl font-semibold text-foreground">
-                Parent Guide to Handwriting Rubrics
-              </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                How WriteWise measures your child&apos;s cursive handwriting development across five essential skills.
-              </DialogDescription>
-            </div>
-          </div>
+          <DialogTitle className="font-heading text-lg sm:text-xl font-semibold text-foreground">
+            Parent Guide to Handwriting Rubrics
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            How WriteWise measures your child&apos;s cursive handwriting development across five essential skills.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Content Body */}

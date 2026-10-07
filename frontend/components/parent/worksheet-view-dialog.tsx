@@ -28,7 +28,6 @@ import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import { PARENT_CRITERIA_LIST, type ScoreBand } from "@/lib/utils/scoring";
 import {
-  FileImage,
   Calendar,
   User,
   ArrowLeft,
@@ -164,26 +163,21 @@ export function WorksheetViewDialog({
         {/* Header */}
         <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border bg-card/80">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pr-8">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
-                <FileImage className="size-4.5" aria-hidden="true" />
-              </div>
-              <div className="min-w-0">
-                <DialogTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
-                  Scored Worksheet Photo
-                </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap truncate">
-                  <span className="inline-flex items-center gap-1 font-medium text-foreground">
-                    <User className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                    {childName}
-                  </span>
-                  <span>&middot;</span>
-                  <span className="inline-flex items-center gap-1">
-                    <Calendar className="size-3" aria-hidden="true" />
-                    {formattedDate}
-                  </span>
-                </DialogDescription>
-              </div>
+            <div className="min-w-0">
+              <DialogTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
+                Scored Worksheet Photo
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap truncate">
+                <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                  <User className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                  {childName}
+                </span>
+                <span>&middot;</span>
+                <span className="inline-flex items-center gap-1">
+                  <Calendar className="size-3" aria-hidden="true" />
+                  {formattedDate}
+                </span>
+              </DialogDescription>
             </div>
 
             {scoreSource !== "none" && (

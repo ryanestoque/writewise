@@ -15,7 +15,7 @@ import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { WorksheetViewDialog } from "./worksheet-view-dialog";
 import { PARENT_CRITERIA_LIST } from "@/lib/utils/scoring";
 import type { StudentScoreHistoryItem } from "@/lib/hooks/use-dashboard";
-import { History, Calendar, FileText, Eye } from "lucide-react";
+import { Calendar, FileText, Eye } from "lucide-react";
 
 interface SubmissionHistoryDialogProps {
   open: boolean;
@@ -48,19 +48,12 @@ export function SubmissionHistoryDialog({
         <DialogContent className="w-[calc(100%-1.5rem)] max-w-2xl max-h-[min(90dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
           {/* Header */}
           <DialogHeader className="p-5 sm:p-6 pb-4 border-b border-border bg-card/60">
-            <div className="flex items-center gap-2.5">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
-                <History className="size-4.5" aria-hidden="true" />
-              </div>
-              <div>
-                <DialogTitle className="font-heading text-lg sm:text-xl font-semibold text-foreground">
-                  Worksheet History &amp; Scores
-                </DialogTitle>
-                <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                  Past scored worksheets and skill feedback for {childName}.
-                </DialogDescription>
-              </div>
-            </div>
+            <DialogTitle className="font-heading text-lg sm:text-xl font-semibold text-foreground">
+              Worksheet History &amp; Scores
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Past scored worksheets and skill feedback for {childName}.
+            </DialogDescription>
           </DialogHeader>
 
           {/* List of submissions */}

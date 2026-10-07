@@ -14,7 +14,6 @@ import {
   SpaceIcon,
   MoveVerticalIcon,
   ScalingIcon,
-  BookOpenIcon,
   GraduationCapIcon,
   SearchIcon,
   XCircleIcon,
@@ -478,13 +477,7 @@ export function RubricReferenceDialog({
       >
         {/* Streamlined Header: Title + Search */}
         <DialogHeader className="p-4 sm:p-5 pb-3 sm:pb-3.5 border-b border-border/70 bg-background/95 backdrop-blur-xs shrink-0 space-y-3">
-          <div className="flex items-center gap-2.5 min-w-0 pr-10 sm:pr-8">
-            <div
-              className="size-8 sm:size-9 rounded-lg bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shrink-0 shadow-xs"
-              aria-hidden="true"
-            >
-              <BookOpenIcon className="size-4 sm:size-4.5" />
-            </div>
+          <div className="min-w-0 pr-10 sm:pr-8">
             <DialogTitle className="text-base sm:text-lg font-heading font-semibold text-foreground tracking-tight">
               Handwriting Rubric Guide
             </DialogTitle>

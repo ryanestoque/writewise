@@ -691,18 +691,13 @@ function UploadFlow({
       </span>
 
       <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-3.5 border-b border-border">
-        <div className="flex items-center gap-2.5 pr-10 sm:pr-8">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
-            <UploadCloudIcon className="size-5" />
-          </div>
-          <div className="min-w-0">
-            <DialogTitle className="text-base sm:text-lg font-semibold text-foreground">
-              Upload Student Worksheet
-            </DialogTitle>
-            <DialogDescription className="sr-only">
-              Upload student cursive worksheets for automated assessment and feedback.
-            </DialogDescription>
-          </div>
+        <div className="min-w-0 pr-10 sm:pr-8">
+          <DialogTitle className="text-base sm:text-lg font-semibold text-foreground">
+            Upload Student Worksheet
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Upload student cursive worksheets for automated assessment and feedback.
+          </DialogDescription>
         </div>
 
         {/* 3-Step Interactive Progress Stepper (Anchored Across All Steps) */}
