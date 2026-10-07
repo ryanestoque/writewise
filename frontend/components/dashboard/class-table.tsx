@@ -36,7 +36,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import type { StudentScoreSummary } from "@/lib/hooks/use-dashboard";
-import { BandBadge } from "@/components/shared/band-badge";
 import { getBandFromScore, getBandMeta } from "@/lib/utils/scoring";
 import { cn } from "@/lib/utils";
 
@@ -538,16 +537,7 @@ export function ClassTable({
                       {/* Overall Composite */}
                       <TableCell className="py-3 px-4 text-right">
                         {hasScores ? (
-                          <div className="flex items-center justify-end gap-2">
-                            <span className="font-sans text-xs font-semibold tabular-nums text-foreground">
-                              {student.scores.composite?.toFixed(1)}%
-                            </span>
-                            <BandBadge
-                              score={student.scores.composite}
-                              size="sm"
-                              showDot={false}
-                            />
-                          </div>
+                          <ScoreCell score={student.scores.composite} />
                         ) : (
                           <span className="text-xs text-muted-foreground/60 italic">Unrated</span>
                         )}

@@ -26,15 +26,16 @@ export function ScoreSourceIndicator({
         <TooltipTrigger
           aria-label={isManual ? "Teacher-assessed score" : "Auto-calibrated score"}
           className={cn(
-            "inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-muted/60 hover:bg-muted px-2 py-0.5 rounded-md border border-border/60 transition-colors cursor-default select-none",
+            "inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground/80 hover:text-foreground transition-colors cursor-default select-none",
             className
           )}
         >
+          <span className="text-muted-foreground/40 font-normal">•</span>
           <span className={cn(
             "font-medium",
             isManual ? "text-brand-600 dark:text-brand-400" : "text-amber-600 dark:text-amber-400"
           )}>
-            {compact ? (isManual ? "Teacher" : "Auto") : (isManual ? "Teacher-assessed" : "Auto-calibrated")}
+            {compact ? (isManual ? "Teacher rubric" : "Auto score") : (isManual ? "Teacher-assessed" : "Auto-calibrated")}
           </span>
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs max-w-xs leading-relaxed">

@@ -180,32 +180,30 @@ export const ActivityCard = memo(function ActivityCard({
             {isArchived ? (
               <Badge
                 variant="outline"
-                className="text-xs font-semibold px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border/80"
+                className="text-xs font-semibold px-2 py-0.5 bg-muted/60 text-muted-foreground border-border/80"
               >
                 <Archive className="w-3.5 h-3.5 mr-1" />
                 Archived
               </Badge>
-            ) : activity.is_take_home ? (
-              <Badge
-                variant="outline"
-                className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900"
-              >
-                <Home className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400" />
-                Take-home
-              </Badge>
             ) : (
-              <Badge
-                variant="outline"
-                className="text-xs font-semibold px-2.5 py-0.5 bg-brand-100/70 text-brand-800 dark:bg-brand-900/50 dark:text-brand-200 border-brand-200/70 dark:border-brand-800/80"
-              >
-                <BookOpen className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400" />
-                In-Class
-              </Badge>
+              <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                {activity.is_take_home ? (
+                  <span className="inline-flex items-center gap-1 text-brand-700 dark:text-brand-300">
+                    <Home className="size-3.5 text-brand-600 dark:text-brand-400" />
+                    Take-home
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-foreground/80">
+                    <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400" />
+                    In-Class
+                  </span>
+                )}
+                <span className="text-muted-foreground/40">•</span>
+                <span className="tabular-nums">
+                  {wordCount} {wordCount === 1 ? "word" : "words"}
+                </span>
+              </div>
             )}
-
-            <span className="inline-flex items-center text-xs font-medium text-muted-foreground bg-muted/40 dark:bg-muted/30 px-2 py-0.5 rounded-md border border-border/50 tabular-nums">
-              {wordCount} {wordCount === 1 ? "word" : "words"}
-            </span>
           </div>
 
           {/* Overflow Actions Menu with 40px Touch Hit Target on Mobile */}
