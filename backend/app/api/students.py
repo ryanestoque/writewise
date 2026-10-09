@@ -12,13 +12,15 @@ router = APIRouter()
 
 class StudentCreate(BaseModel):
     full_name: str
-    section: str
+    section: Optional[str] = None
+    section_id: Optional[str] = None
     parent_email: Optional[str] = None
 
 
 class StudentUpdate(BaseModel):
     full_name: Optional[str] = None
     section: Optional[str] = None
+    section_id: Optional[str] = None
     parent_email: Optional[str] = None
 
     model_config = ConfigDict(extra="ignore")
@@ -124,10 +126,48 @@ def _invite_parent(email: str, student_id: str, student_name: str):
 def create_student(student_in: StudentCreate, teacher: dict = Depends(get_current_teacher)):
     teacher_id = teacher.get("sub")
 
+    section_name = (student_in.section or "").strip()
+    section_id = student_in.section_id
+
+    if section_id:
+        sec_res = (
+            supabase_client.table("section")
+            .select("id, name")
+            .eq("id", section_id)
+            .eq("teacher_id", teacher_id)
+            .execute()
+        )
+        if sec_res.data:
+            section_name = sec_res.data[0]["name"]
+        else:
+            section_id = None
+
+    if not section_id and section_name:
+        sec_res = (
+            supabase_client.table("section")
+            .select("id, name")
+            .eq("teacher_id", teacher_id)
+            .ilike("name", section_name)
+            .execute()
+        )
+        if sec_res.data:
+            section_id = sec_res.data[0]["id"]
+            section_name = sec_res.data[0]["name"]
+        else:
+            ins_sec = (
+                supabase_client.table("section")
+                .insert({"teacher_id": teacher_id, "name": section_name})
+                .execute()
+            )
+            if ins_sec.data:
+                section_id = ins_sec.data[0]["id"]
+                section_name = ins_sec.data[0]["name"]
+
     # 1. Insert student
     insert_data = {
         "full_name": student_in.full_name,
-        "section": student_in.section,
+        "section": section_name,
+        "section_id": section_id,
     }
     if student_in.parent_email and student_in.parent_email.strip():
         insert_data["parent_email"] = student_in.parent_email.strip()
@@ -204,8 +244,50 @@ def update_student(
     update_data = {}
     if student_in.full_name is not None:
         update_data["full_name"] = student_in.full_name
-    if student_in.section is not None:
-        update_data["section"] = student_in.section
+
+    if student_in.section_id is not None or student_in.section is not None:
+        section_name = (student_in.section or "").strip()
+        section_id = student_in.section_id
+
+        if section_id:
+            sec_res = (
+                supabase_client.table("section")
+                .select("id, name")
+                .eq("id", section_id)
+                .eq("teacher_id", teacher_id)
+                .execute()
+            )
+            if sec_res.data:
+                section_name = sec_res.data[0]["name"]
+            else:
+                section_id = None
+
+        if not section_id and section_name:
+            sec_res = (
+                supabase_client.table("section")
+                .select("id, name")
+                .eq("teacher_id", teacher_id)
+                .ilike("name", section_name)
+                .execute()
+            )
+            if sec_res.data:
+                section_id = sec_res.data[0]["id"]
+                section_name = sec_res.data[0]["name"]
+            else:
+                ins_sec = (
+                    supabase_client.table("section")
+                    .insert({"teacher_id": teacher_id, "name": section_name})
+                    .execute()
+                )
+                if ins_sec.data:
+                    section_id = ins_sec.data[0]["id"]
+                    section_name = ins_sec.data[0]["name"]
+
+        if section_name:
+            update_data["section"] = section_name
+        if section_id:
+            update_data["section_id"] = section_id
+
     if student_in.parent_email is not None:
         cleaned_email = student_in.parent_email.strip()
         update_data["parent_email"] = cleaned_email if cleaned_email else None
