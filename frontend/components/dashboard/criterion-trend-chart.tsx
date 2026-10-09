@@ -14,10 +14,81 @@ import {
 import type { StudentScoreHistoryItem } from "@/lib/hooks/use-dashboard";
 import { getBandFromScore, getBandMeta } from "@/lib/utils/scoring";
 import { BandBadge } from "@/components/shared/band-badge";
-import { LineChart as LineChartIcon, Info, Table2, SlidersHorizontal } from "lucide-react";
+import { LineChart as LineChartIcon, Info, Table2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { CRITERION_CONFIG, CHART_BAND_AREAS, CHART_DOT_STROKE } from "@/lib/utils/chart-theme";
+
+interface TooltipPayloadItem {
+  payload: {
+    fullDate: string;
+    activity: string;
+    [key: string]: string | number | null | undefined;
+  };
+}
+
+function ChartTooltipContent({
+  active,
+  payload,
+  isDark,
+}: {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+  isDark: boolean;
+}) {
+  if (!active || !payload || !payload.length) return null;
+  const data = payload[0].payload;
+  return (
+    <div className="p-3 bg-popover text-popover-foreground rounded-xl shadow-warm border border-border text-xs space-y-2 min-w-[200px] z-50">
+      <div className="border-b border-border/60 pb-1.5">
+        <p className="font-semibold text-foreground">{data.fullDate}</p>
+        <p className="text-[11px] text-muted-foreground truncate max-w-[220px]">
+          &quot;{data.activity}&quot;
+        </p>
+      </div>
+
+      <div className="space-y-1">
+        {CRITERION_CONFIG.map((c) => {
+          const val = data[c.key];
+          if (val === null || val === undefined) return null;
+          const numericVal = typeof val === "number" ? val : Number(val);
+          if (isNaN(numericVal)) return null;
+          const band = getBandFromScore(numericVal);
+          const meta = getBandMeta(band);
+          const color = isDark ? c.darkColor : c.lightColor;
+          return (
+            <div
+              key={c.key}
+              className="flex items-center justify-between gap-3 text-[11px]"
+            >
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ backgroundColor: color }}
+                  aria-hidden="true"
+                />
+                <span className="text-muted-foreground">{c.label}:</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="font-semibold tabular-nums text-foreground">
+                  {numericVal.toFixed(1)}%
+                </span>
+                <span
+                  className={cn(
+                    "text-[10px] px-1.5 py-0.5 rounded font-medium",
+                    meta.badgeClass
+                  )}
+                >
+                  {meta.shortLabel}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 interface CriterionTrendChartProps {
   history: StudentScoreHistoryItem[];
@@ -39,6 +110,11 @@ export function CriterionTrendChart({
     baseline_alignment: false,
   });
 
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
+
   useEffect(() => {
     const checkDark = () => {
       const isDarkMode =
@@ -48,6 +124,10 @@ export function CriterionTrendChart({
       setIsDark(isDarkMode);
     };
     checkDark();
+
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handleMotionChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    motionQuery.addEventListener("change", handleMotionChange);
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     mediaQuery.addEventListener("change", checkDark);
@@ -59,6 +139,7 @@ export function CriterionTrendChart({
     });
 
     return () => {
+      motionQuery.removeEventListener("change", handleMotionChange);
       mediaQuery.removeEventListener("change", checkDark);
       observer.disconnect();
     };
@@ -165,7 +246,7 @@ export function CriterionTrendChart({
   if (!history || history.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 rounded-xl border border-dashed border-border bg-muted/20 text-center">
-        <LineChartIcon className="size-8 text-muted-foreground/60 mb-2" />
+        <LineChartIcon className="size-8 text-muted-foreground/60 mb-2" aria-hidden="true" />
         <h3 className="text-xs font-semibold text-foreground">No Assessment History</h3>
         <p className="text-[11px] text-muted-foreground mt-0.5 max-w-xs">
           This student doesn&apos;t have any graded submissions yet. Grade an activity to begin tracking progress.
@@ -184,16 +265,11 @@ export function CriterionTrendChart({
     return (
       <div className={cn("p-4 rounded-xl border border-border bg-card shadow-warm-xs space-y-3.5", className)}>
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-brand-500/10 text-brand-600 dark:text-brand-400 shrink-0">
-              <LineChartIcon className="size-4" aria-hidden="true" />
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold text-foreground">Single Submission Baseline Recorded</h4>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                Completed on {dateStr} • Activity: &ldquo;{single.targetText}&rdquo;
-              </p>
-            </div>
+          <div className="space-y-0.5">
+            <h4 className="text-xs font-semibold text-foreground">Single Submission Baseline Recorded</h4>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Completed on {dateStr} • Activity: &ldquo;{single.targetText}&rdquo;
+            </p>
           </div>
           <BandBadge score={single.compositeScore} size="sm" />
         </div>
@@ -220,7 +296,7 @@ export function CriterionTrendChart({
         </div>
 
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground bg-muted/20 px-3 py-2 rounded-lg border border-border/40">
-          <Info className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+          <Info className="size-3.5 text-primary shrink-0" aria-hidden="true" />
           <span>A progress trajectory line chart will automatically render once a second worksheet is evaluated.</span>
         </div>
       </div>
@@ -233,13 +309,12 @@ export function CriterionTrendChart({
       <div className="flex flex-col gap-3 pt-1 border-b border-border/50 pb-3 min-w-0">
         <div className="flex flex-wrap items-center justify-between gap-2.5">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <SlidersHorizontal className="size-3.5 text-primary shrink-0" aria-hidden="true" />
             <span className="font-semibold text-foreground">Trend Lines</span>
             {isCustomized && (
               <button
                 type="button"
                 onClick={resetCriteria}
-                className="text-[11px] font-medium text-primary hover:underline cursor-pointer ml-1"
+                className="text-[11px] font-medium text-primary hover:underline cursor-pointer ml-1 min-h-[36px] px-2 -my-1 rounded-md inline-flex items-center hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Reset default
               </button>
@@ -262,7 +337,7 @@ export function CriterionTrendChart({
               tabIndex={viewMode === "chart" ? 0 : -1}
               onClick={() => setViewMode("chart")}
               className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[36px] sm:min-h-[30px] rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                "inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[40px] sm:min-h-[32px] rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary touch-manipulation",
                 viewMode === "chart"
                   ? "bg-card text-foreground font-semibold shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -280,7 +355,7 @@ export function CriterionTrendChart({
               tabIndex={viewMode === "table" ? 0 : -1}
               onClick={() => setViewMode("table")}
               className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[36px] sm:min-h-[30px] rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                "inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[40px] sm:min-h-[32px] rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary touch-manipulation",
                 viewMode === "table"
                   ? "bg-card text-foreground font-semibold shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -305,10 +380,10 @@ export function CriterionTrendChart({
                   onClick={() => toggleCriterion(c.key)}
                   aria-pressed={isSelected}
                   className={cn(
-                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer border select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-[32px]",
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium transition-all cursor-pointer border select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-[40px] sm:min-h-[32px] touch-manipulation",
                     isSelected
                       ? "bg-card text-foreground border-border shadow-2xs font-semibold"
-                      : "bg-muted/20 text-muted-foreground/60 border-border/40 hover:bg-muted/40 hover:text-muted-foreground line-through opacity-75"
+                      : "bg-muted/20 text-muted-foreground/80 border-border/40 hover:bg-muted/40 hover:text-muted-foreground line-through opacity-75"
                   )}
                 >
                   <span
@@ -342,7 +417,7 @@ export function CriterionTrendChart({
           {/* Chart Box with Accessible Region */}
           {!hasActiveCriteria ? (
             <div className="h-64 sm:h-72 w-full flex flex-col items-center justify-center p-6 rounded-xl border border-dashed border-border bg-muted/15 text-center space-y-3">
-              <Info className="size-6 text-muted-foreground/70" />
+              <Info className="size-6 text-muted-foreground/70" aria-hidden="true" />
               <div className="space-y-1 max-w-xs">
                 <p className="text-xs font-semibold text-foreground">No Criteria Lines Selected</p>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
@@ -352,7 +427,7 @@ export function CriterionTrendChart({
               <button
                 type="button"
                 onClick={resetCriteria}
-                className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-brand-700 transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors cursor-pointer"
               >
                 Reset to default lines
               </button>
@@ -363,7 +438,7 @@ export function CriterionTrendChart({
               aria-label="Cursive handwriting progress trend chart across 5 skills"
               className="h-64 sm:h-72 w-full pt-1"
             >
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" debounce={50}>
               <LineChart
                 data={chartData}
                 margin={{ top: 12, right: 12, left: -16, bottom: 0 }}
@@ -403,59 +478,7 @@ export function CriterionTrendChart({
                   unit="%"
                 />
 
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (!active || !payload || !payload.length) return null;
-                    const data = payload[0].payload;
-                    return (
-                      <div className="p-3 bg-popover text-popover-foreground rounded-xl shadow-warm border border-border text-xs space-y-2 min-w-[200px] z-50">
-                        <div className="border-b border-border/60 pb-1.5">
-                          <p className="font-semibold text-foreground">{data.fullDate}</p>
-                          <p className="text-[11px] text-muted-foreground truncate max-w-[220px]">
-                            &quot;{data.activity}&quot;
-                          </p>
-                        </div>
-
-                        <div className="space-y-1">
-                          {CRITERION_CONFIG.map((c) => {
-                            const val = data[c.key];
-                            if (val === null || val === undefined) return null;
-                            const band = getBandFromScore(val);
-                            const meta = getBandMeta(band);
-                            const color = getCriterionColor(c);
-                            return (
-                              <div
-                                key={c.key}
-                                className="flex items-center justify-between gap-3 text-[11px]"
-                              >
-                                <div className="flex items-center gap-1.5">
-                                  <span
-                                    className="w-1.5 h-1.5 rounded-full shrink-0"
-                                    style={{ backgroundColor: color }}
-                                  />
-                                  <span className="text-muted-foreground">{c.label}:</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span className="font-semibold tabular-nums text-foreground">
-                                    {Number(val).toFixed(1)}%
-                                  </span>
-                                  <span
-                                    className={cn(
-                                      "text-[10px] px-1.5 py-0.5 rounded font-medium",
-                                      meta.badgeClass
-                                    )}
-                                  >
-                                    {meta.shortLabel}
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  }}
-                />
+                <Tooltip content={<ChartTooltipContent isDark={isDark} />} />
 
                 {CRITERION_CONFIG.map((c) => {
                   if (!activeCriteria[c.key]) return null;
@@ -469,6 +492,8 @@ export function CriterionTrendChart({
                       stroke={color}
                       strokeWidth={c.strokeWidth}
                       strokeDasharray={c.strokeDasharray}
+                      isAnimationActive={!prefersReducedMotion}
+                      animationDuration={300}
                       dot={{
                         r: c.key === "composite" ? 4 : 3,
                         fill: color,
