@@ -2,14 +2,14 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-10-02
+**Last updated:** 2026-10-10
 
 ## Summary
 
 | Phase | Done / Total |
 |---|---|
 | Phase 0 — Setup | 13 / 18 |
-| Phase 1 — Teacher Tooling & Raw CV Pipeline | 20 / 20 |
+| Phase 1 — Teacher Tooling & Raw CV Pipeline | 21 / 21 |
 | Between Phases — Calibration | 5 / 8 *(+3 code-ready)* |
 | Phase 2 — Calibrated Scoring & Full System | 13 / 14 |
 
@@ -54,6 +54,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
 | Class roster management (add/edit/remove student) | Done | | PRD §7.1, API_SPEC §3.1, DATABASE §5 |
+| Class section relational subsystem (`public.section` CRUD, `ManageSectionsDialog`, `/api/sections`) | Done | | Spec: `2026-10-10-class-section-crud-design.md`, Migration: `0020_class_sections.sql` |
 | Activity creation (freeform target text) | Done | | PRD §7.1, API_SPEC §3.2, DESIGN §6 screens 5–6 |
 | Submission upload (single photo per activity) | Done | | PRD §7.1, API_SPEC §3.3 |
 | Submission deletion & attempt management | Done | | API_SPEC §3.3, DESIGN §7.1 |
