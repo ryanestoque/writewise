@@ -21,17 +21,11 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import {
-  FileText,
   LineChart,
-  ClipboardList,
   Loader2,
   UserX,
   BookOpen,
-  Info,
   History,
-  GraduationCap,
-  PenTool,
-  Award,
   CheckCircle2,
   ChevronRight,
 } from "lucide-react";
@@ -152,18 +146,13 @@ export function ProgressPageContent() {
           {/* Welcome & How It Works Guide Hub */}
           <div className="rounded-xl border border-border bg-card shadow-warm p-5 sm:p-7 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-start gap-3.5">
-                <div className="flex size-11 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0 mt-0.5">
-                  <GraduationCap className="size-6" aria-hidden="true" />
-                </div>
-                <div className="space-y-1">
-                  <h2 className="font-heading text-lg sm:text-xl font-bold text-foreground">
-                    Welcome to {selectedChild.fullName}&apos;s Cursive Journey
-                  </h2>
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-2xl">
-                    WriteWise measures handwriting worksheets across five essential cursive skills. Explore the handwriting guide to see what your child will learn and how you can practice together at home.
-                  </p>
-                </div>
+              <div className="space-y-1">
+                <h2 className="font-heading text-lg sm:text-xl font-bold text-foreground">
+                  Welcome to {selectedChild.fullName}&apos;s Cursive Journey
+                </h2>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-2xl">
+                  WriteWise measures handwriting worksheets across five essential cursive skills. Explore the handwriting guide to see what your child will learn and how you can practice together at home.
+                </p>
               </div>
 
               <Button
@@ -240,10 +229,9 @@ export function ProgressPageContent() {
               <div className="space-y-0.5">
                 <h2
                   id="take-home-onboarding-heading"
-                  className="font-heading text-base sm:text-lg font-semibold text-foreground flex items-center gap-2"
+                  className="font-heading text-base sm:text-lg font-semibold text-foreground"
                 >
-                  <ClipboardList className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                  <span>Assigned Take-Home Worksheets</span>
+                  Assigned Take-Home Worksheets
                 </h2>
                 {pendingActivitiesCount > 0 && (
                   <p className="text-xs text-muted-foreground leading-relaxed">
@@ -276,10 +264,9 @@ export function ProgressPageContent() {
               <div className="flex items-center justify-between">
                 <h2
                   id="latest-assessment-heading"
-                  className="font-heading text-base sm:text-lg font-semibold text-foreground flex items-center gap-2"
+                  className="font-heading text-base sm:text-lg font-semibold text-foreground"
                 >
-                  <FileText className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                  <span>Latest Assessment &amp; Feedback</span>
+                  Latest Assessment &amp; Feedback
                 </h2>
               </div>
               <LatestSubmissionCard
@@ -290,14 +277,9 @@ export function ProgressPageContent() {
 
             {/* Quick Home Support Card - Balances Desktop Column Height */}
             <div className="rounded-xl border border-border/70 bg-card/60 p-4 sm:p-5 space-y-3 shadow-warm">
-              <div className="flex items-center gap-2">
-                <div className="flex size-7 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
-                  <PenTool className="size-3.5" aria-hidden="true" />
-                </div>
-                <h3 className="font-heading text-xs sm:text-sm font-semibold text-foreground">
-                  Supporting Cursive at Home
-                </h3>
-              </div>
+              <h3 className="font-heading text-xs sm:text-sm font-semibold text-foreground">
+                Supporting Cursive at Home
+              </h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Short 5-minute sessions focusing on proper pencil grip and gentle paper slant build muscle memory faster than repetitive drills.
               </p>
@@ -327,10 +309,9 @@ export function ProgressPageContent() {
               <div className="flex items-center justify-between">
                 <h2
                   id="take-home-heading"
-                  className="font-heading text-base sm:text-lg font-semibold text-foreground flex items-center gap-2"
+                  className="font-heading text-base sm:text-lg font-semibold text-foreground"
                 >
-                  <ClipboardList className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                  <span>Assigned Take-Home Worksheets</span>
+                  Assigned Take-Home Worksheets
                 </h2>
                 {pendingActivitiesCount > 0 && (
                   <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/80 px-2.5 py-0.5 rounded-full border border-brand-200/70 dark:border-brand-800/70 shrink-0">
@@ -353,10 +334,9 @@ export function ProgressPageContent() {
               <div className="flex items-center justify-between">
                 <h2
                   id="progress-trends-heading"
-                  className="font-heading text-base sm:text-lg font-semibold text-foreground flex items-center gap-2"
+                  className="font-heading text-base sm:text-lg font-semibold text-foreground"
                 >
-                  <LineChart className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                  <span>Progress Over Time</span>
+                  Progress Over Time
                 </h2>
               </div>
 
@@ -372,18 +352,13 @@ export function ProgressPageContent() {
               ) : historyCount === 1 && history?.[0] ? (
                 <div className="rounded-xl border border-brand-200 dark:border-brand-900 bg-brand-50/20 dark:bg-brand-950/20 shadow-warm p-5 sm:p-6 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                    <div className="flex items-start gap-3">
-                      <div className="flex size-9 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0 mt-0.5">
-                        <Award className="size-5" aria-hidden="true" />
-                      </div>
-                      <div className="space-y-1">
-                        <h3 className="font-heading text-sm sm:text-base font-semibold text-foreground">
-                          First Milestone Achieved: Baseline Established!
-                        </h3>
-                        <p className="text-xs text-muted-foreground leading-relaxed max-w-lg">
-                          Your child&apos;s first worksheet has been evaluated. This establishes their starting baseline. Complete 1 more worksheet to unlock interactive trend lines.
-                        </p>
-                      </div>
+                    <div className="space-y-1">
+                      <h3 className="font-heading text-sm sm:text-base font-semibold text-foreground">
+                        First Milestone Achieved: Baseline Established!
+                      </h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed max-w-lg">
+                        Your child&apos;s first worksheet has been evaluated. This establishes their starting baseline. Complete 1 more worksheet to unlock interactive trend lines.
+                      </p>
                     </div>
                     <span className="text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-100 dark:bg-brand-900/60 px-2.5 py-1 rounded-full self-start sm:self-auto shrink-0">
                       1 of 2 Complete
@@ -432,18 +407,13 @@ export function ProgressPageContent() {
                 </div>
               ) : (
                 <div className="rounded-xl border border-border bg-card/60 shadow-warm p-5 sm:p-6 space-y-4">
-                  <div className="flex items-start gap-3.5">
-                    <div className="flex size-9 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0 mt-0.5">
-                      <Info className="size-4.5" aria-hidden="true" />
-                    </div>
-                    <div className="space-y-1">
-                      <h3 className="font-heading text-sm font-semibold text-foreground">
-                        Progress History Coming Soon
-                      </h3>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Handwriting trend lines across all 5 skills will appear here once your child completes 2 or more scored worksheets.
-                      </p>
-                    </div>
+                  <div className="space-y-1">
+                    <h3 className="font-heading text-sm font-semibold text-foreground">
+                      Progress History Coming Soon
+                    </h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Handwriting trend lines across all 5 skills will appear here once your child completes 2 or more scored worksheets.
+                    </p>
                   </div>
                   <TrendGraphTeaser subtitle="Trend lines across Letter Formation, Size, Spacing, Slant & Baseline" />
                 </div>

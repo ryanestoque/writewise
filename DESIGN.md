@@ -146,7 +146,7 @@ The type system pairs a rounded, geometric heading face with a clean, tabular-ca
 
 **Display Font:** Poppins (geometric sans-serif with rounded terminals, Google Fonts)  
 **Body Font:** Inter (clean neo-grotesque with tabular numeric figures, Google Fonts)  
-**Cursive Font:** Cedarville Cursive (fluid handwriting accent font, Google Fonts)
+**Cursive Font:** Learning Curve (fluid handwriting accent font, local)
 
 **Character:** Friendly and clear. Poppins provides a welcoming, classroom-friendly presence in headings, while Inter delivers crisp legibility in multi-column tables and diagnostic measurement values.
 
@@ -179,9 +179,9 @@ WriteWise enforces a responsive dual-modality layout strategy:
 Surfaces emphasize structural clarity through subtle 1px border strokes (`#e3e6e4`) and soft, warm ambient drop shadows that avoid stark dark halos.
 
 ### Shadow Vocabulary
-- **Warm Subtle** (`box-shadow: 0 2px 10px rgba(30, 40, 35, 0.04)`): Interactive buttons on hover, floating badge chips, dropdown menu surfaces.
-- **Warm Medium** (`box-shadow: 0 4px 20px rgba(30, 40, 35, 0.06)`): Elevated cards, diagnostic report panels, popovers, sheet sidebars.
-- **Warm Deep** (`box-shadow: 0 12px 36px rgba(30, 40, 35, 0.12)`): Modal dialogs, submission preview overlays, confirmation prompts.
+- **Warm Subtle** (`shadow-warm-sm` / `box-shadow: 0 2px 10px rgba(30, 40, 35, 0.04)`): Interactive buttons on hover, floating badge chips, dropdown menu surfaces.
+- **Warm Medium** (`shadow-warm` / `box-shadow: 0 4px 20px rgba(30, 40, 35, 0.06)`): Elevated cards, diagnostic report panels, popovers, sheet sidebars.
+- **Standard Overlay** (`shadow-xl`): Modal dialogs, submission preview overlays, confirmation prompts.
 
 ### Named Rules
 **The Precision vs Warmth Elevation Rule.** Data tables, raw measurement feeds, and system logs remain strictly flat with 1px border lines and zero shadow. Cards, feedback containers, and floating control bars employ `shadow-warm` to invite human touch.
@@ -228,7 +228,7 @@ Form geometry communicates interaction depth and intent:
 
 ### Diagnostic Overlay & Cursive Guidelines (Signature Components)
 - **Handwriting Overlay:** Low visual weight (1.5px stroke, 60% opacity) geometric bounding lines for slant, spacing, baseline drift, and letter formation. Tapping a criterion highlights its specific lines while dimming others.
-- **Cursive Guidelines Background:** Decorative 3-line penmanship guide (headline, dotted midline, baseline) in soft pine wash `#e4f1ef` to anchor cursive typography.
+- **Cursive Guidelines Background:** Decorative 3-color penmanship guide with a slate gray headline, teal dotted midline, and orange/rust baseline to anchor cursive typography.
 
 ### Iconography & Visual Semantics
 

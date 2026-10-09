@@ -9,11 +9,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  PenToolIcon,
-  CompassIcon,
-  SpaceIcon,
-  MoveVerticalIcon,
-  ScalingIcon,
   GraduationCapIcon,
   SearchIcon,
   XCircleIcon,
@@ -32,7 +27,6 @@ interface CriterionItem {
   id: string;
   name: string;
   category: string;
-  icon: typeof PenToolIcon;
   target: string;
   targetLabel: string;
   classroomStandard: string;
@@ -46,7 +40,6 @@ const criteria: CriterionItem[] = [
     id: "formation",
     name: "Letter Formation",
     category: "Shape & Joins",
-    icon: PenToolIcon,
     target: "Clear loops, proper cursive joins, legible character structure",
     targetLabel: "Morphology & Joins",
     classroomStandard: "Proper cursive loops and joining strokes without print-hybrid breaks",
@@ -60,7 +53,6 @@ const criteria: CriterionItem[] = [
     id: "slant",
     name: "Slant Angle",
     category: "Inclination",
-    icon: CompassIcon,
     target: "Standard ~68° forward slant (60°–75° from horizontal baseline)",
     targetLabel: "60°–75° Slant (~68° Std)",
     classroomStandard: "Consistent forward lean (~68°) across all tall letters and ascenders",
@@ -74,7 +66,6 @@ const criteria: CriterionItem[] = [
     id: "spacing",
     name: "Spacing & Rhythm",
     category: "Gaps & Margins",
-    icon: SpaceIcon,
     target: "Uniform letter gaps & ~1 letter width between words",
     targetLabel: "Uniform 1-Letter Gaps",
     classroomStandard: "Uniform 1-letter finger space between words; even gaps between letters",
@@ -88,7 +79,6 @@ const criteria: CriterionItem[] = [
     id: "baseline",
     name: "Baseline Alignment",
     category: "Guideline Placement",
-    icon: MoveVerticalIcon,
     target: "±2px deviation from writing guideline",
     targetLabel: "±2px Guideline Deviation",
     classroomStandard: "Letters resting flat on the bottom line without sagging or floating",
@@ -102,7 +92,6 @@ const criteria: CriterionItem[] = [
     id: "size",
     name: "Size Consistency",
     category: "Vertical Scale",
-    icon: ScalingIcon,
     target: "2:1 ratio for ascenders/descenders vs. x-height",
     targetLabel: "2:1 Ascender/x-Height Ratio",
     classroomStandard: "Tall letters (l, b, h) touching headline; short letters (a, c, e) reaching dotted midline",
@@ -574,7 +563,6 @@ export function RubricReferenceDialog({
               ) : (
                 <div className="space-y-2">
                   {filteredCriteria.map((item) => {
-                    const Icon = item.icon;
                     const isExpanded = expandedCriteria.has(item.id);
 
                     return (
@@ -598,12 +586,6 @@ export function RubricReferenceDialog({
                             className="w-full flex items-center justify-between p-3 sm:p-3.5 text-left transition-colors gap-3 cursor-pointer select-none rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
-                              <div
-                                className="size-7 sm:size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-2xs"
-                                aria-hidden="true"
-                              >
-                                <Icon className="size-3.5 sm:size-4" />
-                              </div>
                               <div className="min-w-0">
                                 <span className="text-sm font-semibold text-foreground tracking-tight block">
                                   {item.name}

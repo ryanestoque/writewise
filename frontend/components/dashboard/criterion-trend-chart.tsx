@@ -14,8 +14,7 @@ import {
 import type { StudentScoreHistoryItem } from "@/lib/hooks/use-dashboard";
 import { getBandFromScore, getBandMeta } from "@/lib/utils/scoring";
 import { BandBadge } from "@/components/shared/band-badge";
-import { LineChart as LineChartIcon, Info, Table2, SlidersHorizontal, Check, ChevronDown } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { LineChart as LineChartIcon, Info, Table2, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { CRITERION_CONFIG, CHART_BAND_AREAS, CHART_DOT_STROKE } from "@/lib/utils/chart-theme";
@@ -177,132 +176,155 @@ export function CriterionTrendChart({
 
   if (history.length === 1) {
     const single = history[0];
+    const dateStr = new Date(single.submissionDate).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
     return (
-      <div className="space-y-3 p-4 rounded-xl border border-border bg-muted/10">
-        <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
-          <Info className="size-4 text-brand-600" />
-          <span>Single Submission Recorded</span>
+      <div className={cn("p-4 rounded-xl border border-border bg-card shadow-warm-xs space-y-3.5", className)}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-brand-500/10 text-brand-600 dark:text-brand-400 shrink-0">
+              <LineChartIcon className="size-4" aria-hidden="true" />
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold text-foreground">Single Submission Baseline Recorded</h4>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Completed on {dateStr} • Activity: &ldquo;{single.targetText}&rdquo;
+              </p>
+            </div>
+          </div>
+          <BandBadge score={single.compositeScore} size="sm" />
         </div>
-        <p className="text-[11px] text-muted-foreground">
-          Score: <strong className="text-foreground">{single.compositeScore?.toFixed(1)}%</strong> ({getBandMeta(single.compositeBand).label}) on {new Date(single.submissionDate).toLocaleDateString()}. Multiple submissions are needed to render a trend trajectory line chart.
-        </p>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 border-t border-border/50">
+          <div className="p-2 rounded-lg bg-muted/30 border border-border/40">
+            <span className="text-[10px] font-medium text-muted-foreground block">Overall Score</span>
+            <span className="text-xs font-bold text-foreground tabular-nums">
+              {single.compositeScore != null ? `${single.compositeScore.toFixed(1)}%` : "—"}
+            </span>
+          </div>
+          <div className="p-2 rounded-lg bg-muted/30 border border-border/40">
+            <span className="text-[10px] font-medium text-muted-foreground block">Letter Shapes</span>
+            <span className="text-xs font-bold text-foreground tabular-nums">
+              {single.scores.letter_formation != null ? `${single.scores.letter_formation.toFixed(1)}%` : "—"}
+            </span>
+          </div>
+          <div className="p-2 rounded-lg bg-muted/30 border border-border/40 col-span-2 sm:col-span-1">
+            <span className="text-[10px] font-medium text-muted-foreground block">Line Alignment</span>
+            <span className="text-xs font-bold text-foreground tabular-nums">
+              {single.scores.baseline_alignment != null ? `${single.scores.baseline_alignment.toFixed(1)}%` : "—"}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground bg-muted/20 px-3 py-2 rounded-lg border border-border/40">
+          <Info className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+          <span>A progress trajectory line chart will automatically render once a second worksheet is evaluated.</span>
+        </div>
       </div>
     );
   }
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Controls Bar: Compact Popover Filter + View Mode Toggle */}
-      <div className="flex items-center justify-between gap-3 pt-1 border-b border-border/50 pb-3">
-        {viewMode === "chart" ? (
-          <Popover>
-            <PopoverTrigger className="inline-flex items-center gap-2 px-3 py-1.5 min-h-[36px] rounded-lg border border-border/70 bg-card hover:bg-muted/50 text-xs font-medium text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 shadow-2xs">
-              <SlidersHorizontal className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-              <span className="text-muted-foreground hidden sm:inline">Showing:</span>
-              <span className="font-semibold truncate max-w-[150px] sm:max-w-[210px]">
-                {(() => {
-                  const activeLabels = CRITERION_CONFIG.filter((c) => activeCriteria[c.key]).map((c) => c.label);
-                  if (activeLabels.length === 0) return "None selected";
-                  if (activeLabels.length <= 2) return activeLabels.join(", ");
-                  return `${activeLabels.slice(0, 2).join(", ")} (+${activeLabels.length - 2})`;
-                })()}
-              </span>
-              <ChevronDown className="size-3.5 text-muted-foreground shrink-0 ml-0.5" />
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-64 p-3 rounded-2xl border border-border bg-popover text-popover-foreground shadow-lg space-y-2.5 z-50">
-              <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                <span className="text-xs font-semibold text-foreground">Filter Trend Lines</span>
-                {isCustomized && (
-                  <button
-                    type="button"
-                    onClick={resetCriteria}
-                    className="text-[11px] font-medium text-brand-700 dark:text-brand-300 hover:underline cursor-pointer"
-                  >
-                    Reset default
-                  </button>
-                )}
-              </div>
-              <div className="space-y-1">
-                {CRITERION_CONFIG.map((c) => {
-                  const isSelected = activeCriteria[c.key];
-                  return (
-                    <button
-                      key={c.key}
-                      type="button"
-                      onClick={() => toggleCriterion(c.key)}
-                      aria-pressed={isSelected}
-                      className={cn(
-                        "w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer text-left",
-                        isSelected
-                          ? "bg-muted/70 text-foreground font-semibold"
-                          : "text-muted-foreground hover:bg-muted/30"
-                      )}
-                    >
-                      <div className="flex items-center gap-2 truncate">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: getCriterionColor(c) }}
-                          aria-hidden="true"
-                        />
-                        <span className="truncate">{c.label}</span>
-                      </div>
-                      {isSelected && <Check className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 ml-2" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </PopoverContent>
-          </Popover>
-        ) : (
-          <p className="text-xs text-muted-foreground font-medium truncate max-w-[240px] sm:max-w-none">
-            Scores across all {history.length} completed worksheets.
-          </p>
-        )}
+      {/* Controls Bar: Inline Interactive Filter Pills + View Mode Toggle */}
+      <div className="flex flex-col gap-3 pt-1 border-b border-border/50 pb-3 min-w-0">
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <SlidersHorizontal className="size-3.5 text-primary shrink-0" aria-hidden="true" />
+            <span className="font-semibold text-foreground">Trend Lines</span>
+            {isCustomized && (
+              <button
+                type="button"
+                onClick={resetCriteria}
+                className="text-[11px] font-medium text-primary hover:underline cursor-pointer ml-1"
+              >
+                Reset default
+              </button>
+            )}
+          </div>
 
-        {/* View Switcher Tablist */}
-        <div
-          role="tablist"
-          aria-label="Progress view mode"
-          onKeyDown={handleTabKeyDown}
-          className="flex items-center gap-1 self-start sm:self-auto bg-muted/40 p-1 rounded-lg border border-border/60 shrink-0"
-        >
-          <button
-            id="progress-view-tab-chart"
-            role="tab"
-            type="button"
-            aria-selected={viewMode === "chart"}
-            aria-controls="progress-view-panel-chart"
-            tabIndex={viewMode === "chart" ? 0 : -1}
-            onClick={() => setViewMode("chart")}
-            className={cn(
-              "inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[40px] sm:min-h-[32px] rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
-              viewMode === "chart"
-                ? "bg-card text-foreground font-semibold shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            )}
+          {/* View Switcher Tablist */}
+          <div
+            role="tablist"
+            aria-label="Progress view mode"
+            onKeyDown={handleTabKeyDown}
+            className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/60 shrink-0"
           >
-            <LineChartIcon className="size-3.5" aria-hidden="true" />
-            <span>Chart</span>
-          </button>
-          <button
-            id="progress-view-tab-table"
-            role="tab"
-            type="button"
-            aria-selected={viewMode === "table"}
-            aria-controls="progress-view-panel-table"
-            tabIndex={viewMode === "table" ? 0 : -1}
-            onClick={() => setViewMode("table")}
-            className={cn(
-              "inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[40px] sm:min-h-[32px] rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
-              viewMode === "table"
-                ? "bg-card text-foreground font-semibold shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Table2 className="size-3.5" aria-hidden="true" />
-            <span>Table</span>
-          </button>
+            <button
+              id="progress-view-tab-chart"
+              role="tab"
+              type="button"
+              aria-selected={viewMode === "chart"}
+              aria-controls="progress-view-panel-chart"
+              tabIndex={viewMode === "chart" ? 0 : -1}
+              onClick={() => setViewMode("chart")}
+              className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[36px] sm:min-h-[30px] rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                viewMode === "chart"
+                  ? "bg-card text-foreground font-semibold shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <LineChartIcon className="size-3.5" aria-hidden="true" />
+              <span>Chart</span>
+            </button>
+            <button
+              id="progress-view-tab-table"
+              role="tab"
+              type="button"
+              aria-selected={viewMode === "table"}
+              aria-controls="progress-view-panel-table"
+              tabIndex={viewMode === "table" ? 0 : -1}
+              onClick={() => setViewMode("table")}
+              className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[36px] sm:min-h-[30px] rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                viewMode === "table"
+                  ? "bg-card text-foreground font-semibold shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Table2 className="size-3.5" aria-hidden="true" />
+              <span>Table</span>
+            </button>
+          </div>
         </div>
+
+        {/* Interactive Criterion Legend Pills */}
+        {viewMode === "chart" && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {CRITERION_CONFIG.map((c) => {
+              const isSelected = activeCriteria[c.key];
+              const color = getCriterionColor(c);
+              return (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => toggleCriterion(c.key)}
+                  aria-pressed={isSelected}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer border select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-[32px]",
+                    isSelected
+                      ? "bg-card text-foreground border-border shadow-2xs font-semibold"
+                      : "bg-muted/20 text-muted-foreground/60 border-border/40 hover:bg-muted/40 hover:text-muted-foreground line-through opacity-75"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "size-2.5 rounded-full shrink-0 transition-opacity",
+                      !isSelected && "opacity-40"
+                    )}
+                    style={{ backgroundColor: color }}
+                    aria-hidden="true"
+                  />
+                  <span>{c.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {viewMode === "chart" ? (

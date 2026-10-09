@@ -811,12 +811,22 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
               <text x="212" y="20" fontSize="8" className="fill-primary font-sans font-semibold">~68° Slant</text>
 
               {/* Big Cursive Letters on Baseline */}
+              <style>{`
+                @keyframes drawText {
+                  0% { clip-path: inset(0 100% 0 0); opacity: 0.3; }
+                  100% { clip-path: inset(0 -10% 0 0); opacity: 1; }
+                }
+                .animate-draw {
+                  animation: drawText 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+                }
+              `}</style>
               <text
+                key={activeLetter.id}
                 x="50%"
                 y="75"
                 dominantBaseline="alphabetic"
                 textAnchor="middle"
-                className="font-cursive fill-foreground"
+                className="font-cursive fill-foreground animate-draw"
                 style={{ fontSize: "56px", fontWeight: 500 }}
               >
                 {activeLetter.upper}{activeLetter.lower}
@@ -990,14 +1000,13 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
             )}>
               {/* Case Mode Selector (Pairs, Upper, Lower) */}
               <div
-                role="radiogroup"
+                role="group"
                 aria-label="Filter letter case"
                 className="inline-flex items-center p-0.5 rounded-lg border border-border/70 bg-muted/40 shrink-0 self-start sm:self-auto"
               >
                 <button
                   type="button"
-                  role="radio"
-                  aria-checked={caseFilter === "pairs"}
+                  aria-pressed={caseFilter === "pairs"}
                   onClick={() => setCaseFilter("pairs")}
                   className={cn(
                     "px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer",
@@ -1010,8 +1019,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                 </button>
                 <button
                   type="button"
-                  role="radio"
-                  aria-checked={caseFilter === "upper"}
+                  aria-pressed={caseFilter === "upper"}
                   onClick={() => setCaseFilter("upper")}
                   className={cn(
                     "px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer",
@@ -1024,8 +1032,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                 </button>
                 <button
                   type="button"
-                  role="radio"
-                  aria-checked={caseFilter === "lower"}
+                  aria-pressed={caseFilter === "lower"}
                   onClick={() => setCaseFilter("lower")}
                   className={cn(
                     "px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer",
@@ -1051,16 +1058,17 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
 
                 {[
                   { id: "all", label: "All Letters", count: 26 },
-                  { id: "ascender", label: "Ascenders (Tall)", count: 7 },
-                  { id: "midline", label: "Midline (Short)", count: 14 },
-                  { id: "descender", label: "Descenders (Tail)", count: 6 },
-                  { id: "highJoiner", label: "High Joiners", count: 4 },
+                  { id: "ascender", label: "Tall Letters (Ascenders)", count: 7 },
+                  { id: "midline", label: "Short Letters (Midline)", count: 14 },
+                  { id: "descender", label: "Tail Letters (Descenders)", count: 6 },
+                  { id: "highJoiner", label: "High Connections", count: 4 },
                 ].map((chip) => {
                   const isActive = zoneFilter === chip.id;
                   return (
                     <button
                       key={chip.id}
                       type="button"
+                      aria-pressed={isActive}
                       onClick={() => setZoneFilter(chip.id as typeof zoneFilter)}
                       className={cn(
                         "px-2.5 py-1 rounded-full text-xs font-medium shrink-0 transition-colors cursor-pointer border",

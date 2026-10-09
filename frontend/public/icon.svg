@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="ww-bg" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#1b6b63" />
+      <stop offset="100%" stopColor="#124842" />
+    </linearGradient>
+    <linearGradient id="ww-nib-gold" x1="28" y1="8" x2="42" y2="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#f3d368" />
+      <stop offset="60%" stopColor="#c9a227" />
+      <stop offset="100%" stopColor="#967414" />
+    </linearGradient>
+    <filter id="ww-shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <!-- Background container badge -->
+  <rect width="48" height="48" rx="12" fill="url(#ww-bg)" />
+
+  <!-- Handwriting Guidelines -->
+  <line x1="8" y1="17" x2="40" y2="17" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1" stroke-dasharray="2 2" stroke-linecap="round" />
+  <line x1="8" y1="26" x2="40" y2="26" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1.2" stroke-linecap="round" />
+  <line x1="8" y1="35" x2="40" y2="35" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1" stroke-linecap="round" />
+
+  <!-- Cursive "W" Calligraphic Flow -->
+  <path
+    d="M 10 22 C 10 17 13.5 15.5 15.5 18 C 17.5 20.5 18 35 21 35 C 24 35 25.5 24 27.5 24 C 29.5 24 30.5 35 33.5 35 C 36.5 35 38 27.5 39.5 22"
+    stroke="#ffffff"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    filter="url(#ww-shadow)"
+  />
+
+  <!-- Angled Fountain Pen Nib -->
+  <g filter="url(#ww-shadow)">
+    <!-- Nib collar ring -->
+    <path
+      d="M 37.5 22.5 L 41 19"
+      stroke="url(#ww-nib-gold)"
+      stroke-width="2.5"
+      stroke-linecap="round"
+    />
+    <!-- Nib body -->
+    <path
+      d="M 38 20.5 L 43.5 15 L 44 9 L 38 9.5 L 32.5 15 L 35 17.5 Z"
+      fill="url(#ww-nib-gold)"
+      stroke="#ffffff"
+      stroke-width="0.8"
+      stroke-linejoin="round"
+    />
+    <!-- Breather hole and slit -->
+    <circle cx="39.5" cy="13.5" r="1.1" fill="#124842" />
+    <path
+      d="M 43.5 9.5 L 39.5 13.5"
+      stroke="#124842"
+      stroke-width="0.9"
+      stroke-linecap="round"
+    />
+  </g>
+</svg>

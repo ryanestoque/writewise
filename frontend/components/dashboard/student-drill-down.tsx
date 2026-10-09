@@ -34,6 +34,9 @@ import {
   ChevronRight,
   PenTool,
   Info,
+  LayoutDashboard,
+  LineChart,
+  History,
 } from "lucide-react";
 
 interface StudentDrillDownProps {
@@ -52,6 +55,7 @@ export function StudentDrillDownDrawer({
   const studentId = student?.studentId ?? null;
   const { data: history = [], isLoading } = useStudentScoreHistory(studentId);
   const [accordionValue, setAccordionValue] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<"overview" | "trends" | "history">("overview");
 
   const allCriteriaKeys = useMemo(() => RUBRIC_CRITERIA.map((c) => c.key), []);
 
@@ -68,6 +72,18 @@ export function StudentDrillDownDrawer({
     if (!history || history.length === 0) return null;
     return history[history.length - 1];
   }, [history]);
+
+  // First submission info for progress trajectory
+  const firstSubmission = useMemo(() => {
+    if (!history || history.length === 0) return null;
+    return history[0];
+  }, [history]);
+
+  // Score improvement calculation
+  const scoreDelta = useMemo(() => {
+    if (!firstSubmission?.compositeScore || !latestSubmission?.compositeScore) return null;
+    return latestSubmission.compositeScore - firstSubmission.compositeScore;
+  }, [firstSubmission, latestSubmission]);
 
   // Compute top strength and priority focus area from latest scores
   const { topStrength, focusArea } = useMemo(() => {
@@ -107,6 +123,8 @@ export function StudentDrillDownDrawer({
   }, [student]);
 
   const reversedHistory = useMemo(() => [...history].reverse(), [history]);
+  // Capped recent history for Overview tab (Harden: P2 requirement)
+  const recentHistoryPreview = useMemo(() => reversedHistory.slice(0, 3), [reversedHistory]);
 
   if (!student) return null;
 
@@ -118,8 +136,8 @@ export function StudentDrillDownDrawer({
         side="right"
         className="w-full sm:max-w-xl p-0 flex flex-col h-full bg-background border-l border-border shadow-warm-sm overflow-hidden"
       >
-        {/* Drawer Header with Clean Metadata */}
-        <SheetHeader className="p-5 sm:p-6 bg-card border-b border-border shrink-0 space-y-2">
+        {/* Drawer Header with Clean Metadata & Tab Navigation */}
+        <SheetHeader className="p-5 sm:p-6 pb-0 sm:pb-0 bg-card border-b border-border shrink-0 space-y-4">
           <div className="flex items-start justify-between gap-3 pr-6">
             <div className="flex-1 min-w-0 space-y-1">
               <SheetTitle className="font-heading text-lg sm:text-xl font-bold text-foreground leading-snug break-words">
@@ -136,10 +154,60 @@ export function StudentDrillDownDrawer({
               </div>
             </div>
           </div>
+
+          {/* Accessible Segmented Tab Navigation Bar */}
+          {hasSubmissions && (
+            <div className="flex items-center gap-1 border-t border-border/60 pt-2 -mx-5 sm:-mx-6 px-5 sm:px-6 overflow-x-auto no-scrollbar -mb-px">
+              <button
+                type="button"
+                onClick={() => setActiveTab("overview")}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap min-h-[40px] -mb-px",
+                  activeTab === "overview"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <LayoutDashboard className="size-3.5" />
+                <span>Overview</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("trends")}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap min-h-[40px] -mb-px",
+                  activeTab === "trends"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <LineChart className="size-3.5" />
+                <span>Score Trends</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("history")}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap min-h-[40px] -mb-px",
+                  activeTab === "history"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <History className="size-3.5" />
+                <span>History</span>
+                <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] bg-muted text-muted-foreground font-bold tabular-nums">
+                  {history.length}
+                </span>
+              </button>
+            </div>
+          )}
         </SheetHeader>
 
         {/* Scrollable Drawer Body */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+        <div className={cn("flex-1 overflow-y-auto overflow-x-hidden p-5 sm:p-6 min-w-0 flex flex-col", hasSubmissions && "space-y-6")}>
           {isLoading ? (
             <div className="space-y-4">
               <Skeleton className="h-32 w-full rounded-xl" />
@@ -147,8 +215,8 @@ export function StudentDrillDownDrawer({
               <Skeleton className="h-32 w-full rounded-xl" />
             </div>
           ) : !hasSubmissions ? (
-            /* Actionable Unified Onboarding Empty State for Students with No Submissions */
-            <div className="p-8 sm:p-12 rounded-xl border border-dashed border-border/60 bg-muted/20 text-center flex flex-col items-center justify-center space-y-3.5 my-auto">
+            /* Actionable Unified Onboarding Empty State */
+            <div className="p-8 sm:p-12 rounded-xl border border-dashed border-border/60 bg-muted/20 text-center flex flex-col items-center justify-center space-y-3.5 my-auto w-full">
               <div className="p-3.5 rounded-full bg-background border border-border/60 text-muted-foreground shadow-warm-xs">
                 <PenTool className="size-6 text-primary" />
               </div>
@@ -161,8 +229,9 @@ export function StudentDrillDownDrawer({
                 </p>
               </div>
             </div>
-          ) : (
-            <>
+          ) : activeTab === "overview" ? (
+            /* Tab 1: OVERVIEW PANEL */
+            <div className="space-y-6">
               {/* Integrated Overall Performance & Highlights Hero Card */}
               {student.scores.composite !== null && (
                 <div className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-warm-xs space-y-4">
@@ -224,7 +293,7 @@ export function StudentDrillDownDrawer({
                 </div>
               )}
 
-              {/* Section 1: 5-Criteria Diagnostic Breakdown */}
+              {/* 5-Criteria Diagnostic Breakdown */}
               <section className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-sans text-sm font-semibold text-foreground flex items-center gap-1.5">
@@ -316,15 +385,15 @@ export function StudentDrillDownDrawer({
                             </div>
                           </AccordionTrigger>
 
-                          <AccordionContent className="px-3.5 sm:px-4 pb-4 space-y-3 border-0">
+                          <AccordionContent className="px-3.5 sm:px-4 pb-4 space-y-3.5 border-0">
                             <BandPositionBar score={score} showLabel={false} height="sm" />
                             {diagnosticNote && (
-                              <div className="p-3 rounded-lg bg-muted/30 border border-border text-xs text-muted-foreground leading-relaxed">
-                                <div className="flex items-center gap-1.5 font-semibold text-foreground/90 mb-1">
+                              <div className="p-3 sm:p-3.5 rounded-lg bg-muted/30 border border-border/80 text-xs text-muted-foreground leading-relaxed">
+                                <div className="flex items-center gap-1.5 font-semibold text-foreground/90 mb-1.5">
                                   <Info className="size-3.5 text-primary shrink-0" />
-                                  <span>Diagnostic Note:</span>
+                                  <span>Diagnostic Note</span>
                                 </div>
-                                <p className="text-muted-foreground">{diagnosticNote}</p>
+                                <p className="text-muted-foreground/90 pl-5">{diagnosticNote}</p>
                               </div>
                             )}
                           </AccordionContent>
@@ -335,27 +404,26 @@ export function StudentDrillDownDrawer({
                 </div>
               </section>
 
-              {/* Section 2: Historical Progress Trend */}
-              <section className="space-y-3 pt-1">
-                <h3 className="font-sans text-sm font-semibold text-foreground">
-                  Score Trend
-                </h3>
-
-                <div className="p-4 rounded-xl border border-border bg-card shadow-warm-xs">
-                  <CriterionTrendChart history={history} />
-                </div>
-              </section>
-
-              {/* Section 3: Graded Submissions History List */}
-              <section className="space-y-3 pt-1">
+              {/* Recent Submissions Preview (Capped to 3 items with 'View All' affordance) */}
+              <section className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-sans text-sm font-semibold text-foreground">
-                    Submissions ({history.length})
+                    Recent Worksheets
                   </h3>
+                  {history.length > 3 && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("history")}
+                      className="text-xs font-semibold text-primary hover:underline cursor-pointer inline-flex items-center gap-1"
+                    >
+                      <span>View all {history.length}</span>
+                      <ChevronRight className="size-3" />
+                    </button>
+                  )}
                 </div>
 
                 <div className="space-y-2.5">
-                  {reversedHistory.map((item) => (
+                  {recentHistoryPreview.map((item) => (
                     <button
                       key={item.submissionId}
                       type="button"
@@ -395,7 +463,86 @@ export function StudentDrillDownDrawer({
                   ))}
                 </div>
               </section>
-            </>
+            </div>
+          ) : activeTab === "trends" ? (
+            /* Tab 2: TRENDS PANEL */
+            <div className="space-y-4">
+              <div className="flex items-center justify-between min-w-0">
+                <div>
+                  <h3 className="font-sans text-sm font-semibold text-foreground">
+                    Longitudinal Progress
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Skill scores evaluated across {history.length} completed worksheets.
+                  </p>
+                </div>
+                {scoreDelta !== null && (
+                  <div className="text-right shrink-0">
+                    <span className="text-[11px] font-medium text-muted-foreground block">Trajectory</span>
+                    <span className={cn(
+                      "text-xs font-bold tabular-nums",
+                      scoreDelta > 0 ? "text-emerald-600 dark:text-emerald-400" : scoreDelta < 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"
+                    )}>
+                      {scoreDelta > 0 ? `+${scoreDelta.toFixed(1)}%` : `${scoreDelta.toFixed(1)}%`}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 rounded-xl border border-border bg-card shadow-warm-xs">
+                <CriterionTrendChart history={history} />
+              </div>
+            </div>
+          ) : (
+            /* Tab 3: FULL HISTORY PANEL */
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-sans text-sm font-semibold text-foreground">
+                  All Graded Submissions ({history.length})
+                </h3>
+              </div>
+
+              <div className="space-y-2.5">
+                {reversedHistory.map((item) => (
+                  <button
+                    key={item.submissionId}
+                    type="button"
+                    onClick={() => onOpenSubmission(item.submissionId, item.activityId)}
+                    className="w-full text-left group p-3.5 rounded-xl border border-border bg-card hover:bg-muted/40 hover:border-primary/30 hover:shadow-warm-xs transition-all flex items-center justify-between gap-3 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-manipulation min-h-[48px]"
+                  >
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                          &quot;{item.targetText}&quot;
+                        </span>
+                        {item.isTakeHome && (
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-secondary text-secondary-foreground border border-border/40 font-semibold tracking-wide uppercase shrink-0">
+                            Take-Home
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] font-medium text-muted-foreground tabular-nums">
+                        {new Date(item.submissionDate).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="text-right space-y-0.5">
+                        <span className="font-sans text-xs sm:text-sm font-bold tabular-nums text-foreground block">
+                          {item.compositeScore?.toFixed(1)}%
+                        </span>
+                        <BandBadge score={item.compositeScore} size="sm" showDot={false} />
+                      </div>
+                      <ChevronRight className="size-4 text-muted-foreground/70 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </SheetContent>
