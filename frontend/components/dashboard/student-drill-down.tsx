@@ -22,6 +22,13 @@ import {
 } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Empty,
+  EmptyHeader,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/components/ui/empty";
+import {
   type StudentScoreSummary,
   useStudentScoreHistory,
 } from "@/lib/hooks/use-dashboard";
@@ -47,7 +54,6 @@ import {
   UploadCloud,
   AlertCircle,
   RefreshCw,
-  ScanLine,
 } from "lucide-react";
 
 interface StudentDrillDownProps {
@@ -68,13 +74,17 @@ export function StudentDrillDownDrawer({
   const { openUpload } = useTeacherModals();
   const studentId = student?.studentId ?? null;
   const drawerRef = useRef<HTMLDivElement>(null);
+
+  // Upfront detection of zero submissions from student metadata to prevent CLS & skeleton flash
+  const knownZeroSubmissions = student?.scoreSource === "none" || student?.latestSubmissionId === null;
+
   const {
     data: history = [],
     isLoading,
     error,
     refetch,
     isRefetching,
-  } = useStudentScoreHistory(open ? studentId : null);
+  } = useStudentScoreHistory(open && !knownZeroSubmissions ? studentId : null);
   const [accordionValue, setAccordionValue] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "trends" | "history">("overview");
 
@@ -172,7 +182,7 @@ export function StudentDrillDownDrawer({
   // Capped recent history for Overview tab (Harden: P2 requirement)
   const recentHistoryPreview = useMemo(() => reversedHistory.slice(0, 3), [reversedHistory]);
 
-  const hasSubmissions = history.length > 0;
+  const hasSubmissions = !knownZeroSubmissions && history.length > 0;
 
   // Keyboard navigation for tab cycling scoped exclusively to the drawer dialog
   useEffect(() => {
@@ -239,7 +249,9 @@ export function StudentDrillDownDrawer({
                   </SheetDescription>
                   <span>•</span>
                   <span className="tabular-nums">
-                    {history.length} {history.length === 1 ? "submission" : "submissions"}
+                    {knownZeroSubmissions
+                      ? "0 submissions"
+                      : `${history.length} ${history.length === 1 ? "submission" : "submissions"}`}
                   </span>
                 </div>
               </div>
@@ -247,7 +259,7 @@ export function StudentDrillDownDrawer({
 
             {/* Accessible Segmented Tab Navigation Bar */}
             {hasSubmissions && (
-              <div className="-mx-5 sm:-mx-6 px-5 sm:px-6 -mb-px pt-1">
+              <div className="-mx-5 sm:-mx-6 px-5 sm:px-6 pt-1">
                 <TabsList
                   variant="line"
                   className="w-full grid grid-cols-3 h-auto gap-0 rounded-none bg-transparent p-0"
@@ -256,7 +268,7 @@ export function StudentDrillDownDrawer({
                     value="overview"
                     title="Overview (Alt + 1)"
                     aria-keyshortcuts="Alt+1"
-                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] -mb-px data-active:text-primary data-active:after:bg-primary"
+                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] translate-y-[1px] data-active:text-primary data-active:after:bg-primary"
                   >
                     <LayoutDashboard className="size-3.5 shrink-0" aria-hidden="true" />
                     <span>Overview</span>
@@ -266,7 +278,7 @@ export function StudentDrillDownDrawer({
                     value="trends"
                     title="Score Trends (Alt + 2)"
                     aria-keyshortcuts="Alt+2"
-                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] -mb-px data-active:text-primary data-active:after:bg-primary"
+                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] translate-y-[1px] data-active:text-primary data-active:after:bg-primary"
                   >
                     <LineChart className="size-3.5 shrink-0" aria-hidden="true" />
                     <span>
@@ -279,7 +291,7 @@ export function StudentDrillDownDrawer({
                     value="history"
                     title="History (Alt + 3)"
                     aria-keyshortcuts="Alt+3"
-                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] -mb-px data-active:text-primary data-active:after:bg-primary"
+                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] translate-y-[1px] data-active:text-primary data-active:after:bg-primary"
                   >
                     <History className="size-3.5 shrink-0" aria-hidden="true" />
                     <span>History</span>
@@ -323,83 +335,66 @@ export function StudentDrillDownDrawer({
                   disabled={isRefetching}
                 >
                   <RefreshCw className={cn("size-3.5", isRefetching && "animate-spin motion-reduce:animate-none")} aria-hidden="true" />
-                  <span>{isRefetching ? "Retrying..." : "Try Again"}</span>
                 </Button>
               </div>
             ) : !hasSubmissions ? (
               /* Actionable Pedagogical Onboarding & Criteria Preview Empty State */
               <div className="space-y-6">
-                {/* Hero Upload Prompt Card */}
-                <div className="p-5 sm:p-6 rounded-xl border border-dashed border-border/80 bg-muted/20 text-center flex flex-col items-center justify-center space-y-3.5 w-full">
-                  <div className="p-3.5 rounded-full bg-background border border-border/60 text-primary shadow-warm-xs">
-                    <ScanLine className="size-6 text-primary" aria-hidden="true" />
-                  </div>
-                  <div className="space-y-1.5 max-w-md">
-                    <h4 className="text-base font-semibold text-foreground">
+                {/* Hero Upload Prompt Card using Standard Empty Primitives */}
+                <Empty className="p-4 sm:p-6 rounded-xl border border-dashed border-border/80 bg-muted/20 text-center shadow-warm-xs">
+                  <EmptyHeader>
+                    <EmptyTitle className="font-heading text-base font-semibold text-foreground">
                       No Graded Worksheets Yet
-                    </h4>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
+                    </EmptyTitle>
+                    <EmptyDescription className="text-xs text-muted-foreground leading-relaxed max-w-md">
                       Upload a handwriting worksheet for <span className="font-semibold text-foreground">{student.fullName}</span> to automatically evaluate stroke geometry, letter height, and baseline consistency.
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="mt-1 text-xs font-semibold gap-1.5 cursor-pointer shadow-warm-xs"
-                    onClick={() => {
-                      onOpenChange(false);
-                      if (onUpload && student.studentId) {
-                        onUpload(student.studentId);
-                      } else {
-                        openUpload({ studentId: student.studentId });
-                      }
-                    }}
-                  >
-                    <UploadCloud className="size-3.5" aria-hidden="true" />
-                    <span>Upload Worksheet</span>
-                  </Button>
-                </div>
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  <EmptyContent className="mt-1">
+                    <Button
+                      type="button"
+                      size="default"
+                      className="text-xs font-semibold gap-2 cursor-pointer shadow-warm-xs min-h-[44px] sm:min-h-[40px] px-4"
+                      onClick={() => {
+                        onOpenChange(false);
+                        if (onUpload && student.studentId) {
+                          onUpload(student.studentId);
+                        } else {
+                          openUpload({ studentId: student.studentId });
+                        }
+                      }}
+                    >
+                      <UploadCloud className="size-4" aria-hidden="true" />
+                      <span>Upload Worksheet</span>
+                    </Button>
+                  </EmptyContent>
+                </Empty>
 
                 {/* Inactive 5-Criteria Pedagogical Framework Scaffolding */}
-                <section className="space-y-3">
+                <section aria-labelledby="diagnostic-framework-title" className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-sans text-sm font-semibold text-foreground">
+                    <h3 id="diagnostic-framework-title" className="font-sans text-sm font-semibold text-foreground">
                       Diagnostic Criteria Framework
                     </h3>
                   </div>
 
-                  <div className="rounded-xl border border-border bg-card divide-y divide-border shadow-warm-xs overflow-hidden">
-                    {RUBRIC_CRITERIA.map((criterion) => {
-                      let description = "";
-                      if (criterion.key === "letter_formation_band") {
-                        description = "Upper/lowercase stroke geometry, letter loops, and character formation accuracy.";
-                      } else if (criterion.key === "size_consistency_band") {
-                        description = "Height uniformity and vertical proportions relative to headline and baseline guides.";
-                      } else if (criterion.key === "spacing_band") {
-                        description = "Inter-word and letter gap consistency across all written lines.";
-                      } else if (criterion.key === "slant_band") {
-                        description = "Consistent forward angle inclination and vertical stroke alignment.";
-                      } else if (criterion.key === "baseline_alignment_band") {
-                        description = "Horizontal word alignment along the bottom ruling guide without drifting.";
-                      }
-
-                      return (
-                        <div key={criterion.key} className="p-3.5 sm:p-4 space-y-1.5 hover:bg-muted/15 transition-colors">
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-xs font-semibold text-foreground">
-                              {criterion.shortName}
-                            </span>
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/40 shrink-0">
-                              Awaiting Assessment
-                            </span>
-                          </div>
-                          <p className="text-xs text-muted-foreground leading-normal">
-                            {description}
-                          </p>
+                  <ul role="list" className="rounded-xl border border-border bg-card divide-y divide-border shadow-warm-xs overflow-hidden">
+                    {RUBRIC_CRITERIA.map((criterion) => (
+                      <li key={criterion.key} className="p-3.5 sm:p-4 space-y-1.5">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-xs font-semibold text-foreground">
+                            {criterion.shortName}
+                          </span>
+                          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/40 shrink-0">
+                            Awaiting Assessment
+                          </span>
                         </div>
-                      );
-                    })}
-                  </div>
+                        <p className="text-xs text-muted-foreground leading-normal">
+                          {criterion.hint}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
                 </section>
               </div>
             ) : (
@@ -770,28 +765,26 @@ export function StudentDrillDownDrawer({
 
       {/* Persistent Rubric Score Bands Footer */}
       <footer className="shrink-0 border-t border-border bg-card/95 backdrop-blur-xs px-4 sm:px-6 py-2.5 sm:py-3">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2">
+        <div className="flex flex-col gap-1.5 sm:gap-2">
           <span className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider shrink-0">
-            Rubric Bands
+            Rubrics
           </span>
-          <div className="relative overflow-hidden sm:overflow-visible pr-2 sm:pr-0 after:pointer-events-none after:absolute after:right-0 after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-card after:to-transparent sm:after:hidden">
-            <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap text-xs pb-0.5 sm:pb-0 pr-6 sm:pr-0">
-              {RUBRIC_BANDS.map((band) => {
-                let range = "";
-                if (band.band === "needs_improvement") range = "0–24%";
-                else if (band.band === "developing") range = "25–49%";
-                else if (band.band === "satisfactory") range = "50–74%";
-                else if (band.band === "excellent") range = "75–100%";
+          <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-1 sm:gap-y-1.5 text-xs max-w-max">
+            {RUBRIC_BANDS.map((band) => {
+              let range = "";
+              if (band.band === "needs_improvement") range = "0–24%";
+              else if (band.band === "developing") range = "25–49%";
+              else if (band.band === "satisfactory") range = "50–74%";
+              else if (band.band === "excellent") range = "75–100%";
 
-                return (
-                  <div key={band.band} className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                    <span className={cn("size-2 rounded-full shrink-0", band.dotColor)} />
-                    <span className="font-medium text-foreground text-[10px] sm:text-[11px] whitespace-nowrap">{band.label}</span>
-                    <span className="text-muted-foreground text-[10px] sm:text-[11px] tabular-nums shrink-0">({range})</span>
-                  </div>
-                );
-              })}
-            </div>
+              return (
+                <div key={band.band} className="flex items-center gap-1 sm:gap-1.5 min-w-0">
+                  <span className={cn("size-2 rounded-full shrink-0", band.dotColor)} />
+                  <span className="font-medium text-foreground text-[10px] sm:text-[11px] truncate">{band.label}</span>
+                  <span className="text-muted-foreground text-[10px] sm:text-[11px] tabular-nums shrink-0">({range})</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </footer>
