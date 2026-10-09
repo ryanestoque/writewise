@@ -8,6 +8,7 @@ export interface Student {
   id: string;
   full_name: string;
   section: string;
+  section_id?: string | null;
   created_at: string;
   parent_email?: string | null;
   parent_status?: "pending" | "active" | null;
@@ -28,6 +29,7 @@ export function useStudents() {
           id,
           full_name,
           section,
+          section_id,
           parent_email,
           parent_status,
           created_at
@@ -50,7 +52,7 @@ export function useCreateStudent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (studentData: { full_name: string; section: string; parent_email?: string }) => {
+    mutationFn: async (studentData: { full_name: string; section?: string; section_id?: string; parent_email?: string }) => {
       const token = await getAuthToken(supabase);
 
       const response = await fetch("/api/students", {
@@ -66,6 +68,7 @@ export function useCreateStudent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["students"] });
+      queryClient.invalidateQueries({ queryKey: ["sections"] });
     },
   });
 }
@@ -75,7 +78,7 @@ export function useUpdateStudent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data: updateData }: { id: string; data: { full_name?: string; section?: string; parent_email?: string | null } }) => {
+    mutationFn: async ({ id, data: updateData }: { id: string; data: { full_name?: string; section?: string; section_id?: string; parent_email?: string | null } }) => {
       const token = await getAuthToken(supabase);
 
       const response = await fetch(`/api/students/${id}`, {
