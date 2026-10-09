@@ -30,8 +30,9 @@ on conflict (teacher_id, name) do nothing;
 update public.student s
 set section_id = sec.id
 from public.teacher_student ts
-join public.section sec on sec.teacher_id = ts.teacher_id and sec.name = trim(s.section)
+join public.section sec on sec.teacher_id = ts.teacher_id
 where ts.student_id = s.id
+  and sec.name = trim(s.section)
   and s.section_id is null;
 
 -- 5. Row Level Security

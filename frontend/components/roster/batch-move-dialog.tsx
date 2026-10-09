@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/combobox";
 import { Progress } from "@/components/ui/progress";
 import { Student } from "@/lib/hooks/use-students";
+import { useSections } from "@/lib/hooks/use-sections";
 import { createClient } from "@/lib/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { runConcurrentPool } from "@/lib/utils/concurrent-pool";
@@ -35,6 +36,7 @@ export function BatchMoveDialog({
   onComplete,
 }: BatchMoveDialogProps) {
   const queryClient = useQueryClient();
+  const { data: sectionEntities } = useSections();
   const [targetSection, setTargetSection] = useState("");
   const [sectionError, setSectionError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -42,10 +44,15 @@ export function BatchMoveDialog({
 
   // Extract unique sections for the combobox
   const existingSections = useMemo(() => {
-    if (!allStudents) return [];
-    const sections = new Set(allStudents.map((s) => s.section).filter(Boolean));
-    return Array.from(sections).sort();
-  }, [allStudents]);
+    const secSet = new Set<string>();
+    if (sectionEntities) {
+      sectionEntities.forEach((s) => secSet.add(s.name));
+    }
+    if (allStudents) {
+      allStudents.forEach((s) => s.section && secSet.add(s.section));
+    }
+    return Array.from(secSet).sort();
+  }, [sectionEntities, allStudents]);
 
   const handleOpenChange = (newOpen: boolean) => {
     if (isProcessing) return;

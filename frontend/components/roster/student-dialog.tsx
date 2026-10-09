@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useCreateStudent, useUpdateStudent, useStudents, Student } from "@/lib/hooks/use-students";
+import { useSections } from "@/lib/hooks/use-sections";
 import { Loader2, Plus, Check } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,15 +56,21 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
   const { mutate: createStudent, isPending: isCreating } = useCreateStudent();
   const { mutate: updateStudent, isPending: isUpdating } = useUpdateStudent();
   const { data: students } = useStudents();
+  const { data: sectionEntities } = useSections();
   
   const isPending = isCreating || isUpdating;
 
-  // Extract unique sections for the combobox
+  // Extract unique sections for the combobox (combining DB section entities + student sections)
   const existingSections = useMemo(() => {
-    if (!students) return [];
-    const sections = new Set(students.map(s => s.section).filter(Boolean));
-    return Array.from(sections).sort();
-  }, [students]);
+    const secSet = new Set<string>();
+    if (sectionEntities) {
+      sectionEntities.forEach((s) => secSet.add(s.name));
+    }
+    if (students) {
+      students.forEach((s) => s.section && secSet.add(s.section));
+    }
+    return Array.from(secSet).sort();
+  }, [sectionEntities, students]);
 
   const [duplicateData, setDuplicateData] = useState<StudentFormValues | null>(null);
   const [pendingAddAnother, setPendingAddAnother] = useState(false);

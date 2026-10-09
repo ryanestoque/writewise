@@ -28,10 +28,12 @@ import {
   Mail,
   Send,
   Download,
+  FolderKanban,
 } from "lucide-react";
 import { StudentDialog } from "@/components/roster/student-dialog";
 import { BulkStudentDialog } from "@/components/roster/bulk-student-dialog";
 import { BatchMoveDialog } from "@/components/roster/batch-move-dialog";
+import { ManageSectionsDialog } from "@/components/roster/manage-sections-dialog";
 import { FloatingBatchBar } from "@/components/roster/floating-batch-bar";
 import { exportStudentsToCSV } from "@/lib/utils/csv-export";
 import { createClient } from "@/lib/supabase/client";
@@ -65,6 +67,7 @@ export default function RosterPage() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
+  const [isManageSectionsOpen, setIsManageSectionsOpen] = useState(false);
   const [studentToEdit, setStudentToEdit] = useState<Student | null>(null);
 
   // Search, Filter, Sort state
@@ -370,6 +373,15 @@ export default function RosterPage() {
               Export CSV
             </Button>
           )}
+
+          <Button
+            onClick={() => setIsManageSectionsOpen(true)}
+            variant="outline"
+            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] flex-1 sm:flex-none border-border text-foreground hover:bg-muted text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl"
+          >
+            <FolderKanban className="w-4 h-4 mr-1.5 text-muted-foreground shrink-0" />
+            Manage Sections
+          </Button>
 
           <Button
             onClick={handleOpenBulk}
@@ -925,6 +937,12 @@ export default function RosterPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Manage Sections Dialog */}
+      <ManageSectionsDialog
+        open={isManageSectionsOpen}
+        onOpenChange={setIsManageSectionsOpen}
+      />
     </div>
   );
 }
