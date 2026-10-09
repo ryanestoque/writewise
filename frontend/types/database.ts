@@ -222,6 +222,38 @@ export type Database = {
         }
         Relationships: []
       }
+      section: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          teacher_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          teacher_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          teacher_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "section_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teacher"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student: {
         Row: {
           created_at: string
@@ -230,6 +262,7 @@ export type Database = {
           parent_email: string | null
           parent_status: string | null
           section: string
+          section_id: string | null
           updated_at: string
         }
         Insert: {
@@ -239,6 +272,7 @@ export type Database = {
           parent_email?: string | null
           parent_status?: string | null
           section: string
+          section_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -248,9 +282,18 @@ export type Database = {
           parent_email?: string | null
           parent_status?: string | null
           section?: string
+          section_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "student_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "section"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       student_parent: {
         Row: {
