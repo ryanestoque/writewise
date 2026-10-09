@@ -250,7 +250,7 @@ export function StudentDrillDownDrawer({
               <div className="-mx-5 sm:-mx-6 px-5 sm:px-6 -mb-px pt-1">
                 <TabsList
                   variant="line"
-                  className="w-full grid grid-cols-3 h-auto gap-0.5 sm:gap-1 rounded-none bg-transparent p-0"
+                  className="w-full grid grid-cols-3 h-auto gap-0 rounded-none bg-transparent p-0"
                 >
                   <TabsTrigger
                     value="overview"
