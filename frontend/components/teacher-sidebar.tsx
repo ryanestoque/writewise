@@ -55,9 +55,6 @@ interface NavItem {
 const classroomNavItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboardIcon },
   { title: "Class Roster", href: "/roster", icon: UsersIcon },
-];
-
-const assessmentNavItems: NavItem[] = [
   { title: "Activities", href: "/activities", icon: ClipboardListIcon },
 ];
 
@@ -225,75 +222,13 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Group 2: Assessment Navigation */}
+        {/* Group 2: Reference Guides */}
         <SidebarGroup className="py-1">
           <SidebarGroupLabel className="text-xs font-semibold tracking-wider text-muted-foreground uppercase px-2">
-            Assessment
+            Reference
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {assessmentNavItems.map((item) => {
-                const isActive = isItemActive(item.href);
-
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      render={
-                        <Link
-                          href={item.href}
-                          id={`nav-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
-                          aria-current={isActive ? "page" : undefined}
-                          onClick={handleNavClick}
-                        />
-                      }
-                      isActive={isActive}
-                      tooltip={item.title}
-                      className="h-10 sm:h-9.5"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <item.icon className="size-4 shrink-0" aria-hidden="true" />
-                        <span className="truncate group-data-[collapsible=icon]:hidden">{item.title}</span>
-                      </div>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-
-              {/* Rubric Guide Reference Modal Trigger */}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => {
-                    if (isMobile) setOpenMobile(false);
-                    openRubric();
-                  }}
-                  isActive={rubricOpen}
-                  aria-haspopup="dialog"
-                  aria-expanded={rubricOpen}
-                  aria-controls={rubricOpen ? "rubric-reference-dialog" : undefined}
-                  aria-label="Rubric Guide Reference (5 Diagnostic Criteria Modal)"
-                  tooltip={{
-                    children: (
-                      <div className="flex items-center gap-1.5">
-                        <span>Rubric Guide</span>
-                        <Kbd className="text-xs h-4.5 px-1 font-mono font-normal">{altKey}+R</Kbd>
-                      </div>
-                    ),
-                  }}
-                  className="h-10 sm:h-9.5 cursor-pointer"
-                  id="open-rubric-guide"
-                >
-                  <div className="flex items-center justify-between w-full min-w-0">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <BookOpenIcon className="size-4 shrink-0" aria-hidden="true" />
-                      <span className="truncate group-data-[collapsible=icon]:hidden">Rubric Guide</span>
-                    </div>
-                    <Kbd className="text-[10px] h-4 px-1.5 font-mono font-medium text-muted-foreground bg-muted/80 border border-border/50 shrink-0 group-data-[collapsible=icon]:hidden">
-                      {altKey}+R
-                    </Kbd>
-                  </div>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
               {/* Cursive Alphabet Guide Modal Trigger */}
               <SidebarMenuItem>
                 <SidebarMenuButton
@@ -324,6 +259,41 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                     </div>
                     <Kbd className="text-[10px] h-4 px-1.5 font-mono font-medium text-muted-foreground bg-muted/80 border border-border/50 shrink-0 group-data-[collapsible=icon]:hidden">
                       {altKey}+C
+                    </Kbd>
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Scoring Rubric Reference Modal Trigger */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => {
+                    if (isMobile) setOpenMobile(false);
+                    openRubric();
+                  }}
+                  isActive={rubricOpen}
+                  aria-haspopup="dialog"
+                  aria-expanded={rubricOpen}
+                  aria-controls={rubricOpen ? "rubric-reference-dialog" : undefined}
+                  aria-label="Scoring Rubric Reference (5 Diagnostic Criteria Modal)"
+                  tooltip={{
+                    children: (
+                      <div className="flex items-center gap-1.5">
+                        <span>Scoring Rubric</span>
+                        <Kbd className="text-xs h-4.5 px-1 font-mono font-normal">{altKey}+R</Kbd>
+                      </div>
+                    ),
+                  }}
+                  className="h-10 sm:h-9.5 cursor-pointer"
+                  id="open-rubric-guide"
+                >
+                  <div className="flex items-center justify-between w-full min-w-0">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <BookOpenIcon className="size-4 shrink-0" aria-hidden="true" />
+                      <span className="truncate group-data-[collapsible=icon]:hidden">Scoring Rubric</span>
+                    </div>
+                    <Kbd className="text-[10px] h-4 px-1.5 font-mono font-medium text-muted-foreground bg-muted/80 border border-border/50 shrink-0 group-data-[collapsible=icon]:hidden">
+                      {altKey}+R
                     </Kbd>
                   </div>
                 </SidebarMenuButton>

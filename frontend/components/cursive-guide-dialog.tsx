@@ -17,11 +17,9 @@ import {
 import {
   SearchIcon,
   XCircleIcon,
-  LayersIcon,
   RotateCcwIcon,
   CheckCircle2Icon,
   AlertTriangleIcon,
-  BookOpenIcon,
   FilterIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -898,7 +896,6 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
         {/* Practice Vocabulary Words */}
         <div className="pt-2 flex items-center gap-2 flex-wrap text-xs">
           <span className="font-semibold text-muted-foreground flex items-center gap-1">
-            <BookOpenIcon className="size-3.5 text-primary" aria-hidden="true" />
             Practice Words:
           </span>
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -938,6 +935,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
 
           {/* Search & Case / Zone Filters Bar */}
           <div className="flex flex-col gap-2.5">
+            {/* Top Bar: Search Input + Case Mode Selector */}
             <div className="flex items-center gap-2.5">
               {/* Quick Search */}
               <div role="search" aria-label="Search cursive letters" className="relative flex-1 min-w-0">
@@ -976,33 +974,11 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                 )}
               </div>
 
-              {/* Mobile Filters Toggle */}
-              <button
-                type="button"
-                onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                className={cn(
-                  "sm:hidden flex items-center justify-center size-10 rounded-lg border transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer",
-                  isFiltersOpen 
-                    ? "bg-primary/10 border-primary/30 text-primary" 
-                    : "border-border/80 bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                )}
-                aria-label="Toggle filters"
-                aria-expanded={isFiltersOpen}
-              >
-                <FilterIcon className="size-4.5" />
-              </button>
-            </div>
-
-            {/* Case Mode Selector & Zone Filters */}
-            <div className={cn(
-              "flex-col sm:flex-row items-stretch sm:items-center gap-2.5",
-              isFiltersOpen ? "flex animate-in fade-in slide-in-from-top-1" : "hidden sm:flex"
-            )}>
-              {/* Case Mode Selector (Pairs, Upper, Lower) */}
+              {/* Case Mode Selector (Desktop) */}
               <div
                 role="group"
                 aria-label="Filter letter case"
-                className="inline-flex items-center p-0.5 rounded-lg border border-border/70 bg-muted/40 shrink-0 self-start sm:self-auto"
+                className="hidden sm:inline-flex items-center p-0.5 rounded-lg border border-border/70 bg-muted/40 shrink-0"
               >
                 <button
                   type="button"
@@ -1045,44 +1021,108 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                 </button>
               </div>
 
-              {/* Zone Filter Chips */}
-              <div
-                role="toolbar"
-                aria-label="Filter by letter category"
-                className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs"
+              {/* Mobile Filters Toggle */}
+              <button
+                type="button"
+                onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                className={cn(
+                  "sm:hidden flex items-center justify-center size-10 rounded-lg border transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer",
+                  isFiltersOpen 
+                    ? "bg-primary/10 border-primary/30 text-primary" 
+                    : "border-border/80 bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+                aria-label="Toggle filters"
+                aria-expanded={isFiltersOpen}
               >
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
-                  <LayersIcon className="size-3" aria-hidden="true" />
-                  Category:
-                </span>
+                <FilterIcon className="size-4.5" />
+              </button>
+            </div>
 
-                {[
-                  { id: "all", label: "All Letters", count: 26 },
-                  { id: "ascender", label: "Tall Letters (Ascenders)", count: 7 },
-                  { id: "midline", label: "Short Letters (Midline)", count: 14 },
-                  { id: "descender", label: "Tail Letters (Descenders)", count: 6 },
-                  { id: "highJoiner", label: "High Connections", count: 4 },
-                ].map((chip) => {
-                  const isActive = zoneFilter === chip.id;
-                  return (
-                    <button
-                      key={chip.id}
-                      type="button"
-                      aria-pressed={isActive}
-                      onClick={() => setZoneFilter(chip.id as typeof zoneFilter)}
-                      className={cn(
-                        "px-2.5 py-1 rounded-full text-xs font-medium shrink-0 transition-colors cursor-pointer border",
-                        isActive
-                          ? "bg-primary text-primary-foreground border-primary shadow-2xs"
-                          : "bg-background/80 text-muted-foreground border-border/70 hover:text-foreground hover:bg-muted/60"
-                      )}
-                    >
-                      {chip.label}
-                      <span className="ml-1 text-[10px] opacity-80 tabular-nums">({chip.count})</span>
-                    </button>
-                  );
-                })}
+            {/* Mobile-Only Case Selector (when filters expanded) */}
+            {isFiltersOpen && (
+              <div
+                role="group"
+                aria-label="Filter letter case"
+                className="sm:hidden flex items-center p-0.5 rounded-lg border border-border/70 bg-muted/40 shrink-0 self-start animate-in fade-in slide-in-from-top-1"
+              >
+                <button
+                  type="button"
+                  aria-pressed={caseFilter === "pairs"}
+                  onClick={() => setCaseFilter("pairs")}
+                  className={cn(
+                    "flex-1 px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer text-center",
+                    caseFilter === "pairs"
+                      ? "bg-background text-foreground shadow-2xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Pairs (Aa)
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={caseFilter === "upper"}
+                  onClick={() => setCaseFilter("upper")}
+                  className={cn(
+                    "flex-1 px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer text-center",
+                    caseFilter === "upper"
+                      ? "bg-background text-foreground shadow-2xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Upper (A–Z)
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={caseFilter === "lower"}
+                  onClick={() => setCaseFilter("lower")}
+                  className={cn(
+                    "flex-1 px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer text-center",
+                    caseFilter === "lower"
+                      ? "bg-background text-foreground shadow-2xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Lower (a–z)
+                </button>
               </div>
+            )}
+
+            {/* Dedicated Zone / Category Filter Chips Row */}
+            <div
+              role="toolbar"
+              aria-label="Filter by letter category"
+              className={cn(
+                "flex items-center gap-1.5 flex-wrap text-xs pt-0.5",
+                !isFiltersOpen && "hidden sm:flex"
+              )}
+            >
+              {[
+                { id: "all", label: "All", count: 26, description: "All 26 alphabet letters" },
+                { id: "ascender", label: "Ascenders", count: 7, description: "Tall letters reaching top line (b, d, f, h, k, l, t)" },
+                { id: "midline", label: "Midline", count: 14, description: "Short letters within midline zone" },
+                { id: "descender", label: "Descenders", count: 6, description: "Tail letters extending below baseline" },
+                { id: "highJoiner", label: "High Joiners", count: 4, description: "Letters that connect from midline (b, o, v, w)" },
+              ].map((chip) => {
+                const isActive = zoneFilter === chip.id;
+                return (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    title={chip.description}
+                    aria-pressed={isActive}
+                    onClick={() => setZoneFilter(chip.id as typeof zoneFilter)}
+                    className={cn(
+                      "px-2.5 py-1 rounded-full text-xs font-medium shrink-0 transition-all cursor-pointer border",
+                      isActive
+                        ? "bg-primary text-primary-foreground border-primary shadow-2xs"
+                        : "bg-background/80 text-muted-foreground border-border/70 hover:text-foreground hover:bg-muted/60"
+                    )}
+                  >
+                    {chip.label}
+                    <span className="ml-1 text-[10px] opacity-80 tabular-nums">({chip.count})</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -1097,33 +1137,6 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
         <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
           {/* Left: Grid View */}
           <div className="flex-1 overflow-y-auto overscroll-contain focus-visible:outline-none p-3.5 sm:p-5 space-y-5 md:border-r border-border/70">
-            {/* 3-Line Penmanship Ruling Key (Educational Legend) */}
-            <section
-              aria-label="3-Line Penmanship Geometry Legend"
-              className="p-3 sm:p-3.5 rounded-xl border border-border/70 bg-muted/20 dark:bg-card/40 space-y-2.5 print:hidden"
-            >
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
-                  <span className="flex items-center gap-1">
-                    <span className="size-2 rounded-full bg-slate-400 dark:bg-slate-500" aria-hidden="true" />
-                    <strong>Headline:</strong> Tall Ascenders & Capitals
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="size-2 rounded-full bg-teal-600 dark:bg-teal-400" aria-hidden="true" />
-                    <strong>Midline:</strong> Dotted x-Height (Short letters)
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="size-2 rounded-full bg-orange-600 dark:bg-orange-400" aria-hidden="true" />
-                    <strong>Baseline:</strong> Solid Base Guide
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="size-2 rounded-full bg-indigo-500" aria-hidden="true" />
-                    <strong>Descender:</strong> Tail Loops below baseline
-                  </span>
-                </div>
-              </div>
-            </section>
-
             {/* Letter Cards Grid */}
             <section aria-labelledby="alphabet-grid-heading" className="space-y-3">
               <div className="flex items-center justify-between">
@@ -1133,9 +1146,6 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                 >
                   Cursive Letterforms ({filteredLetters.length})
                 </h3>
-                <span className="text-xs text-muted-foreground print:hidden">
-                  Click any letter card to inspect formation cues
-                </span>
               </div>
 
               {filteredLetters.length === 0 ? (
