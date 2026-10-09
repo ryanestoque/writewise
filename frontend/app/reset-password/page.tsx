@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -41,20 +41,54 @@ function ResetPasswordForm() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [hasValidSession, setHasValidSession] = useState(false);
 
-  const urlError =
-    searchParams.get("error_description") || searchParams.get("error");
+  // Resend form states & rate-limiting cooldown
+  const [resendEmail, setResendEmail] = useState("");
+  const [isResending, setIsResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
+  const [resendError, setResendError] = useState<string | null>(null);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+
+  const successRef = useRef<HTMLDivElement>(null);
+
+  // Handle countdown timer for resend email cooldown
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return;
+    const timer = setInterval(() => {
+      setCooldownSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldownSeconds]);
+
+  // Move focus to success card upon resend for screen reader accessibility
+  useEffect(() => {
+    if (resendSuccess) {
+      successRef.current?.focus();
+    }
+  }, [resendSuccess]);
 
   useEffect(() => {
     let isMounted = true;
 
     async function checkSession() {
-      if (urlError) {
+      const errorCode = searchParams.get("error_code");
+      const err = searchParams.get("error");
+      const desc = searchParams.get("error_description");
+
+      if (errorCode || err || desc) {
         if (isMounted) {
           setIsVerifyingSession(false);
-          setFormError(urlError);
         }
         return;
       }
+
+      // Check URL search & hash fragments for auth tokens
+      const hash = typeof window !== "undefined" ? window.location.hash : "";
+      const hasTokenInHash =
+        hash.includes("access_token=") ||
+        hash.includes("type=recovery") ||
+        hash.includes("error=");
+      const hasTokenInQuery =
+        searchParams.has("code") || searchParams.has("token_hash");
 
       // Check current session
       const {
@@ -70,7 +104,15 @@ function ResetPasswordForm() {
         return;
       }
 
-      // Listen for auth state change in case hash tokens or recovery tokens are being processed
+      // If no session AND no auth tokens/errors in URL, skip artificial waiting
+      if (!hasTokenInHash && !hasTokenInQuery) {
+        if (isMounted) {
+          setIsVerifyingSession(false);
+        }
+        return;
+      }
+
+      // Listen for auth state change in case hash tokens or recovery tokens are being processed asynchronously
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange((event, newSession) => {
@@ -82,12 +124,12 @@ function ResetPasswordForm() {
         }
       });
 
-      // Fallback timeout if no session detected within 2.5 seconds
+      // Shorter 1.5s fallback timeout if tokens are present but fail to yield a session
       const timer = setTimeout(() => {
-        if (isMounted && !hasValidSession) {
+        if (isMounted) {
           setIsVerifyingSession(false);
         }
-      }, 2500);
+      }, 1500);
 
       return () => {
         subscription.unsubscribe();
@@ -100,7 +142,60 @@ function ResetPasswordForm() {
     return () => {
       isMounted = false;
     };
-  }, [supabase, urlError, hasValidSession]);
+  }, [supabase, searchParams]);
+
+  async function handleResendSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setResendError(null);
+
+    if (cooldownSeconds > 0) {
+      setResendError(`Please wait ${cooldownSeconds} second${cooldownSeconds === 1 ? "" : "s"} before requesting another recovery email.`);
+      return;
+    }
+
+    if (!resendEmail || !resendEmail.includes("@")) {
+      setResendError("Please enter a valid email address.");
+      return;
+    }
+
+    setIsResending(true);
+
+    try {
+      const redirectUrl = `${window.location.origin}/auth/callback?next=/reset-password`;
+      const { error: sendError } = await supabase.auth.resetPasswordForEmail(
+        resendEmail.trim(),
+        {
+          redirectTo: redirectUrl,
+        }
+      );
+
+      if (sendError) {
+        const status = (sendError as { status?: number }).status;
+        const code = (sendError as { code?: string }).code;
+
+        if (
+          status === 429 ||
+          code === "over_email_send_rate_limit" ||
+          code === "rate_limit_exceeded"
+        ) {
+          setResendError(
+            "Too many requests. Please wait a few moments before trying again."
+          );
+        } else {
+          setResendError("Failed to send reset link. Please verify your email and try again.");
+        }
+        setIsResending(false);
+        return;
+      }
+
+      setResendSuccess(true);
+      setCooldownSeconds(60);
+      setIsResending(false);
+    } catch {
+      setResendError("An unexpected error occurred. Please try again.");
+      setIsResending(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -148,7 +243,7 @@ function ResetPasswordForm() {
   if (isVerifyingSession) {
     return (
       <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs p-8 text-center space-y-4">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-warm-sm ring-4 ring-brand-100/70">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-warm-sm ring-4 ring-brand-100/70">
           <BrandIcon className="size-6" />
         </div>
         <div className="space-y-2">
@@ -166,40 +261,115 @@ function ResetPasswordForm() {
 
   if (!hasValidSession) {
     return (
-      <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs">
+      <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs transition-all duration-200">
         <CardHeader className="space-y-3 text-center pb-4">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-destructive/10 text-destructive ring-4 ring-destructive/20">
-            <CircleAlertIcon className="size-6" />
+          <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-destructive/10 text-destructive ring-4 ring-destructive/15">
+            <KeyRoundIcon className="size-6" aria-hidden="true" />
           </div>
           <div>
             <h1 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-2xl">
               Recovery Link Expired or Invalid
             </h1>
-            <CardDescription className="mt-1 text-xs text-muted-foreground">
-              This password reset link has expired, is invalid, or has already been used.
+            <CardDescription className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
+              For your security, password reset links are single-use and expire after 1 hour.
             </CardDescription>
           </div>
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {formError && (
-            <Alert variant="destructive">
-              <CircleAlertIcon className="size-4" />
-              <AlertDescription className="text-xs">{formError}</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="rounded-xl border border-border/80 bg-muted/30 p-4 text-xs text-muted-foreground space-y-2">
-            <p className="font-medium text-foreground">What you can do:</p>
-            <ul className="list-disc list-inside space-y-1 pl-1">
-              <li>Return to the login page and request a new password recovery link.</li>
-              <li>Contact your school administrator or teacher coordinator if you need assistance.</li>
-            </ul>
+          <div aria-live="polite" className="space-y-4">
+            {resendSuccess ? (
+              <div
+                ref={successRef}
+                tabIndex={-1}
+                className="space-y-3 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg p-0.5"
+              >
+                <Alert className="border-primary/20 bg-primary/5 text-foreground dark:border-primary/30 dark:bg-primary/10">
+                  <CheckCircle2Icon className="size-4 text-primary shrink-0" aria-hidden="true" />
+                  <AlertDescription className="text-xs leading-relaxed">
+                    If an account exists for <span className="font-semibold text-foreground">{resendEmail}</span>, a new password reset link has been sent. Please check your inbox and spam folder.
+                  </AlertDescription>
+                </Alert>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setResendSuccess(false);
+                  }}
+                  className="w-full h-10 text-xs font-medium"
+                >
+                  Send to a different email
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={handleResendSubmit} className="space-y-3">
+                {resendError && (
+                  <Alert variant="destructive" className="[&>svg]:translate-y-0" role="alert">
+                    <CircleAlertIcon aria-hidden="true" />
+                    <AlertDescription id="resend-error-desc" className="text-xs leading-normal">
+                      {resendError}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="resend-email"
+                    className="text-xs font-semibold text-foreground"
+                  >
+                    Request a new recovery link
+                  </Label>
+                  <Input
+                    id="resend-email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={resendEmail}
+                    onChange={(e) => setResendEmail(e.target.value.trim())}
+                    required
+                    autoComplete="email"
+                    enterKeyHint="send"
+                    aria-invalid={!!resendError}
+                    aria-describedby={resendError ? "resend-error-desc" : "resend-email-hint"}
+                    className="h-10 text-base sm:text-sm"
+                  />
+                  <p id="resend-email-hint" className="text-[11px] text-muted-foreground">
+                    We will send a fresh password reset link to your registered email address.
+                  </p>
+                </div>
+                <Button
+                  type="submit"
+                  disabled={isResending || cooldownSeconds > 0}
+                  className="w-full h-10 gap-2 font-medium"
+                >
+                  {isResending ? (
+                    <>
+                      <Spinner className="size-4 text-primary-foreground" />
+                      <span>Sending new link…</span>
+                    </>
+                  ) : cooldownSeconds > 0 ? (
+                    <span>Resend available in {cooldownSeconds}s</span>
+                  ) : (
+                    <>
+                      <span>Send New Recovery Link</span>
+                      <ArrowRightIcon className="size-4" aria-hidden="true" />
+                    </>
+                  )}
+                </Button>
+              </form>
+            )}
           </div>
+
+          <p className="text-xs text-muted-foreground leading-relaxed text-center pt-1">
+            Need assistance? If you continue to experience issues, please contact your school administrator or WriteWise teacher coordinator.
+          </p>
         </CardContent>
 
         <CardFooter className="flex flex-col gap-2 border-t border-border/60 bg-muted/20 px-6 py-4">
-          <Button onClick={() => router.push("/login")} className="w-full">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => router.push("/login")}
+            className="w-full h-10 text-xs text-muted-foreground hover:text-foreground"
+          >
             Return to Sign In
           </Button>
         </CardFooter>
@@ -211,7 +381,7 @@ function ResetPasswordForm() {
     <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs transition-all duration-200">
       <CardHeader className="space-y-3 text-center pb-4">
         <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-warm-sm ring-4 ring-brand-100/70">
-          <KeyRoundIcon className="size-6" />
+          <KeyRoundIcon className="size-6" aria-hidden="true" />
         </div>
         <div>
           <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
@@ -223,7 +393,7 @@ function ResetPasswordForm() {
         </div>
         {userEmail && (
           <div className="inline-flex items-center justify-center gap-1.5 rounded-full bg-brand-50 dark:bg-brand-950 px-3 py-1 text-xs font-medium text-brand-800 dark:text-brand-300 border border-brand-200/80 dark:border-brand-900 mx-auto">
-            <CheckCircle2Icon className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" />
+            <CheckCircle2Icon className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
             <span className="truncate max-w-[260px]">{userEmail}</span>
           </div>
         )}
@@ -232,9 +402,9 @@ function ResetPasswordForm() {
       <CardContent className="space-y-4">
         <form onSubmit={handleSubmit} className="grid gap-4">
           {formError && (
-            <Alert variant="destructive" className="[&>svg]:translate-y-0">
+            <Alert variant="destructive" className="[&>svg]:translate-y-0" role="alert">
               <CircleAlertIcon aria-hidden="true" />
-              <AlertDescription className="text-xs leading-normal">
+              <AlertDescription id="password-form-error" className="text-xs leading-normal">
                 {formError}
               </AlertDescription>
             </Alert>
@@ -257,7 +427,9 @@ function ResetPasswordForm() {
                 required
                 minLength={10}
                 disabled={isSubmitting}
-                className="h-10 pr-10 text-sm"
+                aria-invalid={!!formError}
+                aria-describedby={formError ? "password-form-error" : "password-hint"}
+                className="h-10 pr-10 text-base sm:text-sm"
               />
               <button
                 type="button"
@@ -267,13 +439,13 @@ function ResetPasswordForm() {
                 className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground/60 hover:text-foreground transition-colors disabled:pointer-events-none"
               >
                 {showPassword ? (
-                  <EyeOffIcon className="size-4" />
+                  <EyeOffIcon className="size-4" aria-hidden="true" />
                 ) : (
-                  <EyeIcon className="size-4" />
+                  <EyeIcon className="size-4" aria-hidden="true" />
                 )}
               </button>
             </div>
-            <p className="text-[11px] text-muted-foreground">
+            <p id="password-hint" className="text-[11px] text-muted-foreground">
               Must be at least 10 characters in length.
             </p>
           </div>
@@ -295,7 +467,9 @@ function ResetPasswordForm() {
                 required
                 minLength={10}
                 disabled={isSubmitting}
-                className="h-10 pr-10 text-sm"
+                aria-invalid={!!formError}
+                aria-describedby={formError ? "password-form-error" : undefined}
+                className="h-10 pr-10 text-base sm:text-sm"
               />
               <button
                 type="button"
@@ -307,9 +481,9 @@ function ResetPasswordForm() {
                 className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground/60 hover:text-foreground transition-colors disabled:pointer-events-none"
               >
                 {showConfirmPassword ? (
-                  <EyeOffIcon className="size-4" />
+                  <EyeOffIcon className="size-4" aria-hidden="true" />
                 ) : (
-                  <EyeIcon className="size-4" />
+                  <EyeIcon className="size-4" aria-hidden="true" />
                 )}
               </button>
             </div>
@@ -328,7 +502,7 @@ function ResetPasswordForm() {
             ) : (
               <>
                 Update Password
-                <ArrowRightIcon className="size-4 ml-1.5" />
+                <ArrowRightIcon className="size-4 ml-1.5" aria-hidden="true" />
               </>
             )}
           </Button>

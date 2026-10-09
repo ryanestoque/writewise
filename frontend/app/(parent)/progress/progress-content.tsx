@@ -92,21 +92,13 @@ export function ProgressPageContent() {
     <div className="w-full space-y-5 sm:space-y-6 pb-12">
       {/* Zone 1: Child Header & Quick Guides */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-3 border-b border-border/60">
-        <div className="flex items-center gap-3">
-          <div
-            aria-hidden="true"
-            className="flex size-11 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-heading font-bold text-lg border border-brand-200/60 dark:border-brand-800/60 shadow-xs shrink-0 select-none"
-          >
-            {selectedChild.fullName.charAt(0)}
-          </div>
-          <div className="space-y-0.5 min-w-0">
-            <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground truncate">
-              {selectedChild.fullName}
-            </h1>
-            <p className="text-xs sm:text-sm font-medium text-muted-foreground">
-              Section <span className="text-foreground font-semibold">{selectedChild.section}</span>
-            </p>
-          </div>
+        <div className="space-y-0.5 min-w-0">
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground truncate">
+            {selectedChild.fullName}
+          </h1>
+          <p className="text-xs sm:text-sm font-medium text-muted-foreground">
+            Section <span className="text-foreground font-semibold">{selectedChild.section}</span>
+          </p>
         </div>
 
         {historyCount >= 1 && (

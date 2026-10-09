@@ -5,13 +5,16 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
   const error = searchParams.get("error");
+  const errorCode = searchParams.get("error_code");
   const errorDescription = searchParams.get("error_description");
   const next = searchParams.get("next") || "/accept-invite";
   const errorTarget = next.startsWith("/reset-password") ? "/reset-password" : "/accept-invite";
 
-  if (error || errorDescription) {
+  if (error || errorDescription || errorCode) {
     const redirectUrl = new URL(errorTarget, origin);
-    redirectUrl.searchParams.set("error", errorDescription || error || "auth_error");
+    if (errorCode) redirectUrl.searchParams.set("error_code", errorCode);
+    if (error) redirectUrl.searchParams.set("error", error);
+    if (errorDescription) redirectUrl.searchParams.set("error_description", errorDescription);
     return NextResponse.redirect(redirectUrl);
   }
 
