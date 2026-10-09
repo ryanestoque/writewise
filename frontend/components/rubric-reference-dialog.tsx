@@ -468,7 +468,7 @@ export function RubricReferenceDialog({
         <DialogHeader className="p-4 sm:p-5 pb-3 sm:pb-3.5 border-b border-border/70 bg-background/95 backdrop-blur-xs shrink-0 space-y-3">
           <div className="min-w-0 pr-10 sm:pr-8">
             <DialogTitle className="text-base sm:text-lg font-heading font-semibold text-foreground tracking-tight">
-              Handwriting Rubric Guide
+              Scoring Rubric
             </DialogTitle>
           </div>
 

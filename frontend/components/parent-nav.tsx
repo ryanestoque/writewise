@@ -202,15 +202,6 @@ export function ParentNav({
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  {onCursiveGuideClick && (
-                    <DropdownMenuItem
-                      onClick={onCursiveGuideClick}
-                      className="cursor-pointer gap-2 py-2 text-xs"
-                    >
-                      <PenTool className="size-3.5 text-muted-foreground" />
-                      <span>Cursive Letter Guide</span>
-                    </DropdownMenuItem>
-                  )}
                   <DropdownMenuItem
                     render={<Link href="/parent-settings" />}
                     className="cursor-pointer gap-2 py-2 text-xs"

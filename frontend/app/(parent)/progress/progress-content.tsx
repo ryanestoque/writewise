@@ -5,7 +5,7 @@ import { useParentPortal } from "@/components/parent-portal-provider";
 import { LatestSubmissionCard } from "@/components/parent/latest-submission-card";
 import { TakeHomeActivities } from "@/components/parent/take-home-activities";
 import { CriterionTrendChart } from "@/components/dashboard/criterion-trend-chart";
-import { ParentRubricDialog } from "@/components/parent/parent-rubric-dialog";
+import { RubricReferenceDialog } from "@/components/rubric-reference-dialog";
 import { SubmissionHistoryDialog } from "@/components/parent/submission-history-dialog";
 import {
   useChildScoreHistory,
@@ -32,7 +32,6 @@ import {
 
 export function ProgressPageContent() {
   const [rubricOpen, setRubricOpen] = useState(false);
-  const [rubricCriterion, setRubricCriterion] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const {
     selectedChildId,
@@ -41,10 +40,7 @@ export function ProgressPageContent() {
     openUploadDialog,
   } = useParentPortal();
 
-  const handleOpenRubric = useCallback((criterionKey?: string | null) => {
-    setRubricCriterion(criterionKey ?? null);
-    setRubricOpen(true);
-  }, []);
+  const handleOpenRubric = useCallback(() => setRubricOpen(true), []);
 
   const handleUploadActivity = useCallback(
     (activityId: string) => {
@@ -129,12 +125,12 @@ export function ProgressPageContent() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleOpenRubric(null)}
+              onClick={() => handleOpenRubric()}
               aria-haspopup="dialog"
               className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 text-xs font-medium border-border/80 hover:bg-muted/50 cursor-pointer"
             >
               <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-              <span>Handwriting Guide &amp; Scoring</span>
+              <span>Scoring Rubric</span>
             </Button>
           </div>
         )}
@@ -158,12 +154,12 @@ export function ProgressPageContent() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleOpenRubric(null)}
+                onClick={() => handleOpenRubric()}
                 aria-haspopup="dialog"
                 className="self-start sm:self-center h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-semibold gap-1.5 shrink-0 cursor-pointer shadow-xs border-brand-300/80 dark:border-brand-800 bg-brand-50/60 dark:bg-brand-950/40 text-brand-800 dark:text-brand-200 hover:bg-brand-100 dark:hover:bg-brand-900/60"
               >
                 <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                <span>Handwriting Guide &amp; Rubrics</span>
+                <span>Scoring Rubric</span>
               </Button>
             </div>
 
@@ -286,12 +282,12 @@ export function ProgressPageContent() {
               <div className="pt-1 flex items-center justify-between border-t border-border/50">
                 <button
                   type="button"
-                  onClick={() => handleOpenRubric(null)}
+                  onClick={() => handleOpenRubric()}
                   aria-haspopup="dialog"
                   aria-label="Review rubrics and handwriting tips"
                   className="text-xs font-semibold text-brand-700 dark:text-brand-300 hover:underline flex items-center gap-1 cursor-pointer min-h-[40px] sm:min-h-[36px] -my-1 py-1"
                 >
-                  <span>Review Rubrics &amp; Tips</span>
+                  <span>Scoring Rubric</span>
                   <ChevronRight className="size-3" aria-hidden="true" />
                 </button>
                 <span className="text-xs text-muted-foreground">5 cursive skills</span>
@@ -424,10 +420,9 @@ export function ProgressPageContent() {
       )}
 
       {/* Dialogs */}
-      <ParentRubricDialog
+      <RubricReferenceDialog
         open={rubricOpen}
         onOpenChange={setRubricOpen}
-        initialCriterion={rubricCriterion}
       />
       <SubmissionHistoryDialog
         open={historyOpen}
