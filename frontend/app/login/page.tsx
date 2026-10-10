@@ -84,6 +84,10 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
         return;
       }
 
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("writewise_recovery_email", resetEmail.trim());
+      }
+
       setIsSent(true);
       setIsSending(false);
     } catch {

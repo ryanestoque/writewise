@@ -23,7 +23,6 @@ import {
   EyeIcon,
   EyeOffIcon,
   ArrowRightIcon,
-  KeyRoundIcon,
   CheckCircle2Icon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -39,7 +38,21 @@ function ResetPasswordForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isVerifyingSession, setIsVerifyingSession] = useState(true);
+  const [isVerifyingSession, setIsVerifyingSession] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const hash = window.location.hash || "";
+      if (
+        params.has("error") ||
+        params.has("error_code") ||
+        params.has("error_description") ||
+        hash.includes("error=")
+      ) {
+        return false;
+      }
+    }
+    return true;
+  });
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [hasValidSession, setHasValidSession] = useState(false);
 
@@ -49,7 +62,6 @@ function ResetPasswordForm() {
   const [resendSuccess, setResendSuccess] = useState(false);
   const [resendError, setResendError] = useState<string | null>(null);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
-  const [urlErrorDescription, setUrlErrorDescription] = useState<string | null>(null);
   const [isDirectVisit, setIsDirectVisit] = useState(false);
 
   const successRef = useRef<HTMLDivElement>(null);
@@ -82,12 +94,37 @@ function ResetPasswordForm() {
 
       if (desc || err || errorCode) {
         if (isMounted) {
-          setUrlErrorDescription(
-            desc || err || "The password recovery link is invalid or has expired."
-          );
+          const emailParam = searchParams.get("email");
+          const cachedEmail =
+            typeof window !== "undefined"
+              ? sessionStorage.getItem("writewise_recovery_email")
+              : null;
+          if (emailParam) {
+            setResendEmail(emailParam);
+            if (typeof window !== "undefined") {
+              sessionStorage.setItem("writewise_recovery_email", emailParam);
+            }
+          } else if (cachedEmail) {
+            setResendEmail(cachedEmail);
+          }
           setIsVerifyingSession(false);
         }
         return;
+      }
+
+      // Check email search param or cached recovery email on non-error direct visit as well
+      const emailParam = searchParams.get("email");
+      const cachedEmail =
+        typeof window !== "undefined"
+          ? sessionStorage.getItem("writewise_recovery_email")
+          : null;
+      if (emailParam && isMounted) {
+        setResendEmail(emailParam);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("writewise_recovery_email", emailParam);
+        }
+      } else if (cachedEmail && isMounted) {
+        setResendEmail(cachedEmail);
       }
 
       // Check URL search & hash fragments for auth tokens
@@ -200,6 +237,10 @@ function ResetPasswordForm() {
         return;
       }
 
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("writewise_recovery_email", resendEmail.trim());
+      }
+
       setResendSuccess(true);
       setCooldownSeconds(60);
       setIsResending(false);
@@ -272,29 +313,27 @@ function ResetPasswordForm() {
   }
 
   if (!hasValidSession) {
-    const headerTitle = isDirectVisit
-      ? "Reset Your Password"
-      : "Your Reset Link Has Expired";
+    const headerTitle = resendSuccess
+      ? "Check Your Email"
+      : isDirectVisit
+        ? "Reset Your Password"
+        : "Your Reset Link Has Expired";
 
-    const headerDescription = isDirectVisit
-      ? "Enter your account email address below to receive a secure password reset link."
-      : (urlErrorDescription ||
-          "For your security, password reset links are single-use and expire after 1 hour. Enter your email below to receive a fresh link.");
+    const headerDescription = resendSuccess
+      ? "We've sent a new password recovery link to your registered email address."
+      : isDirectVisit
+        ? "Enter your account email address below to receive a secure password reset link."
+        : "Password reset links expire after 1 hour for security. Enter your email below for a fresh link.";
 
     return (
-      <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs transition-all duration-200">
-        <CardHeader className="space-y-3 text-center pb-4">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 ring-4 ring-amber-500/15">
-            <KeyRoundIcon className="size-6" aria-hidden="true" />
-          </div>
-          <div>
-            <h1 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-              {headerTitle}
-            </h1>
-            <CardDescription className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-              {headerDescription}
-            </CardDescription>
-          </div>
+      <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs transition-all duration-200 pb-0">
+        <CardHeader className="space-y-1.5 text-left pb-4">
+          <h1 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+            {headerTitle}
+          </h1>
+          <CardDescription className="text-xs text-muted-foreground leading-relaxed">
+            {headerDescription}
+          </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -309,7 +348,7 @@ function ResetPasswordForm() {
                 <Alert className="border-primary/20 bg-primary/5 text-foreground dark:border-primary/30 dark:bg-primary/10">
                   <CheckCircle2Icon className="size-4 text-primary shrink-0" aria-hidden="true" />
                   <AlertDescription className="text-xs leading-relaxed">
-                    If an account exists for <span className="font-semibold text-foreground">{resendEmail}</span>, a new password reset link has been sent. Please check your inbox and spam folder.
+                    If an account exists for <span className="font-semibold text-foreground">{resendEmail}</span>, a new password reset link has been sent. Links usually arrive within 1–2 minutes from WriteWise Security (<span className="font-medium text-foreground">noreply@writewise.edu</span>). Please check your inbox and spam folder.
                   </AlertDescription>
                 </Alert>
                 <Button
@@ -335,12 +374,12 @@ function ResetPasswordForm() {
                 )}
                 <div className="space-y-1.5">
                   <Label htmlFor="resend-email" className="text-xs font-semibold text-foreground">
-                    Email Address
+                    Account Email
                   </Label>
                   <Input
                     id="resend-email"
                     type="email"
-                    placeholder="Enter your email address"
+                    placeholder="e.g. teacher@school.edu"
                     value={resendEmail}
                     onChange={(e) => {
                       setResendEmail(e.target.value);
@@ -350,11 +389,15 @@ function ResetPasswordForm() {
                     autoComplete="email"
                     enterKeyHint="send"
                     aria-invalid={!!resendError}
-                    aria-describedby={resendError ? "resend-error-desc" : "resend-email-hint"}
+                    aria-describedby={
+                      resendError
+                        ? "resend-error-desc resend-email-hint"
+                        : "resend-email-hint"
+                    }
                     className="h-10 text-base sm:text-sm"
                   />
-                  <p id="resend-email-hint" className="text-xs text-muted-foreground">
-                    We will send a fresh password reset link to your registered email address.
+                  <p id="resend-email-hint" className="text-[11px] text-muted-foreground">
+                    Enter the email address associated with your WriteWise account.
                   </p>
                 </div>
                 <Button
@@ -380,24 +423,36 @@ function ResetPasswordForm() {
             )}
           </div>
 
-          <p className="text-xs text-muted-foreground leading-relaxed text-center pt-1">
-            Need assistance? If you continue to experience issues, please{" "}
-            <a
-              href="mailto:support@writewise.edu?subject=Password%20Reset%20Assistance"
-              className="font-medium text-foreground underline underline-offset-2 hover:text-primary transition-colors"
-            >
-              contact your school administrator or WriteWise coordinator
-            </a>
-            .
-          </p>
+          {(() => {
+            const errorCodeParam = searchParams.get("error_code") || searchParams.get("error");
+            const mailtoSubject = encodeURIComponent("Password Reset Assistance");
+            const mailtoBody = encodeURIComponent(
+              `Hi WriteWise Support,\n\nI am having trouble resetting my password.${resendEmail ? `\nAccount Email: ${resendEmail}` : ""
+              }${errorCodeParam ? `\nError Context: ${errorCodeParam}` : ""
+              }\n\nPlease help me access my account.`
+            );
+            const mailtoHref = `mailto:support@writewise.edu?subject=${mailtoSubject}&body=${mailtoBody}`;
+            return (
+              <p className="text-xs text-muted-foreground leading-relaxed text-center pt-1">
+                Need help?{" "}
+                <a
+                  href={mailtoHref}
+                  rel="noopener noreferrer"
+                  className="font-medium text-foreground underline underline-offset-2 hover:text-primary transition-colors"
+                >
+                  Contact your school administrator or WriteWise coordinator
+                </a>.
+              </p>
+            );
+          })()}
         </CardContent>
 
-        <CardFooter className="border-t border-border/60 pt-3 pb-0 justify-center">
+        <CardFooter className="border-t border-border/60 py-3 justify-center">
           <Link
             href="/login"
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" }),
-              "text-xs text-muted-foreground hover:text-foreground"
+              "h-8 px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
             )}
           >
             Return to Sign In
@@ -408,11 +463,8 @@ function ResetPasswordForm() {
   }
 
   return (
-    <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs transition-all duration-200">
-      <CardHeader className="space-y-3 text-center pb-4">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-warm-sm ring-4 ring-brand-100/70">
-          <KeyRoundIcon className="size-6" aria-hidden="true" />
-        </div>
+    <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs transition-all duration-200 pb-0">
+      <CardHeader className="space-y-2 text-left pb-4">
         <div>
           <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Reset Your Password
@@ -422,7 +474,7 @@ function ResetPasswordForm() {
           </CardDescription>
         </div>
         {userEmail && (
-          <div className="inline-flex items-center justify-center gap-1.5 rounded-full bg-brand-50 dark:bg-brand-950 px-3 py-1 text-xs font-medium text-brand-800 dark:text-brand-300 border border-brand-200/80 dark:border-brand-900 mx-auto">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 dark:bg-brand-950 px-3 py-1 text-xs font-medium text-brand-800 dark:text-brand-300 border border-brand-200/80 dark:border-brand-900 self-start">
             <CheckCircle2Icon className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
             <span className="truncate max-w-[260px]">{userEmail}</span>
           </div>
@@ -541,12 +593,12 @@ function ResetPasswordForm() {
         </form>
       </CardContent>
 
-      <CardFooter className="border-t border-border/60 pt-3 pb-0 justify-center">
+      <CardFooter className="border-t border-border/60 py-3 justify-center">
         <Link
           href="/login"
           className={cn(
             buttonVariants({ variant: "ghost", size: "sm" }),
-            "text-xs text-muted-foreground hover:text-foreground"
+            "h-8 px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
           )}
         >
           Cancel and return to Sign In
