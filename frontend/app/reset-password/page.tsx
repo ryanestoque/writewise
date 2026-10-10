@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -47,6 +49,8 @@ function ResetPasswordForm() {
   const [resendSuccess, setResendSuccess] = useState(false);
   const [resendError, setResendError] = useState<string | null>(null);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [urlErrorDescription, setUrlErrorDescription] = useState<string | null>(null);
+  const [isDirectVisit, setIsDirectVisit] = useState(false);
 
   const successRef = useRef<HTMLDivElement>(null);
 
@@ -68,14 +72,19 @@ function ResetPasswordForm() {
 
   useEffect(() => {
     let isMounted = true;
+    let timer: NodeJS.Timeout | null = null;
+    let authSubscription: { unsubscribe: () => void } | null = null;
 
     async function checkSession() {
       const errorCode = searchParams.get("error_code");
       const err = searchParams.get("error");
       const desc = searchParams.get("error_description");
 
-      if (errorCode || err || desc) {
+      if (desc || err || errorCode) {
         if (isMounted) {
+          setUrlErrorDescription(
+            desc || err || "The password recovery link is invalid or has expired."
+          );
           setIsVerifyingSession(false);
         }
         return;
@@ -104,9 +113,10 @@ function ResetPasswordForm() {
         return;
       }
 
-      // If no session AND no auth tokens/errors in URL, skip artificial waiting
+      // If no session AND no auth tokens/errors in URL, skip artificial waiting & mark direct visit
       if (!hasTokenInHash && !hasTokenInQuery) {
         if (isMounted) {
+          setIsDirectVisit(true);
           setIsVerifyingSession(false);
         }
         return;
@@ -123,24 +133,26 @@ function ResetPasswordForm() {
           setIsVerifyingSession(false);
         }
       });
+      authSubscription = subscription;
 
       // Shorter 1.5s fallback timeout if tokens are present but fail to yield a session
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         if (isMounted) {
           setIsVerifyingSession(false);
         }
       }, 1500);
-
-      return () => {
-        subscription.unsubscribe();
-        clearTimeout(timer);
-      };
     }
 
     checkSession();
 
     return () => {
       isMounted = false;
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
+      if (timer) {
+        clearTimeout(timer);
+      }
     };
   }, [supabase, searchParams]);
 
@@ -260,28 +272,38 @@ function ResetPasswordForm() {
   }
 
   if (!hasValidSession) {
+    const headerTitle = isDirectVisit
+      ? "Reset Your Password"
+      : "Your Reset Link Has Expired";
+
+    const headerDescription = isDirectVisit
+      ? "Enter your account email address below to receive a secure password reset link."
+      : (urlErrorDescription ||
+          "For your security, password reset links are single-use and expire after 1 hour. Enter your email below to receive a fresh link.");
+
     return (
       <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs transition-all duration-200">
         <CardHeader className="space-y-3 text-center pb-4">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-destructive/10 text-destructive ring-4 ring-destructive/15">
+          <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 ring-4 ring-amber-500/15">
             <KeyRoundIcon className="size-6" aria-hidden="true" />
           </div>
           <div>
             <h1 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-              Recovery Link Expired or Invalid
+              {headerTitle}
             </h1>
             <CardDescription className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-              For your security, password reset links are single-use and expire after 1 hour.
+              {headerDescription}
             </CardDescription>
           </div>
         </CardHeader>
 
         <CardContent className="space-y-4">
-          <div aria-live="polite" className="space-y-4">
+          <div className="space-y-4">
             {resendSuccess ? (
               <div
                 ref={successRef}
                 tabIndex={-1}
+                aria-live="polite"
                 className="space-y-3 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg p-0.5"
               >
                 <Alert className="border-primary/20 bg-primary/5 text-foreground dark:border-primary/30 dark:bg-primary/10">
@@ -312,18 +334,18 @@ function ResetPasswordForm() {
                   </Alert>
                 )}
                 <div className="space-y-1.5">
-                  <Label
-                    htmlFor="resend-email"
-                    className="text-xs font-semibold text-foreground"
-                  >
-                    Request a new recovery link
+                  <Label htmlFor="resend-email" className="text-xs font-semibold text-foreground">
+                    Email Address
                   </Label>
                   <Input
                     id="resend-email"
                     type="email"
                     placeholder="Enter your email address"
                     value={resendEmail}
-                    onChange={(e) => setResendEmail(e.target.value.trim())}
+                    onChange={(e) => {
+                      setResendEmail(e.target.value);
+                      if (resendError) setResendError(null);
+                    }}
                     required
                     autoComplete="email"
                     enterKeyHint="send"
@@ -331,7 +353,7 @@ function ResetPasswordForm() {
                     aria-describedby={resendError ? "resend-error-desc" : "resend-email-hint"}
                     className="h-10 text-base sm:text-sm"
                   />
-                  <p id="resend-email-hint" className="text-[11px] text-muted-foreground">
+                  <p id="resend-email-hint" className="text-xs text-muted-foreground">
                     We will send a fresh password reset link to your registered email address.
                   </p>
                 </div>
@@ -359,19 +381,27 @@ function ResetPasswordForm() {
           </div>
 
           <p className="text-xs text-muted-foreground leading-relaxed text-center pt-1">
-            Need assistance? If you continue to experience issues, please contact your school administrator or WriteWise teacher coordinator.
+            Need assistance? If you continue to experience issues, please{" "}
+            <a
+              href="mailto:support@writewise.edu?subject=Password%20Reset%20Assistance"
+              className="font-medium text-foreground underline underline-offset-2 hover:text-primary transition-colors"
+            >
+              contact your school administrator or WriteWise coordinator
+            </a>
+            .
           </p>
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-2 border-t border-border/60 bg-muted/20 px-6 py-4">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => router.push("/login")}
-            className="w-full h-10 text-xs text-muted-foreground hover:text-foreground"
+        <CardFooter className="border-t border-border/60 pt-3 pb-0 justify-center">
+          <Link
+            href="/login"
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" }),
+              "text-xs text-muted-foreground hover:text-foreground"
+            )}
           >
             Return to Sign In
-          </Button>
+          </Link>
         </CardFooter>
       </Card>
     );
@@ -427,6 +457,7 @@ function ResetPasswordForm() {
                 required
                 minLength={10}
                 disabled={isSubmitting}
+                autoComplete="new-password"
                 aria-invalid={!!formError}
                 aria-describedby={formError ? "password-form-error" : "password-hint"}
                 className="h-10 pr-10 text-base sm:text-sm"
@@ -467,6 +498,7 @@ function ResetPasswordForm() {
                 required
                 minLength={10}
                 disabled={isSubmitting}
+                autoComplete="new-password"
                 aria-invalid={!!formError}
                 aria-describedby={formError ? "password-form-error" : undefined}
                 className="h-10 pr-10 text-base sm:text-sm"
@@ -509,14 +541,16 @@ function ResetPasswordForm() {
         </form>
       </CardContent>
 
-      <CardFooter className="flex flex-col gap-2 border-t border-border/60 bg-muted/20 px-6 py-4 text-center">
-        <button
-          type="button"
-          onClick={() => router.push("/login")}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+      <CardFooter className="border-t border-border/60 pt-3 pb-0 justify-center">
+        <Link
+          href="/login"
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "sm" }),
+            "text-xs text-muted-foreground hover:text-foreground"
+          )}
         >
           Cancel and return to Sign In
-        </button>
+        </Link>
       </CardFooter>
     </Card>
   );
