@@ -13,6 +13,8 @@ Full architectural and mathematical details are documented in [CALIBRATION_SCORI
 | :--- | :--- | :--- |
 | [`export_dataset.py`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/research/export_dataset.py) | Exports and anonymizes paired Phase 1 data (raw CV measurements + teacher rubric scores + word crops). | `research/output/paired_measurements.csv`<br>`research/output/paired_crops.csv` |
 | [`analyze_correlations.py`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/research/analyze_correlations.py) | Computes Spearman's Rho ($\rho$), evaluates rubric band distributions, derives constants for `backend/app/scoring/provider.py`, and generates thesis defense reports. | `research/output/correlation_analysis_report.md`<br>`research/output/correlation_analysis_results.json` |
+| [`backfill_scores.py`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/research/backfill_scores.py) | Calculates and persists calibrated scores on existing Phase 1 measurements using calibrated thresholds. | Database updates to `measurement` rows |
+| [`reset_scores.py`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/research/reset_scores.py) | Resets calibrated scores on `measurement` rows back to NULL for reverting to interactive Phase 1 manual rating mode. | Database updates to `measurement` rows |
 
 ---
 

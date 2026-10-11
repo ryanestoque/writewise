@@ -100,7 +100,7 @@ Full detail → `TESTING.md`.
 
 ## 6. Hard Rules — Non-Negotiables
 
-1. Never bypass RLS from app code. The service-role key is used only in `research/export_dataset.py` and manual backup scripts — never in the deployed API.
+1. Never bypass RLS from browser/frontend code. The service-role key is held only by the backend FastAPI service (which enforces application-level authorization in Python before every write) and authorized offline research scripts (`research/export_dataset.py`, `research/backfill_scores.py`, `research/reset_scores.py`, and manual backup scripts) — it must never be bundled into or exposed through the client.
 2. Frontend branches on `error.code`, never on `error.message` text.
 3. EXIF stripping (GPS, timestamp, device info) is unconditional on every path that writes an image to Storage. Never make it conditional or skip it.
 4. Logs may only contain opaque `student_id`/`submission_id` + pipeline metadata. Never `full_name`, raw image bytes, or measurement values tied to an identifiable child.
@@ -110,9 +110,9 @@ Full detail → `TESTING.md`.
 8. Prod (`writewise-prod`) is touched only by the two named key-holders, only for debugging/export/incident-response. Everyone else works against `writewise-dev` seeded data.
 9. Rejected submissions (failed quality gate or post-segmentation mismatch) are persisted as a `Submission` row with status `rejected` + reason — never silently discarded.
 10. No automated dependency bots. Updates are manual and deliberate.
-11. Dataset export/anonymization happens only via `research/export_dataset.py`, run locally with the service-role key — never an in-app endpoint, never ad hoc SQL.
+11. Dataset export/anonymization happens only via `research/export_dataset.py`, and score maintenance via `research/backfill_scores.py` or `research/reset_scores.py`, run locally with the service-role key — never an in-app endpoint, never ad hoc SQL.
 12. No app-level rate limiting — this is a documented accepted risk at pilot scale, not a gap to opportunistically "fix."
-13. The CNN model loads from Supabase Storage at container startup. Never bundle it in git; a failed load should crash startup loudly, not degrade silently. *(This applies to the scoring CNN artifact. The HTR model (`app/ml/htr.py`) follows a different pattern by design: it falls back to stub mode on failed load rather than crashing, because target text verification is a quality gate enhancement, not core scoring functionality. See ADR 0003.)*
+13. The CNN model loads from Supabase Storage at container startup. Never bundle it in git. If `MODEL_ARTIFACT_PATH` is configured, a failed load must crash startup loudly, not degrade silently. When `MODEL_ARTIFACT_PATH` is empty/unset (prior to Stage 2 model calibration completion), the backend activates stub mode across environments. *(The HTR model (`app/ml/htr.py`) follows a similar fallback: if `HTR_MODEL_ARTIFACT_PATH` is empty or fails to load, it falls back to stub mode because target text verification is a quality gate enhancement, not core scoring functionality. See ADR 0003.)*
 14. The CV/CNN pipeline stays in-process inside the single FastAPI service — never split into a separate microservice.
 15. Single Uvicorn worker only — never add multi-worker (would duplicate the resident CNN model in memory).
 
@@ -124,7 +124,7 @@ Full detail → `TESTING.md`.
 |---|---|
 | Product scope, roles, phased roadmap | `PRD.md` |
 | System design, data-access pattern, deploy targets, CI | `ARCHITECTURE.md` |
-| Screens, visual system, copy voice | `DESIGN.md` |
+| Screens, visual system, copy voice | `docs/DESIGN.md` (flows/specs) & `DESIGN.md` (tokens) |
 | OpenCV quality gate, preprocessing, segmentation, feature extraction | `CV_PIPELINE.md` |
 | CNN model, training regimen, inference | `ML_PIPELINE.md` |
 | Schema, RLS policies, Storage policies | `DATABASE.md` |
