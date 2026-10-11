@@ -9,8 +9,8 @@ Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §
 | Phase | Done / Total |
 |---|---|
 | Phase 0 — Setup | 15 / 18 |
-| Phase 1 — Teacher Tooling & Raw CV Pipeline | 21 / 21 |
-| Between Phases — Calibration | 5 / 8 *(+3 code-ready)* |
+| Phase 1 — Teacher Tooling & Raw CV Pipeline | 25 / 25 |
+| Between Phases — Calibration | 6 / 9 *(+3 code-ready)* |
 | Phase 2 — Calibrated Scoring & Full System | 13 / 14 |
 
 *(Update this table whenever you check off an item below.)*
@@ -55,11 +55,15 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 |---|---|---|---|
 | Class roster management (add/edit/remove student) | Done | | PRD §7.1, API_SPEC §3.1, DATABASE §5 |
 | Class section relational subsystem (`public.section` CRUD, `ManageSectionsDialog`, `/api/sections`) | Done | | ADR 0004, DATABASE §5, API_SPEC §3.2, Migration `0020_class_sections.sql` |
+| Parent invitation management & resend flow (`/api/students/{id}/resend-invite`, status tracking, sibling linking) | Done | | API_SPEC §3.1, DATABASE §4.1/§5, Migration `0015_parent_invite_status.sql` |
 | Activity creation (freeform target text) | Done | | PRD §7.1, API_SPEC §3.3, DESIGN §6 screens 5–6 |
+| Activity lifecycle & management (edit, archive/unarchive, bulk-archive, delete guard, CSV export) | Done | | API_SPEC §3.3, DESIGN §7.13, Migration `0012_activity_archive.sql` |
 | Submission upload (single photo per activity) | Done | | PRD §7.1, API_SPEC §3.4 |
 | Submission deletion & attempt management | Done | | API_SPEC §3.4, DESIGN §7.10 |
+| Batch submission deletion (multi-select, confirmation dialog, atomic bulk delete) | Done | | API_SPEC §3.4.5, DESIGN §7.10 |
 | Raw CV measurement display | Done | | PRD §7.1/§7.3, CV_PIPELINE §8, DESIGN §7.2 |
 | Manual rubric score entry | Done | | PRD §7.1, DATABASE §9, DESIGN §7.9 |
+| Interactive pedagogical reference tools (Animated Cursive Stroke Canvas & Unified Rubric Reference Dialog) | Done | | DESIGN §7.11–§7.12, `frontend/components/cursive-stroke-canvas.tsx` |
 | Teacher account settings (profile & in-session password update) | Done | | PRD §7.1, DESIGN §6 screen 3, DATABASE §4 |
 
 
@@ -92,6 +96,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 |---|---|---|---|
 | Threshold/correlation analysis (Spearman's Rho per criterion) | Code Complete | Script ready (`research/analyze_correlations.py`); blocked on Phase 1 paired data | PRD §5, PRD §11 |
 | Calibration dataset export & anonymization (`research/export_dataset.py`) | Done | | ARCHITECTURE §16, SECURITY §6, training/README.md |
+| Score maintenance & test seed utilities (`research/backfill_scores.py`, `research/reset_scores.py`) | Done | | AGENTS §6 Rule 11, research/README.md |
 | ML Stage 1 — CCC dataset prep (format conversion, split) | Done | | ML_PIPELINE §2 |
 | ML Stage 1 — fine-tuning (two-phase) | Done | | ML_PIPELINE §4 |
 | ML Stage 1 — evaluation (Accuracy/Precision/Recall/F1) | Done | | ML_PIPELINE §5 |
@@ -120,8 +125,8 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Parent login & own-child-only view | Done | | PRD §7.2, DATABASE §10 |
 | Per-criterion trend chart + composite trend | Done | | PRD §7.2/§7.5, DESIGN §7.7 |
 | Latest diagnostic feedback view | Done | | PRD §7.2 |
-| Upload submission for teacher-assigned activity | Done | | PRD §7.2, API_SPEC §3.3 |
-| Manage take-home submissions (delete un-graded upload to retry) | Done | | PRD §7.2, API_SPEC §3.3 |
+| Upload submission for teacher-assigned activity | Done | | PRD §7.2, API_SPEC §3.4 |
+| Manage take-home submissions (delete un-graded upload to retry) | Done | | PRD §7.2, API_SPEC §3.4 |
 | Parent account settings (profile & in-session password update) | Done | | DESIGN §6 screen 3, DATABASE §4 |
 
 ### Diagnostic Engine
@@ -129,7 +134,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
 | Numeric score → qualitative band conversion | Done | | PRD §7.4 |
-| Visual overlay annotation generation | Done | Full backend generator (`app/diagnostic/`) + interactive SVG overlay in Teacher/Parent portals | PRD §7.4, DESIGN §7.4 |
+| Visual overlay annotation generation | Done | Full backend generator (`app/diagnostic/`) + interactive SVG overlay in Teacher/Parent portals (uses vector stroke tracing; Grad-CAM saliency superseded) | PRD §7.4, DESIGN §7.4, ML_PIPELINE §6.6 |
 | Criterion-by-criterion text explanation | Done | | PRD §7.4, DESIGN §8.2 |
 
 ### Integration
