@@ -77,7 +77,6 @@ import {
   type ClassDiagnosticSummary,
 } from "@/components/activities/activity-detail-hero";
 import { SubmissionCard } from "@/components/activities/submission-card";
-import { ScoringGuidePopover } from "@/components/activities/scoring-guide-popover";
 
 type SubmissionFilter = "all" | "completed" | "processing" | "rejected";
 type SubmissionSort =
@@ -599,6 +598,17 @@ export default function ActivityDetailPage({
     });
   }, []);
 
+  const handleToggleCardSelect = useCallback(
+    (sub: Submission, groupSubmissions?: Submission[]) => {
+      if (groupSubmissions && groupSubmissions.length > 0) {
+        handleToggleSelectGroup(groupSubmissions);
+      } else {
+        handleToggleSelectSubmission(sub);
+      }
+    },
+    [handleToggleSelectGroup, handleToggleSelectSubmission]
+  );
+
   const clearSelection = useCallback(() => {
     setSelectedSubmissionIds(new Set());
   }, []);
@@ -960,7 +970,7 @@ export default function ActivityDetailPage({
               />
             </div>
 
-            {/* Secondary controls: Sort Selector + Rubric Guide Trigger */}
+            {/* Secondary controls: Sort Selector */}
             <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-border/50">
               {/* Sort Selector */}
               <DropdownMenu>
@@ -1025,14 +1035,6 @@ export default function ActivityDetailPage({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              <div
-                className="h-4 w-px bg-border/60 shrink-0 hidden sm:block"
-                aria-hidden="true"
-              />
-
-              {/* Scoring Explainer Guide Trigger */}
-              <ScoringGuidePopover />
             </div>
           </div>
         )}
@@ -1214,9 +1216,7 @@ export default function ActivityDetailPage({
                       onReupload={handleReupload}
                       isSelected={isGroupSelected}
                       isIndeterminate={isGroupIndeterminate}
-                      onToggleSelect={() =>
-                        handleToggleSelectGroup(group.allSubmissions)
-                      }
+                      onToggleSelect={handleToggleCardSelect}
                       onDeleteSingleAttempt={handleDeleteSingleAttemptPrompt}
                       onDeleteAllStudentAttempts={
                         handleDeleteAllStudentAttemptsPrompt
@@ -1232,7 +1232,7 @@ export default function ActivityDetailPage({
                     onSelect={handleSelectSubmission}
                     onReupload={handleReupload}
                     isSelected={selectedSubmissionIds.has(sub.id)}
-                    onToggleSelect={handleToggleSelectSubmission}
+                    onToggleSelect={handleToggleCardSelect}
                     onDeleteSingleAttempt={handleDeleteSingleAttemptPrompt}
                   />
                 ))}

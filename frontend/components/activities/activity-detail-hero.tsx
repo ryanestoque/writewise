@@ -342,9 +342,9 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
 
         {/* Right: Class Diagnostic Synthesis (when completed scans exist) */}
         {classDiagnostics ? (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-muted/25 dark:bg-muted/15 p-2.5 rounded-xl border border-border/60 text-xs">
-            <div>
-              <span className="text-[11px] text-muted-foreground font-medium block">
+          <div className="flex items-center justify-between gap-2.5 bg-muted/25 dark:bg-muted/15 p-2.5 rounded-xl border border-border/60 text-xs">
+            <div className="min-w-0">
+              <span className="text-[11px] text-muted-foreground font-medium block truncate">
                 Class Performance ({classDiagnostics.completedCount} scored)
               </span>
               <div className="flex items-center gap-1.5 mt-0.5">
@@ -370,14 +370,14 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
             <div className="flex items-center gap-2 shrink-0">
               <Popover>
                 <PopoverTrigger
-                  className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] sm:min-h-[36px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                  className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 min-h-[44px] sm:min-h-[36px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label="View class criteria breakdown"
                 >
                   <BarChart3
                     className="size-3.5 text-brand-600 dark:text-brand-400"
                     aria-hidden="true"
                   />
-                  <span>Class Breakdown</span>
+                  <span className="hidden sm:inline">Class Breakdown</span>
                   <ChevronDown
                     className="size-3 opacity-60"
                     aria-hidden="true"
