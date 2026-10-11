@@ -8,7 +8,7 @@ Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §
 
 | Phase | Done / Total |
 |---|---|
-| Phase 0 — Setup | 13 / 18 |
+| Phase 0 — Setup | 15 / 18 |
 | Phase 1 — Teacher Tooling & Raw CV Pipeline | 21 / 21 |
 | Between Phases — Calibration | 5 / 8 *(+3 code-ready)* |
 | Phase 2 — Calibrated Scoring & Full System | 13 / 14 |
@@ -36,8 +36,8 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 
 **Cloud provisioning** (`DEPLOYMENT.md` provisioning order-of-operations)
 - [x] `writewise-dev` + `writewise-prod` Supabase projects created
-- [ ] Railway project created (backend root, Nixpacks)
-- [ ] Railway env vars filled, Railway URL obtained
+- [x] Railway project created (backend root, Nixpacks)
+- [x] Railway env vars filled, Railway URL obtained
 - [x] Vercel project created (frontend root), Preview/Production env vars set
 - [ ] Railway + Supabase-prod access restricted to the two named key-holders
 - [ ] Health-ping GitHub Action set up
