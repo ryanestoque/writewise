@@ -3,6 +3,7 @@
 **A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and Progress Monitoring System**
 
 - **Document type:** Internal design guide (companion to PRD.md, ARCHITECTURE.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, SECURITY.md, TESTING.md, DEPLOYMENT.md)
+- **Design Tokens & Theme Tokens Source:** see [DESIGN.md (root)](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/DESIGN.md) for the active YAML tokens, CSS variables, and Impeccable specifications.
 - **Team:** Ryan Christopher B. Estoque, John Lawrence V. Monleon, James David B. Asoy, Saara Eliana G. Ibag
 - **Status:** Draft v1 — reflects decisions locked as of this document's creation. Update this file whenever a design decision changes; it should stay the single source of truth for "how the product looks and behaves," the way ARCHITECTURE.md is the source of truth for "how the system is built" and PRD.md is the source of truth for "what the system does."
 - **Secondary use:** this document is written to be readable both as a build spec (concrete tokens/values a developer implements directly) and as source material for an AI UI-generation prompt (Figma AI / Google Stitch), if one is drafted later from it.
@@ -149,10 +150,13 @@ Both remain functional (not broken) at the non-primary size — this is about wh
 
 Role-differentiated, matching how much "surface area" each role actually manages:
 
-- **Teacher:** persistent left sidebar (desktop) — Roster, Activities, Dashboard, Settings — collapsing to a top bar + drawer on mobile.
+- **Teacher:** persistent left sidebar (desktop) structured into two functional groups:
+  - **Classroom Navigation:** Dashboard (`/dashboard`), Class Roster (`/roster`), Activities (`/activities`).
+  - **Reference Guides:** Triggers for the interactive Cursive Guide and Scoring Rubric dialogs.
   - **Collapsed Desktop Mode:** Icon-only navigation with rich Base UI tooltips, preserving the teacher's identity indicator via an initials avatar (`getInitials`) that reveals full name and email on hover/focus.
   - **Mobile Drawer:** Sheet drawer auto-dismisses (`setOpenMobile(false)`) immediately upon link navigation to prevent background trapping.
   - **Subroute Matching:** Prefix-aware active state highlighting (`pathname === href || pathname.startsWith(href + '/')`) to maintain parent tab highlighting on nested detail pages (e.g. `/roster/[id]`).
+  - **Student Avatar Simplification:** Student initials avatars have been removed across student views (roster, class table, drill-down, submission cards) to prioritize clear typography, responsive scannability, and reduce visual noise. Teacher profile avatar is preserved.
 - **Parent:** lightweight top nav, mobile-first — the parent's world is effectively one screen (their child's progress) plus an upload action, so a full sidebar would be wasted structure.
 - **Multi-child parents:** an always-present child switcher at the top of the parent nav (a simple selector, not conditional UI) — for a parent with one child it just shows their name; for a parent with more than one enrolled at the school, it scales automatically. Cheap insurance against a real edge case at a single-school pilot scale.
 
@@ -257,6 +261,20 @@ Provides safe, role-scoped removal of mistaken, illegible, or duplicate submissi
 - **Teacher portal:** From the submission detail modal/page, an accessible **"Delete Attempt"** button opens a high-contrast confirmation `AlertDialog` using the `--destructive` token (§2.1). Confirming permanently removes the attempt, raw CV measurements, rubric scores, and stored photo, invalidating dashboard queries and returning to the activity or student view.
 - **Parent portal:** For take-home activities, parents who uploaded a worksheet photo can select **"Delete Upload"** from the assignment view or worksheet dialog *only while the submission is un-graded* (`canDelete = true`). This allows retaking an accidental or blurry upload before the teacher reviews it. Once graded, deletion is disabled/hidden to preserve evaluated school records.
 - **Confirmation dialog:** Uses clear, unambiguous copy stating that deletion is permanent and cannot be undone, avoiding vague warning language (§8.1).
+
+### 7.11 Unified Scoring Rubric Reference
+
+A shared interactive modal (`frontend/components/rubric-reference-dialog.tsx`) accessible from both the teacher sidebar and parent portal navigation. Outlines the 5 diagnostic penmanship criteria (Letter Formation, Line Straightness, Word Spacing, Letter Slant, Size Proportion) and their corresponding developmental rubric bands (Needs Attention, Developing, Competent, Exemplary) with concrete descriptors. Unifying this reference eliminates duplicate modal implementations between teacher and parent experiences.
+
+### 7.12 Animated Cursive Stroke Canvas
+
+An interactive HTML5 canvas component (`frontend/components/cursive-stroke-canvas.tsx`) that renders stroke-by-stroke handwriting animations across uppercase and lowercase cursive characters. Demonstrates proper pen movement, ascender/descender trajectory, and connective ligature flow according to standard handwriting motion mechanics, providing visual pedagogical context.
+
+### 7.13 Minimalist Dialog & Header Hierarchy
+
+In accordance with visual hierarchy polish:
+- **Card and Dialog Headers:** Decorative icon badges and redundant subheadings have been removed from header bars to create clean, high-density modal surfaces.
+- **Activity Filter Controls:** Horizontal filter pills (`FilterPills`) support smooth edge gradients, horizontal scrolling on narrow viewports, and clean active/archived state toggles.
 
 ---
 

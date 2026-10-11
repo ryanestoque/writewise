@@ -93,6 +93,8 @@ components:
 
 # Design System: WriteWise
 
+> ℹ️ **Design Guides Separation:** This root document defines the design tokens, visual system, typography, colors, and component specifications utilized by agentic tooling (e.g. Impeccable). For user journeys, full screen catalog, navigation flows, and interactive state specifications, consult [docs/DESIGN.md](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/docs/DESIGN.md).
+
 ## Overview
 
 **Creative North Star: "The Warm Educational Studio"**
