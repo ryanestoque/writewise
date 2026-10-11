@@ -27,8 +27,7 @@ export function useSections() {
       } = await supabase.auth.getSession();
       if (!session) throw new Error("Unauthorized");
 
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const res = await fetch(`${backendUrl}/api/sections`, {
+      const res = await fetch("/api/sections", {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -56,8 +55,7 @@ export function useCreateSection() {
       } = await supabase.auth.getSession();
       if (!session) throw new Error("Unauthorized");
 
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const res = await fetch(`${backendUrl}/api/sections`, {
+      const res = await fetch("/api/sections", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -90,8 +88,7 @@ export function useUpdateSection() {
       } = await supabase.auth.getSession();
       if (!session) throw new Error("Unauthorized");
 
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const res = await fetch(`${backendUrl}/api/sections/${id}`, {
+      const res = await fetch(`/api/sections/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -126,8 +123,7 @@ export function useDeleteSection() {
       } = await supabase.auth.getSession();
       if (!session) throw new Error("Unauthorized");
 
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const res = await fetch(`${backendUrl}/api/sections/${id}`, {
+      const res = await fetch(`/api/sections/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${session.access_token}`,
