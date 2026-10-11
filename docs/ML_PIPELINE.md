@@ -106,8 +106,11 @@ CV_PIPELINE.md's schema shape stays uniform — `letter_formation_score` added p
 
 What *does* differ is the `ScoreProvider`'s internal logic per criterion: for the four OpenCV criteria, it applies the threshold-mapping function derived from calibration analysis. For letter formation, it's an **identity passthrough** — the "raw" value already is the score. Same schema shape, different logic per criterion — consistent with `ScoreProvider` already being described in ARCHITECTURE §10 as a per-criterion abstraction, not a new pattern.
 
-### 6.6 Explainable AI (XAI) via Grad-CAM Defect Saliency
-To explain why a word crop received a low formation score ($y < 75$, "Needs Attention") without resorting to fragile character-level cuts on connected cursive ligatures, deployed inference runs Gradient-weighted Class Activation Mapping (Grad-CAM) using `tf.GradientTape`:
+### 6.6 Explainable AI (XAI) via Grad-CAM Defect Saliency *(Superseded)*
+
+> ⚠️ **Status: Superseded by Stroke Tracing (`CV_PIPELINE.md` §10)**  
+> Grad-CAM heatmap/polygon extraction was originally prototyped to explain letter formation defects. In production, this approach has been superseded by the vector stroke skeleton tracing and letter zoning pipeline documented in `CV_PIPELINE.md` §10 (`app/cv/tracing.py`). Stroke tracing delivers exact pen trajectories, ascender/descender guidelines, and ligature-level letter zoning directly on the SVG canvas without neural activation blur. While backend inference retains `_compute_gradcam_saliency` as an optional calculation, the frontend diagnostic overlay renders stroke tracing exclusively.
+
 1. **Target Feature Map:** The final convolutional layer of MobileNetV2 (`Conv_1` / `out_relu`, shape $3 \times 3 \times 1280$).
 2. **Defect Gradient:** Gradients of the negative score $-y$ are extracted and pooled spatially into neuron weights $\alpha_k$.
 3. **Activation Mask:** $L_{\text{defect}} = \text{ReLU}\left(-\sum_k \alpha_k A^k\right)$, isolating the specific stroke anomalies that penalized the prediction.
@@ -135,9 +138,10 @@ Per ARCHITECTURE, the exported artifact is downloaded from Supabase Storage and 
 
 **Performance budget:** under **3 seconds total** CNN inference per submission (5–10 word crops through the frozen backbone + Stage 2 head on CPU). Combined with CV_PIPELINE.md's <5s CV-portion budget, that's **~8s total worst-case** — comfortably inside typical platform timeout windows (30–60s) and consistent with DESIGN.md's synchronous "Analyzing..." loading state. Like CV_PIPELINE.md's tunable constants, this is a target to validate against real hardware once the model is actually running on Railway, not a benchmarked number yet.
 
-**Failure handling:**
-- **Bad/edge-case word crop** — no separate confidence-estimation system (MC dropout, ensembles, predicted variance would be disproportionate effort given the post-segmentation gate, CV_PIPELINE.md §5.3, already exists specifically to keep garbage crops out). Just clamp output to [0, 100].
-- **Model artifact fails to load at startup** — the container fails startup entirely (loud crash/restart, visible in Railway's log viewer) rather than coming up in a degraded "CV works, CNN doesn't" state. The CNN is core functionality, not optional.
+**Failure handling & Stub mode:**
+- **Stub fallback (pre-calibration):** When `MODEL_ARTIFACT_PATH` is empty or unset, the backend activates stub mode (`app.ml.model._stub_mode = True`), returning deterministic plausible scores per word crop without requiring a trained `.keras` file.
+- **Configured artifact load failure:** Once `MODEL_ARTIFACT_PATH` is configured in production, a failed download or load crashes container startup loudly (AGENTS.md §6 Rule #13) rather than degrading silently.
+- **Bad/edge-case word crop:** No separate confidence-estimation system needed (post-segmentation gate in CV_PIPELINE.md §5.3 filters non-words). Scores are clamped to [0, 100].
 
 ---
 

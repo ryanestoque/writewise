@@ -1,8 +1,10 @@
 # Letter Formation Grad-CAM Saliency Overlay — Design Spec
 
 **Date:** 2026-09-28  
-**Status:** Approved  
+**Status:** Superseded by Stroke Tracing (`CV_PIPELINE.md` §10)  
 **Implements:** PRD §7.4 (Diagnostic Engine), ML_PIPELINE §6/§8 (CNN Inference & Explainability), CV_PIPELINE §7 (Word Segmentation), DESIGN §7.4 (Diagnostic Overlay)  
+
+> ⚠️ **SUPERSEDED:** This design spec is superseded by `CV_PIPELINE.md` §10 (Vector Stroke Skeleton Tracing & Letter Zoning). The Grad-CAM heatmap visualization has been retired from the frontend diagnostic overlay in favor of deterministic SVG stroke tracing (`app/cv/tracing.py`).
 
 ---
 

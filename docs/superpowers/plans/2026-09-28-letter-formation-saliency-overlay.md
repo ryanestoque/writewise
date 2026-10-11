@@ -1,5 +1,7 @@
 # Letter Formation Grad-CAM Saliency Overlay Implementation Plan
 
+> ⚠️ **SUPERSEDED:** This implementation plan is superseded by `CV_PIPELINE.md` §10 (Vector Stroke Skeleton Tracing & Letter Zoning). The Grad-CAM heatmap visualization has been retired from the frontend diagnostic overlay in favor of deterministic SVG stroke tracing (`app/cv/tracing.py`).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Implement genuine Explainable AI (XAI) for cursive letter formation using Grad-CAM on the MobileNetV2 regression model, delivering SVG vector defect contours in the diagnostic overlay for teachers and parents.
