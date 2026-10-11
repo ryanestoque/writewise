@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import type { Activity } from "@/lib/hooks/use-activities";
 import type { ScoreBandInfo } from "@/lib/utils/submission-status";
@@ -25,16 +26,12 @@ import {
 import {
   Archive,
   ArchiveRestore,
-  Home,
-  BookOpen,
-  CalendarDays,
   Upload,
   MoreVertical,
   Copy,
   Check,
   Edit3,
   Trash2,
-  GraduationCap,
   ArrowRight,
   BarChart3,
   ChevronDown,
@@ -73,7 +70,7 @@ export interface ActivityDetailHeroProps {
   onToggleArchive: () => void;
 }
 
-export function ActivityDetailHero({
+export const ActivityDetailHero = memo(function ActivityDetailHero({
   activity,
   isArchived,
   wordCount,
@@ -94,7 +91,7 @@ export function ActivityDetailHero({
     <section
       aria-labelledby="activity-prompt-heading"
       className={cn(
-        "relative bg-surface dark:bg-card border rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-warm transition-all overflow-hidden print:shadow-none print:border-black/30 print:p-4 print:bg-white",
+        "relative bg-surface dark:bg-card border rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-warm transition-colors duration-200 overflow-hidden print:shadow-none print:border-black/30 print:p-4 print:bg-white",
         isArchived
           ? "border-muted-foreground/30 bg-muted/20 opacity-95"
           : "border-border"
@@ -139,23 +136,15 @@ export function ActivityDetailHero({
               ) : activity.is_take_home ? (
                 <Badge
                   variant="outline"
-                  className="text-xs font-semibold px-2 sm:px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900 shrink-0 print:border-black/30 print:text-black"
+                  className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900 shrink-0 print:border-black/30 print:text-black"
                 >
-                  <Home
-                    className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400 print:text-black"
-                    aria-hidden="true"
-                  />
                   <span>Take-home Activity</span>
                 </Badge>
               ) : (
                 <Badge
                   variant="outline"
-                  className="text-xs font-semibold px-2 sm:px-2.5 py-0.5 bg-brand-100/70 text-brand-800 dark:bg-brand-900/50 dark:text-brand-200 border-brand-200/70 dark:border-brand-800/80 shrink-0 print:border-black/30 print:text-black"
+                  className="text-xs font-semibold px-2.5 py-0.5 bg-brand-100/70 text-brand-800 dark:bg-brand-900/50 dark:text-brand-200 border-brand-200/70 dark:border-brand-800/80 shrink-0 print:border-black/30 print:text-black"
                 >
-                  <BookOpen
-                    className="w-3.5 h-3.5 mr-1 text-brand-600 dark:text-brand-400 print:text-black"
-                    aria-hidden="true"
-                  />
                   <span>In-Class Activity</span>
                 </Badge>
               )}
@@ -167,9 +156,8 @@ export function ActivityDetailHero({
 
             <time
               dateTime={activity.created_at}
-              className="text-xs text-muted-foreground inline-flex items-center gap-1 print:text-black"
+              className="text-xs text-muted-foreground inline-flex items-center print:text-black"
             >
-              <CalendarDays className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
               <span>Created {formatDate(activity.created_at)}</span>
             </time>
           </div>
@@ -179,7 +167,7 @@ export function ActivityDetailHero({
             <Button
               size="sm"
               onClick={onUpload}
-              className="h-9 px-2.5 sm:px-3.5 bg-primary hover:bg-brand-700 text-primary-foreground text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer"
+              className="min-h-[44px] sm:min-h-[36px] h-auto sm:h-9 px-3 sm:px-3.5 bg-primary hover:bg-brand-700 dark:hover:bg-brand-500 text-primary-foreground text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer"
               title="Upload Worksheets (U)"
             >
               <Upload className="w-4 h-4 mr-1 sm:mr-1.5 shrink-0" />
@@ -193,7 +181,7 @@ export function ActivityDetailHero({
             {/* Options Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="inline-flex items-center justify-center size-9 rounded-lg sm:rounded-xl border border-border bg-background hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                className="inline-flex items-center justify-center size-11 sm:size-9 rounded-lg sm:rounded-xl border border-border bg-background hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label="More activity options"
               >
                 <MoreVertical className="w-4 h-4" />
@@ -292,10 +280,6 @@ export function ActivityDetailHero({
         <div className="flex flex-col justify-center gap-2">
           <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <GraduationCap
-                className="size-4 text-brand-600 dark:text-brand-400 shrink-0"
-                aria-hidden="true"
-              />
               <span>
                 <strong className="text-foreground font-semibold tabular-nums">
                   {uniqueStudentsCount}
@@ -347,7 +331,7 @@ export function ActivityDetailHero({
               <span className="text-[11px]">No students enrolled yet</span>
               <Link
                 href="/roster"
-                className="text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 inline-flex items-center gap-1 group/link focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                className="text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 inline-flex items-center gap-1 group/link focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm py-1.5 px-2 -my-1 sm:my-0 min-h-[36px] sm:min-h-0"
               >
                 <span>Manage Roster</span>
                 <ArrowRight className="size-3 transition-transform group-hover/link:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" />
@@ -358,27 +342,28 @@ export function ActivityDetailHero({
 
         {/* Right: Class Diagnostic Synthesis (when completed scans exist) */}
         {classDiagnostics ? (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between lg:justify-end gap-2.5 bg-muted/25 dark:bg-muted/15 p-2.5 rounded-xl border border-border/60 text-xs">
-            <div className="flex items-center gap-2">
-              <BarChart3
-                className="size-4 text-brand-600 dark:text-brand-400 shrink-0"
-                aria-hidden="true"
-              />
-              <div>
-                <span className="text-[11px] text-muted-foreground font-medium block">
-                  Class Performance ({classDiagnostics.completedCount} scored)
-                </span>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <Badge
-                    variant="outline"
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-muted/25 dark:bg-muted/15 p-2.5 rounded-xl border border-border/60 text-xs">
+            <div>
+              <span className="text-[11px] text-muted-foreground font-medium block">
+                Class Performance ({classDiagnostics.completedCount} scored)
+              </span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-xs font-semibold px-2 py-0.5 inline-flex items-center gap-1.5",
+                    classDiagnostics.scoreBand.className
+                  )}
+                >
+                  <span
                     className={cn(
-                      "text-xs font-semibold px-2 py-0.5",
-                      classDiagnostics.scoreBand.className
+                      "size-1.5 rounded-full shrink-0",
+                      classDiagnostics.scoreBand.dotColor
                     )}
-                  >
-                    <span>{classDiagnostics.scoreBand.label}</span>
-                  </Badge>
-                </div>
+                    aria-hidden="true"
+                  />
+                  <span>{classDiagnostics.scoreBand.label}</span>
+                </Badge>
               </div>
             </div>
 
@@ -539,7 +524,7 @@ export function ActivityDetailHero({
                   {classDiagnostics.strongestCriterion && (
                     <div className="pt-2 border-t border-border/60 text-[11px] space-y-1 text-muted-foreground">
                       <p>
-                        <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                        <span className="font-semibold text-band-4-text dark:text-band-4">
                           Strength:
                         </span>{" "}
                         {classDiagnostics.strongestCriterion.name} (
@@ -550,7 +535,7 @@ export function ActivityDetailHero({
                       </p>
                       {classDiagnostics.focusCriterion && (
                         <p>
-                          <span className="font-semibold text-amber-800 dark:text-amber-400">
+                          <span className="font-semibold text-band-2-text dark:text-band-2">
                             Practice Focus:
                           </span>{" "}
                           {classDiagnostics.focusCriterion.name} (
@@ -581,4 +566,4 @@ export function ActivityDetailHero({
       </div>
     </section>
   );
-}
+});

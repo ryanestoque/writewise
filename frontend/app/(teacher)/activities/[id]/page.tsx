@@ -493,6 +493,22 @@ export default function ActivityDetailPage({
       });
   }, [activity]);
 
+  const handleOpenUpload = useCallback(() => {
+    openUpload({ activityId: id });
+  }, [openUpload, id]);
+
+  const handleEditActivity = useCallback(() => {
+    if (activity) setEditingActivity(activity);
+  }, [activity]);
+
+  const handleDuplicateActivity = useCallback(() => {
+    setIsDuplicateOpen(true);
+  }, []);
+
+  const handleDeleteActivity = useCallback(() => {
+    if (activity) setDeletingActivity(activity);
+  }, [activity]);
+
   const handleSelectSubmission = useCallback(
     (sub: Submission) => {
       router.push(`/activities/${id}/submissions/${sub.id}`);
@@ -815,10 +831,10 @@ export default function ActivityDetailPage({
         classDiagnostics={classDiagnostics}
         hasCopiedPrompt={hasCopiedPrompt}
         onCopyPrompt={handleCopyPrompt}
-        onUpload={() => openUpload({ activityId: id })}
-        onEdit={() => setEditingActivity(activity)}
-        onDuplicate={() => setIsDuplicateOpen(true)}
-        onDelete={() => setDeletingActivity(activity)}
+        onUpload={handleOpenUpload}
+        onEdit={handleEditActivity}
+        onDuplicate={handleDuplicateActivity}
+        onDelete={handleDeleteActivity}
         onToggleArchive={handleToggleArchive}
       />
 
