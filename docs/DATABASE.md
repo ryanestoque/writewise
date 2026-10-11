@@ -128,16 +128,30 @@ Whoever sets up the pilot's first teacher accounts just needs to set `role: teac
 
 ---
 
-## 5. Roster — `student`, `teacher_student`, `student_parent`
+## 5. Roster — `section`, `student`, `teacher_student`, `student_parent`
 
 ```sql
--- migration: 0003_roster.sql
+-- migration: 0020_class_sections.sql (ADR 0004)
+create table public.section (
+  id uuid primary key default gen_random_uuid(),
+  teacher_id uuid not null references public.teacher(id) on delete cascade,
+  name text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint uq_teacher_section_name unique (teacher_id, name)
+);
 
+create trigger set_section_updated_at
+  before update on public.section
+  for each row execute function public.set_updated_at();
+
+-- migrations: 0003_roster.sql, 0011_add_parent_email_to_student.sql, 0020_class_sections.sql
 create table public.student (
   id uuid primary key default gen_random_uuid(),
   full_name text not null,
-  section text not null,
-  parent_email text, -- added via migration 0011_add_parent_email_to_student.sql (optional parent contact/invite email)
+  section text not null, -- denormalized string kept in sync with section.name (ADR 0004)
+  section_id uuid references public.section(id) on delete restrict, -- relational FK
+  parent_email text, -- optional parent contact/invite email
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -157,7 +171,7 @@ create trigger set_student_updated_at
   for each row execute function public.set_updated_at();
 ```
 
-Stores the core roster entity (`full_name` + `section`, plus optional `parent_email` for immediate contact tracking and portal invitations). No LRN/external ID: the PRD never scopes one, the paper consent forms don't collect one, and disambiguating duplicate names within a class is a roster-UI concern the teacher already handles by construction (they added the student), not a schema one.
+Stores the core roster entity (`full_name` + `section` / `section_id`, plus optional `parent_email` for immediate contact tracking and portal invitations). Per ADR 0004, `section_id` establishes referential integrity to `public.section`, while `student.section` is preserved as a synchronized denormalized string to prevent breaking client queries and exports. No LRN/external ID: the PRD never scopes one, the paper consent forms don't collect one, and disambiguating duplicate names within a class is a roster-UI concern the teacher already handles by construction (they added the student), not a schema one.
 
 ```sql
 create table public.teacher_student (
@@ -452,6 +466,12 @@ alter table public.student_parent enable row level security;
 create policy "parent can view own links"
   on public.student_parent for select
   using (parent_id = auth.uid());
+
+-- section: teacher can view own created sections (migration 0020_class_sections.sql).
+alter table public.section enable row level security;
+create policy "teacher can view own sections"
+  on public.section for select
+  using (teacher_id = auth.uid());
 
 -- activity: creator teacher sees their own; a parent sees take-home activities
 -- from any teacher linked to their child.

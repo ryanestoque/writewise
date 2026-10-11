@@ -116,7 +116,8 @@ Schema is authored SQL-first via Supabase CLI migrations (`supabase/migrations/*
 |---|---|
 | **teacher** | linked to `auth.users` |
 | **parent** | linked to `auth.users` |
-| **student** | name, section — no auth account |
+| **section** | relational classroom sections (`name`, `teacher_id` unique pair; migration `0020_class_sections.sql`, ADR 0004) |
+| **student** | name, section (denormalized string), section_id (relational FK to `section`) — no auth account |
 | **teacher_student** | join table — many-to-many (supports co-taught sections, mid-year class changes) |
 | **student_parent** | join table — many-to-many (supports multiple guardians per student) |
 | **activity** | target text, creator (teacher), created date |
