@@ -38,7 +38,7 @@ def _should_use_stub() -> bool:
     """Determine whether to use stub mode for HTR."""
     if settings.ENVIRONMENT == "test":
         return True
-    if settings.ENVIRONMENT == "dev" and not getattr(settings, "HTR_MODEL_ARTIFACT_PATH", ""):
+    if not getattr(settings, "HTR_MODEL_ARTIFACT_PATH", ""):
         return True
     return False
 

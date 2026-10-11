@@ -103,13 +103,11 @@ def suppress_guidelines_preserving_strokes(
                 x_min = max(0, x - 2)
                 x_max = min(w_crop, x + 3)
 
-                has_ink_above = (
-                    win_top_y2 > win_top_y1
-                    and np.any(cleaned[win_top_y1:win_top_y2, x_min:x_max] > 0)
+                has_ink_above = win_top_y2 > win_top_y1 and np.any(
+                    cleaned[win_top_y1:win_top_y2, x_min:x_max] > 0
                 )
-                has_ink_below = (
-                    win_bot_y2 > win_bot_y1
-                    and np.any(cleaned[win_bot_y1:win_bot_y2, x_min:x_max] > 0)
+                has_ink_below = win_bot_y2 > win_bot_y1 and np.any(
+                    cleaned[win_bot_y1:win_bot_y2, x_min:x_max] > 0
                 )
 
                 if not (has_ink_above and has_ink_below):
@@ -151,9 +149,7 @@ def extract_stroke_svg_paths(
         return []
 
     if guideline_ys:
-        binary_crop = suppress_guidelines_preserving_strokes(
-            binary_crop, word_bbox, guideline_ys
-        )
+        binary_crop = suppress_guidelines_preserving_strokes(binary_crop, word_bbox, guideline_ys)
 
     # Calculate scale factor if crop dimensions differ slightly from bbox dimensions
     scale_x = w_box / float(w_crop)
@@ -307,5 +303,3 @@ def segment_word_letter_zones(
         )
 
     return zones
-
-

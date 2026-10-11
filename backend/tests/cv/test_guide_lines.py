@@ -204,4 +204,3 @@ def test_detect_and_deskew_faint_red_midlines_in_color_image():
     assert result.topline_y[0] == 400
     assert result.midline_y[0] == 500
     assert result.baseline_y[0] == 600
-

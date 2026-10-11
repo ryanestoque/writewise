@@ -80,4 +80,3 @@ def test_extract_stroke_svg_paths_with_guideline_suppression():
     # Ensure no path spans across the full width x=0 to x=99 at y=220
     for p in paths:
         assert "M 100 220 L 199 220" not in p
-

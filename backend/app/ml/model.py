@@ -25,7 +25,7 @@ def _should_use_stub() -> bool:
     """Determine whether to use stub inference instead of a real model."""
     if settings.ENVIRONMENT == "test":
         return True
-    if settings.ENVIRONMENT == "dev" and not settings.MODEL_ARTIFACT_PATH:
+    if not settings.MODEL_ARTIFACT_PATH:
         return True
     return False
 

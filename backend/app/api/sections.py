@@ -67,9 +67,7 @@ def list_sections(teacher: dict = Depends(get_current_teacher)):
 
 
 @router.post("", response_model=SectionResponse)
-def create_section(
-    section_in: SectionCreate, teacher: dict = Depends(get_current_teacher)
-):
+def create_section(section_in: SectionCreate, teacher: dict = Depends(get_current_teacher)):
     teacher_id = teacher.get("sub")
     trimmed_name = section_in.name.strip()
     if not trimmed_name:

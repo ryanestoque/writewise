@@ -394,12 +394,14 @@ async def create_submission(
                             f"but recognized '{transcribed}'."
                         )
                         word["casing_note"] = casing_note
-                        casing_mismatches.append({
-                            "word_index": crop_idx,
-                            "expected": expected_word_text,
-                            "detected": transcribed,
-                            "note": casing_note,
-                        })
+                        casing_mismatches.append(
+                            {
+                                "word_index": crop_idx,
+                                "expected": expected_word_text,
+                                "detected": transcribed,
+                                "note": casing_note,
+                            }
+                        )
                     elif is_initial_cap_diff:
                         exp_char = expected_word_text[0]
                         det_char = transcribed[0]
@@ -408,12 +410,14 @@ async def create_submission(
                             f"but recognized lowercase '{det_char}'."
                         )
                         word["casing_note"] = casing_note
-                        casing_mismatches.append({
-                            "word_index": crop_idx,
-                            "expected": expected_word_text,
-                            "detected": transcribed,
-                            "note": casing_note,
-                        })
+                        casing_mismatches.append(
+                            {
+                                "word_index": crop_idx,
+                                "expected": expected_word_text,
+                                "detected": transcribed,
+                                "note": casing_note,
+                            }
+                        )
 
             # Generate letter zones for letter-level tracing overlay
             binary_crop = (

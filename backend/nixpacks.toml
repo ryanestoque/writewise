@@ -1,0 +1,7 @@
+# Nixpacks configuration for WriteWise FastAPI backend on Railway
+
+[phases.install]
+cmds = ["uv sync --frozen"]
+
+[start]
+cmd = "uv run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"

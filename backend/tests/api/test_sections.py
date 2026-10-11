@@ -68,11 +68,7 @@ def test_rename_section_syncs_students(client, cleanup_sections):
 
         # Verify student.section was synced
         student_check = (
-            supabase_client.table("student")
-            .select("section")
-            .eq("id", stu_id)
-            .single()
-            .execute()
+            supabase_client.table("student").select("section").eq("id", stu_id).single().execute()
         )
         assert student_check.data["section"] == new_name
     finally:
