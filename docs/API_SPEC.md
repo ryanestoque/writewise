@@ -57,13 +57,24 @@ The frontend branches on `error.code`, never on parsing `message` text (ARCHITEC
 
 | Code | HTTP status | Source |
 |---|---|---|
-| `VALIDATION_ERROR` | 400 | Pydantic validation failure, normalized into this envelope via a custom exception handler |
+| `VALIDATION_ERROR` | 400 / 422 | Pydantic validation failure or invalid payload format, normalized into envelope |
+| `BAD_REQUEST` | 400 | Request violates business precondition (e.g. resend-invite on student without parent email) |
+| `INVALID_SUBMISSION_STATUS` | 400 | Action attempted on invalid submission status (e.g. grading rejected submission) |
+| `INVITE_FAILED` | 400 | Parent email invitation delivery failed via Supabase Auth admin API |
 | `UNSUPPORTED_FILE_TYPE` | 400 | Submission upload — file isn't `image/jpeg` or `image/png` (§3.3) |
 | `FILE_TOO_LARGE` | 400 | Submission upload — file exceeds 15 MB (§3.3) |
+| `ACTIVITY_HAS_SUBMISSIONS` | 400 | `DELETE /api/activities/{id}` — refused because student submissions already exist |
 | `UNAUTHORIZED` | 401 | Missing, invalid, or expired JWT |
 | `FORBIDDEN` | 403 | Authenticated, but wrong role for this route |
 | `MANUAL_SCORING_DISABLED` | 403 | `PATCH /submissions/{id}/manual-score` called while `SCORING_ENGINE=calibrated` (§3.3) |
-| `NOT_FOUND` | 404 | Referenced `student_id` / `activity_id` / `submission_id` doesn't exist, or caller has no relationship to it (§2.2) |
+| `NOT_ROSTER_TEACHER` | 403 | Action refused — caller is a teacher, but the student is not on their roster (§3.3) |
+| `NOT_SUBMISSION_UPLOADER` | 403 | Attempt deletion — caller is a parent, but was not the original uploader (§3.3) |
+| `NOT_CHILD_PARENT` | 403 | Action refused — caller is a parent, but has no linked relationship to the student (§3.3) |
+| `NOT_FOUND` | 404 | Referenced `student_id` / `activity_id` / `section_id` / `submission_id` doesn't exist or caller has no access |
+| `SECTION_NAME_EXISTS` | 409 | Section creation/rename — teacher already has a section with that case-insensitive name |
+| `SECTION_NOT_EMPTY` | 409 | Section deletion refused — students are currently assigned to the section |
+| `MANUAL_SCORE_ALREADY_EXISTS` | 409 | `manual_score.submission_id` is `unique` (DATABASE §9) — no re-grade flow (§3.3) |
+| `SUBMISSION_ALREADY_GRADED` | 409 | Attempt deletion — parent attempted to delete an already graded submission (§3.3) |
 | `QUALITY_GATE_BLUR` | 422 | CV_PIPELINE §2 |
 | `QUALITY_GATE_BRIGHTNESS` | 422 | CV_PIPELINE §2 |
 | `QUALITY_GATE_CONTRAST` | 422 | CV_PIPELINE §2 |
@@ -73,11 +84,7 @@ The frontend branches on `error.code`, never on parsing `message` text (ARCHITEC
 | `QUALITY_GATE_SCRIPT_NOT_CURSIVE` | 422 | CV_PIPELINE §5.4 (post-segmentation cursive connectivity check: printed handwriting rejected) |
 | `SEGMENTATION_COUNT_MISMATCH` | 422 | CV_PIPELINE §5.3 (post-segmentation gate) |
 | `TARGET_TEXT_MISMATCH` | 422 | CV_PIPELINE §7b (HTR target text verification — detected text does not match activity target) |
-| `MANUAL_SCORE_ALREADY_EXISTS` | 409 | `manual_score.submission_id` is `unique` (DATABASE §9) — no re-grade flow (§3.3) |
-| `NOT_ROSTER_TEACHER` | 403 | Attempt deletion — caller is a teacher, but the student is not on their roster (§3.3) |
-| `NOT_SUBMISSION_UPLOADER` | 403 | Attempt deletion — caller is a parent, but was not the original uploader of this submission (§3.3) |
-| `NOT_CHILD_PARENT` | 403 | Attempt deletion — caller is a parent, but has no linked relationship to the student (§3.3) |
-| `SUBMISSION_ALREADY_GRADED` | 409 | Attempt deletion — parent attempted to delete an already graded submission (§3.3) |
+| `RATE_LIMIT_EXCEEDED` | 429 | Upstream Supabase Auth email rate limit exceeded during parent invitation dispatch |
 | `MODEL_INFERENCE_ERROR` | 500 | ML_PIPELINE §9's `ModelInferenceError` |
 | `INTERNAL_ERROR` | 500 | Catch-all for unhandled failures |
 
@@ -101,17 +108,18 @@ Any field describing *who did something* — `created_by` (activity), `uploader_
 
 **Caller:** Teacher only.
 
-Creates a roster entry, and optionally invites a parent (ARCHITECTURE §5) in the same request. The invite failing does **not** fail the whole request — a typo'd parent email shouldn't cost a teacher a correctly-entered student while moving through a class of 30.
+Creates a roster entry, and optionally invites a parent (ARCHITECTURE §5) in the same request. Either `section` (string) or `section_id` (UUID) may be passed; if `section_id` is supplied, `section` is populated from the linked record, or if a raw `section` string is given, the matching `public.section` is looked up or automatically provisioned (ADR 0004). The invite failing does **not** fail the whole request — a typo'd parent email shouldn't cost a teacher a correctly-entered student while moving through a class of 30.
 
 Request:
 ```json
 {
   "full_name": "Juan Dela Cruz",
   "section": "Sampaguita",
+  "section_id": "55555555-5555-5555-5555-555555555555",
   "parent_email": "parent@example.com"
 }
 ```
-`parent_email` is optional.
+`parent_email` and `section_id` are optional.
 
 Response (`201 Created`):
 ```json
@@ -119,6 +127,7 @@ Response (`201 Created`):
   "id": "22222222-2222-2222-2222-222222222222",
   "full_name": "Juan Dela Cruz",
   "section": "Sampaguita",
+  "section_id": "55555555-5555-5555-5555-555555555555",
   "parent_email": "parent@example.com",
   "parent_invited": true,
   "parent_invite_error": null,
@@ -134,18 +143,36 @@ If `parent_email` was supplied, it is saved directly to the `student` record. If
 
 **Caller:** Teacher only, and only for a student on their own roster (§2.2 ownership check → `404` otherwise).
 
-Partial update. Also supports adding/updating/clearing a parent email on an already-created student, saving to `student.parent_email` and reusing the invite mechanism — covering the realistic gap where a teacher didn't have the parent's email at creation time.
+Partial update. Accepts `full_name`, `section`, `section_id`, and `parent_email`. When updating sections, passing `section_id` synchronizes `student.section` from `public.section.name`, and passing `section` links/creates the teacher's section (ADR 0004). Also supports adding/updating/clearing a parent email on an already-created student, saving to `student.parent_email` and triggering the invite mechanism.
 
 Request (all fields optional):
 ```json
 {
   "full_name": "Juan D. Cruz",
   "section": "Rosal",
+  "section_id": "66666666-6666-6666-6666-666666666666",
   "parent_email": "parent@example.com"
 }
 ```
 
 Response (`200 OK`): same shape as `POST /students`'s response, reflecting the updated record.
+
+#### `POST /api/students/{id}/resend-invite`
+
+**Caller:** Teacher only, and only for a student on their own roster with an existing `parent_email`.
+
+Re-triggers the parent invitation email via Supabase Auth admin API without modifying roster data. If upstream rate-limits occur on Supabase Auth, returns `429 RATE_LIMIT_EXCEEDED`. If the student has no linked email, returns `400 BAD_REQUEST`.
+
+Response (`200 OK`):
+```json
+{
+  "success": true,
+  "student_id": "22222222-2222-2222-2222-222222222222",
+  "parent_email": "parent@example.com",
+  "parent_status": "pending",
+  "message": "Parent invitation sent successfully"
+}
+```
 
 #### `DELETE /api/students/{id}/teacher-link`
 
@@ -170,7 +197,85 @@ If the link doesn't exist (already removed, or never existed), return `404` rath
 
 ---
 
-### 3.2 Activities
+### 3.2 Sections
+
+Manages relational classroom sections (`public.section`, migration `0020_class_sections.sql`, ADR 0004). Teacher-owned; section names must be unique per teacher.
+
+#### `GET /api/sections`
+
+**Caller:** Teacher only.
+
+Lists all sections created by the authenticated teacher, ordered alphabetically by name, including the current count of enrolled students from the teacher's active roster.
+
+Response (`200 OK`):
+```json
+[
+  {
+    "id": "55555555-5555-5555-5555-555555555555",
+    "name": "Sampaguita",
+    "student_count": 28,
+    "created_at": "2026-08-08T09:00:00Z",
+    "updated_at": "2026-08-08T09:00:00Z"
+  }
+]
+```
+
+#### `POST /api/sections`
+
+**Caller:** Teacher only.
+
+Creates a new class section. If the teacher already has a section with that case-insensitive name, returns `409 SECTION_NAME_EXISTS`.
+
+Request:
+```json
+{
+  "name": "Rosal"
+}
+```
+
+Response (`200 OK`):
+```json
+{
+  "id": "66666666-6666-6666-6666-666666666666",
+  "name": "Rosal",
+  "student_count": 0,
+  "created_at": "2026-08-08T09:00:00Z",
+  "updated_at": "2026-08-08T09:00:00Z"
+}
+```
+
+#### `PATCH /api/sections/{id}`
+
+**Caller:** Teacher only (ownership verified).
+
+Renames a section. Updates `section.name` and automatically synchronizes the denormalized string column `student.section` for all students referencing this `section_id` (ADR 0004). If the new name collides with another of the teacher's sections, returns `409 SECTION_NAME_EXISTS`.
+
+Request:
+```json
+{
+  "name": "Rosal - Morning"
+}
+```
+
+Response (`200 OK`): updated `SectionResponse` object.
+
+#### `DELETE /api/sections/{id}`
+
+**Caller:** Teacher only (ownership verified).
+
+Permanently deletes a section. If students are currently assigned to this section (`student_count > 0`), deletion is refused with `409 SECTION_NOT_EMPTY` (referential safety).
+
+Response (`200 OK`):
+```json
+{
+  "success": true,
+  "deleted_id": "66666666-6666-6666-6666-666666666666"
+}
+```
+
+---
+
+### 3.3 Activities
 
 #### `POST /api/activities`
 
@@ -198,6 +303,35 @@ Response (`201 Created`):
 `created_by` is derived from the caller's JWT (§2.5), never accepted from the request body.
 
 > **Expected word count is not a stored field.** CV_PIPELINE §5.3's post-segmentation gate needs "expected word count" to compare detected segmentation against — this is computed server-side at submission-processing time as `len(target_text.split())`, not stored redundantly on `activity` or entered separately by the teacher. It's a pure function of `target_text`; storing it separately would just be a second source of truth that could drift.
+
+---
+
+#### `PATCH /api/activities/{activity_id}`
+
+**Caller:** Teacher only (ownership verified).
+
+Updates activity properties (`target_text` and/or `is_take_home`).
+
+Request:
+```json
+{
+  "target_text": "the quick brown fox jumps",
+  "is_take_home": true
+}
+```
+
+Response (`200 OK`):
+```json
+{
+  "id": "33333333-3333-3333-3333-333333333333",
+  "target_text": "the quick brown fox jumps",
+  "is_take_home": true,
+  "created_by": "11111111-1111-1111-1111-111111111111",
+  "created_at": "2026-08-08T09:00:00Z"
+}
+```
+
+If the activity does not exist or isn't owned by the caller → `404 NOT_FOUND`.
 
 ---
 
@@ -247,7 +381,23 @@ An empty `ids` array is a valid no-op (`updated: [], skipped: []`).
 
 ---
 
-### 3.3 Submissions
+#### `DELETE /api/activities/{activity_id}`
+
+**Caller:** Teacher only (ownership verified).
+
+Permanently deletes an activity. If any student submissions exist for this activity, deletion is strictly refused with `400 ACTIVITY_HAS_SUBMISSIONS` to safeguard research data integrity.
+
+Response (`200 OK`):
+```json
+{
+  "id": "33333333-3333-3333-3333-333333333333",
+  "deleted": true
+}
+```
+
+---
+
+### 3.4 Submissions
 
 #### `POST /api/submissions`
 
@@ -401,7 +551,36 @@ Response (`200 OK`):
 
 ---
 
-### 3.4 Health & Config
+#### `POST /api/submissions/batch-delete`
+
+**Caller:** Teacher or Parent (applies individual deletion authorization rules to each submission).
+
+Deletes up to 100 submission attempts in a single transaction. Validates IDs, checks role permissions per submission (refuses parent deletions on already-graded items), deletes underlying Storage images, and removes `submission` database rows.
+
+Request:
+```json
+{
+  "submission_ids": [
+    "44444444-4444-4444-4444-444444444444",
+    "44444444-4444-4444-4444-444444444445"
+  ]
+}
+```
+
+Response (`200 OK`):
+```json
+{
+  "deleted_count": 2,
+  "deleted_ids": [
+    "44444444-4444-4444-4444-444444444444",
+    "44444444-4444-4444-4444-444444444445"
+  ]
+}
+```
+
+---
+
+### 3.5 Health & Config
 
 #### `GET /api/health`
 
@@ -427,11 +606,21 @@ Response (`200 OK`):
 |---|---|
 | `POST /api/students` | §7.1 Teacher Portal — class roster management |
 | `PATCH /api/students/{id}` | §7.1 Teacher Portal — class roster management |
+| `POST /api/students/{id}/resend-invite` | §7.1 Teacher Portal — parent invitation management |
 | `DELETE /api/students/{id}/teacher-link` | §7.1 Teacher Portal — class roster management |
+| `GET /api/sections` | §7.1 Teacher Portal — section management |
+| `POST /api/sections` | §7.1 Teacher Portal — section management |
+| `PATCH /api/sections/{id}` | §7.1 Teacher Portal — section management |
+| `DELETE /api/sections/{id}` | §7.1 Teacher Portal — section management |
 | `POST /api/activities` | §7.1 Teacher Portal — activity creation |
+| `PATCH /api/activities/{id}` | §7.1 Teacher Portal — activity edit |
+| `PATCH /api/activities/{id}/archive` | §7.1 Teacher Portal — activity archive |
+| `POST /api/activities/bulk-archive` | §7.1 Teacher Portal — activity bulk archive |
+| `DELETE /api/activities/{id}` | §7.1 Teacher Portal — activity deletion |
 | `POST /api/submissions` | §7.1 submission upload; §7.2 Parent Portal — take-home upload |
 | `PATCH /api/submissions/{id}/manual-score` | §7.1 Teacher Portal — Phase 1 manual rubric entry |
 | `DELETE /api/submissions/{id}` | §7.1 Teacher Portal & §7.2 Parent Portal — attempt management & deletion |
+| `POST /api/submissions/batch-delete` | §7.1 Teacher Portal & §7.2 Parent Portal — bulk attempt deletion |
 | `GET /api/health` | Not a PRD feature — deploy/monitoring infrastructure (ARCHITECTURE §14/§15) |
 
 Every endpoint here is organized by REST resource (§3), not by portal, since submission upload is shared by both roles (PRD §6) — this table gives the portal-oriented view without duplicating any endpoint's documentation under two headings.
@@ -454,11 +643,12 @@ Extends ARCHITECTURE §2's repo layout, which reserves `backend/app/api/` for "r
 
 ```
 backend/app/api/
-├── students.py       # POST /students, PATCH /students/{id}, DELETE /students/{id}/teacher-link
-├── activities.py      # POST /activities
-├── submissions.py      # POST /submissions, PATCH /submissions/{id}/manual-score, DELETE /submissions/{id}
-├── health.py            # GET /health
-└── deps.py                # get_current_user, get_current_teacher, get_current_parent (§2.2)
+├── students.py       # POST /students, PATCH /students/{id}, POST /students/{id}/resend-invite, DELETE /students/{id}/teacher-link
+├── sections.py       # GET/POST /sections, PATCH/DELETE /sections/{id}
+├── activities.py     # POST /activities, PATCH/DELETE /activities/{id}, archive & bulk-archive
+├── submissions.py    # POST /submissions, PATCH /submissions/{id}/manual-score, DELETE /submissions/{id}, POST /submissions/batch-delete
+├── health.py         # GET /health
+└── deps.py           # get_current_user, get_current_teacher, get_current_parent (§2.2)
 ```
 
 One file per resource, matching §3's resource-based grouping. `deps.py` holds the shared auth/ownership-check dependencies in exactly one place — the same rationale DATABASE §10.1 gives for its shared RLS helper functions, just re-expressed in Python for the write path.
