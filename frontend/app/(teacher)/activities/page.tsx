@@ -99,7 +99,7 @@ export default function ActivitiesPage() {
   }, [activities]);
 
   const activityFilterItems = useMemo<FilterPillItem<FilterType>[]>(() => {
-    const items: FilterPillItem<FilterType>[] = [
+    return [
       { id: "all", label: "All", count: counts.all },
       {
         id: "in_class",
@@ -113,16 +113,12 @@ export default function ActivitiesPage() {
         count: counts.take_home,
         disabled: counts.take_home === 0 && filterType !== "take_home",
       },
-    ];
-    if (counts.archived > 0) {
-      items.push({
+      {
         id: "archived",
         label: "Archived",
         count: counts.archived,
-        disabled: counts.archived === 0 && filterType !== "archived",
-      });
-    }
-    return items;
+      },
+    ];
   }, [counts, filterType]);
 
   const filteredAndSortedActivities = useMemo(() => {

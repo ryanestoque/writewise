@@ -23,6 +23,8 @@ import {
   FilterIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CursiveStrokeCanvas } from "@/components/cursive-stroke-canvas";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export type LetterZone = "ascender" | "midline" | "descender";
 
@@ -665,6 +667,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
   const [selectedLetterId, setSelectedLetterId] = useState<string | null>("A");
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -777,98 +780,11 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
           </div>
         </div>
 
-        {/* Large Visual Stroke Display on 3-Line Penmanship Ruling */}
-        <div className="w-full h-32 sm:h-36 rounded-xl border border-border/70 bg-background/90 dark:bg-surface/80 relative overflow-hidden flex items-center justify-center shadow-2xs">
-          <svg
-            viewBox="0 0 400 100"
-            preserveAspectRatio="none"
-            role="img"
-            className="w-full h-full select-none"
-            aria-label={`Detailed cursive stroke diagram for ${activeLetter.id}`}
-          >
-            <g aria-hidden="true">
-              {/* Ruling Lines */}
-              {/* Headline at y=25 */}
-              <line x1="10" y1="25" x2="390" y2="25" stroke="currentColor" className="text-slate-400 dark:text-slate-500" strokeWidth="1" strokeOpacity="0.7" />
-              <text x="14" y="21" fontSize="9" className="fill-slate-500 dark:fill-slate-400 font-sans font-medium">Headline</text>
-
-              {/* Midline at y=50 */}
-              <line x1="10" y1="50" x2="390" y2="50" stroke="currentColor" className="text-teal-600 dark:text-teal-400" strokeWidth="1.2" strokeDasharray="4 3" strokeOpacity="0.8" />
-              <text x="14" y="46" fontSize="9" className="fill-teal-600 dark:fill-teal-400 font-sans font-medium">Dotted Midline (x-Height)</text>
-
-              {/* Baseline at y=75 */}
-              <line x1="10" y1="75" x2="390" y2="75" stroke="currentColor" className="text-orange-600 dark:text-orange-400" strokeWidth="1.8" strokeOpacity="0.9" />
-              <text x="14" y="71" fontSize="9" className="fill-orange-600 dark:fill-orange-400 font-sans font-bold">Solid Baseline</text>
-
-              {/* Descender Line at y=90 */}
-              <line x1="10" y1="90" x2="390" y2="90" stroke="currentColor" className="text-slate-300 dark:text-slate-600" strokeWidth="0.8" strokeDasharray="2 2" strokeOpacity="0.5" />
-              <text x="14" y="96" fontSize="8" className="fill-slate-400 font-sans">Descender Zone</text>
-
-              {/* ~68° Slant Guideline */}
-              <line x1="170" y1="85" x2="210" y2="15" stroke="currentColor" className="text-primary" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
-              <text x="212" y="20" fontSize="8" className="fill-primary font-sans font-semibold">~68° Slant</text>
-
-              {/* Big Cursive Letters on Baseline */}
-              <style>{`
-                @keyframes drawText {
-                  0% { clip-path: inset(0 100% 0 0); opacity: 0.3; }
-                  100% { clip-path: inset(0 -10% 0 0); opacity: 1; }
-                }
-                .animate-draw {
-                  animation: drawText 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-                }
-              `}</style>
-              <text
-                key={activeLetter.id}
-                x="50%"
-                y="75"
-                dominantBaseline="alphabetic"
-                textAnchor="middle"
-                className="font-cursive fill-foreground animate-draw"
-                style={{ fontSize: "56px", fontWeight: 500 }}
-              >
-                {activeLetter.upper}{activeLetter.lower}
-              </text>
-            </g>
-          </svg>
-        </div>
-
-        {/* Stroke Formation Steps (Uppercase & Lowercase) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-          {/* Uppercase Steps */}
-          <div className="p-3.5 rounded-xl border border-border/70 bg-card space-y-2">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-              <span className="size-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[11px] font-bold">
-                {activeLetter.upper}
-              </span>
-              <span>Capital Letter Formation ({activeLetter.upper})</span>
-            </div>
-            <ol className="space-y-1.5 text-xs text-muted-foreground list-decimal list-inside leading-relaxed">
-              {activeLetter.upperSteps.map((step, idx) => (
-                <li key={idx} className="pl-1">
-                  <span className="text-foreground/90">{step}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-
-          {/* Lowercase Steps */}
-          <div className="p-3.5 rounded-xl border border-border/70 bg-card space-y-2">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-              <span className="size-5 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 flex items-center justify-center text-[11px] font-bold">
-                {activeLetter.lower}
-              </span>
-              <span>Lowercase Letter Formation ({activeLetter.lower})</span>
-            </div>
-            <ol className="space-y-1.5 text-xs text-muted-foreground list-decimal list-inside leading-relaxed">
-              {activeLetter.lowerSteps.map((step, idx) => (
-                <li key={idx} className="pl-1">
-                  <span className="text-foreground/90">{step}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
+        {/* Realistic Animated Penmanship Stroke Display */}
+        <CursiveStrokeCanvas
+          key={activeLetter.id}
+          letterId={activeLetter.id}
+        />
 
         {/* Coaching Tip & Common Pitfall */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1185,7 +1101,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                           tabIndex={isSelected ? 0 : -1}
                           onClick={() => {
                             setSelectedLetterId(item.id);
-                            setIsMobileDetailOpen(true);
+                            if (isMobile) setIsMobileDetailOpen(true);
                           }}
                           aria-pressed={isSelected}
                           aria-label={`Letter ${item.id}. Click to view detailed formation guide.`}
@@ -1230,9 +1146,10 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
       </DialogContent>
 
       {/* Mobile Drawer / Sheet View */}
-      {isMobileDetailOpen && (
+      {/* Only mount below md — otherwise a hidden second canvas animates on desktop */}
+      {isMobile && isMobileDetailOpen && (
         <Sheet open={isMobileDetailOpen} onOpenChange={setIsMobileDetailOpen}>
-          <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl p-4 overflow-y-auto sm:hidden">
+          <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl p-4 overflow-y-auto md:hidden">
             <SheetHeader className="p-0 pb-3 border-b border-border/70 flex flex-row items-center justify-between">
               <SheetTitle className="text-base font-heading font-semibold">
                 Letter {activeLetter?.id} Detail Guide
