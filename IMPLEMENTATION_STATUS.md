@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-10-10
+**Last updated:** 2026-10-12
 
 ## Summary
 
@@ -32,7 +32,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 - [x] `.env.example` templates committed (frontend + backend)
 - [x] Initial Supabase migration files written (schema skeleton — `DATABASE.md`)
 - [x] CI workflow committed (`.github/workflows/`)
-- [x] Auth Portal Shell & Layout audited (Login, Teacher Sidebar, Sign-Out Modal, Rubric Dialog — `frontend/docs/audits/`)
+- [x] Auth Portal Shell & Layout audited (Login, Teacher Sidebar, Sign-Out Modal, Rubric Dialog)
 
 **Cloud provisioning** (`DEPLOYMENT.md` provisioning order-of-operations)
 - [x] `writewise-dev` + `writewise-prod` Supabase projects created
@@ -54,10 +54,10 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
 | Class roster management (add/edit/remove student) | Done | | PRD §7.1, API_SPEC §3.1, DATABASE §5 |
-| Class section relational subsystem (`public.section` CRUD, `ManageSectionsDialog`, `/api/sections`) | Done | | Spec: `2026-10-10-class-section-crud-design.md`, Migration: `0020_class_sections.sql` |
-| Activity creation (freeform target text) | Done | | PRD §7.1, API_SPEC §3.2, DESIGN §6 screens 5–6 |
-| Submission upload (single photo per activity) | Done | | PRD §7.1, API_SPEC §3.3 |
-| Submission deletion & attempt management | Done | | API_SPEC §3.3, DESIGN §7.1 |
+| Class section relational subsystem (`public.section` CRUD, `ManageSectionsDialog`, `/api/sections`) | Done | | ADR 0004, DATABASE §5, API_SPEC §3.2, Migration `0020_class_sections.sql` |
+| Activity creation (freeform target text) | Done | | PRD §7.1, API_SPEC §3.3, DESIGN §6 screens 5–6 |
+| Submission upload (single photo per activity) | Done | | PRD §7.1, API_SPEC §3.4 |
+| Submission deletion & attempt management | Done | | API_SPEC §3.4, DESIGN §7.10 |
 | Raw CV measurement display | Done | | PRD §7.1/§7.3, CV_PIPELINE §8, DESIGN §7.2 |
 | Manual rubric score entry | Done | | PRD §7.1, DATABASE §9, DESIGN §7.9 |
 | Teacher account settings (profile & in-session password update) | Done | | PRD §7.1, DESIGN §6 screen 3, DATABASE §4 |
@@ -79,8 +79,8 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Feature extraction — size consistency | Done | | CV_PIPELINE §6.4 |
 | CNN handoff crop generation | Done | | CV_PIPELINE §7 |
 | Output schema persisted to `measurement` | Done | | CV_PIPELINE §8, DATABASE §8 |
-| HTR target text verification | Done | | CTC model + cursive-aware Levenshtein verification in `app/ml/htr.py`; integrated in submission pipeline; `bypass_text_check` override; stub mode for dev/test | CV_PIPELINE §7b, ADR 0003 |
-| Stroke skeleton tracing & letter zoning | Done | | SVG vector paths + letter zone segmentation in `app/cv/tracing.py`; consumed by diagnostic overlay | CV_PIPELINE §10 |
+| HTR target text verification | Done | | CV_PIPELINE §7b, ADR 0003 (CTC model + Levenshtein in `app/ml/htr.py`) |
+| Stroke skeleton tracing & letter zoning | Done | | CV_PIPELINE §10 (`app/cv/tracing.py`) |
 
 ---
 

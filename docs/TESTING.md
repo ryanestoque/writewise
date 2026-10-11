@@ -53,7 +53,7 @@ ML_PIPELINE.md §8 has the deployed container **fail startup entirely** if the m
 
 **Decision:** `app.ml.inference.run_letter_formation_inference` is swapped for a deterministic stub in every test run — returns a fixed, in-range score per word crop, no real forward pass, no real artifact required. The app's startup lifespan event (which downloads and loads the real model) is skipped entirely in test mode via a new `ENVIRONMENT=test` value — see §10, this is one line of new scope on top of TECH_STACK.md §8.3's existing `dev`/`prod` values.
 
-**HTR model mocking** follows the same pattern: `app.ml.htr` uses a module-level singleton loaded at startup. In `ENVIRONMENT=test`, it activates stub mode automatically — `verify_target_text()` returns `(True, target_text, 1.0)` for all inputs, and `predict_word_text()` returns an empty string. Unlike the CNN mock (which prevents startup failure), the HTR stub is the module's own built-in fallback — no test-specific patching needed. This also applies in dev when `HTR_MODEL_ARTIFACT_PATH` is empty or unset.
+**HTR model mocking** follows the same pattern: `app.ml.htr` uses a module-level singleton loaded at startup. In `ENVIRONMENT=test`, it activates stub mode automatically — `verify_target_text()` returns `(True, target_text, 1.0)` for all inputs, and `predict_word_text()` returns an empty string. Unlike the CNN mock (which prevents startup failure), the HTR stub is the module's own built-in fallback — no test-specific patching needed. This also applies across any environment (dev or prod) when `HTR_MODEL_ARTIFACT_PATH` is empty or unset. Similarly, an unset or empty `MODEL_ARTIFACT_PATH` activates deterministic stub inference across environments.
 
 > **Why mock rather than require a real model in CI:** this unblocks integration-test writing from day one instead of gating it behind a September milestone, keeps CI fast and deterministic, and correctly stays in this document's lane (§1) — integration tests verify the pipeline is *wired together correctly*, not that the model's judgment is *good*, which is ML_PIPELINE §5/§10's separate, offline job. The real model gets exercised for real for the first time in an actual Railway deployment, exactly where ML_PIPELINE §8's fail-loud behavior is designed to catch a genuine problem.
 
@@ -233,6 +233,7 @@ Targeted for October, ahead of the technical defense:
 - [ ] Full backend test suite green in CI (§4, §5, §6.1)
 - [ ] Manual RLS checklist (§6.2) run
 - [ ] Manual QA checklist (§7) run against the **full** screen inventory (Phase 1 + Phase 2 + parent screens)
+- [ ] `MODEL_ARTIFACT_PATH` configured in production Railway environment variables pointing to calibrated `.keras` artifact in Supabase Storage (disables stub fallback mode)
 - [ ] `pip-audit` and `npm audit` run again, findings triaged (SECURITY §8)
 - [ ] Dependency versions confirmed still inside their supported window (TECH_STACK §1's "actively supported through defense season" table)
 

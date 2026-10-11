@@ -83,6 +83,7 @@ Standard OCR transcribes text and discards the physical/structural quality of th
 3. **Privacy by default.** Students are minors with no login; real names are access-controlled by role; EXIF is stripped unconditionally; logs never contain identifiable data; anonymization happens only through a controlled export script.
 4. **Calibration before automation.** The system earns the right to auto-score by first proving statistical agreement with human expert judgment — no black-box scoring.
 5. **Ship the pilot, not the platform.** Scope is deliberately tight (one school, ~65 users, synchronous processing, no admin role) to protect the October defense date.
+6. **No Institutional Endorsement Claims.** WriteWise is an independent developmental assessment instrument. The system is designed to be grade-level agnostic across basic penmanship instruction and never claims official DepEd curriculum alignment, certification, or institutional endorsement in user-facing UI or product copy. Formal curricular alignment is investigated solely within offline academic research validation instruments (`EXPERT_RUBRIC_VALIDATION_INSTRUMENT.md`).
 
 ## Accessibility & Inclusion
 

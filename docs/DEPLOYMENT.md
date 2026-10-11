@@ -48,10 +48,10 @@ Deployment itself is **not** owned by GitHub Actions — Vercel's and Railway's 
 
 | Setting | Value |
 |---|---|
-| Build method | **Nixpacks** (auto-detects from `pyproject.toml`/`uv.lock` — no Dockerfile needed) |
+| Build method | **Nixpacks** (configured via `backend/nixpacks.toml` using `uv sync --frozen` and `backend/Procfile` — no Dockerfile needed) |
 | Plan | **Hobby ($5/mo)** |
 | Root directory | `backend` |
-| Start command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` (TECH_STACK.md §3.5) |
+| Start command | `uv run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}` (or via Procfile) |
 | Region | Nearest available to Philippines |
 
 **Why a paid tier, given the team's preference to avoid subscriptions:** Railway removed its genuine free tier in 2023. What remains post-trial is a $1/mo "Free" plan capped at 0.5GB RAM / 0.5GB storage — not enough headroom for TensorFlow + OpenCV + a resident CNN model. The only real free-tier alternative (Render) trades that for a 512MB-RAM instance that spins down after 15 minutes of inactivity, adding a 30-60s cold start on top of the PRD's synchronous "wait in the same session" upload flow — a real risk during a live pilot, and untested against the actual model's memory footprint. Given that, the team elected to treat Railway's ~$5/mo as **one deliberate, team-split, one-time pilot expense** rather than reopen ARCHITECTURE.md's hosting choice — not an ongoing subscription commitment beyond the pilot's life (see §12 for what happens to this cost post-defense).
@@ -78,8 +78,8 @@ TECH_STACK.md §8 is the source of truth for the **full list** of required varia
 1. Supabase project URLs/keys exist as soon as the `dev`/`prod` Supabase projects are created (§8, steps 1-2)
 2. Railway's own service URL (`NEXT_PUBLIC_API_BASE_URL`'s prod value) only exists **after** the Railway service is created and gets its first deploy — so Railway env vars get filled before Vercel's Production env vars
 3. `CORS_ALLOWED_ORIGINS` (Railway) needs the Vercel URL — so it's filled *after* Vercel's project exists, meaning it's the one Railway var that gets revisited/added slightly out of the initial batch
-4. `MODEL_ARTIFACT_PATH` doesn't need a real value until a trained model actually exists (§10) — this can lag behind every other variable without blocking anything else
-5. `HTR_MODEL_ARTIFACT_PATH` similarly doesn't need a real value until the HTR model is trained and uploaded (see ML_PIPELINE.md §9) — empty or omitted in dev activates stub mode, which is the intended local behavior.
+4. `MODEL_ARTIFACT_PATH` doesn't need a real value until a trained model actually exists (§10) — empty or omitted across environments activates deterministic stub fallback mode without crashing startup.
+5. `HTR_MODEL_ARTIFACT_PATH` similarly doesn't need a real value until the HTR model is trained and uploaded (see ML_PIPELINE.md §9) — empty or omitted across environments activates stub mode, which is the intended behavior prior to artifact upload.
 
 ---
 
