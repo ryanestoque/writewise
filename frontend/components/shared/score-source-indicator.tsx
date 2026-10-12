@@ -40,8 +40,8 @@ export function ScoreSourceIndicator({
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs max-w-xs leading-relaxed">
           {isManual
-            ? "Scores currently derived from teacher's rubric assessment (Phase 1 calibration mode)."
-            : "Scores generated automatically by calibrated CV and CNN diagnostic pipeline."}
+            ? "Scores assessed directly by the teacher using curriculum rubric standards."
+            : "Scores generated automatically by WriteWise diagnostic engine based on cursive penmanship standards."}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

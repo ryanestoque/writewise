@@ -72,8 +72,11 @@ export const SpacingLayer = memo(function SpacingLayer({
         const minHit = Math.max(36, 36 * hitScale);
         const hitW = Math.max(minHit, width + 8);
         const hitH = Math.max(minHit, tickHeight * 2 + 8);
-        const badgeW = 62 * hitScale;
+        const badgeW = 70 * hitScale;
         const badgeH = 20 * hitScale;
+        const spacingLabel = isAttention
+          ? (gap_ratio < 0.6 ? "Tight gap" : "Wide gap")
+          : "Good space";
 
         return (
           <g
@@ -177,8 +180,9 @@ export const SpacingLayer = memo(function SpacingLayer({
             />
 
             {/* In spotlight mode, render ratio pill */}
-            {isSpotlight && (
+            {isSpotlight && (isAttention || isActive) && (
               <g transform={`translate(${x1 + width / 2}, ${y - 12 * hitScale})`}>
+                <title>{`${spacingLabel} (${gap_ratio.toFixed(2)}× midline height)`}</title>
                 <rect
                   x={-badgeW / 2}
                   y={-badgeH / 2}
@@ -186,6 +190,9 @@ export const SpacingLayer = memo(function SpacingLayer({
                   height={badgeH}
                   rx={badgeH / 2}
                   fill={bracketColor}
+                  fillOpacity={isActive ? 0.95 : 0.85}
+                  stroke={isActive ? "#ffffff" : "none"}
+                  strokeWidth={1.5}
                   className="transition-transform group-hover:scale-110 motion-reduce:transform-none"
                 />
                 <text
@@ -194,11 +201,11 @@ export const SpacingLayer = memo(function SpacingLayer({
                   dominantBaseline="central"
                   textAnchor="middle"
                   fill="#ffffff"
-                  fontSize={10 * hitScale}
+                  fontSize={9.5 * hitScale}
                   fontWeight="600"
                   fontFamily="system-ui, sans-serif"
                 >
-                  {gap_ratio}× x-ht
+                  {spacingLabel}
                 </text>
               </g>
             )}

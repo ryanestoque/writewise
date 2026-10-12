@@ -38,16 +38,21 @@ function ChartTooltipContent({
 }) {
   if (!active || !payload || !payload.length) return null;
   const data = payload[0].payload;
+  const submissionIndex = data.submissionIndex as number | undefined;
+
   return (
-    <div className="p-3 bg-popover text-popover-foreground rounded-xl shadow-warm border border-border text-xs space-y-2 min-w-[200px] z-50">
+    <div className="p-3 bg-popover text-popover-foreground rounded-xl shadow-warm border border-border text-xs space-y-2 min-w-[240px] z-50">
       <div className="border-b border-border/60 pb-1.5">
-        <p className="font-semibold text-foreground">{data.fullDate}</p>
+        <p className="font-semibold text-foreground">
+          {submissionIndex ? `Worksheet #${submissionIndex} · ` : ""}
+          {data.fullDate}
+        </p>
         <p className="text-[11px] text-muted-foreground truncate max-w-[220px]">
           &quot;{data.activity}&quot;
         </p>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         {CRITERION_CONFIG.map((c) => {
           const val = data[c.key];
           if (val === null || val === undefined) return null;
@@ -61,25 +66,25 @@ function ChartTooltipContent({
               key={c.key}
               className="flex items-center justify-between gap-3 text-[11px]"
             >
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 min-w-0">
                 <span
                   className="w-1.5 h-1.5 rounded-full shrink-0"
                   style={{ backgroundColor: color }}
                   aria-hidden="true"
                 />
-                <span className="text-muted-foreground">{c.label}:</span>
+                <span className="text-muted-foreground truncate">{c.label}:</span>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <span className="font-semibold tabular-nums text-foreground">
                   {numericVal.toFixed(1)}%
                 </span>
                 <span
                   className={cn(
-                    "text-[10px] px-1.5 py-0.5 rounded font-medium",
+                    "text-[10px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap",
                     meta.badgeClass
                   )}
                 >
-                  {meta.shortLabel}
+                  {meta.label}
                 </span>
               </div>
             </div>
@@ -195,6 +200,18 @@ export function CriterionTrendChart({
   );
 
   const chartData = useMemo(() => {
+    // Check if dates collide across submissions
+    const dateCounts: Record<string, number> = {};
+    history.forEach((item) => {
+      const d = new Date(item.submissionDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+      dateCounts[d] = (dateCounts[d] || 0) + 1;
+    });
+
+    const hasDuplicateDates = Object.values(dateCounts).some((count) => count > 1);
+
     return history.map((item, idx) => {
       const date = new Date(item.submissionDate);
       const formattedDate = date.toLocaleDateString("en-US", {
@@ -202,10 +219,15 @@ export function CriterionTrendChart({
         day: "numeric",
       });
 
+      const dateLabel = hasDuplicateDates
+        ? `${formattedDate} (#${idx + 1})`
+        : formattedDate;
+
       return {
         id: item.submissionId,
         index: idx + 1,
-        dateLabel: `${formattedDate}`,
+        submissionIndex: idx + 1,
+        dateLabel,
         fullDate: date.toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
@@ -282,13 +304,13 @@ export function CriterionTrendChart({
             </span>
           </div>
           <div className="p-2 rounded-lg bg-muted/30 border border-border/40">
-            <span className="text-[10px] font-medium text-muted-foreground block">Letter Shapes</span>
+            <span className="text-[10px] font-medium text-muted-foreground block">Letter Formation</span>
             <span className="text-xs font-bold text-foreground tabular-nums">
               {single.scores.letter_formation != null ? `${single.scores.letter_formation.toFixed(1)}%` : "—"}
             </span>
           </div>
           <div className="p-2 rounded-lg bg-muted/30 border border-border/40 col-span-2 sm:col-span-1">
-            <span className="text-[10px] font-medium text-muted-foreground block">Line Alignment</span>
+            <span className="text-[10px] font-medium text-muted-foreground block">Baseline Alignment</span>
             <span className="text-xs font-bold text-foreground tabular-nums">
               {single.scores.baseline_alignment != null ? `${single.scores.baseline_alignment.toFixed(1)}%` : "—"}
             </span>
@@ -551,11 +573,11 @@ export function CriterionTrendChart({
                   <th scope="col" className="py-2.5 px-3 whitespace-nowrap">Date</th>
                   <th scope="col" className="py-2.5 px-3 min-w-[140px]">Worksheet Activity</th>
                   <th scope="col" className="py-2.5 px-3 text-right whitespace-nowrap">Overall Penmanship</th>
-                  <th scope="col" className="py-2.5 px-3 text-right whitespace-nowrap">Letter Shapes</th>
-                  <th scope="col" className="py-2.5 px-3 text-right whitespace-nowrap">Size &amp; Proportions</th>
+                  <th scope="col" className="py-2.5 px-3 text-right whitespace-nowrap">Letter Formation</th>
+                  <th scope="col" className="py-2.5 px-3 text-right whitespace-nowrap">Size Consistency</th>
                   <th scope="col" className="py-2.5 px-3 text-right whitespace-nowrap">Spacing</th>
-                  <th scope="col" className="py-2.5 px-3 text-right whitespace-nowrap">Slant &amp; Tilt</th>
-                  <th scope="col" className="py-2.5 px-3 text-right whitespace-nowrap">Line Alignment</th>
+                  <th scope="col" className="py-2.5 px-3 text-right whitespace-nowrap">Slant</th>
+                  <th scope="col" className="py-2.5 px-3 text-right whitespace-nowrap">Baseline Alignment</th>
                 </tr>
               </thead>
             <tbody className="divide-y divide-border/60">

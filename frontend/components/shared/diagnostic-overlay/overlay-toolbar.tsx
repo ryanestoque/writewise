@@ -542,7 +542,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   <ChevronLeft className="size-4 @min-[540px]:size-3" aria-hidden="true" />
                 </Button>
                 <span className="tabular-nums font-semibold text-foreground px-1 text-[11px] select-none">
-                  {currentIndex >= 0 ? currentIndex + 1 : "—"}
+                  {currentIndex >= 0 ? currentIndex + 1 : 1}
                   <span className="text-muted-foreground font-normal"> / </span>
                   {attentionItems.length}
                 </span>
@@ -585,7 +585,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                     <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.6" strokeDasharray="2 2" />
                     <line x1="1" y1="10" x2="13" y2="10" stroke="currentColor" strokeWidth="1.5" />
                   </svg>
-                  <span className="hidden @min-[640px]:inline">Lines</span>
+                  <span className="hidden @min-[420px]:inline">Lines</span>
                 </Button>
               )}
 
@@ -606,7 +606,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   aria-label="Toggle diagnostic symbols legend"
                 >
                   <HelpCircle className="size-3.5" aria-hidden="true" />
-                  <span className="hidden @min-[640px]:inline">Legend</span>
+                  <span className="hidden @min-[420px]:inline">Legend</span>
                 </Button>
               )}
 
@@ -621,7 +621,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 />
                 <Label
                   htmlFor="toggle-diagnostic-overlay-desktop"
-                  className="text-xs @min-[540px]:text-[11px] font-medium text-muted-foreground cursor-pointer select-none whitespace-nowrap hidden @min-[640px]:inline"
+                  className="text-xs @min-[540px]:text-[11px] font-medium text-muted-foreground cursor-pointer select-none whitespace-nowrap hidden @min-[460px]:inline"
                 >
                   {visible ? "Overlay on" : "Overlay off"}
                 </Label>

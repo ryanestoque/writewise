@@ -26,7 +26,13 @@ import {
 } from "@/components/shared/diagnostic-overlay";
 import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
-import { PARENT_CRITERIA_LIST, type ScoreBand } from "@/lib/utils/scoring";
+import { cn } from "@/lib/utils";
+import {
+  PARENT_CRITERIA_LIST,
+  PARENT_CRITERIA_METADATA,
+  type ScoreBand,
+  type CriterionKey,
+} from "@/lib/utils/scoring";
 import {
   Calendar,
   User,
@@ -114,6 +120,7 @@ export function WorksheetViewDialog({
   const [selectedAttentionItem, setSelectedAttentionItem] =
     useState<ActiveAnnotationHover | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"photo" | "scores">("photo");
 
   const deleteMutation = useDeleteSubmission();
 
@@ -135,8 +142,23 @@ export function WorksheetViewDialog({
     if (!nextOpen) {
       setCriterionOverride(null);
       setSelectedAttentionItem(null);
+      setMobileTab("photo");
     }
     onOpenChange(nextOpen);
+  };
+
+  const handleCriterionSelect = (criterionKey: CriterionKey) => {
+    const key = criterionKey as CriterionFilter;
+    setCriterionOverride(key);
+    if (overlay) {
+      const items = getAttentionItems(overlay, key);
+      if (items.length > 0) {
+        setSelectedAttentionItem(items[0]);
+      } else {
+        setSelectedAttentionItem(null);
+      }
+    }
+    setMobileTab("photo");
   };
 
   const effectiveInitialCriterion: CriterionFilter = useMemo(() => {
@@ -148,6 +170,17 @@ export function WorksheetViewDialog({
   }, [initialCriterion, overlay?.summary?.weakest_criterion]);
 
   const activeCriterion = criterionOverride ?? effectiveInitialCriterion;
+
+  // Auto-focus first attention item when overlay data is present to avoid unselected/empty pager state
+  const activeAttentionItem = useMemo(() => {
+    if (selectedAttentionItem) return selectedAttentionItem;
+    if (overlay) {
+      const items = getAttentionItems(overlay, activeCriterion);
+      return items[0] ?? null;
+    }
+    return null;
+  }, [selectedAttentionItem, overlay, activeCriterion]);
+
   const { data: imageUrl, isLoading: isImageLoading } =
     useSubmissionImageUrl(imagePath);
 
@@ -159,15 +192,15 @@ export function WorksheetViewDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-4xl max-h-[min(94dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
+      <DialogContent className="w-[calc(100%-1.5rem)] sm:max-w-4xl lg:max-w-5xl max-h-[min(94dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
         {/* Header */}
         <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border bg-card/80">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pr-8">
+          <div className="flex items-center justify-between gap-3 pr-10">
             <div className="min-w-0">
               <DialogTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
                 Scored Worksheet Photo
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap truncate">
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
                 <span className="inline-flex items-center gap-1 font-medium text-foreground">
                   <User className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                   {childName}
@@ -177,22 +210,55 @@ export function WorksheetViewDialog({
                   <Calendar className="size-3" aria-hidden="true" />
                   {formattedDate}
                 </span>
+                {scoreSource !== "none" && (
+                  <>
+                    <span>&middot;</span>
+                    <ScoreSourceIndicator source={scoreSource} compact />
+                  </>
+                )}
               </DialogDescription>
             </div>
-
-            {scoreSource !== "none" && (
-              <div className="self-start sm:self-auto">
-                <ScoreSourceIndicator source={scoreSource} compact />
-              </div>
-            )}
           </div>
         </DialogHeader>
 
         {/* Content Body: Split View */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start lg:items-center">
+          {/* Mobile View Segmented Switcher */}
+          <div className="lg:hidden flex items-center p-1 bg-muted/50 rounded-xl border border-border/70 text-xs font-medium">
+            <button
+              type="button"
+              onClick={() => setMobileTab("photo")}
+              className={cn(
+                "flex-1 py-2 px-3 rounded-lg text-center transition-all cursor-pointer min-h-[38px] flex items-center justify-center font-medium",
+                mobileTab === "photo"
+                  ? "bg-card text-foreground font-semibold shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Worksheet Photo
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab("scores")}
+              className={cn(
+                "flex-1 py-2 px-3 rounded-lg text-center transition-all cursor-pointer min-h-[38px] flex items-center justify-center gap-1.5 font-medium",
+                mobileTab === "scores"
+                  ? "bg-card text-foreground font-semibold shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <span>Scores &amp; Skills</span>
+              {compositeScore != null && (
+                <span className="text-[11px] font-sans tabular-nums px-1.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-800 dark:text-brand-300 font-semibold border border-brand-200/60 dark:border-brand-800/60">
+                  {Math.round(compositeScore)}%
+                </span>
+              )}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             {/* Left: High-Resolution Worksheet Photo Inspector */}
-            <div className="lg:col-span-7 flex flex-col justify-center w-full gap-2">
+            <div className={cn("lg:col-span-7 flex flex-col justify-center w-full gap-2", mobileTab !== "photo" && "hidden lg:flex")}>
               <WorksheetImageInspector
                 imageUrl={imageUrl}
                 altText={`Handwriting worksheet submitted for ${childName}`}
@@ -213,7 +279,7 @@ export function WorksheetViewDialog({
                           setSelectedAttentionItem(null);
                         }
                       }}
-                      selectedAttentionId={selectedAttentionItem?.id}
+                      selectedAttentionId={activeAttentionItem?.id}
                       onSelectAttentionItem={setSelectedAttentionItem}
                       visible={showOverlay}
                       onToggleVisible={setShowOverlay}
@@ -237,7 +303,7 @@ export function WorksheetViewDialog({
                     imageUrl={imageUrl}
                     visible={showOverlay}
                     activeCriterion={activeCriterion}
-                    selectedAnnotation={selectedAttentionItem}
+                    selectedAnnotation={activeAttentionItem}
                     onSelectAnnotation={setSelectedAttentionItem}
                     showGuideLines={showGuideLines}
                   />
@@ -273,7 +339,7 @@ export function WorksheetViewDialog({
             </div>
 
             {/* Right: Worksheet Details & Criterion Feedback */}
-            <div className="lg:col-span-5 space-y-4">
+            <div className={cn("lg:col-span-5 space-y-4", mobileTab !== "scores" && "hidden lg:block")}>
               {/* Activity Target Text */}
               <div className="p-3.5 rounded-xl border border-border/80 bg-card/60 space-y-1 shadow-xs">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -312,20 +378,41 @@ export function WorksheetViewDialog({
                     <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Skill Breakdown
                     </span>
-                    <span className="text-xs text-muted-foreground">
-                      5 skills
-                    </span>
+                    {activeCriterion !== "all" ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCriterionOverride("all");
+                          setSelectedAttentionItem(null);
+                        }}
+                        className="text-xs text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:underline cursor-pointer font-medium"
+                      >
+                        Show All Skills
+                      </button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        5 skills
+                      </span>
+                    )}
                   </div>
                   <div className="divide-y divide-border/50">
-                    {PARENT_CRITERIA.map((criterion) => (
-                      <CriterionFeedbackRow
-                        key={criterion.criterionKey}
-                        criterionKey={criterion.criterionKey}
-                        label={criterion.label}
-                        score={scores[criterion.criterionKey]}
-                        band={bands[criterion.criterionKey]}
-                      />
-                    ))}
+                    {PARENT_CRITERIA.map((criterion) => {
+                      const isCriterionActive = activeCriterion === criterion.criterionKey;
+                      const criterionMeta = PARENT_CRITERIA_METADATA[criterion.criterionKey as CriterionKey];
+                      return (
+                        <CriterionFeedbackRow
+                          key={criterion.criterionKey}
+                          criterionKey={criterion.criterionKey as CriterionKey}
+                          label={criterion.label}
+                          score={scores[criterion.criterionKey]}
+                          band={bands[criterion.criterionKey]}
+                          showDiagnosticNote={isCriterionActive}
+                          isActive={isCriterionActive}
+                          homePracticeTip={isCriterionActive ? criterionMeta?.homeTip : null}
+                          onInspect={() => handleCriterionSelect(criterion.criterionKey as CriterionKey)}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               )}

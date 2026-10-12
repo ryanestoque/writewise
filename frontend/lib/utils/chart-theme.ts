@@ -25,7 +25,7 @@ export const CRITERION_CONFIG: readonly ChartCriterionConfig[] = [
   },
   {
     key: "letter_formation",
-    label: "Letter Shapes",
+    label: "Letter Formation",
     lightColor: "#475569", // Slate Gray (slate-600)
     darkColor: "#cbd5e1",  // Slate Tint (slate-300)
     strokeWidth: 2,
@@ -33,7 +33,7 @@ export const CRITERION_CONFIG: readonly ChartCriterionConfig[] = [
   },
   {
     key: "size_consistency",
-    label: "Size & Proportions",
+    label: "Size Consistency",
     lightColor: "#0e7490", // Deep Cyan / Cool Teal (cyan-700)
     darkColor: "#38bdf8",  // Sky Blue (sky-400)
     strokeWidth: 2,
@@ -49,7 +49,7 @@ export const CRITERION_CONFIG: readonly ChartCriterionConfig[] = [
   },
   {
     key: "slant",
-    label: "Slant & Tilt",
+    label: "Slant",
     lightColor: "#92400e", // Warm Bronze / Sepia (amber-800)
     darkColor: "#fbbf24",  // Warm Ochre (amber-400)
     strokeWidth: 2,
@@ -57,7 +57,7 @@ export const CRITERION_CONFIG: readonly ChartCriterionConfig[] = [
   },
   {
     key: "baseline_alignment",
-    label: "Line Alignment",
+    label: "Baseline Alignment",
     lightColor: "#15803d", // Deep Pine (green-700)
     darkColor: "#4ade80",  // Light Pine (green-400)
     strokeWidth: 2,

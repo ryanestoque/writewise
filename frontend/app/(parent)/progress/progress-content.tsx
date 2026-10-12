@@ -7,6 +7,7 @@ import { TakeHomeActivities } from "@/components/parent/take-home-activities";
 import { CriterionTrendChart } from "@/components/dashboard/criterion-trend-chart";
 import { RubricReferenceDialog } from "@/components/rubric-reference-dialog";
 import { SubmissionHistoryDialog } from "@/components/parent/submission-history-dialog";
+import { SampleReportPreview } from "@/components/parent/sample-report-preview";
 import {
   useChildScoreHistory,
   useTakeHomeActivities,
@@ -38,6 +39,7 @@ export function ProgressPageContent() {
     selectedChild,
     isLoading: childrenLoading,
     openUploadDialog,
+    openCursiveGuide,
   } = useParentPortal();
 
   const handleOpenRubric = useCallback(() => setRubricOpen(true), []);
@@ -101,8 +103,8 @@ export function ProgressPageContent() {
           </p>
         </div>
 
-        {historyCount >= 1 && (
-          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          {historyCount >= 1 && (
             <Button
               variant="outline"
               size="sm"
@@ -113,24 +115,24 @@ export function ProgressPageContent() {
               <History className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
               <span>All Worksheets ({historyCount})</span>
             </Button>
+          )}
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleOpenRubric()}
-              aria-haspopup="dialog"
-              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 text-xs font-medium border-border/80 hover:bg-muted/50 cursor-pointer"
-            >
-              <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-              <span>Scoring Rubric</span>
-            </Button>
-          </div>
-        )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleOpenRubric()}
+            aria-haspopup="dialog"
+            className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 text-xs font-medium border-border/80 hover:bg-muted/50 cursor-pointer"
+          >
+            <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+            <span>Scoring Rubric</span>
+          </Button>
+        </div>
       </div>
 
       {isZeroState ? (
         /* Day-One Welcoming Onboarding Experience */
-        <div className="space-y-5 sm:space-y-6">
+        <div className="space-y-6">
           {/* Welcome & How It Works Guide Hub */}
           <div className="rounded-xl border border-border bg-card shadow-warm p-5 sm:p-7 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -139,20 +141,22 @@ export function ProgressPageContent() {
                   Welcome to {selectedChild.fullName}&apos;s Cursive Journey
                 </h2>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-2xl">
-                  WriteWise measures handwriting worksheets across five essential cursive skills. Explore the handwriting guide to see what your child will learn and how you can practice together at home.
+                  WriteWise measures handwriting worksheets across five essential cursive skills. Explore how diagnostic feedback works below, or consult the reference tools while awaiting your child&apos;s first scored classroom worksheet.
                 </p>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleOpenRubric()}
-                aria-haspopup="dialog"
-                className="self-start sm:self-center h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-semibold gap-1.5 shrink-0 cursor-pointer shadow-xs border-brand-300/80 dark:border-brand-800 bg-brand-50/60 dark:bg-brand-950/40 text-brand-800 dark:text-brand-200 hover:bg-brand-100 dark:hover:bg-brand-900/60"
-              >
-                <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                <span>Scoring Rubric</span>
-              </Button>
+              <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={openCursiveGuide}
+                  aria-haspopup="dialog"
+                  className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-semibold gap-1.5 shrink-0 cursor-pointer border-border/80 hover:bg-muted/50"
+                >
+                  <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                  <span>Alphabet Guide</span>
+                </Button>
+              </div>
             </div>
 
             {/* Assessment Workflow Walkthrough - Flat Stepper */}
@@ -207,6 +211,11 @@ export function ProgressPageContent() {
             </div>
           </div>
 
+          {/* Interactive Sample Assessment Showcase */}
+          <SampleReportPreview
+            onOpenRubric={handleOpenRubric}
+          />
+
           {/* Assigned Take-Home Worksheets */}
           <section
             id="assigned-take-home-worksheets"
@@ -245,6 +254,35 @@ export function ProgressPageContent() {
         <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
           {/* Left Column (Desktop): Latest Assessment & Diagnostic Feedback */}
           <div className="w-full lg:col-span-5 space-y-6">
+            {/* Mobile Callout: Elevated Pending Worksheets Notice (Hidden on desktop) */}
+            {pendingActivitiesCount > 0 && (
+              <div className="lg:hidden rounded-xl border border-brand-200/80 dark:border-brand-800/80 bg-brand-50/70 dark:bg-brand-950/40 p-3.5 flex items-center justify-between gap-3 shadow-2xs">
+                <div className="min-w-0 space-y-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="size-2 rounded-full bg-brand-600 dark:bg-brand-400 shrink-0" aria-hidden="true" />
+                    <span className="text-xs font-semibold text-foreground">
+                      {pendingActivitiesCount} Take-Home {pendingActivitiesCount === 1 ? "Worksheet" : "Worksheets"} Due
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground pl-3.5">
+                    Practice on paper and upload a photo for scoring
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const el = document.getElementById("assigned-take-home-section");
+                    if (el) el.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="h-8 px-2.5 text-xs font-medium shrink-0 gap-1 border-brand-300/80 dark:border-brand-700/80 bg-card hover:bg-brand-100/50 cursor-pointer shadow-2xs"
+                >
+                  <span>Go to Tasks</span>
+                  <ChevronRight className="size-3 text-muted-foreground" aria-hidden="true" />
+                </Button>
+              </div>
+            )}
+
             <section
               aria-labelledby="latest-assessment-heading"
               className="space-y-3"
@@ -262,37 +300,15 @@ export function ProgressPageContent() {
                 childName={selectedChild.fullName}
               />
             </section>
-
-            {/* Quick Home Support Card - Balances Desktop Column Height */}
-            <div className="rounded-xl border border-border/70 bg-card/60 p-4 sm:p-5 space-y-3 shadow-warm">
-              <h3 className="font-heading text-xs sm:text-sm font-semibold text-foreground">
-                Supporting Cursive at Home
-              </h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Short 5-minute sessions focusing on proper pencil grip and gentle paper slant build muscle memory faster than repetitive drills.
-              </p>
-              <div className="pt-1 flex items-center justify-between border-t border-border/50">
-                <button
-                  type="button"
-                  onClick={() => handleOpenRubric()}
-                  aria-haspopup="dialog"
-                  aria-label="Review rubrics and handwriting tips"
-                  className="text-xs font-semibold text-brand-700 dark:text-brand-300 hover:underline flex items-center gap-1 cursor-pointer min-h-[40px] sm:min-h-[36px] -my-1 py-1"
-                >
-                  <span>Scoring Rubric</span>
-                  <ChevronRight className="size-3" aria-hidden="true" />
-                </button>
-                <span className="text-xs text-muted-foreground">5 cursive skills</span>
-              </div>
-            </div>
           </div>
 
           {/* Right Column (Desktop): Assigned Worksheets & Progress Trend */}
           <div className="w-full lg:col-span-7 space-y-6">
             {/* Zone 3: Assigned Take-Home Activities */}
             <section
+              id="assigned-take-home-section"
               aria-labelledby="take-home-heading"
-              className="space-y-3"
+              className="space-y-3 scroll-mt-6"
             >
               <div className="flex items-center justify-between">
                 <h2
@@ -407,6 +423,29 @@ export function ProgressPageContent() {
                 </div>
               )}
             </section>
+
+            {/* Quick Home Support Card - Balances Desktop Column Height & Provides Actionable Home Tips */}
+            <div className="rounded-xl border border-border/70 bg-card/60 p-4 sm:p-5 space-y-3 shadow-warm">
+              <h3 className="font-heading text-xs sm:text-sm font-semibold text-foreground">
+                Supporting Cursive at Home
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Short 5-minute sessions focusing on proper pencil grip and gentle paper slant build muscle memory faster than repetitive drills.
+              </p>
+              <div className="pt-1 flex items-center justify-between border-t border-border/50">
+                <button
+                  type="button"
+                  onClick={() => handleOpenRubric()}
+                  aria-haspopup="dialog"
+                  aria-label="Review rubrics and handwriting tips"
+                  className="text-xs font-semibold text-brand-700 dark:text-brand-300 hover:underline flex items-center gap-1 cursor-pointer min-h-[40px] sm:min-h-[36px] -my-1 py-1"
+                >
+                  <span>Scoring Rubric</span>
+                  <ChevronRight className="size-3" aria-hidden="true" />
+                </button>
+                <span className="text-xs text-muted-foreground">5 cursive skills</span>
+              </div>
+            </div>
           </div>
         </div>
       )}

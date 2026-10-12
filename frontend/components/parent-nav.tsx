@@ -90,6 +90,8 @@ export function ParentNav({
       .slice(0, 2)
       .toUpperCase() || "P";
 
+  const activeChild = linkedChildren.find((c) => c.id === selectedChildId);
+
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80">
@@ -120,7 +122,9 @@ export function ParentNav({
                   aria-label="Select child"
                 >
                   <Users className="size-3.5 text-muted-foreground shrink-0" />
-                  <SelectValue placeholder="Select child" />
+                  <SelectValue placeholder="Select child">
+                    {activeChild ? `${activeChild.fullName} (${activeChild.section})` : undefined}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent align="center" className="w-[240px] sm:w-[280px]">
                   {linkedChildren.map((child) => (

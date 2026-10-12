@@ -255,14 +255,14 @@ export interface ParentCriterionMeta {
 export const PARENT_CRITERIA_METADATA: Record<CriterionKey, ParentCriterionMeta> = {
   letter_formation: {
     key: "letter_formation",
-    label: "Letter Shapes",
+    label: "Letter Formation",
     shortDescription: "Proper cursive loops and complete stroke closures",
     homeTip: "Practice tracing tricky lowercase cursive loops (like f, g, and b) with smooth, continuous pencil strokes.",
   },
   size_consistency: {
     key: "size_consistency",
-    label: "Size & Proportions",
-    shortDescription: "Consistent height across the 3-line ruling",
+    label: "Size Consistency",
+    shortDescription: "Consistent height across the 3-line penmanship ruling",
     homeTip: "Guide letters to reach the dotted midline without drifting over the top headline.",
   },
   spacing: {
@@ -273,13 +273,13 @@ export const PARENT_CRITERIA_METADATA: Record<CriterionKey, ParentCriterionMeta>
   },
   slant: {
     key: "slant",
-    label: "Slant & Tilt",
+    label: "Slant",
     shortDescription: "Consistent, forward cursive angle",
     homeTip: "Slightly tilt the practice paper to help natural, comfortable cursive slant without straining the wrist.",
   },
   baseline_alignment: {
     key: "baseline_alignment",
-    label: "Line Alignment",
+    label: "Baseline Alignment",
     shortDescription: "Staying grounded along the writing line",
     homeTip: "Encourage resting every letter securely along the solid baseline before moving to the next word.",
   },
