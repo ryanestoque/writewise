@@ -292,6 +292,24 @@ export function CriterionTrendChart({
     return `Across ${history.length} worksheets from ${startDate} to ${endDate}, overall penmanship score ${trendDesc}. Currently showing lines for: ${activeList || "none"}.`;
   }, [history, activeCriteria]);
 
+  const trajectoryStats = useMemo(() => {
+    if (!history || history.length < 2) return null;
+    const first = history[0];
+    const latest = history[history.length - 1];
+    if (first.compositeScore == null || latest.compositeScore == null) return null;
+    const diff = latest.compositeScore - first.compositeScore;
+    const firstDate = new Date(first.submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const latestDate = new Date(latest.submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return {
+      baselineScore: first.compositeScore,
+      latestScore: latest.compositeScore,
+      diff,
+      firstDate,
+      latestDate,
+      totalCount: history.length,
+    };
+  }, [history]);
+
   if (!history || history.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 rounded-xl border border-dashed border-border bg-muted/20 text-center">
@@ -472,6 +490,58 @@ export function CriterionTrendChart({
           aria-labelledby="progress-view-tab-chart"
           className="space-y-4"
         >
+          {/* High-level Trajectory Micro-Summary for Fast Scanning */}
+          {trajectoryStats && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2.5 sm:p-3 rounded-xl bg-muted/20 border border-border/60 text-xs">
+              <div className="space-y-0.5">
+                <span className="text-[11px] text-muted-foreground font-medium block">
+                  Starting Baseline ({trajectoryStats.firstDate})
+                </span>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="font-bold tabular-nums text-foreground text-sm sm:text-base">
+                    {trajectoryStats.baselineScore.toFixed(1)}%
+                  </span>
+                  <BandBadge score={trajectoryStats.baselineScore} size="sm" />
+                </div>
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-[11px] text-muted-foreground font-medium block">
+                  Latest Score ({trajectoryStats.latestDate})
+                </span>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="font-bold tabular-nums text-foreground text-sm sm:text-base">
+                    {trajectoryStats.latestScore.toFixed(1)}%
+                  </span>
+                  <BandBadge score={trajectoryStats.latestScore} size="sm" />
+                </div>
+              </div>
+              <div className="col-span-2 sm:col-span-1 space-y-0.5 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-border/50">
+                <span className="text-[11px] text-muted-foreground font-medium block">
+                  Overall Trajectory
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-semibold text-[11px] tabular-nums",
+                      trajectoryStats.diff > 0
+                        ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-800/60"
+                        : trajectoryStats.diff < 0
+                        ? "bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 border border-amber-300/60 dark:border-amber-800/60"
+                        : "bg-muted text-muted-foreground border border-border/60"
+                    )}
+                  >
+                    {trajectoryStats.diff > 0
+                      ? `+${trajectoryStats.diff.toFixed(1)}% Growth`
+                      : trajectoryStats.diff < 0
+                      ? `${trajectoryStats.diff.toFixed(1)}% Drift`
+                      : "Steady (±0%)"}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">({trajectoryStats.totalCount} worksheets)</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Screen Reader Accessible Summary */}
           <p className="sr-only">
             {accessibleSummary}
@@ -508,7 +578,14 @@ export function CriterionTrendChart({
               aria-label="Cursive handwriting progress trend chart across 5 skills"
               className="h-64 sm:h-72 w-full min-w-0 min-h-[256px] relative pt-1"
             >
-              <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={256} debounce={50}>
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+                minWidth={0}
+                minHeight={256}
+                initialDimension={{ width: 500, height: 256 }}
+                debounce={50}
+              >
               <LineChart
                 data={chartData}
                 margin={{ top: 12, right: 12, left: -16, bottom: 0 }}
@@ -565,14 +642,14 @@ export function CriterionTrendChart({
                       isAnimationActive={!prefersReducedMotion}
                       animationDuration={300}
                       dot={{
-                        r: c.key === "composite" ? 4 : 3,
+                        r: c.key === "composite" ? 5 : 4,
                         fill: color,
                         stroke: isDark ? CHART_DOT_STROKE.dark : CHART_DOT_STROKE.light,
-                        strokeWidth: 1.5,
+                        strokeWidth: 2,
                       }}
                       activeDot={{
-                        r: 5,
-                        strokeWidth: 2,
+                        r: 7,
+                        strokeWidth: 2.5,
                         stroke: isDark ? CHART_DOT_STROKE.dark : CHART_DOT_STROKE.light,
                       }}
                     />
@@ -584,22 +661,22 @@ export function CriterionTrendChart({
           )}
 
           {/* Band Zones Legend */}
-          <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 max-w-fit mx-auto pt-2 text-[11px] text-muted-foreground border-t border-border/50">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 max-w-fit mx-auto pt-3 text-xs text-muted-foreground border-t border-border/50">
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-xs bg-band-4/60 border border-band-4/80" />
-              <span>Excellent (75–100%)</span>
+              <span className="size-3 rounded-xs bg-band-4/60 border border-band-4/80" />
+              <span className="font-medium text-foreground/90">Excellent (75–100%)</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-xs bg-band-3/60 border border-band-3/80" />
-              <span>Satisfactory (50–74%)</span>
+              <span className="size-3 rounded-xs bg-band-3/60 border border-band-3/80" />
+              <span className="font-medium text-foreground/90">Satisfactory (50–74%)</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-xs bg-band-2/60 border border-band-2/80" />
-              <span>Developing (25–49%)</span>
+              <span className="size-3 rounded-xs bg-band-2/60 border border-band-2/80" />
+              <span className="font-medium text-foreground/90">Developing (25–49%)</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-xs bg-band-1/60 border border-band-1/80" />
-              <span>Needs Improvement (0–24%)</span>
+              <span className="size-3 rounded-xs bg-band-1/60 border border-band-1/80" />
+              <span className="font-medium text-foreground/90">Needs Improvement (0–24%)</span>
             </span>
           </div>
         </div>

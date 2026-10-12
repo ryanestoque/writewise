@@ -1,4 +1,4 @@
-import { Eye, Award, Target, ChevronDown } from "lucide-react";
+import { Eye, Target, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BandBadge } from "@/components/shared/band-badge";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
@@ -52,15 +52,13 @@ export function CriterionFeedbackRow({
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-xs sm:text-sm font-medium text-foreground">{displayLabel}</span>
             {highlightBadge === "top_strength" && (
-              <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/50 shrink-0 shadow-2xs">
-                <Award className="size-3 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-                <span>Top Strength</span>
+              <span className="inline-flex items-center text-[10px] sm:text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/50 shrink-0 shadow-2xs">
+                Top Strength
               </span>
             )}
             {highlightBadge === "practice_focus" && (
-              <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-amber-900 dark:text-amber-200 bg-amber-100/90 dark:bg-amber-950/80 px-2 py-0.5 rounded-md border border-amber-300/90 dark:border-amber-750/80 shrink-0 shadow-2xs">
-                <Target className="size-3 text-amber-600 dark:text-amber-400" aria-hidden="true" />
-                <span>Practice Focus</span>
+              <span className="inline-flex items-center text-[10px] sm:text-[11px] font-semibold text-amber-900 dark:text-amber-200 bg-amber-100/90 dark:bg-amber-950/80 px-2 py-0.5 rounded-md border border-amber-300/90 dark:border-amber-750/80 shrink-0 shadow-2xs">
+                Practice Focus
               </span>
             )}
           </div>
@@ -106,10 +104,10 @@ export function CriterionFeedbackRow({
                 aria-controls={`diagnostic-note-${criterionKey}`}
                 aria-label={
                   showDiagnosticNote
-                    ? `Hide diagnostic note for ${displayLabel}`
-                    : `Show diagnostic note for ${displayLabel}`
+                    ? `Hide diagnostic feedback for ${displayLabel}`
+                    : `Show diagnostic feedback for ${displayLabel}`
                 }
-                className="size-9 sm:size-8 inline-flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/70 border border-border/60 hover:border-border focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 cursor-pointer transition-colors shadow-2xs"
+                className="min-h-[40px] min-w-[40px] sm:min-h-[32px] sm:min-w-[32px] sm:size-8 inline-flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/70 border border-border/60 hover:border-border focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 cursor-pointer transition-colors shadow-2xs"
                 title={showDiagnosticNote ? "Hide details" : "Show details"}
               >
                 <ChevronDown
@@ -151,7 +149,8 @@ export function CriterionFeedbackRow({
                 type="button"
                 onClick={onInspect}
                 aria-haspopup="dialog"
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:underline px-2 py-1 rounded-md hover:bg-brand-50/80 dark:hover:bg-brand-950/60 cursor-pointer transition-colors"
+                aria-label={`Inspect ${displayLabel} guide lines on worksheet photo`}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:underline px-2.5 py-1.5 min-h-[40px] sm:min-h-[36px] rounded-md hover:bg-brand-50/80 dark:hover:bg-brand-950/60 cursor-pointer transition-colors"
                 title={`Inspect ${displayLabel} guide lines on worksheet`}
               >
                 <Eye className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />

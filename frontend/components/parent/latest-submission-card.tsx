@@ -13,6 +13,7 @@ import {
   PARENT_CRITERIA_LIST,
   getBandMeta,
   getBandFromScore,
+  computeStrengthAndFocus,
   type CriterionKey,
 } from "@/lib/utils/scoring";
 
@@ -41,7 +42,7 @@ export function LatestSubmissionCard({
   childName = "Your child",
 }: LatestSubmissionCardProps) {
   const [viewImageOpen, setViewImageOpen] = useState(false);
-  const [expandedCriteria, setExpandedCriteria] = useState<Record<string, boolean>>({});
+  const [userExpandedOverrides, setUserExpandedOverrides] = useState<Record<string, boolean>>({});
   const [imageError, setImageError] = useState(false);
   const [selectedCriterionForView, setSelectedCriterionForView] =
     useState<CriterionFilter>("all");
@@ -53,58 +54,45 @@ export function LatestSubmissionCard({
     setViewImageOpen(true);
   }, []);
 
-  const allNotesExpanded = useMemo(() => {
-    return PARENT_CRITERIA_LIST.every((c) => !!expandedCriteria[c.key]);
-  }, [expandedCriteria]);
-
-  const toggleAllDiagnosticNotes = useCallback(() => {
-    if (allNotesExpanded) {
-      setExpandedCriteria({});
-    } else {
-      const next: Record<string, boolean> = {};
-      PARENT_CRITERIA_LIST.forEach((c) => {
-        next[c.key] = true;
-      });
-      setExpandedCriteria(next);
-    }
-  }, [allNotesExpanded]);
-
-  const toggleCriterionNote = useCallback((key: CriterionKey) => {
-    setExpandedCriteria((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  }, []);
-
   // Compute Top Strength and Primary Practice Focus based on criterion scores
   const { topStrength, practiceFocus } = useMemo(() => {
-    if (!latest?.scores) return { topStrength: null, practiceFocus: null };
-
-    const validCriteria = PARENT_CRITERIA_LIST.map((c) => {
-      const score = latest.scores[c.key];
-      const band = latest.bands[c.key];
-      return {
-        key: c.key as CriterionKey,
-        score,
-        band,
-        meta: c,
-      };
-    }).filter((c) => c.score != null);
-
-    if (validCriteria.length === 0) {
-      return { topStrength: null, practiceFocus: null };
-    }
-
-    // Sort descending by score
-    const sorted = [...validCriteria].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-    const top = sorted[0];
-    const focus = sorted[sorted.length - 1];
-
-    return {
-      topStrength: top,
-      practiceFocus: focus.key !== top.key ? focus : null,
-    };
+    return computeStrengthAndFocus(latest?.scores, latest?.bands);
   }, [latest]);
+
+  const isCriterionExpanded = useCallback(
+    (key: string, isFocus: boolean) => {
+      if (userExpandedOverrides[key] !== undefined) {
+        return userExpandedOverrides[key];
+      }
+      return isFocus;
+    },
+    [userExpandedOverrides]
+  );
+
+  const allNotesExpanded = useMemo(() => {
+    return PARENT_CRITERIA_LIST.every((c) =>
+      isCriterionExpanded(c.key, practiceFocus?.key === c.key)
+    );
+  }, [isCriterionExpanded, practiceFocus?.key]);
+
+  const toggleAllDiagnosticNotes = useCallback(() => {
+    const nextState = !allNotesExpanded;
+    const next: Record<string, boolean> = {};
+    PARENT_CRITERIA_LIST.forEach((c) => {
+      next[c.key] = nextState;
+    });
+    setUserExpandedOverrides(next);
+  }, [allNotesExpanded]);
+
+  const toggleCriterionNote = useCallback(
+    (key: CriterionKey, currentlyExpanded: boolean) => {
+      setUserExpandedOverrides((prev) => ({
+        ...prev,
+        [key]: !currentlyExpanded,
+      }));
+    },
+    []
+  );
 
   if (isLoading) {
     return (
@@ -147,13 +135,13 @@ export function LatestSubmissionCard({
     <>
       <div className="rounded-xl border border-border bg-card shadow-warm overflow-hidden transition-shadow hover:shadow-md">
         {/* Header & Overall Score Section */}
-        <div className="p-5 space-y-4 bg-card">
+        <div className="p-5 sm:p-6 space-y-5 bg-card">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-semibold text-foreground truncate" title={latest.activityText}>
+              <h3 className="text-base sm:text-lg font-semibold text-foreground truncate" title={latest.activityText}>
                 &ldquo;{latest.activityText}&rdquo;
               </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Assessed on {formattedDate}</p>
+              <p className="text-xs text-muted-foreground/80 mt-0.5">Assessed on {formattedDate}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {latest.scoreSource !== "none" && (
@@ -167,36 +155,43 @@ export function LatestSubmissionCard({
             <button
               type="button"
               onClick={() => openWorksheetForCriterion("all")}
-              aria-label="View scored worksheet with guide lines"
+              aria-label="View scored worksheet with interactive guide lines"
               aria-haspopup="dialog"
-              className="group relative w-full h-32 sm:h-36 rounded-xl overflow-hidden border border-border/70 bg-muted/30 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 shadow-xs block text-left"
+              className="group relative w-full h-44 sm:h-52 rounded-xl overflow-hidden border border-border/80 bg-muted/30 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 shadow-xs block text-left transition-all hover:border-brand-500/50 hover:shadow-warm"
             >
               <Image
                 src={imageUrl}
                 alt={`Handwriting worksheet sample for ${latest.activityText}`}
                 fill
                 priority
-                sizes="(max-width: 768px) 100vw, 400px"
+                sizes="(max-width: 768px) 100vw, 600px"
                 onError={() => setImageError(true)}
-                className="object-cover object-center group-hover:scale-[1.02] transition-transform duration-300 motion-reduce:transform-none motion-reduce:transition-none"
+                className="object-cover object-center group-hover:scale-[1.01] transition-transform duration-300 motion-reduce:transform-none motion-reduce:transition-none"
               />
-              {/* Sleek top-right glass chip, keeping cursive strokes below completely unobstructed */}
+              {/* Sleek top-right glass chip */}
               <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900/75 hover:bg-neutral-900/90 text-white backdrop-blur-md border border-white/20 text-[11px] font-medium shadow-xs transition-colors group-hover:bg-brand-700/90 group-hover:border-brand-400/50">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900/80 hover:bg-neutral-900/95 text-white backdrop-blur-md border border-white/25 text-[11px] font-medium shadow-xs transition-colors group-hover:bg-brand-700/95 group-hover:border-brand-400/60">
                   <Eye className="size-3 text-white/90" aria-hidden="true" />
                   <span>Inspect Guidelines</span>
                   <ZoomIn className="size-3 text-white/75 ml-0.5" aria-hidden="true" />
                 </span>
               </div>
-              <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+              {/* Bottom guidance strip for clear click affordance */}
+              <div className="absolute inset-x-0 bottom-0 py-1.5 px-3 bg-gradient-to-t from-black/70 via-black/35 to-transparent flex items-center justify-between text-[11px] text-white/95 font-medium pointer-events-none transition-opacity">
+                <span className="flex items-center gap-1.5">
+                  <span className="size-1.5 rounded-full bg-brand-400" aria-hidden="true" />
+                  Inspect 5-skill geometric overlays
+                </span>
+                <span className="text-[10px] text-white/80 hidden sm:inline">Diagnostic Guidelines</span>
+              </div>
             </button>
           )}
 
           {/* Overall Penmanship Metric */}
-          <div className="space-y-2.5 pt-0.5">
+          <div className="space-y-2.5 pt-1">
             <div className="flex items-baseline justify-between gap-2">
               <div>
-                <h4 className="text-xs font-semibold text-muted-foreground block mb-1">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
                   Overall Penmanship
                 </h4>
                 <div className="flex items-baseline gap-2">
@@ -217,13 +212,45 @@ export function LatestSubmissionCard({
               const explanation = compositeBand ? PARENT_BAND_EXPLANATIONS[compositeBand] : null;
               if (!explanation) return null;
               return (
-                <p className="text-xs text-muted-foreground leading-normal pt-0.5">
+                <p className="text-xs text-muted-foreground leading-relaxed pt-0.5">
                   <span className="font-semibold text-foreground">{bandMeta.label}:</span>{" "}
                   {explanation}
                 </p>
               );
             })()}
           </div>
+
+          {/* Consolidated Key Insights (Top Strength & Practice Focus) */}
+          {(topStrength || practiceFocus) && (
+            <div className="rounded-xl border border-border/70 bg-muted/20 p-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+              {topStrength && (
+                <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-850/60">
+                  <span className="size-2 rounded-full bg-emerald-600 dark:bg-emerald-400 mt-1 shrink-0" aria-hidden="true" />
+                  <div className="min-w-0 space-y-0.5">
+                    <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 block">
+                      Top Strength: {topStrength.meta.label}
+                    </span>
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                      {topStrength.meta.shortDescription}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {practiceFocus && (
+                <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-850/60">
+                  <span className="size-2 rounded-full bg-amber-600 dark:bg-amber-400 mt-1 shrink-0" aria-hidden="true" />
+                  <div className="min-w-0 space-y-0.5">
+                    <span className="text-xs font-semibold text-amber-900 dark:text-amber-200 block">
+                      Practice Focus: {practiceFocus.meta.label}
+                    </span>
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                      {practiceFocus.meta.shortDescription}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Action Trigger Button */}
           {latest.imagePath && (!imageUrl || imageError) && (
@@ -259,9 +286,9 @@ export function LatestSubmissionCard({
                 onClick={toggleAllDiagnosticNotes}
                 aria-expanded={allNotesExpanded}
                 aria-controls="criterion-breakdown-details"
-                className="h-7 px-2.5 inline-flex items-center rounded-lg border border-border/70 hover:border-border bg-card/60 hover:bg-muted/60 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+                className="h-9 sm:h-7 min-h-[36px] sm:min-h-[28px] px-2.5 inline-flex items-center rounded-lg border border-border/80 hover:border-brand-500/50 bg-card hover:bg-brand-50/60 dark:hover:bg-brand-950/40 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 transition-colors cursor-pointer shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
               >
-                {allNotesExpanded ? "Hide All Notes" : "Show All Notes"}
+                {allNotesExpanded ? "Collapse All Notes" : "Expand All Notes"}
               </button>
             </div>
 
@@ -269,6 +296,7 @@ export function LatestSubmissionCard({
               {PARENT_CRITERIA_LIST.map((criterion) => {
                 const isTop = topStrength?.key === criterion.key;
                 const isFocus = practiceFocus?.key === criterion.key;
+                const isExpanded = isCriterionExpanded(criterion.key, isFocus);
                 const highlightBadge = isTop ? "top_strength" : isFocus ? "practice_focus" : null;
                 const homePracticeTip = isFocus ? practiceFocus?.meta.homeTip : null;
 
@@ -280,8 +308,8 @@ export function LatestSubmissionCard({
                     score={latest.scores[criterion.key]}
                     band={latest.bands[criterion.key]}
                     onInspect={() => openWorksheetForCriterion(criterion.key as CriterionFilter)}
-                    showDiagnosticNote={!!expandedCriteria[criterion.key]}
-                    onToggleDiagnosticNote={() => toggleCriterionNote(criterion.key as CriterionKey)}
+                    showDiagnosticNote={isExpanded}
+                    onToggleDiagnosticNote={() => toggleCriterionNote(criterion.key as CriterionKey, isExpanded)}
                     highlightBadge={highlightBadge}
                     homePracticeTip={homePracticeTip}
                   />

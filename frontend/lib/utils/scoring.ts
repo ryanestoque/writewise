@@ -299,3 +299,85 @@ export function getParentCriterionLabel(key: string): string {
   }
   return key;
 }
+
+export function computeStrengthAndFocus(
+  scores: Record<string, number | null> | undefined | null,
+  bands: Record<string, ScoreBand | null> | undefined | null
+) {
+  if (!scores || !bands) return { topStrength: null, practiceFocus: null };
+
+  const validCriteria = PARENT_CRITERIA_LIST.map((c) => {
+    const score = scores[c.key];
+    const band = bands[c.key];
+    return {
+      key: c.key as CriterionKey,
+      score,
+      band,
+      meta: c,
+    };
+  }).filter((c) => c.score != null);
+
+  if (validCriteria.length === 0) {
+    return { topStrength: null, practiceFocus: null };
+  }
+
+  const sorted = [...validCriteria].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const top = sorted[0];
+  const focus = sorted[sorted.length - 1];
+
+  return {
+    topStrength: top,
+    practiceFocus: focus.key !== top.key ? focus : null,
+  };
+}
+
+export interface ActivitySkillMeta {
+  criterionKey: CriterionKey;
+  label: string;
+  shortLabel: string;
+}
+
+export function getActivitySkillMeta(targetText: string): ActivitySkillMeta {
+  const trimmed = targetText.trim();
+  const words = trimmed.split(/\s+/);
+  const lower = trimmed.toLowerCase();
+
+  if (words.length >= 3) {
+    return {
+      criterionKey: "spacing",
+      label: "Inter-Word Spacing & Rhythm",
+      shortLabel: "Spacing",
+    };
+  }
+
+  if (lower.includes("banana") || lower === "b" || lower === "l" || lower === "e" || lower === "c") {
+    return {
+      criterionKey: "letter_formation",
+      label: "Letter Loops & Connectors",
+      shortLabel: "Letter Formation",
+    };
+  }
+
+  if (lower === "f" || lower.includes("q") || lower.includes("j") || lower.includes("p") || lower.includes("y") || lower.includes("g")) {
+    return {
+      criterionKey: "size_consistency",
+      label: "Ascenders, Descenders & Height",
+      shortLabel: "Size Consistency",
+    };
+  }
+
+  if (lower.includes("apple") || lower.includes("cat") || lower.includes("dog")) {
+    return {
+      criterionKey: "baseline_alignment",
+      label: "Baseline Grounding",
+      shortLabel: "Baseline Alignment",
+    };
+  }
+
+  return {
+    criterionKey: "slant",
+    label: "Uniform Forward Slant Angle",
+    shortLabel: "Slant Angle",
+  };
+}
+

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useParentPortal } from "@/components/parent-portal-provider";
 import { LatestSubmissionCard } from "@/components/parent/latest-submission-card";
 import { TakeHomeActivities } from "@/components/parent/take-home-activities";
@@ -11,9 +11,12 @@ import { SampleReportPreview } from "@/components/parent/sample-report-preview";
 import {
   useChildScoreHistory,
   useTakeHomeActivities,
+  useChildLatestScores,
 } from "@/lib/hooks/use-parent-data";
+import { computeStrengthAndFocus } from "@/lib/utils/scoring";
 import { Button } from "@/components/ui/button";
 import { BandBadge } from "@/components/shared/band-badge";
+import { cn } from "@/lib/utils";
 import {
   Empty,
   EmptyDescription,
@@ -37,6 +40,7 @@ export function ProgressPageContent() {
   const [rubricOpen, setRubricOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [activitiesExpanded, setActivitiesExpanded] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"latest" | "tasks" | "trends">("latest");
   const {
     selectedChildId,
     selectedChild,
@@ -58,6 +62,12 @@ export function ProgressPageContent() {
     useChildScoreHistory(selectedChildId);
   const { data: activities } =
     useTakeHomeActivities(selectedChildId);
+  const { data: latestScores } =
+    useChildLatestScores(selectedChildId);
+
+  const { practiceFocus } = useMemo(() => {
+    return computeStrengthAndFocus(latestScores?.scores, latestScores?.bands);
+  }, [latestScores]);
 
   if (childrenLoading) {
     return (
@@ -106,17 +116,22 @@ export function ProgressPageContent() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+        <div
+          className={cn(
+            "items-center gap-2 w-full sm:w-auto self-start sm:self-auto",
+            historyCount >= 1 ? "grid grid-cols-2 sm:flex sm:flex-wrap" : "flex"
+          )}
+        >
           {historyCount >= 1 && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => setHistoryOpen(true)}
               aria-haspopup="dialog"
-              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 text-xs font-medium border-border/80 hover:bg-muted/50 cursor-pointer"
+              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] w-full sm:w-auto justify-center gap-1.5 text-xs font-medium border-border/80 hover:bg-muted/50 cursor-pointer shadow-2xs"
             >
-              <History className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-              <span>All Worksheets ({historyCount})</span>
+              <History className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+              <span className="truncate">All Worksheets ({historyCount})</span>
             </Button>
           )}
 
@@ -125,10 +140,10 @@ export function ProgressPageContent() {
             size="sm"
             onClick={() => handleOpenRubric()}
             aria-haspopup="dialog"
-            className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 text-xs font-medium border-border/80 hover:bg-muted/50 cursor-pointer"
+            className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] w-full sm:w-auto justify-center gap-1.5 text-xs font-medium border-border/80 hover:bg-muted/50 cursor-pointer shadow-2xs"
           >
-            <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-            <span>Scoring Rubric</span>
+            <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+            <span className="truncate">Scoring Rubric</span>
           </Button>
         </div>
       </div>
@@ -148,15 +163,15 @@ export function ProgressPageContent() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+              <div className="flex items-center gap-2 shrink-0 self-start sm:self-center w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={openCursiveGuide}
                   aria-haspopup="dialog"
-                  className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-semibold gap-1.5 shrink-0 cursor-pointer border-border/80 hover:bg-muted/50"
+                  className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] w-full sm:w-auto justify-center text-xs font-semibold gap-1.5 shrink-0 cursor-pointer border-border/80 hover:bg-muted/50 shadow-2xs"
                 >
-                  <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                  <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
                   <span>Alphabet Guide</span>
                 </Button>
               </div>
@@ -241,7 +256,7 @@ export function ProgressPageContent() {
               </div>
               {pendingActivitiesCount > 0 && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/80 px-2.5 py-1 rounded-full border border-brand-200/70 dark:border-brand-800/70 self-start sm:self-auto shrink-0 shadow-2xs">
-                  <span className="size-1.5 rounded-full bg-brand-600 dark:bg-brand-400 animate-pulse motion-reduce:animate-none" aria-hidden="true" />
+                  <span className="size-1.5 rounded-full bg-brand-600 dark:bg-brand-400" aria-hidden="true" />
                   {pendingActivitiesCount} Ready for Practice
                 </span>
               )}
@@ -249,206 +264,316 @@ export function ProgressPageContent() {
             <TakeHomeActivities
               childId={selectedChildId}
               onUploadClick={handleUploadActivity}
+              practiceFocusKey={practiceFocus?.key}
             />
           </section>
         </div>
       ) : (
-        /* Standard 2-Column Dashboard when child has assessment history */
-        <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column (Desktop): Latest Assessment & Diagnostic Feedback */}
-          <div className="w-full lg:col-span-5 space-y-6">
-            {/* Mobile Callout: Elevated Pending Worksheets Notice (Hidden on desktop) */}
-            {pendingActivitiesCount > 0 && (
-              <div className="lg:hidden rounded-xl border border-brand-200/80 dark:border-brand-800/80 bg-brand-50/70 dark:bg-brand-950/40 p-3.5 flex items-center justify-between gap-3 shadow-2xs">
-                <div className="min-w-0 space-y-0.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="size-2 rounded-full bg-brand-600 dark:bg-brand-400 shrink-0" aria-hidden="true" />
-                    <span className="text-xs font-semibold text-foreground">
-                      {pendingActivitiesCount} Take-Home {pendingActivitiesCount === 1 ? "Worksheet" : "Worksheets"} Due
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground pl-3.5">
-                    Practice on paper and upload a photo for scoring
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const el = document.getElementById("assigned-take-home-section");
-                    if (el) el.scrollIntoView({ behavior: "smooth" });
-                  }}
-                  className="h-8 px-2.5 text-xs font-medium shrink-0 gap-1 border-brand-300/80 dark:border-brand-700/80 bg-card hover:bg-brand-100/50 cursor-pointer shadow-2xs"
-                >
-                  <span>Go to Tasks</span>
-                  <ChevronRight className="size-3 text-muted-foreground" aria-hidden="true" />
-                </Button>
-              </div>
-            )}
-
-            <section
-              aria-labelledby="latest-assessment-heading"
-              className="space-y-3"
+        /* Standard Dashboard when child has assessment history */
+        <div className="space-y-6 sm:space-y-8">
+          {/* Mobile View Switcher (Visible only on < lg viewports) */}
+          <div className="lg:hidden sticky top-14 z-20 bg-background/95 backdrop-blur-xs py-1.5 border-b border-border/60">
+            <div
+              role="tablist"
+              aria-label="Progress sections"
+              className="grid grid-cols-3 p-1 bg-muted/70 rounded-xl border border-border/80 text-xs"
             >
-              <div className="flex items-center justify-between">
-                <h2
-                  id="latest-assessment-heading"
-                  className="font-heading text-base sm:text-lg font-semibold text-foreground"
-                >
-                  Latest Assessment &amp; Feedback
-                </h2>
-              </div>
-              <LatestSubmissionCard
-                childId={selectedChildId}
-                childName={selectedChild.fullName}
-              />
-            </section>
+              <button
+                type="button"
+                role="tab"
+                id="mobile-tab-latest"
+                aria-selected={mobileTab === "latest"}
+                aria-controls="mobile-section-latest"
+                onClick={() => setMobileTab("latest")}
+                className={cn(
+                  "py-2 px-2 rounded-lg text-center font-medium transition-all cursor-pointer min-h-[36px] flex items-center justify-center text-xs",
+                  mobileTab === "latest"
+                    ? "bg-card text-foreground shadow-2xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <span>Latest Result</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                id="mobile-tab-tasks"
+                aria-selected={mobileTab === "tasks"}
+                aria-controls="assigned-take-home-section"
+                onClick={() => setMobileTab("tasks")}
+                className={cn(
+                  "py-2 px-2 rounded-lg text-center font-medium transition-all cursor-pointer min-h-[36px] inline-flex items-center justify-center gap-1.5 text-xs",
+                  mobileTab === "tasks"
+                    ? "bg-card text-foreground shadow-2xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <span>Practice Tasks</span>
+                {pendingActivitiesCount > 0 && (
+                  <span className="size-4 rounded-full bg-brand-600 dark:bg-brand-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                    {pendingActivitiesCount}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                id="mobile-tab-trends"
+                aria-selected={mobileTab === "trends"}
+                aria-controls="progress-trends-section"
+                onClick={() => setMobileTab("trends")}
+                className={cn(
+                  "py-2 px-2 rounded-lg text-center font-medium transition-all cursor-pointer min-h-[36px] flex items-center justify-center text-xs",
+                  mobileTab === "trends"
+                    ? "bg-card text-foreground shadow-2xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <span>Trends</span>
+              </button>
+            </div>
           </div>
 
-          {/* Right Column (Desktop): Assigned Worksheets & Progress Trend */}
-          <div className="w-full lg:col-span-7 space-y-6">
-            {/* Zone 3: Assigned Take-Home Activities */}
-            <section
-              id="assigned-take-home-section"
-              aria-labelledby="take-home-heading"
-              className="space-y-3 scroll-mt-6"
+          {/* Top Section: Dual Hero — Left: Latest Assessment & Diagnostic Feedback (Primary Hero, 7 cols) / Right: Assigned Take-Home Worksheets (Action Column, 5 cols) */}
+          <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
+            {/* Left Column (Desktop 7 cols): Latest Assessment & Diagnostic Feedback */}
+            <div
+              id="mobile-section-latest"
+              role="tabpanel"
+              aria-labelledby="mobile-tab-latest"
+              className={cn(
+                "w-full lg:col-span-7 space-y-6",
+                mobileTab !== "latest" && "hidden lg:block"
+              )}
             >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 flex-wrap">
+              {/* Mobile Callout: Elevated Pending Worksheets Notice (Hidden on desktop) */}
+              {pendingActivitiesCount > 0 && (
+                <div className="lg:hidden rounded-xl border border-brand-200/80 dark:border-brand-800/80 bg-brand-50/70 dark:bg-brand-950/40 p-3.5 flex items-center justify-between gap-3 shadow-2xs">
+                  <div className="min-w-0 space-y-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="size-2 rounded-full bg-brand-600 dark:bg-brand-400 shrink-0" aria-hidden="true" />
+                      <span className="text-xs font-semibold text-foreground">
+                        {pendingActivitiesCount} Take-Home {pendingActivitiesCount === 1 ? "Worksheet" : "Worksheets"} Due
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground pl-3.5">
+                      Practice on paper and upload a photo for scoring
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setMobileTab("tasks")}
+                    className="h-8 px-2.5 text-xs font-medium shrink-0 gap-1 border-brand-300/80 dark:border-brand-700/80 bg-card hover:bg-brand-100/50 cursor-pointer shadow-2xs"
+                  >
+                    <span>Go to Tasks</span>
+                    <ChevronRight className="size-3 text-muted-foreground" aria-hidden="true" />
+                  </Button>
+                </div>
+              )}
+
+              <section
+                aria-labelledby="latest-assessment-heading"
+                className="space-y-3"
+              >
+                <div className="flex items-center justify-between">
                   <h2
-                    id="take-home-heading"
+                    id="latest-assessment-heading"
                     className="font-heading text-base sm:text-lg font-semibold text-foreground"
                   >
-                    Assigned Take-Home Worksheets
+                    Latest Assessment &amp; Feedback
                   </h2>
-                  {pendingActivitiesCount > 0 && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/80 px-2.5 py-0.5 rounded-full border border-brand-200/70 dark:border-brand-800/70 shrink-0">
+                </div>
+                <LatestSubmissionCard
+                  childId={selectedChildId}
+                  childName={selectedChild.fullName}
+                />
+              </section>
+
+              {/* Mobile quick link to pending homework tasks when on latest tab */}
+              {pendingActivitiesCount > 0 && (
+                <div className="lg:hidden pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setMobileTab("tasks")}
+                    className="w-full py-2.5 px-3 rounded-xl border border-brand-200/80 dark:border-brand-800/80 bg-brand-50/50 dark:bg-brand-950/30 text-xs font-medium text-brand-800 dark:text-brand-200 hover:bg-brand-100/60 transition-colors flex items-center justify-between cursor-pointer shadow-2xs"
+                  >
+                    <span className="flex items-center gap-1.5">
                       <span className="size-1.5 rounded-full bg-brand-600 dark:bg-brand-400" aria-hidden="true" />
-                      {pendingActivitiesCount} Due
+                      <span>{pendingActivitiesCount} assigned worksheets ready for practice</span>
                     </span>
+                    <span className="font-semibold text-brand-700 dark:text-brand-300 flex items-center gap-0.5">
+                      View Tasks &rarr;
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column (Desktop 5 cols): Assigned Take-Home Worksheets */}
+            <div
+              id="assigned-take-home-section"
+              role="tabpanel"
+              aria-labelledby="mobile-tab-tasks"
+              className={cn(
+                "w-full lg:col-span-5 space-y-6 scroll-mt-6",
+                mobileTab !== "tasks" && "hidden lg:block"
+              )}
+            >
+              <section
+                id="assigned-take-home-section-inner"
+                aria-labelledby="take-home-heading"
+                className="space-y-3"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2
+                      id="take-home-heading"
+                      className="font-heading text-base sm:text-lg font-semibold text-foreground"
+                    >
+                      Assigned Take-Home Worksheets
+                    </h2>
+                    {pendingActivitiesCount > 0 && (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/80 px-2.5 py-0.5 rounded-full border border-brand-200/70 dark:border-brand-800/70 shrink-0">
+                        <span className="size-1.5 rounded-full bg-brand-600 dark:bg-brand-400" aria-hidden="true" />
+                        {pendingActivitiesCount} Due
+                      </span>
+                    )}
+                  </div>
+                  {activities && activities.length > 2 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActivitiesExpanded((prev) => !prev)}
+                      aria-expanded={activitiesExpanded}
+                      aria-controls="take-home-activities-grid"
+                      className="h-9 sm:h-8 min-h-[36px] sm:min-h-[32px] px-2.5 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:bg-brand-50/80 dark:hover:bg-brand-950/50 gap-1 cursor-pointer rounded-lg border border-brand-200/50 dark:border-brand-800/50 shrink-0"
+                    >
+                      <span>{activitiesExpanded ? "Show fewer (2)" : `View all (${activities.length})`}</span>
+                      {activitiesExpanded ? (
+                        <ChevronUp className="size-3.5" aria-hidden="true" />
+                      ) : (
+                        <ChevronDown className="size-3.5" aria-hidden="true" />
+                      )}
+                    </Button>
                   )}
                 </div>
-                {activities && activities.length > 2 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setActivitiesExpanded((prev) => !prev)}
-                    aria-expanded={activitiesExpanded}
-                    aria-controls="take-home-activities-grid"
-                    className="h-8 px-2.5 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:bg-brand-50/80 dark:hover:bg-brand-950/50 gap-1 cursor-pointer rounded-lg border border-brand-200/50 dark:border-brand-800/50 shrink-0"
-                  >
-                    <span>{activitiesExpanded ? "Show fewer (2)" : `View all (${activities.length})`}</span>
-                    {activitiesExpanded ? (
-                      <ChevronUp className="size-3.5" aria-hidden="true" />
-                    ) : (
-                      <ChevronDown className="size-3.5" aria-hidden="true" />
-                    )}
-                  </Button>
-                )}
-              </div>
-              <TakeHomeActivities
-                childId={selectedChildId}
-                onUploadClick={handleUploadActivity}
-                expanded={activitiesExpanded}
-                showExpandButton={false}
-              />
-            </section>
+                <TakeHomeActivities
+                  childId={selectedChildId}
+                  onUploadClick={handleUploadActivity}
+                  expanded={activitiesExpanded}
+                  showExpandButton={false}
+                  gridClassName="grid grid-cols-1 gap-3.5"
+                  practiceFocusKey={practiceFocus?.key}
+                />
+              </section>
+            </div>
+          </div>
 
-            {/* Zone 4: Progress Trend History */}
-            <section
-              aria-labelledby="progress-trends-heading"
-              className="space-y-3"
-            >
-              <div className="flex items-center justify-between">
+          {/* Full-Width Section: Longitudinal Progress Over Time (12 cols) */}
+          <section
+            id="progress-trends-section"
+            role="tabpanel"
+            aria-labelledby="mobile-tab-trends"
+            className={cn(
+              "space-y-3 pt-2",
+              mobileTab !== "trends" && "hidden lg:block"
+            )}
+          >
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
                 <h2
                   id="progress-trends-heading"
                   className="font-heading text-base sm:text-lg font-semibold text-foreground"
                 >
                   Progress Over Time
                 </h2>
+                <p className="text-xs text-muted-foreground hidden sm:block">
+                  Track your child&apos;s cursive handwriting growth and skill development over time
+                </p>
               </div>
+            </div>
 
-              {historyLoading ? (
-                <div role="status" aria-live="polite" className="rounded-xl border border-border bg-card shadow-warm p-8 flex flex-col items-center justify-center min-h-[220px] gap-2.5">
-                  <Loader2 className="size-6 animate-spin motion-reduce:animate-none text-muted-foreground" aria-hidden="true" />
-                  <span className="text-xs text-muted-foreground">Loading trend history...</span>
-                </div>
-              ) : history && history.length >= 2 ? (
-                <div className="rounded-xl border border-border bg-card shadow-warm p-4 sm:p-5 min-w-0">
-                  <CriterionTrendChart history={history} />
-                </div>
-              ) : historyCount === 1 && history?.[0] ? (
-                <div className="rounded-xl border border-brand-200 dark:border-brand-900 bg-brand-50/20 dark:bg-brand-950/20 shadow-warm p-5 sm:p-6 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <h3 className="font-heading text-sm sm:text-base font-semibold text-foreground">
-                        First Milestone Achieved: Baseline Established!
-                      </h3>
-                      <p className="text-xs text-muted-foreground leading-relaxed max-w-lg">
-                        Your child&apos;s first worksheet has been evaluated. This establishes their starting baseline. Complete 1 more worksheet to unlock interactive trend lines.
-                      </p>
-                    </div>
-                    <span className="text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-100 dark:bg-brand-900/60 px-2.5 py-1 rounded-full self-start sm:self-auto shrink-0">
-                      1 of 2 Complete
-                    </span>
-                  </div>
-
-                  {/* 2-Step Progress Stepper with Accessible Semantics */}
-                  <div className="space-y-2 pt-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-medium text-foreground flex items-center gap-1.5">
-                        <CheckCircle2 className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                        First Worksheet (Starting Benchmark)
-                      </span>
-                      <span className="text-muted-foreground">Next Worksheet (Unlocks Trend)</span>
-                    </div>
-                    <div
-                      role="progressbar"
-                      aria-valuenow={1}
-                      aria-valuemin={0}
-                      aria-valuemax={2}
-                      aria-label="Worksheets completed to unlock trend lines: 1 of 2"
-                      className="h-2 w-full rounded-full bg-muted overflow-hidden"
-                    >
-                      <div className="h-full w-1/2 rounded-full bg-brand-600 dark:bg-brand-500 transition-all duration-500 motion-reduce:transition-none" />
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">
-                      Starting Benchmark (&ldquo;{history[0].targetText}&rdquo;):
-                    </span>
-                    <div className="flex items-center gap-2 font-medium">
-                      <span className="font-sans tabular-nums font-semibold text-foreground">
-                        {history[0].compositeScore != null
-                          ? `${history[0].compositeScore.toFixed(1)}%`
-                          : "—"}
-                      </span>
-                      <BandBadge score={history[0].compositeScore} size="sm" />
-                    </div>
-                  </div>
-
-                  {/* Locked Trend Preview Illustration */}
-                  <div className="pt-2 border-t border-border/60">
-                    <TrendGraphTeaser subtitle="Interactive multi-skill graph unlocks after worksheet #2" />
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-xl border border-border bg-card/60 shadow-warm p-5 sm:p-6 space-y-4">
+            {historyLoading ? (
+              <div role="status" aria-live="polite" className="rounded-xl border border-border bg-card shadow-warm p-8 flex flex-col items-center justify-center min-h-[220px] gap-2.5">
+                <Loader2 className="size-6 animate-spin motion-reduce:animate-none text-muted-foreground" aria-hidden="true" />
+                <span className="text-xs text-muted-foreground">Loading trend history...</span>
+              </div>
+            ) : history && history.length >= 2 ? (
+              <div className="rounded-xl border border-border bg-card shadow-warm p-4 sm:p-5 min-w-0">
+                <CriterionTrendChart history={history} />
+              </div>
+            ) : historyCount === 1 && history?.[0] ? (
+              <div className="rounded-xl border border-brand-200 dark:border-brand-900 bg-brand-50/20 dark:bg-brand-950/20 shadow-warm p-5 sm:p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="space-y-1">
-                    <h3 className="font-heading text-sm font-semibold text-foreground">
-                      Progress History Coming Soon
+                    <h3 className="font-heading text-sm sm:text-base font-semibold text-foreground">
+                      First Milestone Achieved: Baseline Established!
                     </h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Handwriting trend lines across all 5 skills will appear here once your child completes 2 or more scored worksheets.
+                    <p className="text-xs text-muted-foreground leading-relaxed max-w-lg">
+                      Your child&apos;s first worksheet has been evaluated. This establishes their starting baseline. Complete 1 more worksheet to unlock interactive trend lines.
                     </p>
                   </div>
-                  <TrendGraphTeaser subtitle="Trend lines across Letter Formation, Size, Spacing, Slant & Baseline" />
+                  <span className="text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-100 dark:bg-brand-900/60 px-2.5 py-1 rounded-full self-start sm:self-auto shrink-0">
+                    1 of 2 Complete
+                  </span>
                 </div>
-              )}
-            </section>
-          </div>
+
+                {/* 2-Step Progress Stepper with Accessible Semantics */}
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium text-foreground flex items-center gap-1.5">
+                      <CheckCircle2 className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                      First Worksheet (Starting Benchmark)
+                    </span>
+                    <span className="text-muted-foreground">Next Worksheet (Unlocks Trend)</span>
+                  </div>
+                  <div
+                    role="progressbar"
+                    aria-valuenow={1}
+                    aria-valuemin={0}
+                    aria-valuemax={2}
+                    aria-label="Worksheets completed to unlock trend lines: 1 of 2"
+                    className="h-2 w-full rounded-full bg-muted overflow-hidden"
+                  >
+                    <div className="h-full w-1/2 rounded-full bg-brand-600 dark:bg-brand-500 transition-all duration-500 motion-reduce:transition-none" />
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">
+                    Starting Benchmark (&ldquo;{history[0].targetText}&rdquo;):
+                  </span>
+                  <div className="flex items-center gap-2 font-medium">
+                    <span className="font-sans tabular-nums font-semibold text-foreground">
+                      {history[0].compositeScore != null
+                        ? `${history[0].compositeScore.toFixed(1)}%`
+                        : "—"}
+                    </span>
+                    <BandBadge score={history[0].compositeScore} size="sm" />
+                  </div>
+                </div>
+
+                {/* Locked Trend Preview Illustration */}
+                <div className="pt-2 border-t border-border/60">
+                  <TrendGraphTeaser subtitle="Interactive multi-skill graph unlocks after worksheet #2" />
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-border bg-card/60 shadow-warm p-5 sm:p-6 space-y-4">
+                <div className="space-y-1">
+                  <h3 className="font-heading text-sm font-semibold text-foreground">
+                    Progress History Coming Soon
+                  </h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Handwriting trend lines across all 5 skills will appear here once your child completes 2 or more scored worksheets.
+                  </p>
+                </div>
+                <TrendGraphTeaser subtitle="Trend lines across Letter Formation, Size, Spacing, Slant & Baseline" />
+              </div>
+            )}
+          </section>
         </div>
       )}
 

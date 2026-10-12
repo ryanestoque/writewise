@@ -25,6 +25,8 @@ export function ScoreSourceIndicator({
       <Tooltip>
         <TooltipTrigger
           type="button"
+          tabIndex={-1}
+          title={isManual ? "Teacher-Assessed Rubric: Evaluated directly by classroom teacher" : "Automated Diagnostic Engine: Evaluated automatically across 5 cursive standards"}
           aria-label={isManual ? "Teacher-assessed score: click for details" : "Auto-calibrated score: click for details"}
           className={cn(
             "inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground/80 hover:text-foreground transition-all cursor-pointer rounded-sm px-1 -mx-1 focus-visible:outline-hidden focus-visible:ring-1.5 focus-visible:ring-ring focus-visible:ring-offset-1 select-none",

@@ -285,5 +285,34 @@
   padding-right: 0.1em;
 }
 
+/* Print Optimization for Progress Reports & Rubric Summaries */
+@media print {
+  nav,
+  header,
+  aside,
+  [data-slot="dialog-overlay"] {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  [role="dialog"] {
+    position: static !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    transform: none !important;
+    background: transparent !important;
+  }
+}
+
 
 

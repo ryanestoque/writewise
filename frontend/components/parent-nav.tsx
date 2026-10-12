@@ -97,7 +97,7 @@ export function ParentNav({
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80">
         <nav
           aria-label="Parent navigation"
-          className="flex h-14 items-center justify-between gap-3 px-4 sm:px-6"
+          className="flex h-14 items-center justify-between gap-2 sm:gap-3 px-3 sm:px-6"
         >
           {/* Left: Brand Logo */}
           <Link
@@ -118,12 +118,17 @@ export function ParentNav({
                 }}
               >
                 <SelectTrigger
-                  className="w-auto min-w-0 max-w-[170px] sm:max-w-[320px] h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 border-border/70 bg-card hover:bg-muted/40 transition-colors shadow-xs truncate"
+                  className="w-auto min-w-0 max-w-[155px] xs:max-w-[200px] sm:max-w-[320px] h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 border-border/70 bg-card hover:bg-muted/40 transition-colors shadow-xs"
                   aria-label="Select child"
                 >
                   <Users className="size-3.5 text-muted-foreground shrink-0" />
-                  <SelectValue placeholder="Select child">
-                    {activeChild ? `${activeChild.fullName} (${activeChild.section})` : undefined}
+                  <SelectValue placeholder="Select child" className="min-w-0">
+                    {activeChild ? (
+                      <span className="inline-flex items-center gap-1 min-w-0 max-w-full">
+                        <span className="truncate">{activeChild.fullName}</span>
+                        <span className="text-muted-foreground text-[11px] sm:text-xs shrink-0">({activeChild.section})</span>
+                      </span>
+                    ) : undefined}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent align="center" className="w-[240px] sm:w-[280px]">
@@ -139,11 +144,11 @@ export function ParentNav({
               </Select>
             ) : linkedChildren.length === 1 ? (
               <div
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/70 bg-card text-xs sm:text-sm font-medium shadow-2xs max-w-[190px] sm:max-w-[320px] truncate select-none"
+                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-border/70 bg-card text-xs sm:text-sm font-medium shadow-2xs max-w-[155px] xs:max-w-[200px] sm:max-w-[320px] min-w-0 select-none"
                 title={`Active student: ${linkedChildren[0].fullName} (${linkedChildren[0].section})`}
               >
                 <Users className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
-                <span className="font-medium text-foreground truncate">{linkedChildren[0].fullName}</span>
+                <span className="font-medium text-foreground truncate min-w-0">{linkedChildren[0].fullName}</span>
                 <span className="inline-flex items-center self-center text-xs text-muted-foreground shrink-0 leading-none">
                   ({linkedChildren[0].section})
                 </span>
@@ -152,17 +157,17 @@ export function ParentNav({
           </div>
 
           {/* Right: Upload utility button + User menu */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {onCursiveGuideClick && (
               <Button
                 variant="outline"
                 size="sm"
-                className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3 sm:px-2.5 gap-1.5 font-medium border-border/80 hover:bg-muted/50 text-foreground cursor-pointer shadow-2xs touch-manipulation"
+                className="size-10 sm:size-auto sm:h-9 min-h-[40px] sm:min-h-[36px] p-0 sm:px-2.5 gap-1.5 font-medium border-border/80 hover:bg-muted/50 text-foreground cursor-pointer shadow-2xs touch-manipulation shrink-0"
                 onClick={onCursiveGuideClick}
                 aria-label="Open Cursive Letter Guide (Standard)"
                 title="Cursive Letter Guide"
               >
-                <PenTool className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                <PenTool className="size-4 sm:size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
                 <span className="hidden sm:inline">Cursive Guide</span>
               </Button>
             )}
@@ -171,18 +176,19 @@ export function ParentNav({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3 sm:px-2.5 gap-1.5 font-medium border-border/80 hover:bg-muted/50 text-foreground cursor-pointer shadow-2xs touch-manipulation"
+                className="size-10 sm:size-auto sm:h-9 min-h-[40px] sm:min-h-[36px] p-0 sm:px-2.5 gap-1.5 font-medium border-border/80 hover:bg-muted/50 text-foreground cursor-pointer shadow-2xs touch-manipulation shrink-0"
                 onClick={onUploadClick}
                 aria-label="Upload take-home worksheet"
+                title="Upload Worksheet"
               >
-                <Upload className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                <Upload className="size-4 sm:size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
                 <span className="hidden sm:inline">Upload</span>
               </Button>
             )}
 
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="size-11 sm:size-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-full inline-flex items-center justify-center font-semibold text-xs bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 hover:bg-brand-200/80 dark:hover:bg-brand-900/80 ring-1 ring-brand-700/25 dark:ring-brand-400/25 border border-brand-200/60 dark:border-brand-800/60 shadow-2xs cursor-pointer focus-visible:ring-2 focus-visible:ring-primary outline-none transition-all touch-manipulation"
+                className="size-10 sm:size-9 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 rounded-full inline-flex items-center justify-center font-semibold text-xs bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 hover:bg-brand-200/80 dark:hover:bg-brand-900/80 ring-1 ring-brand-700/25 dark:ring-brand-400/25 border border-brand-200/60 dark:border-brand-800/60 shadow-2xs cursor-pointer focus-visible:ring-2 focus-visible:ring-primary outline-none transition-all touch-manipulation"
                 aria-label={`User menu for ${user.fullName}`}
               >
                 {initials}
@@ -206,6 +212,15 @@ export function ParentNav({
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
+                  {onCursiveGuideClick && (
+                    <DropdownMenuItem
+                      onClick={onCursiveGuideClick}
+                      className="cursor-pointer gap-2 py-2 text-xs sm:hidden"
+                    >
+                      <PenTool className="size-3.5 text-brand-600 dark:text-brand-400" />
+                      <span>Cursive Letter Guide</span>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
                     render={<Link href="/parent-settings" />}
                     className="cursor-pointer gap-2 py-2 text-xs"

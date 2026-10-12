@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   useTakeHomeActivities,
   useChildSubmissionForActivity,
@@ -38,6 +38,10 @@ import { useDeleteSubmission } from "@/lib/hooks/use-submissions";
 import { toast } from "sonner";
 import type { TakeHomeActivitySubmission } from "@/lib/hooks/use-parent-data";
 import { getRejectionSummary } from "@/lib/utils/submission-status";
+import {
+  getActivitySkillMeta,
+  type CriterionKey,
+} from "@/lib/utils/scoring";
 import { cn } from "@/lib/utils";
 
 interface TakeHomeActivitiesProps {
@@ -46,6 +50,8 @@ interface TakeHomeActivitiesProps {
   expanded?: boolean;
   onToggleExpanded?: () => void;
   showExpandButton?: boolean;
+  gridClassName?: string;
+  practiceFocusKey?: CriterionKey | null;
 }
 
 export function TakeHomeActivities({
@@ -54,11 +60,36 @@ export function TakeHomeActivities({
   expanded: controlledExpanded,
   onToggleExpanded,
   showExpandButton = true,
+  gridClassName = "grid grid-cols-1 sm:grid-cols-2 gap-4",
+  practiceFocusKey,
 }: TakeHomeActivitiesProps) {
   const [internalExpanded, setInternalExpanded] = useState(false);
   const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
   const toggleExpanded = onToggleExpanded || (() => setInternalExpanded((prev) => !prev));
   const { data: activities, isLoading } = useTakeHomeActivities(childId);
+
+  // Intelligently prioritize activities: Photo Retake Needed first, then Practice Focus match, then newest
+  const sortedActivities = useMemo(() => {
+    if (!activities) return [];
+    return [...activities].sort((a, b) => {
+      // 1. Rejected needs photo retake first
+      const aRejected = a.submission?.status === "rejected";
+      const bRejected = b.submission?.status === "rejected";
+      if (aRejected && !bRejected) return -1;
+      if (!aRejected && bRejected) return 1;
+
+      // 2. Matches child's current practice focus
+      if (practiceFocusKey) {
+        const aMatches = getActivitySkillMeta(a.targetText).criterionKey === practiceFocusKey;
+        const bMatches = getActivitySkillMeta(b.targetText).criterionKey === practiceFocusKey;
+        if (aMatches && !bMatches) return -1;
+        if (!aMatches && bMatches) return 1;
+      }
+
+      // 3. Newest first
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [activities, practiceFocusKey]);
 
   if (isLoading) {
     return (
@@ -69,7 +100,7 @@ export function TakeHomeActivities({
     );
   }
 
-  if (!activities || activities.length === 0) {
+  if (!sortedActivities || sortedActivities.length === 0) {
     return (
       <Empty className="border border-border rounded-xl shadow-warm bg-card py-10">
         <EmptyMedia variant="icon" className="bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
@@ -86,11 +117,13 @@ export function TakeHomeActivities({
   }
 
   const visibleActivities =
-    activities.length > 2 && !isExpanded ? activities.slice(0, 2) : activities;
+    sortedActivities.length > 2 && !isExpanded
+      ? sortedActivities.slice(0, 2)
+      : sortedActivities;
 
   return (
     <div className="space-y-3">
-      <div id="take-home-activities-grid" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div id="take-home-activities-grid" className={cn(gridClassName)}>
         {visibleActivities.map((activity) => (
           <ActivityCard
             key={activity.id}
@@ -100,11 +133,12 @@ export function TakeHomeActivities({
             childId={childId}
             initialSubmission={activity.submission}
             onUploadClick={() => onUploadClick(activity.id)}
+            practiceFocusKey={practiceFocusKey}
           />
         ))}
       </div>
 
-      {activities.length > 2 && showExpandButton && (
+      {sortedActivities.length > 2 && showExpandButton && (
         <div className="flex justify-center pt-1">
           <Button
             type="button"
@@ -123,7 +157,7 @@ export function TakeHomeActivities({
             ) : (
               <>
                 <ChevronDown className="size-3.5" aria-hidden="true" />
-                <span>View all assigned activities ({activities.length})</span>
+                <span>View all assigned activities ({sortedActivities.length})</span>
               </>
             )}
           </Button>
@@ -140,6 +174,7 @@ function ActivityCard({
   childId,
   initialSubmission,
   onUploadClick,
+  practiceFocusKey,
 }: {
   activityId: string;
   targetText: string;
@@ -147,6 +182,7 @@ function ActivityCard({
   childId: string | null;
   initialSubmission?: TakeHomeActivitySubmission | null;
   onUploadClick: () => void;
+  practiceFocusKey?: CriterionKey | null;
 }) {
   // Only query individually if initialSubmission was not provided by parent query
   const shouldFetchIndividually = initialSubmission === undefined;
@@ -187,17 +223,40 @@ function ActivityCard({
 
   const needsUpload = !submission || isRejected;
 
+  const skillMeta = useMemo(() => getActivitySkillMeta(targetText), [targetText]);
+  const isPracticeFocusMatch =
+    practiceFocusKey != null && skillMeta.criterionKey === practiceFocusKey;
+
   return (
     <div
       className={cn(
         "rounded-xl border bg-card shadow-warm p-3.5 sm:p-4 flex flex-col justify-between gap-2.5 transition-all hover:shadow-md",
-        needsUpload
-          ? "border-brand-500/40 dark:border-brand-500/30 bg-brand-50/15 dark:bg-brand-950/15 ring-1 ring-brand-500/20"
-          : "border-border"
+        isRejected
+          ? "border-warning/50 dark:border-warning/60 bg-warning/5 dark:bg-warning/10"
+          : isPracticeFocusMatch && needsUpload
+            ? "border-amber-300/80 dark:border-amber-700/70 bg-amber-50/25 dark:bg-amber-950/20"
+            : "border-border/80 hover:border-border"
       )}
     >
-      <div className="space-y-1">
-        <p className="text-[11px] text-muted-foreground font-medium">Assigned {formattedDate}</p>
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between gap-1.5 flex-wrap">
+          <p className="text-[11px] text-muted-foreground font-medium">Assigned {formattedDate}</p>
+          <span
+            className={cn(
+              "inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md border shrink-0 transition-colors",
+              isPracticeFocusMatch
+                ? "bg-amber-100/90 dark:bg-amber-950/80 text-amber-900 dark:text-amber-200 border-amber-300/80 dark:border-amber-700/80 shadow-2xs"
+                : "bg-muted/70 text-muted-foreground border-border/60"
+            )}
+          >
+            {isPracticeFocusMatch && (
+              <span className="size-1.5 rounded-full bg-amber-600 dark:bg-amber-400 mr-1 shrink-0" aria-hidden="true" />
+            )}
+            {isPracticeFocusMatch
+              ? `Priority Focus • ${skillMeta.shortLabel}`
+              : `Focus: ${skillMeta.shortLabel}`}
+          </span>
+        </div>
         <p className="text-sm font-semibold text-foreground line-clamp-2 leading-snug">
           &ldquo;{targetText}&rdquo;
         </p>
@@ -232,14 +291,14 @@ function ActivityCard({
 
             <div className="space-y-1.5 w-full">
               <Button
-                variant="default"
+                variant="outline"
                 size="sm"
-                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 shadow-warm w-full font-medium cursor-pointer"
+                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 w-full font-medium cursor-pointer border-warning/50 dark:border-warning/60 bg-warning/10 dark:bg-warning/20 hover:bg-warning/20 dark:hover:bg-warning/30 text-warning-foreground transition-colors shadow-2xs"
                 onClick={onUploadClick}
-                aria-label={`Take another photo for "${targetText}"`}
+                aria-label={`Retake photo for "${targetText}"`}
               >
-                <Upload className="size-4" aria-hidden="true" />
-                <span>Take Another Photo</span>
+                <Camera className="size-4 text-warning-foreground" aria-hidden="true" />
+                <span>Retake Photo</span>
               </Button>
               <p className="text-xs text-muted-foreground leading-tight text-center">
                 Tip: Lay flat under bright lighting with all 4 corners in frame
@@ -325,14 +384,27 @@ function ActivityCard({
         ) : (
           <div className="space-y-1 w-full">
             <Button
-              variant="default"
+              variant="outline"
               size="sm"
-              className="h-9 min-h-[36px] gap-1.5 shadow-xs w-full font-medium cursor-pointer"
+              className={cn(
+                "h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 w-full font-medium cursor-pointer transition-colors shadow-2xs",
+                isPracticeFocusMatch
+                  ? "border-brand-300 dark:border-brand-700 bg-brand-50/80 hover:bg-brand-100 dark:bg-brand-950/50 dark:hover:bg-brand-900/60 text-brand-800 dark:text-brand-200"
+                  : "border-border/80 hover:border-border hover:bg-muted/60 text-foreground"
+              )}
               onClick={onUploadClick}
               aria-label={`Upload worksheet for "${targetText}"`}
             >
-              <Upload className="size-3.5" aria-hidden="true" />
-              Upload Worksheet
+              <Upload
+                className={cn(
+                  "size-3.5",
+                  isPracticeFocusMatch
+                    ? "text-brand-700 dark:text-brand-300"
+                    : "text-muted-foreground"
+                )}
+                aria-hidden="true"
+              />
+              <span>{isPracticeFocusMatch ? "Upload Practice Worksheet" : "Upload Worksheet"}</span>
             </Button>
             <p className="text-[11px] text-muted-foreground leading-tight text-center truncate">
               Flat photo • all 4 corners in frame
