@@ -116,7 +116,7 @@ const scoringBands: ScoringBandItem[] = [
   {
     band: "Excellent",
     level: "Band 4",
-    range: "80–100%",
+    range: "75–100%",
     dotColor: "bg-band-4",
     containerClass: "border-band-4/30 bg-band-4/5 dark:bg-band-4/10",
     desc: "Exemplary cursive discipline with fluid loop closures, uniform 60°–75° forward slant, and consistent baseline adherence.",
@@ -124,7 +124,7 @@ const scoringBands: ScoringBandItem[] = [
   {
     band: "Satisfactory",
     level: "Band 3",
-    range: "60–79%",
+    range: "50–74%",
     dotColor: "bg-band-3",
     containerClass: "border-band-3/30 bg-band-3/5 dark:bg-band-3/10",
     desc: "Strong cursive legibility with minor spacing or slant variations on complex letter joins (b, k, f, z).",
@@ -132,7 +132,7 @@ const scoringBands: ScoringBandItem[] = [
   {
     band: "Developing",
     level: "Band 2",
-    range: "40–59%",
+    range: "25–49%",
     dotColor: "bg-band-2",
     containerClass: "border-band-2/30 bg-band-2/5 dark:bg-band-2/10",
     desc: "Recognizable cursive structure with noticeable letterform irregularities, midline drift, or fluctuating slant.",
@@ -140,7 +140,7 @@ const scoringBands: ScoringBandItem[] = [
   {
     band: "Needs Improvement",
     level: "Band 1",
-    range: "0–39%",
+    range: "0–24%",
     dotColor: "bg-band-1",
     containerClass: "border-band-1/30 bg-band-1/5 dark:bg-band-1/10",
     desc: "Frequent print-cursive hybrid strokes, disconnected joins, erratic slant angles, or significant baseline drift.",

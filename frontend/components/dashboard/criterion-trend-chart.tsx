@@ -1,6 +1,16 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useSyncExternalStore } from "react";
+
+const emptySubscribe = () => () => {};
+
+function useIsMounted() {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
+}
 import {
   ResponsiveContainer,
   LineChart,
@@ -120,6 +130,8 @@ export function CriterionTrendChart({
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   });
 
+  const hasMounted = useIsMounted();
+
   useEffect(() => {
     const checkDark = () => {
       const isDarkMode =
@@ -210,7 +222,8 @@ export function CriterionTrendChart({
       dateCounts[d] = (dateCounts[d] || 0) + 1;
     });
 
-    const hasDuplicateDates = Object.values(dateCounts).some((count) => count > 1);
+    const uniqueDateCount = Object.keys(dateCounts).length;
+    const allSameDate = uniqueDateCount === 1 && history.length > 1;
 
     return history.map((item, idx) => {
       const date = new Date(item.submissionDate);
@@ -219,9 +232,23 @@ export function CriterionTrendChart({
         day: "numeric",
       });
 
-      const dateLabel = hasDuplicateDates
-        ? `${formattedDate} (#${idx + 1})`
-        : formattedDate;
+      const isFirstOfThisDate =
+        idx === 0 ||
+        new Date(history[idx - 1].submissionDate).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        }) !== formattedDate;
+
+      let dateLabel: string;
+      if (allSameDate) {
+        // If all worksheets were completed on the same date, display clean numbered markers
+        dateLabel = `#${idx + 1}`;
+      } else if (dateCounts[formattedDate] > 1) {
+        // If multiple items share this date, display date on first occurrence, then index only
+        dateLabel = isFirstOfThisDate ? `${formattedDate} (#${idx + 1})` : `#${idx + 1}`;
+      } else {
+        dateLabel = formattedDate;
+      }
 
       return {
         id: item.submissionId,
@@ -332,13 +359,27 @@ export function CriterionTrendChart({
         <div className="flex flex-wrap items-center justify-between gap-2.5">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="font-semibold text-foreground">Trend Lines</span>
-            {isCustomized && (
+            {isCustomized ? (
               <button
                 type="button"
                 onClick={resetCriteria}
                 className="text-[11px] font-medium text-primary hover:underline cursor-pointer ml-1 min-h-[36px] px-2 -my-1 rounded-md inline-flex items-center hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Reset default
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  const allActive: Record<string, boolean> = {};
+                  CRITERION_CONFIG.forEach((c) => {
+                    allActive[c.key] = true;
+                  });
+                  setActiveCriteria(allActive);
+                }}
+                className="text-[11px] font-medium text-primary hover:underline cursor-pointer ml-1 min-h-[36px] px-2 -my-1 rounded-md inline-flex items-center hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Show all skills
               </button>
             )}
           </div>
@@ -404,14 +445,14 @@ export function CriterionTrendChart({
                   className={cn(
                     "inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium transition-all cursor-pointer border select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-[40px] sm:min-h-[32px] touch-manipulation",
                     isSelected
-                      ? "bg-card text-foreground border-border shadow-2xs font-semibold"
-                      : "bg-muted/20 text-muted-foreground/80 border-border/40 hover:bg-muted/40 hover:text-muted-foreground line-through opacity-75"
+                      ? "bg-card text-foreground border-border/90 shadow-2xs font-semibold ring-1 ring-border/50"
+                      : "bg-muted/20 text-muted-foreground border-dashed border-border/60 hover:bg-muted/40 hover:text-foreground hover:border-border/90"
                   )}
                 >
                   <span
                     className={cn(
                       "size-2.5 rounded-full shrink-0 transition-opacity",
-                      !isSelected && "opacity-40"
+                      !isSelected && "opacity-35"
                     )}
                     style={{ backgroundColor: color }}
                     aria-hidden="true"
@@ -454,13 +495,20 @@ export function CriterionTrendChart({
                 Reset to default lines
               </button>
             </div>
+          ) : !hasMounted ? (
+            <div
+              className="h-64 sm:h-72 w-full min-h-[256px] rounded-xl border border-border/40 bg-muted/15 flex items-center justify-center animate-pulse"
+              aria-hidden="true"
+            >
+              <span className="text-xs text-muted-foreground/60">Rendering progress chart…</span>
+            </div>
           ) : (
             <div
               role="region"
               aria-label="Cursive handwriting progress trend chart across 5 skills"
-              className="h-64 sm:h-72 w-full pt-1"
+              className="h-64 sm:h-72 w-full min-w-0 min-h-[256px] relative pt-1"
             >
-              <ResponsiveContainer width="100%" height="100%" debounce={50}>
+              <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={256} debounce={50}>
               <LineChart
                 data={chartData}
                 margin={{ top: 12, right: 12, left: -16, bottom: 0 }}

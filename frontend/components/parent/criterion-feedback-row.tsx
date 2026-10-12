@@ -58,7 +58,7 @@ export function CriterionFeedbackRow({
               </span>
             )}
             {highlightBadge === "practice_focus" && (
-              <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-200/60 dark:border-amber-800/50 shrink-0 shadow-2xs">
+              <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-amber-900 dark:text-amber-200 bg-amber-100/90 dark:bg-amber-950/80 px-2 py-0.5 rounded-md border border-amber-300/90 dark:border-amber-750/80 shrink-0 shadow-2xs">
                 <Target className="size-3 text-amber-600 dark:text-amber-400" aria-hidden="true" />
                 <span>Practice Focus</span>
               </span>
@@ -80,7 +80,7 @@ export function CriterionFeedbackRow({
             <BandBadge band={band} score={score} size="sm" showDot />
           </div>
           <div className="flex items-center gap-1.5">
-            {onInspect && (
+            {!onToggleDiagnosticNote && onInspect && (
               <button
                 type="button"
                 onClick={onInspect}
@@ -110,7 +110,7 @@ export function CriterionFeedbackRow({
                     : `Show diagnostic note for ${displayLabel}`
                 }
                 className="size-9 sm:size-8 inline-flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/70 border border-border/60 hover:border-border focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 cursor-pointer transition-colors shadow-2xs"
-                title={showDiagnosticNote ? "Hide note" : "Show note"}
+                title={showDiagnosticNote ? "Hide details" : "Show details"}
               >
                 <ChevronDown
                   className={cn(
@@ -125,22 +125,40 @@ export function CriterionFeedbackRow({
         </div>
       </div>
       {showPositionBar && <BandPositionBar score={score} height="sm" />}
-      {showDiagnosticNote && diagnosticNote && (
+      {showDiagnosticNote && (diagnosticNote || homePracticeTip || onInspect) && (
         <div
           id={`diagnostic-note-${criterionKey}`}
-          className="pt-1.5 animate-in fade-in-50 duration-200 motion-reduce:animate-none"
+          className="pt-2 space-y-2 animate-in fade-in-50 duration-200 motion-reduce:animate-none"
         >
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            {diagnosticNote}
-          </p>
-        </div>
-      )}
-      {homePracticeTip && (
-        <div className="mt-2.5 p-2.5 rounded-xl bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/70 dark:border-brand-800/70 text-xs text-brand-900 dark:text-brand-200 flex items-start gap-2 shadow-2xs animate-in fade-in-50 duration-200 motion-reduce:animate-none">
-          <Target className="size-3.5 shrink-0 mt-0.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-          <p className="leading-relaxed">
-            <strong className="font-semibold text-brand-800 dark:text-brand-300">Home practice tip:</strong> {homePracticeTip}
-          </p>
+          {diagnosticNote && (
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {diagnosticNote}
+            </p>
+          )}
+
+          {homePracticeTip && (
+            <div className="p-2.5 rounded-xl bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/70 dark:border-brand-800/70 text-xs text-brand-900 dark:text-brand-200 flex items-start gap-2 shadow-2xs">
+              <Target className="size-3.5 shrink-0 mt-0.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+              <p className="leading-relaxed">
+                <strong className="font-semibold text-brand-800 dark:text-brand-300">Home practice tip:</strong> {homePracticeTip}
+              </p>
+            </div>
+          )}
+
+          {onToggleDiagnosticNote && onInspect && (
+            <div className="pt-0.5 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={onInspect}
+                aria-haspopup="dialog"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:underline px-2 py-1 rounded-md hover:bg-brand-50/80 dark:hover:bg-brand-950/60 cursor-pointer transition-colors"
+                title={`Inspect ${displayLabel} guide lines on worksheet`}
+              >
+                <Eye className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                <span>Inspect {displayLabel} guide lines &rarr;</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

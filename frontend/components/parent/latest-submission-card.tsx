@@ -180,15 +180,15 @@ export function LatestSubmissionCard({
                 onError={() => setImageError(true)}
                 className="object-cover object-center group-hover:scale-[1.02] transition-transform duration-300 motion-reduce:transform-none motion-reduce:transition-none"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent flex items-end justify-between p-3">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-sm border border-white/20 text-xs font-medium text-white shadow-xs">
-                  <Eye className="size-3.5 text-white/90" aria-hidden="true" />
-                  <span>View Worksheet &amp; Guidelines</span>
-                </span>
-                <span className="inline-flex items-center justify-center size-8 sm:size-9 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 text-white group-hover:bg-brand-600 group-hover:border-brand-500 transition-all shadow-xs">
-                  <ZoomIn className="size-4 sm:size-4.5" aria-hidden="true" />
+              {/* Sleek top-right glass chip, keeping cursive strokes below completely unobstructed */}
+              <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900/75 hover:bg-neutral-900/90 text-white backdrop-blur-md border border-white/20 text-[11px] font-medium shadow-xs transition-colors group-hover:bg-brand-700/90 group-hover:border-brand-400/50">
+                  <Eye className="size-3 text-white/90" aria-hidden="true" />
+                  <span>Inspect Guidelines</span>
+                  <ZoomIn className="size-3 text-white/75 ml-0.5" aria-hidden="true" />
                 </span>
               </div>
+              <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
             </button>
           )}
 

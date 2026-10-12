@@ -43,13 +43,21 @@ import { cn } from "@/lib/utils";
 interface TakeHomeActivitiesProps {
   childId: string | null;
   onUploadClick: (activityId: string) => void;
+  expanded?: boolean;
+  onToggleExpanded?: () => void;
+  showExpandButton?: boolean;
 }
 
 export function TakeHomeActivities({
   childId,
   onUploadClick,
+  expanded: controlledExpanded,
+  onToggleExpanded,
+  showExpandButton = true,
 }: TakeHomeActivitiesProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [internalExpanded, setInternalExpanded] = useState(false);
+  const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
+  const toggleExpanded = onToggleExpanded || (() => setInternalExpanded((prev) => !prev));
   const { data: activities, isLoading } = useTakeHomeActivities(childId);
 
   if (isLoading) {
@@ -78,7 +86,7 @@ export function TakeHomeActivities({
   }
 
   const visibleActivities =
-    activities.length > 2 && !expanded ? activities.slice(0, 2) : activities;
+    activities.length > 2 && !isExpanded ? activities.slice(0, 2) : activities;
 
   return (
     <div className="space-y-3">
@@ -96,18 +104,18 @@ export function TakeHomeActivities({
         ))}
       </div>
 
-      {activities.length > 2 && (
+      {activities.length > 2 && showExpandButton && (
         <div className="flex justify-center pt-1">
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => setExpanded((prev) => !prev)}
-            aria-expanded={expanded}
+            onClick={toggleExpanded}
+            aria-expanded={isExpanded}
             aria-controls="take-home-activities-grid"
             className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 gap-1.5 cursor-pointer rounded-lg border border-border/50 bg-card shadow-2xs"
           >
-            {expanded ? (
+            {isExpanded ? (
               <>
                 <ChevronUp className="size-3.5" aria-hidden="true" />
                 <span>Show fewer activities</span>
@@ -182,20 +190,20 @@ function ActivityCard({
   return (
     <div
       className={cn(
-        "rounded-xl border bg-card shadow-warm p-4 sm:p-5 flex flex-col justify-between gap-3.5 transition-all hover:shadow-md",
+        "rounded-xl border bg-card shadow-warm p-3.5 sm:p-4 flex flex-col justify-between gap-2.5 transition-all hover:shadow-md",
         needsUpload
           ? "border-brand-500/40 dark:border-brand-500/30 bg-brand-50/15 dark:bg-brand-950/15 ring-1 ring-brand-500/20"
           : "border-border"
       )}
     >
-      <div className="space-y-1.5">
-        <p className="text-xs text-muted-foreground font-medium">Assigned {formattedDate}</p>
-        <p className="text-sm font-semibold text-foreground line-clamp-3 leading-snug">
+      <div className="space-y-1">
+        <p className="text-[11px] text-muted-foreground font-medium">Assigned {formattedDate}</p>
+        <p className="text-sm font-semibold text-foreground line-clamp-2 leading-snug">
           &ldquo;{targetText}&rdquo;
         </p>
       </div>
 
-      <div className="pt-2 border-t border-border/50 flex flex-wrap items-center justify-between gap-2.5">
+      <div className="pt-2 border-t border-border/50 flex flex-wrap items-center justify-between gap-2">
         {isLoading ? (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -315,19 +323,19 @@ function ActivityCard({
             )}
           </div>
         ) : (
-          <div className="space-y-1.5 w-full">
+          <div className="space-y-1 w-full">
             <Button
               variant="default"
               size="sm"
-              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 shadow-warm w-full font-medium cursor-pointer"
+              className="h-9 min-h-[36px] gap-1.5 shadow-xs w-full font-medium cursor-pointer"
               onClick={onUploadClick}
               aria-label={`Upload worksheet for "${targetText}"`}
             >
-              <Upload className="size-4" aria-hidden="true" />
+              <Upload className="size-3.5" aria-hidden="true" />
               Upload Worksheet
             </Button>
-            <p className="text-xs text-muted-foreground leading-tight text-center">
-              Tip: Lay flat under bright lighting with all 4 corners in frame
+            <p className="text-[11px] text-muted-foreground leading-tight text-center truncate">
+              Flat photo • all 4 corners in frame
             </p>
           </div>
         )}

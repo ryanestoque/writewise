@@ -29,11 +29,14 @@ import {
   History,
   CheckCircle2,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 export function ProgressPageContent() {
   const [rubricOpen, setRubricOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [activitiesExpanded, setActivitiesExpanded] = useState(false);
   const {
     selectedChildId,
     selectedChild,
@@ -310,23 +313,45 @@ export function ProgressPageContent() {
               aria-labelledby="take-home-heading"
               className="space-y-3 scroll-mt-6"
             >
-              <div className="flex items-center justify-between">
-                <h2
-                  id="take-home-heading"
-                  className="font-heading text-base sm:text-lg font-semibold text-foreground"
-                >
-                  Assigned Take-Home Worksheets
-                </h2>
-                {pendingActivitiesCount > 0 && (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/80 px-2.5 py-0.5 rounded-full border border-brand-200/70 dark:border-brand-800/70 shrink-0">
-                    <span className="size-1.5 rounded-full bg-brand-600 dark:bg-brand-400" aria-hidden="true" />
-                    {pendingActivitiesCount} Due
-                  </span>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2
+                    id="take-home-heading"
+                    className="font-heading text-base sm:text-lg font-semibold text-foreground"
+                  >
+                    Assigned Take-Home Worksheets
+                  </h2>
+                  {pendingActivitiesCount > 0 && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/80 px-2.5 py-0.5 rounded-full border border-brand-200/70 dark:border-brand-800/70 shrink-0">
+                      <span className="size-1.5 rounded-full bg-brand-600 dark:bg-brand-400" aria-hidden="true" />
+                      {pendingActivitiesCount} Due
+                    </span>
+                  )}
+                </div>
+                {activities && activities.length > 2 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setActivitiesExpanded((prev) => !prev)}
+                    aria-expanded={activitiesExpanded}
+                    aria-controls="take-home-activities-grid"
+                    className="h-8 px-2.5 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:bg-brand-50/80 dark:hover:bg-brand-950/50 gap-1 cursor-pointer rounded-lg border border-brand-200/50 dark:border-brand-800/50 shrink-0"
+                  >
+                    <span>{activitiesExpanded ? "Show fewer (2)" : `View all (${activities.length})`}</span>
+                    {activitiesExpanded ? (
+                      <ChevronUp className="size-3.5" aria-hidden="true" />
+                    ) : (
+                      <ChevronDown className="size-3.5" aria-hidden="true" />
+                    )}
+                  </Button>
                 )}
               </div>
               <TakeHomeActivities
                 childId={selectedChildId}
                 onUploadClick={handleUploadActivity}
+                expanded={activitiesExpanded}
+                showExpandButton={false}
               />
             </section>
 
@@ -350,7 +375,7 @@ export function ProgressPageContent() {
                   <span className="text-xs text-muted-foreground">Loading trend history...</span>
                 </div>
               ) : history && history.length >= 2 ? (
-                <div className="rounded-xl border border-border bg-card shadow-warm p-4 sm:p-5">
+                <div className="rounded-xl border border-border bg-card shadow-warm p-4 sm:p-5 min-w-0">
                   <CriterionTrendChart history={history} />
                 </div>
               ) : historyCount === 1 && history?.[0] ? (
@@ -423,29 +448,6 @@ export function ProgressPageContent() {
                 </div>
               )}
             </section>
-
-            {/* Quick Home Support Card - Balances Desktop Column Height & Provides Actionable Home Tips */}
-            <div className="rounded-xl border border-border/70 bg-card/60 p-4 sm:p-5 space-y-3 shadow-warm">
-              <h3 className="font-heading text-xs sm:text-sm font-semibold text-foreground">
-                Supporting Cursive at Home
-              </h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Short 5-minute sessions focusing on proper pencil grip and gentle paper slant build muscle memory faster than repetitive drills.
-              </p>
-              <div className="pt-1 flex items-center justify-between border-t border-border/50">
-                <button
-                  type="button"
-                  onClick={() => handleOpenRubric()}
-                  aria-haspopup="dialog"
-                  aria-label="Review rubrics and handwriting tips"
-                  className="text-xs font-semibold text-brand-700 dark:text-brand-300 hover:underline flex items-center gap-1 cursor-pointer min-h-[40px] sm:min-h-[36px] -my-1 py-1"
-                >
-                  <span>Scoring Rubric</span>
-                  <ChevronRight className="size-3" aria-hidden="true" />
-                </button>
-                <span className="text-xs text-muted-foreground">5 cursive skills</span>
-              </div>
-            </div>
           </div>
         </div>
       )}
