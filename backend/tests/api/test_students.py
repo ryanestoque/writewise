@@ -139,6 +139,29 @@ def test_update_student_parent_email(client, cleanup_students):
     assert len(res.data) == 1
     assert res.data[0]["parent_email"] is None
 
+    # 4. Re-add email, then test clearing parent email with null (as sent by frontend)
+    client.patch(f"/api/students/{student_id}", json={"parent_email": "another_parent@example.com"})
+    res_readd = (
+        supabase_client.table("student").select("parent_email").eq("id", student_id).execute()
+    )
+    assert res_readd.data[0]["parent_email"] == "another_parent@example.com"
+
+    null_clear_response = client.patch(f"/api/students/{student_id}", json={"parent_email": None})
+    assert null_clear_response.status_code == 200
+    null_data = null_clear_response.json()
+    assert null_data["parent_email"] is None
+    assert null_data["parent_status"] is None
+
+    res_null = (
+        supabase_client.table("student")
+        .select("parent_email, parent_status")
+        .eq("id", student_id)
+        .execute()
+    )
+    assert res_null.data[0]["parent_email"] is None
+    assert res_null.data[0]["parent_status"] is None
+
+
 
 def test_update_student_not_found(client):
     # Try updating a non-existent student or one not on the roster
@@ -197,6 +220,40 @@ def test_create_student_with_existing_parent_email(client, cleanup_students, con
     )
     assert len(sp_res.data) == 1
     assert sp_res.data[0]["parent_id"] == confirmed_parent["id"]
+
+
+def test_update_student_clear_parent_email_unlinks_parent(
+    client, cleanup_students, confirmed_parent
+):
+    # 1. Create student linked to parent
+    payload = {
+        "full_name": "Linked Student",
+        "section": "Section - Linked",
+        "parent_email": confirmed_parent["email"],
+    }
+    create_res = client.post("/api/students", json=payload)
+    student_id = create_res.json()["id"]
+    cleanup_students.append(student_id)
+
+    # Verify student_parent link exists
+    sp_before = (
+        supabase_client.table("student_parent").select("*").eq("student_id", student_id).execute()
+    )
+    assert len(sp_before.data) == 1
+
+    # 2. Clear parent email via PATCH with null
+    patch_res = client.patch(f"/api/students/{student_id}", json={"parent_email": None})
+    assert patch_res.status_code == 200
+    data = patch_res.json()
+    assert data["parent_email"] is None
+    assert data["parent_status"] is None
+
+    # Verify student_parent link was deleted
+    sp_after = (
+        supabase_client.table("student_parent").select("*").eq("student_id", student_id).execute()
+    )
+    assert len(sp_after.data) == 0
+
 
 
 def test_resend_parent_invite(client, cleanup_students, confirmed_parent):

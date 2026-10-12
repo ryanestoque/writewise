@@ -240,7 +240,17 @@ def update_student(
             },
         )
 
-    # 2. Update student fields if provided
+    # 2. Fetch current student to detect email changes
+    curr_res = (
+        supabase_client.table("student").select("parent_email").eq("id", student_id).execute()
+    )
+    old_email = (
+        (curr_res.data[0].get("parent_email") or "").strip().lower()
+        if curr_res.data
+        else ""
+    )
+
+    # 3. Update student fields if provided
     update_data = {}
     if student_in.full_name is not None:
         update_data["full_name"] = student_in.full_name
@@ -288,13 +298,17 @@ def update_student(
         if section_id:
             update_data["section_id"] = section_id
 
-    if student_in.parent_email is not None:
-        cleaned_email = student_in.parent_email.strip()
-        update_data["parent_email"] = cleaned_email if cleaned_email else None
+    if "parent_email" in student_in.model_fields_set:
+        raw_email = student_in.parent_email
+        cleaned_email = raw_email.strip() if raw_email else None
+        update_data["parent_email"] = cleaned_email
         if not cleaned_email:
             update_data["parent_status"] = None
-        else:
+            supabase_client.table("student_parent").delete().eq("student_id", student_id).execute()
+        elif cleaned_email.lower() != old_email:
             update_data["parent_status"] = "pending"
+            supabase_client.table("student_parent").delete().eq("student_id", student_id).execute()
+
 
     student = None
     if update_data:
@@ -307,12 +321,13 @@ def update_student(
         res = supabase_client.table("student").select("*").eq("id", student_id).execute()
         student = res.data[0]
 
-    # 3. Optional parent invite
+    # 4. Optional parent invite (only if parent email is newly added or changed)
     parent_invited = False
     parent_invite_error = None
-    if student_in.parent_email and student_in.parent_email.strip():
+    new_email = student_in.parent_email.strip() if student_in.parent_email else ""
+    if new_email and new_email.lower() != old_email:
         parent_invited, parent_invite_error = _invite_parent(
-            email=student_in.parent_email.strip(),
+            email=new_email,
             student_id=student_id,
             student_name=student["full_name"],
         )

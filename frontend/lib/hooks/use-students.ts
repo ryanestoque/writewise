@@ -90,16 +90,11 @@ export function useUpdateStudent() {
         body: JSON.stringify(updateData),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw data.error;
-      }
-
-      return data;
+      return handleApiResponse(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["students"] });
+      queryClient.invalidateQueries({ queryKey: ["sections"] });
     },
   });
 }
@@ -119,15 +114,12 @@ export function useRemoveStudent() {
         },
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw data.error;
-      }
-
+      await handleApiResponse(response);
       return true;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["students"] });
+      queryClient.invalidateQueries({ queryKey: ["sections"] });
     },
   });
 }

@@ -257,14 +257,28 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
 
-  // Detect password recovery callback (hash tokens or auth event)
+  // Detect password recovery callback (hash tokens, auth errors, or auth event)
   useEffect(() => {
-    if (typeof window !== "undefined" && window.location.hash) {
-      const hash = window.location.hash;
-      if (hash.includes("type=recovery") || hash.includes("access_token=")) {
-        router.replace(`/reset-password${hash}`);
-        return;
-      }
+    const errorCode = searchParams.get("error_code");
+    const errorParam = searchParams.get("error");
+    const errorDesc = searchParams.get("error_description");
+    const hash = typeof window !== "undefined" ? window.location.hash : "";
+
+    const isRecoveryError =
+      errorCode === "otp_expired" ||
+      (errorDesc && errorDesc.toLowerCase().includes("email link")) ||
+      hash.includes("otp_expired") ||
+      (errorParam === "access_denied" && (hash.includes("expired") || (errorDesc && errorDesc.toLowerCase().includes("expired"))));
+
+    if (isRecoveryError) {
+      const search = window.location.search || "";
+      router.replace(`/reset-password${search}${hash}`);
+      return;
+    }
+
+    if (hash && (hash.includes("type=recovery") || hash.includes("access_token="))) {
+      router.replace(`/reset-password${hash}`);
+      return;
     }
 
     const {
@@ -278,7 +292,7 @@ function LoginForm() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [router, supabase]);
+  }, [router, searchParams, supabase]);
 
   const missingRoleError =
     searchParams.get("error") === "missing_role"
