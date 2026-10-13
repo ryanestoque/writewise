@@ -6,7 +6,6 @@ import { useChildLatestScores } from "@/lib/hooks/use-parent-data";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
 import { BandBadge } from "@/components/shared/band-badge";
-import { ScoreSourceIndicator } from "@/components/shared/score-source-indicator";
 import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { WorksheetViewDialog } from "./worksheet-view-dialog";
 import {
@@ -141,12 +140,7 @@ export function LatestSubmissionCard({
               <h3 className="text-base sm:text-lg font-semibold text-foreground truncate" title={latest.activityText}>
                 &ldquo;{latest.activityText}&rdquo;
               </h3>
-              <p className="text-xs text-muted-foreground/80 mt-0.5">Assessed on {formattedDate}</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {latest.scoreSource !== "none" && (
-                <ScoreSourceIndicator source={latest.scoreSource} compact />
-              )}
+              <p className="text-xs text-muted-foreground mt-0.5">Assessed on {formattedDate}</p>
             </div>
           </div>
 
@@ -170,19 +164,11 @@ export function LatestSubmissionCard({
               />
               {/* Sleek top-right glass chip */}
               <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900/80 hover:bg-neutral-900/95 text-white backdrop-blur-md border border-white/25 text-[11px] font-medium shadow-xs transition-colors group-hover:bg-brand-700/95 group-hover:border-brand-400/60">
-                  <Eye className="size-3 text-white/90" aria-hidden="true" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-950/85 hover:bg-brand-900/95 text-brand-50 backdrop-blur-md border border-brand-400/30 text-[11px] font-medium shadow-xs transition-colors group-hover:bg-brand-900/95 group-hover:border-brand-400/60">
+                  <Eye className="size-3 text-brand-200" aria-hidden="true" />
                   <span>Inspect Guidelines</span>
-                  <ZoomIn className="size-3 text-white/75 ml-0.5" aria-hidden="true" />
+                  <ZoomIn className="size-3 text-brand-300 ml-0.5" aria-hidden="true" />
                 </span>
-              </div>
-              {/* Bottom guidance strip for clear click affordance */}
-              <div className="absolute inset-x-0 bottom-0 py-1.5 px-3 bg-gradient-to-t from-black/70 via-black/35 to-transparent flex items-center justify-between text-[11px] text-white/95 font-medium pointer-events-none transition-opacity">
-                <span className="flex items-center gap-1.5">
-                  <span className="size-1.5 rounded-full bg-brand-400" aria-hidden="true" />
-                  Inspect 5-skill geometric overlays
-                </span>
-                <span className="text-[10px] text-white/80 hidden sm:inline">Diagnostic Guidelines</span>
               </div>
             </button>
           )}
@@ -286,7 +272,7 @@ export function LatestSubmissionCard({
                 onClick={toggleAllDiagnosticNotes}
                 aria-expanded={allNotesExpanded}
                 aria-controls="criterion-breakdown-details"
-                className="h-9 sm:h-7 min-h-[36px] sm:min-h-[28px] px-2.5 inline-flex items-center rounded-lg border border-border/80 hover:border-brand-500/50 bg-card hover:bg-brand-50/60 dark:hover:bg-brand-950/40 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 transition-colors cursor-pointer shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+                className="h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-3 sm:px-2.5 inline-flex items-center rounded-lg border border-border/80 hover:border-brand-500/50 bg-card hover:bg-brand-50/60 dark:hover:bg-brand-950/40 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 transition-colors cursor-pointer shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
               >
                 {allNotesExpanded ? "Collapse All Notes" : "Expand All Notes"}
               </button>

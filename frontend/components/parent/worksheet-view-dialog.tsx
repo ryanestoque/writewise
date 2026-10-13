@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { BandBadge } from "@/components/shared/band-badge";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
-import { ScoreSourceIndicator } from "@/components/shared/score-source-indicator";
 import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
 import { GuideLineOverlay, type GuideLines } from "@/components/shared/guide-line-overlay";
 import {
@@ -210,12 +209,6 @@ export function WorksheetViewDialog({
                   <Calendar className="size-3" aria-hidden="true" />
                   {formattedDate}
                 </span>
-                {scoreSource !== "none" && (
-                  <>
-                    <span>&middot;</span>
-                    <ScoreSourceIndicator source={scoreSource} compact />
-                  </>
-                )}
               </DialogDescription>
             </div>
           </div>

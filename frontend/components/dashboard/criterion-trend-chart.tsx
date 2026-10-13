@@ -381,7 +381,7 @@ export function CriterionTrendChart({
               <button
                 type="button"
                 onClick={resetCriteria}
-                className="text-[11px] font-medium text-primary hover:underline cursor-pointer ml-1 min-h-[36px] px-2 -my-1 rounded-md inline-flex items-center hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="text-[11px] font-medium text-primary hover:underline cursor-pointer ml-1 min-h-[40px] sm:min-h-[32px] px-2.5 -my-1 rounded-md inline-flex items-center hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Reset default
               </button>
@@ -395,7 +395,7 @@ export function CriterionTrendChart({
                   });
                   setActiveCriteria(allActive);
                 }}
-                className="text-[11px] font-medium text-primary hover:underline cursor-pointer ml-1 min-h-[36px] px-2 -my-1 rounded-md inline-flex items-center hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="text-[11px] font-medium text-primary hover:underline cursor-pointer ml-1 min-h-[40px] sm:min-h-[32px] px-2.5 -my-1 rounded-md inline-flex items-center hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Show all skills
               </button>

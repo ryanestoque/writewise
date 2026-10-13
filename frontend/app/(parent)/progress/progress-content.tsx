@@ -25,22 +25,23 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import {
-  LineChart,
   Loader2,
   UserX,
   BookOpen,
   History,
   CheckCircle2,
-  ChevronRight,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+
+const MOBILE_TABS = ["latest", "tasks", "trends"] as const;
+type MobileTab = (typeof MOBILE_TABS)[number];
 
 export function ProgressPageContent() {
   const [rubricOpen, setRubricOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [activitiesExpanded, setActivitiesExpanded] = useState(false);
-  const [mobileTab, setMobileTab] = useState<"latest" | "tasks" | "trends">("latest");
+  const [mobileTab, setMobileTab] = useState<MobileTab>("latest");
   const {
     selectedChildId,
     selectedChild,
@@ -48,6 +49,31 @@ export function ProgressPageContent() {
     openUploadDialog,
     openCursiveGuide,
   } = useParentPortal();
+
+  const handleMobileTabKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        const currentIndex = MOBILE_TABS.indexOf(mobileTab);
+        const nextIndex =
+          e.key === "ArrowRight"
+            ? (currentIndex + 1) % MOBILE_TABS.length
+            : (currentIndex - 1 + MOBILE_TABS.length) % MOBILE_TABS.length;
+        const nextTab = MOBILE_TABS[nextIndex];
+        setMobileTab(nextTab);
+        document.getElementById(`mobile-tab-${nextTab}`)?.focus();
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        setMobileTab("latest");
+        document.getElementById("mobile-tab-latest")?.focus();
+      } else if (e.key === "End") {
+        e.preventDefault();
+        setMobileTab("trends");
+        document.getElementById("mobile-tab-trends")?.focus();
+      }
+    },
+    [mobileTab]
+  );
 
   const handleOpenRubric = useCallback(() => setRubricOpen(true), []);
 
@@ -276,6 +302,7 @@ export function ProgressPageContent() {
             <div
               role="tablist"
               aria-label="Progress sections"
+              onKeyDown={handleMobileTabKeyDown}
               className="grid grid-cols-3 p-1 bg-muted/70 rounded-xl border border-border/80 text-xs"
             >
               <button
@@ -284,9 +311,10 @@ export function ProgressPageContent() {
                 id="mobile-tab-latest"
                 aria-selected={mobileTab === "latest"}
                 aria-controls="mobile-section-latest"
+                tabIndex={mobileTab === "latest" ? 0 : -1}
                 onClick={() => setMobileTab("latest")}
                 className={cn(
-                  "py-2 px-2 rounded-lg text-center font-medium transition-all cursor-pointer min-h-[36px] flex items-center justify-center text-xs",
+                  "py-2 px-2 rounded-lg text-center font-medium transition-all cursor-pointer min-h-[40px] flex items-center justify-center text-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
                   mobileTab === "latest"
                     ? "bg-card text-foreground shadow-2xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -300,15 +328,16 @@ export function ProgressPageContent() {
                 id="mobile-tab-tasks"
                 aria-selected={mobileTab === "tasks"}
                 aria-controls="assigned-take-home-section"
+                tabIndex={mobileTab === "tasks" ? 0 : -1}
                 onClick={() => setMobileTab("tasks")}
                 className={cn(
-                  "py-2 px-2 rounded-lg text-center font-medium transition-all cursor-pointer min-h-[36px] inline-flex items-center justify-center gap-1.5 text-xs",
+                  "py-2 px-2 rounded-lg text-center font-medium transition-all cursor-pointer min-h-[40px] inline-flex items-center justify-center gap-1.5 text-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
                   mobileTab === "tasks"
                     ? "bg-card text-foreground shadow-2xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <span>Practice Tasks</span>
+                <span>Tasks</span>
                 {pendingActivitiesCount > 0 && (
                   <span className="size-4 rounded-full bg-brand-600 dark:bg-brand-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
                     {pendingActivitiesCount}
@@ -321,9 +350,10 @@ export function ProgressPageContent() {
                 id="mobile-tab-trends"
                 aria-selected={mobileTab === "trends"}
                 aria-controls="progress-trends-section"
+                tabIndex={mobileTab === "trends" ? 0 : -1}
                 onClick={() => setMobileTab("trends")}
                 className={cn(
-                  "py-2 px-2 rounded-lg text-center font-medium transition-all cursor-pointer min-h-[36px] flex items-center justify-center text-xs",
+                  "py-2 px-2 rounded-lg text-center font-medium transition-all cursor-pointer min-h-[40px] flex items-center justify-center text-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
                   mobileTab === "trends"
                     ? "bg-card text-foreground shadow-2xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -339,39 +369,11 @@ export function ProgressPageContent() {
             {/* Left Column (Desktop 7 cols): Latest Assessment & Diagnostic Feedback */}
             <div
               id="mobile-section-latest"
-              role="tabpanel"
-              aria-labelledby="mobile-tab-latest"
               className={cn(
                 "w-full lg:col-span-7 space-y-6",
                 mobileTab !== "latest" && "hidden lg:block"
               )}
             >
-              {/* Mobile Callout: Elevated Pending Worksheets Notice (Hidden on desktop) */}
-              {pendingActivitiesCount > 0 && (
-                <div className="lg:hidden rounded-xl border border-brand-200/80 dark:border-brand-800/80 bg-brand-50/70 dark:bg-brand-950/40 p-3.5 flex items-center justify-between gap-3 shadow-2xs">
-                  <div className="min-w-0 space-y-0.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="size-2 rounded-full bg-brand-600 dark:bg-brand-400 shrink-0" aria-hidden="true" />
-                      <span className="text-xs font-semibold text-foreground">
-                        {pendingActivitiesCount} Take-Home {pendingActivitiesCount === 1 ? "Worksheet" : "Worksheets"} Due
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground pl-3.5">
-                      Practice on paper and upload a photo for scoring
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setMobileTab("tasks")}
-                    className="h-8 px-2.5 text-xs font-medium shrink-0 gap-1 border-brand-300/80 dark:border-brand-700/80 bg-card hover:bg-brand-100/50 cursor-pointer shadow-2xs"
-                  >
-                    <span>Go to Tasks</span>
-                    <ChevronRight className="size-3 text-muted-foreground" aria-hidden="true" />
-                  </Button>
-                </div>
-              )}
-
               <section
                 aria-labelledby="latest-assessment-heading"
                 className="space-y-3"
@@ -389,34 +391,13 @@ export function ProgressPageContent() {
                   childName={selectedChild.fullName}
                 />
               </section>
-
-              {/* Mobile quick link to pending homework tasks when on latest tab */}
-              {pendingActivitiesCount > 0 && (
-                <div className="lg:hidden pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setMobileTab("tasks")}
-                    className="w-full py-2.5 px-3 rounded-xl border border-brand-200/80 dark:border-brand-800/80 bg-brand-50/50 dark:bg-brand-950/30 text-xs font-medium text-brand-800 dark:text-brand-200 hover:bg-brand-100/60 transition-colors flex items-center justify-between cursor-pointer shadow-2xs"
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <span className="size-1.5 rounded-full bg-brand-600 dark:bg-brand-400" aria-hidden="true" />
-                      <span>{pendingActivitiesCount} assigned worksheets ready for practice</span>
-                    </span>
-                    <span className="font-semibold text-brand-700 dark:text-brand-300 flex items-center gap-0.5">
-                      View Tasks &rarr;
-                    </span>
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Right Column (Desktop 5 cols): Assigned Take-Home Worksheets */}
             <div
               id="assigned-take-home-section"
-              role="tabpanel"
-              aria-labelledby="mobile-tab-tasks"
               className={cn(
-                "w-full lg:col-span-5 space-y-6 scroll-mt-6",
+                "w-full lg:col-span-5 space-y-6 scroll-mt-6 lg:sticky lg:top-6 lg:self-start",
                 mobileTab !== "tasks" && "hidden lg:block"
               )}
             >
@@ -474,8 +455,7 @@ export function ProgressPageContent() {
           {/* Full-Width Section: Longitudinal Progress Over Time (12 cols) */}
           <section
             id="progress-trends-section"
-            role="tabpanel"
-            aria-labelledby="mobile-tab-trends"
+            aria-labelledby="progress-trends-heading"
             className={cn(
               "space-y-3 pt-2",
               mobileTab !== "trends" && "hidden lg:block"
@@ -597,7 +577,7 @@ function TrendGraphTeaser({ subtitle }: { subtitle?: string }) {
     <div className="relative rounded-lg border border-border/70 bg-muted/30 p-3 sm:p-4 overflow-hidden select-none">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-          <LineChart className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+          <span className="size-2 rounded-full bg-brand-600 dark:bg-brand-400 shrink-0" aria-hidden="true" />
           <span>5-Criterion Longitudinal Tracking</span>
         </div>
         <span className="text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-100/70 dark:bg-brand-950/70 px-2.5 py-0.5 rounded-full border border-brand-200/50 dark:border-brand-800/50">
@@ -646,7 +626,7 @@ function TrendGraphTeaser({ subtitle }: { subtitle?: string }) {
         {/* Center overlay pill */}
         <div className="absolute inset-0 flex items-center justify-center">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-background/95 backdrop-blur-xs border border-border/80 text-foreground shadow-2xs">
-            <LineChart className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+            <span className="size-1.5 rounded-full bg-brand-600 dark:bg-brand-400 shrink-0" aria-hidden="true" />
             <span>{subtitle ?? "Unlocks after 2 evaluated worksheets"}</span>
           </span>
         </div>
