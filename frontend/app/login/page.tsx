@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
+import { HandwritingGuidelineBackground } from "@/components/auth/handwriting-guideline-background";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -251,10 +254,21 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUnconfirmed, setIsUnconfirmed] = useState(false);
+  const [isResendingConfirm, setIsResendingConfirm] = useState(false);
+  const [resendConfirmSuccess, setResendConfirmSuccess] = useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
+
+  // Handle ?confirmed=true toast
+  useEffect(() => {
+    if (searchParams.get("confirmed") === "true") {
+      toast.success("Email confirmed — sign in to continue.");
+      router.replace("/login");
+    }
+  }, [searchParams, router]);
 
   // Detect password recovery callback (hash tokens, auth errors, or auth event)
   useEffect(() => {
@@ -297,7 +311,37 @@ function LoginForm() {
     searchParams.get("error") === "missing_role"
       ? "Your account is missing a role assignment. Please contact your school administrator or coordinator."
       : null;
-  const error = formError ?? missingRoleError;
+
+  const confirmationFailedError =
+    searchParams.get("error") === "confirmation_failed"
+      ? "That confirmation link is invalid or expired. Please sign up again or request a new confirmation link."
+      : null;
+
+  const error = formError ?? missingRoleError ?? confirmationFailedError;
+
+  async function handleResendConfirmation() {
+    if (!email.trim() || isResendingConfirm) return;
+    setIsResendingConfirm(true);
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email: email.trim(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/login`,
+        },
+      });
+      if (resendError) {
+        toast.error("Failed to resend confirmation email. Please try again.");
+      } else {
+        setResendConfirmSuccess(true);
+        toast.success("Confirmation email resent! Please check your inbox.");
+      }
+    } catch {
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsResendingConfirm(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -312,11 +356,11 @@ function LoginForm() {
       });
 
       if (authError) {
-        if (
-          authError.code === "invalid_credentials" ||
-          authError.message === "Invalid login credentials"
-        ) {
+        if (authError.code === "invalid_credentials") {
           setFormError("Invalid email or password.");
+        } else if (authError.code === "email_not_confirmed") {
+          setIsUnconfirmed(true);
+          setFormError("Please confirm your email address before signing in. Check your inbox for the link.");
         } else {
           setFormError("Something went wrong. Please try again.");
         }
@@ -345,16 +389,31 @@ function LoginForm() {
       <CardContent className="space-y-4">
         <form onSubmit={handleSubmit} className="grid gap-4" noValidate={false}>
           {error && (
-            <Alert
-              variant="destructive"
-              id="login-error"
-              className="[&>svg]:translate-y-0 animate-in fade-in-50 slide-in-from-top-1 duration-200 motion-reduce:animate-none motion-reduce:transition-none"
-            >
-              <CircleAlertIcon aria-hidden="true" />
-              <AlertDescription className="text-xs leading-normal">
-                {error}
-              </AlertDescription>
-            </Alert>
+            <div className="space-y-2">
+              <Alert
+                variant="destructive"
+                id="login-error"
+                className="[&>svg]:translate-y-0 animate-in fade-in-50 slide-in-from-top-1 duration-200 motion-reduce:animate-none motion-reduce:transition-none"
+              >
+                <CircleAlertIcon aria-hidden="true" />
+                <AlertDescription className="text-xs leading-normal">
+                  {error}
+                </AlertDescription>
+              </Alert>
+              {isUnconfirmed && (
+                <div className="flex items-center justify-between px-1 text-xs">
+                  <span className="text-muted-foreground">Didn&apos;t receive it?</span>
+                  <button
+                    type="button"
+                    onClick={handleResendConfirmation}
+                    disabled={isResendingConfirm || resendConfirmSuccess}
+                    className="font-medium text-primary hover:underline disabled:opacity-50"
+                  >
+                    {isResendingConfirm ? "Resending…" : resendConfirmSuccess ? "Email sent!" : "Resend confirmation email"}
+                  </button>
+                </div>
+              )}
+            </div>
           )}
 
           <div className="grid gap-2">
@@ -439,62 +498,17 @@ function LoginForm() {
       </CardContent>
 
       <CardFooter className="flex flex-col items-center justify-center border-t border-border/60 bg-muted/20 px-6 py-3.5 text-center text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <HelpCircleIcon className="size-3.5 text-muted-foreground/80 shrink-0" aria-hidden="true" />
-          <span>
-            Need account access? Contact your school coordinator.
-          </span>
-        </div>
+        <p>
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/signup"
+            className="font-medium text-primary hover:underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+          >
+            Sign up
+          </Link>
+        </p>
       </CardFooter>
     </Card>
-  );
-}
-
-/**
- * Atmospheric handwriting guidelines background:
- * Evokes authentic ruled cursive notebook lines (ascender, midline, baseline, descender)
- * along with subtle 68° slant guidelines reminiscent of cursive practice sheets.
- */
-function HandwritingGuidelineBackground() {
-  return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 -z-10 overflow-hidden select-none"
-    >
-      {/* Soft warm radial ambient glow */}
-      <div className="absolute -top-32 left-1/2 -translate-x-1/2 size-[720px] rounded-full bg-brand-100/60 blur-3xl opacity-80 dark:bg-brand-900/25" />
-
-      {/* Handwriting ruled guide lines & slant pattern */}
-      <svg
-        className="absolute inset-0 size-full stroke-brand-700/10 dark:stroke-brand-200/8 [mask-image:radial-gradient(ellipse_at_center,white_35%,transparent_80%)]"
-        width="100%"
-        height="100%"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <defs>
-          <pattern
-            id="cursive-ruled-lines"
-            width="120"
-            height="80"
-            patternUnits="userSpaceOnUse"
-          >
-            {/* Cursive 68-degree slant guide */}
-            <line x1="10" y1="80" x2="42" y2="0" strokeWidth="0.75" strokeDasharray="3 6" opacity="0.6" />
-            <line x1="70" y1="80" x2="102" y2="0" strokeWidth="0.75" strokeDasharray="3 6" opacity="0.6" />
-
-            {/* Top ascender line */}
-            <line x1="0" y1="16" x2="120" y2="16" strokeWidth="1" strokeDasharray="3 3" />
-            {/* Midline / x-height */}
-            <line x1="0" y1="36" x2="120" y2="36" strokeWidth="1" strokeDasharray="5 4" />
-            {/* Baseline */}
-            <line x1="0" y1="56" x2="120" y2="56" strokeWidth="1.25" />
-            {/* Descender line */}
-            <line x1="0" y1="76" x2="120" y2="76" strokeWidth="0.75" strokeDasharray="2 3" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#cursive-ruled-lines)" />
-      </svg>
-    </div>
   );
 }
 

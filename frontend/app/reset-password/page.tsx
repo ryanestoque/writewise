@@ -26,6 +26,8 @@ import {
   CheckCircle2Icon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { MIN_PASSWORD_LENGTH } from "@/lib/auth/password-policy";
+import { HandwritingGuidelineBackground } from "@/components/auth/handwriting-guideline-background";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -254,9 +256,9 @@ function ResetPasswordForm() {
     e.preventDefault();
     setFormError(null);
 
-    // SECURITY.md requires 10 characters minimum
-    if (password.length < 10) {
-      setFormError("Password must be at least 10 characters long.");
+    // SECURITY.md requires MIN_PASSWORD_LENGTH characters minimum
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setFormError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`);
       return;
     }
 
@@ -605,74 +607,6 @@ function ResetPasswordForm() {
         </Link>
       </CardFooter>
     </Card>
-  );
-}
-
-function HandwritingGuidelineBackground() {
-  return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 -z-10 overflow-hidden opacity-35 dark:opacity-20"
-    >
-      <svg
-        className="h-full w-full stroke-muted-foreground/30"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <defs>
-          <pattern
-            id="cursive-ruled-lines"
-            width="120"
-            height="80"
-            patternUnits="userSpaceOnUse"
-          >
-            <line
-              x1="10"
-              y1="80"
-              x2="42"
-              y2="0"
-              strokeWidth="0.75"
-              strokeDasharray="3 6"
-              opacity="0.6"
-            />
-            <line
-              x1="70"
-              y1="80"
-              x2="102"
-              y2="0"
-              strokeWidth="0.75"
-              strokeDasharray="3 6"
-              opacity="0.6"
-            />
-            <line
-              x1="0"
-              y1="16"
-              x2="120"
-              y2="16"
-              strokeWidth="1"
-              strokeDasharray="3 3"
-            />
-            <line
-              x1="0"
-              y1="36"
-              x2="120"
-              y2="36"
-              strokeWidth="1"
-              strokeDasharray="5 4"
-            />
-            <line x1="0" y1="56" x2="120" y2="56" strokeWidth="1.25" />
-            <line
-              x1="0"
-              y1="76"
-              x2="120"
-              y2="76"
-              strokeWidth="0.75"
-              strokeDasharray="2 3"
-            />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#cursive-ruled-lines)" />
-      </svg>
-    </div>
   );
 }
 

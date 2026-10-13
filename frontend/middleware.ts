@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/middleware";
 
 // Routes that don't require authentication
-const publicRoutes = ["/login", "/accept-invite", "/auth/callback", "/reset-password"];
+const publicRoutes = ["/login", "/signup", "/accept-invite", "/auth/callback", "/reset-password"];
 
 // Route-to-role mapping (Next.js strips the route group prefix from URLs)
 const teacherRoutes = ["/dashboard", "/roster", "/activities", "/settings"];
@@ -48,9 +48,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Authenticated user on /login → redirect to their portal
+  // Authenticated user on /login or /signup → redirect to their portal
   // (Note: Do not redirect from /accept-invite where user is setting their password)
-  if (user && pathname === "/login") {
+  if (user && (pathname === "/login" || pathname === "/signup")) {
     const url = request.nextUrl.clone();
     url.pathname = roleLanding[userRole ?? ""] ?? "/login";
     return NextResponse.redirect(url);

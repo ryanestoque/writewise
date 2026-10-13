@@ -10,8 +10,15 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get("error");
   const errorCode = searchParams.get("error_code");
   const errorDescription = searchParams.get("error_description");
-  const next = searchParams.get("next") || "/accept-invite";
-  const errorTarget = next.startsWith("/reset-password") ? "/reset-password" : "/accept-invite";
+  const rawNext = searchParams.get("next") || "/accept-invite";
+  // Open-redirect guard: require relative path that does not start with protocol-relative '//'
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/accept-invite";
+  const isSignupConfirm = next === "/login";
+  const errorTarget = isSignupConfirm
+    ? "/login?error=confirmation_failed"
+    : next.startsWith("/reset-password")
+      ? "/reset-password"
+      : "/accept-invite";
 
   if (error || errorDescription || errorCode) {
     const redirectUrl = new URL(errorTarget, origin);
@@ -21,8 +28,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  const supabase = await createClient();
+
   if (code) {
-    const supabase = await createClient();
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
     if (exchangeError) {
       const redirectUrl = new URL(errorTarget, origin);
@@ -33,7 +41,6 @@ export async function GET(request: NextRequest) {
   }
 
   if (tokenHash && type) {
-    const supabase = await createClient();
     const { error: verifyError } = await supabase.auth.verifyOtp({
       type,
       token_hash: tokenHash,
@@ -44,6 +51,11 @@ export async function GET(request: NextRequest) {
       redirectUrl.searchParams.set("error_code", "otp_expired");
       return NextResponse.redirect(redirectUrl);
     }
+  }
+
+  if (isSignupConfirm) {
+    await supabase.auth.signOut();
+    return NextResponse.redirect(new URL("/login?confirmed=true", origin));
   }
 
   return NextResponse.redirect(new URL(next, origin));

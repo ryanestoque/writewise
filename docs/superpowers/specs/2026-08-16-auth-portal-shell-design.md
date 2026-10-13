@@ -164,7 +164,7 @@ Outside the portal shell — no sidebar, no nav. Standalone page at `app/login/p
 - **Subheading:** "Sign in to your account" in Inter, `text-secondary`
 - **Form fields:** Email + Password, shadcn `Input` + `Label`, `rounded-lg`
 - **Submit button:** Full-width, `brand-600` bg, white text, `rounded-lg`, loading spinner on submit
-- **No signup link** — teachers are provisioned in the Supabase dashboard (invite-only model)
+- **Signup link:** Links to `/signup` ("Don't have an account? Sign up") — *(Superseded: Self-service registration added for teachers & parents alongside existing invite flow)*
 
 ### Form behavior
 

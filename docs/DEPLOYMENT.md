@@ -108,6 +108,21 @@ Dependency-ordered — each step assumes the ones before it are done:
 7. **Restrict access** (§7): Railway + Supabase-prod dashboards to the two named key-holders. Add the other two team members as Vercel + GitHub collaborators.
 8. **Set up the health-ping GitHub Action** (§9) — needs the Railway URL from step 4.
 9. **Upload the first CNN model artifact** to Supabase Storage once a trained model exists (§10) — this step can lag well behind everything else without blocking any other setup.
+10. **Configure Supabase Auth settings** (§8.1) in both `writewise-dev` and `writewise-prod` dashboards.
+
+---
+
+### 8.1 Supabase Auth Configuration (Dashboard Setup)
+
+Self-service signup requires specific configuration in both `writewise-dev` and `writewise-prod` Supabase dashboards:
+
+| Setting | Location | Value | Rationale |
+|---|---|---|---|
+| **Confirm email** | Auth → Providers → Email | **Enabled (ON)** | Requires users to verify email before their first sign-in. Prevents ghost accounts. |
+| **Minimum password length** | Auth → Password Policy | **10** | Enforces SECURITY.md §3 policy at the auth engine level. |
+| **Leaked password protection** | Auth → Password Policy | **Enabled (ON)** | Checks HaveIBeenPwned database on password set/reset. |
+| **Redirect URLs** | Auth → URL Configuration | Add `http://localhost:3000/auth/callback` (dev) and `https://<app>.vercel.app/auth/callback` (prod) | Required whitelist for email redirect validation. |
+| **Confirm signup email template** | Auth → Email Templates → Confirm signup | `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email&next=/login` | Uses `token_hash` OTP verification so links work reliably across devices/browsers (skipping PKCE cookie constraints). |
 
 ---
 

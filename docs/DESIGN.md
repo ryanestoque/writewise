@@ -346,6 +346,25 @@ Built using the Base UI / shadcn `Empty` primitive pattern: `EmptyMedia` (Lucide
 | Activities, none created | "No activities yet. Create one to start collecting handwriting samples." | **Create Activity** (`ClipboardList` icon) |
 | Submission history, none | "No submissions yet. Once a worksheet is uploaded, progress will show up here." | |
 
+### 8.4 Self-Service Signup Flow
+
+A unified `/signup` view sharing the atmospheric handwriting background (`HandwritingGuidelineBackground`) and warm card layout of `/login`:
+
+- **Role Selection:** A high-contrast two-segment pill toggle (`Teacher | Parent`), defaulting to Teacher. Each state provides immediate context:
+  - *Teacher:* "Manage your class roster and assess cursive handwriting."
+  - *Parent:* "Your child's teacher will link your account to their student records."
+- **Input Fields:**
+  - *Full Name:* Required string input.
+  - *Email address:* Validated email with duplicate account obfuscation.
+  - *Password:* Minimum 10 characters with live validity indicator (`CheckIcon` + emerald token).
+  - *Confirm Password:* Real-time matching feedback ("Passwords match" / "Does not match").
+- **Verification & Confirmation State (In-Card):**
+  - Success message: "Check your email — We sent a confirmation link to [email]."
+  - Explanatory note: "Please click the link in your email to verify your account. Once verified, you can sign in to WriteWise."
+  - Resend CTA: Cooldown timer button (60s countdown) with rate-limit protection.
+  - Escape hatch: "Entered the wrong email? Use a different email."
+- **Navigation Links:** Card footer links directly to `/login` ("Already have an account? Sign in").
+
 ---
 
 ## 9. Accessibility

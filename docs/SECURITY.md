@@ -8,7 +8,7 @@
 - **Target setting:** School-agnostic — no partner school at present (pilot site TBD)
 - **Status:** Draft v1
 
-**Audience & scope:** this document is written for the dev team and for a technical panel reviewing the repo — not for the public. There is no external vulnerability-disclosure process here: WriteWise is a closed, invite-only pilot (small cohort, size TBD) with no public signup surface, so there's no realistic outside party who'd need a formal "report a vuln" channel. What this document *does* do is consolidate every security-relevant decision already scattered across the other docs (RLS in DATABASE §10–11, JWT/role/ownership checks in API_SPEC §2.2, the RA 10173 rationale in ARCHITECTURE §7/§16, the quality gate in CV_PIPELINE) and make the decisions nobody had made yet.
+**Audience & scope:** this document is written for the dev team and for a technical panel reviewing the repo — not for the public. There is no external vulnerability-disclosure process here. For the thesis demonstration and evaluation, WriteWise provides self-service teacher and parent registration alongside the existing teacher-invite flow, with defensive controls in place (email verification requirement, 10-character minimum password with HaveIBeenPwned checks, immutable role enforcement, and strictly teacher-controlled student linking). What this document *does* do is consolidate every security-relevant decision already scattered across the other docs (RLS in DATABASE §10–11, JWT/role/ownership checks in API_SPEC §2.2, the RA 10173 rationale in ARCHITECTURE §7/§16, the quality gate in CV_PIPELINE) and make the decisions nobody had made yet.
 
 ---
 
@@ -27,7 +27,7 @@ Scoped to what's actually plausible for a small-cohort academic pilot — not a 
 7. **Data lingering past its purpose** — no retention/deletion policy existed anywhere prior to this document (§7.3).
 8. **Tampered model artifact** — both the scoring CNN and the HTR model are `.keras` files downloaded from Supabase Storage at container startup. A compromised Storage bucket or a malicious model file could execute arbitrary code during `tf.keras.models.load_model()`. Mitigated by: Storage bucket is private (no public access), only the two named key-holders have write access to `writewise-prod` Storage (§2.1), and the model files are uploaded manually by the team — never by user input or an automated pipeline.
 
-**Explicitly out of scope**, given architecture and pilot scale: DDoS/high-volume abuse (no public signup surface), sophisticated/targeted nation-state-style attacks, and payment/financial data (none exists in this system).
+**Explicitly out of scope**, given architecture and evaluation scale: enterprise-scale DDoS/high-volume abuse (mitigated at pilot level via Supabase Auth rate limits), sophisticated/targeted nation-state-style attacks, and payment/financial data (none exists in this system).
 
 ---
 
@@ -63,7 +63,7 @@ TECH_STACK.md already establishes the mechanics — `.env`/`.env.local` gitignor
 | **Complexity rules (symbols/mixed-case required)** | Not added | Modern guidance treats these as weaker than length alone — they push users toward predictable substitutions (`Password1!`) rather than genuinely stronger passwords. |
 | **Session (JWT) expiry** | Supabase default (1 hour, transparently renewed via refresh token) | No reason to deviate; renewal is invisible to the user. |
 | **Refresh token lifetime** | Supabase default (7 days, sliding) | Shortening it adds re-login friction for teachers/parents with no meaningful security gain at this threat level — this isn't a banking app, and the realistic threat (device left unlocked) isn't meaningfully mitigated by a shorter window. |
-| **MFA (TOTP)** | Not offered for the pilot | Adds real setup friction for non-technical teachers/parents on a live school rollout; the threat it defends against (credential theft) is comparatively low-probability here — invite-only accounts, no public signup, small closed user base. Documented here as a considered trade-off, not an oversight. |
+| **MFA (TOTP)** | Not offered for the pilot | Adds real setup friction for non-technical teachers/parents on a live school rollout; the threat it defends against (credential theft) is counter-balanced by 10-char password enforcement, leaked password protection (HIBP), and mandatory email verification. Documented here as a considered trade-off, not an oversight. |
 
 ---
 

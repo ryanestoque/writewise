@@ -33,6 +33,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 - [x] Initial Supabase migration files written (schema skeleton — `DATABASE.md`)
 - [x] CI workflow committed (`.github/workflows/`)
 - [x] Auth Portal Shell & Layout audited (Login, Teacher Sidebar, Sign-Out Modal, Rubric Dialog)
+- [x] Self-service teacher & parent registration (`/signup`, email verification flow, role immutability, migration `0021_harden_auth_metadata.sql`)
 
 **Cloud provisioning** (`DEPLOYMENT.md` provisioning order-of-operations)
 - [x] `writewise-dev` + `writewise-prod` Supabase projects created
