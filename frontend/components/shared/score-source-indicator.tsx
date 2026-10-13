@@ -38,7 +38,7 @@ export function ScoreSourceIndicator({
             "font-medium underline decoration-dotted underline-offset-2 decoration-current/40 hover:decoration-current",
             isManual ? "text-brand-600 dark:text-brand-400" : "text-amber-600 dark:text-amber-400"
           )}>
-            {compact ? (isManual ? "Teacher rubric" : "Auto score") : (isManual ? "Teacher-assessed" : "Auto-calibrated")}
+            {compact ? (isManual ? "Teacher rubric" : "Auto-calibrated") : (isManual ? "Teacher-assessed" : "Auto-calibrated")}
           </span>
         </TooltipTrigger>
         <TooltipContent side="top" align="end" className="text-xs max-w-xs p-3 leading-relaxed shadow-warm border border-border">

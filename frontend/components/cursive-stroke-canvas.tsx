@@ -35,33 +35,18 @@ const RULING_GUIDES = (
   <>
     {/* Headline y=25 */}
     <line x1="10" y1="25" x2="390" y2="25" stroke="currentColor" className="text-slate-400 dark:text-slate-500" strokeWidth="1" strokeOpacity="0.7" />
-    <text x="14" y="21" fontSize="9" className="fill-slate-500 dark:fill-slate-400 font-sans font-medium">
-      Headline
-    </text>
 
     {/* Dotted Midline y=50 */}
     <line x1="10" y1="50" x2="390" y2="50" stroke="currentColor" className="text-teal-600 dark:text-teal-400" strokeWidth="1.2" strokeDasharray="4 3" strokeOpacity="0.8" />
-    <text x="14" y="46" fontSize="9" className="fill-teal-600 dark:fill-teal-400 font-sans font-medium">
-      Dotted Midline (x-Height)
-    </text>
 
     {/* Solid Baseline y=75 */}
     <line x1="10" y1="75" x2="390" y2="75" stroke="currentColor" className="text-orange-600 dark:text-orange-400" strokeWidth="1.8" strokeOpacity="0.9" />
-    <text x="14" y="71" fontSize="9" className="fill-orange-600 dark:fill-orange-400 font-sans font-bold">
-      Solid Baseline
-    </text>
 
     {/* Descender Line y=90 */}
     <line x1="10" y1="90" x2="390" y2="90" stroke="currentColor" className="text-slate-300 dark:text-slate-600" strokeWidth="0.8" strokeDasharray="2 2" strokeOpacity="0.5" />
-    <text x="14" y="96" fontSize="8" className="fill-slate-400 font-sans">
-      Descender Zone
-    </text>
 
     {/* ~68° Slant Guideline (dx = 28, dy = 70 => arctan(70/28) ≈ 68.2°) */}
     <line x1="176" y1="85" x2="204" y2="15" stroke="currentColor" className="text-primary" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
-    <text x="206" y="20" fontSize="8" className="fill-primary font-sans font-semibold">
-      ~68° Slant
-    </text>
   </>
 );
 
@@ -216,7 +201,7 @@ export function CursiveStrokeCanvas({
             type="button"
             onClick={() => handleCaseModeChange("lower")}
             className={cn(
-              "px-2.5 py-1 font-medium rounded-md transition-all cursor-pointer",
+              "px-2.5 py-1.5 sm:py-1 min-h-9 sm:min-h-0 font-medium rounded-md transition-all cursor-pointer flex items-center justify-center",
               caseMode === "lower"
                 ? "bg-background text-foreground shadow-2xs font-semibold"
                 : "text-muted-foreground hover:text-foreground"
@@ -228,7 +213,7 @@ export function CursiveStrokeCanvas({
             type="button"
             onClick={() => handleCaseModeChange("upper")}
             className={cn(
-              "px-2.5 py-1 font-medium rounded-md transition-all cursor-pointer",
+              "px-2.5 py-1.5 sm:py-1 min-h-9 sm:min-h-0 font-medium rounded-md transition-all cursor-pointer flex items-center justify-center",
               caseMode === "upper"
                 ? "bg-background text-foreground shadow-2xs font-semibold"
                 : "text-muted-foreground hover:text-foreground"
@@ -240,7 +225,7 @@ export function CursiveStrokeCanvas({
             type="button"
             onClick={() => handleCaseModeChange("both")}
             className={cn(
-              "px-2.5 py-1 font-medium rounded-md transition-all cursor-pointer",
+              "px-2.5 py-1.5 sm:py-1 min-h-9 sm:min-h-0 font-medium rounded-md transition-all cursor-pointer flex items-center justify-center",
               caseMode === "both"
                 ? "bg-background text-foreground shadow-2xs font-semibold"
                 : "text-muted-foreground hover:text-foreground"
@@ -250,24 +235,25 @@ export function CursiveStrokeCanvas({
           </button>
         </div>
 
-        {/* Playback Controls & Speed */}
+        {/* Playback Controls & Speed (Min 40px touch targets for mobile thumbs) */}
         <div className="flex items-center gap-1.5">
           {/* Play/Pause */}
           <button
             type="button"
             onClick={togglePlay}
-            className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md border border-border/70 bg-background hover:bg-muted text-foreground transition-colors cursor-pointer font-medium"
+            className="inline-flex items-center justify-center gap-1.5 h-10 sm:h-7 px-3 sm:px-2.5 rounded-lg sm:rounded-md border border-border/70 bg-background hover:bg-muted text-foreground transition-all cursor-pointer font-medium active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             title={isPlaying ? "Pause animation" : isCompleted ? "Replay animation" : "Play animation"}
+            aria-label={isPlaying ? "Pause animation" : isCompleted ? "Replay animation" : "Play animation"}
           >
             {isPlaying ? (
               <>
-                <PauseIcon className="size-3.5 fill-current" />
-                <span>Pause</span>
+                <PauseIcon className="size-4 sm:size-3.5 fill-current" />
+                <span className="text-xs">Pause</span>
               </>
             ) : (
               <>
-                <PlayIcon className="size-3.5 fill-current" />
-                <span>{isCompleted ? "Replay" : "Play"}</span>
+                <PlayIcon className="size-4 sm:size-3.5 fill-current" />
+                <span className="text-xs">{isCompleted ? "Replay" : "Play"}</span>
               </>
             )}
           </button>
@@ -276,26 +262,28 @@ export function CursiveStrokeCanvas({
           <button
             type="button"
             onClick={resetAnimation}
-            className="inline-flex items-center justify-center size-7 rounded-md border border-border/70 bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            className="inline-flex items-center justify-center size-10 sm:size-7 rounded-lg sm:rounded-md border border-border/70 bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             title="Replay from start"
+            aria-label="Replay from start"
           >
-            <RotateCcwIcon className="size-3.5" />
+            <RotateCcwIcon className="size-4 sm:size-3.5" />
           </button>
 
           {/* Speed Selector */}
-          <div className="flex items-center gap-1 pl-1 border-l border-border/60">
-            <GaugeIcon className="size-3.5 text-muted-foreground" />
+          <div className="flex items-center gap-1 pl-1.5 sm:pl-1 border-l border-border/60">
+            <GaugeIcon className="size-3.5 text-muted-foreground hidden xs:block" />
             {SPEEDS.map((sp) => (
               <button
                 key={sp}
                 type="button"
                 onClick={() => handleSpeedChange(sp)}
                 className={cn(
-                  "px-1.5 py-0.5 text-[11px] rounded transition-all cursor-pointer font-medium",
+                  "min-w-8 h-10 sm:min-w-0 sm:h-auto sm:px-1.5 sm:py-0.5 px-2 py-1 text-xs sm:text-[11px] rounded-lg sm:rounded transition-all cursor-pointer font-medium flex items-center justify-center active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
                   speed === sp
-                    ? "bg-primary text-primary-foreground font-bold"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-primary text-primary-foreground font-bold shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                 )}
+                aria-label={`Set animation speed to ${sp}x`}
               >
                 {sp}x
               </button>
@@ -305,7 +293,7 @@ export function CursiveStrokeCanvas({
       </div>
 
       {/* SVG Penmanship Ruling Canvas */}
-      <div className="w-full h-36 sm:h-40 rounded-xl border border-border/70 bg-background/95 dark:bg-surface/90 relative overflow-hidden flex items-center justify-center shadow-2xs select-none">
+      <div className="w-full h-36 sm:h-40 rounded-xl border border-border/80 bg-card dark:bg-card/90 relative overflow-hidden flex items-center justify-center shadow-xs select-none">
         <svg
           viewBox="0 0 400 100"
           className="w-full h-full"

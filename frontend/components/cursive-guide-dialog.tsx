@@ -9,18 +9,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
   SearchIcon,
   XCircleIcon,
   RotateCcwIcon,
   CheckCircle2Icon,
   AlertTriangleIcon,
   FilterIcon,
+  ArrowLeftIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CursiveStrokeCanvas } from "@/components/cursive-stroke-canvas";
@@ -665,12 +662,34 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
   const [caseFilter, setCaseFilter] = useState<"pairs" | "upper" | "lower">("pairs");
   const [zoneFilter, setZoneFilter] = useState<"all" | "ascender" | "midline" | "descender" | "highJoiner">("all");
   const [selectedLetterId, setSelectedLetterId] = useState<string | null>("A");
-  const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
+  const [mobileView, setMobileView] = useState<"grid" | "detail">("grid");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const isMobile = useIsMobile();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+  const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      setMobileView("grid");
+    }
+    onOpenChange(nextOpen);
+  };
+
+  // Mobile Escape key navigates back to grid instead of dismissing dialog immediately
+  useEffect(() => {
+    if (!open || !isMobile || mobileView !== "detail") return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        setMobileView("grid");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, [open, isMobile, mobileView]);
 
   // Global hotkey '/' inside modal to focus search
   useEffect(() => {
@@ -714,6 +733,55 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
     return CURSIVE_ALPHABET.find((l) => l.id === selectedLetterId) ?? filteredLetters[0] ?? CURSIVE_ALPHABET[0];
   }, [selectedLetterId, filteredLetters]);
 
+  // Navigation indices for Stepper in Mobile Detail View
+  const currentIndex = useMemo(() => {
+    return filteredLetters.findIndex((l) => l.id === activeLetter?.id);
+  }, [filteredLetters, activeLetter]);
+
+  const hasPrevLetter = currentIndex > 0;
+  const hasNextLetter = currentIndex >= 0 && currentIndex < filteredLetters.length - 1;
+
+  const handlePrevLetter = () => {
+    if (hasPrevLetter) {
+      setSelectedLetterId(filteredLetters[currentIndex - 1].id);
+    }
+  };
+
+  const handleNextLetter = () => {
+    if (hasNextLetter) {
+      setSelectedLetterId(filteredLetters[currentIndex + 1].id);
+    }
+  };
+
+  // Touch swipe gestures for mobile letter cycling
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchStartXRef.current = e.touches[0].clientX;
+      touchStartYRef.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    const deltaX = touchEndX - touchStartXRef.current;
+    const deltaY = touchEndY - touchStartYRef.current;
+
+    // Only recognize primarily horizontal swipes with min 45px distance
+    if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+      if (deltaX < 0) {
+        // Swiped left -> next letter
+        handleNextLetter();
+      } else {
+        // Swiped right -> prev letter
+        handlePrevLetter();
+      }
+    }
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+  };
+
   const handleClearSearch = () => {
     setSearchQuery("");
     searchInputRef.current?.focus();
@@ -750,33 +818,27 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
     }
   };
 
-  const renderSpotlightContent = (isMobileSheet = false) => {
+  const renderSpotlightContent = (isMobileDetail = false) => {
     if (!activeLetter) return null;
     return (
       <section
         aria-label={`Detailed formation guide for Letter ${activeLetter.id}`}
         className={cn(
-          "rounded-2xl border border-primary/25 bg-linear-to-b from-card via-card to-primary/5 shadow-xs space-y-4 p-4 sm:p-5",
-          isMobileSheet && "border-none shadow-none bg-transparent p-0"
+          "space-y-4",
+          isMobileDetail
+            ? "p-0 bg-transparent"
+            : "rounded-2xl border border-primary/25 bg-linear-to-b from-card via-card to-primary/5 shadow-xs p-4 sm:p-5"
         )}
       >
-        {/* Spotlight Header: Navigation + Title */}
+        {/* Spotlight Header: Letter Title */}
         <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-border/70">
           <div className="flex items-center gap-2.5">
             <span className="size-9 rounded-xl bg-primary text-primary-foreground font-heading font-bold text-lg flex items-center justify-center shadow-xs">
               {activeLetter.id}
             </span>
-            <div>
-              <h4 className="text-base font-heading font-semibold text-foreground flex items-center gap-2">
-                <span>{activeLetter.name}</span>
-                <span className="text-xs font-normal text-muted-foreground">
-                  ({activeLetter.zoneLabel} Letter{activeLetter.isHighJoiner ? " • High Joiner" : ""})
-                </span>
-              </h4>
-              <p className="text-xs text-muted-foreground">
-                Elementary Standard ~{activeLetter.slantDegree}° Forward Slant • 2:1 Proportions
-              </p>
-            </div>
+            <h4 className="text-base font-heading font-semibold text-foreground">
+              {activeLetter.name}
+            </h4>
           </div>
         </div>
 
@@ -791,7 +853,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
           <div className="p-3 rounded-xl border border-teal-500/20 bg-teal-500/5 dark:bg-teal-500/10 space-y-1">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-teal-800 dark:text-teal-300">
               <CheckCircle2Icon className="size-3.5 shrink-0" />
-              <span>Pedagogical Coaching Tip</span>
+              <span>Coaching Tip</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
               {activeLetter.coachingTip}
@@ -801,7 +863,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
           <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 dark:bg-amber-500/10 space-y-1">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
               <AlertTriangleIcon className="size-3.5 shrink-0" />
-              <span>Watch Out: Common Pitfall</span>
+              <span>Watch Out</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
               {activeLetter.commonPitfall}
@@ -831,26 +893,81 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         id="cursive-guide-dialog"
         overlayClassName="bg-foreground/25 supports-backdrop-filter:backdrop-blur-xs"
         className="p-0 overflow-hidden flex flex-col gap-0 shadow-warm w-[calc(100%-1rem)] sm:max-w-4xl max-h-[min(92dvh,calc(100vh-1.5rem))] rounded-2xl print:max-w-none print:w-full print:max-h-none print:shadow-none print:rounded-none print:border-none print:p-0"
       >
-        {/* Streamlined Header: Title + Print + Search */}
-        <DialogHeader className="p-3.5 sm:p-5 pb-3 sm:pb-3.5 border-b border-border/70 bg-background/95 backdrop-blur-xs shrink-0 space-y-3 print:hidden">
-          <div className="flex items-center justify-between gap-3 min-w-0 pr-10 sm:pr-8">
-            <DialogTitle className="text-base sm:text-lg font-heading font-semibold text-foreground tracking-tight truncate">
-              Cursive Alphabet Guide
-            </DialogTitle>
-          </div>
+        {/* Streamlined Header: Title + Stepper (Mobile) / Search (Desktop) */}
+        <DialogHeader className="p-3.5 sm:p-5 pb-3 sm:pb-3.5 border-b border-border/70 bg-card/95 backdrop-blur-xs shrink-0 space-y-3 print:hidden">
+          {isMobile && mobileView === "detail" ? (
+            <div className="flex items-center justify-between gap-2 min-w-0 pr-14 sm:pr-8">
+              {/* Back to Grid Button */}
+              <div className="flex items-center gap-2 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setMobileView("grid")}
+                  className="inline-flex items-center gap-1.5 h-10 px-2.5 -ml-1 text-xs font-semibold rounded-lg text-primary hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95"
+                  aria-label="Back to alphabet letters"
+                >
+                  <ArrowLeftIcon className="size-4 shrink-0" />
+                  <span>All Letters</span>
+                </button>
+                <DialogTitle className="sr-only">
+                  Letter {activeLetter?.id} Guide
+                </DialogTitle>
+              </div>
+
+              {/* Prev / Next Stepper (Min 40px touch targets for mobile thumbs, clear of dialog Close X) */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={handlePrevLetter}
+                  disabled={!hasPrevLetter}
+                  className={cn(
+                    "size-10 flex items-center justify-center rounded-xl border border-border/80 text-muted-foreground transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95",
+                    hasPrevLetter
+                      ? "hover:text-foreground hover:bg-muted/70 bg-background shadow-2xs cursor-pointer"
+                      : "opacity-35 cursor-not-allowed bg-muted/20"
+                  )}
+                  aria-label="Previous letter"
+                  title="Previous letter"
+                >
+                  <ChevronLeftIcon className="size-4.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextLetter}
+                  disabled={!hasNextLetter}
+                  className={cn(
+                    "size-10 flex items-center justify-center rounded-xl border border-border/80 text-muted-foreground transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95",
+                    hasNextLetter
+                      ? "hover:text-foreground hover:bg-muted/70 bg-background shadow-2xs cursor-pointer"
+                      : "opacity-35 cursor-not-allowed bg-muted/20"
+                  )}
+                  aria-label="Next letter"
+                  title="Next letter"
+                >
+                  <ChevronRightIcon className="size-4.5" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3 min-w-0 pr-14 sm:pr-8">
+              <DialogTitle className="text-base sm:text-lg font-heading font-semibold text-foreground tracking-tight truncate">
+                Cursive Alphabet Guide
+              </DialogTitle>
+            </div>
+          )}
 
           <DialogDescription className="sr-only">
             Interactive cursive handwriting guide showing uppercase and lowercase letter formations on 3-line ruling with stroke cues.
           </DialogDescription>
 
-          {/* Search & Case / Zone Filters Bar */}
-          <div className="flex flex-col gap-2.5">
+          {/* Search & Case / Zone Filters Bar (Hidden on Mobile Detail View to Maximize Screen Room) */}
+          {!(isMobile && mobileView === "detail") && (
+            <div className="flex flex-col gap-2.5">
             {/* Top Bar: Search Input + Case Mode Selector */}
             <div className="flex items-center gap-2.5">
               {/* Quick Search */}
@@ -866,7 +983,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                   id="cursive-search-input"
                   ref={searchInputRef}
                   type="search"
-                  placeholder="Search letters (e.g., 'G', 'loop')... (Press '/')"
+                  placeholder={isMobile ? "Search letters (e.g., 'G', 'loop')..." : "Search letters (e.g., 'G', 'loop')... (Press '/')"}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => {
@@ -942,17 +1059,47 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                 type="button"
                 onClick={() => setIsFiltersOpen(!isFiltersOpen)}
                 className={cn(
-                  "sm:hidden flex items-center justify-center size-10 rounded-lg border transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer",
+                  "sm:hidden relative flex items-center justify-center size-10 rounded-lg border transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer",
                   isFiltersOpen 
                     ? "bg-primary/10 border-primary/30 text-primary" 
                     : "border-border/80 bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 )}
-                aria-label="Toggle filters"
+                aria-label={zoneFilter !== "all" ? `Toggle filters (${zoneFilter} active)` : "Toggle filters"}
                 aria-expanded={isFiltersOpen}
               >
                 <FilterIcon className="size-4.5" />
+                {zoneFilter !== "all" && (
+                  <span
+                    className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary ring-2 ring-background"
+                    aria-hidden="true"
+                  />
+                )}
               </button>
             </div>
+
+            {/* Active Filter Reminder Tag (Mobile collapsed state) */}
+            {!isFiltersOpen && zoneFilter !== "all" && (
+              <div className="sm:hidden flex items-center gap-1.5 text-xs animate-in fade-in slide-in-from-top-1">
+                <span className="text-[11px] text-muted-foreground">Active filter:</span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-medium">
+                  {zoneFilter === "ascender"
+                    ? "Ascenders"
+                    : zoneFilter === "midline"
+                    ? "Midline"
+                    : zoneFilter === "descender"
+                    ? "Descenders"
+                    : "High Joiners"}
+                  <button
+                    type="button"
+                    onClick={() => setZoneFilter("all")}
+                    className="text-primary hover:text-foreground ml-0.5 font-bold cursor-pointer text-xs leading-none"
+                    aria-label="Clear active filter"
+                  >
+                    ×
+                  </button>
+                </span>
+              </div>
+            )}
 
             {/* Mobile-Only Case Selector (when filters expanded) */}
             {isFiltersOpen && (
@@ -1003,12 +1150,12 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
               </div>
             )}
 
-            {/* Dedicated Zone / Category Filter Chips Row */}
+            {/* Dedicated Zone / Category Filter Chips Row (Horizontal Scroll Rail on Mobile) */}
             <div
               role="toolbar"
               aria-label="Filter by letter category"
               className={cn(
-                "flex items-center gap-1.5 flex-wrap text-xs pt-0.5",
+                "flex items-center gap-1.5 text-xs pt-0.5 overflow-x-auto pb-1 sm:pb-0 sm:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
                 !isFiltersOpen && "hidden sm:flex"
               )}
             >
@@ -1028,9 +1175,9 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                     aria-pressed={isActive}
                     onClick={() => setZoneFilter(chip.id as typeof zoneFilter)}
                     className={cn(
-                      "px-2.5 py-1 rounded-full text-xs font-medium shrink-0 transition-all cursor-pointer border",
+                      "px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium shrink-0 transition-all cursor-pointer border",
                       isActive
-                        ? "bg-primary text-primary-foreground border-primary shadow-2xs"
+                        ? "bg-primary text-primary-foreground border-primary shadow-2xs font-semibold"
                         : "bg-background/80 text-muted-foreground border-border/70 hover:text-foreground hover:bg-muted/60"
                     )}
                   >
@@ -1041,6 +1188,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
               })}
             </div>
           </div>
+          )}
 
           <div aria-live="polite" aria-atomic="true" className="sr-only">
             {filteredLetters.length === 26
@@ -1052,7 +1200,12 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
         {/* Split Body */}
         <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
           {/* Left: Grid View */}
-          <div className="flex-1 overflow-y-auto overscroll-contain focus-visible:outline-none p-3.5 sm:p-5 space-y-5 md:border-r border-border/70">
+          <div
+            className={cn(
+              "overflow-y-auto overscroll-contain focus-visible:outline-none p-3.5 sm:p-5 space-y-5 md:border-r border-border/70",
+              isMobile && mobileView === "detail" ? "hidden md:block md:flex-1" : "flex-1"
+            )}
+          >
             {/* Letter Cards Grid */}
             <section aria-labelledby="alphabet-grid-heading" className="space-y-3">
               <div className="flex items-center justify-between">
@@ -1101,7 +1254,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                           tabIndex={isSelected ? 0 : -1}
                           onClick={() => {
                             setSelectedLetterId(item.id);
-                            if (isMobile) setIsMobileDetailOpen(true);
+                            setMobileView("detail");
                           }}
                           aria-pressed={isSelected}
                           aria-label={`Letter ${item.id}. Click to view detailed formation guide.`}
@@ -1138,29 +1291,21 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
             </section>
           </div>
 
-          {/* Right: Spotlight View (Desktop) */}
-          <div className="hidden md:block w-[420px] lg:w-[480px] shrink-0 bg-muted/20 overflow-y-auto p-4 sm:p-5">
-            {renderSpotlightContent(false)}
+          {/* Right: Spotlight View (Desktop or Mobile Detail Drill-down with Swipe Support) */}
+          <div
+            onTouchStart={isMobile && mobileView === "detail" ? handleTouchStart : undefined}
+            onTouchEnd={isMobile && mobileView === "detail" ? handleTouchEnd : undefined}
+            className={cn(
+              "overflow-y-auto",
+              isMobile && mobileView === "detail"
+                ? "flex-1 block p-4 sm:p-5 bg-card touch-pan-y"
+                : "hidden md:block w-[420px] lg:w-[480px] shrink-0 bg-muted/20 p-4 sm:p-5"
+            )}
+          >
+            {renderSpotlightContent(isMobile && mobileView === "detail")}
           </div>
         </div>
       </DialogContent>
-
-      {/* Mobile Drawer / Sheet View */}
-      {/* Only mount below md — otherwise a hidden second canvas animates on desktop */}
-      {isMobile && isMobileDetailOpen && (
-        <Sheet open={isMobileDetailOpen} onOpenChange={setIsMobileDetailOpen}>
-          <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl p-4 overflow-y-auto md:hidden">
-            <SheetHeader className="p-0 pb-3 border-b border-border/70 flex flex-row items-center justify-between">
-              <SheetTitle className="text-base font-heading font-semibold">
-                Letter {activeLetter?.id} Detail Guide
-              </SheetTitle>
-            </SheetHeader>
-            <div className="pt-4 pb-6">
-              {renderSpotlightContent(true)}
-            </div>
-          </SheetContent>
-        </Sheet>
-      )}
     </Dialog>
   );
 }
