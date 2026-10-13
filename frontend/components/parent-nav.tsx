@@ -105,7 +105,7 @@ export function ParentNav({
             className="flex items-center gap-2 shrink-0 rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-opacity hover:opacity-90"
             aria-label="WriteWise Parent Portal Home"
           >
-            <BrandLogo size="sm" />
+            <BrandLogo size="sm" priority />
           </Link>
 
           {/* Center: Child Switcher (DESIGN §5: Always-present child indicator) */}

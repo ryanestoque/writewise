@@ -181,8 +181,8 @@ function AcceptInviteForm() {
   if (isVerifyingSession) {
     return (
       <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs p-8 text-center space-y-4">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-warm-sm ring-4 ring-brand-100/70">
-          <BrandIcon className="size-6" />
+        <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-card shadow-warm-sm ring-4 ring-brand-100/70 border border-border/60 overflow-hidden p-1.5">
+          <BrandIcon className="size-full object-contain" priority />
         </div>
         <div className="space-y-2">
           <Spinner className="mx-auto size-6 text-primary" />
@@ -197,8 +197,8 @@ function AcceptInviteForm() {
     return (
       <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs transition-all duration-200" role="region" aria-label="Invitation Status">
         <CardHeader className="space-y-2.5 text-center pb-3">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-warm-sm ring-4 ring-brand-100/70">
-            <BrandIcon className="size-6" />
+          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-card shadow-warm-sm ring-4 ring-brand-100/70 border border-border/60 overflow-hidden p-1.5">
+            <BrandIcon className="size-full object-contain" priority />
           </div>
           <div>
             <h1 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-2xl">
@@ -302,8 +302,8 @@ function AcceptInviteForm() {
   return (
     <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs transition-all duration-200">
       <CardHeader className="space-y-3 text-center pb-4">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-warm-sm ring-4 ring-brand-100/70">
-          <BrandIcon className="size-6" />
+        <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-card shadow-warm-sm ring-4 ring-brand-100/70 border border-border/60 overflow-hidden p-1.5">
+          <BrandIcon className="size-full object-contain" priority />
         </div>
         <div>
           <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">

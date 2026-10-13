@@ -10,7 +10,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
@@ -25,7 +24,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
-import { BrandIcon } from "@/components/brand-logo";
+import { BrandLogo } from "@/components/brand-logo";
 import {
   CircleAlertIcon,
   EyeIcon,
@@ -336,18 +335,11 @@ function LoginForm() {
 
   return (
     <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs transition-all duration-200">
-      <CardHeader className="space-y-3 text-center pb-4">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-warm-sm ring-4 ring-brand-100/70">
-          <BrandIcon className="size-6" />
+      <CardHeader className="space-y-1.5 text-center pb-2 pt-6">
+        <div className="flex justify-center -my-1">
+          <BrandLogo size="xl" priority />
         </div>
-        <div>
-          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Write<span className="text-primary">Wise</span>
-          </h1>
-          <CardDescription className="mt-1 text-sm text-muted-foreground">
-            {/* Sign in to your account */}
-          </CardDescription>
-        </div>
+        <h1 className="sr-only">WriteWise Login</h1>
       </CardHeader>
 
       <CardContent className="space-y-4">

@@ -69,3 +69,4 @@ research/data/
 # Temporary / scratch debug files
 scratch/
 backend/scratch/
+output/

@@ -22,6 +22,19 @@ const learningCurve = localFont({
 export const metadata: Metadata = {
   title: "WriteWise",
   description: "Cursive Handwriting Assessment and Progress Monitoring System",
+  manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/images/app_icons/writewise-favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/images/app_icons/writewise-favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/images/app_icons/writewise-favicon-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/images/app_icons/writewise-app-icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [
+      { url: "/images/app_icons/writewise-app-icon-180.png", sizes: "180x180", type: "image/png" },
+    ],
+    shortcut: "/images/app_icons/writewise-favicon-32.png",
+  },
 };
 
 export default function RootLayout({

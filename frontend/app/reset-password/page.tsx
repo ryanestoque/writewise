@@ -296,8 +296,8 @@ function ResetPasswordForm() {
   if (isVerifyingSession) {
     return (
       <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs p-8 text-center space-y-4">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-warm-sm ring-4 ring-brand-100/70">
-          <BrandIcon className="size-6" />
+        <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-card shadow-warm-sm ring-4 ring-brand-100/70 border border-border/60 overflow-hidden p-1.5">
+          <BrandIcon className="size-full object-contain" priority />
         </div>
         <div className="space-y-2">
           <Spinner className="mx-auto size-6 text-primary" />

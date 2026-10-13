@@ -122,8 +122,8 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
               tooltip="WriteWise — Teacher Portal"
               className="h-13 group-data-[collapsible=icon]:p-0"
             >
-              <div className="flex aspect-square size-8.5 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shadow-xs border border-brand-200/80 dark:border-brand-900/80 shrink-0">
-                <BrandIcon className="size-4.5 text-primary" />
+              <div className="flex aspect-square size-8.5 items-center justify-center rounded-xl bg-card border border-border/80 shadow-xs shrink-0 overflow-hidden p-0.5">
+                <BrandIcon className="size-full object-contain" />
               </div>
               <div className="grid flex-1 min-w-0 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="font-heading font-bold text-sidebar-foreground tracking-tight text-[15px] truncate">

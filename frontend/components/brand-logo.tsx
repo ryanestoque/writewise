@@ -1,103 +1,125 @@
 import * as React from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-interface BrandIconProps extends React.SVGProps<SVGSVGElement> {
+export interface BrandIconProps
+  extends Omit<React.ComponentProps<typeof Image>, "src" | "alt"> {
   className?: string;
+  alt?: string;
+  size?: number;
+  priority?: boolean;
 }
 
 /**
- * WriteWise custom pen-flourish brand icon mark.
- * Combines an angled fountain pen nib with an organic cursive ink baseline loop.
+ * WriteWise custom brand icon mark.
+ * Uses the official calligraphic 'W' fountain-pen icon.
  */
-export function BrandIcon({ className, ...props }: BrandIconProps) {
+export function BrandIcon({
+  className,
+  alt = "WriteWise Icon",
+  size = 48,
+  priority = false,
+  ...props
+}: BrandIconProps) {
   return (
-    <svg
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-      className={cn("size-6 shrink-0", className)}
+    <Image
+      src="/images/app_icons/writewise-app-icon-180.png"
+      alt={alt}
+      width={size}
+      height={size}
+      priority={priority}
+      className={cn("object-contain shrink-0", className)}
       {...props}
-    >
-      <defs>
-        <linearGradient id="brand-nib-grad" x1="6" y1="4" x2="26" y2="28" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="currentColor" stopOpacity="0.95" />
-          <stop offset="100%" stopColor="currentColor" stopOpacity="0.75" />
-        </linearGradient>
-      </defs>
-      {/* Pen nib & body */}
-      <path
-        d="M19.5 4.5L27.5 12.5L16.5 23.5L9.5 24.5L10.5 17.5L19.5 4.5Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Pen nib tip breather hole & slit */}
-      <path
-        d="M13.5 14.5L18.5 19.5"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-      />
-      <circle cx="16" cy="17" r="1" fill="currentColor" />
-      {/* Cursive ink flourish sweep along baseline */}
-      <path
-        d="M4.5 27C7 26 9.5 23.5 12 25C15 26.8 19 28 27.5 25"
-        stroke="currentColor"
-        strokeWidth="2.25"
-        strokeLinecap="round"
-      />
-    </svg>
+    />
   );
 }
 
-interface BrandLogoProps extends React.HTMLAttributes<HTMLDivElement> {
-  size?: "sm" | "md" | "lg";
+export interface BrandLogoProps
+  extends React.HTMLAttributes<HTMLDivElement> {
+  size?: "sm" | "md" | "lg" | "xl";
+  variant?: "logo" | "mark";
   showSubtitle?: boolean;
   subtitleText?: string;
+  priority?: boolean;
+  imageClassName?: string;
 }
 
+/**
+ * WriteWise brand logo component.
+ * Supports the official full horizontal logo (`variant="logo"`) or the mark + text combination (`variant="mark"`).
+ */
 export function BrandLogo({
   size = "md",
+  variant = "logo",
   showSubtitle = false,
   subtitleText = "Cursive Assessment Portal",
+  priority = false,
+  imageClassName,
   className,
   ...props
 }: BrandLogoProps) {
+  if (variant === "logo") {
+    const heightClasses = {
+      sm: "h-7.5 w-auto",
+      md: "h-9 w-auto",
+      lg: "h-12 w-auto",
+      xl: "h-16 sm:h-20 w-auto",
+    };
+
+    return (
+      <div className={cn("inline-flex items-center gap-2.5", className)} {...props}>
+        <Image
+          src="/images/app_icons/writewise-logo.png"
+          alt="WriteWise"
+          width={280}
+          height={109}
+          priority={priority}
+          className={cn("object-contain select-none", heightClasses[size], imageClassName)}
+        />
+        {showSubtitle && (
+          <span className="text-xs font-medium text-muted-foreground border-l border-border pl-2.5 py-0.5">
+            {subtitleText}
+          </span>
+        )}
+      </div>
+    );
+  }
+
   const iconSizes = {
-    sm: "size-7 p-1.5 rounded-md",
-    md: "size-10 p-2 rounded-xl",
-    lg: "size-12 p-2.5 rounded-2xl",
+    sm: "size-7 rounded-lg",
+    md: "size-9 rounded-xl",
+    lg: "size-11 rounded-2xl",
+    xl: "size-14 rounded-2xl",
   };
 
   const textSizes = {
     sm: "text-lg",
     md: "text-2xl",
     lg: "text-3xl",
+    xl: "text-4xl",
   };
 
   return (
-    <div className={cn("flex items-center gap-3", className)} {...props}>
+    <div className={cn("flex items-center gap-2.5", className)} {...props}>
       <div
         className={cn(
-          "flex items-center justify-center bg-primary text-primary-foreground shadow-warm-sm transition-transform duration-200",
+          "flex items-center justify-center bg-card border border-border/80 shadow-xs overflow-hidden shrink-0",
           iconSizes[size]
         )}
       >
-        <BrandIcon className="size-full" />
+        <BrandIcon className="size-full object-contain p-0.5" priority={priority} />
       </div>
       <div className="flex flex-col text-left">
         <span
           className={cn(
-            "font-heading font-bold tracking-tight text-foreground",
+            "font-heading font-bold tracking-tight text-foreground leading-none",
             textSizes[size]
           )}
         >
           Write<span className="text-primary">Wise</span>
         </span>
         {showSubtitle && (
-          <span className="text-xs font-medium text-muted-foreground">
+          <span className="text-xs font-medium text-muted-foreground mt-0.5">
             {subtitleText}
           </span>
         )}
