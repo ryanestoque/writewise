@@ -18,639 +18,20 @@ import {
   ArrowLeftIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ListOrderedIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CursiveStrokeCanvas } from "@/components/cursive-stroke-canvas";
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  CURSIVE_ALPHABET,
+  LetterGuideItem,
+  LetterZone,
+} from "@/components/cursive-guide-data";
 
-export type LetterZone = "ascender" | "midline" | "descender";
-
-export interface LetterGuideItem {
-  id: string; // "A", "B", ...
-  upper: string;
-  lower: string;
-  name: string;
-  zone: LetterZone;
-  zoneLabel: "Ascender" | "Midline" | "Descender";
-  isHighJoiner?: boolean;
-  bothExtremes?: boolean;
-  slantDegree: number; // default ~68°
-  strokeSummary: string;
-  upperSteps: string[];
-  lowerSteps: string[];
-  coachingTip: string;
-  commonPitfall: string;
-  practiceWords: string[];
-  keywords: string[];
-}
-
-export const CURSIVE_ALPHABET: LetterGuideItem[] = [
-  {
-    id: "A",
-    upper: "A",
-    lower: "a",
-    name: "Letter Aa",
-    zone: "midline",
-    zoneLabel: "Midline",
-    slantDegree: 68,
-    strokeSummary: "Smooth oval counter with crisp baseline tie-off and exit swash.",
-    upperSteps: [
-      "Begin near baseline; slant upward forward to touch headline.",
-      "Sweep down to baseline on left side forming wide oval body.",
-      "Climb back up to top, pull straight down to baseline, and tie off with small horizontal exit loop."
-    ],
-    lowerSteps: [
-      "Begin at baseline; sweep slantingly up to dotted midline.",
-      "Curve back down left to baseline, closing complete oval counter.",
-      "Pull down straight along right side to baseline with sharp upward exit curve."
-    ],
-    coachingTip: "Ensure the lowercase 'a' oval is fully closed before pulling down the right stem, otherwise it resembles 'u' or 'ci'.",
-    commonPitfall: "Leaving the top oval counter open or failing to touch the dotted midline.",
-    practiceWords: ["apple", "ant", "animal", "around"],
-    keywords: ["a", "apple", "vowel", "midline", "oval", "counter"],
-  },
-  {
-    id: "B",
-    upper: "B",
-    lower: "b",
-    name: "Letter Bb",
-    zone: "ascender",
-    zoneLabel: "Ascender",
-    isHighJoiner: true,
-    slantDegree: 68,
-    strokeSummary: "Tall ascender loop to headline with high horizontal bridge join at midline.",
-    upperSteps: [
-      "Slanted downstroke from headline to baseline with small entry hook.",
-      "Retrace up to form upper lobe touching headline and midline.",
-      "Form lower lobe resting flat on baseline, tucked with inner loop."
-    ],
-    lowerSteps: [
-      "Upward continuous sweep from baseline reaching headline.",
-      "Loop backward and pull straight down along slant to baseline.",
-      "Climb back to dotted midline, form small right-hand loop, and finish with a high horizontal bridge."
-    ],
-    coachingTip: "Crucial join: The lowercase 'b' bridge must connect directly to the next letter from the midline without dipping to the baseline.",
-    commonPitfall: "Dropping the exit bridge down to the baseline, which erroneously turns 'b' into an 'l' or 'lo'.",
-    practiceWords: ["ball", "bird", "blue", "book"],
-    keywords: ["b", "ball", "ascender", "tall", "loop", "bridge", "high joiner"],
-  },
-  {
-    id: "C",
-    upper: "C",
-    lower: "c",
-    name: "Letter Cc",
-    zone: "midline",
-    zoneLabel: "Midline",
-    slantDegree: 68,
-    strokeSummary: "Graceful open crescent resting on baseline with fluid forward tilt.",
-    upperSteps: [
-      "Entry loop just below headline.",
-      "Sweep gracefully along headline, curve around down to baseline.",
-      "Finish with upward sweeping exit swash."
-    ],
-    lowerSteps: [
-      "Sweep up slantingly from baseline to touch dotted midline.",
-      "Retrace back along curve, form open rounded bowl resting on baseline.",
-      "Sweep forward with smooth exit stroke to join subsequent letter."
-    ],
-    coachingTip: "Keep the back curve rounded and slanted forward; avoid sharp corners or flattening.",
-    commonPitfall: "Leaning backwards or making the mouth of the letter too narrow.",
-    practiceWords: ["cat", "cup", "clean", "color"],
-    keywords: ["c", "cat", "midline", "short", "crescent", "curve"],
-  },
-  {
-    id: "D",
-    upper: "D",
-    lower: "d",
-    name: "Letter Dd",
-    zone: "ascender",
-    zoneLabel: "Ascender",
-    slantDegree: 68,
-    strokeSummary: "Rounded oval counter with tall straight ascender stem reaching headline.",
-    upperSteps: [
-      "Straight downstroke from headline to baseline.",
-      "Form small baseline knot at bottom, then sweep wide right-hand arc to headline.",
-      "Tuck inward at headline with decorative loop."
-    ],
-    lowerSteps: [
-      "Form standard oval counter starting from baseline up to dotted midline.",
-      "Climb tall and straight up to headline along the forward slant angle.",
-      "Retrace down the same vertical stem to baseline, finishing with an exit curve."
-    ],
-    coachingTip: "Retrace down the stem neatly; do not let the ascender loop open up into an accidental 'l'.",
-    commonPitfall: "Separating the oval body from the ascender stem, creating a print-like gap.",
-    practiceWords: ["dog", "door", "drum", "dance"],
-    keywords: ["d", "dog", "ascender", "tall", "stem", "headline"],
-  },
-  {
-    id: "E",
-    upper: "E",
-    lower: "e",
-    name: "Letter Ee",
-    zone: "midline",
-    zoneLabel: "Midline",
-    slantDegree: 68,
-    strokeSummary: "Compact looped letter filling the zone between baseline and dotted midline.",
-    upperSteps: [
-      "Upper curved bowl starting at headline and looping at dotted midline.",
-      "Lower larger bowl curving from midline down to baseline.",
-      "Smooth exit swash along baseline."
-    ],
-    lowerSteps: [
-      "Slanted upward entry from baseline halfway to dotted midline.",
-      "Loop gently leftward touching dotted midline.",
-      "Cross over down to baseline, finishing with upward forward exit curve."
-    ],
-    coachingTip: "Keep the eye of the lowercase 'e' open and clearly visible so it does not collapse into a closed line.",
-    commonPitfall: "Pinching the loop shut so it resembles 'i' without a dot.",
-    practiceWords: ["egg", "eagle", "earth", "every"],
-    keywords: ["e", "egg", "vowel", "midline", "loop", "eye"],
-  },
-  {
-    id: "F",
-    upper: "F",
-    lower: "f",
-    name: "Letter Ff",
-    zone: "ascender",
-    zoneLabel: "Ascender",
-    bothExtremes: true,
-    slantDegree: 68,
-    strokeSummary: "Unique dual-zone letter: upper loop to headline and lower loop into descender space.",
-    upperSteps: [
-      "Wavy decorative horizontal cap at headline.",
-      "Slanted stem down to baseline with left bottom hook.",
-      "Neat horizontal crossbar across the dotted midline."
-    ],
-    lowerSteps: [
-      "Long upward sweep from baseline touching headline.",
-      "Loop back and pull straight down through baseline into descender space.",
-      "Loop forward to right, climb back up to baseline, and tie off with small knot/bridge."
-    ],
-    coachingTip: "The knot of lowercase 'f' must close exactly on the baseline before joining the next letter.",
-    commonPitfall: "Floating the lower descender loop above the baseline or cutting the top loop too short.",
-    practiceWords: ["fish", "flag", "frog", "family"],
-    keywords: ["f", "fish", "ascender", "descender", "two-way", "headline", "tail"],
-  },
-  {
-    id: "G",
-    upper: "G",
-    lower: "g",
-    name: "Letter Gg",
-    zone: "descender",
-    zoneLabel: "Descender",
-    slantDegree: 68,
-    strokeSummary: "Midline oval body with fluid forward-crossing descender tail loop.",
-    upperSteps: [
-      "Sweeping entry stroke from baseline to headline.",
-      "Sharp peak loop at headline, curving down into midline lobe.",
-      "Pull down below baseline into descender tail loop crossing at baseline."
-    ],
-    lowerSteps: [
-      "Standard oval counter between baseline and dotted midline.",
-      "Pull down straight along slant through baseline into descender zone.",
-      "Loop forward to left, crossing neatly right at the baseline line into exit stroke."
-    ],
-    coachingTip: "The intersection of the lower loop must occur precisely at the baseline to avoid messy letter joins.",
-    commonPitfall: "Crossing the tail too low or making the tail loop excessively bulbous.",
-    practiceWords: ["girl", "green", "game", "grass"],
-    keywords: ["g", "girl", "descender", "tail", "loop", "baseline"],
-  },
-  {
-    id: "H",
-    upper: "H",
-    lower: "h",
-    name: "Letter Hh",
-    zone: "ascender",
-    zoneLabel: "Ascender",
-    slantDegree: 68,
-    strokeSummary: "Tall ascender loop to headline paired with smooth midline arch down to baseline.",
-    upperSteps: [
-      "Left slanted stem with headline entry curve.",
-      "Right vertical stem from headline to baseline.",
-      "Connecting loop at dotted midline binding both stems together."
-    ],
-    lowerSteps: [
-      "Ascender loop starting at baseline, climbing to headline, pulling down to baseline.",
-      "Retrace up stem into smooth rounded arch touching dotted midline.",
-      "Curve down to baseline with forward exit curve."
-    ],
-    coachingTip: "The arch must hit the dotted midline with a rounded peak, matching the rhythm of 'm' and 'n'.",
-    commonPitfall: "Separating the ascender loop and arch, making it look like 'l' and 'r'.",
-    practiceWords: ["hat", "house", "hand", "happy"],
-    keywords: ["h", "hat", "ascender", "tall", "arch", "headline"],
-  },
-  {
-    id: "I",
-    upper: "I",
-    lower: "i",
-    name: "Letter Ii",
-    zone: "midline",
-    zoneLabel: "Midline",
-    slantDegree: 68,
-    strokeSummary: "Simple midline slant with straight downstroke and neat singular dot.",
-    upperSteps: [
-      "Horizontal sweep along baseline, rising smoothly to headline.",
-      "Curving downstroke down to baseline with open crescent bottom."
-    ],
-    lowerSteps: [
-      "Slanted upward stroke from baseline to dotted midline.",
-      "Retrace down along same slant to baseline with sharp exit curve.",
-      "Place single crisp dot directly above stem, just over the dotted midline."
-    ],
-    coachingTip: "Lift pencil only to dot the 'i' after completing the entire continuous cursive word.",
-    commonPitfall: "Drawing a circle, heart, or dash instead of a clean dot, or dotting too high.",
-    practiceWords: ["ink", "ice", "igloo", "island"],
-    keywords: ["i", "ink", "vowel", "midline", "short", "dot"],
-  },
-  {
-    id: "J",
-    upper: "J",
-    lower: "j",
-    name: "Letter Jj",
-    zone: "descender",
-    zoneLabel: "Descender",
-    slantDegree: 68,
-    strokeSummary: "Straight stem plunging through baseline into slender forward tail loop.",
-    upperSteps: [
-      "Start below baseline, sweep upward through midline to headline.",
-      "Plunge straight down below baseline, looping forward to cross at baseline."
-    ],
-    lowerSteps: [
-      "Slanted entry from baseline to dotted midline.",
-      "Pull straight down through baseline into descender space.",
-      "Forward loop crossing at baseline, finished with single dot above midline."
-    ],
-    coachingTip: "Keep the lower tail slender and parallel to the slant of 'g' and 'y'.",
-    commonPitfall: "Forgetting to place the dot or making the lower loop backwards.",
-    practiceWords: ["jar", "jump", "jeep", "jungle"],
-    keywords: ["j", "jar", "descender", "tail", "dot", "loop"],
-  },
-  {
-    id: "K",
-    upper: "K",
-    lower: "k",
-    name: "Letter Kk",
-    zone: "ascender",
-    zoneLabel: "Ascender",
-    slantDegree: 68,
-    strokeSummary: "Tall ascender loop with centered midline tuck and angled baseline kick.",
-    upperSteps: [
-      "Left vertical stem with top entry loop.",
-      "Upper diagonal arm from headline into center stem at midline.",
-      "Lower diagonal leg from midline to baseline with exit curve."
-    ],
-    lowerSteps: [
-      "Tall ascender loop reaching headline, pulling down to baseline.",
-      "Retrace up to dotted midline, form small enclosed eye loop.",
-      "Kick out diagonally down to baseline with smooth exit stroke."
-    ],
-    coachingTip: "Keep the tuck loop small and anchored right beneath the dotted midline.",
-    commonPitfall: "Making the center knot too large or failing to retrace neatly along the stem.",
-    practiceWords: ["kite", "king", "key", "kitten"],
-    keywords: ["k", "kite", "ascender", "tall", "tuck", "kick"],
-  },
-  {
-    id: "L",
-    upper: "L",
-    lower: "l",
-    name: "Letter Ll",
-    zone: "ascender",
-    zoneLabel: "Ascender",
-    slantDegree: 68,
-    strokeSummary: "Graceful sweeping loop reaching headline with wide forward tilt.",
-    upperSteps: [
-      "Top loop at headline, pulling down along forward slant to baseline.",
-      "Small bottom knot resting flat on baseline, swept out with horizontal wave."
-    ],
-    lowerSteps: [
-      "Smooth upward climb from baseline all the way to top headline.",
-      "Loop gently leftward and pull straight down along slant to baseline.",
-      "Curve forward smoothly along baseline into exit stroke."
-    ],
-    coachingTip: "Letter 'l' must reach the top headline to clearly differentiate it from 'e'.",
-    commonPitfall: "Stunting the ascender height so it looks like an oversized 'e'.",
-    practiceWords: ["lion", "leaf", "lake", "light"],
-    keywords: ["l", "lion", "ascender", "tall", "loop", "headline"],
-  },
-  {
-    id: "M",
-    upper: "M",
-    lower: "m",
-    name: "Letter Mm",
-    zone: "midline",
-    zoneLabel: "Midline",
-    slantDegree: 68,
-    strokeSummary: "Three uniform downward hills with rounded crests touching dotted midline.",
-    upperSteps: [
-      "Starting entry curve at headline.",
-      "Three graceful downward stems from headline to baseline with rounded tops.",
-      "Finish with upward baseline exit swash."
-    ],
-    lowerSteps: [
-      "Entry curve from baseline to dotted midline, down to baseline.",
-      "Retrace up to midline for second hill, down to baseline.",
-      "Retrace up to midline for third hill, down to baseline with upward exit curve."
-    ],
-    coachingTip: "Count three full humps. All three humps must touch the dotted midline with equal width.",
-    commonPitfall: "Drawing only two humps (which becomes 'n') or making sharp pointed peaks like 'w'.",
-    practiceWords: ["moon", "milk", "map", "mother"],
-    keywords: ["m", "moon", "midline", "short", "hills", "humps"],
-  },
-  {
-    id: "N",
-    upper: "N",
-    lower: "n",
-    name: "Letter Nn",
-    zone: "midline",
-    zoneLabel: "Midline",
-    slantDegree: 68,
-    strokeSummary: "Two uniform downward hills with rounded crests touching dotted midline.",
-    upperSteps: [
-      "Starting loop at headline, drop to baseline.",
-      "Climb back to headline, pull second stem down to baseline with exit curve."
-    ],
-    lowerSteps: [
-      "Entry curve from baseline to dotted midline, drop to baseline.",
-      "Retrace up to midline for second hill, drop to baseline with exit curve."
-    ],
-    coachingTip: "Ensure the peaks are softly rounded at the midline, maintaining equal spacing.",
-    commonPitfall: "Adding an extra hump, causing it to be misread as 'm'.",
-    practiceWords: ["nest", "nut", "net", "name"],
-    keywords: ["n", "nest", "midline", "short", "hills", "humps"],
-  },
-  {
-    id: "O",
-    upper: "O",
-    lower: "o",
-    name: "Letter Oo",
-    zone: "midline",
-    zoneLabel: "Midline",
-    isHighJoiner: true,
-    slantDegree: 68,
-    strokeSummary: "Complete oval counter with high horizontal bridge connecting at midline.",
-    upperSteps: [
-      "Sweeping oval starting at headline, descending to baseline.",
-      "Climb back up to headline, finishing with inner loop."
-    ],
-    lowerSteps: [
-      "Slanted entry from baseline to dotted midline.",
-      "Curve counter-clockwise to baseline, closing full oval at dotted midline.",
-      "Finish with horizontal exit bridge across midline to link to subsequent letter."
-    ],
-    coachingTip: "Letter 'o' connects from the top (midline). Do not drop the stroke down to the baseline to join.",
-    commonPitfall: "Connecting from the bottom of the oval, which erroneously turns 'o' into 'a'.",
-    practiceWords: ["owl", "open", "orange", "ocean"],
-    keywords: ["o", "owl", "vowel", "midline", "oval", "high joiner", "bridge"],
-  },
-  {
-    id: "P",
-    upper: "P",
-    lower: "p",
-    name: "Letter Pp",
-    zone: "descender",
-    zoneLabel: "Descender",
-    slantDegree: 68,
-    strokeSummary: "Straight stem plunging below baseline, retraced into rounded midline lobe.",
-    upperSteps: [
-      "Straight stem from headline to baseline with entry hook.",
-      "Upper rounded bowl from headline down to dotted midline."
-    ],
-    lowerSteps: [
-      "Slant up from baseline to dotted midline.",
-      "Pull straight down along slant into descender space below baseline.",
-      "Retrace back up stem to baseline and form rounded lobe up to midline, closing at baseline with exit curve."
-    ],
-    coachingTip: "Retrace up the vertical stem neatly; the lobe must touch both midline and baseline.",
-    commonPitfall: "Leaving the lobe open or not descending deep enough below the baseline.",
-    practiceWords: ["pen", "pig", "plant", "paper"],
-    keywords: ["p", "pen", "descender", "tail", "stem", "lobe"],
-  },
-  {
-    id: "Q",
-    upper: "Q",
-    lower: "q",
-    name: "Letter Qq",
-    zone: "descender",
-    zoneLabel: "Descender",
-    slantDegree: 68,
-    strokeSummary: "Midline oval body with backward-looping descender tail hooking to baseline.",
-    upperSteps: [
-      "Full oval loop like capital 'O'.",
-      "Graceful loop swash resting flat across baseline."
-    ],
-    lowerSteps: [
-      "Standard oval counter between baseline and dotted midline.",
-      "Pull straight down along slant into descender zone.",
-      "Loop backward (to the right), climb to baseline, and finish with forward exit hook."
-    ],
-    coachingTip: "Unlike 'g' which loops left/forward, 'q' loops backward/rightward before connecting.",
-    commonPitfall: "Looping to the left, which completely transforms 'q' into 'g'.",
-    practiceWords: ["queen", "quiet", "quick", "quilt"],
-    keywords: ["q", "queen", "descender", "tail", "backward loop", "oval"],
-  },
-  {
-    id: "R",
-    upper: "R",
-    lower: "r",
-    name: "Letter Rr",
-    zone: "midline",
-    zoneLabel: "Midline",
-    slantDegree: 68,
-    strokeSummary: "Distinctive midline shoulder step with horizontal slide and curved exit.",
-    upperSteps: [
-      "Vertical stem from headline to baseline.",
-      "Upper bowl to midline, then slanted leg down to baseline with exit curve."
-    ],
-    lowerSteps: [
-      "Slant upward from baseline to dotted midline.",
-      "Make a tiny step slightly above midline, horizontal flat shoulder slide.",
-      "Curve down to baseline with smooth upward exit curve."
-    ],
-    coachingTip: "The horizontal shoulder at the dotted midline is the hallmark of clear cursive 'r'.",
-    commonPitfall: "Omitting the shoulder step so the letter looks like a single slanted spike or 'i'.",
-    practiceWords: ["rose", "rain", "river", "rabbit"],
-    keywords: ["r", "rose", "midline", "short", "shoulder", "step"],
-  },
-  {
-    id: "S",
-    upper: "S",
-    lower: "s",
-    name: "Letter Ss",
-    zone: "midline",
-    zoneLabel: "Midline",
-    slantDegree: 68,
-    strokeSummary: "Slanted sweep to midline with rounded belly retracing along baseline.",
-    upperSteps: [
-      "Slanted entry from baseline to headline with top loop.",
-      "Swelling rounded belly down to baseline with inner tie-off loop."
-    ],
-    lowerSteps: [
-      "Slant upward from baseline to dotted midline with gentle peak.",
-      "Curve inward forming rounded belly down to baseline.",
-      "Retrace back along baseline and exit smoothly to join next letter."
-    ],
-    coachingTip: "Curve the belly well before retracing along the baseline.",
-    commonPitfall: "Making the belly too flat or failing to retrace on the baseline before joining.",
-    practiceWords: ["sun", "star", "ship", "smile"],
-    keywords: ["s", "sun", "midline", "short", "belly", "retrace"],
-  },
-  {
-    id: "T",
-    upper: "T",
-    lower: "t",
-    name: "Letter Tt",
-    zone: "ascender",
-    zoneLabel: "Ascender",
-    slantDegree: 68,
-    strokeSummary: "Tall straight ascender stem reaching nearly to headline, crossed neatly at midline.",
-    upperSteps: [
-      "Wavy horizontal cap at headline.",
-      "Slanted stem down to baseline with left bottom curl."
-    ],
-    lowerSteps: [
-      "Start at baseline, climb straight up along slant nearly to headline.",
-      "Retrace down along same line to baseline with upward exit curve.",
-      "Cross neatly with horizontal stroke right along the dotted midline."
-    ],
-    coachingTip: "Cross the 't' right on the dotted midline; lift pencil to cross only after finishing the word.",
-    commonPitfall: "Making a loop in the stem (which turns it into 'l') or crossing too high.",
-    practiceWords: ["tree", "tiger", "train", "table"],
-    keywords: ["t", "tree", "ascender", "tall", "stem", "crossbar", "midline"],
-  },
-  {
-    id: "U",
-    upper: "U",
-    lower: "u",
-    name: "Letter Uu",
-    zone: "midline",
-    zoneLabel: "Midline",
-    slantDegree: 68,
-    strokeSummary: "Rounded valley resting on baseline, filling the zone to dotted midline.",
-    upperSteps: [
-      "Entry hook at headline, drop to baseline.",
-      "Rounded bowl rising to headline, down to baseline with exit curve."
-    ],
-    lowerSteps: [
-      "Slant to dotted midline, curve down into rounded valley on baseline.",
-      "Climb back up to dotted midline, pull down straight to baseline with exit curve."
-    ],
-    coachingTip: "The base of 'u' must be a rounded cup, unlike 'v' which has a sharper corner and high join.",
-    commonPitfall: "Making pointed bottoms or forgetting the right downward stem.",
-    practiceWords: ["under", "uncle", "umbrella", "uniform"],
-    keywords: ["u", "umbrella", "vowel", "midline", "valley", "cup"],
-  },
-  {
-    id: "V",
-    upper: "V",
-    lower: "v",
-    name: "Letter Vv",
-    zone: "midline",
-    zoneLabel: "Midline",
-    isHighJoiner: true,
-    slantDegree: 68,
-    strokeSummary: "Midline dip with high horizontal exit bridge connecting at dotted midline.",
-    upperSteps: [
-      "Entry loop at headline, drop to baseline.",
-      "Climb back to headline, finishing with small horizontal top bridge."
-    ],
-    lowerSteps: [
-      "Entry curve to dotted midline, smooth dip down to baseline.",
-      "Climb up to dotted midline with a small horizontal bridge to join next letter."
-    ],
-    coachingTip: "High joiner: Connects from the dotted midline. Do not drop to the baseline.",
-    commonPitfall: "Dropping the exit stroke to the baseline, which transforms 'v' into 'u'.",
-    practiceWords: ["van", "vine", "vase", "voice"],
-    keywords: ["v", "van", "midline", "short", "bridge", "high joiner"],
-  },
-  {
-    id: "W",
-    upper: "W",
-    lower: "w",
-    name: "Letter Ww",
-    zone: "midline",
-    zoneLabel: "Midline",
-    isHighJoiner: true,
-    slantDegree: 68,
-    strokeSummary: "Double rounded baseline valleys finishing with high horizontal bridge at midline.",
-    upperSteps: [
-      "Entry loop at headline, double valley dipping to baseline.",
-      "Finishing with top loop at headline."
-    ],
-    lowerSteps: [
-      "Double valley from dotted midline to baseline with uniform width.",
-      "End with high horizontal connecting bridge across dotted midline."
-    ],
-    coachingTip: "Keep both valleys equal in depth and width; exit high across the midline.",
-    commonPitfall: "Uneven valley sizes or dropping the exit stroke down to the baseline.",
-    practiceWords: ["water", "wind", "wood", "whale"],
-    keywords: ["w", "water", "midline", "short", "double valley", "high joiner"],
-  },
-  {
-    id: "X",
-    upper: "X",
-    lower: "x",
-    name: "Letter Xx",
-    zone: "midline",
-    zoneLabel: "Midline",
-    slantDegree: 68,
-    strokeSummary: "Curved stroke from midline to baseline crossed by opposite diagonal line.",
-    upperSteps: [
-      "Compound curve from headline to baseline, crossed by diagonal stroke."
-    ],
-    lowerSteps: [
-      "Curved stroke from dotted midline to baseline with exit curve.",
-      "Cross with opposite diagonal stroke intersecting in the center of the x-height zone."
-    ],
-    coachingTip: "Cross right at the center between dotted midline and baseline.",
-    commonPitfall: "Crossing too high or making both strokes completely straight like print 'x'.",
-    practiceWords: ["box", "fox", "six", "xylophone"],
-    keywords: ["x", "box", "midline", "cross", "diagonal"],
-  },
-  {
-    id: "Y",
-    upper: "Y",
-    lower: "y",
-    name: "Letter Yy",
-    zone: "descender",
-    zoneLabel: "Descender",
-    slantDegree: 68,
-    strokeSummary: "Midline cup with straight stem plunging below baseline into forward tail loop.",
-    upperSteps: [
-      "Valley from headline to baseline and back to headline.",
-      "Straight stem down below baseline with forward tail loop crossing at baseline."
-    ],
-    lowerSteps: [
-      "Entry curve and rounded cup between dotted midline and baseline.",
-      "Pull down straight along slant through baseline into descender space.",
-      "Loop forward to left, crossing neatly right at baseline into exit stroke."
-    ],
-    coachingTip: "Ensure the cup reaches the dotted midline before pulling down into the tail.",
-    commonPitfall: "Shallow descender tail or crossing the loop above the baseline.",
-    practiceWords: ["yellow", "yarn", "yard", "yogurt"],
-    keywords: ["y", "yellow", "descender", "tail", "loop", "cup"],
-  },
-  {
-    id: "Z",
-    upper: "Z",
-    lower: "z",
-    name: "Letter Zz",
-    zone: "descender",
-    zoneLabel: "Descender",
-    slantDegree: 68,
-    strokeSummary: "Midline wave with baseline notch and fluid descender tail loop.",
-    upperSteps: [
-      "Wave along headline, diagonal to baseline, lower cursive loop below baseline."
-    ],
-    lowerSteps: [
-      "Curved shoulder along dotted midline, small notch sitting on baseline.",
-      "Loop down into descender space below baseline, swinging forward across baseline."
-    ],
-    coachingTip: "The small notch must rest cleanly on the baseline before plunging into the tail loop.",
-    commonPitfall: "Omitting the baseline notch, which makes 'z' look like a cursive '3' or 'g'.",
-    practiceWords: ["zebra", "zoo", "zero", "zigzag"],
-    keywords: ["z", "zebra", "descender", "tail", "notch", "shoulder"],
-  },
-];
+// Re-export data types for backward compatibility
+export { CURSIVE_ALPHABET };
+export type { LetterGuideItem, LetterZone };
 
 interface CursiveGuideDialogProps {
   open: boolean;
@@ -664,18 +45,42 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
   const [selectedLetterId, setSelectedLetterId] = useState<string | null>("A");
   const [mobileView, setMobileView] = useState<"grid" | "detail">("grid");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [activeStepTab, setActiveStepTab] = useState<"lower" | "upper">("lower");
   const isMobile = useIsMobile();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+  const backButtonRef = useRef<HTMLButtonElement>(null);
   const touchStartXRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
+
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       setMobileView("grid");
     }
     onOpenChange(nextOpen);
   };
+
+  // Focus management: when entering detail view on mobile, focus the back button
+  useEffect(() => {
+    if (open && isMobile && mobileView === "detail") {
+      const timer = setTimeout(() => {
+        backButtonRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [open, isMobile, mobileView]);
+
+  const handleBackToGrid = React.useCallback(() => {
+    setMobileView("grid");
+    // Return focus to the letter card that was opened
+    setTimeout(() => {
+      const targetBtn = gridRef.current?.querySelector(
+        `button[data-letter-id="${selectedLetterId}"]`
+      ) as HTMLButtonElement | null;
+      targetBtn?.focus();
+    }, 50);
+  }, [selectedLetterId]);
 
   // Mobile Escape key navigates back to grid instead of dismissing dialog immediately
   useEffect(() => {
@@ -684,12 +89,12 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
-        setMobileView("grid");
+        handleBackToGrid();
       }
     };
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
-  }, [open, isMobile, mobileView]);
+  }, [open, isMobile, mobileView, handleBackToGrid]);
 
   // Global hotkey '/' inside modal to focus search
   useEffect(() => {
@@ -759,6 +164,11 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
       touchStartXRef.current = e.touches[0].clientX;
       touchStartYRef.current = e.touches[0].clientY;
     }
+  };
+
+  const handleTouchCancel = () => {
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -836,10 +246,20 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
             <span className="size-9 rounded-xl bg-primary text-primary-foreground font-heading font-bold text-lg flex items-center justify-center shadow-xs">
               {activeLetter.id}
             </span>
-            <h4 className="text-base font-heading font-semibold text-foreground">
-              {activeLetter.name}
-            </h4>
+            <div>
+              <h3 className="text-base font-heading font-semibold text-foreground leading-tight">
+                {activeLetter.name}
+              </h3>
+              <p className="text-[11px] text-muted-foreground">
+                {activeLetter.zoneLabel} zone • ~{activeLetter.slantDegree}° forward slant
+              </p>
+            </div>
           </div>
+          {activeLetter.isHighJoiner && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/15 text-primary border border-primary/25">
+              High Joiner
+            </span>
+          )}
         </div>
 
         {/* Realistic Animated Penmanship Stroke Display */}
@@ -848,11 +268,68 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
           letterId={activeLetter.id}
         />
 
-        {/* Coaching Tip & Common Pitfall */}
+        {/* Step-by-Step Formation Cues (Clarify Feature) */}
+        <div className="p-3.5 rounded-xl border border-border/80 bg-muted/20 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+              <ListOrderedIcon className="size-3.5 text-primary" aria-hidden="true" />
+              <span>Step-by-Step Formation</span>
+            </div>
+            <div
+              role="radiogroup"
+              aria-label="Formation step case"
+              className="inline-flex items-center p-0.5 rounded-md border border-border/70 bg-background text-[11px]"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={activeStepTab === "lower"}
+                onClick={() => setActiveStepTab("lower")}
+                className={cn(
+                  "px-2 py-0.5 rounded font-medium transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40",
+                  activeStepTab === "lower"
+                    ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Lower ({activeLetter.lower})
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={activeStepTab === "upper"}
+                onClick={() => setActiveStepTab("upper")}
+                className={cn(
+                  "px-2 py-0.5 rounded font-medium transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40",
+                  activeStepTab === "upper"
+                    ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Upper ({activeLetter.upper})
+              </button>
+            </div>
+          </div>
+
+          <ol className="space-y-1.5 text-xs text-muted-foreground pl-0 list-none">
+            {(activeStepTab === "lower" ? activeLetter.lowerSteps : activeLetter.upperSteps).map(
+              (step, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="size-4.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                    {idx + 1}
+                  </span>
+                  <span className="leading-relaxed text-foreground/90">{step}</span>
+                </li>
+              )
+            )}
+          </ol>
+        </div>
+
+        {/* Coaching Tip & Common Pitfall (Design token styling) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="p-3 rounded-xl border border-teal-500/20 bg-teal-500/5 dark:bg-teal-500/10 space-y-1">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-teal-800 dark:text-teal-300">
-              <CheckCircle2Icon className="size-3.5 shrink-0" />
+          <div className="p-3 rounded-xl border border-primary/25 bg-primary/5 dark:bg-primary/10 space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-primary dark:text-primary-foreground">
+              <CheckCircle2Icon className="size-3.5 shrink-0" aria-hidden="true" />
               <span>Coaching Tip</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -860,9 +337,9 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
             </p>
           </div>
 
-          <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 dark:bg-amber-500/10 space-y-1">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
-              <AlertTriangleIcon className="size-3.5 shrink-0" />
+          <div className="p-3 rounded-xl border border-warning/35 bg-warning/10 dark:bg-warning/15 space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-warning-foreground dark:text-warning">
+              <AlertTriangleIcon className="size-3.5 shrink-0" aria-hidden="true" />
               <span>Watch Out</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -906,12 +383,13 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
               {/* Back to Grid Button */}
               <div className="flex items-center gap-2 min-w-0">
                 <button
+                  ref={backButtonRef}
                   type="button"
-                  onClick={() => setMobileView("grid")}
+                  onClick={handleBackToGrid}
                   className="inline-flex items-center gap-1.5 h-10 px-2.5 -ml-1 text-xs font-semibold rounded-lg text-primary hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95"
-                  aria-label="Back to alphabet letters"
+                  aria-label="Back to alphabet letters list"
                 >
-                  <ArrowLeftIcon className="size-4 shrink-0" />
+                  <ArrowLeftIcon className="size-4 shrink-0" aria-hidden="true" />
                   <span>All Letters</span>
                 </button>
                 <DialogTitle className="sr-only">
@@ -934,7 +412,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                   aria-label="Previous letter"
                   title="Previous letter"
                 >
-                  <ChevronLeftIcon className="size-4.5" />
+                  <ChevronLeftIcon className="size-4.5" aria-hidden="true" />
                 </button>
                 <button
                   type="button"
@@ -949,7 +427,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                   aria-label="Next letter"
                   title="Next letter"
                 >
-                  <ChevronRightIcon className="size-4.5" />
+                  <ChevronRightIcon className="size-4.5" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -968,232 +446,244 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
           {/* Search & Case / Zone Filters Bar (Hidden on Mobile Detail View to Maximize Screen Room) */}
           {!(isMobile && mobileView === "detail") && (
             <div className="flex flex-col gap-2.5">
-            {/* Top Bar: Search Input + Case Mode Selector */}
-            <div className="flex items-center gap-2.5">
-              {/* Quick Search */}
-              <div role="search" aria-label="Search cursive letters" className="relative flex-1 min-w-0">
-                <label htmlFor="cursive-search-input" className="sr-only">
-                  Filter cursive alphabet by letter or keyword
-                </label>
-                <SearchIcon
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/70 pointer-events-none"
-                  aria-hidden="true"
-                />
-                <input
-                  id="cursive-search-input"
-                  ref={searchInputRef}
-                  type="search"
-                  placeholder={isMobile ? "Search letters (e.g., 'G', 'loop')..." : "Search letters (e.g., 'G', 'loop')... (Press '/')"}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape" && searchQuery) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleClearSearch();
-                    }
-                  }}
-                  className="w-full h-10 sm:h-9 pl-8 pr-8 text-xs rounded-lg border border-border/80 bg-background placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all [&::-webkit-search-cancel-button]:hidden"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={handleClearSearch}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 size-10 sm:size-7 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer rounded-md hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                    aria-label="Clear search"
-                  >
-                    <XCircleIcon className="size-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {/* Case Mode Selector (Desktop) */}
-              <div
-                role="group"
-                aria-label="Filter letter case"
-                className="hidden sm:inline-flex items-center p-0.5 rounded-lg border border-border/70 bg-muted/40 shrink-0"
-              >
-                <button
-                  type="button"
-                  aria-pressed={caseFilter === "pairs"}
-                  onClick={() => setCaseFilter("pairs")}
-                  className={cn(
-                    "px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer",
-                    caseFilter === "pairs"
-                      ? "bg-background text-foreground shadow-2xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Pairs (Aa)
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={caseFilter === "upper"}
-                  onClick={() => setCaseFilter("upper")}
-                  className={cn(
-                    "px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer",
-                    caseFilter === "upper"
-                      ? "bg-background text-foreground shadow-2xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Upper (A–Z)
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={caseFilter === "lower"}
-                  onClick={() => setCaseFilter("lower")}
-                  className={cn(
-                    "px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer",
-                    caseFilter === "lower"
-                      ? "bg-background text-foreground shadow-2xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Lower (a–z)
-                </button>
-              </div>
-
-              {/* Mobile Filters Toggle */}
-              <button
-                type="button"
-                onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                className={cn(
-                  "sm:hidden relative flex items-center justify-center size-10 rounded-lg border transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer",
-                  isFiltersOpen 
-                    ? "bg-primary/10 border-primary/30 text-primary" 
-                    : "border-border/80 bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                )}
-                aria-label={zoneFilter !== "all" ? `Toggle filters (${zoneFilter} active)` : "Toggle filters"}
-                aria-expanded={isFiltersOpen}
-              >
-                <FilterIcon className="size-4.5" />
-                {zoneFilter !== "all" && (
-                  <span
-                    className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary ring-2 ring-background"
+              {/* Top Bar: Search Input + Case Mode Selector */}
+              <div className="flex items-center gap-2.5">
+                {/* Quick Search */}
+                <div role="search" aria-label="Search cursive letters" className="relative flex-1 min-w-0">
+                  <label htmlFor="cursive-search-input" className="sr-only">
+                    Filter cursive alphabet by letter or keyword
+                  </label>
+                  <SearchIcon
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/70 pointer-events-none"
                     aria-hidden="true"
                   />
-                )}
-              </button>
-            </div>
+                  <input
+                    id="cursive-search-input"
+                    ref={searchInputRef}
+                    type="search"
+                    placeholder={
+                      isMobile
+                        ? "Search letters (e.g., 'G', 'loop')..."
+                        : "Search letters (e.g., 'G', 'loop')... (Press '/')"
+                    }
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape" && searchQuery) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleClearSearch();
+                      }
+                    }}
+                    className="w-full h-10 sm:h-9 pl-8 pr-8 text-xs rounded-lg border border-border/80 bg-background placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all [&::-webkit-search-cancel-button]:hidden"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={handleClearSearch}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 size-10 sm:size-7 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer rounded-md hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                      aria-label="Clear search"
+                    >
+                      <XCircleIcon className="size-3.5" aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
 
-            {/* Active Filter Reminder Tag (Mobile collapsed state) */}
-            {!isFiltersOpen && zoneFilter !== "all" && (
-              <div className="sm:hidden flex items-center gap-1.5 text-xs animate-in fade-in slide-in-from-top-1">
-                <span className="text-[11px] text-muted-foreground">Active filter:</span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-medium">
-                  {zoneFilter === "ascender"
-                    ? "Ascenders"
-                    : zoneFilter === "midline"
-                    ? "Midline"
-                    : zoneFilter === "descender"
-                    ? "Descenders"
-                    : "High Joiners"}
+                {/* Case Mode Selector (Desktop) */}
+                <div
+                  role="radiogroup"
+                  aria-label="Filter letter case"
+                  className="hidden sm:inline-flex items-center p-0.5 rounded-lg border border-border/70 bg-muted/40 shrink-0"
+                >
                   <button
                     type="button"
-                    onClick={() => setZoneFilter("all")}
-                    className="text-primary hover:text-foreground ml-0.5 font-bold cursor-pointer text-xs leading-none"
-                    aria-label="Clear active filter"
-                  >
-                    ×
-                  </button>
-                </span>
-              </div>
-            )}
-
-            {/* Mobile-Only Case Selector (when filters expanded) */}
-            {isFiltersOpen && (
-              <div
-                role="group"
-                aria-label="Filter letter case"
-                className="sm:hidden flex items-center p-0.5 rounded-lg border border-border/70 bg-muted/40 shrink-0 self-start animate-in fade-in slide-in-from-top-1"
-              >
-                <button
-                  type="button"
-                  aria-pressed={caseFilter === "pairs"}
-                  onClick={() => setCaseFilter("pairs")}
-                  className={cn(
-                    "flex-1 px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer text-center",
-                    caseFilter === "pairs"
-                      ? "bg-background text-foreground shadow-2xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Pairs (Aa)
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={caseFilter === "upper"}
-                  onClick={() => setCaseFilter("upper")}
-                  className={cn(
-                    "flex-1 px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer text-center",
-                    caseFilter === "upper"
-                      ? "bg-background text-foreground shadow-2xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Upper (A–Z)
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={caseFilter === "lower"}
-                  onClick={() => setCaseFilter("lower")}
-                  className={cn(
-                    "flex-1 px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer text-center",
-                    caseFilter === "lower"
-                      ? "bg-background text-foreground shadow-2xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Lower (a–z)
-                </button>
-              </div>
-            )}
-
-            {/* Dedicated Zone / Category Filter Chips Row (Horizontal Scroll Rail on Mobile) */}
-            <div
-              role="toolbar"
-              aria-label="Filter by letter category"
-              className={cn(
-                "flex items-center gap-1.5 text-xs pt-0.5 overflow-x-auto pb-1 sm:pb-0 sm:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-                !isFiltersOpen && "hidden sm:flex"
-              )}
-            >
-              {[
-                { id: "all", label: "All", count: 26, description: "All 26 alphabet letters" },
-                { id: "ascender", label: "Ascenders", count: 7, description: "Tall letters reaching top line (b, d, f, h, k, l, t)" },
-                { id: "midline", label: "Midline", count: 14, description: "Short letters within midline zone" },
-                { id: "descender", label: "Descenders", count: 6, description: "Tail letters extending below baseline" },
-                { id: "highJoiner", label: "High Joiners", count: 4, description: "Letters that connect from midline (b, o, v, w)" },
-              ].map((chip) => {
-                const isActive = zoneFilter === chip.id;
-                return (
-                  <button
-                    key={chip.id}
-                    type="button"
-                    title={chip.description}
-                    aria-pressed={isActive}
-                    onClick={() => setZoneFilter(chip.id as typeof zoneFilter)}
+                    role="radio"
+                    aria-checked={caseFilter === "pairs"}
+                    onClick={() => setCaseFilter("pairs")}
                     className={cn(
-                      "px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium shrink-0 transition-all cursor-pointer border",
-                      isActive
-                        ? "bg-primary text-primary-foreground border-primary shadow-2xs font-semibold"
-                        : "bg-background/80 text-muted-foreground border-border/70 hover:text-foreground hover:bg-muted/60"
+                      "px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                      caseFilter === "pairs"
+                        ? "bg-background text-foreground shadow-2xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    {chip.label}
-                    <span className="ml-1 text-[10px] opacity-80 tabular-nums">({chip.count})</span>
+                    Pairs (Aa)
                   </button>
-                );
-              })}
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={caseFilter === "upper"}
+                    onClick={() => setCaseFilter("upper")}
+                    className={cn(
+                      "px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                      caseFilter === "upper"
+                        ? "bg-background text-foreground shadow-2xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    Upper (A–Z)
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={caseFilter === "lower"}
+                    onClick={() => setCaseFilter("lower")}
+                    className={cn(
+                      "px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                      caseFilter === "lower"
+                        ? "bg-background text-foreground shadow-2xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    Lower (a–z)
+                  </button>
+                </div>
+
+                {/* Mobile Filters Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                  className={cn(
+                    "sm:hidden relative flex items-center justify-center size-10 rounded-lg border transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer",
+                    isFiltersOpen
+                      ? "bg-primary/10 border-primary/30 text-primary"
+                      : "border-border/80 bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  )}
+                  aria-label={zoneFilter !== "all" ? `Toggle filters (${zoneFilter} active)` : "Toggle filters"}
+                  aria-expanded={isFiltersOpen}
+                >
+                  <FilterIcon className="size-4.5" aria-hidden="true" />
+                  {zoneFilter !== "all" && (
+                    <span
+                      className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary ring-2 ring-background"
+                      aria-hidden="true"
+                    />
+                  )}
+                </button>
+              </div>
+
+              {/* Active Filter Reminder Tag (Mobile collapsed state, with generous 40px touch dismissal hit area) */}
+              {!isFiltersOpen && zoneFilter !== "all" && (
+                <div className="sm:hidden flex items-center gap-1.5 text-xs animate-in fade-in slide-in-from-top-1">
+                  <span className="text-[11px] text-muted-foreground">Active filter:</span>
+                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-medium">
+                    {zoneFilter === "ascender"
+                      ? "Ascenders"
+                      : zoneFilter === "midline"
+                      ? "Midline"
+                      : zoneFilter === "descender"
+                      ? "Descenders"
+                      : "High Joiners"}
+                    <button
+                      type="button"
+                      onClick={() => setZoneFilter("all")}
+                      className="inline-flex items-center justify-center size-7 rounded-full text-primary hover:text-foreground hover:bg-primary/20 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                      aria-label="Clear active filter"
+                    >
+                      <span className="text-sm font-bold leading-none" aria-hidden="true">×</span>
+                    </button>
+                  </span>
+                </div>
+              )}
+
+              {/* Mobile-Only Case Selector (when filters expanded) */}
+              {isFiltersOpen && (
+                <div
+                  role="radiogroup"
+                  aria-label="Filter letter case"
+                  className="sm:hidden flex items-center p-0.5 rounded-lg border border-border/70 bg-muted/40 shrink-0 self-start w-full animate-in fade-in slide-in-from-top-1"
+                >
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={caseFilter === "pairs"}
+                    onClick={() => setCaseFilter("pairs")}
+                    className={cn(
+                      "flex-1 px-2.5 py-2 min-h-10 text-xs font-medium rounded-md transition-all cursor-pointer text-center flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                      caseFilter === "pairs"
+                        ? "bg-background text-foreground shadow-2xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    Pairs (Aa)
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={caseFilter === "upper"}
+                    onClick={() => setCaseFilter("upper")}
+                    className={cn(
+                      "flex-1 px-2.5 py-2 min-h-10 text-xs font-medium rounded-md transition-all cursor-pointer text-center flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                      caseFilter === "upper"
+                        ? "bg-background text-foreground shadow-2xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    Upper (A–Z)
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={caseFilter === "lower"}
+                    onClick={() => setCaseFilter("lower")}
+                    className={cn(
+                      "flex-1 px-2.5 py-2 min-h-10 text-xs font-medium rounded-md transition-all cursor-pointer text-center flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                      caseFilter === "lower"
+                        ? "bg-background text-foreground shadow-2xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    Lower (a–z)
+                  </button>
+                </div>
+              )}
+
+              {/* Dedicated Zone / Category Filter Chips Row (Horizontal Scroll Rail on Mobile with 40px touch targets) */}
+              <div
+                role="radiogroup"
+                aria-label="Filter by letter category"
+                className={cn(
+                  "flex items-center gap-1.5 text-xs pt-0.5 overflow-x-auto pb-1 sm:pb-0 sm:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+                  !isFiltersOpen && "hidden sm:flex"
+                )}
+              >
+                {[
+                  { id: "all", label: "All", count: 26, description: "All 26 alphabet letters" },
+                  { id: "ascender", label: "Ascenders", count: 7, description: "Tall letters reaching top line (b, d, f, h, k, l, t)" },
+                  { id: "midline", label: "Midline", count: 14, description: "Short letters within midline zone" },
+                  { id: "descender", label: "Descenders", count: 6, description: "Tail letters extending below baseline" },
+                  { id: "highJoiner", label: "High Joiners", count: 4, description: "Letters that connect from midline (b, o, v, w)" },
+                ].map((chip) => {
+                  const isActive = zoneFilter === chip.id;
+                  return (
+                    <button
+                      key={chip.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={isActive}
+                      title={chip.description}
+                      onClick={() => setZoneFilter(chip.id as typeof zoneFilter)}
+                      className={cn(
+                        "px-3.5 py-2 sm:py-1 min-h-10 sm:min-h-7 rounded-full text-xs font-medium shrink-0 transition-all cursor-pointer border flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95",
+                        isActive
+                          ? "bg-primary text-primary-foreground border-primary shadow-2xs font-semibold"
+                          : "bg-background/80 text-muted-foreground border-border/70 hover:text-foreground hover:bg-muted/60"
+                      )}
+                    >
+                      {chip.label}
+                      <span className="ml-1 text-[10px] opacity-80 tabular-nums">({chip.count})</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
           )}
 
+          {/* Accessible Live Region for Screen Readers */}
           <div aria-live="polite" aria-atomic="true" className="sr-only">
             {filteredLetters.length === 26
-              ? "Showing all 26 cursive letters"
-              : `Showing ${filteredLetters.length} letters matching filter`}
+              ? `Showing all 26 cursive letters. Letter ${activeLetter.id} currently selected.`
+              : `Showing ${filteredLetters.length} letters matching filter. Letter ${activeLetter.id} currently selected.`}
           </div>
         </DialogHeader>
 
@@ -1223,9 +713,9 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                   <button
                     type="button"
                     onClick={handleClearSearch}
-                    className="inline-flex items-center justify-center gap-1.5 h-8 px-3 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/15 rounded-lg transition-colors cursor-pointer"
+                    className="inline-flex items-center justify-center gap-1.5 h-10 sm:h-8 px-3.5 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/15 rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                   >
-                    <RotateCcwIcon className="size-3" aria-hidden="true" />
+                    <RotateCcwIcon className="size-3.5" aria-hidden="true" />
                     Reset filters
                   </button>
                 </div>
@@ -1233,8 +723,8 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                 <div
                   ref={gridRef}
                   onKeyDown={handleGridKeyDown}
-                  role="list"
-                  aria-label="Cursive alphabet grid"
+                  role="radiogroup"
+                  aria-label="Cursive alphabet letters"
                   className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 print:grid-cols-4 print:gap-3"
                 >
                   {filteredLetters.map((item) => {
@@ -1247,17 +737,18 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                         : item.lower;
 
                     return (
-                      <div key={item.id} role="listitem" className="min-w-0 print:break-inside-avoid">
+                      <div key={item.id} className="min-w-0 print:break-inside-avoid">
                         <button
                           type="button"
+                          role="radio"
+                          aria-checked={isSelected}
                           data-letter-id={item.id}
                           tabIndex={isSelected ? 0 : -1}
                           onClick={() => {
                             setSelectedLetterId(item.id);
                             setMobileView("detail");
                           }}
-                          aria-pressed={isSelected}
-                          aria-label={`Letter ${item.id}. Click to view detailed formation guide.`}
+                          aria-label={`Letter ${item.id}, ${item.zoneLabel} zone. Click to view formation guide.`}
                           className={cn(
                             "w-full relative group flex flex-col text-left rounded-xl border transition-all duration-150 overflow-hidden cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
                             "h-20 sm:h-24 print:h-20 print:border-black print:bg-white",
@@ -1294,6 +785,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
           {/* Right: Spotlight View (Desktop or Mobile Detail Drill-down with Swipe Support) */}
           <div
             onTouchStart={isMobile && mobileView === "detail" ? handleTouchStart : undefined}
+            onTouchCancel={isMobile && mobileView === "detail" ? handleTouchCancel : undefined}
             onTouchEnd={isMobile && mobileView === "detail" ? handleTouchEnd : undefined}
             className={cn(
               "overflow-y-auto",
@@ -1309,4 +801,3 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
     </Dialog>
   );
 }
-

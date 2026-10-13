@@ -30,23 +30,73 @@ const SPEEDS: AnimationSpeed[] = [0.5, 1, 1.5];
 
 const offsetTransform = (offsetX: number) => (offsetX ? `translate(${offsetX}, 0)` : undefined);
 
-// Static ruling guides — hoisted so they're never re-created on re-render.
+// Safe isomorphic layout effect for SSR hydration resilience
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+// Static ruling guides — matching WriteWise 3-line penmanship curriculum guidelines
 const RULING_GUIDES = (
   <>
-    {/* Headline y=25 */}
-    <line x1="10" y1="25" x2="390" y2="25" stroke="currentColor" className="text-slate-400 dark:text-slate-500" strokeWidth="1" strokeOpacity="0.7" />
+    {/* Headline y=25 (Slate guidance) */}
+    <line
+      x1="10"
+      y1="25"
+      x2="390"
+      y2="25"
+      stroke="currentColor"
+      className="text-muted-foreground/60"
+      strokeWidth="1"
+      strokeOpacity="0.7"
+    />
 
-    {/* Dotted Midline y=50 */}
-    <line x1="10" y1="50" x2="390" y2="50" stroke="currentColor" className="text-teal-600 dark:text-teal-400" strokeWidth="1.2" strokeDasharray="4 3" strokeOpacity="0.8" />
+    {/* Dotted Midline y=50 (Primary Teal) */}
+    <line
+      x1="10"
+      y1="50"
+      x2="390"
+      y2="50"
+      stroke="currentColor"
+      className="text-primary/75 dark:text-primary-foreground/75"
+      strokeWidth="1.2"
+      strokeDasharray="4 3"
+      strokeOpacity="0.85"
+    />
 
-    {/* Solid Baseline y=75 */}
-    <line x1="10" y1="75" x2="390" y2="75" stroke="currentColor" className="text-orange-600 dark:text-orange-400" strokeWidth="1.8" strokeOpacity="0.9" />
+    {/* Solid Baseline y=75 (Warm Rust/Ochre Anchor) */}
+    <line
+      x1="10"
+      y1="75"
+      x2="390"
+      y2="75"
+      stroke="currentColor"
+      className="text-band-1 dark:text-band-1-text"
+      strokeWidth="1.8"
+      strokeOpacity="0.9"
+    />
 
     {/* Descender Line y=90 */}
-    <line x1="10" y1="90" x2="390" y2="90" stroke="currentColor" className="text-slate-300 dark:text-slate-600" strokeWidth="0.8" strokeDasharray="2 2" strokeOpacity="0.5" />
+    <line
+      x1="10"
+      y1="90"
+      x2="390"
+      y2="90"
+      stroke="currentColor"
+      className="text-muted-foreground/40"
+      strokeWidth="0.8"
+      strokeDasharray="2 2"
+      strokeOpacity="0.5"
+    />
 
     {/* ~68° Slant Guideline (dx = 28, dy = 70 => arctan(70/28) ≈ 68.2°) */}
-    <line x1="176" y1="85" x2="204" y2="15" stroke="currentColor" className="text-primary" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+    <line
+      x1="176"
+      y1="85"
+      x2="204"
+      y2="15"
+      stroke="currentColor"
+      className="text-primary/30"
+      strokeWidth="1"
+      strokeDasharray="3 3"
+    />
   </>
 );
 
@@ -57,13 +107,29 @@ export function CursiveStrokeCanvas({
 }: CursiveStrokeCanvasProps) {
   const [caseMode, setCaseMode] = useState<AnimationCaseMode>("lower");
   const [speed, setSpeed] = useState<AnimationSpeed>(1);
-  const [isPlaying, setIsPlaying] = useState<boolean>(true);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    }
+    return false;
+  });
+  const [isPlaying, setIsPlaying] = useState<boolean>(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return false;
+    }
+    return true;
+  });
   const [activeSeqIndex, setActiveSeqIndex] = useState<number>(0);
-  const [isCompleted, setIsCompleted] = useState<boolean>(false);
+  const [isCompleted, setIsCompleted] = useState<boolean>(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return true;
+    }
+    return false;
+  });
 
   // Per-frame values live in refs and are painted imperatively — no React
   // re-render per animation frame.
-  const progressRef = useRef(0); // 0..1 for current stroke
+  const progressRef = useRef(prefersReducedMotion ? 1 : 0); // 0..1 for current stroke
   const speedRef = useRef<AnimationSpeed>(1);
   const pathLengthRef = useRef(0);
   const activePathRef = useRef<SVGPathElement | null>(null);
@@ -96,6 +162,22 @@ export function CursiveStrokeCanvas({
 
   const activeItem = sequence[activeSeqIndex];
 
+  // Motion preference listener: pause and complete strokes immediately if user prefers reduced motion
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handleChange = (e: MediaQueryListEvent) => {
+      setPrefersReducedMotion(e.matches);
+      if (e.matches) {
+        setIsPlaying(false);
+        setIsCompleted(true);
+        progressRef.current = 1;
+      }
+    };
+    mql.addEventListener("change", handleChange);
+    return () => mql.removeEventListener("change", handleChange);
+  }, []);
+
   /** Apply progress to the DOM: stroke reveal + pen-tip position. */
   const paint = useCallback((p: number) => {
     const path = activePathRef.current;
@@ -113,8 +195,8 @@ export function CursiveStrokeCanvas({
     progressRef.current = 0;
     setActiveSeqIndex(0);
     setIsCompleted(false);
-    setIsPlaying(true);
-  }, []);
+    setIsPlaying(!prefersReducedMotion);
+  }, [prefersReducedMotion]);
 
   const handleCaseModeChange = (mode: AnimationCaseMode) => {
     setCaseMode(mode);
@@ -133,9 +215,8 @@ export function CursiveStrokeCanvas({
     }
   }, [activeItem, onActiveStepChange]);
 
-  // Measure once per stroke (not per frame) and paint the current progress
-  // before the browser paints, so there's no flash of the full stroke.
-  useLayoutEffect(() => {
+  // Measure once per stroke (not per frame) using isomorphic layout effect to avoid SSR warnings
+  useIsomorphicLayoutEffect(() => {
     const path = activePathRef.current;
     if (!path) return;
     let len = 0;
@@ -147,13 +228,13 @@ export function CursiveStrokeCanvas({
     pathLengthRef.current = len;
     if (len > 0) {
       path.style.strokeDasharray = String(len);
-      paint(progressRef.current);
+      paint(prefersReducedMotion ? 1 : progressRef.current);
     }
-  }, [activeItem, paint]);
+  }, [activeItem, paint, prefersReducedMotion]);
 
   // Animation loop. Pure: no side effects inside state updaters.
   useEffect(() => {
-    if (!isPlaying || !activeItem) return;
+    if (!isPlaying || !activeItem || prefersReducedMotion) return;
 
     const isLast = activeSeqIndex >= sequence.length - 1;
     const factor = activeItem.isShort ? SHORT_STROKE_FACTOR : 1;
@@ -181,7 +262,7 @@ export function CursiveStrokeCanvas({
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [isPlaying, activeItem, activeSeqIndex, sequence.length, paint]);
+  }, [isPlaying, activeItem, activeSeqIndex, sequence.length, paint, prefersReducedMotion]);
 
   const togglePlay = () => {
     if (isCompleted) {
@@ -196,12 +277,18 @@ export function CursiveStrokeCanvas({
       {/* Controls & Case Selector Header */}
       <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
         {/* Case Mode Selector */}
-        <div className="flex items-center p-0.5 rounded-lg border border-border/70 bg-muted/40">
+        <div
+          role="radiogroup"
+          aria-label="Cursive letter case mode"
+          className="flex items-center p-0.5 rounded-lg border border-border/70 bg-muted/40"
+        >
           <button
             type="button"
+            role="radio"
+            aria-checked={caseMode === "lower"}
             onClick={() => handleCaseModeChange("lower")}
             className={cn(
-              "px-2.5 py-1.5 sm:py-1 min-h-9 sm:min-h-0 font-medium rounded-md transition-all cursor-pointer flex items-center justify-center",
+              "px-2.5 py-1.5 sm:py-1 min-h-10 sm:min-h-0 font-medium rounded-md transition-all cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
               caseMode === "lower"
                 ? "bg-background text-foreground shadow-2xs font-semibold"
                 : "text-muted-foreground hover:text-foreground"
@@ -211,9 +298,11 @@ export function CursiveStrokeCanvas({
           </button>
           <button
             type="button"
+            role="radio"
+            aria-checked={caseMode === "upper"}
             onClick={() => handleCaseModeChange("upper")}
             className={cn(
-              "px-2.5 py-1.5 sm:py-1 min-h-9 sm:min-h-0 font-medium rounded-md transition-all cursor-pointer flex items-center justify-center",
+              "px-2.5 py-1.5 sm:py-1 min-h-10 sm:min-h-0 font-medium rounded-md transition-all cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
               caseMode === "upper"
                 ? "bg-background text-foreground shadow-2xs font-semibold"
                 : "text-muted-foreground hover:text-foreground"
@@ -223,9 +312,11 @@ export function CursiveStrokeCanvas({
           </button>
           <button
             type="button"
+            role="radio"
+            aria-checked={caseMode === "both"}
             onClick={() => handleCaseModeChange("both")}
             className={cn(
-              "px-2.5 py-1.5 sm:py-1 min-h-9 sm:min-h-0 font-medium rounded-md transition-all cursor-pointer flex items-center justify-center",
+              "px-2.5 py-1.5 sm:py-1 min-h-10 sm:min-h-0 font-medium rounded-md transition-all cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
               caseMode === "both"
                 ? "bg-background text-foreground shadow-2xs font-semibold"
                 : "text-muted-foreground hover:text-foreground"
@@ -269,16 +360,16 @@ export function CursiveStrokeCanvas({
             <RotateCcwIcon className="size-4 sm:size-3.5" />
           </button>
 
-          {/* Speed Selector */}
+          {/* Speed Selector (Min 40px touch targets on mobile) */}
           <div className="flex items-center gap-1 pl-1.5 sm:pl-1 border-l border-border/60">
-            <GaugeIcon className="size-3.5 text-muted-foreground hidden xs:block" />
+            <GaugeIcon className="size-3.5 text-muted-foreground hidden xs:block" aria-hidden="true" />
             {SPEEDS.map((sp) => (
               <button
                 key={sp}
                 type="button"
                 onClick={() => handleSpeedChange(sp)}
                 className={cn(
-                  "min-w-8 h-10 sm:min-w-0 sm:h-auto sm:px-1.5 sm:py-0.5 px-2 py-1 text-xs sm:text-[11px] rounded-lg sm:rounded transition-all cursor-pointer font-medium flex items-center justify-center active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                  "min-w-10 h-10 sm:min-w-0 sm:h-auto sm:px-1.5 sm:py-0.5 px-2 py-1 text-xs sm:text-[11px] rounded-lg sm:rounded transition-all cursor-pointer font-medium flex items-center justify-center active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
                   speed === sp
                     ? "bg-primary text-primary-foreground font-bold shadow-2xs"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -330,7 +421,7 @@ export function CursiveStrokeCanvas({
                 strokeWidth="2.6"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-teal-700 dark:text-teal-300"
+                className="text-primary dark:text-primary-foreground"
               />
             ))}
 
@@ -347,18 +438,21 @@ export function CursiveStrokeCanvas({
                   strokeWidth="2.6"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className={isCompleted ? "text-teal-700 dark:text-teal-300" : "text-primary"}
+                  className={isCompleted ? "text-primary dark:text-primary-foreground" : "text-primary"}
                 />
                 <g ref={penRef}>
                   {isCompleted ? (
                     <circle
                       r="2.5"
-                      className="fill-teal-600 dark:fill-teal-400 stroke-background stroke-[1.2]"
+                      className="fill-primary dark:fill-primary-foreground stroke-background stroke-[1.2]"
                     />
                   ) : (
                     <>
-                      {isPlaying ? (
-                        <circle r="5" className="fill-primary/25 animate-ping opacity-75" />
+                      {isPlaying && !prefersReducedMotion ? (
+                        <circle
+                          r="5"
+                          className="fill-primary/25 animate-ping opacity-75 motion-reduce:hidden"
+                        />
                       ) : null}
                       <circle r="3.5" className="fill-primary/40 stroke-primary stroke-[1.2]" />
                       <circle r="2" className="fill-primary-foreground" />
