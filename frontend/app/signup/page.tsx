@@ -34,6 +34,7 @@ type UserRole = "teacher" | "parent";
 function SignUpForm() {
   const [role, setRole] = useState<UserRole>("teacher");
   const [fullName, setFullName] = useState("");
+  const [schoolName, setSchoolName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -82,6 +83,7 @@ function SignUpForm() {
 
     try {
       const redirectUrl = `${window.location.origin}/auth/callback?next=/login`;
+      const trimmedSchool = schoolName.trim();
       const { error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
@@ -89,6 +91,9 @@ function SignUpForm() {
           data: {
             role,
             full_name: fullName.trim(),
+            ...(role === "teacher" && trimmedSchool
+              ? { school_name: trimmedSchool }
+              : {}),
           },
           emailRedirectTo: redirectUrl,
         },
@@ -320,6 +325,35 @@ function SignUpForm() {
                 className="h-10 text-sm"
               />
             </div>
+
+            {role === "teacher" && (
+              <div className="grid gap-2 animate-in fade-in-50 duration-150">
+                <div className="flex items-center justify-between">
+                  <Label
+                    htmlFor="schoolName"
+                    className="text-xs font-semibold text-foreground"
+                  >
+                    School / Institution
+                  </Label>
+                  <span className="text-[11px] text-muted-foreground">
+                    Optional
+                  </span>
+                </div>
+                <Input
+                  id="schoolName"
+                  type="text"
+                  placeholder="e.g. Holy Cross of Davao College"
+                  value={schoolName}
+                  onChange={(e) => setSchoolName(e.target.value)}
+                  autoComplete="organization"
+                  disabled={isLoading}
+                  className="h-10 text-sm"
+                />
+                <p className="text-[11px] text-muted-foreground leading-normal px-0.5">
+                  Appears in your class rosters and portal sidebar.
+                </p>
+              </div>
+            )}
 
             <div className="grid gap-2">
               <Label htmlFor="email" className="text-xs font-semibold text-foreground">
