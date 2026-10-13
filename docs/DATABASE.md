@@ -21,7 +21,7 @@ Established once here so individual table sections below don't repeat them.
   - **Identity/roster cleanup** (`auth.users` → `teacher`/`parent`; `teacher`/`student`/`parent` → their join-table rows): `CASCADE`. If the identity or roster entry is gone, its own link rows should disappear with it — no orphans.
   - **Account deletion vs. research data** (`teacher`/`student` → `activity`/`submission`): `RESTRICT`. Deleting a teacher or student account must be *blocked* while calibration data still references them — this is a thesis's actual dataset, and an account cleanup action should never be able to silently take part of it out.
   - **Submission attempt deletion** (`submission` → `measurement`/`manual_score`): `CASCADE` (updated via migration `0019_submission_cascade_delete.sql`). When an authorized user (teacher, or parent on an un-graded take-home attempt) deletes a submission attempt, its dependent `measurement` and `manual_score` records cascade delete cleanly, in lockstep with Storage object cleanup in FastAPI.
-- **Indexing philosophy:** minimal. Primary key and `unique` constraints (which Postgres indexes automatically) are all this schema gets up front — no proactive indexes for dashboard/trend query patterns. At pilot scale (5 teachers, 30 students), a full scan of any table here is scanning a few hundred rows at absolute worst. Add indexes reactively if Railway's structured logs (ARCHITECTURE §15) ever show a real slowdown — see §11.
+- **Indexing philosophy:** minimal. Primary key and `unique` constraints (which Postgres indexes automatically) are all this schema gets up front — no proactive indexes for dashboard/trend query patterns. At pilot scale (small cohort, size TBD), a full scan of any table here is scanning a few hundred rows at absolute worst. Add indexes reactively if Railway's structured logs (ARCHITECTURE §15) ever show a real slowdown — see §11.
 - **Access pattern reminder (from ARCHITECTURE §4):** RLS policies below are effectively **read policies**. Writes (roster changes, activity creation, submission upload) go through FastAPI using the service-role key, which bypasses RLS by design — FastAPI does its own authorization in Python. Don't go looking for `insert`/`update`/`delete` policies on most tables; they're intentionally not here.
 - **Migrations:** SQL-first via Supabase CLI (`supabase/migrations/*.sql`, timestamp-prefixed), per ARCHITECTURE §2/§6 — this document's SQL is written in the grouping it would actually ship as migration files (see §12), not as one monolithic script.
 
@@ -582,7 +582,7 @@ Per §1's stated philosophy: nothing beyond what `primary key` and `unique` cons
 - `submission(student_id)`, `submission(activity_id)` — for the class-wide roster and per-student drill-down dashboard queries (§7.5 of the PRD).
 - A reverse-direction index on `teacher_student(student_id)` / `student_parent(student_id)` if "who teaches/parents this student" lookups (rather than "this teacher/parent's roster") turn out to be common.
 
-At 30 students total, none of this is expected to matter during the pilot.
+At pilot scale (small cohort), none of this is expected to matter during the pilot.
 
 ---
 
@@ -593,7 +593,7 @@ PRD §5 explicitly calls for Phase 2 UI (dashboard, diagnostic feedback panel) t
 It should include a handful of fake teachers, students, activities, and `submission`/`measurement` rows — with `measurement` scores spread across the full 0–100 range per criterion (some weak, some strong, not uniform placeholder numbers), specifically so dashboard trend charts and the class-wide "sortable by weakest criterion" roster view have visually meaningful variation to build against from day one.
 
 ```sql
--- supabase/seed.sql (illustrative excerpt — full version has ~5 teachers,
+-- supabase/seed.sql (illustrative excerpt — full version has a few teachers,
 -- ~10-15 students, several activities, and a spread of submissions/measurements)
 
 insert into auth.users (id, email, raw_user_meta_data)
@@ -616,6 +616,6 @@ values ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-2222222
 ## 14. Known Risks & Open Items
 
 - **`uploader_role` isn't DB-enforced against the matching profile table** (§7) — a deliberate trade for RLS simplicity. If this ever proves too loose in practice (e.g. a bug lets a teacher-flagged upload actually come from a parent), the fallback is the two-nullable-FK-with-`check` pattern considered and set aside during design.
-- **Reactive indexing (§12) is unvalidated** — the "30 students, don't bother" call is based on the pilot's stated scale, not a benchmark. If Phase 2's dashboard queries come in slow once real data is flowing, `submission(student_id)`/`submission(activity_id)` are the first candidates, not a deeper redesign.
+- **Reactive indexing (§12) is unvalidated** — the "small cohort, don't bother" call is based on the pilot's stated scale, not a benchmark. If Phase 2's dashboard queries come in slow once real data is flowing, `submission(student_id)`/`submission(activity_id)` are the first candidates, not a deeper redesign.
 - **`manual_score_archived` (§9.1) has no defined long-term retention policy** — it's kept indefinitely as of this document. Worth a decision once the thesis defense (and any panel follow-up) is fully behind the team, but not before.
 - **This document assumes CV_PIPELINE.md §8's output schema is stable enough to hardcode into `measurement`'s raw columns.** CV_PIPELINE §12 flags several of its own constants (word-gap multiplier, quality-gate thresholds) as unvalidated starting defaults — if the *shape* of the aggregate output changes (not just its threshold values), `measurement`'s 6 raw column pairs would need a migration to match. The values, not the shape, are what's expected to move during calibration.

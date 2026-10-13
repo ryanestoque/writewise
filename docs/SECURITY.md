@@ -5,16 +5,16 @@
 - **Document type:** Internal engineering security reference (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, TESTING.md, DEPLOYMENT.md)
 - **Team:** Ryan Christopher B. Estoque, John Lawrence V. Monleon, James David B. Asoy, Saara Eliana G. Ibag
 - **Institution:** Holy Cross of Davao College, BSIT
-- **Research locale:** Matina Aplaya Elementary School, Talomo, Davao City
+- **Target setting:** School-agnostic — no partner school at present (pilot site TBD)
 - **Status:** Draft v1
 
-**Audience & scope:** this document is written for the dev team and for a technical panel reviewing the repo — not for the public. There is no external vulnerability-disclosure process here: WriteWise is a closed, invite-only pilot (5 teachers, 30 students, one school) with no public signup surface, so there's no realistic outside party who'd need a formal "report a vuln" channel. What this document *does* do is consolidate every security-relevant decision already scattered across the other docs (RLS in DATABASE §10–11, JWT/role/ownership checks in API_SPEC §2.2, the RA 10173 rationale in ARCHITECTURE §7/§16, the quality gate in CV_PIPELINE) and make the decisions nobody had made yet.
+**Audience & scope:** this document is written for the dev team and for a technical panel reviewing the repo — not for the public. There is no external vulnerability-disclosure process here: WriteWise is a closed, invite-only pilot (small cohort, size TBD) with no public signup surface, so there's no realistic outside party who'd need a formal "report a vuln" channel. What this document *does* do is consolidate every security-relevant decision already scattered across the other docs (RLS in DATABASE §10–11, JWT/role/ownership checks in API_SPEC §2.2, the RA 10173 rationale in ARCHITECTURE §7/§16, the quality gate in CV_PIPELINE) and make the decisions nobody had made yet.
 
 ---
 
 ## 1. Threat Model
 
-Scoped to what's actually plausible for a 30-student, one-school academic pilot — not a generic enterprise threat list.
+Scoped to what's actually plausible for a small-cohort academic pilot — not a generic enterprise threat list.
 
 **In scope:**
 
@@ -103,9 +103,9 @@ Vercel, Railway, and Supabase all process real student data as sub-processors un
 
 NPC Circular 2022-04 requires registering a Data Processing System with the NPC if the organization employs 250+ people, processes sensitive personal information of 1,000+ individuals, **or** the processing involves automated decision-making or profiling (this last clause applies regardless of the numeric thresholds).
 
-WriteWise is nowhere near the numeric thresholds (30 students, 5 teachers). The automated-decision-making clause is the one worth addressing directly: Phase 2's CNN-generated diagnostic scores could arguably be read as "automated processing... profiling" of a child's academic performance.
+WriteWise is nowhere near the numeric thresholds (pilot cohort size TBD, but a small closed group). The automated-decision-making clause is the one worth addressing directly: Phase 2's CNN-generated diagnostic scores could arguably be read as "automated processing... profiling" of a child's academic performance.
 
-**Conclusion: registration is not pursued for this pilot.** The teacher remains in the loop reviewing every result before it's acted on — this is decision *support*, not an unreviewed automated decision producing a legal or similarly significant effect on the child, which is the threshold the profiling concern is really aimed at. **This conclusion should be revisited if WriteWise ever expands beyond a single-school academic pilot** — the automated-decision-making clause doesn't have a size exemption, and a larger deployment would need this re-examined, not assumed to still hold.
+**Conclusion: registration is not pursued for this pilot.** The teacher remains in the loop reviewing every result before it's acted on — this is decision *support*, not an unreviewed automated decision producing a legal or similarly significant effect on the child, which is the threshold the profiling concern is really aimed at. **This conclusion should be revisited if WriteWise ever expands beyond the capstone's controlled testing, and before any real deployment at any school** — the automated-decision-making clause doesn't have a size exemption, and a larger deployment would need this re-examined, not assumed to still hold.
 
 ### 6.2 Breach notification checklist
 
@@ -158,7 +158,7 @@ TECH_STACK.md already locked "no Dependabot/Renovate — manual updates only" to
 API_SPEC §8 already flagged the absence of rate limiting as "reasonable at pilot scale... worth a deliberate note that it's an absence, not an oversight." This section formalizes that call rather than changing it:
 
 - **Login/auth attempts:** covered for free by Supabase Auth's built-in rate limiting on sign-in endpoints — no additional work needed.
-- **FastAPI routes** (`/submissions`, `/activities`, `/students`): no rate limiting. At 5 teachers / 30 students this isn't a realistic abuse target — the actual worst case is a teacher's flaky mobile connection retrying `POST /submissions` rapidly, a scenario API_SPEC §5 already accepts as a UX trade-off (frontend disables the Submit button on tap). Building real rate-limiting infrastructure (e.g. Redis-backed counters) for this threat level would be effort spent defending against something that doesn't exist at this scale. **Explicitly accepted as a deliberate, documented risk**, not revisited unless the pilot scope grows materially.
+- **FastAPI routes** (`/submissions`, `/activities`, `/students`): no rate limiting. At a small-cohort scale this isn't a realistic abuse target — the actual worst case is a teacher's flaky mobile connection retrying `POST /submissions` rapidly, a scenario API_SPEC §5 already accepts as a UX trade-off (frontend disables the Submit button on tap). Building real rate-limiting infrastructure (e.g. Redis-backed counters) for this threat level would be effort spent defending against something that doesn't exist at this scale. **Explicitly accepted as a deliberate, documented risk**, not revisited unless the pilot scope grows materially.
 
 ---
 
@@ -174,7 +174,7 @@ Matching the pattern every other doc in this set closes with — things this doc
 
 - **Second prod-key holder not yet named** (§2.1) — needs a name filled in before Phase 1 launch; the *policy* (two named holders, not all four) is locked, the specific second person isn't yet recorded here.
 - **Free-tier backup/keep-alive mitigations (§5.1) are unvalidated in practice** — the weekly manual backup script and the health-ping GitHub Action need to actually exist and be exercised once (a real restore test, not just "the script ran without erroring") before Phase 1 goes live with real student data behind it.
-- **NPC registration conclusion (§6.1) is scoped to this pilot specifically** — explicitly not a standing exemption; must be re-examined if WriteWise is ever deployed beyond the single Matina Aplaya Elementary pilot.
+- **NPC registration conclusion (§6.1) is scoped to the capstone's controlled testing only** — explicitly not a standing exemption. Any real deployment at any school requires a fresh RA 10173 / NPC review plus a data-sharing agreement with that school.
 - ~~EXIF-stripping and decompression-bomb guards (§4) are new scope beyond anything CV_PIPELINE.md currently documents~~ — **Resolved:** ARCHITECTURE.md §8 step 1 and CV_PIPELINE.md §1's diagram (step 0) now both document these running before the CV pipeline starts, and TESTING.md §6.1 has explicit test rows for both.
 - **Automated negative-auth tests (TESTING.md §6.1) don't exist yet** — TESTING.md specifies what they should cover, not that they've been written. Needs to land before the "we tested this" claim is actually true.
 - **No formal Data Protection Officer designated** — RA 10173 compliance in spirit doesn't require a DPO at this pilot's scale/registration status (§6.1), but if the project's compliance posture is ever questioned by the school or a panel, "who is accountable for this" should have a named answer, not just "the team."

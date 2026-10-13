@@ -5,7 +5,7 @@
 - **Document type:** Internal engineering PRD (build guide for the dev team, companion to ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, SECURITY.md, TESTING.md, DEPLOYMENT.md)
 - **Team:** Ryan Christopher B. Estoque, John Lawrence V. Monleon, James David B. Asoy, Saara Eliana G. Ibag
 - **Institution:** Holy Cross of Davao College, BSIT
-- **Research locale:** Matina Aplaya Elementary School, Talomo, Davao City
+- **Target setting:** School-agnostic — any basic-education classroom in the Philippines; no partner school at present (pilot site TBD)
 - **Target technical defense:** October 2026
 - **Target Phase 1 launch:** September 2026 (or earlier)
 - **Status:** Draft v1
@@ -40,7 +40,7 @@ Standard OCR is not a substitute: OCR transcribes text and discards the physical
 | **Parent/Guardian** | Parent of an enrolled student | Views their own child's assessment history and progress dashboard; can upload their child's completed sheet for a teacher-assigned activity |
 | **Student** | Learner (minor) | No account, no direct system access. Exists only as a roster record a teacher creates and links submissions to. All interaction happens on paper. |
 
-There is no separate admin role for the pilot — the teacher setting up the class is the local admin. (Flagged as a future enhancement if the system expands beyond one school.)
+There is no separate admin role for the pilot — the teacher setting up the class is the local admin. (Flagged as a future enhancement if the system expands beyond a single class cohort or to multiple schools.)
 
 **Access control:** a parent only ever sees their own child's record; a teacher only sees their own class roster and submissions.
 
@@ -99,10 +99,10 @@ The scoring system cannot be "designed" up front the normal way — the rubric t
 | Window | Focus |
 |---|---|
 | Now – early Sept | Build Phase 1 (teacher tooling + raw CV pipeline); in parallel, build Phase 2 UI (parent portal, dashboard, diagnostic feedback layout) against placeholder data |
-| September | Phase 1 live — 5 teachers / 30 students generating paired calibration data; Phase 2 UI work continues in parallel |
+| September | Phase 1 live — teachers/students (cohort size TBD) generating paired calibration data; Phase 2 UI work continues in parallel |
 | Late Sept | Threshold/correlation analysis; CNN evaluation; calibrate scoring engine |
 | Late Sept – early Oct | Integrate calibrated engine into Phase 2 UI; remove manual-entry field; full system complete |
-| Early–mid Oct | Full user evaluation: 5 teachers, 30 parents, IT experts (ISO/IEC 25010 questionnaire) + diagnostic accuracy validation |
+| Early–mid Oct | Full user evaluation: teachers and parents (respondent count TBD), IT experts (ISO/IEC 25010 questionnaire) + diagnostic accuracy validation |
 | October | Technical defense |
 
 ⚠️ **Risk flag:** this is a compressed runway (~9-10 weeks) for a system with a real statistical validation study embedded in it. The parallel-track approach exists specifically to protect the October defense date — if Phase 1 data collection slips past mid-September, the calibration → integration → evaluation chain has very little slack left. Track this weekly.

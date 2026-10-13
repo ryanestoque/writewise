@@ -142,7 +142,7 @@ Install the latest TensorFlow release compatible with Python 3.13 (check `pip in
 uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ```
 
-**No Gunicorn, no multi-worker setup.** ML_PIPELINE.md keeps the fine-tuned CNN model resident in memory per process (loaded once at container startup). Multiple workers would mean multiple full copies of that model loaded into RAM simultaneously — real memory cost for negligible benefit at this pilot's scale (5 teachers, 30 students, synchronous one-submission-at-a-time processing). Revisit only if Railway's structured logs (ARCHITECTURE §15) show single-worker is an actual concurrency bottleneck — not preemptively.
+**No Gunicorn, no multi-worker setup.** ML_PIPELINE.md keeps the fine-tuned CNN model resident in memory per process (loaded once at container startup). Multiple workers would mean multiple full copies of that model loaded into RAM simultaneously — real memory cost for negligible benefit at this pilot's scale (small cohort, size TBD, synchronous one-submission-at-a-time processing). Revisit only if Railway's structured logs (ARCHITECTURE §15) show single-worker is an actual concurrency bottleneck — not preemptively.
 
 ### 3.6 Key Backend Dependencies
 
@@ -323,5 +323,5 @@ Frontend runs at `http://localhost:3000`, backend at `http://localhost:8000` (Sw
 ## 10. Open Items / Revisit List
 
 - **TensorFlow ↔ Python 3.14:** once TensorFlow ships official Python 3.14 wheels, revisit whether upgrading is worth it — no rush, 3.13 is fully supported through the pilot and defense.
-- **Uvicorn single-worker assumption (§3.5):** unvalidated against real concurrent load — the pilot's stated scale (5 teachers) is the basis for this call, not a benchmark. First candidate to revisit if Railway's logs ever show a real bottleneck.
+- **Uvicorn single-worker assumption (§3.5):** unvalidated against real concurrent load — the pilot's expected small scale is the basis for this call, not a benchmark. First candidate to revisit if Railway's logs ever show a real bottleneck.
 - **`openapi-typescript` regeneration is manual (§5.1)**, same trust model as `supabase gen types` (§5.2) — both rely on the PR author remembering to regenerate. If this proves unreliable in practice, a CI freshness check is the fallback, at the cost of the extra infrastructure noted in §5.2.

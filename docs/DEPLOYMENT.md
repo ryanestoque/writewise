@@ -27,7 +27,7 @@ All platform accounts (Vercel, Railway, Supabase, the GitHub repo) live under **
 
 Per ARCHITECTURE.md §3, there are exactly two environments (`dev`, `prod`) and no third staging environment. This document adds the concrete URL/hosting decisions ARCHITECTURE.md left unspecified:
 
-- **No custom domain.** The pilot runs on free platform subdomains — a Vercel `*.vercel.app` URL for the frontend and a Railway `*.up.railway.app` URL for the backend. This is a closed, invite-only pilot (5 teachers, one school); a custom domain would add real cost and DNS/renewal overhead for zero functional benefit.
+- **No custom domain.** The pilot runs on free platform subdomains — a Vercel `*.vercel.app` URL for the frontend and a Railway `*.up.railway.app` URL for the backend. This is a closed, invite-only pilot (small cohort, size TBD); a custom domain would add real cost and DNS/renewal overhead for zero functional benefit.
 - **Region:** Railway service deployed to the nearest available region to the Philippines at signup time (verify actual regional availability when provisioning — it varies by plan).
 
 ---
@@ -203,8 +203,8 @@ TESTING.md §8 defines the **conditions** that must be true before Phase 1 launc
 1. Confirm every item on TESTING.md §8's checklist is checked off
 2. Final `main` merge containing everything Phase 1 needs (teacher portal, upload, raw CV display, manual rubric entry) — auto-deploys to prod via Vercel/Railway
 3. **Manually smoke-test the actual prod URLs end-to-end** — create a real test activity, upload a real photo, confirm it processes correctly — before any real teacher touches the system. **Non-negotiable**: this is the last checkpoint before real children's data starts flowing, and the easiest step to skip under September time pressure.
-4. Create the 5 real teacher accounts against `writewise-prod` (resolves ARCHITECTURE.md §5's "provisioning TBD" note)
-5. Hand off prod URLs + credentials to the 5 teachers, with a short orientation given they're non-technical users on a live system for the first time
+4. Create the real teacher accounts against `writewise-prod` (resolves ARCHITECTURE.md §5's "provisioning TBD" note)
+5. Hand off prod URLs + credentials to the pilot teachers, with a short orientation given they're non-technical users on a live system for the first time
 6. Monitor Railway's structured logs closely for the first several real submissions (ARCHITECTURE.md §15 — this is where that logging investment starts paying off)
 
 ---

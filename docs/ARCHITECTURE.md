@@ -78,7 +78,7 @@ Two fully separate Supabase projects:
 | Environment | Supabase project | Data | Used by |
 |---|---|---|---|
 | **dev** | `writewise-dev` | Seeded fake roster/students | Local development, manual testing |
-| **prod** | `writewise-prod` | Real students (Matina Aplaya Elementary, once live) | The live pilot, starting Phase 1 |
+| **prod** | `writewise-prod` | Real students (pilot site TBD, once live) | The live pilot, starting Phase 1 |
 
 There is no third staging environment. Vercel's automatic preview deployments (one per branch/PR, provided free by the platform) serve as the de facto pre-merge check for frontend changes, pointed at the dev Supabase project. Backend changes are tested locally against dev Supabase before merging.
 
@@ -102,7 +102,7 @@ Auth itself (login, session/JWT) goes through Supabase Auth directly from the fr
 ## 5. Authentication & Account Provisioning
 
 - **Teacher accounts:** created directly (details TBD with the team — likely provisioned by whoever sets up the pilot, since there's no admin role).
-- **Parent accounts:** teacher-invited. When a teacher adds a student to the roster with a parent's email, the app triggers a Supabase Auth invite email. The parent clicks the link, sets a password, and is automatically linked to that student record. No manual credential handling, no email-independent fallback — this assumes parent email reliability at Matina Aplaya Elementary holds up during the pilot; revisit if it doesn't.
+- **Parent accounts:** teacher-invited. When a teacher adds a student to the roster with a parent's email, the app triggers a Supabase Auth invite email. The parent clicks the link, sets a password, and is automatically linked to that student record. No manual credential handling, no email-independent fallback — this assumes parent email reliability, which is unverified for any deployment site and must be revisited per deployment if it doesn't hold.
 - **No student accounts.** Students are minors and exist only as roster records a teacher creates.
 - **No separate admin role** for the pilot — the teacher is the local admin for their own roster.
 
@@ -232,7 +232,7 @@ Actual deployment is **not** owned by Actions — Vercel and Railway's own nativ
 
 ## 15. Logging & Observability
 
-Structured JSON application logging (Python `logging` module) for key pipeline events — quality-gate pass/fail and reason, per-stage timing, total processing duration, errors — written to stdout and captured via Railway's built-in log viewer. No third-party service (e.g. Sentry) — unnecessary overhead for a pilot this size (5 teachers, 30 students).
+Structured JSON application logging (Python `logging` module) for key pipeline events — quality-gate pass/fail and reason, per-stage timing, total processing duration, errors — written to stdout and captured via Railway's built-in log viewer. No third-party service (e.g. Sentry) — unnecessary overhead for a pilot this size (small cohort, size TBD).
 
 **Why this is worth the setup:** beyond debugging during the live September pilot, this is the actual evidence base for the ISO/IEC 25010 "Reliability" and "Performance Efficiency" sections of the thesis writeup — without instrumenting it, those sections would have nothing concrete to cite.
 
@@ -250,7 +250,7 @@ Structured JSON application logging (Python `logging` module) for key pipeline e
 
 Things this document deliberately left as assumptions worth checking as the build progresses:
 
-- **Parent email reliability** (§5) — the teacher-invite flow assumes parents check and can act on an invite email. If this proves unreliable at Matina Aplaya Elementary during Phase 1, the provisioning flow will need revisiting.
+- **Parent email reliability** (§5) — the teacher-invite flow assumes parents check and can act on an invite email. This is unverified for any deployment site; if it proves unreliable at a given site during Phase 1, the provisioning flow will need revisiting.
 - **Teacher account creation** (§5) — not yet fully specified; needs a decision on who provisions the first teacher accounts before Phase 1 launch.
 - **Relative-unit measurement validity** (§8) — normalized/relative units avoid the camera-distance problem, but should be sanity-checked against the calibration data once Phase 1 is collecting it, to confirm the normalization approach doesn't introduce its own bias (e.g. sensitivity to which reference letter/measure is used for normalization).
 

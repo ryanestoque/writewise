@@ -8,7 +8,7 @@ web
 
 ## Users
 
-**Primary user: Teachers** — basic education teachers (pilot: Matina Aplaya Elementary School, Talomo, Davao City) who create cursive handwriting activities, upload/review student worksheet submissions, view per-student and class-wide assessment results, and manage their class roster. They access the system via desktop/laptop browser for review and via phone browser (Android 9+/iOS 15+) for photo capture and upload.
+**Primary user: Teachers** — basic education teachers (school-agnostic; no partner school, pilot site to be recruited) who create cursive handwriting activities, upload/review student worksheet submissions, view per-student and class-wide assessment results, and manage their class roster. They access the system via desktop/laptop browser for review and via phone browser (Android 9+/iOS 15+) for photo capture and upload.
 
 **Secondary user: Parents/Guardians** — parents of enrolled students who view their own child's assessment history, progress dashboard, and latest diagnostic feedback, and can upload a completed take-home worksheet. Same device profile as teachers.
 
@@ -30,10 +30,10 @@ Standard OCR transcribes text and discards the physical/structural quality of th
 
 ## Operating Context
 
-- **Research locale:** Matina Aplaya Elementary School, Talomo, Davao City
+- **Target setting:** School-agnostic — any basic-education classroom in the Philippines; no partner school at present (pilot site TBD)
 - **Academic context:** BSIT thesis project (Holy Cross of Davao College); target technical defense October 2026
 - **Team:** Ryan Christopher B. Estoque, John Lawrence V. Monleon, James David B. Asoy, Saara Eliana G. Ibag
-- **Pilot scale:** 5 teachers, 30 students, 30 parents
+- **Pilot scale:** small closed cohort; no fixed pilot or respondent count yet (TBD)
 - **Workflow:** Teacher defines a freeform-text cursive activity → students complete it on paper → teacher (or parent, for take-home) photographs the completed worksheet → uploads via phone browser → system processes synchronously (no background queue) → results displayed immediately
 - **Two-phase build:** Phase 1 collects raw CV measurements + paired manual teacher scores (calibration data); Phase 2 swaps in calibrated auto-scoring, diagnostic feedback UI, parent portal, and progress dashboards
 
@@ -82,7 +82,7 @@ Standard OCR transcribes text and discards the physical/structural quality of th
 2. **Encouraging over judgmental.** Every piece of feedback a child eventually sees through their teacher or parent should be constructive, specific, and non-punitive.
 3. **Privacy by default.** Students are minors with no login; real names are access-controlled by role; EXIF is stripped unconditionally; logs never contain identifiable data; anonymization happens only through a controlled export script.
 4. **Calibration before automation.** The system earns the right to auto-score by first proving statistical agreement with human expert judgment — no black-box scoring.
-5. **Ship the pilot, not the platform.** Scope is deliberately tight (one school, ~65 users, synchronous processing, no admin role) to protect the October defense date.
+5. **Ship the pilot, not the platform.** Scope is deliberately tight (one small closed cohort, size TBD, synchronous processing, no admin role) to protect the October defense date.
 6. **No Institutional Endorsement Claims.** WriteWise is an independent developmental assessment instrument. The system is designed to be grade-level agnostic across basic penmanship instruction and never claims official DepEd curriculum alignment, certification, or institutional endorsement in user-facing UI or product copy. Formal curricular alignment is investigated solely within offline academic research validation instruments (`EXPERT_RUBRIC_VALIDATION_INSTRUMENT.md`).
 
 ## Accessibility & Inclusion
@@ -90,4 +90,4 @@ Standard OCR transcribes text and discards the physical/structural quality of th
 - WCAG 2.1 AA compliance (4.5:1 text contrast minimum, semantic landmarks, visible keyboard focus, screen reader context for interactive elements)
 - Color is never the sole signal — every band indicator pairs color with text label (accommodates the ~8% male color-blindness prevalence)
 - `prefers-reduced-motion` respected throughout (Framer Motion sequences, dialog overlays)
-- Mobile-responsive design for phone-browser access (Android 9+/iOS 15+) — teachers and parents in the pilot locale commonly access via smartphone
+- Mobile-responsive design for phone-browser access (Android 9+/iOS 15+) — teachers and parents in the Philippine basic-education context commonly access via smartphone

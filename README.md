@@ -9,7 +9,7 @@ WriteWise automatically assesses uploaded cursive handwriting worksheets against
 | **Status** | Draft v1 · pre-Phase 1 |
 | **Team** | Ryan Christopher B. Estoque, John Lawrence V. Monleon, James David B. Asoy, Saara Eliana G. Ibag |
 | **Institution** | Holy Cross of Davao College, BSIT |
-| **Research locale** | Matina Aplaya Elementary School, Talomo, Davao City |
+| **Target setting** | School-agnostic — any basic-education classroom in the Philippines (no partner school at present) |
 | **Phase 1 target** | September 2026 (or earlier) |
 | **Technical defense** | October 2026 |
 
@@ -62,10 +62,10 @@ Once calibration is done, the manual-entry step is swapped for the calibrated au
 | Window | Focus |
 |---|---|
 | Now – early Sept | Phase 1 build (teacher tooling + raw CV pipeline); Phase 2 UI built in parallel against placeholder/manual data |
-| September | Phase 1 live — 5 teachers / 30 students generating calibration data |
+| September | Phase 1 live — teachers/students (cohort size TBD) generating calibration data |
 | Late Sept | Threshold/correlation analysis, CNN evaluation, calibrate scoring engine |
 | Late Sept – early Oct | Integrate calibrated engine, remove manual-entry field, full system complete |
-| Early–mid Oct | Full evaluation: 5 teachers, 30 parents, IT experts (ISO/IEC 25010) + diagnostic accuracy validation |
+| Early–mid Oct | Full evaluation: teachers and parents (respondent count TBD), IT experts (ISO/IEC 25010) + diagnostic accuracy validation |
 | October | Technical defense |
 
 ⚠️ Compressed ~9–10 week runway with a real statistical validation study embedded in it — see `PRD.md` §5/§12 for the risk breakdown.
@@ -233,4 +233,4 @@ Real student names are stored in-app (restricted by role-based RLS access); anon
 - James David B. Asoy
 - Saara Eliana G. Ibag
 
-Holy Cross of Davao College, BSIT — capstone project, research locale: Matina Aplaya Elementary School, Talomo, Davao City.
+Holy Cross of Davao College, BSIT — capstone project. WriteWise is school-agnostic and is not tied to any partner institution.
