@@ -9,7 +9,6 @@ The loaded model is held as a module-level singleton. Single Uvicorn worker
 """
 
 import logging
-import tempfile
 from typing import Any
 
 from app.core.config import settings
@@ -51,28 +50,18 @@ def load_model() -> None:
         )
         return
 
-    # Production: download and load the real model
-    logger.info(
-        "ML model loader: downloading artifact from bucket=%s path=%s",
-        settings.MODEL_STORAGE_BUCKET,
-        settings.MODEL_ARTIFACT_PATH,
-    )
+    # Production: load the real model (cached locally or downloaded once)
     try:
         import tensorflow as tf
 
-        from app.core.supabase import supabase_client
+        from app.ml.cache import get_cached_model_path
 
-        response = supabase_client.storage.from_(settings.MODEL_STORAGE_BUCKET).download(
-            settings.MODEL_ARTIFACT_PATH
+        local_model_path = get_cached_model_path(
+            settings.MODEL_STORAGE_BUCKET, settings.MODEL_ARTIFACT_PATH
         )
-
-        with tempfile.NamedTemporaryFile(suffix=".keras", delete=False) as tmp:
-            tmp.write(response)
-            tmp_path = tmp.name
-
-        _model = tf.keras.models.load_model(tmp_path)
+        _model = tf.keras.models.load_model(str(local_model_path))
         _stub_mode = False
-        logger.info("ML model loader: model loaded successfully")
+        logger.info("ML model loader: model loaded successfully from %s", local_model_path)
 
     except Exception as exc:
         # AGENTS.md §6 rule 13: failed load crashes startup loudly

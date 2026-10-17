@@ -11,7 +11,7 @@ from app.api.sections import router as sections_router
 from app.api.students import router as students_router
 from app.api.submissions import router as submissions_router
 from app.core.config import settings
-from app.ml.htr import load_htr_model
+from app.ml.htr import get_htr_model, is_htr_stub_mode, load_htr_model
 from app.ml.model import is_stub_mode, load_model
 
 logger = logging.getLogger(__name__)
@@ -100,6 +100,8 @@ def health_check():
         "environment": settings.ENVIRONMENT,
         "model_loaded": True,
         "model_stub": is_stub_mode(),
+        "htr_stub": is_htr_stub_mode(),
+        "htr_loaded": get_htr_model() is not None,
         "scoring_engine": settings.SCORING_ENGINE,
     }
 

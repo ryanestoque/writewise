@@ -8,7 +8,6 @@ returns matching or simulated transcriptions without loading real weights.
 """
 
 import logging
-import tempfile
 from typing import Any, Optional, Tuple
 
 import cv2
@@ -65,29 +64,19 @@ def load_htr_model() -> None:
         return
 
     htr_path = getattr(settings, "HTR_MODEL_ARTIFACT_PATH", "")
-    logger.info(
-        "HTR model loader: downloading artifact from bucket=%s path=%s",
-        settings.MODEL_STORAGE_BUCKET,
-        htr_path,
-    )
     try:
         import tensorflow as tf
 
-        from app.core.supabase import supabase_client
+        from app.ml.cache import get_cached_model_path
 
-        response = supabase_client.storage.from_(settings.MODEL_STORAGE_BUCKET).download(htr_path)
-
-        with tempfile.NamedTemporaryFile(suffix=".keras", delete=False) as tmp:
-            tmp.write(response)
-            tmp_path = tmp.name
-
-        _htr_model = tf.keras.models.load_model(tmp_path, compile=False)
+        local_model_path = get_cached_model_path(settings.MODEL_STORAGE_BUCKET, htr_path)
+        _htr_model = tf.keras.models.load_model(str(local_model_path), compile=False)
         _htr_stub_mode = False
-        logger.info("HTR model loader: model loaded successfully")
+        logger.info("HTR model loader: model loaded successfully from %s", local_model_path)
 
     except Exception as exc:
-        logger.warning(
-            "HTR model failed to load from Storage (%s). Falling back to stub mode: %s",
+        logger.error(
+            "HTR model failed to load (%s). Falling back to stub mode: %s",
             htr_path,
             exc,
         )
@@ -403,7 +392,14 @@ def verify_target_text(
         (is_match, detected_text, similarity_score)
     """
     if is_htr_stub_mode() or _htr_model is None:
-        # Stub mode: accept by default
+        if settings.ENVIRONMENT != "test":
+            logger.warning(
+                "verify_target_text: HTR is running in stub mode. "
+                "Target text '%s' accepted without AI verification.",
+                target_text,
+            )
+            return True, "", 0.0
+        # Stub mode in test environment: accept by default for mock test pipelines
         return True, target_text, 1.0
 
     has_valid_masks = binary_masks is not None and len(binary_masks) == len(word_crops)
@@ -414,7 +410,7 @@ def verify_target_text(
     detected_text = " ".join(w for w in detected_words if w)
 
     if not detected_text:
-        return True, "", 1.0
+        return True, "", 0.0
 
     det_words = [w for w in detected_text.lower().strip().split() if w]
     tgt_words = [w for w in target_text.lower().strip().split() if w]
