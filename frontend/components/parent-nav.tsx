@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BrandLogo } from "@/components/brand-logo";
+import { BrandIcon, BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -99,13 +99,19 @@ export function ParentNav({
           aria-label="Parent navigation"
           className="flex h-14 items-center justify-between gap-2 sm:gap-3 px-3 sm:px-6"
         >
-          {/* Left: Brand Logo */}
+          {/* Left: Brand Logo (App icon on mobile, full logo on desktop) */}
           <Link
             href="/progress"
-            className="flex items-center gap-2 shrink-0 rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-opacity hover:opacity-90"
+            className="flex items-center gap-2 shrink-0 rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-opacity hover:opacity-90 min-h-[40px] min-w-[40px]"
             aria-label="WriteWise Parent Portal Home"
           >
-            <BrandLogo size="sm" priority />
+            {/* Mobile Viewports: App Icon */}
+            <div className="flex sm:hidden size-8 items-center justify-center rounded-lg overflow-hidden shrink-0 shadow-2xs">
+              <BrandIcon size={32} className="size-full object-contain" priority />
+            </div>
+
+            {/* Tablet & Desktop: Full Horizontal Logo */}
+            <BrandLogo size="sm" priority className="hidden sm:inline-flex" />
           </Link>
 
           {/* Center: Child Switcher (DESIGN §5: Always-present child indicator) */}
