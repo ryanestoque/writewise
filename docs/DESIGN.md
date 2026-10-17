@@ -218,9 +218,11 @@ Inline banner on the same upload screen (no navigation to a separate screen), wi
 | Error code | Copy |
 |---|---|
 | `QUALITY_GATE_BLUR` | "This photo is too blurry to analyze. Hold the camera steady and try again." |
-| `QUALITY_GATE_BRIGHTNESS` | "This photo is too dark to analyze. Try moving to a brighter spot and retake it." |
+| `QUALITY_GATE_BRIGHTNESS` | Tailor to dark versus bright-with-insufficient-detail using error details: "Retake in even, indirect light without glare." A bright readable white page is permitted. |
 | `QUALITY_GATE_CONTRAST` | "This photo looks washed out. Try adjusting the lighting or angle and retake it." |
 | `QUALITY_GATE_RESOLUTION` | "This photo doesn't have enough detail to analyze. Move a little closer and retake it." |
+
+Capture tips must preserve the original worksheet. Adjust lighting, focus, and framing; do not ask the student to retrace or darken existing writing to pass a photo-quality check. A contrast rejection describes visibility in this photo, not a judgment about the student's handwriting.
 
 A **Retake** button re-opens the native picker immediately.
 

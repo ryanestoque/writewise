@@ -315,12 +315,12 @@ export function SampleReportPreview({
           id="sample-diagnostic-details"
           className="lg:col-span-5 space-y-4"
         >
-          {/* Overall Penmanship Summary */}
+          {/* Overall Score Summary */}
           <div className="rounded-xl border border-border/80 bg-muted/30 p-4 space-y-2.5 shadow-2xs">
             <div className="flex items-baseline justify-between gap-2">
               <div>
                 <span className="text-[11px] font-semibold text-muted-foreground block uppercase tracking-wider">
-                  Sample Overall Penmanship
+                  Sample Overall Score
                 </span>
                 <span className="text-2xl font-bold font-sans tabular-nums text-foreground">
                   87.2%

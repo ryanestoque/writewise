@@ -242,12 +242,12 @@ export function getRejectionSummary(code: string | null): {
     case "QUALITY_GATE_BRIGHTNESS":
       return {
         label: "Lighting issue",
-        detail: "Move to a brighter spot with even lighting",
+        detail: "Retake in even, indirect light without glare",
       };
     case "QUALITY_GATE_CONTRAST":
       return {
-        label: "Faint handwriting",
-        detail: "Ensure dark pencil strokes and reduce glare",
+        label: "Low photo contrast",
+        detail: "Reduce glare and tap the handwriting to focus",
       };
     case "QUALITY_GATE_RESOLUTION":
       return {

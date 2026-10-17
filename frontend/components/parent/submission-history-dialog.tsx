@@ -20,6 +20,8 @@ import {
   FileText,
   Eye,
   ChevronDown,
+  BookOpen,
+  ArrowUpDown,
 } from "lucide-react";
 
 interface SubmissionHistoryDialogProps {
@@ -27,6 +29,7 @@ interface SubmissionHistoryDialogProps {
   onOpenChange: (open: boolean) => void;
   history: StudentScoreHistoryItem[];
   childName: string;
+  onOpenRubric?: () => void;
 }
 
 const PARENT_CRITERIA = PARENT_CRITERIA_LIST.map((c) => ({
@@ -39,6 +42,7 @@ export function SubmissionHistoryDialog({
   onOpenChange,
   history,
   childName,
+  onOpenRubric,
 }: SubmissionHistoryDialogProps) {
   const [selectedItemForView, setSelectedItemForView] =
     useState<StudentScoreHistoryItem | null>(null);
@@ -47,15 +51,34 @@ export function SubmissionHistoryDialog({
   const [expandedSubmissions, setExpandedSubmissions] = useState<
     Record<string, boolean>
   >({});
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const savedScrollTopRef = useRef<number>(0);
+  const lastTriggeredButtonIdRef = useRef<string | null>(null);
 
-  // Sort reverse-chronologically (newest first)
-  const sortedHistory = useMemo(() => [...history].reverse(), [history]);
+  // Build items with permanent chronological attempt numbers & previous-attempt deltas
+  const processedHistory = useMemo(() => {
+    // history is in chronological order (earliest = index 0)
+    const items = history.map((item, idx) => {
+      const prevItem = idx > 0 ? history[idx - 1] : null;
+      const currentScore = item.compositeScore;
+      const prevScore = prevItem?.compositeScore;
+      const delta =
+        currentScore != null && prevScore != null ? currentScore - prevScore : null;
+      return {
+        ...item,
+        attemptNumber: idx + 1,
+        isBaseline: idx === 0 && history.length > 1,
+        delta,
+      };
+    });
+    return sortOrder === "newest" ? items.reverse() : items;
+  }, [history, sortOrder]);
+
   const isViewingWorksheet = !!selectedItemForView;
 
-  // Restore scroll position when returning from the worksheet photo viewer
+  // Restore scroll position and keyboard focus when returning from the worksheet photo viewer
   useEffect(() => {
     if (!isViewingWorksheet && scrollContainerRef.current && savedScrollTopRef.current > 0) {
       const scrollEl = scrollContainerRef.current;
@@ -63,6 +86,12 @@ export function SubmissionHistoryDialog({
       requestAnimationFrame(() => {
         if (scrollEl) {
           scrollEl.scrollTop = targetScroll;
+        }
+        if (lastTriggeredButtonIdRef.current) {
+          const btn = document.getElementById(lastTriggeredButtonIdRef.current);
+          if (btn) {
+            btn.focus();
+          }
         }
       });
     }
@@ -75,6 +104,7 @@ export function SubmissionHistoryDialog({
     if (scrollContainerRef.current) {
       savedScrollTopRef.current = scrollContainerRef.current.scrollTop;
     }
+    lastTriggeredButtonIdRef.current = `inspect-btn-${item.submissionId}`;
     setInitialCriterionForView(criterion);
     setSelectedItemForView(item);
   };
@@ -82,6 +112,12 @@ export function SubmissionHistoryDialog({
   const handleBackFromWorksheetView = () => {
     setSelectedItemForView(null);
     setInitialCriterionForView(undefined);
+  };
+
+  const handleCloseAll = () => {
+    setSelectedItemForView(null);
+    setInitialCriterionForView(undefined);
+    onOpenChange(false);
   };
 
   const toggleExpanded = (submissionId: string) => {
@@ -93,29 +129,43 @@ export function SubmissionHistoryDialog({
 
   const allExpanded = useMemo(() => {
     return (
-      sortedHistory.length > 0 &&
-      sortedHistory.every((item) => !!expandedSubmissions[item.submissionId])
+      processedHistory.length > 0 &&
+      processedHistory.every((item) => !!expandedSubmissions[item.submissionId])
     );
-  }, [sortedHistory, expandedSubmissions]);
+  }, [processedHistory, expandedSubmissions]);
 
   const toggleAllExpanded = () => {
     if (allExpanded) {
       setExpandedSubmissions({});
     } else {
       const next: Record<string, boolean> = {};
-      for (const item of sortedHistory) {
+      for (const item of processedHistory) {
         next[item.submissionId] = true;
       }
       setExpandedSubmissions(next);
     }
   };
 
+  const scrollToTop = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const scrollToBottom = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  };
+
   // Compute longitudinal trajectory from earliest to latest attempt
   const overallStats = useMemo(() => {
-    if (sortedHistory.length < 2) return null;
-    const newestScore = sortedHistory[0]?.compositeScore;
-    const oldestScore =
-      sortedHistory[sortedHistory.length - 1]?.compositeScore;
+    if (history.length < 2) return null;
+    const newestScore = history[history.length - 1]?.compositeScore;
+    const oldestScore = history[0]?.compositeScore;
     if (newestScore == null || oldestScore == null) return null;
     const overallDelta = newestScore - oldestScore;
     return {
@@ -123,12 +173,12 @@ export function SubmissionHistoryDialog({
       oldestScore,
       overallDelta,
     };
-  }, [sortedHistory]);
+  }, [history]);
 
   return (
     <>
       <Dialog open={open && !isViewingWorksheet} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[calc(100%-1.5rem)] max-w-2xl max-h-[min(90dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
+        <DialogContent className="w-[calc(100%-1.5rem)] sm:max-w-3xl lg:max-w-4xl max-h-[min(90dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
           {/* Header */}
           <DialogHeader className="p-5 sm:p-6 pb-4 border-b border-border bg-card/60">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -137,15 +187,15 @@ export function SubmissionHistoryDialog({
                   Worksheet History &amp; Scores
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-                  {sortedHistory.length > 0 ? (
+                  {processedHistory.length > 0 ? (
                     <>
-                      {sortedHistory.length} scored{" "}
-                      {sortedHistory.length === 1 ? "worksheet" : "worksheets"}{" "}
+                      {processedHistory.length} scored{" "}
+                      {processedHistory.length === 1 ? "worksheet" : "worksheets"}{" "}
                       for{" "}
                       <span className="font-medium text-foreground">
                         {childName}
                       </span>{" "}
-                      (showing newest first)
+                      ({sortOrder === "newest" ? "showing newest first" : "showing earliest first"})
                     </>
                   ) : (
                     `Past scored worksheets and skill feedback for ${childName}.`
@@ -177,24 +227,77 @@ export function SubmissionHistoryDialog({
                 )}
               </div>
 
-              {sortedHistory.length > 1 && (
-                <button
-                  type="button"
-                  onClick={toggleAllExpanded}
-                  className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:underline cursor-pointer shrink-0 h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] py-1.5 px-3 rounded-lg hover:bg-brand-50/60 dark:hover:bg-brand-950/40 border border-transparent hover:border-brand-200/60 dark:hover:border-brand-800/60 transition-colors self-start sm:self-center inline-flex items-center touch-manipulation"
-                >
-                  {allExpanded ? "Collapse All Details" : "Expand All Details"}
-                </button>
-              )}
+              {/* Action Buttons in Header */}
+              <div className="flex flex-wrap items-center gap-2 self-start sm:self-center shrink-0">
+                {onOpenRubric && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onOpenRubric}
+                    className="h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-2.5 text-xs font-medium gap-1.5 border-border/80 hover:bg-muted/50 cursor-pointer shadow-2xs"
+                    title="Open 5-criterion rubric scoring reference"
+                  >
+                    <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+                    <span>Scoring Rubric</span>
+                  </Button>
+                )}
+
+                {processedHistory.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={toggleAllExpanded}
+                    className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-3 rounded-lg hover:bg-brand-50/60 dark:hover:bg-brand-950/40 border border-transparent hover:border-brand-200/60 dark:hover:border-brand-800/60 transition-colors inline-flex items-center touch-manipulation"
+                  >
+                    {allExpanded ? "Collapse All Details" : "Expand All Details"}
+                  </Button>
+                )}
+              </div>
             </div>
           </DialogHeader>
+
+          {/* Interactive Sub-Header Controls for Multi-Attempt Navigation */}
+          {history.length > 2 && (
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-2 bg-muted/30 border-b border-border/60 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground font-medium">Order:</span>
+                <button
+                  type="button"
+                  onClick={() => setSortOrder((prev) => (prev === "newest" ? "oldest" : "newest"))}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-card border border-border/80 hover:bg-muted/50 text-foreground font-medium transition-colors cursor-pointer shadow-2xs touch-manipulation"
+                  title="Toggle chronological sorting"
+                >
+                  <ArrowUpDown className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                  <span>{sortOrder === "newest" ? "Newest First" : "Earliest First"}</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={scrollToTop}
+                  className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer hover:underline touch-manipulation"
+                >
+                  Jump to {sortOrder === "newest" ? "Latest" : "Baseline"}
+                </button>
+                <span className="text-border" aria-hidden="true">&middot;</span>
+                <button
+                  type="button"
+                  onClick={scrollToBottom}
+                  className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer hover:underline touch-manipulation"
+                >
+                  Jump to {sortOrder === "newest" ? "Baseline" : "Latest"}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* List of submissions */}
           <div
             ref={scrollContainerRef}
             className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"
           >
-            {sortedHistory.length === 0 ? (
+            {processedHistory.length === 0 ? (
               <div className="p-8 text-center space-y-2 rounded-xl border border-dashed border-border bg-muted/20">
                 <FileText
                   className="size-8 text-muted-foreground/60 mx-auto"
@@ -208,7 +311,7 @@ export function SubmissionHistoryDialog({
                 </p>
               </div>
             ) : (
-              sortedHistory.map((item, index) => {
+              processedHistory.map((item) => {
                 const formattedDate = new Date(
                   item.submissionDate
                 ).toLocaleDateString("en-US", {
@@ -217,16 +320,6 @@ export function SubmissionHistoryDialog({
                   year: "numeric",
                 });
 
-                // Delta vs chronologically preceding attempt
-                const previousItem = sortedHistory[index + 1];
-                const currentScore = item.compositeScore;
-                const prevScore = previousItem?.compositeScore;
-                const delta =
-                  currentScore != null && prevScore != null
-                    ? currentScore - prevScore
-                    : null;
-                const isBaseline =
-                  index === sortedHistory.length - 1 && sortedHistory.length > 1;
                 const isExpanded = !!expandedSubmissions[item.submissionId];
 
                 return (
@@ -239,37 +332,40 @@ export function SubmissionHistoryDialog({
                       <div className="space-y-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                            Attempt #{sortedHistory.length - index}
+                            Attempt #{item.attemptNumber}
                           </span>
 
-                          {delta != null && (
+                          {item.delta != null && (
                             <span
                               className={cn(
                                 "inline-flex items-center px-2 py-0.5 rounded-md tabular-nums shrink-0 text-[11px] font-semibold shadow-2xs",
-                                delta > 0
+                                item.delta > 0
                                   ? "text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 border border-band-4/30 dark:border-band-4/40"
-                                  : delta < 0
+                                  : item.delta < 0
                                   ? "text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40"
                                   : "text-muted-foreground bg-muted/40 border border-border/60"
                               )}
                               title={
-                                delta > 0
-                                  ? `Improvement of +${delta.toFixed(1)}% compared to Attempt #${sortedHistory.length - (index + 1)}`
-                                  : delta < 0
-                                  ? `Difference of ${delta.toFixed(1)}% compared to Attempt #${sortedHistory.length - (index + 1)}`
+                                item.delta > 0
+                                  ? `Improvement of +${item.delta.toFixed(1)}% compared to Attempt #${item.attemptNumber - 1}`
+                                  : item.delta < 0
+                                  ? `Difference of ${item.delta.toFixed(1)}% compared to Attempt #${item.attemptNumber - 1}`
                                   : "No score change compared to previous attempt"
                               }
                             >
                               <span>
-                                {delta > 0
-                                  ? `+${delta.toFixed(1)}%`
-                                  : `${delta.toFixed(1)}%`}
+                                {item.delta > 0
+                                  ? `+${item.delta.toFixed(1)}%`
+                                  : `${item.delta.toFixed(1)}%`}
                               </span>
                             </span>
                           )}
 
-                          {isBaseline && (
-                            <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-muted/40 px-2 py-0.5 rounded-md border border-border/50 shrink-0">
+                          {item.isBaseline && (
+                            <span
+                              className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-muted/40 px-2 py-0.5 rounded-md border border-border/50 shrink-0"
+                              title="Starting benchmark worksheet for this child"
+                            >
                               Baseline attempt
                             </span>
                           )}
@@ -299,11 +395,12 @@ export function SubmissionHistoryDialog({
 
                         {item.imagePath && (
                           <Button
+                            id={`inspect-btn-${item.submissionId}`}
                             variant="outline"
                             size="sm"
                             onClick={() => handleOpenWorksheetView(item)}
                             aria-haspopup="dialog"
-                            aria-label={`View photo and guide lines for attempt #${sortedHistory.length - index}: "${item.targetText}"`}
+                            aria-label={`View photo and guide lines for attempt #${item.attemptNumber}: "${item.targetText}"`}
                             className="h-9 min-h-[36px] text-xs font-medium gap-1.5 border-brand-200 dark:border-brand-900 bg-brand-50/40 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 hover:bg-brand-100/60 dark:hover:bg-brand-900/50 cursor-pointer shadow-2xs"
                           >
                             <Eye
@@ -316,20 +413,46 @@ export function SubmissionHistoryDialog({
                       </div>
                     </div>
 
-                    {/* 5-Skill Summary: Stacked on Mobile, 5-col Grid on sm+ */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-muted-foreground">
-                          5-Skill Summary
-                        </span>
+                    {/* 5-Skill Overview & Expand Toggle */}
+                    <div className="space-y-2 pt-1 border-t border-border/50">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
+                        {/* Organic non-truncating skill pills */}
+                        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                          <span className="font-semibold text-muted-foreground mr-1 text-[11px] uppercase tracking-wider">
+                            Skills:
+                          </span>
+                          {PARENT_CRITERIA.map((criterion) => {
+                            const band = item.bands[criterion.criterionKey];
+                            return (
+                              <span
+                                key={criterion.criterionKey}
+                                className="inline-flex items-center gap-1.5 text-[11px] font-medium text-foreground/80 bg-muted/30 dark:bg-muted/20 border border-border/60 rounded-md px-2 py-0.5"
+                              >
+                                <span
+                                  className={cn(
+                                    "size-1.5 rounded-full shrink-0",
+                                    band === "excellent" && "bg-band-4",
+                                    band === "satisfactory" && "bg-band-3",
+                                    band === "developing" && "bg-band-2",
+                                    band === "needs_improvement" && "bg-band-1",
+                                    !band && "bg-muted-foreground/40"
+                                  )}
+                                  aria-hidden="true"
+                                />
+                                <span>{criterion.label}</span>
+                              </span>
+                            );
+                          })}
+                        </div>
+
                         <button
                           type="button"
                           onClick={() => toggleExpanded(item.submissionId)}
                           aria-expanded={isExpanded}
                           aria-controls={`details-${item.submissionId}`}
-                          className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:underline cursor-pointer py-1 px-1.5 rounded-md hover:bg-brand-50/60 dark:hover:bg-brand-950/40 transition-colors"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:underline cursor-pointer py-1 px-1.5 rounded-md hover:bg-brand-50/60 dark:hover:bg-brand-950/40 transition-colors shrink-0 self-start sm:self-auto"
                         >
-                          <span>{isExpanded ? "Hide Details" : "View Details"}</span>
+                          <span>{isExpanded ? "Hide Details" : "View Feedback & Notes"}</span>
                           <ChevronDown
                             className={cn(
                               "size-3.5 transition-transform duration-200 motion-reduce:transition-none text-brand-600 dark:text-brand-400",
@@ -338,54 +461,6 @@ export function SubmissionHistoryDialog({
                             aria-hidden="true"
                           />
                         </button>
-                      </div>
-
-                      {/* Mobile Stacked List (xs) */}
-                      <div className="sm:hidden space-y-1.5 pt-0.5">
-                        {PARENT_CRITERIA.map((criterion) => {
-                          const score = item.scores[criterion.criterionKey];
-                          const band = item.bands[criterion.criterionKey];
-                          return (
-                            <div
-                              key={criterion.criterionKey}
-                              className="rounded-lg border border-border/60 bg-muted/20 px-3 py-1.5 flex items-center justify-between gap-2"
-                            >
-                              <span className="text-xs font-medium text-foreground">
-                                {criterion.label}
-                              </span>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <span className="text-xs font-semibold font-sans tabular-nums text-foreground">
-                                  {score != null ? `${Math.round(score)}%` : "—"}
-                                </span>
-                                <BandBadge band={band} score={score} size="sm" showDot />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Desktop 5-Column Grid (sm+) */}
-                      <div className="hidden sm:grid sm:grid-cols-5 gap-2 pt-0.5">
-                        {PARENT_CRITERIA.map((criterion) => {
-                          const score = item.scores[criterion.criterionKey];
-                          const band = item.bands[criterion.criterionKey];
-                          return (
-                            <div
-                              key={criterion.criterionKey}
-                              className="rounded-lg border border-border/60 bg-muted/20 px-2.5 py-1.5 flex flex-col justify-between"
-                            >
-                              <span className="text-[11px] font-medium text-muted-foreground truncate" title={criterion.label}>
-                                {criterion.label}
-                              </span>
-                              <div className="flex items-center justify-between gap-1 mt-1">
-                                <span className="text-xs font-semibold font-sans tabular-nums text-foreground">
-                                  {score != null ? `${Math.round(score)}%` : "—"}
-                                </span>
-                                <BandBadge band={band} score={score} size="sm" showDot />
-                              </div>
-                            </div>
-                          );
-                        })}
                       </div>
                     </div>
 
@@ -431,8 +506,9 @@ export function SubmissionHistoryDialog({
           {/* Streamlined Footer */}
           <div className="py-2.5 px-4 sm:px-6 border-t border-border bg-card/60 flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              Showing {sortedHistory.length}{" "}
-              {sortedHistory.length === 1 ? "worksheet" : "worksheets"}
+              Showing {processedHistory.length}{" "}
+              {processedHistory.length === 1 ? "worksheet" : "worksheets"}{" "}
+              ({sortOrder === "newest" ? "newest first" : "earliest first"})
             </p>
             <Button
               variant="outline"
@@ -451,7 +527,7 @@ export function SubmissionHistoryDialog({
         <WorksheetViewDialog
           open={!!selectedItemForView}
           onOpenChange={(openNext) => {
-            if (!openNext) handleBackFromWorksheetView();
+            if (!openNext) handleCloseAll();
           }}
           onBack={handleBackFromWorksheetView}
           backLabel="Back to History"

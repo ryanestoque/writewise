@@ -567,6 +567,7 @@ export function ProgressPageContent() {
         onOpenChange={setHistoryOpen}
         history={history ?? []}
         childName={selectedChild.fullName}
+        onOpenRubric={handleOpenRubric}
       />
     </div>
   );

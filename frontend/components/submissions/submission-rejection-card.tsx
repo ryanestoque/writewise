@@ -38,16 +38,16 @@ export const REJECTION_GUIDE: Record<string, RejectionDetail> = {
   QUALITY_GATE_BRIGHTNESS: {
     title: "Lighting Too Dark or Overexposed",
     description:
-      "Heavy shadows or strong glare obscured the 3-line penmanship ruling and handwriting strokes.",
+      "The photo is too dark, or its bright areas do not show enough writing detail.",
     advice:
       "Position the worksheet in bright, indirect natural or classroom light without overhead flash glare.",
   },
   QUALITY_GATE_CONTRAST: {
-    title: "Low Contrast or Faint Pencil Strokes",
+    title: "Low Contrast in Worksheet Photo",
     description:
-      "The handwriting strokes were too faint against the paper background for reliable contour analysis.",
+      "The photo does not separate the writing clearly enough from the paper background.",
     advice:
-      "Ensure the student writes with a dark #2 pencil or pen, and adjust lighting to eliminate washed-out areas.",
+      "Retake the original worksheet in even, indirect light, reduce glare, and tap the handwriting to focus.",
   },
   QUALITY_GATE_RESOLUTION: {
     title: "Image Resolution Too Low",

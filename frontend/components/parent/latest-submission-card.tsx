@@ -153,12 +153,12 @@ export function LatestSubmissionCard({
             </button>
           )}
 
-          {/* Overall Penmanship Metric */}
+          {/* Overall Score Metric */}
           <div className="space-y-2.5 pt-1">
             <div className="flex items-baseline justify-between gap-2">
               <div>
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
-                  Overall Penmanship
+                  Overall Score
                 </h4>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl sm:text-3xl font-bold font-sans tabular-nums text-foreground">

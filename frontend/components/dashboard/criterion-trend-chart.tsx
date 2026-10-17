@@ -289,7 +289,7 @@ export function CriterionTrendChart({
 
     const activeList = CRITERION_CONFIG.filter((c) => activeCriteria[c.key]).map((c) => c.label).join(", ");
 
-    return `Across ${history.length} worksheets from ${startDate} to ${endDate}, overall penmanship score ${trendDesc}. Currently showing lines for: ${activeList || "none"}.`;
+    return `Across ${history.length} worksheets from ${startDate} to ${endDate}, overall score ${trendDesc}. Currently showing lines for: ${activeList || "none"}.`;
   }, [history, activeCriteria]);
 
   const trajectoryStats = useMemo(() => {
@@ -374,7 +374,7 @@ export function CriterionTrendChart({
     <div className={cn("space-y-4", className)}>
       {/* Controls Bar: Inline Interactive Filter Pills + View Mode Toggle */}
       <div className="flex flex-col gap-3 pt-1 border-b border-border/50 pb-3 min-w-0">
-        <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="font-semibold text-foreground">Trend Lines</span>
             {isCustomized ? (
@@ -407,7 +407,7 @@ export function CriterionTrendChart({
             role="tablist"
             aria-label="Progress view mode"
             onKeyDown={handleTabKeyDown}
-            className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/60 shrink-0"
+            className="grid grid-cols-2 sm:flex sm:items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/60 w-full sm:w-auto shrink-0"
           >
             <button
               id="progress-view-tab-chart"
@@ -418,7 +418,7 @@ export function CriterionTrendChart({
               tabIndex={viewMode === "chart" ? 0 : -1}
               onClick={() => setViewMode("chart")}
               className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[40px] sm:min-h-[32px] rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary touch-manipulation",
+                "inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[40px] sm:min-h-[32px] rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary touch-manipulation",
                 viewMode === "chart"
                   ? "bg-card text-foreground font-semibold shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -436,7 +436,7 @@ export function CriterionTrendChart({
               tabIndex={viewMode === "table" ? 0 : -1}
               onClick={() => setViewMode("table")}
               className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[40px] sm:min-h-[32px] rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary touch-manipulation",
+                "inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[40px] sm:min-h-[32px] rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary touch-manipulation",
                 viewMode === "table"
                   ? "bg-card text-foreground font-semibold shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -697,7 +697,7 @@ export function CriterionTrendChart({
                 <tr className="border-b border-border bg-muted/30 text-muted-foreground font-semibold">
                   <th scope="col" className="py-2.5 px-3 whitespace-nowrap">Date</th>
                   <th scope="col" className="py-2.5 px-3 min-w-[140px]">Worksheet Activity</th>
-                  <th scope="col" className="py-2.5 px-3 text-right whitespace-nowrap">Overall Penmanship</th>
+                  <th scope="col" className="py-2.5 px-3 text-right whitespace-nowrap">Overall Score</th>
                   <th scope="col" className="py-2.5 px-3 text-right whitespace-nowrap">Letter Formation</th>
                   <th scope="col" className="py-2.5 px-3 text-right whitespace-nowrap">Size Consistency</th>
                   <th scope="col" className="py-2.5 px-3 text-right whitespace-nowrap">Spacing</th>

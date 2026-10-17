@@ -23,12 +23,19 @@ import {
   type DiagnosticOverlayData,
   type ActiveAnnotationHover,
 } from "@/components/shared/diagnostic-overlay";
-import { CriterionFeedbackRow } from "./criterion-feedback-row";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import { cn } from "@/lib/utils";
 import {
   PARENT_CRITERIA_LIST,
   PARENT_CRITERIA_METADATA,
+  DIAGNOSTIC_NOTES,
+  computeStrengthAndFocus,
   type ScoreBand,
   type CriterionKey,
 } from "@/lib/utils/scoring";
@@ -36,6 +43,7 @@ import {
   ArrowLeft,
   Trash2,
   Loader2,
+  Eye,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -87,11 +95,6 @@ interface WorksheetViewDialogProps {
   backLabel?: string;
 }
 
-const PARENT_CRITERIA = PARENT_CRITERIA_LIST.map((c) => ({
-  criterionKey: c.key,
-  label: c.label,
-}));
-
 export function WorksheetViewDialog({
   open,
   onOpenChange,
@@ -119,6 +122,10 @@ export function WorksheetViewDialog({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<"photo" | "scores">("photo");
 
+  const { topStrength, practiceFocus } = useMemo(() => {
+    return computeStrengthAndFocus(scores, bands);
+  }, [scores, bands]);
+
   const deleteMutation = useDeleteSubmission();
 
   const handleDelete = async () => {
@@ -144,7 +151,7 @@ export function WorksheetViewDialog({
     onOpenChange(nextOpen);
   };
 
-  const handleCriterionSelect = (criterionKey: CriterionKey) => {
+  const handleCriterionSelect = (criterionKey: CriterionKey, switchMobileTab = false) => {
     const key = criterionKey as CriterionFilter;
     setCriterionOverride(key);
     if (overlay) {
@@ -155,7 +162,9 @@ export function WorksheetViewDialog({
         setSelectedAttentionItem(null);
       }
     }
-    setMobileTab("photo");
+    if (switchMobileTab) {
+      setMobileTab("photo");
+    }
   };
 
   const effectiveInitialCriterion: CriterionFilter = useMemo(() => {
@@ -164,7 +173,7 @@ export function WorksheetViewDialog({
       return overlay.summary.weakest_criterion as CriterionFilter;
     }
     return "all";
-  }, [initialCriterion, overlay?.summary?.weakest_criterion]);
+  }, [initialCriterion, overlay]);
 
   const activeCriterion = criterionOverride ?? effectiveInitialCriterion;
 
@@ -189,11 +198,21 @@ export function WorksheetViewDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[calc(100%-1.5rem)] sm:max-w-4xl lg:max-w-5xl max-h-[min(94dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
+      <DialogContent className="w-[calc(100%-1.5rem)] sm:max-w-3xl lg:max-w-4xl max-h-[min(94dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
         {/* Header */}
         <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border bg-card/80">
           <div className="flex items-center justify-between gap-3 pr-10">
-            <div className="min-w-0">
+            <div className="min-w-0 space-y-1">
+              {onBack && (
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 transition-colors cursor-pointer group mb-0.5 touch-manipulation"
+                >
+                  <ArrowLeft className="size-3.5 transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
+                  <span>{backLabel}</span>
+                </button>
+              )}
               <DialogTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
                 Scored Worksheet Photo
               </DialogTitle>
@@ -205,6 +224,12 @@ export function WorksheetViewDialog({
                 <span>
                   {formattedDate}
                 </span>
+                {targetText && (
+                  <>
+                    <span>&middot;</span>
+                    <span className="italic truncate max-w-[220px]">&ldquo;{targetText}&rdquo;</span>
+                  </>
+                )}
               </DialogDescription>
             </div>
           </div>
@@ -213,9 +238,17 @@ export function WorksheetViewDialog({
         {/* Content Body: Split View */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           {/* Mobile View Segmented Switcher */}
-          <div className="lg:hidden flex items-center p-1 bg-muted/50 rounded-xl border border-border/70 text-xs font-medium">
+          <div
+            role="tablist"
+            aria-label="Worksheet view options"
+            className="lg:hidden flex items-center p-1 bg-muted/50 rounded-xl border border-border/70 text-xs font-medium"
+          >
             <button
               type="button"
+              id="mobile-tab-photo"
+              role="tab"
+              aria-selected={mobileTab === "photo"}
+              aria-controls="mobile-panel-photo"
               onClick={() => setMobileTab("photo")}
               className={cn(
                 "flex-1 py-2 px-3 rounded-lg text-center transition-all cursor-pointer min-h-[40px] flex items-center justify-center font-medium touch-manipulation",
@@ -228,6 +261,10 @@ export function WorksheetViewDialog({
             </button>
             <button
               type="button"
+              id="mobile-tab-scores"
+              role="tab"
+              aria-selected={mobileTab === "scores"}
+              aria-controls="mobile-panel-scores"
               onClick={() => setMobileTab("scores")}
               className={cn(
                 "flex-1 py-2 px-3 rounded-lg text-center transition-all cursor-pointer min-h-[40px] flex items-center justify-center gap-1.5 font-medium touch-manipulation",
@@ -247,7 +284,12 @@ export function WorksheetViewDialog({
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             {/* Left: High-Resolution Worksheet Photo Inspector */}
-            <div className={cn("lg:col-span-7 flex flex-col justify-center w-full gap-2", mobileTab !== "photo" && "hidden lg:flex")}>
+            <div
+              id="mobile-panel-photo"
+              role="tabpanel"
+              aria-labelledby="mobile-tab-photo"
+              className={cn("lg:col-span-7 flex flex-col justify-center w-full gap-2", mobileTab !== "photo" && "hidden lg:flex")}
+            >
               <WorksheetImageInspector
                 imageUrl={imageUrl}
                 altText={`Handwriting worksheet submitted for ${childName}`}
@@ -328,7 +370,12 @@ export function WorksheetViewDialog({
             </div>
 
             {/* Right: Worksheet Details & Criterion Feedback */}
-            <div className={cn("lg:col-span-5 space-y-4", mobileTab !== "scores" && "hidden lg:block")}>
+            <div
+              id="mobile-panel-scores"
+              role="tabpanel"
+              aria-labelledby="mobile-tab-scores"
+              className={cn("lg:col-span-5 space-y-4", mobileTab !== "scores" && "hidden lg:block")}
+            >
               {/* Activity Target Text */}
               <div className="p-3.5 rounded-xl border border-border/80 bg-card/60 space-y-1 shadow-xs">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -344,16 +391,13 @@ export function WorksheetViewDialog({
                 <div className="p-3.5 rounded-xl border border-border/80 bg-card space-y-2 shadow-xs">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Overall Penmanship Score
+                      Overall Score
                     </span>
                     <BandBadge score={compositeScore} size="sm" />
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-bold font-sans tabular-nums text-foreground">
                       {compositeScore.toFixed(1)}%
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      overall handwriting score
                     </span>
                   </div>
                   <BandPositionBar score={compositeScore} height="sm" />
@@ -362,47 +406,127 @@ export function WorksheetViewDialog({
 
               {/* Criteria Feedback Breakdown */}
               {scores && bands && (
-                <div className="p-3.5 rounded-xl border border-border/80 bg-muted/10 space-y-2 shadow-xs">
+                <div className="p-3.5 rounded-xl border border-border/80 bg-muted/10 space-y-2.5 shadow-xs">
                   <div className="flex items-center justify-between pb-1 border-b border-border/50">
                     <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Skill Breakdown
                     </span>
-                    {activeCriterion !== "all" ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCriterionOverride("all");
-                          setSelectedAttentionItem(null);
-                        }}
-                        className="text-xs text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:underline cursor-pointer font-medium"
-                      >
-                        Show All Skills
-                      </button>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        5 skills
-                      </span>
-                    )}
+                    <span className="text-xs text-muted-foreground">
+                      5 skills
+                    </span>
                   </div>
-                  <div className="divide-y divide-border/50">
-                    {PARENT_CRITERIA.map((criterion) => {
-                      const isCriterionActive = activeCriterion === criterion.criterionKey;
-                      const criterionMeta = PARENT_CRITERIA_METADATA[criterion.criterionKey as CriterionKey];
+
+                  <Accordion
+                    value={activeCriterion === "all" ? [] : [activeCriterion]}
+                    onValueChange={(val) => {
+                      const next = Array.isArray(val)
+                        ? (val as string[])
+                        : val
+                        ? [val as string]
+                        : [];
+                      if (next.length > 0) {
+                        const selected = next[next.length - 1] as CriterionKey;
+                        handleCriterionSelect(selected, false);
+                      } else {
+                        setCriterionOverride("all");
+                        setSelectedAttentionItem(null);
+                      }
+                    }}
+                    className="rounded-xl border border-border/80 bg-card overflow-hidden divide-y divide-border/60 shadow-2xs"
+                  >
+                    {PARENT_CRITERIA_LIST.map((criterion) => {
+                      const isTop = topStrength?.key === criterion.key;
+                      const isFocus = practiceFocus?.key === criterion.key;
+                      const highlightBadge = isTop
+                        ? "top_strength"
+                        : isFocus
+                        ? "practice_focus"
+                        : null;
+                      const score = scores[criterion.key];
+                      const band = bands[criterion.key];
+                      const diagnosticNote = band ? DIAGNOSTIC_NOTES[criterion.key][band] : null;
+                      const criterionMeta = PARENT_CRITERIA_METADATA[criterion.key];
+                      const homeTip = isFocus ? practiceFocus?.meta.homeTip : criterionMeta?.homeTip;
+
                       return (
-                        <CriterionFeedbackRow
-                          key={criterion.criterionKey}
-                          criterionKey={criterion.criterionKey as CriterionKey}
-                          label={criterion.label}
-                          score={scores[criterion.criterionKey]}
-                          band={bands[criterion.criterionKey]}
-                          showDiagnosticNote={isCriterionActive}
-                          isActive={isCriterionActive}
-                          homePracticeTip={isCriterionActive ? criterionMeta?.homeTip : null}
-                          onInspect={() => handleCriterionSelect(criterion.criterionKey as CriterionKey)}
-                        />
+                        <AccordionItem
+                          value={criterion.key}
+                          key={criterion.key}
+                          className="border-0 hover:bg-muted/10 transition-colors"
+                        >
+                          <AccordionTrigger className="hover:no-underline px-3.5 py-2.5 sm:py-3 items-center gap-3 cursor-pointer">
+                            <div className="flex items-center justify-between flex-1 min-w-0 pr-1 gap-2">
+                              {/* Left: Title + Highlight Badge */}
+                              <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                                <span className="text-xs sm:text-sm font-semibold text-foreground truncate">
+                                  {criterion.label}
+                                </span>
+                                {highlightBadge === "top_strength" && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 px-1.5 py-0.5 rounded-md border border-band-4/30 dark:border-band-4/40 shrink-0">
+                                    <span className="size-1.5 rounded-full bg-band-4 shrink-0" aria-hidden="true" />
+                                    Top Strength
+                                  </span>
+                                )}
+                                {highlightBadge === "practice_focus" && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 px-1.5 py-0.5 rounded-md border border-band-2/30 dark:border-band-2/40 shrink-0">
+                                    <span className="size-1.5 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
+                                    Practice Focus
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Right: Score + BandBadge */}
+                              <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 text-right">
+                                {score != null && (
+                                  <span className="font-sans text-xs sm:text-sm font-semibold tabular-nums text-foreground">
+                                    {Math.round(score)}%
+                                  </span>
+                                )}
+                                <BandBadge band={band} score={score} size="sm" showDot />
+                              </div>
+                            </div>
+                          </AccordionTrigger>
+
+                          <AccordionContent className="px-3.5 pb-3.5 pt-0 space-y-2.5 border-0">
+                            {/* Compact Band Position Bar */}
+                            <div className="pt-0.5 pb-1">
+                              <BandPositionBar score={score} height="sm" />
+                            </div>
+
+                            {/* Diagnostic Note */}
+                            {diagnosticNote && (
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                {diagnosticNote}
+                              </p>
+                            )}
+
+                            {/* Home Practice Coaching Tip */}
+                            {homeTip && (
+                              <div className="p-2.5 rounded-xl bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40 text-xs text-band-2-text dark:text-amber-200 shadow-2xs">
+                                <p className="leading-relaxed">
+                                  <strong className="font-semibold text-band-2-text dark:text-amber-200">Tip:</strong> {homeTip}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Mobile shortcut to switch to photo inspection */}
+                            <div className="lg:hidden pt-1">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setMobileTab("photo")}
+                                className="w-full h-10 min-h-[40px] text-xs font-medium gap-1.5 border-brand-200 dark:border-brand-900 bg-brand-50/50 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 cursor-pointer"
+                              >
+                                <Eye className="size-3.5" aria-hidden="true" />
+                                <span>Inspect on Photo</span>
+                              </Button>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
                       );
                     })}
-                  </div>
+                  </Accordion>
                 </div>
               )}
             </div>
@@ -477,7 +601,7 @@ export function WorksheetViewDialog({
             >
               {deleteMutation.isPending ? (
                 <>
-                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
                   <span>Deleting...</span>
                 </>
               ) : (

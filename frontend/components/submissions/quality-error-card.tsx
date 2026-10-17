@@ -118,12 +118,12 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
         return {
           isQualityCheck: true,
           badgeLabel: "Glare",
-          title: "Worksheet Washed Out by Glare",
+          title: "Writing Details Are Washed Out",
           description:
-            "Direct overhead lighting or flash glare washed out the page, obscuring the pencil marks and guidelines.",
+            "The bright photo does not show enough writing detail against the paper. Glare or exposure may be reducing visibility.",
           tips: [
             "Turn off the camera flash to eliminate bright white reflections.",
-            "Angle your phone slightly to avoid direct ceiling lights bouncing off the paper.",
+            "Move the light source or worksheet to reduce reflections while keeping the phone parallel to the page.",
             "Move away from harsh direct desk lamps.",
           ],
           icon: SunMedium,
@@ -148,13 +148,13 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
       return {
         isQualityCheck: true,
         badgeLabel: "Contrast",
-        title: "Pencil Strokes Too Faint",
+        title: "Writing Details Are Too Faint in This Photo",
         description:
-          "The pencil marks blend into the paper background, making it hard to trace continuous cursive strokes.",
+          "The photo does not separate the writing clearly enough from the nearby paper background.",
         tips: [
-          "Angle the light source across the paper to cast subtle shadows in the pencil grooves.",
+          "Retake in bright, diffused light with the phone parallel to the page.",
           "Check if table or window glare is reflecting off the shiny graphite.",
-          "If the writing is very light, have the student trace firmly with a #2 or 2B pencil.",
+          "Tap the handwriting to focus and use the original camera photo without filters.",
         ],
         icon: Contrast,
       };

@@ -77,7 +77,7 @@ export function BrandLogo({
           className={cn("object-contain select-none", heightClasses[size], imageClassName)}
         />
         {showSubtitle && (
-          <span className="text-xs font-medium text-muted-foreground border-l border-border pl-2.5 py-0.5">
+          <span className="text-xs font-medium text-muted-foreground border-l border-border pl-2.5 py-0.5 whitespace-nowrap">
             {subtitleText}
           </span>
         )}

@@ -29,7 +29,7 @@ import {
   UploadCloudIcon,
   ChevronsUpDownIcon,
 } from "lucide-react";
-import { BrandIcon } from "@/components/brand-logo";
+import { BrandIcon, BrandLogo } from "@/components/brand-logo";
 import { Kbd } from "@/components/ui/kbd";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import {
@@ -120,18 +120,22 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                 />
               }
               tooltip="WriteWise — Teacher Portal"
-              className="h-13 group-data-[collapsible=icon]:p-0"
+              className="h-13 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
             >
-              <div className="flex aspect-square size-8.5 items-center justify-center rounded-xl bg-card border border-border/80 shadow-xs shrink-0 overflow-hidden p-0.5">
+              {/* Collapsed Icon: centered mark in rail mode */}
+              <div className="hidden group-data-[collapsible=icon]:flex aspect-square size-8 items-center justify-center rounded-xl bg-card border border-border/80 shadow-xs shrink-0 overflow-hidden p-0.5">
                 <BrandIcon className="size-full object-contain" />
               </div>
-              <div className="grid flex-1 min-w-0 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="font-heading font-bold text-sidebar-foreground tracking-tight text-[15px] truncate">
-                  WriteWise
-                </span>
-                <span className="truncate text-xs text-muted-foreground font-medium">
-                  Teacher Portal
-                </span>
+
+              {/* Expanded View: Full Horizontal Logo + Role Subtitle */}
+              <div className="flex items-center min-w-0 group-data-[collapsible=icon]:hidden">
+                <BrandLogo
+                  size="sm"
+                  variant="logo"
+                  showSubtitle
+                  subtitleText="Teacher Portal"
+                  priority
+                />
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>

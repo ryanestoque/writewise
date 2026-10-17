@@ -17,7 +17,7 @@ export interface ChartCriterionConfig {
 export const CRITERION_CONFIG: readonly ChartCriterionConfig[] = [
   {
     key: "composite",
-    label: "Overall Penmanship",
+    label: "Overall Score",
     lightColor: "#1b6b63", // Primary Brand Teal (brand-600)
     darkColor: "#57b3a6",  // Vibrant Teal (brand-400)
     strokeWidth: 3,
