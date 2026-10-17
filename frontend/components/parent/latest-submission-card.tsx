@@ -6,7 +6,6 @@ import { useChildLatestScores } from "@/lib/hooks/use-parent-data";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
 import { BandBadge } from "@/components/shared/band-badge";
-import { ScoreSourceIndicator } from "@/components/shared/score-source-indicator";
 import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { WorksheetViewDialog } from "./worksheet-view-dialog";
 import {
@@ -104,15 +103,7 @@ export function LatestSubmissionCard({
               <h3 className="text-base sm:text-lg font-semibold text-foreground truncate" title={latest.activityText}>
                 &ldquo;{latest.activityText}&rdquo;
               </h3>
-              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                <p className="text-xs text-muted-foreground">Assessed on {formattedDate}</p>
-                {latest.scoreSource !== "none" && (
-                  <>
-                    <span className="text-muted-foreground/60 text-xs hidden sm:inline">&middot;</span>
-                    <ScoreSourceIndicator source={latest.scoreSource} />
-                  </>
-                )}
-              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">Assessed on {formattedDate}</p>
             </div>
           </div>
 

@@ -58,9 +58,8 @@
 **Files:**
 - Modify: `frontend/components/parent/latest-submission-card.tsx`
 
-- [x] **Step 1: Add `ScoreSourceIndicator` and pass `showPositionBar`**
-  - Import `ScoreSourceIndicator` from `@/components/shared/score-source-indicator`.
-  - Render `<ScoreSourceIndicator source={latest.scoreSource} />` in the top card header alongside the assessed date.
+- [x] **Step 1: Open all diagnostic notes, pass `showPositionBar`, and exclude `ScoreSourceIndicator`**
+  - Note: `ScoreSourceIndicator` is intentionally excluded from the parent portal (it is an internal/teacher calibration indicator, not parent-facing).
   - Remove accordion state: delete `userExpandedOverrides`, `isCriterionExpanded`, `allNotesExpanded`, `toggleAllDiagnosticNotes`, and `toggleCriterionNote`.
   - Remove the "Expand All Notes" / "Collapse All Notes" button from the breakdown header.
   - Pass `showPositionBar={true}` to every `CriterionFeedbackRow`.

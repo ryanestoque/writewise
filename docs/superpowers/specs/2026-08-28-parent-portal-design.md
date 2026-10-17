@@ -126,7 +126,7 @@ The parent's primary read — "how did my kid do most recently?"
   - Small `BandPositionBar` (compact variant)
   - `BandBadge`
   - One-line diagnostic note from `DIAGNOSTIC_NOTES` in `scoring.ts`, matched to the criterion's current band
-- **Score source indicator:** `ScoreSourceIndicator` showing whether scores are manual or calibrated
+- **Score source indicator:** Intentionally omitted for parents (internal/teacher tool only; avoiding technical AI vs calibration jargon in parent UI)
 
 **Empty state:** If no scored submissions exist:
 > "No assessment results yet. Once a worksheet is uploaded and scored, your child's progress will appear here."
