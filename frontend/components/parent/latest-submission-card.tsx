@@ -6,6 +6,7 @@ import { useChildLatestScores } from "@/lib/hooks/use-parent-data";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
 import { BandBadge } from "@/components/shared/band-badge";
+import { ScoreSourceIndicator } from "@/components/shared/score-source-indicator";
 import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { WorksheetViewDialog } from "./worksheet-view-dialog";
 import {
@@ -13,7 +14,6 @@ import {
   getBandMeta,
   getBandFromScore,
   computeStrengthAndFocus,
-  type CriterionKey,
 } from "@/lib/utils/scoring";
 
 const PARENT_BAND_EXPLANATIONS: Record<string, string> = {
@@ -41,7 +41,6 @@ export function LatestSubmissionCard({
   childName = "Your child",
 }: LatestSubmissionCardProps) {
   const [viewImageOpen, setViewImageOpen] = useState(false);
-  const [userExpandedOverrides, setUserExpandedOverrides] = useState<Record<string, boolean>>({});
   const [imageError, setImageError] = useState(false);
   const [selectedCriterionForView, setSelectedCriterionForView] =
     useState<CriterionFilter>("all");
@@ -57,41 +56,6 @@ export function LatestSubmissionCard({
   const { topStrength, practiceFocus } = useMemo(() => {
     return computeStrengthAndFocus(latest?.scores, latest?.bands);
   }, [latest]);
-
-  const isCriterionExpanded = useCallback(
-    (key: string, isFocus: boolean) => {
-      if (userExpandedOverrides[key] !== undefined) {
-        return userExpandedOverrides[key];
-      }
-      return isFocus;
-    },
-    [userExpandedOverrides]
-  );
-
-  const allNotesExpanded = useMemo(() => {
-    return PARENT_CRITERIA_LIST.every((c) =>
-      isCriterionExpanded(c.key, practiceFocus?.key === c.key)
-    );
-  }, [isCriterionExpanded, practiceFocus?.key]);
-
-  const toggleAllDiagnosticNotes = useCallback(() => {
-    const nextState = !allNotesExpanded;
-    const next: Record<string, boolean> = {};
-    PARENT_CRITERIA_LIST.forEach((c) => {
-      next[c.key] = nextState;
-    });
-    setUserExpandedOverrides(next);
-  }, [allNotesExpanded]);
-
-  const toggleCriterionNote = useCallback(
-    (key: CriterionKey, currentlyExpanded: boolean) => {
-      setUserExpandedOverrides((prev) => ({
-        ...prev,
-        [key]: !currentlyExpanded,
-      }));
-    },
-    []
-  );
 
   if (isLoading) {
     return (
@@ -140,7 +104,15 @@ export function LatestSubmissionCard({
               <h3 className="text-base sm:text-lg font-semibold text-foreground truncate" title={latest.activityText}>
                 &ldquo;{latest.activityText}&rdquo;
               </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Assessed on {formattedDate}</p>
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                <p className="text-xs text-muted-foreground">Assessed on {formattedDate}</p>
+                {latest.scoreSource !== "none" && (
+                  <>
+                    <span className="text-muted-foreground/60 text-xs hidden sm:inline">&middot;</span>
+                    <ScoreSourceIndicator source={latest.scoreSource} />
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
@@ -210,10 +182,10 @@ export function LatestSubmissionCard({
           {(topStrength || practiceFocus) && (
             <div className="rounded-xl border border-border/70 bg-muted/20 p-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
               {topStrength && (
-                <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-850/60">
-                  <span className="size-2 rounded-full bg-emerald-600 dark:bg-emerald-400 mt-1 shrink-0" aria-hidden="true" />
+                <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-band-4/15 dark:bg-band-4/25 border border-band-4/30 dark:border-band-4/40">
+                  <span className="size-2 rounded-full bg-band-4 mt-1 shrink-0" aria-hidden="true" />
                   <div className="min-w-0 space-y-0.5">
-                    <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 block">
+                    <span className="text-xs font-semibold text-band-4-text dark:text-emerald-300 block">
                       Top Strength: {topStrength.meta.label}
                     </span>
                     <p className="text-[11px] text-muted-foreground leading-snug">
@@ -223,10 +195,10 @@ export function LatestSubmissionCard({
                 </div>
               )}
               {practiceFocus && (
-                <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-850/60">
-                  <span className="size-2 rounded-full bg-amber-600 dark:bg-amber-400 mt-1 shrink-0" aria-hidden="true" />
+                <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40">
+                  <span className="size-2 rounded-full bg-band-2 mt-1 shrink-0" aria-hidden="true" />
                   <div className="min-w-0 space-y-0.5">
-                    <span className="text-xs font-semibold text-amber-900 dark:text-amber-200 block">
+                    <span className="text-xs font-semibold text-band-2-text dark:text-amber-200 block">
                       Practice Focus: {practiceFocus.meta.label}
                     </span>
                     <p className="text-[11px] text-muted-foreground leading-snug">
@@ -257,7 +229,6 @@ export function LatestSubmissionCard({
 
         {/* Diagnostic Criterion Breakdown */}
         <div className="border-t border-border/60 p-5 space-y-3.5 bg-muted/10">
-
           {/* 5-Criterion Stacked List */}
           <div className="space-y-1">
             <div className="flex items-center justify-between pb-2 border-b border-border/60">
@@ -267,22 +238,12 @@ export function LatestSubmissionCard({
                 </h4>
                 <span className="text-[11px] text-muted-foreground font-medium hidden sm:inline">5 skills</span>
               </div>
-              <button
-                type="button"
-                onClick={toggleAllDiagnosticNotes}
-                aria-expanded={allNotesExpanded}
-                aria-controls="criterion-breakdown-details"
-                className="h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-3 sm:px-2.5 inline-flex items-center rounded-lg border border-border/80 hover:border-brand-500/50 bg-card hover:bg-brand-50/60 dark:hover:bg-brand-950/40 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 transition-colors cursor-pointer shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
-              >
-                {allNotesExpanded ? "Collapse All Notes" : "Expand All Notes"}
-              </button>
             </div>
 
             <div id="criterion-breakdown-details" className="divide-y divide-border/50">
               {PARENT_CRITERIA_LIST.map((criterion) => {
                 const isTop = topStrength?.key === criterion.key;
                 const isFocus = practiceFocus?.key === criterion.key;
-                const isExpanded = isCriterionExpanded(criterion.key, isFocus);
                 const highlightBadge = isTop ? "top_strength" : isFocus ? "practice_focus" : null;
                 const homePracticeTip = isFocus ? practiceFocus?.meta.homeTip : null;
 
@@ -294,8 +255,8 @@ export function LatestSubmissionCard({
                     score={latest.scores[criterion.key]}
                     band={latest.bands[criterion.key]}
                     onInspect={() => openWorksheetForCriterion(criterion.key as CriterionFilter)}
-                    showDiagnosticNote={isExpanded}
-                    onToggleDiagnosticNote={() => toggleCriterionNote(criterion.key as CriterionKey, isExpanded)}
+                    showDiagnosticNote={true}
+                    showPositionBar={true}
                     highlightBadge={highlightBadge}
                     homePracticeTip={homePracticeTip}
                   />
