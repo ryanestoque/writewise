@@ -1,15 +1,21 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useChildLatestScores } from "@/lib/hooks/use-parent-data";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
 import { BandBadge } from "@/components/shared/band-badge";
-import { CriterionFeedbackRow } from "./criterion-feedback-row";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
 import { WorksheetViewDialog } from "./worksheet-view-dialog";
 import {
   PARENT_CRITERIA_LIST,
+  DIAGNOSTIC_NOTES,
   getBandMeta,
   getBandFromScore,
   computeStrengthAndFocus,
@@ -55,6 +61,17 @@ export function LatestSubmissionCard({
   const { topStrength, practiceFocus } = useMemo(() => {
     return computeStrengthAndFocus(latest?.scores, latest?.bands);
   }, [latest]);
+
+  // Controlled accordion items: defaults to having only the practiceFocus open
+  const [openCriteria, setOpenCriteria] = useState<string[]>([]);
+  const hasInitializedAccordion = useRef(false);
+
+  useEffect(() => {
+    if (!hasInitializedAccordion.current && practiceFocus?.key) {
+      setOpenCriteria([practiceFocus.key]);
+      hasInitializedAccordion.current = true;
+    }
+  }, [practiceFocus?.key]);
 
   if (isLoading) {
     return (
@@ -220,8 +237,8 @@ export function LatestSubmissionCard({
 
         {/* Diagnostic Criterion Breakdown */}
         <div className="border-t border-border/60 p-5 space-y-3.5 bg-muted/10">
-          {/* 5-Criterion Stacked List */}
-          <div className="space-y-1">
+          {/* 5-Criterion Accordion List */}
+          <div className="space-y-2.5">
             <div className="flex items-center justify-between pb-2 border-b border-border/60">
               <div className="flex items-center gap-2">
                 <h4 className="text-xs sm:text-sm font-heading font-semibold text-foreground">
@@ -229,31 +246,97 @@ export function LatestSubmissionCard({
                 </h4>
                 <span className="text-[11px] text-muted-foreground font-medium hidden sm:inline">5 skills</span>
               </div>
+              <span className="text-[11px] text-muted-foreground">Tap a skill to expand details</span>
             </div>
 
-            <div id="criterion-breakdown-details" className="divide-y divide-border/50">
+            <Accordion
+              multiple
+              value={openCriteria}
+              onValueChange={(val) =>
+                setOpenCriteria(
+                  Array.isArray(val)
+                    ? (val as string[])
+                    : val
+                    ? [val as string]
+                    : []
+                )
+              }
+              className="rounded-xl border border-border/80 bg-card overflow-hidden divide-y divide-border/60 shadow-2xs"
+            >
               {PARENT_CRITERIA_LIST.map((criterion) => {
                 const isTop = topStrength?.key === criterion.key;
                 const isFocus = practiceFocus?.key === criterion.key;
                 const highlightBadge = isTop ? "top_strength" : isFocus ? "practice_focus" : null;
                 const homePracticeTip = isFocus ? practiceFocus?.meta.homeTip : null;
+                const score = latest.scores[criterion.key];
+                const band = latest.bands[criterion.key];
+                const diagnosticNote = band ? DIAGNOSTIC_NOTES[criterion.key][band] : null;
 
                 return (
-                  <CriterionFeedbackRow
+                  <AccordionItem
+                    value={criterion.key}
                     key={criterion.key}
-                    criterionKey={criterion.key}
-                    label={criterion.label}
-                    score={latest.scores[criterion.key]}
-                    band={latest.bands[criterion.key]}
-                    onInspect={() => openWorksheetForCriterion(criterion.key as CriterionFilter)}
-                    showDiagnosticNote={true}
-                    showPositionBar={true}
-                    highlightBadge={highlightBadge}
-                    homePracticeTip={homePracticeTip}
-                  />
+                    className="border-0 hover:bg-muted/10 transition-colors"
+                  >
+                    <AccordionTrigger className="hover:no-underline px-3.5 sm:px-4 py-3 sm:py-3.5 items-center gap-3 cursor-pointer">
+                      <div className="flex items-center justify-between flex-1 min-w-0 pr-1 gap-2">
+                        {/* Left: Title + Highlight Badge */}
+                        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                          <span className="text-xs sm:text-sm font-semibold text-foreground truncate">
+                            {criterion.label}
+                          </span>
+                          {highlightBadge === "top_strength" && (
+                            <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 px-1.5 py-0.5 rounded-md border border-band-4/30 dark:border-band-4/40 shrink-0">
+                              <span className="size-1.5 rounded-full bg-band-4 shrink-0" aria-hidden="true" />
+                              Top Strength
+                            </span>
+                          )}
+                          {highlightBadge === "practice_focus" && (
+                            <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 px-1.5 py-0.5 rounded-md border border-band-2/30 dark:border-band-2/40 shrink-0">
+                              <span className="size-1.5 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
+                              Practice Focus
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Right: Score + BandBadge */}
+                        <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 text-right">
+                          {score != null && (
+                            <span className="font-sans text-xs sm:text-sm font-semibold tabular-nums text-foreground">
+                              {Math.round(score)}%
+                            </span>
+                          )}
+                          <BandBadge band={band} score={score} size="sm" showDot />
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+
+                    <AccordionContent className="px-3.5 sm:px-4 pb-4 space-y-2.5 border-0">
+                      {/* Compact Band Position Bar */}
+                      <div className="pt-0.5 pb-1">
+                        <BandPositionBar score={score} height="sm" />
+                      </div>
+
+                      {/* Diagnostic Note */}
+                      {diagnosticNote && (
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {diagnosticNote}
+                        </p>
+                      )}
+
+                      {/* Coaching Tip */}
+                      {homePracticeTip && (
+                        <div className="p-2.5 rounded-xl bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40 text-xs text-band-2-text dark:text-amber-200 shadow-2xs">
+                          <p className="leading-relaxed">
+                            <strong className="font-semibold text-band-2-text dark:text-amber-200">Tip:</strong> {homePracticeTip}
+                          </p>
+                        </div>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
                 );
               })}
-            </div>
+            </Accordion>
           </div>
         </div>
       </div>
