@@ -1,4 +1,3 @@
-import { Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BandBadge } from "@/components/shared/band-badge";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
@@ -41,8 +40,23 @@ export function CriterionFeedbackRow({
 
   return (
     <div
+      role={onInspect ? "button" : undefined}
+      tabIndex={onInspect ? 0 : undefined}
+      onClick={onInspect}
+      onKeyDown={
+        onInspect
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onInspect();
+              }
+            }
+          : undefined
+      }
       className={cn(
         "py-2.5 sm:py-3 first:pt-1 last:pb-1 transition-colors space-y-1.5",
+        onInspect &&
+          "cursor-pointer rounded-xl px-2.5 -mx-2.5 hover:bg-muted/20 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
         isActive &&
           "bg-brand-50/80 dark:bg-brand-950/50 ring-2 ring-brand-500/80 dark:ring-brand-400/80 shadow-xs rounded-xl px-2.5 -mx-2.5"
       )}
@@ -70,35 +84,14 @@ export function CriterionFeedbackRow({
           </div>
         </div>
 
-        {/* Right: Score, BandBadge, and Inspect Button */}
-        <div className="shrink-0 flex items-center gap-2 pt-0.5 sm:pt-0">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {score != null && (
-              <span className="text-xs sm:text-sm font-semibold font-sans tabular-nums text-foreground">
-                {Math.round(score)}%
-              </span>
-            )}
-            <BandBadge band={band} score={score} size="sm" showDot />
-          </div>
-
-          {onInspect && (
-            <button
-              type="button"
-              onClick={onInspect}
-              aria-haspopup="dialog"
-              className={cn(
-                "h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-3 sm:px-2.5 text-xs inline-flex items-center gap-1.5 cursor-pointer rounded-lg border focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 transition-colors font-medium touch-manipulation",
-                isActive
-                  ? "border-brand-600 bg-brand-600 text-white dark:border-brand-500 dark:bg-brand-500 dark:text-neutral-950 font-semibold shadow-xs"
-                  : "text-brand-800 dark:text-brand-200 border-brand-200/90 dark:border-brand-800/80 bg-brand-50/60 dark:bg-brand-950/40 hover:bg-brand-100/70 dark:hover:bg-brand-900/60"
-              )}
-              title={`Inspect ${displayLabel} on worksheet`}
-              aria-label={`Inspect ${displayLabel} strokes on worksheet photo`}
-            >
-              <Eye className="size-3.5 shrink-0 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-              <span className="text-[11px] sm:text-xs">{isActive ? "Viewing" : "Inspect"}</span>
-            </button>
+        {/* Right: Score and BandBadge */}
+        <div className="shrink-0 flex items-center gap-1.5 sm:gap-2 pt-0.5 sm:pt-0">
+          {score != null && (
+            <span className="text-xs sm:text-sm font-semibold font-sans tabular-nums text-foreground">
+              {Math.round(score)}%
+            </span>
           )}
+          <BandBadge band={band} score={score} size="sm" showDot />
         </div>
       </div>
 
