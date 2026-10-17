@@ -120,7 +120,9 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
         if row_proj[y] >= peak_threshold:
             window_mask = h_only[max(0, y - 3) : min(h, y + 4), :]
             nonzeros = np.where(window_mask > 0)[1]
-            if len(nonzeros) > 0 and (nonzeros[-1] - nonzeros[0]) >= min_span:
+            # np.where orders by row, so a sloped line's first/last X values need
+            # not be its leftmost/rightmost pixels across this multi-row window.
+            if len(nonzeros) > 0 and np.ptp(nonzeros) >= min_span:
                 filtered_row_proj[y] = float(row_proj[y])
 
     peaks = []

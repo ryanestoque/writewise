@@ -1,3 +1,5 @@
+import cv2
+import numpy as np
 import pytest
 
 from app.cv.quality_gate import QualityGateRejection, QualityMetrics, run_quality_gate
@@ -6,6 +8,7 @@ from tests.synthetic import (
     make_bright_image,
     make_dark_image,
     make_low_contrast_image,
+    make_segmented_worksheet,
     make_sharp_worksheet,
     make_small_image,
 )
@@ -73,11 +76,144 @@ def test_dark_image_rejected_on_brightness():
     assert exc_info.value.threshold == 50.0
 
 
-def test_bright_image_rejected_on_brightness():
+def test_readable_white_paper_is_not_rejected_as_overexposed():
+    # This existing fixture has sharp black strokes on light paper, not lost detail.
+    result = run_quality_gate(make_bright_image())
+    assert result.brightness_mean > 210
+
+
+def _capture_worksheet(
+    *,
+    paper: int = 240,
+    ink: int = 90,
+    blur_sigma: float = 0,
+    shadow: bool = False,
+    sharp_rules: bool = False,
+    rotation: float = 0,
+    noise: float = 0,
+    dashed_midline: bool = False,
+) -> bytes:
+    """Known readable strokes, with capture degradation applied independently."""
+    image = np.full((2200, 1600), paper, dtype=np.uint8)
+    for baseline in (600, 1050, 1500):
+        cv2.putText(
+            image,
+            "Practice cursive writing",
+            (140, baseline - 8),
+            cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
+            2.8,
+            ink,
+            thickness=3,
+            lineType=cv2.LINE_AA,
+        )
+
+    if blur_sigma and sharp_rules:
+        image = cv2.GaussianBlur(image, (61, 61), blur_sigma)
+
+    # Sharp printed structure must not vouch for the focus of the handwriting.
+    for baseline in (600, 1050, 1500):
+        for y in (baseline - 120, baseline - 60, baseline):
+            if dashed_midline and y == baseline - 60:
+                for x in range(80, 1520, 70):
+                    cv2.line(image, (x, y), (min(x + 40, 1520), y), paper - 50, thickness=2)
+            else:
+                cv2.line(image, (80, y), (1520, y), max(ink, paper - 50), thickness=2)
+    if blur_sigma and not sharp_rules:
+        image = cv2.GaussianBlur(image, (61, 61), blur_sigma)
+
+    if rotation:
+        transform = cv2.getRotationMatrix2D((800, 1100), rotation, 1.0)
+        image = cv2.warpAffine(image, transform, (1600, 2200), borderValue=paper)
+
+    if shadow:
+        illumination = np.linspace(0.55, 1.0, image.shape[1])[None, :]
+        image = (image * illumination).astype(np.uint8)
+
+    if noise:
+        sensor_noise = np.random.default_rng(42).normal(0, noise, image.shape)
+        image = np.clip(image.astype(float) + sensor_noise, 0, 255).astype(np.uint8)
+
+    success, encoded = cv2.imencode(".jpg", image)
+    assert success
+    return encoded.tobytes()
+
+
+@pytest.mark.parametrize("shadow", [False, True])
+@pytest.mark.parametrize("ink", [90, 180, 225])
+def test_readable_sparse_pencil_passes_under_even_and_uneven_lighting(shadow, ink):
+    result = run_quality_gate(_capture_worksheet(ink=ink, shadow=shadow))
+    assert isinstance(result, QualityMetrics)
+
+
+@pytest.mark.parametrize("rotation", [-8, 8])
+def test_readable_rotated_capture_passes(rotation):
+    assert isinstance(run_quality_gate(_capture_worksheet(rotation=rotation)), QualityMetrics)
+
+
+@pytest.mark.parametrize("noise", [2, 3])
+@pytest.mark.parametrize("ink", [90, 180, 225])
+def test_readable_writing_passes_with_mild_sensor_noise(noise, ink):
+    assert isinstance(run_quality_gate(_capture_worksheet(ink=ink, noise=noise)), QualityMetrics)
+
+
+@pytest.mark.parametrize("noise", [2, 3])
+def test_sensor_noise_does_not_make_blurred_writing_pass(noise):
     with pytest.raises(QualityGateRejection) as exc_info:
-        run_quality_gate(make_bright_image())
+        run_quality_gate(_capture_worksheet(paper=190, blur_sigma=9, sharp_rules=True, noise=noise))
+    assert exc_info.value.code == "QUALITY_GATE_BLUR"
+
+
+@pytest.mark.parametrize("rotation", [-14, -12, -8, -3, -1, 0, 1, 3, 8, 12, 14])
+def test_dashed_sharp_rules_do_not_hide_blurred_handwriting(rotation):
+    with pytest.raises(QualityGateRejection) as exc_info:
+        run_quality_gate(
+            _capture_worksheet(
+                paper=190,
+                blur_sigma=9,
+                sharp_rules=True,
+                dashed_midline=True,
+                rotation=rotation,
+            )
+        )
+    assert exc_info.value.code == "QUALITY_GATE_BLUR"
+
+
+def test_rotated_sharp_rules_do_not_hide_blurred_handwriting():
+    with pytest.raises(QualityGateRejection) as exc_info:
+        run_quality_gate(_capture_worksheet(paper=190, blur_sigma=9, sharp_rules=True, rotation=8))
+    assert exc_info.value.code == "QUALITY_GATE_BLUR"
+
+
+def test_washed_out_photo_reports_brightness_instead_of_blur():
+    with pytest.raises(QualityGateRejection) as exc_info:
+        run_quality_gate(_capture_worksheet(paper=253, ink=249))
     assert exc_info.value.code == "QUALITY_GATE_BRIGHTNESS"
-    assert exc_info.value.threshold == 210.0
+
+
+def test_low_contrast_photo_reports_contrast_instead_of_blur():
+    with pytest.raises(QualityGateRejection) as exc_info:
+        run_quality_gate(_capture_worksheet(paper=150, ink=146))
+    assert exc_info.value.code == "QUALITY_GATE_CONTRAST"
+
+
+@pytest.mark.parametrize("sharp_rules", [False, True])
+def test_blurred_writing_is_rejected_even_with_sharp_rules(sharp_rules):
+    with pytest.raises(QualityGateRejection) as exc_info:
+        run_quality_gate(_capture_worksheet(paper=190, blur_sigma=9, sharp_rules=sharp_rules))
+    assert exc_info.value.code == "QUALITY_GATE_BLUR"
+
+
+def test_sharp_rulings_do_not_hide_blurred_word_shapes():
+    image = cv2.imdecode(np.frombuffer(make_segmented_worksheet(), np.uint8), cv2.IMREAD_GRAYSCALE)
+    blurred = cv2.GaussianBlur(image, (61, 61), 12)
+    for y in (400, 460, 520, 800, 860, 920):
+        cv2.line(blurred, (100, y), (1900, y), 30, thickness=2)
+    success, encoded = cv2.imencode(".jpg", blurred)
+    assert success
+
+    with pytest.raises(QualityGateRejection) as exc_info:
+        run_quality_gate(encoded.tobytes())
+    assert exc_info.value.code == "QUALITY_GATE_BLUR"
 
 
 def test_low_contrast_image_rejected_on_contrast():
@@ -97,19 +233,12 @@ def test_sharp_worksheet_passes_end_to_end():
 
 
 def test_realistic_sparse_pencil_worksheet_passes_contrast():
-    """Verify that a realistic phone capture of sparse cursive writing on ruled paper
-    (which naturally has lower global standard deviation due to mostly blank paper)
-    passes the contrast check.
-    """
-    import numpy as np
-
     from app.cv.quality_gate import _check_contrast
+    from tests.synthetic import _base_worksheet
 
-    # Simulate 12MP capture of ruled notebook paper with sparse pencil writing (~16–19 std)
-    h, w = 4000, 3000
-    paper = np.random.normal(145, 14, (h, w)).clip(0, 255).astype(np.uint8)
-    std = _check_contrast(paper)
-    assert std >= 12.0
+    # Sparse strokes can be readable even when blank paper dilutes the global std.
+    paper = _base_worksheet(3000, 4000, bg_value=190, ink_value=90, density=350000)
+    assert _check_contrast(paper) < 12.0
 
 
 def test_realistic_sparse_pencil_worksheet_passes_blur():

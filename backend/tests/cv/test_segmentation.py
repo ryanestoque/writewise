@@ -487,3 +487,81 @@ def test_vertical_notebook_margin_suppressed_on_multi_line_page():
     word = result.lines[1].words[0]
     bx, by, bw, bh = word.bbox
     assert bx >= 280, f"Word bbox x={bx} erroneously included vertical margin line at x ~ 120"
+
+
+@pytest.mark.parametrize("unit_height", [60, 100, 160])
+def test_tall_cursive_f_is_not_discarded_as_vertical_margin(unit_height: int):
+    """A narrow letter with an ascender and descender remains one complete word crop."""
+    import cv2
+    import numpy as np
+
+    from app.cv.guide_lines import DeskewResult
+
+    binary = np.zeros((2000, 2000), dtype=np.uint8)
+    top = 400
+    thickness = max(4, int(0.05 * unit_height))
+    # One connected cursive f, with its body in row 0 and its loop below the baseline.
+    stem = [
+        (0.45, 0.1),
+        (0.40, 0.7),
+        (0.32, 1.3),
+        (0.32, 2.1),
+        (0.38, 2.5),
+        (0.52, 2.7),
+        (0.64, 2.6),
+        (0.68, 2.4),
+        (0.52, 2.15),
+        (0.32, 1.95),
+    ]
+    branch = [(0.08, 1.95), (0.30, 1.65), (0.60, 1.25), (0.72, 1.1)]
+    for points in (stem, branch):
+        path = np.array(
+            [(950 + int(x * unit_height), top + int(y * unit_height)) for x, y in points],
+            dtype=np.int32,
+        )
+        cv2.polylines(binary, [path], False, 255, thickness=thickness)
+    gray = 255 - binary
+    deskew = DeskewResult(
+        gray=gray,
+        denoised=gray,
+        binary=binary,
+        topline_y=[top, top + 2 * unit_height],
+        midline_y=[top + unit_height, top + 3 * unit_height],
+        baseline_y=[top + 2 * unit_height, top + 4 * unit_height],
+    )
+
+    result = segment_lines_and_words(deskew, expected_word_count=1)
+
+    assert result.total_word_count == 1
+    assert len(result.lines[0].words) == 1
+    assert result.lines[1].words == []
+    _, y, _, height = result.lines[0].words[0].bbox
+    assert y <= top + int(0.15 * unit_height)
+    assert y + height >= top + int(2.65 * unit_height)
+
+
+@pytest.mark.parametrize("x_shift", [0, 30])
+def test_straight_tall_strokes_inside_page_are_not_words(x_shift: int):
+    """Straight or tilted interior rules must remain rejected as margin artifacts."""
+    import cv2
+    import numpy as np
+
+    from app.cv.guide_lines import DeskewResult
+
+    binary = np.zeros((2000, 2000), dtype=np.uint8)
+    cv2.line(binary, (1000, 330), (1000 + x_shift, 950), 255, thickness=18)
+    gray = 255 - binary
+    deskew = DeskewResult(
+        gray=gray,
+        denoised=gray,
+        binary=binary,
+        topline_y=[400, 600],
+        midline_y=[500, 700],
+        baseline_y=[600, 800],
+    )
+
+    with pytest.raises(PostSegmentationRejection) as exc_info:
+        segment_lines_and_words(deskew, expected_word_count=1)
+
+    assert exc_info.value.code == "SEGMENTATION_COUNT_MISMATCH"
+    assert exc_info.value.detected_words == 0

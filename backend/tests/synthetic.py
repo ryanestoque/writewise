@@ -9,7 +9,7 @@ import numpy as np
 
 # Tuned so each generator's JPEG-encoded output sits clearly on the correct
 # side of quality_gate.py's thresholds (RESOLUTION_MIN_SHORT_SIDE=1500,
-# BLUR_VARIANCE_MIN=15.0, BRIGHTNESS range 50-210, CONTRAST_STD_MIN=12.0).
+# BLUR_VARIANCE_MIN=15.0, dark brightness cutoff 50, local stroke contrast minimum 12).
 _SHARP_BG = 190
 _SHARP_INK = 30
 _DARK_BG = 20
@@ -17,7 +17,7 @@ _DARK_INK = 255
 _BRIGHT_BG = 240
 _BRIGHT_INK = 0
 _LOW_CONTRAST_BG = 140
-_LOW_CONTRAST_INK = 125
+_LOW_CONTRAST_INK = 134
 _LOW_CONTRAST_CELL = 6  # checkerboard cell size in px
 
 
@@ -73,7 +73,7 @@ def make_dark_image(width: int = 2000, height: int = 2600) -> bytes:
 
 
 def make_bright_image(width: int = 2000, height: int = 2600) -> bytes:
-    """Generate an image with mean brightness above 200."""
+    """Generate readable black strokes on light paper; high mean is not lost detail."""
     img = _base_worksheet(width, height, bg_value=_BRIGHT_BG, ink_value=_BRIGHT_INK)
     _, buf = cv2.imencode(".jpg", img)
     return buf.tobytes()
@@ -81,12 +81,11 @@ def make_bright_image(width: int = 2000, height: int = 2600) -> bytes:
 
 def make_low_contrast_image(width: int = 2000, height: int = 2600) -> bytes:
     """
-    Generate an image with intensity std dev below 20.
+    Generate faint detail on mid-gray paper, below the local contrast minimum.
 
     Uses a fine checkerboard (every pixel borders an edge, so Laplacian
-    variance stays high) between two close gray values (so population std
-    stays low) — this is what makes it fail contrast specifically, without
-    also tripping the blur check first.
+    variance remains measurable) between two close gray values. Contrast is
+    checked before focus, so inadequate stroke separation is reported first.
     """
     img = np.full((height, width), _LOW_CONTRAST_BG, dtype=np.uint8)
     yy, xx = np.mgrid[0:height, 0:width]

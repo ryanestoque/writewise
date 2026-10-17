@@ -204,3 +204,26 @@ def test_detect_and_deskew_faint_red_midlines_in_color_image():
     assert result.topline_y[0] == 400
     assert result.midline_y[0] == 500
     assert result.baseline_y[0] == 600
+
+
+def test_detect_and_deskew_preserves_slightly_sloped_midline():
+    """A midline spanning multiple image rows must retain its full horizontal extent."""
+    import cv2
+    import numpy as np
+
+    from app.cv.preprocessing import PreprocessResult
+
+    binary = np.zeros((1800, 2000), dtype=np.uint8)
+    for y in [400, 500, 600, 800, 900, 1000]:
+        cv2.line(binary, (100, y), (1900, y), 255, thickness=5)
+    # Slight residual slope after page deskew: the rightmost ink occurs on earlier rows.
+    cv2.line(binary, (100, 708), (1900, 692), 255, thickness=5)
+    gray = 255 - binary
+    prep = PreprocessResult(gray=gray, denoised=gray, binary=binary, otsu_threshold=100.0)
+
+    result = detect_and_deskew(prep)
+
+    assert len(result.baseline_y) == 3
+    assert result.topline_y == [400, 600, 800]
+    assert result.midline_y == [500, 700, 900]
+    assert result.baseline_y == [600, 800, 1000]

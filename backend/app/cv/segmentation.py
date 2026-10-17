@@ -514,9 +514,17 @@ def segment_lines_and_words(
             if bbox_w > int(img_w * 0.85) or (bbox_w / max(1, bbox_h) > 12.0):
                 return None
 
-            # 2. Filter out vertical margin lines (skinny and tall spanning line band)
+            # 2. Filter out straight vertical margins, preserving tall cursive letters.
+            # Aspect ratio alone also matches letters with ascenders and descenders (e.g. f).
             if (bbox_h / max(1, bbox_w) > 3.0) and (bbox_h > int(0.65 * band_height)):
-                return None
+                row_counts = np.bincount(ys)
+                ink_rows = np.flatnonzero(row_counts)
+                row_centers = np.bincount(ys, weights=xs)[ink_rows] / row_counts[ink_rows]
+                # Remove linear tilt: a margin remains straight even in an angled photo.
+                straight_centers = np.polyval(np.polyfit(ink_rows, row_centers, 1), ink_rows)
+                curvature = float(np.sqrt(np.mean((row_centers - straight_centers) ** 2)))
+                if curvature < max(2.0, 0.04 * unit_height):
+                    return None
 
             # 3. Filter out low-density noise clouds across blank lines
             density = ink_pixel_count / max(1, bbox_w * bbox_h)
