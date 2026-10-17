@@ -366,7 +366,7 @@ export function SampleReportPreview({
             {/* Actionable Home Coaching Tip */}
             <div className="rounded-lg border border-brand-200/60 dark:border-brand-800/60 bg-brand-100/50 dark:bg-brand-950/40 p-3 space-y-1">
               <span className="font-semibold text-xs text-brand-900 dark:text-brand-200 block">
-                Home Practice Tip:
+                Tip:
               </span>
               <p className="text-xs text-brand-800 dark:text-brand-300 leading-relaxed">
                 {currentMeta.homeTip}

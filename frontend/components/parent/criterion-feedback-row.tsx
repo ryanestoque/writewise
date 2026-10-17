@@ -1,4 +1,4 @@
-import { Eye, Target } from "lucide-react";
+import { Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BandBadge } from "@/components/shared/band-badge";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
@@ -127,10 +127,9 @@ export function CriterionFeedbackRow({
           )}
 
           {homePracticeTip && (
-            <div className="p-2.5 rounded-xl bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40 text-xs text-band-2-text dark:text-amber-200 flex items-start gap-2 shadow-2xs">
-              <Target className="size-3.5 shrink-0 mt-0.5 text-band-2" aria-hidden="true" />
+            <div className="p-2.5 rounded-xl bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40 text-xs text-band-2-text dark:text-amber-200 shadow-2xs">
               <p className="leading-relaxed">
-                <strong className="font-semibold text-band-2-text dark:text-amber-200">Home practice tip:</strong> {homePracticeTip}
+                <strong className="font-semibold text-band-2-text dark:text-amber-200">Tip:</strong> {homePracticeTip}
               </p>
             </div>
           )}
