@@ -19,6 +19,7 @@ See [ML_PIPELINE.md](../docs/ML_PIPELINE.md) for full architecture details.
 training/
 ├── convert_ccc.py           # Step 1: CCC format conversion
 ├── stage1_finetune.ipynb    # Step 2: Fine-tune MobileNetV2 on CCC (Colab)
+├── stage1_finetune_v2.ipynb # Corrected retraining version; preserves original runs
 ├── evaluate_stage1.py       # Step 3: Stage 1 evaluation metrics
 ├── stage2_calibrate.py      # Step 4: Regression head (needs paired data)
 ├── export_model.py          # Step 5: Combine into deployable artifact
@@ -40,6 +41,29 @@ training/
 5. **Download checkpoint** — save the `.keras` file from Drive to your local machine
 6. **Evaluate:** `python evaluate_stage1.py --checkpoint <path>` — check `results/stage1_evaluation/summary.json`
 7. **Target:** >=90% accuracy on CCC test set (PRD §11)
+
+### Stage 1 corrected retraining (v2)
+
+Use `stage1_finetune_v2.ipynb` in a fresh Colab T4 GPU runtime. Reuse the existing
+processed CCC data and train both phases from ImageNet weights. V2 fixes geometric
+augmentation border fill, shares a canonical 52-class label mapping, freezes
+BatchNormalization during fine-tuning, and selects the best validation-loss
+checkpoint across both phases. Class counts and training logs are saved for analysis;
+class balancing remains off for this corrected baseline.
+
+Each run writes to `checkpoints/stage1_v2/<run-id>/` in Drive, including
+`stage1_best.keras`, `run_config.json`, phase histories, and training curves.
+The original notebook and checkpoint are preserved. After selecting the configuration
+using validation results, set `RUN_FINAL_TEST = True` in a new cell and run the final
+evaluation cell once; its reports go to that run's `evaluation/` folder. Improvements
+and the >=90% target must be measured after retraining. Stage 2 still requires separate
+validation against teacher scores.
+
+Notebook regression checks, from the repository root:
+
+```powershell
+& backend/.venv/Scripts/python.exe -m pytest training/tests/test_stage1_notebook.py -q --basetemp training/results/notebook_test_tmp
+```
 
 ### HTR Model (Target Text Verification)
 
