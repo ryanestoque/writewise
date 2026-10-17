@@ -68,11 +68,6 @@ export function CriterionFeedbackRow({
               </span>
             )}
           </div>
-          {meta?.shortDescription && (
-            <p className="text-xs text-muted-foreground font-normal leading-tight">
-              {meta.shortDescription}
-            </p>
-          )}
         </div>
 
         {/* Right: Score, BandBadge, and Inspect Button */}
