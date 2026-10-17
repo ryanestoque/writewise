@@ -17,11 +17,8 @@ import type { StudentScoreHistoryItem } from "@/lib/hooks/use-dashboard";
 import type { CriterionFilter } from "@/components/shared/diagnostic-overlay";
 import { cn } from "@/lib/utils";
 import {
-  Calendar,
   FileText,
   Eye,
-  TrendingUp,
-  TrendingDown,
   ChevronDown,
 } from "lucide-react";
 
@@ -160,20 +157,14 @@ export function SubmissionHistoryDialog({
                     <span className="text-muted-foreground">Overall trajectory:</span>
                     <span
                       className={cn(
-                        "font-semibold font-sans tabular-nums inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] shadow-2xs",
+                        "font-semibold font-sans tabular-nums inline-flex items-center px-2 py-0.5 rounded-md text-[11px] shadow-2xs",
                         overallStats.overallDelta > 0
-                          ? "text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/60 dark:border-emerald-800/50"
+                          ? "text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 border border-band-4/30 dark:border-band-4/40"
                           : overallStats.overallDelta < 0
-                          ? "text-amber-900 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/60 border border-amber-200/60 dark:border-amber-800/50"
+                          ? "text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40"
                           : "text-muted-foreground bg-muted/40 border border-border/60"
                       )}
                     >
-                      {overallStats.overallDelta > 0 && (
-                        <TrendingUp className="size-3 shrink-0" aria-hidden="true" />
-                      )}
-                      {overallStats.overallDelta < 0 && (
-                        <TrendingDown className="size-3 shrink-0" aria-hidden="true" />
-                      )}
                       {overallStats.overallDelta > 0
                         ? `+${overallStats.overallDelta.toFixed(1)}%`
                         : `${overallStats.overallDelta.toFixed(1)}%`}
@@ -190,7 +181,7 @@ export function SubmissionHistoryDialog({
                 <button
                   type="button"
                   onClick={toggleAllExpanded}
-                  className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:underline cursor-pointer shrink-0 min-h-[36px] sm:min-h-[32px] py-1.5 px-3 rounded-lg hover:bg-brand-50/60 dark:hover:bg-brand-950/40 border border-transparent hover:border-brand-200/60 dark:hover:border-brand-800/60 transition-colors self-start sm:self-center inline-flex items-center"
+                  className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:underline cursor-pointer shrink-0 h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] py-1.5 px-3 rounded-lg hover:bg-brand-50/60 dark:hover:bg-brand-950/40 border border-transparent hover:border-brand-200/60 dark:hover:border-brand-800/60 transition-colors self-start sm:self-center inline-flex items-center touch-manipulation"
                 >
                   {allExpanded ? "Collapse All Details" : "Expand All Details"}
                 </button>
@@ -254,11 +245,11 @@ export function SubmissionHistoryDialog({
                           {delta != null && (
                             <span
                               className={cn(
-                                "inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md tabular-nums shrink-0 shadow-2xs",
+                                "inline-flex items-center px-2 py-0.5 rounded-md tabular-nums shrink-0 text-[11px] font-semibold shadow-2xs",
                                 delta > 0
-                                  ? "text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/60 dark:border-emerald-800/50"
+                                  ? "text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 border border-band-4/30 dark:border-band-4/40"
                                   : delta < 0
-                                  ? "text-amber-900 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/60 border border-amber-200/60 dark:border-amber-800/50"
+                                  ? "text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40"
                                   : "text-muted-foreground bg-muted/40 border border-border/60"
                               )}
                               title={
@@ -269,12 +260,6 @@ export function SubmissionHistoryDialog({
                                   : "No score change compared to previous attempt"
                               }
                             >
-                              {delta > 0 && (
-                                <TrendingUp className="size-3 shrink-0" aria-hidden="true" />
-                              )}
-                              {delta < 0 && (
-                                <TrendingDown className="size-3 shrink-0" aria-hidden="true" />
-                              )}
                               <span>
                                 {delta > 0
                                   ? `+${delta.toFixed(1)}%`
@@ -297,9 +282,8 @@ export function SubmissionHistoryDialog({
                           &ldquo;{item.targetText}&rdquo;
                         </h4>
 
-                        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <Calendar className="size-3.5 text-muted-foreground/70" aria-hidden="true" />
-                          <span>Assessed on {formattedDate}</span>
+                        <p className="text-xs text-muted-foreground">
+                          Assessed on {formattedDate}
                         </p>
                       </div>
 

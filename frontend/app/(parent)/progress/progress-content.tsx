@@ -429,7 +429,7 @@ export function ProgressPageContent() {
                       onClick={() => setActivitiesExpanded((prev) => !prev)}
                       aria-expanded={activitiesExpanded}
                       aria-controls="take-home-activities-grid"
-                      className="h-9 sm:h-8 min-h-[36px] sm:min-h-[32px] px-2.5 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:bg-brand-50/80 dark:hover:bg-brand-950/50 gap-1 cursor-pointer rounded-lg border border-brand-200/50 dark:border-brand-800/50 shrink-0"
+                      className="h-10 sm:h-8 min-h-[40px] sm:min-h-[32px] px-3 sm:px-2.5 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:bg-brand-50/80 dark:hover:bg-brand-950/50 gap-1 cursor-pointer rounded-lg border border-brand-200/50 dark:border-brand-800/50 shrink-0 touch-manipulation"
                     >
                       <span>{activitiesExpanded ? "Show fewer (2)" : `View all (${activities.length})`}</span>
                       {activitiesExpanded ? (

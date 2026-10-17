@@ -147,7 +147,6 @@ export function ParentNav({
                 className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-border/70 bg-card text-xs sm:text-sm font-medium shadow-2xs max-w-[155px] xs:max-w-[200px] sm:max-w-[320px] min-w-0 select-none"
                 title={`Active student: ${linkedChildren[0].fullName} (${linkedChildren[0].section})`}
               >
-                <Users className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
                 <span className="font-medium text-foreground truncate min-w-0">{linkedChildren[0].fullName}</span>
                 <span className="inline-flex items-center self-center text-xs text-muted-foreground shrink-0 leading-none">
                   ({linkedChildren[0].section})

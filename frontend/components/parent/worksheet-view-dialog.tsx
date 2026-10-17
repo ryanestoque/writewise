@@ -33,8 +33,6 @@ import {
   type CriterionKey,
 } from "@/lib/utils/scoring";
 import {
-  Calendar,
-  User,
   ArrowLeft,
   Trash2,
   Loader2,
@@ -200,13 +198,11 @@ export function WorksheetViewDialog({
                 Scored Worksheet Photo
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
-                <span className="inline-flex items-center gap-1 font-medium text-foreground">
-                  <User className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                <span className="font-medium text-foreground">
                   {childName}
                 </span>
                 <span>&middot;</span>
-                <span className="inline-flex items-center gap-1">
-                  <Calendar className="size-3" aria-hidden="true" />
+                <span>
                   {formattedDate}
                 </span>
               </DialogDescription>
@@ -222,7 +218,7 @@ export function WorksheetViewDialog({
               type="button"
               onClick={() => setMobileTab("photo")}
               className={cn(
-                "flex-1 py-2 px-3 rounded-lg text-center transition-all cursor-pointer min-h-[38px] flex items-center justify-center font-medium",
+                "flex-1 py-2 px-3 rounded-lg text-center transition-all cursor-pointer min-h-[40px] flex items-center justify-center font-medium touch-manipulation",
                 mobileTab === "photo"
                   ? "bg-card text-foreground font-semibold shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -234,7 +230,7 @@ export function WorksheetViewDialog({
               type="button"
               onClick={() => setMobileTab("scores")}
               className={cn(
-                "flex-1 py-2 px-3 rounded-lg text-center transition-all cursor-pointer min-h-[38px] flex items-center justify-center gap-1.5 font-medium",
+                "flex-1 py-2 px-3 rounded-lg text-center transition-all cursor-pointer min-h-[40px] flex items-center justify-center gap-1.5 font-medium touch-manipulation",
                 mobileTab === "scores"
                   ? "bg-card text-foreground font-semibold shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
