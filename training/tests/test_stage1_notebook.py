@@ -98,6 +98,117 @@ def test_augmentation_keeps_white_background_white():
     np.testing.assert_allclose(augmented, 1.0, atol=1e-5)
 
 
+def dataset_builder():
+    namespace = {
+        "np": np,
+        "tf": tf,
+        "SEED": 42,
+        "NUM_CLASSES": 2,
+        "BATCH_SIZE": 32,
+        "augmentation_layer": tf.keras.Sequential([tf.keras.layers.Identity()]),
+    }
+    notebook_function("transform_sample", namespace)
+    return notebook_function("build_dataset", namespace)
+
+
+def test_training_shuffle_can_draw_from_beyond_the_first_2000_samples():
+    # Ordered groups reproduce the limited-buffer problem without a training run.
+    labels = np.repeat([0, 1], 4096).astype(np.int32)
+    images = np.broadcast_to((labels * 255)[:, None, None], (len(labels), 2, 2))
+    images = images.astype(np.uint8)
+    dataset = dataset_builder()(images, labels, augment=True)
+    first_images, first_labels = next(iter(dataset))
+    assert set(np.argmax(first_labels.numpy(), axis=1)) == {0, 1}
+    # Shuffling must keep each image paired with its label.
+    np.testing.assert_allclose(
+        first_images[:, 0, 0, 0].numpy(),
+        np.argmax(first_labels.numpy(), axis=1) * 2 - 1,
+    )
+    first_epoch = np.concatenate([np.argmax(y.numpy(), axis=1) for _, y in dataset])
+    second_epoch = np.concatenate([np.argmax(y.numpy(), axis=1) for _, y in dataset])
+    np.testing.assert_array_equal(np.bincount(first_epoch), [4096, 4096])
+    assert not np.array_equal(first_epoch, second_epoch)
+
+
+def test_clean_dataset_preserves_order_and_does_not_augment():
+    labels = np.array([0, 1, 0], dtype=np.int32)
+    images = np.stack([np.full((2, 2), v, np.uint8) for v in (0, 127, 255)])
+    dataset = dataset_builder()(images, labels, augment=False)
+    clean_images, clean_labels = next(iter(dataset))
+    np.testing.assert_array_equal(np.argmax(clean_labels.numpy(), axis=1), labels)
+    np.testing.assert_allclose(
+        clean_images[:, 0, 0, 0].numpy(), images[:, 0, 0] / 127.5 - 1, atol=1e-7
+    )
+
+
+def test_diagnostics_reload_checkpoint_and_report_all_classes_without_test_data(
+    tmp_path,
+):
+    diagnostic_cell = next(
+        (source for source in code_cells() if "def evaluate_clean_split(" in source),
+        None,
+    )
+    assert diagnostic_cell is not None, (
+        "Missing clean train/validation diagnostics cell"
+    )
+    import matplotlib
+
+    matplotlib.use("Agg")
+    checkpoint = tmp_path / "stage1_best.keras"
+    model = tf.keras.Sequential(
+        [
+            tf.keras.Input((2, 2, 3)),
+            tf.keras.layers.GlobalAveragePooling2D(),
+            tf.keras.layers.Dense(3, activation="softmax"),
+        ]
+    )
+    model.set_weights([np.zeros((3, 3), np.float32), np.array([50, 0, 0], np.float32)])
+    model.save(checkpoint)
+    # The in-memory model is deliberately different from the saved checkpoint.
+    model.set_weights([np.zeros((3, 3), np.float32), np.array([0, 5, 0], np.float32)])
+    namespace = {
+        "Path": Path,
+        "json": json,
+        "np": np,
+        "tf": tf,
+        "model": model,
+        "SEED": 42,
+        "NUM_CLASSES": 3,
+        "BATCH_SIZE": 2,
+        "class_names": ["A", "B", "C"],
+        "CHECKPOINT_DIR": str(tmp_path),
+        "checkpoint_path": str(checkpoint),
+        "RUN_ID": "diagnostics-test",
+        "selected_phase": "A",
+        "X_train": np.full((2, 2, 2), 255, dtype=np.uint8),
+        "y_train": np.array([0, 0], dtype=np.int32),
+        "X_val": np.full((2, 2, 2), 255, dtype=np.uint8),
+        "y_val": np.array([0, 2], dtype=np.int32),
+    }
+    notebook_function("transform_sample", namespace)
+    notebook_function("build_dataset", namespace)
+    exec(diagnostic_cell, namespace)  # noqa: S102 - trusted local notebook
+    output_dir = tmp_path / "diagnostics"
+    summary = json.loads((output_dir / "validation_summary.json").read_text())
+    assert summary["checkpoint"] == str(checkpoint)
+    assert summary["run_id"] == "diagnostics-test"
+    assert summary["train_clean"]["accuracy"] == 1.0
+    assert summary["val"]["accuracy"] == 0.5
+    # Retain the logits-based training loss even for a confidently wrong class.
+    assert summary["val"]["loss"] == pytest.approx(25.0)
+    assert summary["val"]["macro_recall"] == pytest.approx(1 / 3)
+    assert summary["val"]["missing_classes"] == ["B"]
+    assert summary["generalization_gap_percentage_points"] == 50.0
+    for split in ("train_clean", "val"):
+        report = (output_dir / f"{split}_classification_report.txt").read_text()
+        assert "B" in report and "C" in report
+        matrix = np.loadtxt(output_dir / f"{split}_confusion_matrix.csv", delimiter=",")
+        assert matrix.shape == (3, 3)
+        assert matrix.sum() == 2
+        assert (output_dir / f"{split}_confusion_matrix.png").exists()
+    assert not (tmp_path / "evaluation").exists()
+
+
 def test_fine_tuning_does_not_change_batch_normalization_state():
     # The top portion contains BN, so the original unfreeze policy breaks this.
     base = tf.keras.Sequential(
@@ -245,4 +356,7 @@ def test_training_checkpoint_can_be_loaded_by_stage2(tmp_path):
 
     # The final test set cannot be consumed accidentally by Run all.
     with pytest.raises(RuntimeError, match="Final test is disabled"):
-        exec("".join(notebook["cells"][17]["source"]), namespace)  # noqa: S102 - local cells
+        final_cell = next(
+            source for source in code_cells() if "if not RUN_FINAL_TEST:" in source
+        )
+        exec(final_cell, namespace)  # noqa: S102 - local cells
