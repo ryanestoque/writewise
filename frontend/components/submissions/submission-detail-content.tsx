@@ -42,7 +42,6 @@ import {
   Edit3,
   Trash2,
   Loader2,
-  ScanText,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -428,10 +427,6 @@ export function SubmissionDetailContent({
     return typeof raw?.detected_text === "string" ? raw.detected_text : null;
   }, [submission.measurement?.raw_output]);
 
-  const transcriptionSimilarity = useMemo(() => {
-    const raw = submission.measurement?.raw_output as Record<string, unknown> | undefined;
-    return typeof raw?.transcription_similarity === "number" ? raw.transcription_similarity : null;
-  }, [submission.measurement?.raw_output]);
 
   const casingMismatches = useMemo(() => {
     const raw = submission.measurement?.raw_output as Record<string, unknown> | undefined;
@@ -836,34 +831,6 @@ export function SubmissionDetailContent({
                   </span>
                 </div>
               </div>
-
-              {detectedText && (
-                <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40 flex-wrap">
-                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                    <ScanText className="size-3.5 text-primary shrink-0" aria-hidden="true" />
-                    <span className="font-semibold text-foreground shrink-0 text-xs">AI Cursive Recognition:</span>
-                    <span className="font-medium text-foreground italic bg-primary/5 dark:bg-primary/10 px-2.5 py-1 rounded-lg border border-primary/20 truncate max-w-full text-xs font-mono">
-                      &quot;{detectedText}&quot;
-                    </span>
-                  </div>
-                  {transcriptionSimilarity !== null && (
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "text-[10px] px-2 py-0.5 font-semibold shrink-0",
-                        transcriptionSimilarity >= 0.8
-                          ? "bg-success/10 text-success border-success/30"
-                          : transcriptionSimilarity >= 0.65
-                            ? "bg-warning/10 text-warning border-warning/30"
-                            : "bg-destructive/10 text-destructive border-destructive/30"
-                      )}
-                      title={`Levenshtein similarity to target prompt: ${Math.round(transcriptionSimilarity * 100)}%`}
-                    >
-                      {Math.round(transcriptionSimilarity * 100)}% Prompt Match
-                    </Badge>
-                  )}
-                </div>
-              )}
 
               {casingMismatches.length > 0 && (
                 <div className="flex items-start gap-1.5 pt-2 border-t border-border/40 text-xs text-warning bg-warning/5 dark:bg-warning/10 p-2 rounded-lg border border-warning/20">
