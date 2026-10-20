@@ -8,7 +8,7 @@
 
 import math
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 import cv2
 import numpy as np
@@ -111,6 +111,7 @@ def validate_cursive_script(
     detected_words: int,
     expected_words: Optional[int] = None,
     min_connectivity_threshold: float = 0.40,
+    all_guideline_ys: Optional[Sequence[int]] = None,
 ) -> None:
     """Validate that handwriting exhibits continuous cursive stroke connectivity (CV_PIPELINE §5.4).
 
@@ -129,6 +130,9 @@ def validate_cursive_script(
         Target expected words from activity prompt text if available.
     min_connectivity_threshold : float, default=0.40
         Minimum ratio of maximum connected component width to word bounding box width.
+    all_guideline_ys : Optional[Sequence[int]]
+        All detected guideline Y-positions across the worksheet to prevent guidelines
+        from neighboring lines or baseline fragments from creating false ligatures.
 
     Raises
     ------
@@ -140,7 +144,7 @@ def validate_cursive_script(
 
     for line in lines:
         unit_h = max(1.0, float(line.baseline_y - line.midline_y))
-        line_mask_half = max(2, int(0.04 * unit_h))
+        line_mask_half = max(3, int(0.05 * unit_h))
         # Words must be wide enough to contain multiple characters (>= 1.1x guideline height)
         min_word_w = int(1.1 * unit_h)
 
@@ -152,7 +156,13 @@ def validate_cursive_script(
             ink = (crop > 0).astype(np.uint8)
 
             # Suppress ruling lines to prevent them from acting as false ligatures
-            for gy in (line.topline_y, line.midline_y, line.baseline_y):
+            guidelines_to_mask = set((line.topline_y, line.midline_y, line.baseline_y))
+            if all_guideline_ys is not None:
+                for gy in all_guideline_ys:
+                    if w.bbox[1] - line_mask_half <= gy <= w.bbox[1] + w.bbox[3] + line_mask_half:
+                        guidelines_to_mask.add(gy)
+
+            for gy in guidelines_to_mask:
                 rel_y = gy - w.bbox[1]
                 y1 = max(0, rel_y - line_mask_half)
                 y2 = min(crop.shape[0], rel_y + line_mask_half + 1)
@@ -164,7 +174,19 @@ def validate_cursive_script(
                 continue
 
             min_area = max(15, int(0.02 * (unit_h**2)))
-            valid_stats = [s for s in stats[1:] if s[cv2.CC_STAT_AREA] >= min_area]
+            max_aspect_ratio = 6.0
+            max_sliver_height = max(4, int(0.18 * unit_h))
+
+            # Exclude extreme horizontal ruling slivers (narrow in height but spanning wide)
+            valid_stats = [
+                s
+                for s in stats[1:]
+                if s[cv2.CC_STAT_AREA] >= min_area
+                and not (
+                    s[cv2.CC_STAT_WIDTH] / max(1, s[cv2.CC_STAT_HEIGHT]) > max_aspect_ratio
+                    and s[cv2.CC_STAT_HEIGHT] < max_sliver_height
+                )
+            ]
             if not valid_stats:
                 continue
 
@@ -177,9 +199,16 @@ def validate_cursive_script(
         failing_count = sum(1 for r in word_ratios if r < min_connectivity_threshold)
         failing_fraction = failing_count / len(word_ratios)
 
-        if (len(word_ratios) == 1 and mean_ratio < 0.35) or (
-            len(word_ratios) >= 2
-            and (mean_ratio < min_connectivity_threshold or failing_fraction >= 0.70)
+        if (
+            (len(word_ratios) == 1 and mean_ratio < 0.35)
+            or (
+                len(word_ratios) == 2
+                and (mean_ratio < min_connectivity_threshold or failing_fraction >= 0.50)
+            )
+            or (
+                len(word_ratios) >= 3
+                and (mean_ratio < min_connectivity_threshold or failing_fraction >= 0.70)
+            )
         ):
             exp_words = expected_words if expected_words is not None else detected_words
             raise PostSegmentationRejection(
@@ -684,10 +713,14 @@ def segment_lines_and_words(
 
     # §5.4: Post-segmentation script check (print vs. cursive)
     if validate_script and total_words > 0:
+        all_guidelines = (
+            deskew.topline_y + deskew.midline_y + deskew.baseline_y if deskew is not None else None
+        )
         validate_cursive_script(
             lines=line_segments,
             detected_words=total_words,
             expected_words=expected_word_count,
+            all_guideline_ys=all_guidelines,
         )
 
     return SegmentationResult(

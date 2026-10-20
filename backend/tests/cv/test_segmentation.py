@@ -336,6 +336,25 @@ def test_printed_worksheet_rejected_with_script_code():
     assert "printed rather than cursive" in exc_info.value.message
 
 
+def test_printed_worksheet_with_guideline_remnants_rejected():
+    """Worksheets with printed handwriting are rejected even when horizontal ruling line remnants
+    survive or touch the word bounding box.
+    """
+    img_bytes = make_printed_worksheet(num_lines=1, words_per_line=2)
+    preprocessed = preprocess(img_bytes)
+    deskewed = detect_and_deskew(preprocessed)
+
+    # Inject horizontal ruling line sliver artifact near the baseline
+    base_y = deskewed.baseline_y[0]
+    deskewed.binary[base_y + 4 : base_y + 8, 200:800] = 255
+
+    with pytest.raises(PostSegmentationRejection) as exc_info:
+        segment_lines_and_words(deskewed, expected_word_count=2)
+
+    assert exc_info.value.code == "QUALITY_GATE_SCRIPT_NOT_CURSIVE"
+    assert "printed rather than cursive" in exc_info.value.message
+
+
 def test_cursive_worksheet_passes_script_validation():
     """Worksheets with cursive ligatures pass post-segmentation script validation."""
     img_bytes = make_segmented_worksheet(num_lines=2, words_per_line=3, with_ligatures=True)
