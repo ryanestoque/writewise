@@ -29,6 +29,8 @@ python export_dataset.py --output-dir output
 ```
 
 ### 2. Run Spearman's Rho & Threshold Derivation
+Exports include `slant_method`, evidence coverage, and within-word spread for new measurements. Missing method metadata denotes `legacy_hough_v1`; new records use `lsd_stems_v2`. Analyze separate method cohorts: the analysis and calibration entry points reject mixed-method slant data. Unmeasurable slant values remain empty, not zero. No existing submission is automatically remeasured by these changes.
+
 Compute rank correlations against teacher rubric scores and derive calibration constants:
 
 ```bash

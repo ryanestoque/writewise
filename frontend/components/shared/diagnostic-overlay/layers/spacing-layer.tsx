@@ -74,8 +74,9 @@ export const SpacingLayer = memo(function SpacingLayer({
         const hitH = Math.max(minHit, tickHeight * 2 + 8);
         const badgeW = 70 * hitScale;
         const badgeH = 20 * hitScale;
+        // Match WORD_GAP_MIN_RATIO in backend/app/diagnostic/rules.py.
         const spacingLabel = isAttention
-          ? (gap_ratio < 0.6 ? "Tight gap" : "Wide gap")
+          ? (gap_ratio < 1.2 ? "Tight gap" : "Wide gap")
           : "Good space";
 
         return (

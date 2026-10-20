@@ -142,3 +142,38 @@ def test_slant_inter_word_outlier_detection_in_line():
     assert slant_ann[3]["severity"] == "needs_attention"
     assert "irregular slant" in slant_ann[3]["note"].lower()
     assert "deviates" in slant_ann[3]["note"].lower()
+
+
+def test_unmeasurable_slant_does_not_create_an_upright_annotation():
+    raw = {"lines": [{"words": [{"bbox": [10, 10, 60, 40], "slant_deg": None}]}]}
+    overlay = generate_diagnostic_overlay(raw)
+    assert overlay["slant"]["annotations"] == []
+    # Other criteria still receive the same word.
+    assert len(overlay["baseline"]["annotations"]) == 1
+
+
+def test_mixed_strokes_are_flagged_even_when_word_means_are_identical():
+    raw = {
+        "lines": [
+            {
+                "words": [
+                    {
+                        "word_index": 0,
+                        "bbox": [10, 10, 60, 80],
+                        "slant_deg": 0,
+                        "slant_std_deg": 30,
+                    },
+                    {
+                        "word_index": 1,
+                        "bbox": [100, 10, 60, 80],
+                        "slant_deg": 0,
+                        "slant_std_deg": 0.5,
+                    },
+                ]
+            }
+        ]
+    }
+    annotations = generate_diagnostic_overlay(raw)["slant"]["annotations"]
+    assert annotations[0]["severity"] == "needs_attention"
+    assert "within-word" in annotations[0]["note"]
+    assert annotations[1]["severity"] == "normal"

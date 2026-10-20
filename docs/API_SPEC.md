@@ -474,6 +474,8 @@ In Phase 1 (`SCORING_ENGINE=manual`), `scores.*` and `overlay` are always `null`
 
 `manual_score` never appears in this response — manual grading is a separate step, entered after the teacher reviews these raw measurements, via the endpoint below.
 
+For new `lsd_stems_v2` measurements, `aggregate.slant.mean` and `.std` may be null when no word supplies sustained stem evidence; `scores.slant_score` and the composite score are then null as well. The same nullable values are persisted in existing measurement columns. Unsupported words have `raw_output.lines[].words[].slant_deg: null` and no slant vector. `raw_output.slant_analysis` records the method version, `measured_words`, `total_words`, and `within_word_std_deg` (RMS across measurable words). Each measured word also records `slant_std_deg` and `slant_segment_count`. Existing records without these additions retain their original measurements. See `CV_PIPELINE.md` §6.1 for interpretation and provisional tolerances.
+
 #### `PATCH /api/submissions/{id}/manual-score`
 
 **Caller:** Teacher only, and only the teacher who owns the student on this submission.

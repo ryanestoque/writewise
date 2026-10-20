@@ -89,6 +89,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sections */
+        get: operations["list_sections_api_sections_get"];
+        put?: never;
+        /** Create Section */
+        post: operations["create_section_api_sections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sections/{section_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Section */
+        delete: operations["delete_section_api_sections__section_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Section */
+        patch: operations["update_section_api_sections__section_id__patch"];
+        trace?: never;
+    };
     "/api/activities": {
         parameters: {
             query?: never;
@@ -190,14 +226,47 @@ export interface paths {
         head?: never;
         /**
          * Submit Manual Score
-         * @description Enters the teacher's independent rubric grade (Phase 1 calibration input).
+         * @description Enters or updates the teacher's independent rubric grade (Phase 1 calibration input).
          *
          *     API_SPEC §3.3:
          *     - Teacher only, owning the student on this submission.
          *     - 403 MANUAL_SCORING_DISABLED when SCORING_ENGINE=calibrated.
-         *     - 409 MANUAL_SCORE_ALREADY_EXISTS if called twice on the same submission.
          */
         patch: operations["submit_manual_score_api_submissions__submission_id__manual_score_patch"];
+        trace?: never;
+    };
+    "/api/submissions/{submission_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Submission */
+        delete: operations["delete_submission_api_submissions__submission_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/submissions/batch-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Batch Delete Submissions */
+        post: operations["batch_delete_submissions_api_submissions_batch_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 }
@@ -228,6 +297,11 @@ export interface components {
             /** Is Take Home */
             is_take_home?: boolean | null;
         };
+        /** BatchDeleteSubmissionsRequest */
+        BatchDeleteSubmissionsRequest: {
+            /** Submission Ids */
+            submission_ids: string[];
+        };
         /** Body_create_submission_api_submissions_post */
         Body_create_submission_api_submissions_post: {
             /** Image */
@@ -236,6 +310,11 @@ export interface components {
             activity_id: string;
             /** Student Id */
             student_id: string;
+            /**
+             * Bypass Text Check
+             * @default false
+             */
+            bypass_text_check: boolean;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -255,12 +334,37 @@ export interface components {
          * @enum {string}
          */
         ScoreBandEnum: "needs_improvement" | "developing" | "satisfactory" | "excellent";
+        /** SectionCreate */
+        SectionCreate: {
+            /** Name */
+            name: string;
+        };
+        /** SectionResponse */
+        SectionResponse: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Student Count */
+            student_count: number;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+        };
+        /** SectionUpdate */
+        SectionUpdate: {
+            /** Name */
+            name: string;
+        };
         /** StudentCreate */
         StudentCreate: {
             /** Full Name */
             full_name: string;
             /** Section */
-            section: string;
+            section?: string | null;
+            /** Section Id */
+            section_id?: string | null;
             /** Parent Email */
             parent_email?: string | null;
         };
@@ -270,6 +374,8 @@ export interface components {
             full_name?: string | null;
             /** Section */
             section?: string | null;
+            /** Section Id */
+            section_id?: string | null;
             /** Parent Email */
             parent_email?: string | null;
         };
@@ -432,6 +538,125 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sections_api_sections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionResponse"][];
+                };
+            };
+        };
+    };
+    create_section_api_sections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_section_api_sections__section_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_section_api_sections__section_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionResponse"];
                 };
             };
             /** @description Validation Error */
@@ -653,6 +878,70 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ManualScoreRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_submission_api_submissions__submission_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_delete_submissions_api_submissions_batch_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchDeleteSubmissionsRequest"];
             };
         };
         responses: {

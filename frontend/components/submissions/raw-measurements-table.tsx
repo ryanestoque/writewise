@@ -68,6 +68,18 @@ export function RawMeasurementsTable({
   onSelectCriterion,
 }: RawMeasurementsTableProps) {
   const rawCriteria = useMemo(() => {
+    const slantRaw = measurement?.raw_output?.slant_analysis;
+    const slantAnalysis = slantRaw && typeof slantRaw === "object" && !Array.isArray(slantRaw)
+      ? slantRaw as Record<string, unknown>
+      : null;
+    const withinWordStd = typeof slantAnalysis?.within_word_std_deg === "number"
+      && Number.isFinite(slantAnalysis.within_word_std_deg)
+      ? slantAnalysis.within_word_std_deg
+      : null;
+    const slantCoverage = typeof slantAnalysis?.measured_words === "number"
+      && typeof slantAnalysis?.total_words === "number"
+      ? `${slantAnalysis.measured_words} / ${slantAnalysis.total_words}`
+      : "Not recorded";
     // 1. Letter formation benchmark
     let formationBenchmark: BenchmarkIndicator;
     if (measurement?.letter_formation_mean != null) {
@@ -149,7 +161,7 @@ export function RawMeasurementsTable({
       const isBorderline = (val >= 3.0 && val < 6.0) || (val > 15.0 && val <= 19.0);
       slantBenchmark = {
         status: isOptimal ? "within_target" : isBorderline ? "borderline" : "deviating",
-        label: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "Deviating",
+        label: isOptimal ? "Mean within target" : isBorderline ? "Mean borderline" : "Mean deviating",
         badgeClass: isOptimal
           ? "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
           : isBorderline
@@ -284,29 +296,39 @@ export function RawMeasurementsTable({
                   ? ` ± ${Number(measurement.slant_std).toFixed(1)}°`
                   : ""
               }`
-            : "—",
+            : slantAnalysis ? "Not measurable" : "—",
         description:
-          "Average forward cursive stroke lean relative to vertical guideline perpendicular (Standard cursive lean: 6.0° – 15.0°).",
+          "Mean sustained stem lean from vertical, with direction variation measured within and between words. Target angles are provisional.",
         benchmark: slantBenchmark,
-        targetText: "6.0° – 15.0° forward",
+        targetText: "6.0° – 15.0° (provisional)",
         subDetails: [
           {
-            label: "Mean forward slant",
+            label: "Mean stem lean",
             value:
               measurement?.slant_mean != null && !Number.isNaN(Number(measurement.slant_mean))
                 ? `${Number(measurement.slant_mean).toFixed(1)}°`
                 : "—",
           },
           {
-            label: "Target forward lean",
+            label: "Provisional forward lean",
             value: "6.0° – 15.0° (from vertical)",
           },
           {
-            label: "Slant variation (std)",
+            label: "Between-word variation",
             value:
               measurement?.slant_std != null && !Number.isNaN(Number(measurement.slant_std))
                 ? `±${Number(measurement.slant_std).toFixed(1)}°`
                 : "—",
+          },
+          {
+            label: "Within-word variation (RMS)",
+            value: withinWordStd !== null
+              ? `${withinWordStd.toFixed(1)}°`
+              : slantAnalysis ? "Not measurable" : "Not recorded",
+          },
+          {
+            label: "Words measured",
+            value: slantCoverage,
           },
         ],
       },

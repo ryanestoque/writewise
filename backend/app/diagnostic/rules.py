@@ -51,6 +51,7 @@ def evaluate_slant(
     bbox: list[int],
     line_median: float | None = None,
     is_high_variance: bool = False,
+    within_word_std: float | None = None,
 ) -> tuple[Severity, list[int], str]:
     x, y, w, h = bbox
     cx = x + w // 2
@@ -63,6 +64,14 @@ def evaluate_slant(
 
     vector = [cx - dx, cy + dy, cx + dx, cy - dy]
     angle = round(slant_deg, 1)
+
+    # Provisional tolerance shared with the existing line-variation check.
+    if within_word_std is not None and within_word_std > SLANT_LINE_STDEV_MAX:
+        return (
+            "needs_attention",
+            vector,
+            f"Mixed stem directions (mean {angle}°; within-word variation {within_word_std:.1f}°)",
+        )
 
     if slant_deg > SLANT_MAX_DEG:
         return "needs_attention", vector, f"Steep forward slant ({angle}°)"

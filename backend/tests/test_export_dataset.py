@@ -149,6 +149,21 @@ def test_anonymize_id():
     assert code_2 == "STUDENT_002"
 
 
+def test_export_preserves_slant_method_and_evidence(sample_paired_data):
+    sample_paired_data[1]["measurement"]["raw_output"]["slant_analysis"] = {
+        "method": "lsd_stems_v2",
+        "measured_words": 1,
+        "total_words": 2,
+        "within_word_std_deg": 12.3,
+    }
+    records = build_measurements_records(sample_paired_data, {}, {})
+    assert records[0]["slant_method"] == "legacy_hough_v1"
+    assert records[1]["slant_method"] == "lsd_stems_v2"
+    assert records[1]["slant_measured_words"] == 1
+    assert records[1]["slant_total_words"] == 2
+    assert records[1]["slant_within_word_std_deg"] == 12.3
+
+
 def test_filter_paired_records():
     """Only completed submissions with both measurement and manual_score are retained."""
     raw_submissions = [

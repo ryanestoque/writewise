@@ -9,6 +9,7 @@ Provides interchangeable scoring engine implementations:
 """
 
 import logging
+import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
@@ -158,12 +159,14 @@ class CalibratedScoreProvider(ScoreProvider):
         if isinstance(aggregate, AggregateMetrics):
             obj = getattr(aggregate, key, None)
             if obj is not None and hasattr(obj, subkey):
-                return float(getattr(obj, subkey))
+                value = getattr(obj, subkey)
+                return default if value is None else float(value)
             return default
         elif isinstance(aggregate, dict):
             # Nested dictionary: {"slant": {"mean": 12.5}}
             if key in aggregate and isinstance(aggregate[key], dict):
-                return float(aggregate[key].get(subkey, default))
+                value = aggregate[key].get(subkey, default)
+                return default if value is None else float(value)
             # Flat dictionary: {"slant_mean": 12.5}
             flat_key = f"{key}_{subkey}"
             if flat_key in aggregate and aggregate[flat_key] is not None:
@@ -200,9 +203,13 @@ class CalibratedScoreProvider(ScoreProvider):
         ml_result: LetterFormationResult | float | None = None,
     ) -> CriterionScores:
         # 1. Slant score: penalty for deviation from standard ~12.5° forward slant
-        slant_mean = self._extract_metric(aggregate, "slant", "mean", default=12.5)
-        slant_dev = abs(slant_mean - SLANT_TARGET_DEG)
-        slant_score = _clamp(100.0 - slant_dev * SLANT_PENALTY_FACTOR)
+        slant_mean = self._extract_metric(aggregate, "slant", "mean", default=math.nan)
+        # Unsupported lean must not become an invented upright or ideal angle.
+        slant_score = (
+            _clamp(100.0 - abs(slant_mean - SLANT_TARGET_DEG) * SLANT_PENALTY_FACTOR)
+            if math.isfinite(slant_mean)
+            else None
+        )
 
         # 2. Spacing score: combination of word spacing and letter spacing consistency
         word_spacing_mean = self._extract_metric(

@@ -163,6 +163,7 @@ def build_measurements_records(
 
         student_code = anonymize_id(sub["student_id"], student_map, prefix="STUDENT")
         submission_code = anonymize_id(sub["id"], submission_map, prefix="SUBMISSION")
+        slant_analysis = (meas.get("raw_output") or {}).get("slant_analysis") or {}
 
         row = {
             "student_code": student_code,
@@ -170,6 +171,10 @@ def build_measurements_records(
             # Raw CV / CNN measurements (6 metric pairs)
             "slant_mean": meas.get("slant_mean"),
             "slant_std": meas.get("slant_std"),
+            "slant_method": slant_analysis.get("method") or "legacy_hough_v1",
+            "slant_measured_words": slant_analysis.get("measured_words"),
+            "slant_total_words": slant_analysis.get("total_words"),
+            "slant_within_word_std_deg": slant_analysis.get("within_word_std_deg"),
             "word_spacing_mean": meas.get("word_spacing_mean"),
             "word_spacing_std": meas.get("word_spacing_std"),
             "letter_spacing_mean": meas.get("letter_spacing_mean"),

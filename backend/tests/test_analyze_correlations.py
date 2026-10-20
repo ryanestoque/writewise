@@ -43,6 +43,24 @@ def test_compute_ranks_empty():
     assert compute_ranks([]) == []
 
 
+def test_calibration_rejects_mixed_slant_methods():
+    records = [
+        {"slant_mean": 12, "slant_method": "legacy_hough_v1"},
+        {"slant_mean": 13, "slant_method": "lsd_stems_v2"},
+    ]
+    with pytest.raises(ValueError, match="Mixed slant measurement methods"):
+        derive_calibration_constants(records)
+
+
+def test_analysis_rejects_mixed_slant_methods_before_writing_reports(tmp_path):
+    source = tmp_path / "mixed.csv"
+    source.write_text("slant_mean,slant_method\n12,legacy_hough_v1\n13,lsd_stems_v2\n")
+    output = tmp_path / "reports"
+    with pytest.raises(ValueError, match="Mixed slant measurement methods"):
+        run_analysis(source, output)
+    assert not output.exists()
+
+
 def test_spearman_correlation_perfect():
     """Perfect positive and negative rank correlations."""
     x = [1.0, 2.0, 3.0, 4.0, 5.0]

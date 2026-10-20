@@ -122,26 +122,31 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
                 )
 
                 # 3. Slant
-                slant_deg = word.get("slant_deg", 0.0)
-                sl_sev, vector, sl_note = evaluate_slant(
-                    slant_deg,
-                    bbox,
-                    line_median=line_median_slant,
-                    is_high_variance=is_high_slant_variance,
-                )
-                if sl_sev == "needs_attention":
-                    attention_counts["slant"] += 1
-                slant_annotations.append(
-                    SlantAnnotation(
-                        line_index=line_idx,
-                        word_index=w_idx,
-                        bbox=bbox,
-                        angle_deg=round(slant_deg, 1),
-                        vector=vector,
-                        severity=sl_sev,
-                        note=sl_note,
+                slant_deg = word.get("slant_deg")
+                if slant_deg is not None:
+                    within_std = word.get("slant_std_deg")
+                    sl_sev, vector, sl_note = evaluate_slant(
+                        slant_deg,
+                        bbox,
+                        line_median=line_median_slant,
+                        is_high_variance=is_high_slant_variance,
+                        within_word_std=within_std,
                     )
-                )
+                    if within_std is not None and within_std <= SLANT_LINE_STDEV_MAX:
+                        sl_note += f"; within-word variation {within_std:.1f}°"
+                    if sl_sev == "needs_attention":
+                        attention_counts["slant"] += 1
+                    slant_annotations.append(
+                        SlantAnnotation(
+                            line_index=line_idx,
+                            word_index=w_idx,
+                            bbox=bbox,
+                            angle_deg=round(slant_deg, 1),
+                            vector=vector,
+                            severity=sl_sev,
+                            note=sl_note,
+                        )
+                    )
 
                 # 4. Letter Formation & Stroke Tracing
                 score = word.get("letter_formation_score")

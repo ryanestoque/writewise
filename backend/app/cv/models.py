@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Optional
 class MetricSummary:
     """Statistical summary (mean and standard deviation)."""
 
-    mean: float
-    std: float
+    mean: float | None
+    std: float | None
 
 
 @dataclass
@@ -29,11 +29,23 @@ class WordMeasurement:
 
     word_index: int
     bbox: List[int]  # [x, y, w, h]
-    slant_deg: float
+    slant_deg: float | None
     baseline_deviation_ratio: float
     size_ratio: float
     measured_baseline_y: Optional[int] = None
     stroke_paths: List[str] = field(default_factory=list)
+    slant_std_deg: float | None = None
+    slant_segment_count: int = 0
+
+
+@dataclass
+class SlantAnalysisData:
+    """Version and coverage; within-word spread is separate from word-mean std."""
+
+    method: str
+    measured_words: int
+    total_words: int
+    within_word_std_deg: float | None
 
 
 @dataclass
@@ -63,6 +75,7 @@ class MeasurementData:
     guide_lines: GuideLinesData
     lines: List[LineMeasurement]
     aggregate: AggregateMetrics
+    slant_analysis: SlantAnalysisData | None = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert dataclass hierarchy to standard JSON-compatible dictionary."""

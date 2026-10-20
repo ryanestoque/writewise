@@ -54,6 +54,7 @@ The computer vision subsystem needed an architectural design that solves the fol
 - **Rationale:** Normalizing against handwriting-derived dimensions (e.g. average letter height) creates circular dependency (evaluating handwriting quality using that same handwriting as ground truth). Practice paper has printed baseline/midline ruling, providing an objective, camera-scale-invariant baseline.
 
 ### Decision 3: Hough Stroke-Filtering with Neutral Fallback for Slant Angle
+- **Superseded for new measurements on 2026-10-20:** `lsd_stems_v2` uses scale-normalized sustained stem edges, separately reports mean lean and within-word spread, and returns null when unmeasurable. See `CV_PIPELINE.md` §6.1. The original decision below describes legacy measurements only.
 - **Chosen Approach:** Use Probabilistic Hough Transform (`cv2.HoughLinesP`) on the word crop, filtered strictly to near-vertical strokes ($45^\circ \le \theta \le 135^\circ$), measuring angle deviation relative to vertical. If no near-vertical strokes are detected (e.g., punctuation or purely round letters), the word falls back to `0.0°` (neutral vertical).
 - **Rationale:** Principal Component Analysis (PCA) on whole-word ink spreads fails for cursive because words are horizontally wide. Segment-filtering isolates the actual down/up pen stems carrying the slant signal.
 

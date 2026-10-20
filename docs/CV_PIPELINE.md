@@ -148,9 +148,15 @@ WriteWise specifically evaluates cursive penmanship. To prevent printed (manuscr
 All four criteria operate on the binarized (post-threshold) image, per word.
 
 ### 6.1 Slant Angle
-1. Run `cv2.HoughLinesP` within each word's region.
-2. Filter to near-vertical segments (within ±45° of vertical) — this isolates the up/down pen strokes that carry the slant signal and excludes the horizontal connecting strokes between letters.
-3. Average the surviving segments' angle relative to true vertical, measured against the detected guide lines' perpendicular (not absolute image vertical) — keeps this self-consistent even if deskew isn't perfect.
+1. Normalize each word crop to a **64px baseline-to-midline unit**, with known foreground polarity. Use smooth interpolation, pad the crop, and suppress known ruling rows while retaining crossing strokes. This representation is used only for slant; other criteria retain their existing inputs.
+2. Run OpenCV's standard Line Segment Detector on stroke edges. Retain segments spanning at least **60% of a guideline unit vertically** and lying within **±45° of the reference perpendicular**. These are sustained stem-edge candidates, not recognized letters or independent pen strokes.
+3. Report **lean** as the vertical-span-weighted mean angle (positive forward/right, negative backward/left), and **within-word variation** as the corresponding weighted population standard deviation. A mean close to zero can coexist with large spread when strokes lean in opposing directions.
+4. Preserve the existing worksheet mean and sample standard deviation across measurable word means as **between-word** statistics. Separately report the RMS of measured within-word standard deviations and the number of words with usable evidence.
+5. If no sustained candidates survive, return **null**, not an upright `0°`; omit that word's slant vector and exclude it from lean aggregates. An entirely unmeasurable sheet has null slant mean/std and no automated slant score. Other criteria remain available.
+
+New measurements include `slant_analysis` metadata (`method: "lsd_stems_v2"`, `measured_words`, `total_words`, `within_word_std_deg`), and each word includes `slant_std_deg` and `slant_segment_count`. Earlier measurements lack this metadata and retain their original values; changing code does not remeasure stored submissions. Do not combine versions silently during calibration or rewrite existing data through ad hoc scripts.
+
+The 60% support cutoff, angle targets, and diagnostic variation tolerance are **provisional**, not teacher-calibrated limits. The existing 8° line-variation tolerance is also used to flag within-word mixed stem directions. Calibrated scoring still uses the provisional mean-angle formula; variation is reported diagnostically rather than given a newly invented score penalty. Round-only or faint writing can be unmeasurable, edge pairs are correlated, and accepted segments may still include curved-letter fragments. Evidence coverage is not an accuracy probability. Validate against teacher-marked real handwriting before claiming general worksheet accuracy.
 
 *(Considered and rejected: a PCA/image-moments approach on ink-pixel spread. Cursive words are wide and horizontally dominant in overall shape, so the dominant PCA axis tends to track word direction rather than stroke lean — it would need extra correction the line-segment-filtering approach avoids by construction.)*
 

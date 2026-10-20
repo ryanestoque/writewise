@@ -2,9 +2,11 @@
 
 from typing import List
 
+import numpy as np
+
 from app.cv.features.baseline import compute_baseline_deviation
 from app.cv.features.size import compute_size_ratio
-from app.cv.features.slant import compute_word_slant
+from app.cv.features.slant import SLANT_METHOD, analyze_word_slant
 from app.cv.features.spacing import calc_stats, compute_spacing_metrics
 from app.cv.guide_lines import DeskewResult
 from app.cv.models import (
@@ -12,6 +14,8 @@ from app.cv.models import (
     GuideLinesData,
     LineMeasurement,
     MeasurementData,
+    MetricSummary,
+    SlantAnalysisData,
     WordMeasurement,
 )
 from app.cv.segmentation import SegmentationResult
@@ -40,6 +44,8 @@ def extract_features(
     all_slants: List[float] = []
     all_baseline_devs: List[float] = []
     all_size_ratios: List[float] = []
+    all_slant_spreads: List[float] = []
+    total_words = 0
 
     for line in segmentation.lines:
         words_in_line: List[WordMeasurement] = []
@@ -47,11 +53,20 @@ def extract_features(
 
         for word in line.words:
             # §6.1 Slant
-            slant_deg = compute_word_slant(
+            slant = analyze_word_slant(
                 binary_crop=word.binary_crop,
                 reference_perpendicular_deg=90.0,
+                unit_height=unit_height,
+                guideline_rows=tuple(
+                    y - word.bbox[1] for y in (line.topline_y, line.midline_y, line.baseline_y)
+                ),
+                ink_is_light=True,
             )
-            all_slants.append(slant_deg)
+            total_words += 1
+            if slant.angle_deg is not None:
+                all_slants.append(slant.angle_deg)
+                if slant.std_deg is not None:
+                    all_slant_spreads.append(slant.std_deg)
 
             # §6.3 Baseline Deviation
             base_dev, measured_base_y = compute_baseline_deviation(
@@ -83,7 +98,9 @@ def extract_features(
                 WordMeasurement(
                     word_index=word.word_index,
                     bbox=list(word.bbox),
-                    slant_deg=slant_deg,
+                    slant_deg=slant.angle_deg,
+                    slant_std_deg=slant.std_deg,
+                    slant_segment_count=slant.segment_count,
                     baseline_deviation_ratio=base_dev,
                     size_ratio=size_rat,
                     measured_baseline_y=measured_base_y,
@@ -104,7 +121,7 @@ def extract_features(
     word_spacing_metric, letter_spacing_metric = compute_spacing_metrics(segmentation.lines)
 
     # Aggregate summaries
-    slant_summary = calc_stats(all_slants)
+    slant_summary = calc_stats(all_slants) if all_slants else MetricSummary(None, None)
     baseline_summary = calc_stats(all_baseline_devs)
     size_summary = calc_stats(all_size_ratios)
 
@@ -127,4 +144,14 @@ def extract_features(
         guide_lines=guide_lines,
         lines=line_measurements,
         aggregate=aggregate,
+        slant_analysis=SlantAnalysisData(
+            method=SLANT_METHOD,
+            measured_words=len(all_slants),
+            total_words=total_words,
+            within_word_std_deg=(
+                round(float(np.sqrt(np.mean(np.square(all_slant_spreads)))), 1)
+                if all_slant_spreads
+                else None
+            ),
+        ),
     )

@@ -50,13 +50,13 @@ export const CRITERIA_GUIDE: Record<
   },
   "Slant Angle": {
     rubricGoal:
-      "Check consistent ~68° forward lean across all letters and stems.",
+      "Check typical forward stem lean and consistency within and between words.",
     coachingTip:
       "Angling the paper slightly on the desk helps maintain a steady forward lean.",
   },
   Slant: {
     rubricGoal:
-      "Check consistent ~68° forward lean across all letters and stems.",
+      "Check typical forward stem lean and consistency within and between words.",
     coachingTip:
       "Angling the paper slightly on the desk helps maintain a steady forward lean.",
   },
@@ -217,7 +217,7 @@ export const RUBRIC_CRITERIA: Array<{
     key: "slant_band",
     name: "Slant Angle",
     shortName: "Slant Angle",
-    hint: "Uniform forward slant tilt (target 6.0°–15.0° forward)",
+    hint: "Typical stem lean and consistency within and between words",
   },
   {
     key: "baseline_alignment_band",

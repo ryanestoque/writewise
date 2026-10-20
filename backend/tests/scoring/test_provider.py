@@ -98,6 +98,25 @@ class TestManualScoreProvider:
 
 
 class TestCalibratedScoreProvider:
+    @pytest.mark.parametrize(
+        "aggregate",
+        [
+            {"slant": {"mean": None, "std": None}},
+            {"slant_mean": None},
+            AggregateMetrics(
+                slant=MetricSummary(mean=None, std=None),
+                word_spacing=MetricSummary(2, 0),
+                letter_spacing=MetricSummary(0.4, 0),
+                baseline_deviation=MetricSummary(0, 0),
+                size_consistency=MetricSummary(1, 0),
+            ),
+        ],
+    )
+    def test_unmeasurable_slant_is_not_scored_as_upright_or_ideal(self, aggregate):
+        scores = CalibratedScoreProvider().compute_scores(aggregate, 80)
+        assert scores.slant_score is None
+        assert scores.composite_score is None
+
     def test_ideal_measurements_produce_high_scores(self, sample_aggregate, sample_ml_result):
         provider = CalibratedScoreProvider()
         scores = provider.compute_scores(sample_aggregate, sample_ml_result)

@@ -250,11 +250,28 @@ def compute_band_distribution(
     return result
 
 
+def validate_slant_methods(records: List[Dict[str, Any]]) -> str:
+    """Never fit or report one slant relationship across incompatible estimators."""
+    methods = {
+        record.get("slant_method") or "legacy_hough_v1"
+        for record in records
+        if record.get("slant_mean") is not None
+    }
+    if len(methods) > 1:
+        raise ValueError(
+            "Mixed slant measurement methods: "
+            + ", ".join(sorted(methods))
+            + ". Analyze a separate export cohort for each method."
+        )
+    return next(iter(methods), "unmeasurable")
+
+
 def derive_calibration_constants(records: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Derive recommended calibration constants from empirical band distributions.
 
     Matches constants used by CalibratedScoreProvider in `backend/app/scoring/provider.py`.
     """
+    validate_slant_methods(records)
     constants = dict(DEFAULT_CALIBRATION)
 
     # 1. Slant
@@ -361,6 +378,8 @@ def generate_markdown_report(analysis_results: Dict[str, Any], output_path: Path
         "",
         f"**Generated:** {now_str}  ",
         f"**Sample Size (Paired Submissions):** {sample_size}  ",
+        "**Slant measurement method:** "
+        f"`{analysis_results.get('slant_method', 'legacy_hough_v1')}`  ",
         "**Target Defense Requirement:** Spearman's rank correlation $\\rho \\ge 0.70$ (PRD §11)  ",
         "",
         "---",
@@ -507,6 +526,7 @@ def run_analysis(
 ) -> Dict[str, Any]:
     """Execute complete correlation analysis pipeline."""
     records = load_measurements_csv(input_csv)
+    slant_method = validate_slant_methods(records)
     n = len(records)
     logger.info("Loaded %d records from %s", n, input_csv)
 
@@ -662,6 +682,7 @@ def run_analysis(
 
     analysis_results = {
         "sample_size": n,
+        "slant_method": slant_method,
         "correlations": correlations,
         "band_distributions": band_distributions,
         "constants": constants,

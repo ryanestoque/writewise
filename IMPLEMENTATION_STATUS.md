@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-10-12
+**Last updated:** 2026-10-20
 
 ## Summary
 
@@ -78,7 +78,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Line segmentation | Done | | CV_PIPELINE §5.1 |
 | Word segmentation | Done | | CV_PIPELINE §5.2 |
 | Post-segmentation gate | Done | | CV_PIPELINE §5.3 |
-| Feature extraction — slant angle | Done | | CV_PIPELINE §6.1 |
+| Feature extraction — slant angle | Done | | CV_PIPELINE §6.1; `lsd_stems_v2` separates lean/within-word variation, records evidence coverage, and leaves unsupported angles null. Synthetic checks pass; real-worksheet validation and database integration verification remain pending. |
 | Feature extraction — spacing | Done | | CV_PIPELINE §6.2 |
 | Feature extraction — baseline alignment | Done | | CV_PIPELINE §6.3 |
 | Feature extraction — size consistency | Done | | CV_PIPELINE §6.4 |

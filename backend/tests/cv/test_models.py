@@ -1,3 +1,6 @@
+import json
+
+import cv2
 import numpy as np
 
 from app.cv.features import extract_features
@@ -98,3 +101,43 @@ def test_extract_features_end_to_end():
     assert len(meas.lines[0].words) == 1
     assert meas.aggregate.size_consistency.mean > 0.0
     assert meas.guide_lines.baseline_y == [300]
+
+
+def _extract_slant_crops(crops):
+    frame = np.zeros((300, 1000), dtype=np.uint8)
+    deskew = DeskewResult(
+        gray=255 - frame,
+        denoised=255 - frame,
+        binary=frame,
+        baseline_y=[100],
+        midline_y=[20],
+        topline_y=[-60],
+    )
+    words = [
+        WordSegment(index, (index * 400, 0, crop.shape[1], crop.shape[0]), 255 - crop, crop)
+        for index, crop in enumerate(crops)
+    ]
+    line = LineSegment(0, (0, 200), -60, 20, 100, words=words)
+    return extract_features(SegmentationResult([line], len(words)), deskew)
+
+
+def test_unmeasurable_word_does_not_pull_mean_slant_toward_zero():
+    crop = np.zeros((130, 180), dtype=np.uint8)
+    cv2.line(crop, (100, 20), (79, 100), 255, 5)
+    measurement = _extract_slant_crops([crop, np.zeros_like(crop)])
+    assert abs(measurement.aggregate.slant.mean - 15) <= 2
+    assert measurement.lines[0].words[1].slant_deg is None
+    assert measurement.slant_analysis.measured_words == 1
+    assert measurement.slant_analysis.total_words == 2
+    assert measurement.slant_analysis.within_word_std_deg <= 2
+
+
+def test_no_stem_evidence_persists_null_and_method_version():
+    measurement = _extract_slant_crops([np.zeros((130, 180), dtype=np.uint8)])
+    assert measurement.aggregate.slant.mean is None
+    assert measurement.aggregate.slant.std is None
+    raw = measurement.to_dict()
+    assert raw["slant_analysis"]["method"] == "lsd_stems_v2"
+    assert raw["slant_analysis"]["measured_words"] == 0
+    assert raw["slant_analysis"]["within_word_std_deg"] is None
+    json.dumps(raw, allow_nan=False)
