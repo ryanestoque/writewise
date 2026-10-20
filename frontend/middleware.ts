@@ -30,6 +30,14 @@ function getRouteRole(pathname: string): string | null {
   return null;
 }
 
+function createRedirect(url: URL, sourceResponse: NextResponse): NextResponse {
+  const redirectResponse = NextResponse.redirect(url);
+  sourceResponse.cookies.getAll().forEach((cookie) => {
+    redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+  });
+  return redirectResponse;
+}
+
 export async function middleware(request: NextRequest) {
   const { supabase, response } = await createClient(request);
   const { pathname } = request.nextUrl;
@@ -45,7 +53,7 @@ export async function middleware(request: NextRequest) {
   if (!user && !isPublicRoute(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return createRedirect(url, response);
   }
 
   // Authenticated user on /login or /signup → redirect to their portal
@@ -53,7 +61,7 @@ export async function middleware(request: NextRequest) {
   if (user && (pathname === "/login" || pathname === "/signup")) {
     const url = request.nextUrl.clone();
     url.pathname = roleLanding[userRole ?? ""] ?? "/login";
-    return NextResponse.redirect(url);
+    return createRedirect(url, response);
   }
 
   // Authenticated user — check role matches route
@@ -64,7 +72,7 @@ export async function middleware(request: NextRequest) {
     if (routeRole && routeRole !== userRole) {
       const url = request.nextUrl.clone();
       url.pathname = roleLanding[userRole] ?? "/login";
-      return NextResponse.redirect(url);
+      return createRedirect(url, response);
     }
   }
 
@@ -74,7 +82,7 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("error", "missing_role");
-    return NextResponse.redirect(url);
+    return createRedirect(url, response);
   }
 
   return response;
@@ -87,9 +95,9 @@ export const config = {
      * - api routes (FastAPI proxy)
      * - _next/static (static files)
      * - _next/image (image optimization)
-     * - favicon.ico, sitemap.xml, robots.txt
+     * - favicon.ico, sitemap.xml, robots.txt, manifest.json
      * - Image files
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|manifest.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

@@ -95,15 +95,15 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
-| Threshold/correlation analysis (Spearman's Rho per criterion) | Code Complete | Script ready (`research/analyze_correlations.py`); blocked on Phase 1 paired data | PRD §5, PRD §11 |
+| Threshold/correlation analysis (Spearman's Rho per criterion) | Done | Executed on N=52 paired pilot dataset (`research/output/correlation_analysis_report.md`) | PRD §5, PRD §11 |
 | Calibration dataset export & anonymization (`research/export_dataset.py`) | Done | | ARCHITECTURE §16, SECURITY §6, training/README.md |
 | Score maintenance & test seed utilities (`research/backfill_scores.py`, `research/reset_scores.py`) | Done | | AGENTS §6 Rule 11, research/README.md |
 | ML Stage 1 — CCC dataset prep (format conversion, split) | Done | | ML_PIPELINE §2 |
 | ML Stage 1 — fine-tuning (two-phase) | Done | | ML_PIPELINE §4 |
 | ML Stage 1 — evaluation (Accuracy/Precision/Recall/F1) | Done | | ML_PIPELINE §5 |
 | HTR model fine-tuning (SimpleHTR on IAM Words) | Done | | Training notebook `training/train_htr.ipynb`; artifact `simplehtr_iam.keras` uploaded to Storage | ML_PIPELINE §9, ADR 0003 |
-| ML Stage 2 — regression-head training/calibration | Code Complete | Training script ready (`training/stage2_calibrate.py`); blocked on Phase 1 paired data | ML_PIPELINE §6 |
-| Export combined inference artifact (`.keras`) | Code Complete | Exporter ready (`training/export_model.py`); blocked on Stage 2 execution | ML_PIPELINE §7 |
+| ML Stage 2 — regression-head training/calibration | Done | Trained on 611 word crops; best weights restored from epoch 24 (`checkpoints/stage2_calibrated.keras`) | ML_PIPELINE §6 |
+| Export combined inference artifact (`.keras`) | Done | Exported `writewise-model.keras` (2.34M params), uploaded to Storage, and synced locally | ML_PIPELINE §7 |
 
 ---
 
