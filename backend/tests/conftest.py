@@ -11,6 +11,8 @@ from app.main import app
 # Ensure test suite runs in test environment (TESTING.md §3.2, AGENTS.md §5)
 settings.ENVIRONMENT = "test"
 os.environ["ENVIRONMENT"] = "test"
+settings.SCORING_ENGINE = "manual"
+os.environ["SCORING_ENGINE"] = "manual"
 
 # Fetch a real teacher ID from the database to avoid FK constraints.
 # Uses the service-role client which must have SELECT on public.teacher

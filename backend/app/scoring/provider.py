@@ -20,21 +20,20 @@ from app.ml.models import LetterFormationResult
 
 logger = logging.getLogger(__name__)
 
-# Calibration baseline targets and penalty constants (Phase 2 placeholder).
-# In production, these constants are calibrated from paired Phase 1 data
-# (Spearman's rank correlation against teacher rubric evaluations).
-SLANT_TARGET_DEG = 12.5  # Ideal forward cursive slant (~10°-15°)
-SLANT_PENALTY_FACTOR = 2.5
+# Calibration baseline targets and penalty constants derived from Spearman analysis.
+# Empirical constants derived from paired Phase 1 data (research/analyze_correlations.py).
+SLANT_TARGET_DEG = 12.97  # Ideal forward cursive slant (~13°)
+SLANT_PENALTY_FACTOR = 10.0
 
-WORD_GAP_TARGET_RATIO = 2.0  # Ideal word spacing relative to midline height
+WORD_GAP_TARGET_RATIO = 1.4  # Ideal word spacing relative to midline height
 WORD_GAP_PENALTY_FACTOR = 35.0
 
-LETTER_GAP_TARGET_RATIO = 0.4  # Ideal letter spacing relative to midline height
+LETTER_GAP_TARGET_RATIO = 0.12  # Ideal letter spacing relative to midline height
 LETTER_GAP_PENALTY_FACTOR = 100.0
 
-BASELINE_DEV_PENALTY_FACTOR = 350.0  # Deviation relative to guideline height
+BASELINE_DEV_PENALTY_FACTOR = 800.0  # Deviation relative to guideline height
 
-SIZE_RATIO_TARGET = 1.0  # Proportion matching expected 3-line guideline height
+SIZE_RATIO_TARGET = 1.14  # Proportion matching expected 3-line guideline height
 SIZE_DEV_PENALTY_FACTOR = 120.0
 
 

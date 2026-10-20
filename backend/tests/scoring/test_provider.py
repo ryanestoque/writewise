@@ -4,6 +4,10 @@ from app.core.config import settings
 from app.cv.models import AggregateMetrics, MetricSummary
 from app.ml.models import LetterFormationResult, WordFormationScore
 from app.scoring.provider import (
+    LETTER_GAP_TARGET_RATIO,
+    SIZE_RATIO_TARGET,
+    SLANT_TARGET_DEG,
+    WORD_GAP_TARGET_RATIO,
     CalibratedScoreProvider,
     CriterionScores,
     ManualScoreProvider,
@@ -14,11 +18,11 @@ from app.scoring.provider import (
 @pytest.fixture
 def sample_aggregate() -> AggregateMetrics:
     return AggregateMetrics(
-        slant=MetricSummary(mean=12.5, std=1.2),
-        word_spacing=MetricSummary(mean=2.0, std=0.2),
-        letter_spacing=MetricSummary(mean=0.4, std=0.05),
+        slant=MetricSummary(mean=SLANT_TARGET_DEG, std=1.2),
+        word_spacing=MetricSummary(mean=WORD_GAP_TARGET_RATIO, std=0.2),
+        letter_spacing=MetricSummary(mean=LETTER_GAP_TARGET_RATIO, std=0.05),
         baseline_deviation=MetricSummary(mean=0.0, std=0.01),
-        size_consistency=MetricSummary(mean=1.0, std=0.05),
+        size_consistency=MetricSummary(mean=SIZE_RATIO_TARGET, std=0.05),
     )
 
 
@@ -167,11 +171,11 @@ class TestCalibratedScoreProvider:
     def test_accepts_dictionary_input(self):
         provider = CalibratedScoreProvider()
         raw_dict = {
-            "slant": {"mean": 12.5, "std": 1.0},
-            "word_spacing": {"mean": 2.0, "std": 0.1},
-            "letter_spacing": {"mean": 0.4, "std": 0.05},
+            "slant": {"mean": SLANT_TARGET_DEG, "std": 1.0},
+            "word_spacing": {"mean": WORD_GAP_TARGET_RATIO, "std": 0.1},
+            "letter_spacing": {"mean": LETTER_GAP_TARGET_RATIO, "std": 0.05},
             "baseline_deviation": {"mean": 0.0, "std": 0.01},
-            "size_consistency": {"mean": 1.0, "std": 0.02},
+            "size_consistency": {"mean": SIZE_RATIO_TARGET, "std": 0.02},
             "letter_formation": {"mean": 80.0, "std": 2.0},
         }
         scores = provider.compute_scores(raw_dict)
@@ -182,11 +186,11 @@ class TestCalibratedScoreProvider:
     def test_accepts_flat_dictionary_input(self):
         provider = CalibratedScoreProvider()
         flat_dict = {
-            "slant_mean": 12.5,
-            "word_spacing_mean": 2.0,
-            "letter_spacing_mean": 0.4,
+            "slant_mean": SLANT_TARGET_DEG,
+            "word_spacing_mean": WORD_GAP_TARGET_RATIO,
+            "letter_spacing_mean": LETTER_GAP_TARGET_RATIO,
             "baseline_deviation_mean": 0.0,
-            "size_consistency_mean": 1.0,
+            "size_consistency_mean": SIZE_RATIO_TARGET,
             "letter_formation_mean": 75.0,
         }
         scores = provider.compute_scores(flat_dict)

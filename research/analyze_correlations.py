@@ -23,7 +23,13 @@ import math
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 logging.basicConfig(
     level=logging.INFO,
@@ -199,6 +205,20 @@ def _percentile(sorted_vals: List[float], p: float) -> float:
     return d0 + d1
 
 
+def normalize_band(b: Any) -> Optional[str]:
+    """Normalize rubric band string to canonical Title Case ('Needs Improvement', etc.)."""
+    if b is None:
+        return None
+    s = str(b).strip().lower().replace("_", " ")
+    mapping = {
+        "needs improvement": "Needs Improvement",
+        "developing": "Developing",
+        "satisfactory": "Satisfactory",
+        "excellent": "Excellent",
+    }
+    return mapping.get(s)
+
+
 def compute_band_distribution(
     records: List[Dict[str, Any]],
     metric_key: str,
@@ -208,7 +228,8 @@ def compute_band_distribution(
     band_groups: Dict[str, List[float]] = {b: [] for b in RUBRIC_BANDS}
 
     for r in records:
-        band = r.get(band_key)
+        raw_band = r.get(band_key)
+        band = normalize_band(raw_band)
         val = r.get(metric_key)
         if band in band_groups and val is not None and val != "":
             try:
