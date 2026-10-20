@@ -227,3 +227,31 @@ def test_detect_and_deskew_preserves_slightly_sloped_midline():
     assert result.topline_y == [400, 600, 800]
     assert result.midline_y == [500, 700, 900]
     assert result.baseline_y == [600, 800, 1000]
+
+
+def test_detect_and_deskew_warm_lighting_does_not_flood_red_mask():
+    """Warm indoor lighting (amber tint Hue 5-15, Saturation 40-80) must not flood red lines."""
+    import cv2
+    import numpy as np
+
+    from app.cv.preprocessing import preprocess
+
+    h, w = 2000, 2000
+    # Warm amber paper background (Hue ~7, Saturation ~62, Value ~185)
+    color = np.full((h, w, 3), (140, 150, 185), dtype=np.uint8)
+
+    # 1 ruling with Blue Top (400), Faint Red Mid (500), Blue Base (600)
+    cv2.line(color, (100, 400), (w - 100, 400), (160, 120, 100), thickness=4)
+    cv2.line(color, (100, 500), (w - 100, 500), (125, 130, 195), thickness=4)
+    cv2.line(color, (100, 600), (w - 100, 600), (160, 120, 100), thickness=4)
+
+    _, img_bytes = cv2.imencode(".jpg", color)
+    prep = preprocess(img_bytes.tobytes())
+    result = detect_and_deskew(prep)
+
+    # Must detect exactly 1 ruling without being blinded by warm paper background
+    assert len(result.baseline_y) == 1
+    assert result.topline_y[0] == 400
+    assert abs(result.midline_y[0] - 500) <= 1
+    assert result.baseline_y[0] == 600
+

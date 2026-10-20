@@ -95,13 +95,22 @@ def detect_and_deskew(preprocessed: PreprocessResult) -> DeskewResult:
     h_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (k_w, 1))
     h_only = cv2.morphologyEx(binary, cv2.MORPH_OPEN, h_kernel)
 
-    # If color image is available, extract faint red ruling lines via HSV color space
+    # If color image is available, extract faint red ruling lines relative to local background
     # (ADR 0003) on blue-red-blue paper where red midlines are faint in grayscale.
+    # Note: Global HSV thresholding (e.g. S >= 15) must NOT be used because warm indoor lighting
+    # gives the entire paper an amber/reddish tint (Hue 0-15, S=30-80), flooding the image.
+    # Instead, we measure the local red prominence above the surrounding paper background.
     if deskewed_color is not None:
-        hsv = cv2.cvtColor(deskewed_color, cv2.COLOR_BGR2HSV)
-        red_mask1 = cv2.inRange(hsv, (0, 15, 50), (15, 255, 255))
-        red_mask2 = cv2.inRange(hsv, (160, 15, 50), (180, 255, 255))
-        h_red = cv2.morphologyEx(red_mask1 | red_mask2, cv2.MORPH_OPEN, h_kernel)
+        b_ch, g_ch, r_ch = cv2.split(deskewed_color)
+        red_diff = cv2.subtract(r_ch, cv2.max(g_ch, b_ch))
+        v_ksize = max(9, int(h * 0.008))
+        if v_ksize % 2 == 0:
+            v_ksize += 1
+        v_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, v_ksize))
+        bg_red = cv2.morphologyEx(red_diff, cv2.MORPH_OPEN, v_kernel)
+        red_prominence = cv2.subtract(red_diff, bg_red)
+        _, red_lines = cv2.threshold(red_prominence, 8, 255, cv2.THRESH_BINARY)
+        h_red = cv2.morphologyEx(red_lines, cv2.MORPH_OPEN, h_kernel)
         h_only = cv2.bitwise_or(h_only, h_red)
 
     row_proj = np.sum(h_only > 0, axis=1)  # number of guideline ink pixels per row
