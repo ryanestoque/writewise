@@ -205,6 +205,24 @@ export function getBandMeta(band?: ScoreBand | string | null): RubricBandMeta {
   );
 }
 
+export function computeCompositeFromCriteria(
+  scores: Record<string, unknown> | null | undefined
+): number | null {
+  if (!scores) return null;
+  const values = [
+    scores.letter_formation ?? scores.letter_formation_score,
+    scores.size_consistency ?? scores.size_consistency_score,
+    scores.spacing ?? scores.spacing_score,
+    scores.slant ?? scores.slant_score,
+    scores.baseline_alignment ?? scores.baseline_alignment_score,
+  ]
+    .filter((v): v is number => v !== null && v !== undefined && !Number.isNaN(Number(v)))
+    .map(Number);
+
+  if (values.length === 0) return null;
+  return values.reduce((sum, v) => sum + v, 0) / values.length;
+}
+
 export function getBandFromScore(score: number | null | undefined): ScoreBand | null {
   if (score === null || score === undefined) return null;
   if (score >= 75) return "excellent";

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "../supabase/client";
-import { getBandFromScore, type ScoreBand } from "../utils/scoring";
+import { getBandFromScore, computeCompositeFromCriteria, type ScoreBand } from "../utils/scoring";
 import type { GuideLines } from "@/components/shared/guide-line-overlay";
 import type { DiagnosticOverlayData } from "@/components/shared/diagnostic-overlay";
 
@@ -123,7 +123,8 @@ export function useDashboardScores() {
         for (const s of scoredSubmissions) {
           const m = Array.isArray(s.measurement) ? s.measurement[0] : s.measurement;
           const ms = Array.isArray(s.manual_score) ? s.manual_score[0] : s.manual_score;
-          if (m?.composite_score != null || ms != null) {
+          const computedComp = computeCompositeFromCriteria(m);
+          if (m?.composite_score != null || computedComp != null || ms != null) {
             latestWithScores = s;
             break;
           }
@@ -169,7 +170,10 @@ export function useDashboardScores() {
           : latestWithScores.activity;
 
         // Phase 2 check: if measurement has calibrated scores
-        const isCalibrated = rawMeasurement?.composite_score != null;
+        const computedCalibratedComp = computeCompositeFromCriteria(rawMeasurement);
+        const isCalibrated = Boolean(
+          rawMeasurement && (rawMeasurement.composite_score != null || computedCalibratedComp != null)
+        );
         if (isCalibrated) hasCalibrated = true;
 
         let lfScore: number | null = null;
@@ -186,12 +190,12 @@ export function useDashboardScores() {
         let baBand: ScoreBand | null = null;
 
         if (isCalibrated) {
-          lfScore = Number(rawMeasurement.letter_formation_score);
-          scScore = Number(rawMeasurement.size_consistency_score);
-          spScore = Number(rawMeasurement.spacing_score);
-          slScore = Number(rawMeasurement.slant_score);
-          baScore = Number(rawMeasurement.baseline_alignment_score);
-          compScore = Number(rawMeasurement.composite_score);
+          lfScore = rawMeasurement.letter_formation_score != null ? Number(rawMeasurement.letter_formation_score) : null;
+          scScore = rawMeasurement.size_consistency_score != null ? Number(rawMeasurement.size_consistency_score) : null;
+          spScore = rawMeasurement.spacing_score != null ? Number(rawMeasurement.spacing_score) : null;
+          slScore = rawMeasurement.slant_score != null ? Number(rawMeasurement.slant_score) : null;
+          baScore = rawMeasurement.baseline_alignment_score != null ? Number(rawMeasurement.baseline_alignment_score) : null;
+          compScore = rawMeasurement.composite_score != null ? Number(rawMeasurement.composite_score) : computedCalibratedComp;
 
           lfBand = getBandFromScore(lfScore);
           scBand = getBandFromScore(scScore);
@@ -390,7 +394,10 @@ export function useStudentScoreHistory(studentId: string | null) {
           : row.manual_score;
         const rawActivity = Array.isArray(row.activity) ? row.activity[0] : row.activity;
 
-        const isCalibrated = rawMeasurement?.composite_score != null;
+        const computedCalibratedComp = computeCompositeFromCriteria(rawMeasurement);
+        const isCalibrated = Boolean(
+          rawMeasurement && (rawMeasurement.composite_score != null || computedCalibratedComp != null)
+        );
         if (!isCalibrated && !rawManual) continue;
 
         let lfScore: number | null = null;
@@ -407,12 +414,12 @@ export function useStudentScoreHistory(studentId: string | null) {
         let baBand: ScoreBand | null = null;
 
         if (isCalibrated) {
-          lfScore = Number(rawMeasurement.letter_formation_score);
-          scScore = Number(rawMeasurement.size_consistency_score);
-          spScore = Number(rawMeasurement.spacing_score);
-          slScore = Number(rawMeasurement.slant_score);
-          baScore = Number(rawMeasurement.baseline_alignment_score);
-          compScore = Number(rawMeasurement.composite_score);
+          lfScore = rawMeasurement.letter_formation_score != null ? Number(rawMeasurement.letter_formation_score) : null;
+          scScore = rawMeasurement.size_consistency_score != null ? Number(rawMeasurement.size_consistency_score) : null;
+          spScore = rawMeasurement.spacing_score != null ? Number(rawMeasurement.spacing_score) : null;
+          slScore = rawMeasurement.slant_score != null ? Number(rawMeasurement.slant_score) : null;
+          baScore = rawMeasurement.baseline_alignment_score != null ? Number(rawMeasurement.baseline_alignment_score) : null;
+          compScore = rawMeasurement.composite_score != null ? Number(rawMeasurement.composite_score) : computedCalibratedComp;
 
           lfBand = getBandFromScore(lfScore);
           scBand = getBandFromScore(scScore);

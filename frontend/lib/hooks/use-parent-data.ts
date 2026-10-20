@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "../supabase/client";
-import { getBandFromScore, type ScoreBand } from "../utils/scoring";
+import { getBandFromScore, computeCompositeFromCriteria, type ScoreBand } from "../utils/scoring";
 import { extractGuideLines, type GuideLines } from "@/components/shared/guide-line-overlay";
 import {
   extractDiagnosticOverlay,
@@ -145,22 +145,25 @@ export function useChildLatestScores(childId: string | null) {
       for (const row of data || []) {
         const m = Array.isArray(row.measurement) ? row.measurement[0] : row.measurement;
         const ms = Array.isArray(row.manual_score) ? row.manual_score[0] : row.manual_score;
-        if (!m?.composite_score && !ms) continue;
+        const computedCalibratedComp = computeCompositeFromCriteria(m);
+        const hasCalibrated = Boolean(m && (m.composite_score != null || computedCalibratedComp != null));
+        if (!hasCalibrated && !ms) continue;
 
         const rawActivity = Array.isArray(row.activity) ? row.activity[0] : row.activity;
-        const isCalibrated = m?.composite_score != null;
+        const isCalibrated = hasCalibrated;
 
         let scores: ChildLatestScores["scores"];
         let bands: ChildLatestScores["bands"];
 
         if (isCalibrated) {
+          const compScore = m.composite_score != null ? Number(m.composite_score) : computedCalibratedComp;
           scores = {
             letter_formation: m.letter_formation_score != null ? Number(m.letter_formation_score) : null,
             size_consistency: m.size_consistency_score != null ? Number(m.size_consistency_score) : null,
             spacing: m.spacing_score != null ? Number(m.spacing_score) : null,
             slant: m.slant_score != null ? Number(m.slant_score) : null,
             baseline_alignment: m.baseline_alignment_score != null ? Number(m.baseline_alignment_score) : null,
-            composite: m.composite_score != null ? Number(m.composite_score) : null,
+            composite: compScore,
           };
           bands = {
             letter_formation: getBandFromScore(scores.letter_formation),
@@ -278,7 +281,8 @@ export function useChildScoreHistory(childId: string | null) {
         const rawManual = Array.isArray(row.manual_score) ? row.manual_score[0] : row.manual_score;
         const rawActivity = Array.isArray(row.activity) ? row.activity[0] : row.activity;
 
-        const isCalibrated = rawMeasurement?.composite_score != null;
+        const computedCalibratedComp = computeCompositeFromCriteria(rawMeasurement);
+        const isCalibrated = Boolean(rawMeasurement && (rawMeasurement.composite_score != null || computedCalibratedComp != null));
         if (!isCalibrated && !rawManual) continue;
 
         let lfScore: number | null = null;
@@ -295,12 +299,12 @@ export function useChildScoreHistory(childId: string | null) {
         let baBand: ScoreBand | null = null;
 
         if (isCalibrated) {
-          lfScore = Number(rawMeasurement.letter_formation_score);
-          scScore = Number(rawMeasurement.size_consistency_score);
-          spScore = Number(rawMeasurement.spacing_score);
-          slScore = Number(rawMeasurement.slant_score);
-          baScore = Number(rawMeasurement.baseline_alignment_score);
-          compScore = Number(rawMeasurement.composite_score);
+          lfScore = rawMeasurement.letter_formation_score != null ? Number(rawMeasurement.letter_formation_score) : null;
+          scScore = rawMeasurement.size_consistency_score != null ? Number(rawMeasurement.size_consistency_score) : null;
+          spScore = rawMeasurement.spacing_score != null ? Number(rawMeasurement.spacing_score) : null;
+          slScore = rawMeasurement.slant_score != null ? Number(rawMeasurement.slant_score) : null;
+          baScore = rawMeasurement.baseline_alignment_score != null ? Number(rawMeasurement.baseline_alignment_score) : null;
+          compScore = rawMeasurement.composite_score != null ? Number(rawMeasurement.composite_score) : computedCalibratedComp;
           lfBand = getBandFromScore(lfScore);
           scBand = getBandFromScore(scScore);
           spBand = getBandFromScore(spScore);
@@ -406,7 +410,14 @@ export function useTakeHomeActivities(childId: string | null) {
             created_at,
             uploader_role,
             manual_score(id),
-            measurement(composite_score)
+            measurement(
+              composite_score,
+              letter_formation_score,
+              size_consistency_score,
+              spacing_score,
+              slant_score,
+              baseline_alignment_score
+            )
           `)
           .eq("student_id", childId)
           .in("activity_id", activityIds)
@@ -417,7 +428,9 @@ export function useTakeHomeActivities(childId: string | null) {
             // Since sorted created_at desc, the first time we see an activity_id is the latest
             if (!submissionsMap[sub.activity_id]) {
               const m = Array.isArray(sub.measurement) ? sub.measurement[0] : sub.measurement;
-              const compositeScore = m?.composite_score != null ? Number(m.composite_score) : null;
+              const compositeScore = m?.composite_score != null
+                ? Number(m.composite_score)
+                : computeCompositeFromCriteria(m);
               const hasManualScore = Array.isArray(sub.manual_score)
                 ? sub.manual_score.length > 0
                 : !!sub.manual_score;
@@ -470,7 +483,14 @@ export function useChildSubmissionForActivity(
           rejection_code,
           uploader_role,
           manual_score(id),
-          measurement(composite_score)
+          measurement(
+            composite_score,
+            letter_formation_score,
+            size_consistency_score,
+            spacing_score,
+            slant_score,
+            baseline_alignment_score
+          )
         `)
         .eq("student_id", childId)
         .eq("activity_id", activityId)
@@ -483,7 +503,9 @@ export function useChildSubmissionForActivity(
 
       const row = data[0];
       const m = Array.isArray(row.measurement) ? row.measurement[0] : row.measurement;
-      const compositeScore = m?.composite_score != null ? Number(m.composite_score) : null;
+      const compositeScore = m?.composite_score != null
+        ? Number(m.composite_score)
+        : computeCompositeFromCriteria(m);
       const hasManualScore = Array.isArray(row.manual_score)
         ? row.manual_score.length > 0
         : !!row.manual_score;

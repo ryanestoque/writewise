@@ -7,6 +7,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { Submission, ScoreBand } from "@/lib/hooks/use-submissions";
+import { computeCompositeFromCriteria } from "@/lib/utils/scoring";
 
 export type ScoreSource = "calibrated" | "manual" | "none";
 
@@ -151,8 +152,9 @@ export function resolveSubmissionScore(
 
   // 1. Calibrated score check (Phase 2)
   const m = submission.measurement;
-  if (m?.composite_score != null) {
-    const compScore = Number(m.composite_score);
+  const computedComp = computeCompositeFromCriteria(m);
+  if (m?.composite_score != null || computedComp != null) {
+    const compScore = m?.composite_score != null ? Number(m.composite_score) : computedComp;
     return {
       compositeScore: compScore,
       scoreBand: getScoreBandLabel(compScore, { source: "calibrated" }),
@@ -160,15 +162,15 @@ export function resolveSubmissionScore(
       isScored: true,
       criteriaScores: {
         letterFormation:
-          m.letter_formation_score != null ? Number(m.letter_formation_score) : null,
+          m?.letter_formation_score != null ? Number(m.letter_formation_score) : null,
         sizeConsistency:
-          m.size_consistency_score != null ? Number(m.size_consistency_score) : null,
+          m?.size_consistency_score != null ? Number(m.size_consistency_score) : null,
         spacing:
-          m.spacing_score != null ? Number(m.spacing_score) : null,
+          m?.spacing_score != null ? Number(m.spacing_score) : null,
         slant:
-          m.slant_score != null ? Number(m.slant_score) : null,
+          m?.slant_score != null ? Number(m.slant_score) : null,
         baselineAlignment:
-          m.baseline_alignment_score != null ? Number(m.baseline_alignment_score) : null,
+          m?.baseline_alignment_score != null ? Number(m.baseline_alignment_score) : null,
       },
     };
   }
