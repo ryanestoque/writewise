@@ -61,6 +61,7 @@ supabase/.temp/
 # ML training data and artifacts (ML_PIPELINE §9)
 training/data/
 training/results/
+training/checkpoints/
 *.keras
 *.h5
 

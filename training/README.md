@@ -163,7 +163,12 @@ Separate from the scoring CNN pipeline above — this trains the SimpleHTR model
 1. **Open** `train_htr.ipynb` in Google Colab, connect to GPU runtime
 2. **Train** — the notebook handles IAM Words dataset loading, preprocessing, and CTC model training
 3. **Download** the resulting `.keras` artifact (e.g., `simplehtr_iam.keras`)
-4. **Upload to Supabase Storage** — upload to the `model-artifacts` bucket alongside the scoring CNN artifact
+4. **Upload to Supabase Storage** — upload to the `model-artifacts` bucket:
+   ```bash
+   # Via upload script (syncs to Supabase and local cache):
+   uv run --directory backend python ../training/upload_model.py simplehtr_iam.keras --dest-name simplehtr_iam.keras
+   ```
+   *(Or drag & drop via Supabase Web Dashboard -> Storage -> `model-artifacts`)*
 5. **Set env var** — set `HTR_MODEL_ARTIFACT_PATH=simplehtr_iam.keras` in the backend `.env` / Railway dashboard
 
 ### Stage 2 (Calibration & Production Export)
@@ -176,7 +181,10 @@ Separate from the scoring CNN pipeline above — this trains the SimpleHTR model
        --baseline \
        --output-path artifacts/writewise-model.keras
    ```
-9. **Upload to Supabase Storage** — upload `writewise-model.keras` to the `model-artifacts` bucket.
+9. **Upload to Supabase Storage** — upload `writewise-model.keras` to the `model-artifacts` bucket:
+   ```bash
+   uv run --directory backend python ../training/upload_model.py artifacts/writewise-model.keras --dest-name writewise-model.keras
+   ```
 
 **Calibrated Export (after Phase 1 collects teacher scores):**
 10. **Export paired data** — run `python research/export_dataset.py` to get teacher-score + word-crop pairs (`paired_measurements.csv` and `paired_crops.csv`).
@@ -194,4 +202,8 @@ Separate from the scoring CNN pipeline above — this trains the SimpleHTR model
         --model-path checkpoints/stage2_calibrated.keras \
         --output-path artifacts/writewise-model.keras
     ```
-14. **Update Supabase Storage** — replace `writewise-model.keras` in the `model-artifacts` bucket.
+14. **Update Supabase Storage** — replace `writewise-model.keras` in the `model-artifacts` bucket:
+    ```bash
+    uv run --directory backend python ../training/upload_model.py artifacts/writewise-model.keras --dest-name writewise-model.keras
+    ```
+15. **Update env vars & reload** — ensure `MODEL_ARTIFACT_PATH=writewise-model.keras` in `backend/.env` (and Railway dashboard for prod) and restart the FastAPI service.
