@@ -266,10 +266,12 @@ class TestCreateSubmission:
         assert db_overlay is not None
         assert "summary" in db_overlay
 
-    def test_submission_bypass_target_text_mismatch(
+    def test_submission_text_mismatch_not_rejected(
         self, client, test_activity, test_student, cleanup_submissions, monkeypatch
     ):
-        """Verify that passing bypass_text_check=True bypasses TARGET_TEXT_MISMATCH rejection."""
+        """Verify that a target text mismatch does not reject the submission,
+        succeeding with 201.
+        """
         import app.api.submissions as subs_module
 
         # Mock verify_target_text to return a mismatch
@@ -281,8 +283,8 @@ class TestCreateSubmission:
 
         img_bytes = make_segmented_worksheet()
 
-        # Without bypass_text_check -> 422 TARGET_TEXT_MISMATCH
-        res_rejected = client.post(
+        # Target text mismatch is not gated -> succeeds with 201
+        res = client.post(
             "/api/submissions",
             data={
                 "activity_id": test_activity["id"],
@@ -290,28 +292,8 @@ class TestCreateSubmission:
             },
             files={"image": ("worksheet.jpg", img_bytes, "image/jpeg")},
         )
-        assert res_rejected.status_code == 422
-        assert res_rejected.json()["error"]["code"] == "TARGET_TEXT_MISMATCH"
-        rejected_sub_id = res_rejected.json()["error"]["details"]["submission_id"]
-        cleanup_submissions.append(
-            {
-                "id": rejected_sub_id,
-                "image_path": f"{test_student['id']}/{rejected_sub_id}.jpg",
-            }
-        )
-
-        # With bypass_text_check=True -> 201 Success
-        res_bypassed = client.post(
-            "/api/submissions",
-            data={
-                "activity_id": test_activity["id"],
-                "student_id": test_student["id"],
-                "bypass_text_check": "true",
-            },
-            files={"image": ("worksheet.jpg", img_bytes, "image/jpeg")},
-        )
-        assert res_bypassed.status_code == 201
-        data = res_bypassed.json()
+        assert res.status_code == 201
+        data = res.json()
         sub_id = data["submission_id"]
         cleanup_submissions.append(
             {

@@ -224,7 +224,7 @@ async def create_submission(
         rejection["details"]["detected_text"] = htr_detected_text
 
     if not rejection and pipeline_result and pipeline_result.word_crops and target_text:
-        is_match, detected_text, similarity = verify_target_text(
+        _is_match, detected_text, similarity = verify_target_text(
             pipeline_result.word_crops,
             target_text=target_text,
             binary_masks=pipeline_result.binary_crops if pipeline_result.binary_crops else None,
@@ -232,20 +232,6 @@ async def create_submission(
         )
         htr_detected_text = detected_text
         htr_similarity = round(similarity, 3)
-
-        if not is_match and not bypass_text_check:
-            rejection = {
-                "code": "TARGET_TEXT_MISMATCH",
-                "message": (
-                    f"Worksheet text does not match expected activity prompt: "
-                    f"detected '{detected_text}', expected '{target_text}'."
-                ),
-                "details": {
-                    "detected_text": detected_text,
-                    "expected_text": target_text,
-                    "similarity": round(similarity, 3),
-                },
-            }
 
     # 6c. Run CNN inference for letter formation on valid pipelines (ML_PIPELINE §8, §11)
     ml_result = None
