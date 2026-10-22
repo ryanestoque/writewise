@@ -86,7 +86,7 @@ The frontend branches on `error.code`, never on parsing `message` text (ARCHITEC
 | `TARGET_TEXT_MISMATCH` | 422 | CV_PIPELINE §7b (HTR target text verification — detected text does not match activity target) |
 | `RATE_LIMIT_EXCEEDED` | 429 | Upstream Supabase Auth email rate limit exceeded during parent invitation dispatch |
 | `MODEL_INFERENCE_ERROR` | 500 | ML_PIPELINE §9's `ModelInferenceError` |
-| `INTERNAL_ERROR` | 500 | Catch-all for unhandled failures |
+| `INTERNAL_ERROR` | 500 | Unhandled failures, or an incomplete submission deletion (Storage/database failure; retry the deletion) |
 
 ### 2.5 Actor-Derived Fields
 
@@ -536,6 +536,8 @@ Performs a permanent hard-deletion of the submission attempt and all associated 
 2. Removes the image file from Supabase Storage (`submission-images` bucket).
 3. Deletes the `submission` row in Postgres. Dependent child rows (`measurement`, `manual_score`) cascade automatically via `ON DELETE CASCADE` (DATABASE §8/§9, migration `0019_submission_cascade_delete.sql`).
 
+The database deletion and its cascades are atomic. Storage and Postgres **do not share a transaction**. Any Storage error (including a timeout after possible partial progress) returns `500 INTERNAL_ERROR` without attempting database deletion. If photo removal succeeds but the database statement is rejected, the records remain and the photo may already be absent. Retry the same deletion: an already-absent photo is a successful no-op. If a database response is lost after commit, the request may return an error even though deletion completed; a single retry then returns `404 NOT_FOUND`. Success is returned only after both stages acknowledge completion. Errors contain a fixed retry message and empty `details`; provider errors and image paths are not returned or logged.
+
 Response (`200 OK`):
 ```json
 {
@@ -550,6 +552,7 @@ Response (`200 OK`):
 - **Parent not linked to student** → `403 NOT_CHILD_PARENT`.
 - **Parent was not the uploader** → `403 NOT_SUBMISSION_UPLOADER`.
 - **Parent attempts to delete an already graded submission** → `409 SUBMISSION_ALREADY_GRADED`.
+- **Storage or database deletion fails** → `500 INTERNAL_ERROR`; retry as described above.
 
 ---
 
@@ -557,7 +560,11 @@ Response (`200 OK`):
 
 **Caller:** Teacher or Parent (applies individual deletion authorization rules to each submission).
 
-Deletes up to 100 submission attempts in a single transaction. Validates IDs, checks role permissions per submission (refuses parent deletions on already-graded items), deletes underlying Storage images, and removes `submission` database rows.
+Deletes up to 100 submission attempts. Validates IDs and checks role permissions for the entire batch before deleting anything (refuses parent deletions on already-graded items). Removes the Storage images first, then deletes the matching `submission` rows in **one Postgres statement**, cascading to `measurement` and `manual_score` atomically. Migration `0019_submission_cascade_delete.sql` must be applied.
+
+Storage and Postgres are separate operations, with the same failure/retry contract as single deletion above. A Storage failure does not attempt database deletion, even if some photos were removed before the error. A rejected database statement preserves all database records, although photos may already be gone. Either failure returns `500 INTERNAL_ERROR`; retry the batch. A lost database response can also return an error after a successful commit; the retry then ignores already-deleted rows. There is no background retry job.
+
+Duplicate IDs are collapsed; IDs already absent are ignored. `deleted_ids` and `deleted_count` describe rows actually deleted by the database statement, not the number requested or fetched beforehand. An entirely absent batch succeeds with an empty list and count `0`.
 
 Request:
 ```json

@@ -61,7 +61,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Activity lifecycle & management (edit, archive/unarchive, bulk-archive, delete guard, CSV export) | Done | | API_SPEC §3.3, DESIGN §7.13, Migration `0012_activity_archive.sql` |
 | Submission upload (single photo per activity) | Done | | PRD §7.1, API_SPEC §3.4 |
 | Submission deletion & attempt management | Done | | API_SPEC §3.4, DESIGN §7.10 |
-| Batch submission deletion (multi-select, confirmation dialog, atomic bulk delete) | Done | | API_SPEC §3.4.5, DESIGN §7.10 |
+| Batch submission deletion (multi-select, confirmation dialog, Storage-first cleanup + atomic database delete) | Done | Failure paths covered with controlled SDK HTTP responses; real Storage/cascade integration tests added. Full ephemeral-stack verification of the failure-handling update remains pending. | API_SPEC §3.4, TESTING §5, DESIGN §7.10 |
 | Raw CV measurement display | Done | | PRD §7.1/§7.3, CV_PIPELINE §8, DESIGN §7.2 |
 | Manual rubric score entry | Done | | PRD §7.1, DATABASE §9, DESIGN §7.9 |
 | Interactive pedagogical reference tools (Animated Cursive Stroke Canvas & Unified Rubric Reference Dialog) | Done | | DESIGN §7.11–§7.12, `frontend/components/cursive-stroke-canvas.tsx` |

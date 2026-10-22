@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 import pytest
 from PIL import Image
+from storage3.exceptions import StorageApiError
 
 from app.core.config import settings
 from app.core.supabase import supabase_client
@@ -804,7 +805,9 @@ class TestSubmitManualScore:
 
 
 class TestDeleteSubmissionTeacher:
-    def test_teacher_delete_submission_success(self, client, test_activity, test_student):
+    def test_teacher_delete_submission_success(
+        self, client, test_activity, test_student, cleanup_submissions
+    ):
         """Teacher can delete a submission for a student on their roster."""
         # 1. Create submission directly in DB
         sub_res = (
@@ -823,12 +826,28 @@ class TestDeleteSubmissionTeacher:
         )
         submission = sub_res.data[0]
         sub_id = submission["id"]
+        cleanup_submissions.append(submission)
+        image_bytes = _make_test_jpeg()
+        bucket = supabase_client.storage.from_("submission-images")
+        bucket.upload(submission["image_path"], image_bytes, {"content-type": "image/jpeg"})
+        assert bucket.download(submission["image_path"]) == image_bytes
 
         # Insert dummy measurement
         supabase_client.table("measurement").insert(
             {
                 "submission_id": sub_id,
                 "raw_output": {},
+            }
+        ).execute()
+        supabase_client.table("manual_score").insert(
+            {
+                "submission_id": sub_id,
+                "graded_by": TEST_TEACHER_ID,
+                "letter_formation_band": "satisfactory",
+                "size_consistency_band": "satisfactory",
+                "spacing_band": "satisfactory",
+                "slant_band": "satisfactory",
+                "baseline_alignment_band": "satisfactory",
             }
         ).execute()
 
@@ -847,6 +866,12 @@ class TestDeleteSubmissionTeacher:
             supabase_client.table("measurement").select("id").eq("submission_id", sub_id).execute()
         )
         assert len(check_meas.data) == 0
+        assert not (
+            supabase_client.table("manual_score").select("id").eq("submission_id", sub_id).execute()
+        ).data
+        with pytest.raises(StorageApiError) as missing_image:
+            bucket.download(submission["image_path"])
+        assert str(missing_image.value.status) in {"400", "404"}
 
     def test_teacher_delete_non_roster_student_forbidden(self, client, test_activity):
         """Teacher cannot delete a submission for a student not on their roster."""
@@ -896,7 +921,9 @@ class TestDeleteSubmissionTeacher:
 
 
 class TestBatchDeleteSubmissions:
-    def test_teacher_batch_delete_success(self, client, test_activity, test_student):
+    def test_teacher_batch_delete_success(
+        self, client, test_activity, test_student, cleanup_submissions
+    ):
         """Teacher can batch delete multiple submissions for a roster student."""
         sub1 = (
             supabase_client.table("submission")
@@ -928,6 +955,10 @@ class TestBatchDeleteSubmissions:
             .execute()
             .data[0]
         )
+        cleanup_submissions.extend([sub1, sub2])
+        bucket = supabase_client.storage.from_("submission-images")
+        for sub in (sub1, sub2):
+            bucket.upload(sub["image_path"], _make_test_jpeg(), {"content-type": "image/jpeg"})
 
         # Insert dummy measurements
         supabase_client.table("measurement").insert(
@@ -964,6 +995,10 @@ class TestBatchDeleteSubmissions:
                 .execute()
             )
             assert len(check_meas.data) == 0
+            for sub in (sub1, sub2):
+                with pytest.raises(StorageApiError) as missing_image:
+                    bucket.download(sub["image_path"])
+                assert str(missing_image.value.status) in {"400", "404"}
         finally:
             supabase_client.table("measurement").delete().in_(
                 "submission_id", [sub1["id"], sub2["id"]]

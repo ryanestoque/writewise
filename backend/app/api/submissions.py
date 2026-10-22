@@ -46,6 +46,57 @@ class BatchDeleteSubmissionsRequest(BaseModel):
     submission_ids: list[str]
 
 
+def _delete_submission_artifacts(submissions: list[dict[str, Any]]) -> list[str]:
+    """Remove photos before one cascading DB delete; failures remain retryable.
+
+    Storage and Postgres cannot share a transaction. A failed DB delete can
+    leave rows whose photos are already absent; Storage removal accepts those
+    missing paths on a retry. Never discard the rows after a Storage error.
+    """
+    submission_ids = [submission["id"] for submission in submissions]
+    image_paths = [
+        submission["image_path"] for submission in submissions if submission["image_path"]
+    ]
+
+    try:
+        if image_paths:
+            supabase_client.storage.from_("submission-images").remove(image_paths)
+    except Exception as exc:
+        logger.error(
+            "Submission deletion failed: stage=storage submission_ids=%s error_type=%s",
+            submission_ids,
+            type(exc).__name__,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "code": "INTERNAL_ERROR",
+                "message": "Could not finish deleting the submission. Please try again.",
+                "details": {},
+            },
+        ) from exc
+
+    try:
+        # Migration 0019 cascades measurement/manual_score in this same DB statement.
+        deleted = supabase_client.table("submission").delete().in_("id", submission_ids).execute()
+    except Exception as exc:
+        logger.error(
+            "Submission deletion failed: stage=database submission_ids=%s error_type=%s",
+            submission_ids,
+            type(exc).__name__,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "code": "INTERNAL_ERROR",
+                "message": "Could not finish deleting the submission. Please try again.",
+                "details": {},
+            },
+        ) from exc
+
+    return [row["id"] for row in (deleted.data or [])]
+
+
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_submission(
     image: UploadFile = File(...),
@@ -744,7 +795,6 @@ async def delete_submission(
     submission = sub_res.data[0]
     student_id = submission["student_id"]
     uploader_id = submission["uploader_id"]
-    image_path = submission["image_path"]
 
     # 3. Role-based authorization
     if caller_role == "teacher":
@@ -822,33 +872,8 @@ async def delete_submission(
             },
         )
 
-    # 4. Delete Storage asset
-    try:
-        supabase_client.storage.from_("submission-images").remove([image_path])
-    except Exception as exc:
-        logger.warning(
-            "Failed to delete storage asset %s for submission %s: %s",
-            image_path,
-            submission_id,
-            exc,
-        )
-
-    # 5. Delete DB record (cascades to measurement and manual_score)
-    try:
-        # Also clean up child rows explicitly for safety if migration pending
-        supabase_client.table("manual_score").delete().eq("submission_id", submission_id).execute()
-        supabase_client.table("measurement").delete().eq("submission_id", submission_id).execute()
-        supabase_client.table("submission").delete().eq("id", submission_id).execute()
-    except Exception as exc:
-        logger.error("Failed to delete submission record %s: %s", submission_id, exc)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "code": "INTERNAL_ERROR",
-                "message": "Failed to delete submission.",
-                "details": {"error": str(exc)},
-            },
-        )
+    # 4. Remove photos, then delete the row and its dependent records atomically in Postgres.
+    _delete_submission_artifacts([submission])
 
     return {"id": submission_id, "deleted": True}
 
@@ -991,30 +1016,7 @@ async def batch_delete_submissions(
             },
         )
 
-    found_ids = [s["id"] for s in submissions]
-    image_paths = [s["image_path"] for s in submissions if s.get("image_path")]
+    # 5. Remove photos, then delete the batch and its dependent records in one DB statement.
+    deleted_ids = _delete_submission_artifacts(submissions)
 
-    # 5. Delete Storage assets
-    if image_paths:
-        try:
-            supabase_client.storage.from_("submission-images").remove(image_paths)
-        except Exception as exc:
-            logger.warning("Failed to delete storage assets during batch deletion: %s", exc)
-
-    # 6. Delete DB records
-    try:
-        supabase_client.table("manual_score").delete().in_("submission_id", found_ids).execute()
-        supabase_client.table("measurement").delete().in_("submission_id", found_ids).execute()
-        supabase_client.table("submission").delete().in_("id", found_ids).execute()
-    except Exception as exc:
-        logger.error("Failed to batch delete submission records: %s", exc)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "code": "INTERNAL_ERROR",
-                "message": "Failed to delete submissions.",
-                "details": {"error": str(exc)},
-            },
-        )
-
-    return {"deleted_count": len(found_ids), "deleted_ids": found_ids}
+    return {"deleted_count": len(deleted_ids), "deleted_ids": deleted_ids}

@@ -2,6 +2,7 @@ import io
 
 import pytest
 from fastapi.testclient import TestClient
+from storage3.exceptions import StorageApiError
 
 from app.api.deps import get_current_user
 from app.core.supabase import supabase_client
@@ -208,7 +209,7 @@ class TestParentSubmissionAuthorization:
 
 class TestDeleteSubmissionParent:
     def test_parent_delete_own_ungraded_submission_success(
-        self, parent_client, take_home_activity, linked_student
+        self, parent_client, take_home_activity, linked_student, cleanup_submissions
     ):
         """Parent can delete their own un-graded submission."""
         sub_res = (
@@ -226,6 +227,12 @@ class TestDeleteSubmissionParent:
             .execute()
         )
         sub_id = sub_res.data[0]["id"]
+        submission = sub_res.data[0]
+        cleanup_submissions.append(submission)
+        bucket = supabase_client.storage.from_("submission-images")
+        bucket.upload(
+            submission["image_path"], make_segmented_worksheet(), {"content-type": "image/jpeg"}
+        )
 
         response = parent_client.delete(f"/api/submissions/{sub_id}")
         assert response.status_code == 200
@@ -233,6 +240,9 @@ class TestDeleteSubmissionParent:
 
         check = supabase_client.table("submission").select("id").eq("id", sub_id).execute()
         assert len(check.data) == 0
+        with pytest.raises(StorageApiError) as missing_image:
+            bucket.download(submission["image_path"])
+        assert str(missing_image.value.status) in {"400", "404"}
 
     def test_parent_delete_graded_submission_conflict(
         self, parent_client, take_home_activity, linked_student

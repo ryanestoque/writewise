@@ -137,7 +137,7 @@ What's stored per submission: **the original uploaded photo only.** The Phase 2 
 
 The CNN model artifact also lives in Storage (a separate, private location from submission images) — see §9.
 
-**Deletion cleanup:** when a submission is deleted via FastAPI (`DELETE /api/submissions/{id}`), the service-role client unconditionally deletes the corresponding photo from `submission-images` alongside the cascading database row removals (`measurement`, `manual_score`), ensuring no orphaned files linger in storage.
+**Deletion cleanup:** single and batch submission deletion use the service-role client to remove photos from `submission-images` first, then issue one `submission` DELETE. Migration `0019_submission_cascade_delete.sql` makes the dependent `measurement` and `manual_score` deletions part of that same atomic Postgres statement. Any Storage error stops the operation before database deletion. If Storage removal succeeds but the database statement is rejected, the records remain with potentially missing photos; repeating the deletion safely accepts already-absent photos. A lost database response can leave the commit outcome unknown to the caller; retrying returns `404` for an already-deleted single submission or ignores absent rows in a batch. Success requires acknowledgment of both stages. Storage and Postgres are not one transaction, and no background recovery is provided. This prevents discarding photo references after a Storage error; it does not repair photos orphaned by earlier versions.
 
 ---
 

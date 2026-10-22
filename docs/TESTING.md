@@ -146,6 +146,14 @@ Covers ARCHITECTURE.md §8's synchronous pipeline end-to-end: upload → quality
 | `DELETE /api/submissions/{id}` by parent on own un-graded submission | `200`, deletes image from storage and submission record |
 | `DELETE /api/submissions/{id}` by parent on graded submission | `409 SUBMISSION_ALREADY_GRADED` |
 | `DELETE /api/submissions/{id}` by parent on unlinked child or not uploader | `403 NOT_CHILD_PARENT` or `403 NOT_SUBMISSION_UPLOADER` |
+| Single/batch deletion: Storage error, timeout, or partial removal followed by failure | `500 INTERNAL_ERROR`; all submission/measurement/manual-score records preserved; retry completes |
+| Single/batch deletion: database statement fails after photo removal | `500 INTERNAL_ERROR`; all database records preserved; retry accepts already-absent photos |
+| Successful teacher/parent single deletion and teacher batch deletion | Real synthetic image uploaded to Storage first, then verified absent; dependent database rows cascade |
+| Single/batch deletion provider failures | Error `details` empty; provider exception text absent from response and application logs |
+| Batch deletion with a concurrent deletion | Count/IDs reflect the rows returned by the DELETE, not the earlier fetch |
+| Database commit succeeds but its response is lost | Initial request errors; single retry returns `404`, batch retry reports zero for already-deleted rows |
+
+`tests/api/test_submission_deletion_failures.py` exercises the actual routes and Supabase SDK with controlled HTTP responses. These tests cover failure orchestration, not Postgres transaction semantics. Normal suite collection still loads `tests/conftest.py` and requires the ephemeral stack. To run only the transport cases without that bootstrap, configure dummy local Supabase settings and `ENVIRONMENT=test`, then run `uv run pytest --confcutdir=tests/api tests/api/test_submission_deletion_failures.py` from `backend/`. The success tests in `test_submissions.py` and `test_submissions_parent.py` exercise real Storage deletion and cascades against the ephemeral stack. A change to deletion still requires the full ephemeral suite (§3.3).
 
 > The last two rows close API_SPEC.md §8's own flagged gap ("`MANUAL_SCORING_DISABLED` has no automated end-to-end test yet"). Both are testable today by setting the config flag in the test environment — neither depends on real calibration thresholds existing yet, so there's no reason to wait for PRD §5's "Between Phases" step to close this.
 
