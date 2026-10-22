@@ -369,6 +369,21 @@ A unified `/signup` view sharing the atmospheric handwriting background (`Handwr
 
 ---
 
+### 8.5 Public Landing Page
+
+The public `/` route introduces cursive assessment to teachers and parents before account creation. Signed-in teachers continue to `/dashboard`; signed-in parents continue to `/progress`. The middleware permits the exact home path without making other routes public.
+
+- **Opening:** “See the progress in every pen stroke.” A two-column desktop layout pairs the headline and account-creation action with an interactive practice sheet. On mobile, the copy precedes the sheet in one column. Supporting copy frames the tool as assistance for teacher review and states beside signup that parents need a teacher invitation to view their child's progress.
+- **Worksheet example:** Keyboard-operable Spacing, Slant, Baseline, Size, and Formation tabs change the annotation and encouraging practice guidance. Tabs have at least 44px targets and wrap into two rows on phones. The default spacing example deliberately uses tight, wide, and balanced word gaps; its observation and practice guidance identify those exact differences. Each handwriting line has an accessible description that preserves word separation. One plain-language overlay note replaces sample measurement chips; feedback and instructions use readable supporting type. The handwriting and guides scale together on narrow screens. The local Learning Curve typeface supplies synthetic handwriting; “Illustrative example” and an explicit disclaimer distinguish it from an actual student assessment. No student data or score is fetched.
+- **Content order:** Create/photograph/review sequence → compact five-criterion reference → teacher and parent benefits → access/privacy explanation → four-question FAQ → account-creation action. The reference and workflow use simple dividers rather than repeated cards with decorative hover states.
+- **Expectations:** The workflow and FAQ require paper with three printed penmanship guides (top, middle, and baseline). Benefit copy describes measurements and visual feedback without an unqualified accuracy claim. Parent invitation requirements appear beside the opening action and in the parent benefits section.
+- **Navigation:** “Create an account” links to `/signup`; “Sign in” links to `/login`. In-page links lead to the example, workflow, and teacher/parent sections. The compact mobile header retains sign-in and a second row of section links for the workflow, audience information, FAQ, and privacy/help. Anchor offsets account for the taller header; account creation remains in the hero and closing section. All signup actions use “Create an account.”
+- **Privacy and help:** The public access explanation describes linked teacher/parent visibility, worksheet storage for assessment history, and photo-metadata removal. Parents are directed to the activity teacher for invitations, linking, worksheet preparation, and records questions. Footer and mobile navigation link directly to this explanation; no unverified support address or compliance claim is introduced.
+- **Visual system:** Existing pine-teal and soft-pine semantic tokens, Poppins headings, Inter body copy, and the local handwriting accent. Landing-specific layout and typography live in `frontend/app/landing.module.css`; portal tokens and components retain their established appearance.
+- **Accessibility:** Skip link to the main landmark, labeled tabs and panels, visible keyboard focus (including an inset FAQ trigger outline inside clipped accordion items, the feedback panel, and closing action), at least 44px tab targets, text labels for annotations, and motion enabled only when reduced motion is not requested.
+
+---
+
 ## 9. Accessibility
 
 - **Color is never the sole signal.** Every band indicator (badges, chart zones, overlay legend, table cells) always pairs its color with the band's text name — covers the largest real accessibility gap (color-blindness affects roughly 1 in 12 men) without needing a secondary pattern/texture system.

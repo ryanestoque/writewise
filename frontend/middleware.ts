@@ -15,8 +15,9 @@ const roleLanding: Record<string, string> = {
 };
 
 function isPublicRoute(pathname: string): boolean {
-  return publicRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  return (
+    pathname === "/" ||
+    publicRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`))
   );
 }
 
