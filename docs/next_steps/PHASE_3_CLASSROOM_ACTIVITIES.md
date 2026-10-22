@@ -1,8 +1,8 @@
 # Phase 3 — Classroom-Style Activities (Deadlines, Returns, Notifications, Gradebook)
 
-**As of:** October 20, 2026
+**As of:** October 22, 2026
 **Status:** 📐 Design agreed — **not scheduled before the defense.** Build starts after the October 2026 technical defense.
-**Origin:** Design-tree grill session, 2026-10-19 (19 decisions, all accepted).
+**Origin:** Design-tree grill session, 2026-10-19 (19 decisions, all accepted). **Amended 2026-10-22:** private comments (Q20–Q28, Slice ⑥); Q16 revised.
 **Supersedes (when promoted):** PRD §13 "Notifications" deferred item, PRODUCT.md "Push notifications" deferred item.
 
 ---
@@ -43,10 +43,19 @@ Phase 3 adds that loop without touching the CV/CNN pipeline or the calibration s
 | Q13 | Gradebook | Per-section grid of students × activities with status chips. Overall % = points earned ÷ points possible. CSV export. Parent sees own child's row |
 | Q14 | Active attempt | Latest **completed, non-returned** submission counts. Teacher may **pin** a different attempt. Exposed as the `active_submission` view |
 | Q15 | Missing / Excused | Missing doesn't affect the % until the teacher clicks **Assign 0** or **Excuse** (per cell or bulk per activity). Excused work is removed from both earned and possible points |
-| Q16 | Extra fields | `title` and `instructions` only. **Out:** PDF attachments, scheduled publish, activity drafts, comment threads |
+| Q16 | Extra fields | `title` and `instructions` only. **Out:** PDF attachments, scheduled publish, activity drafts, public/class-wide comment streams. *(Amended 2026-10-22: private per-student comments are **in**, see Q20–Q28)* |
 | Q17 | Calibration | Export keeps returned submissions that have a score, flagged with `return_reason` and `is_active_attempt`. Analysis excludes blur/crop/wrong-worksheet returns by default. Gradebook points are **never** exported |
 | Q18 | Migration | Backfill: existing activities assigned to **all** of the teacher's sections, no due date, no points; existing submissions marked **Released**. Parents see no change |
-| Q19 | Build order | Five slices, §8 |
+| Q19 | Build order | Six slices, §8 *(Slice ⑥ added 2026-10-22)* |
+| Q20 | Private comments: scope | Added as **Slice ⑥**, built after Slice ③ (needs the bell). Post-defense like the rest of Phase 3 |
+| Q21 | Thread anchor | One thread per **student × activity** (keyed on `student_work`). Exists before any upload; survives returns and resubmissions |
+| Q22 | Participants | The activity's owning teacher + **all** parents linked to the student (`student_parent`). One shared thread; everyone sees every message |
+| Q23 | Content | Plain text only, 1–1000 chars. No attachments, no markdown, no auto-linking |
+| Q24 | Edit / delete | No editing. Author may delete own comment → **body scrubbed to NULL**, `deleted_at` stamped, "Comment deleted" placeholder keeps thread order |
+| Q25 | Return note | `submission.return_note` stays as-is. The thread renders return events **inline as read-only entries** derived from submission rows (not stored as comments) so parents can reply in context |
+| Q26 | Notifications | New in-app type `comment_posted` → all participants except the author, **coalesced** to one unread notification per thread per recipient. **No email** (Q6 unchanged) |
+| Q27 | Write path & gating | Writes via FastAPI (participation check + insert + notifications in one transaction); reads via RLS. Postable whenever `is_assigned` holds — incl. in-class and past due / `close_after_due`. Teacher can **lock** a thread |
+| Q28 | Privacy & UI | Bodies never logged, never exported, cascade-deleted with the student. Score-leak-before-release accepted (composer hint only). UI: student-work side panel (teacher) + unread dot on gradebook cell; child's activity page (parent); bell deep-links |
 
 ---
 
@@ -60,6 +69,7 @@ Classroom's key idea is a per-student record for each assignment, which exists e
 - pinned attempt (Q14)
 - points override / Assign 0 (Q11, Q15)
 - excused flag (Q15)
+- private comment thread + lock flag (Q21, Q27; Slice ⑥)
 
 Rows are created on demand (on the first teacher action or upload), not up front for every assigned student.
 
@@ -152,6 +162,7 @@ create table public.student_work (
   pinned_submission_id   uuid references public.submission(id) on delete set null,
   points_override        numeric(6,2) check (points_override >= 0),  -- Slice ⑤; 0 = "Assign 0"
   excused                boolean not null default false,       -- Slice ⑤
+  comments_locked        boolean not null default false,       -- Slice ⑥
   updated_at timestamptz not null default now(),
   primary key (activity_id, student_id)
 );
@@ -167,6 +178,8 @@ create table public.student_work (
 create type public.notification_type as enum (
   'activity_assigned', 'due_soon', 'submission_returned', 'submission_rejected',
   'score_released', 'activity_missing', 'resubmitted_after_return');
+-- Slice ⑥ (own migration — enum values can't be used in the same txn):
+-- alter type public.notification_type add value 'comment_posted';
 
 create table public.notification (
   id uuid primary key default gen_random_uuid(),
@@ -208,6 +221,41 @@ Notifications store **IDs only**. The bell UI resolves the child name and activi
 | `measurement`, score-bearing reads, diagnostics | Parent policies gain `and s.released_at is not null` |
 | `notification` | Select own (`recipient_id = auth.uid()`). No client writes; marking read goes through FastAPI |
 | `email_outbox` | RLS enabled, no policies |
+| `private_comment` | Select: teacher who owns the activity, or a parent linked via `student_parent` where `is_assigned(activity_id, student_id)`. **No client writes** (FastAPI only, Q27) |
+
+### 4.8 `private_comment` (Slice ⑥)
+
+```sql
+create table public.private_comment (
+  id uuid primary key default gen_random_uuid(),
+  activity_id uuid not null,
+  student_id  uuid not null,
+  author_id   uuid references auth.users(id) on delete set null,   -- null if account removed
+  author_role text not null check (author_role in ('teacher', 'parent')),
+  body        text check (char_length(body) between 1 and 1000),   -- NULL once deleted (Q24)
+  deleted_at  timestamptz,
+  created_at  timestamptz not null default now(),
+  constraint comment_body_xor_deleted check ((body is null) = (deleted_at is not null)),
+  foreign key (activity_id, student_id)
+    references public.student_work(activity_id, student_id) on delete cascade
+);
+create index on public.private_comment (activity_id, student_id, created_at);
+
+-- Coalescing for comment_posted (Q26): at most one UNREAD comment notification
+-- per (recipient, activity, student). FastAPI inserts with
+--   on conflict (recipient_id, activity_id, student_id)
+--   where type = 'comment_posted' and read_at is null
+--   do update set created_at = now()
+-- dedupe_key = 'comment:{activity}:{student}:{recipient}:{first_comment_id}' keeps the
+-- global unique constraint satisfied once the previous one has been read.
+create unique index notification_comment_unread_uniq
+  on public.notification (recipient_id, activity_id, student_id)
+  where type = 'comment_posted' and read_at is null;
+```
+
+- Posting upserts the `student_work` row first (rows are on-demand, §3.1).
+- The thread view merges `private_comment` rows with **return events** read from `submission` (`returned_at`, `return_reason`, `return_note`) in `created_at` order (Q25). Return events are never copied into this table.
+- The unread `comment_posted` notification **is** the per-thread unread state: it drives the gradebook-cell dot, and opening the thread marks it read. No separate read-receipt table.
 
 ---
 
@@ -224,6 +272,7 @@ Notifications store **IDs only**. The bell UI resolves the child name and activi
 | `score_released` | Parents | Release (single or bulk) | FastAPI | No |
 | `activity_missing` | Parents | Effective due passed, no active submission, not excused | `pg_cron` | No |
 | `resubmitted_after_return` | Activity's teacher | Parent upload where the previous latest submission was `returned` | FastAPI | No |
+| `comment_posted` | All thread participants except the author | New private comment (coalesced per thread, §4.8) | FastAPI | No |
 
 Dedupe keys include the effective due epoch, so **moving a due date re-arms** `due_soon`/`activity_missing` instead of silently suppressing them.
 
@@ -295,6 +344,9 @@ Parent: their own child's row only, released scores only.
 | `PATCH /api/me/settings` | + `email_notifications` | ④ |
 | `POST /api/internal/dispatch-emails` | Shared-secret, excluded from public OpenAPI tags | ④ |
 | `GET /api/sections/{id}/gradebook.csv` | CSV export | ⑤ |
+| `POST /api/activities/{id}/students/{student_id}/comments` | `{ body }` — participant check, upsert `student_work`, insert, emit `comment_posted` | ⑥ |
+| `DELETE /api/comments/{id}` | Author only; scrubs body. Non-author → `NOT_FOUND`; already deleted → 204 (idempotent) | ⑥ |
+| `PUT /api/activities/{id}/students/{student_id}/work` | + `comments_locked` (teacher only) | ⑥ |
 
 **New error codes** (add to API_SPEC §2.4 catalog, Rule 2):
 
@@ -306,6 +358,9 @@ Parent: their own child's row only, released scores only.
 | `SUBMISSION_NOT_RETURNABLE` | 409 | Status is `processing`, `rejected`, or already `returned` |
 | `SUBMISSION_NOT_RELEASABLE` | 409 | Not graded, or not the active attempt |
 | `INVALID_DISPATCH_SECRET` | 401 | Missing or incorrect `X-Dispatch-Secret` header |
+| `COMMENTS_LOCKED` | 409 | Posting to a thread whose `student_work.comments_locked` is true |
+
+Comment body length violations reuse `VALIDATION_ERROR`; non-participants get `NOT_FOUND` (§2.2 ownership rule).
 
 The existing parent-delete rule (`SUBMISSION_ALREADY_GRADED`) is unchanged.
 
@@ -322,6 +377,7 @@ Each slice can ship on its own and unblocks the next.
 | **③ In-app notifications** | `notification` table, FastAPI emitters, `pg_cron` time-based function, header bell | Duplicate notifications | SQL-function tests for idempotency and due-date re-arming |
 | **④ Email** | `email_outbox`, dispatcher endpoint, Resend, Vault secret, email toggle | PII in email or in logs | Dispatcher unit tests with stubbed Resend; template snapshot test asserting no score/note fields |
 | **⑤ Points & gradebook** | `points_possible`, overrides, excused, gradebook grid, CSV | Composite-to-points scaling (§9 Q-A) | Pure-function tests for overall % edge cases |
+| **⑥ Private comments** | `private_comment`, `comment_posted` enum value, coalescing index, `comments_locked`, thread panel (teacher + parent), gradebook unread dot | Cross-family leakage; comment bodies in logs | Full suite; RLS: parent of another child / unassigned student cannot read; coalescing test (N comments → 1 unread); delete scrubs body; log-capture test asserting no body text |
 
 ---
 
@@ -341,8 +397,11 @@ Each slice can ship on its own and unblocks the next.
 ## 10. Hard-Rule Checklist (AGENTS.md §6)
 
 - [ ] **R1:** bell and gradebook read through RLS; the service-role key stays in FastAPI and the dispatcher.
-- [ ] **R2:** all six new error codes added to API_SPEC §2.4; frontend branches on `error.code`.
-- [ ] **R4:** notifications store IDs only; dispatcher logs `notification_id` only; emails use first name only.
+- [ ] **R2:** all seven new error codes added to API_SPEC §2.4; frontend branches on `error.code`.
+- [ ] **R4:** notifications store IDs only; dispatcher logs `notification_id` only; emails use first name only; comment bodies never logged (comment `id` only).
+- [ ] **R1 (⑥):** comments read through RLS; writes only via FastAPI.
+- [ ] **R3/R5 (⑥):** N/A by design — comments are text-only, no new image path (Q23).
+- [ ] **R11 (⑥):** `private_comment` is never included by `research/export_dataset.py`.
 - [ ] **R6:** every table, enum, policy and `pg_cron` job is a versioned migration; types regenerated.
 - [ ] **R7:** points derived from ScoreProvider output; no phase branch in the gradebook.
 - [ ] **R9:** returned submissions persisted, never deleted.
@@ -354,4 +413,4 @@ Each slice can ship on its own and unblocks the next.
 
 ## 11. Docs to Update When Promoted
 
-PRD §7 + §13 · PRODUCT.md (deferred list) · DATABASE.md (tables, view, RLS, `pg_cron`) · API_SPEC.md (endpoints + §2.4 codes) · ARCHITECTURE.md (scheduled jobs, outbox, Resend; amends the "synchronous only" stance for *notifications*, not for the CV pipeline) · SECURITY.md (email channel, Vault secret) · DESIGN.md (bell, gradebook, Return dialog, status chips) · DEPLOYMENT.md (`RESEND_API_KEY`, `EMAIL_DISPATCH_SECRET`, Vault setup) · TESTING.md (RLS release tests) · IMPLEMENTATION_STATUS.md (new Phase 3 section). Consider an **ADR 0005** for the scheduler + outbox decision.
+PRD §7 + §13 · PRODUCT.md (deferred list) · DATABASE.md (tables, view, RLS, `pg_cron`) · API_SPEC.md (endpoints + §2.4 codes) · ARCHITECTURE.md (scheduled jobs, outbox, Resend; amends the "synchronous only" stance for *notifications*, not for the CV pipeline) · SECURITY.md (email channel, Vault secret) · DESIGN.md (bell, gradebook, Return dialog, status chips, private-comment panel) · DEPLOYMENT.md (`RESEND_API_KEY`, `EMAIL_DISPATCH_SECRET`, Vault setup) · TESTING.md (RLS release tests) · IMPLEMENTATION_STATUS.md (new Phase 3 section). Consider an **ADR 0005** for the scheduler + outbox decision.
