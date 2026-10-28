@@ -436,7 +436,7 @@
 
 .studioHeader {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
@@ -445,17 +445,8 @@
   border-bottom: 1px solid var(--rule);
 }
 
-.studioEyebrow {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--ink-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
 .studioTitle {
-  margin: 2px 0 0;
+  margin: 0;
   font-family: var(--font-heading), sans-serif;
   font-size: 1.0625rem;
   font-weight: 600;
@@ -466,47 +457,52 @@
   position: relative;
 }
 
-.previewGuideTools {
-  display: flex;
-  flex-wrap: wrap;
+.viewerSwitchPill {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 4px;
-}
-
-.previewGuideTools button {
-  min-height: 40px;
-  padding: 0 14px;
-  font-family: var(--font-heading), sans-serif;
-  font-weight: 600;
-  font-size: 0.8125rem;
-  letter-spacing: -0.01em;
-  border-radius: 8px;
-  border: 1.5px solid #c8e2dc;
-  background: var(--paper);
-  color: var(--ink-soft);
+  height: 28px;
+  padding: 0 6px 0 10px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid #c8e2dc;
+  box-shadow: 0 2px 6px -1px rgb(20 80 73 / 0.15);
   cursor: pointer;
+  user-select: none;
   touch-action: manipulation;
   transition:
-    background 180ms var(--ease-out),
-    border-color 180ms var(--ease-out),
-    color 180ms var(--ease-out),
-    box-shadow 180ms var(--ease-out);
+    background-color 150ms var(--ease-out),
+    border-color 150ms var(--ease-out),
+    box-shadow 150ms var(--ease-out),
+    transform 150ms var(--ease-out);
 }
 
-.previewGuideTools button:hover {
-  background: var(--wash-soft);
-  border-color: #a4d3cb;
-  color: var(--teal-deep);
-}
-
-.previewGuideTools button[aria-pressed="true"] {
-  background: var(--wash);
+.viewerSwitchPill:hover {
+  background: #fff;
   border-color: var(--teal);
+  box-shadow: 0 3px 10px -2px rgb(20 80 73 / 0.22);
+}
+
+.viewerSwitchLabel {
+  font-family: var(--font-heading), sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--teal-night);
-  box-shadow:
-    0 0 0 1px var(--teal) inset,
-    0 2px 6px -2px rgb(20 80 73 / 0.15);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 150ms var(--ease-out);
+}
+
+.viewerSwitchPill:has([data-state="unchecked"]) .viewerSwitchLabel,
+.viewerSwitchPill:has([aria-checked="false"]) .viewerSwitchLabel {
+  color: var(--ink-muted);
 }
 
 .studioControls {
@@ -526,11 +522,6 @@
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--ink-soft);
-}
-
-.studioCriteriaHint {
-  font-size: 0.75rem;
-  color: var(--ink-muted);
 }
 
 .studioCriteriaGrid {
@@ -557,12 +548,13 @@
   flex-direction: column;
   justify-content: space-between;
   gap: 8px;
-  padding: 10px;
+  padding: 8px 6px;
   border-radius: 10px;
   border: 1px solid var(--rule);
   background: var(--canvas);
   cursor: pointer;
   font-variant-numeric: tabular-nums;
+  overflow: hidden;
   transition:
     border-color 150ms ease-out,
     background-color 150ms ease-out,
@@ -607,10 +599,29 @@
 }
 
 .previewBand {
-  height: 22px;
-  padding: 0 7px;
-  font-size: 0.6875rem;
-  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  height: 20px;
+  padding: 0 4px;
+  gap: 4px;
+  font-size: 0.625rem;
+  letter-spacing: -0.01em;
+  box-sizing: border-box;
+}
+
+.previewBand .bandDot {
+  width: 5px;
+  height: 5px;
+  flex-shrink: 0;
+}
+
+.previewBandText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .studioCoaching {
@@ -1620,9 +1631,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .studioCard [data-inspector-container] button,
-  .studioCard [data-inspector-container] summary,
-  .previewGuideTools button {
+  .studioCard [data-inspector-container] button {
     min-height: 44px;
     min-width: 44px;
   }

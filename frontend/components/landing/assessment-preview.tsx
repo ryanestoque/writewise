@@ -5,6 +5,7 @@ import { WorksheetImageInspector } from "@/components/shared/worksheet-image-ins
 import { DiagnosticOverlay } from "@/components/shared/diagnostic-overlay/diagnostic-overlay";
 import type { ActiveAnnotationHover } from "@/components/shared/diagnostic-overlay/types";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 import { getScoreBandLabel } from "@/lib/utils/submission-status";
 import {
   EXAMPLE_CRITERIA,
@@ -18,8 +19,7 @@ import styles from "@/app/landing.module.css";
 export function AssessmentPreview() {
   const criterionId = useId();
   const [criterion, setCriterion] = useState<(typeof EXAMPLE_CRITERIA)[number]["id"]>("spacing");
-  const [visible, setVisible] = useState(true);
-  const [guides, setGuides] = useState(true);
+  const [showOverlay, setShowOverlay] = useState(true);
   const [annotation, setAnnotation] = useState<ActiveAnnotationHover | null>(null);
   const focused = EXAMPLE_CRITERIA.find((item) => item.id === criterion) ?? EXAMPLE_CRITERIA[2];
   const focusedBand = getScoreBandLabel(focused.score, { source: "calibrated" });
@@ -31,6 +31,7 @@ export function AssessmentPreview() {
     if (!selected) return;
     setCriterion(selected.id);
     setAnnotation(null);
+    setShowOverlay(true);
   };
 
   return (
@@ -40,10 +41,7 @@ export function AssessmentPreview() {
       aria-label="Interactive worksheet assessment studio"
     >
       <div className={styles.studioHeader}>
-        <div>
-          <span className={styles.studioEyebrow}>Interactive worksheet sample</span>
-          <h2 className={styles.studioTitle}>Cursive practice: &ldquo;kites fly high&rdquo;</h2>
-        </div>
+        <h2 className={styles.studioTitle}>Cursive practice: &ldquo;kites fly high&rdquo;</h2>
         <span className={styles.band} data-band="satisfactory">
           <span className={styles.bandDot} aria-hidden="true" />
           74% Overall · Satisfactory
@@ -51,44 +49,40 @@ export function AssessmentPreview() {
       </div>
 
       <div className={styles.studioViewerWrap}>
+        <label
+          htmlFor={`${criterionId}-overlay-switch`}
+          className={styles.viewerSwitchPill}
+        >
+          <span className={styles.viewerSwitchLabel}>Assessment marks</span>
+          <Switch
+            id={`${criterionId}-overlay-switch`}
+            size="sm"
+            checked={showOverlay}
+            onCheckedChange={setShowOverlay}
+            aria-label="Toggle assessment marks overlay"
+          />
+        </label>
+
         <WorksheetImageInspector
           imageUrl={EXAMPLE_WORKSHEET}
           imageDimensions={EXAMPLE_WORKSHEET_DIMENSIONS}
-          headerLabel="Sample handwriting worksheet"
+          headerLabel=""
           altText="Cursive worksheet showing two lines of 'kites fly high': the first line has crowded then wide word spaces; the second has even word spaces."
           showShortcutsLegend={false}
           keyboardScope="focused"
-          imageToolsDisclosure
+          showImageTools={false}
           autoAspectRatio={false}
           aspectRatioClass="aspect-[62/43] min-h-[210px]"
-          diagnosticToolbar={
-            <div className={styles.previewGuideTools}>
-              <button
-                type="button"
-                aria-pressed={visible}
-                onClick={() => setVisible((current) => !current)}
-              >
-                Assessment marks
-              </button>
-              <button
-                type="button"
-                aria-pressed={guides}
-                onClick={() => setGuides((current) => !current)}
-              >
-                Guide lines
-              </button>
-            </div>
-          }
         >
           <DiagnosticOverlay
             overlay={EXAMPLE_OVERLAY}
             imageUrl={EXAMPLE_WORKSHEET}
             imageDimensions={EXAMPLE_WORKSHEET_DIMENSIONS}
             activeCriterion={criterion}
-            visible={visible}
+            visible={showOverlay}
             selectedAnnotation={annotation}
             onSelectAnnotation={setAnnotation}
-            showGuideLines={guides}
+            showGuideLines={showOverlay}
           />
         </WorksheetImageInspector>
       </div>
@@ -98,7 +92,6 @@ export function AssessmentPreview() {
           <span id={`${criterionId}-heading`} className={styles.studioCriteriaLabel}>
             Select a criterion to inspect marks
           </span>
-          <span className={styles.studioCriteriaHint}>5 criteria</span>
         </div>
 
         <RadioGroup
@@ -111,6 +104,8 @@ export function AssessmentPreview() {
             const band = getScoreBandLabel(item.score, { source: "calibrated" });
             const bandKey =
               band.band === "Needs Improvement" ? "needs" : band.band.toLowerCase();
+            const bandDisplay =
+              band.band === "Needs Improvement" ? "Needs Impr." : band.band;
             const isSelected = item.id === criterion;
             return (
               <label
@@ -128,9 +123,15 @@ export function AssessmentPreview() {
                   <span className={styles.studioCriterionName}>{item.name}</span>
                   <span className={styles.studioCriterionScore}>{item.score}%</span>
                 </span>
-                <span className={`${styles.band} ${styles.previewBand}`} data-band={bandKey}>
+                <span
+                  className={`${styles.band} ${styles.previewBand}`}
+                  data-band={bandKey}
+                  title={band.band}
+                >
                   <span className={styles.bandDot} aria-hidden="true" />
-                  {band.band}
+                  <span className={styles.previewBandText} aria-label={band.band}>
+                    {bandDisplay}
+                  </span>
                 </span>
               </label>
             );

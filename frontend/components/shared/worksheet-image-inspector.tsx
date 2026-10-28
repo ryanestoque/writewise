@@ -68,6 +68,8 @@ export interface WorksheetImageInspectorProps {
   keyboardScope?: "global" | "focused";
   /** Public demos can progressively disclose secondary image controls. */
   imageToolsDisclosure?: boolean;
+  /** Whether to show secondary image tools (zoom, contrast, loupe). Defaults to true. */
+  showImageTools?: boolean;
   /** Additional container classes */
   className?: string;
   /** Custom aspect ratio / height classes (optional, defaults to dynamic auto-fit) */
@@ -89,6 +91,7 @@ export function WorksheetImageInspector({
   showShortcutsLegend = true,
   keyboardScope = "global",
   imageToolsDisclosure = false,
+  showImageTools = true,
   children,
   className,
   aspectRatioClass,
@@ -550,7 +553,7 @@ export function WorksheetImageInspector({
     }
   };
 
-  const CommandDeck = imageToolsDisclosure ? "details" : "div";
+  const CommandDeck = imageToolsDisclosure && showImageTools ? "details" : "div";
 
   return (
     <div
@@ -576,10 +579,11 @@ export function WorksheetImageInspector({
       {/* Action Controls: Unified Command Deck or Standalone Inspector Controls */}
       {diagnosticToolbar ? (
         <CommandDeck className={cn(
-          "w-full rounded-xl border border-border/70 bg-muted/35 overflow-hidden shadow-2xs divide-y divide-border/60 shrink-0",
-          !imageToolsDisclosure && "flex flex-col"
+          "w-full rounded-xl border border-border/70 bg-muted/35 overflow-hidden shadow-2xs shrink-0",
+          (!imageToolsDisclosure || !showImageTools) && "flex flex-col",
+          showImageTools && "divide-y divide-border/60"
         )}>
-          {imageToolsDisclosure && (
+          {imageToolsDisclosure && showImageTools && (
             <summary className="min-h-11 px-3 py-3 text-sm font-semibold cursor-pointer touch-manipulation">
               Image tools
             </summary>
@@ -587,7 +591,8 @@ export function WorksheetImageInspector({
           <div className="p-1 sm:p-1.5">
             {diagnosticToolbar}
           </div>
-          <div className={cn(
+          {showImageTools && (
+            <div className={cn(
             "w-full flex items-center justify-between gap-1 p-1 sm:p-1.5 text-xs",
             imageToolsDisclosure && "flex-wrap gap-y-2"
           )}>
@@ -671,8 +676,9 @@ export function WorksheetImageInspector({
               </Button>
             </div>
           </div>
+          )}
         </CommandDeck>
-      ) : (
+      ) : showImageTools ? (
         /* Standalone Inspector Action Controls */
         <div className="w-full flex items-center justify-between gap-1 bg-muted/50 p-1 rounded-xl border border-border/80 text-xs shadow-2xs shrink-0">
           {/* Left tools: Contrast & Loupe */}
@@ -755,7 +761,7 @@ export function WorksheetImageInspector({
             </Button>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Interactive Image Container */}
       <div
