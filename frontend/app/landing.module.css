@@ -688,12 +688,13 @@
   background: var(--wash);
   border-top: 1px solid #d2e7e3;
   border-bottom: 1px solid #d2e7e3;
-  padding: var(--section) var(--gutter);
+  padding: var(--section) 0;
 }
 
 .workflowInner {
   max-width: var(--max);
   margin: 0 auto;
+  padding: 0 var(--gutter);
 }
 
 .steps {
@@ -1259,13 +1260,14 @@
   position: relative;
   background: var(--teal);
   color: #fff;
-  padding: var(--section) var(--gutter);
+  padding: var(--section) 0;
   overflow: hidden;
 }
 
 .closeInner {
   max-width: var(--max);
   margin: 0 auto;
+  padding: 0 var(--gutter);
 }
 
 .closeHeader {
