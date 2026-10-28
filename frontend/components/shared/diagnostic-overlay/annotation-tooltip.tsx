@@ -146,14 +146,7 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
     const maxCaretOffset = Math.max(0, cardHalfWidth - 22);
     caretOffset = Math.max(-maxCaretOffset, Math.min(maxCaretOffset, deltaViewportX));
 
-    // Vertical placement and height-aware clamping within visible viewport
-    const hasExtraNote =
-      (criterion === "letter_formation" && isAttention) || criterion === "spacing";
-    const cardEstimatedHeight = isNarrowOrShort
-      ? (hasExtraNote ? 104 : 86)
-      : (hasExtraNote ? 146 : 126);
-
-    const vMargin = isNarrowOrShort ? 6 : 10;
+    // Vertical placement: place below if pin is in upper part of viewport, place above if in lower part
     const spaceAbove = targetViewportY;
     const spaceBelow = viewportH - targetViewportY;
 
@@ -165,23 +158,10 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
       isNearTop = spaceBelow >= spaceAbove;
     }
 
-    const idealCardTop = isNearTop
-      ? targetViewportY + (isNarrowOrShort ? 8 : 12)
-      : targetViewportY - (isNarrowOrShort ? 8 : 12) - cardEstimatedHeight;
-
-    const minCardTop = vMargin;
-    const maxCardTop = Math.max(minCardTop, viewportH - cardEstimatedHeight - vMargin);
-    const clampedViewportY = Math.max(minCardTop, Math.min(maxCardTop, idealCardTop));
-
-    const clampedLocalY =
-      containerH / 2 + (clampedViewportY - viewportH / 2 - panOffset.y) / effectiveZoom;
-
-    // Dynamically adjust caret direction if vertical clamping pushed the card across the pin
-    if (targetViewportY <= clampedViewportY + 4) {
-      isNearTop = true; // Pin is above or at top edge of card -> caret at top pointing up
-    } else if (targetViewportY >= clampedViewportY + cardEstimatedHeight - 4) {
-      isNearTop = false; // Pin is below or at bottom edge of card -> caret at bottom pointing down
-    }
+    const vGap = isNarrowOrShort ? 8 : 10;
+    const clampedLocalY = isNearTop
+      ? pixelY + vGap / effectiveZoom
+      : pixelY - vGap / effectiveZoom;
 
     leftPos = `${clampedLocalX}px`;
     topPos = `${clampedLocalY}px`;
@@ -189,7 +169,7 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
     // Defensive fallback if measurements are somehow not yet settled
     const leftPct = Math.max(15, Math.min(85, (x / imageWidth) * 100));
     const topPct = Math.max(15, Math.min(85, (y / imageHeight) * 100));
-    isNearTop = topPct < 30;
+    isNearTop = topPct < 45;
     cardWidth = 220;
     leftPos = `${leftPct}%`;
     topPos = `${topPct}%`;
@@ -210,8 +190,10 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
       style={{
         left: leftPos,
         top: topPos,
-        transform: `translate3d(-50%, 0, 0) scale(${counterScale})`,
-        transformOrigin: isNearTop ? "top center" : "bottom center",
+        transform: `translate3d(-50%, ${isNearTop ? "0" : "-100%"}, 0) scale(${counterScale})`,
+        transformOrigin: isNearTop
+          ? `calc(50% + ${caretOffset}px) top`
+          : `calc(50% + ${caretOffset}px) bottom`,
       }}
     >
       <TooltipCard
