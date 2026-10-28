@@ -76,7 +76,7 @@ const FormationWordItem = memo(function FormationWordItem({
 
   const isFocusable = isSpotlight || isAttention;
   const isActive = activeAnnotationId === id;
-  const hitH = Math.max(36, 36 * hitScale);
+  const hitH = OVERLAY_WEIGHTS.minTargetSize * hitScale;
   const hitW = Math.max(hitH, w);
   const badgeW = 34 * hitScale;
   const badgeH = 20 * hitScale;

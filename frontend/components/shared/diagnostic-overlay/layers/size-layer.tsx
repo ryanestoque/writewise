@@ -71,7 +71,7 @@ export const SizeLayer = memo(function SizeLayer({
 
         const isFocusable = isSpotlight || isAttention;
         const isActive = activeAnnotationId === id;
-        const minHit = Math.max(36, 36 * hitScale);
+        const minHit = OVERLAY_WEIGHTS.minTargetSize * hitScale;
         const hitW = Math.max(minHit, w);
         const hitH = Math.max(minHit, Math.max(h, ch));
 
@@ -105,7 +105,7 @@ export const SizeLayer = memo(function SizeLayer({
               }
             }}
           >
-            {/* Transparent padding to guarantee minimum 36x36px hit target */}
+            {/* Scale SVG hit geometry to maintain a 44 CSS-pixel minimum. */}
             <rect
               x={x - (hitW > w ? (hitW - w) / 2 : 0)}
               y={Math.min(y, cy) - (hitH > Math.max(h, ch) ? (hitH - Math.max(h, ch)) / 2 : 0)}

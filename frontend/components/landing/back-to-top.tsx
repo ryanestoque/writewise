@@ -20,6 +20,7 @@ export function BackToTop() {
 
   const scrollToTop = () => {
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById("hero-heading")?.focus({ preventScroll: true });
     window.scrollTo({
       top: 0,
       behavior: prefersReducedMotion ? "auto" : "smooth",
@@ -33,6 +34,8 @@ export function BackToTop() {
       data-visible={visible}
       onClick={scrollToTop}
       aria-label="Back to top of page"
+      aria-hidden={!visible}
+      inert={!visible}
       tabIndex={visible ? 0 : -1}
     >
       <svg

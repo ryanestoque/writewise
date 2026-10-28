@@ -106,14 +106,14 @@ export const SlantLayer = memo(function SlantLayer({
               }
             }}
           >
-            {/* Generous touch hit area (scaled to maintain minimum 36px physical screen pixels on mobile) */}
+            {/* Scale SVG hit geometry to maintain a 44 CSS-pixel minimum. */}
             <line
               x1={x1}
               y1={y1}
               x2={x2}
               y2={y2}
               stroke="transparent"
-              strokeWidth={Math.max(36, 36 * hitScale)}
+              strokeWidth={OVERLAY_WEIGHTS.minTargetSize * hitScale}
               strokeLinecap="round"
               className="pointer-events-auto"
             />

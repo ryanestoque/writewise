@@ -52,6 +52,8 @@ export function extractDiagnosticOverlay(
 interface DiagnosticOverlayProps {
   overlay: DiagnosticOverlayData | null | undefined;
   imageUrl?: string | null;
+  /** Known dimensions of a static image, avoiding an eager dimension probe. */
+  imageDimensions?: { width: number; height: number };
   visible?: boolean;
   activeCriterion?: CriterionFilter;
   zoomScale?: number;
@@ -63,6 +65,7 @@ interface DiagnosticOverlayProps {
 export const DiagnosticOverlay = memo(function DiagnosticOverlay({
   overlay,
   imageUrl,
+  imageDimensions,
   visible = true,
   activeCriterion = "all",
   zoomScale,
@@ -82,10 +85,11 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
     width: number;
     height: number;
   } | null>(null);
-  const [naturalSize, setNaturalSize] = useState<{
+  const [loadedSize, setNaturalSize] = useState<{
     width: number;
     height: number;
   } | null>(null);
+  const naturalSize = imageDimensions ?? loadedSize;
   const [hoveredAnnotation, setHoveredAnnotation] =
     useState<ActiveAnnotationHover | null>(null);
 
@@ -209,6 +213,7 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
 
   // Load natural dimensions of the image so SVG viewBox aligns 1:1 with pixel coordinates
   useEffect(() => {
+    if (imageDimensions) return;
     if (!imageUrl) {
       setNaturalSize(null);
       return;
@@ -241,7 +246,7 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
       img.onload = null;
       img.onerror = null;
     };
-  }, [imageUrl]);
+  }, [imageUrl, imageDimensions]);
 
   const handleHoverAnnotation: HoverAnnotationCallback = useCallback(
     (hover) => {
@@ -295,7 +300,7 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
     if (!naturalSize) return 1;
     if (!containerSize || containerSize.width <= 0 || containerSize.height <= 0) {
       // Sensible initial estimate before ResizeObserver fires (typical viewport ~480px)
-      return Math.round(Math.max(1, naturalSize.width / 480) * 4) / 4;
+      return Math.ceil(Math.max(1, naturalSize.width / 480) * 4) / 4;
     }
     const imgRatio = naturalSize.width / naturalSize.height;
     const containerRatio = containerSize.width / containerSize.height;
@@ -305,8 +310,8 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
       renderedW = containerSize.height * imgRatio;
     }
     const rawScale = Math.max(1, naturalSize.width / Math.max(renderedW, 1));
-    // Quantize hitScale to 0.25 increments to prevent continuous re-rendering churn during sidebar transitions
-    return Math.round(rawScale * 4) / 4;
+    // Round up so quantization never shrinks hit targets below their CSS-pixel minimum.
+    return Math.ceil(rawScale * 4) / 4;
   }, [naturalSize, containerSize]);
 
   if (!visible || !overlay) return null;

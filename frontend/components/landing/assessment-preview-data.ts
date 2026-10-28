@@ -3,6 +3,7 @@ import type { DiagnosticOverlayData } from "@/components/shared/diagnostic-overl
 // Hand-authored demonstration data, never a real submission or an inference result.
 // Coordinates match /images/landing/example-worksheet.svg (620 × 430).
 export const EXAMPLE_WORKSHEET = "/images/landing/example-worksheet.svg";
+export const EXAMPLE_WORKSHEET_DIMENSIONS = { width: 620, height: 430 } as const;
 
 export const EXAMPLE_CRITERIA = [
   {

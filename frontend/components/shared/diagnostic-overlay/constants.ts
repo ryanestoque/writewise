@@ -33,6 +33,7 @@ export const OVERLAY_COLORS = {
 } as const;
 
 export const OVERLAY_WEIGHTS = {
+  minTargetSize: 44,
   strokeNormal: 2.25,
   strokeAttention: 3.0,
   strokeHover: 3.75,

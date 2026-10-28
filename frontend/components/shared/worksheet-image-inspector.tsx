@@ -44,6 +44,8 @@ export function useInspectorContext(): InspectorContextValue {
 export interface WorksheetImageInspectorProps {
   /** Signed URL or public URL of the worksheet photo */
   imageUrl?: string | null;
+  /** Known dimensions of a static image, avoiding an eager dimension probe. */
+  imageDimensions?: { width: number; height: number };
   /** Accessible image description */
   altText?: string;
   /** Whether the image is currently loading from storage */
@@ -76,6 +78,7 @@ export interface WorksheetImageInspectorProps {
 
 export function WorksheetImageInspector({
   imageUrl,
+  imageDimensions,
   altText = "Handwriting worksheet photo",
   isLoading = false,
   isError = false,
@@ -91,10 +94,11 @@ export function WorksheetImageInspector({
   aspectRatioClass,
   autoAspectRatio = true,
 }: WorksheetImageInspectorProps) {
-  const [naturalDimensions, setNaturalDimensions] = useState<{
+  const [loadedDimensions, setNaturalDimensions] = useState<{
     width: number;
     height: number;
   } | null>(null);
+  const naturalDimensions = imageDimensions ?? loadedDimensions;
   const [zoomScale, setZoomScale] = useState<number>(1);
   const [isLoupeActive, setIsLoupeActive] = useState<boolean>(false);
   const [isHighContrast, setIsHighContrast] = useState<boolean>(false);
@@ -135,7 +139,7 @@ export function WorksheetImageInspector({
 
   // Track natural image dimensions to dynamically eliminate letterbox/pillarbox empty space
   useEffect(() => {
-    if (!imageUrl) return;
+    if (!imageUrl || imageDimensions) return;
 
     let active = true;
     const img = new Image();
@@ -152,7 +156,7 @@ export function WorksheetImageInspector({
     return () => {
       active = false;
     };
-  }, [imageUrl]);
+  }, [imageUrl, imageDimensions]);
 
   const imgRatio = naturalDimensions
     ? naturalDimensions.width / naturalDimensions.height
@@ -817,6 +821,8 @@ export function WorksheetImageInspector({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imageUrl}
+                width={imageDimensions?.width}
+                height={imageDimensions?.height}
                 alt={altText}
                 loading="lazy"
                 decoding="async"

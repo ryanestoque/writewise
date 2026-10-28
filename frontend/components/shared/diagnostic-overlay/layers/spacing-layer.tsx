@@ -69,7 +69,7 @@ export const SpacingLayer = memo(function SpacingLayer({
 
         const isFocusable = isSpotlight || isAttention;
         const isActive = activeAnnotationId === id;
-        const minHit = Math.max(36, 36 * hitScale);
+        const minHit = OVERLAY_WEIGHTS.minTargetSize * hitScale;
         const hitW = Math.max(minHit, width + 8);
         const hitH = Math.max(minHit, tickHeight * 2 + 8);
         const badgeW = 70 * hitScale;
@@ -109,7 +109,7 @@ export const SpacingLayer = memo(function SpacingLayer({
               }
             }}
           >
-            {/* Generous touch hit area (scaled to maintain minimum 36px physical screen pixels on mobile) */}
+            {/* Scale SVG hit geometry to maintain a 44 CSS-pixel minimum. */}
             <rect
               x={x1 - (hitW - width) / 2}
               y={y - hitH / 2}
@@ -191,7 +191,6 @@ export const SpacingLayer = memo(function SpacingLayer({
                   height={badgeH}
                   rx={badgeH / 2}
                   fill={bracketColor}
-                  fillOpacity={isActive ? 0.95 : 0.85}
                   stroke={isActive ? "#ffffff" : "none"}
                   strokeWidth={1.5}
                   className="transition-transform group-hover:scale-110 motion-reduce:transform-none"

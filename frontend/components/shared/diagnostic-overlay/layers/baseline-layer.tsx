@@ -192,14 +192,14 @@ export const BaselineLayer = memo(function BaselineLayer({
               }
             }}
           >
-            {/* Generous touch hit area (scaled to maintain minimum 36px physical screen pixels on mobile) */}
+            {/* Scale SVG hit geometry to maintain a 44 CSS-pixel minimum. */}
             <line
               x1={x}
               y1={wordBottomY}
               x2={x + w}
               y2={wordBottomY}
               stroke="transparent"
-              strokeWidth={Math.max(36, 36 * hitScale)}
+              strokeWidth={OVERLAY_WEIGHTS.minTargetSize * hitScale}
               strokeLinecap="round"
               className="pointer-events-auto"
             />

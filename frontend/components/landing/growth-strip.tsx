@@ -3,19 +3,13 @@
 import { useId, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import styles from "@/app/landing.module.css";
 
-/* ------------------------------------------------------------------ */
-/* Synthetic practice data — illustrative only, never a real learner. */
-/* ------------------------------------------------------------------ */
-
 const GUIDE = { top: 34, mid: 74, base: 112 } as const;
 
 interface Word {
   text: string;
   x: number;
   width: number;
-  /** Baseline offset (negative = floats above the line). */
   dy: number;
-  /** Extra skew in degrees (positive = tips backward). */
   skew: number;
   scale: number;
 }
@@ -46,8 +40,8 @@ const SLIPS: Slip[] = [
     criterion: "Spacing",
     band: "developing",
     bandLabel: "Developing",
-    observation: "“kites” and “fly” touch, then a wide gap opens before “high.”",
-    next: "Leave one finger-width of space after every word before starting the next.",
+    observation: "“kites” and “fly” touch; “high” sits too far away.",
+    next: "Leave a finger-width between words.",
     description:
       "Week 1 spacing example of “kites fly high”: the first two words touch, then a wide gap separates “fly” and “high.”",
   },
@@ -62,7 +56,7 @@ const SLIPS: Slip[] = [
     criterion: "Spacing",
     band: "satisfactory",
     bandLabel: "Satisfactory",
-    observation: "Each word has its own space. The gap before “high” is still wider.",
+    observation: "Words are separated; the gap before “high” is wider.",
     next: "Keep the same finger-width gap after each word.",
     description:
       "Week 4 spacing example of “kites fly high”: the words are separated, but the gap before “high” is still wider.",
@@ -78,8 +72,8 @@ const SLIPS: Slip[] = [
     criterion: "Spacing",
     band: "excellent",
     bandLabel: "Excellent",
-    observation: "The gaps after “kites” and “fly” are even, so each word is easy to pick out.",
-    next: "Keep these even spaces across a full sentence on the next worksheet.",
+    observation: "Even gaps make each word easy to read.",
+    next: "Keep these spaces across a full sentence.",
     description: "Week 8 spacing example of “kites fly high”: equal gaps separate all three words.",
   },
 ];
@@ -100,8 +94,6 @@ function spacingGaps(words: Word[]) {
       gap.x2 - gap.x1 < 6 ? "touching" : even ? "even gap" : i === 0 ? "small gap" : "wide gap",
   }));
 }
-
-/* ------------------------------------------------------------------ */
 
 function Guides() {
   return (
@@ -169,7 +161,7 @@ function SlipDrawing({ slip }: { slip: Slip }) {
       <span className={styles.spacingLabels} aria-hidden="true">
         {spacingGaps(slip.words).map((gap) => (
           <span key={gap.after}>
-            <span className={styles.spacingAfter}>After {gap.after}</span>
+            <span className={styles.spacingAfter}>After &ldquo;{gap.after}&rdquo;</span>
             <span className={styles.spacingLabel}>{gap.label}</span>
           </span>
         ))}
@@ -177,8 +169,6 @@ function SlipDrawing({ slip }: { slip: Slip }) {
     </span>
   );
 }
-
-/* ------------------------------------------------------------------ */
 
 export function GrowthStrip() {
   const [active, setActive] = useState(0);
@@ -205,10 +195,7 @@ export function GrowthStrip() {
   };
 
   return (
-    <figure className={styles.strip}>
-      <p className={styles.stripDisclosure}>
-        Synthetic spacing example. Choose a week; this is not an expected eight-week result.
-      </p>
+    <div className={styles.growthCard}>
       <div
         className={styles.slips}
         role="tablist"
@@ -236,7 +223,10 @@ export function GrowthStrip() {
             >
               <span className={styles.slipHead}>
                 <span className={styles.slipWeek}>{s.label}</span>
-                <span className={styles.slipCriterion}>{s.criterion}</span>
+                <span className={styles.band} data-band={s.band}>
+                  <span className={styles.bandDot} aria-hidden="true" />
+                  {s.bandLabel}
+                </span>
               </span>
               <SlipDrawing slip={s} />
             </button>
@@ -245,15 +235,27 @@ export function GrowthStrip() {
       </div>
 
       <div className={styles.thread} aria-hidden="true">
-        <svg viewBox="0 0 600 64" preserveAspectRatio="none">
+        <svg viewBox="0 0 600 44" preserveAspectRatio="none">
           <path
             className={styles.threadPath}
-            d="M100,52 C170,52 220,46 270,38 C330,28 380,24 430,18 C460,14 480,12 500,10"
+            d="M100,36 C175,36 225,28 300,22 C375,16 425,10 500,8"
           />
         </svg>
-        <span className={styles.threadNode} style={{ left: "16.667%", top: "81%" }} />
-        <span className={styles.threadNode} style={{ left: "50%", top: "52%" }} />
-        <span className={styles.threadNode} style={{ left: "83.333%", top: "16%" }} />
+        <span
+          className={styles.threadNode}
+          data-active={active === 0}
+          style={{ left: "16.667%", top: "82%" }}
+        />
+        <span
+          className={styles.threadNode}
+          data-active={active === 1}
+          style={{ left: "50%", top: "50%" }}
+        />
+        <span
+          className={styles.threadNode}
+          data-active={active === 2}
+          style={{ left: "83.333%", top: "18%" }}
+        />
       </div>
 
       <div
@@ -264,15 +266,15 @@ export function GrowthStrip() {
         tabIndex={0}
       >
         <div key={slip.id} className={styles.feedbackInner}>
-          <p className={styles.feedbackTitle}>
-            <span>
-              {slip.label}: {slip.criterion}
+          <div className={styles.feedbackTitle}>
+            <span className={styles.feedbackWeekLabel}>
+              {slip.label} · {slip.criterion}
             </span>
             <span className={styles.band} data-band={slip.band}>
               <span className={styles.bandDot} aria-hidden="true" />
               {slip.bandLabel}
             </span>
-          </p>
+          </div>
           <div className={styles.mobileComparison}>
             {comparisonSlips.map((sample) => (
               <div
@@ -287,7 +289,7 @@ export function GrowthStrip() {
                       ? "Selected week"
                       : sample.id === "week-1"
                         ? "Starting point"
-                        : "Later example"}
+                        : "Later week"}
                   </span>
                 </p>
                 <SlipDrawing slip={sample} />
@@ -306,10 +308,6 @@ export function GrowthStrip() {
           </dl>
         </div>
       </div>
-
-      <figcaption className={styles.stripCaption}>
-        Illustrative handwriting and feedback. No real student data.
-      </figcaption>
-    </figure>
+    </div>
   );
 }
