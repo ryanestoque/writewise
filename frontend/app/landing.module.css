@@ -698,25 +698,6 @@
   box-shadow: 0 4px 20px rgb(20 80 73 / 0.05);
 }
 
-.stepTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.stepBadge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: var(--wash);
-  color: var(--teal-deep);
-  font-size: 0.75rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
 .stepArtWrap {
   height: 148px;
   display: flex;
@@ -941,11 +922,6 @@
   font-size: 1rem;
   font-weight: 600;
   color: var(--ink);
-}
-
-.bandSpectrumSub {
-  font-size: 0.875rem;
-  color: var(--ink-muted);
 }
 
 .bandSpectrumGrid {

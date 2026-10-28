@@ -73,23 +73,15 @@ export function CriteriaDetails() {
     <section id="criteria" className={styles.criteriaSection} aria-labelledby="criteria-heading">
       <div className={styles.sectionHeader}>
         <div>
-          <span className={styles.eyebrow}>What we measure</span>
           <h2 id="criteria-heading" className={styles.sectionTitle}>
             Five fundamentals of fluent cursive.
           </h2>
         </div>
-        <p className={styles.sectionLede}>
-          Every worksheet is evaluated across five penmanship criteria. Instead of red pass-or-fail
-          marks, each score maps to a supportive four-tier developmental spectrum.
-        </p>
       </div>
 
       <div className={styles.bandSpectrumCard} aria-label="Developmental score bands">
         <div className={styles.bandSpectrumHead}>
           <span className={styles.bandSpectrumTitle}>Developmental growth spectrum</span>
-          <span className={styles.bandSpectrumSub}>
-            Every score pairs its color band with a clear text label—never alarm red.
-          </span>
         </div>
         <ul className={styles.bandSpectrumGrid}>
           {bands.map((b) => (

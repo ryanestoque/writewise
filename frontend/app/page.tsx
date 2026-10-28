@@ -19,21 +19,18 @@ export const metadata: Metadata = {
 const steps = [
   {
     id: "upload",
-    stepNumber: "01",
     title: "Snap the worksheet",
     body: "Photograph the completed activity page with any phone or tablet. Built-in photo checks catch blur or glare right away so you can retake on the spot.",
     Art: UploadArt,
   },
   {
     id: "assess",
-    stepNumber: "02",
     title: "Review five-part coaching",
     body: "Inspect handwriting guides across five criteria, paired with plain-language observations and a clear next step for practice.",
     Art: AssessArt,
   },
   {
     id: "progress",
-    stepNumber: "03",
     title: "Follow growth over time",
     body: "Compare results week to week across your class roster and share steady progress updates with parents.",
     Art: ProgressArt,
@@ -102,7 +99,6 @@ export default async function Home() {
         <section className={styles.hero} aria-labelledby="hero-heading">
           <div className={styles.heroGrid}>
             <div className={styles.heroCopy}>
-              <span className={styles.eyebrow}>Paper-first cursive assessment</span>
               <h1 id="hero-heading" className={styles.heroTitle} tabIndex={-1}>
                 <span className={styles.heroLine}>Practice on paper.</span>
                 <span className={styles.heroLine}>
@@ -134,7 +130,7 @@ export default async function Home() {
                 </li>
                 <li>
                   <strong>4 growth bands</strong>
-                  <span>Supportive feedback with zero red ink</span>
+                  <span>Supportive, step-by-step coaching</span>
                 </li>
                 <li>
                   <strong>Paper-only for kids</strong>
@@ -152,7 +148,6 @@ export default async function Home() {
           <div className={styles.workflowInner}>
             <div className={styles.sectionHeader}>
               <div>
-                <span className={styles.eyebrow}>How it works</span>
                 <h2 id="workflow-heading" className={styles.sectionTitle}>
                   From paper to progress in three steps.
                 </h2>
@@ -164,11 +159,8 @@ export default async function Home() {
             </div>
 
             <ol className={styles.steps}>
-              {steps.map(({ id, stepNumber, title, body, Art }) => (
+              {steps.map(({ id, title, body, Art }) => (
                 <li key={id} className={styles.stepCard}>
-                  <div className={styles.stepTop}>
-                    <span className={styles.stepBadge}>Step {stepNumber}</span>
-                  </div>
                   <div className={styles.stepArtWrap}>
                     <Art />
                   </div>
@@ -187,7 +179,6 @@ export default async function Home() {
         <section id="progress" className={styles.progressSection} aria-labelledby="progress-heading">
           <div className={styles.sectionHeader}>
             <div>
-              <span className={styles.eyebrow}>Longitudinal tracking</span>
               <h2 id="progress-heading" className={styles.sectionTitle}>
                 Watch rhythm and spacing steady week by week.
               </h2>
@@ -205,7 +196,6 @@ export default async function Home() {
         <section id="for-you" className={styles.close} aria-labelledby="close-heading">
           <div className={styles.closeInner}>
             <div className={styles.closeHeader}>
-              <span className={styles.closeEyebrow}>Built for classroom &amp; home</span>
               <h2 id="close-heading" className={styles.closeTitle}>
                 Start with one worksheet.
               </h2>
