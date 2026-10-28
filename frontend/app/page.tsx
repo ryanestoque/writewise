@@ -104,7 +104,7 @@ export default async function Home() {
               </h1>
               <p className={styles.heroLede}>
                 Snap a photo of any cursive worksheet for stroke-by-stroke feedback and progress
-                tracking—while keeping kids on paper.
+                tracking, while keeping kids on paper.
               </p>
 
               <div className={styles.heroActions}>

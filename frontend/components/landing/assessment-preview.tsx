@@ -41,7 +41,7 @@ export function AssessmentPreview() {
       aria-label="Interactive worksheet assessment studio"
     >
       <div className={styles.studioHeader}>
-        <h2 className={styles.studioTitle}>Cursive practice: &ldquo;kites fly high&rdquo;</h2>
+        <h2 className={styles.studioTitle}>Target text: &ldquo;kites fly high&rdquo;</h2>
         <span className={styles.band} data-band="satisfactory">
           <span className={styles.bandDot} aria-hidden="true" />
           74% Overall · Satisfactory
