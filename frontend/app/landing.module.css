@@ -463,6 +463,25 @@
   position: relative;
 }
 
+.studioViewerTopRow {
+  display: contents;
+}
+
+.studioViewerMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 0 4px;
+}
+
+.studioViewerCaption {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--ink-muted);
+}
+
 .viewerSwitchPill {
   position: absolute;
   top: 10px;
@@ -859,10 +878,10 @@
 
 .ink {
   font-family: var(--font-cursive), cursive;
-  font-size: 66px;
+  font-size: 96px;
   fill: var(--pencil);
   stroke: var(--pencil);
-  stroke-width: 0.6;
+  stroke-width: 0.5;
   paint-order: stroke fill;
 }
 
@@ -1635,16 +1654,25 @@
     gap: 12px;
   }
 
+  .studioViewerTopRow {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 8px;
+  }
+
   .viewerSwitchPill {
-    top: 8px;
-    right: 8px;
-    height: 26px;
-    padding: 0 4px 0 8px;
-    gap: 6px;
+    position: static;
+    top: auto;
+    right: auto;
+    z-index: auto;
+    height: 28px;
+    padding: 0 8px 0 10px;
+    gap: 8px;
+    background: #fff;
   }
 
   .viewerSwitchLabel {
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
   }
 
   .studioCriteriaGrid {

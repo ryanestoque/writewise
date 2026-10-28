@@ -3,7 +3,7 @@
 import { useId, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import styles from "@/app/landing.module.css";
 
-const GUIDE = { top: 34, mid: 74, base: 112 } as const;
+const GUIDE = { top: 35, mid: 64, base: 94 } as const;
 
 interface Word {
   text: string;
@@ -33,9 +33,9 @@ const SLIPS: Slip[] = [
     id: "week-1",
     label: "Week 1",
     words: [
-      { text: "kites", x: 18, width: 114, dy: 0, skew: 0, scale: 1 },
-      { text: "fly", x: 134, width: 60, dy: 0, skew: 0, scale: 1 },
-      { text: "high", x: 238, width: 94, dy: 0, skew: 0, scale: 1 },
+      { text: "kites", x: 16, width: 110, dy: 0, skew: 0, scale: 1 },
+      { text: "fly", x: 130, width: 74, dy: 0, skew: 0, scale: 1 },
+      { text: "high", x: 244, width: 104, dy: 0, skew: 0, scale: 1 },
     ],
     criterion: "Spacing",
     band: "developing",
@@ -49,9 +49,9 @@ const SLIPS: Slip[] = [
     id: "week-4",
     label: "Week 4",
     words: [
-      { text: "kites", x: 18, width: 114, dy: 0, skew: 0, scale: 1 },
-      { text: "fly", x: 148, width: 60, dy: 0, skew: 0, scale: 1 },
-      { text: "high", x: 236, width: 94, dy: 0, skew: 0, scale: 1 },
+      { text: "kites", x: 16, width: 110, dy: 0, skew: 0, scale: 1 },
+      { text: "fly", x: 142, width: 74, dy: 0, skew: 0, scale: 1 },
+      { text: "high", x: 244, width: 104, dy: 0, skew: 0, scale: 1 },
     ],
     criterion: "Spacing",
     band: "satisfactory",
@@ -65,9 +65,9 @@ const SLIPS: Slip[] = [
     id: "week-8",
     label: "Week 8",
     words: [
-      { text: "kites", x: 18, width: 114, dy: 0, skew: 0, scale: 1 },
-      { text: "fly", x: 152, width: 60, dy: 0, skew: 0, scale: 1 },
-      { text: "high", x: 232, width: 94, dy: 0, skew: 0, scale: 1 },
+      { text: "kites", x: 16, width: 110, dy: 0, skew: 0, scale: 1 },
+      { text: "fly", x: 148, width: 74, dy: 0, skew: 0, scale: 1 },
+      { text: "high", x: 244, width: 104, dy: 0, skew: 0, scale: 1 },
     ],
     criterion: "Spacing",
     band: "excellent",

@@ -104,7 +104,7 @@ export const EXAMPLE_OVERLAY: DiagnosticOverlayData = {
       {
         line_index: 0,
         word_index: 1,
-        bbox: [212, 66, 90, 110],
+        bbox: [212, 66, 90, 90],
         measured_y: 156,
         deviation_ratio: 0.0,
         severity: "normal",
@@ -131,7 +131,7 @@ export const EXAMPLE_OVERLAY: DiagnosticOverlayData = {
       {
         line_index: 1,
         word_index: 1,
-        bbox: [235, 226, 90, 110],
+        bbox: [235, 226, 90, 90],
         measured_y: 316,
         deviation_ratio: 0.0,
         severity: "normal",
@@ -161,7 +161,7 @@ export const EXAMPLE_OVERLAY: DiagnosticOverlayData = {
       {
         line_index: 0,
         word_index: 1,
-        bbox: [212, 66, 90, 110],
+        bbox: [212, 66, 90, 90],
         size_ratio: 1.0,
         severity: "normal",
         note: "Loop height stays within target ruling.",
@@ -185,7 +185,7 @@ export const EXAMPLE_OVERLAY: DiagnosticOverlayData = {
       {
         line_index: 1,
         word_index: 1,
-        bbox: [235, 226, 90, 110],
+        bbox: [235, 226, 90, 90],
         size_ratio: 1.0,
         severity: "normal",
         note: "Even letter proportion matching the reference model.",
@@ -214,7 +214,7 @@ export const EXAMPLE_OVERLAY: DiagnosticOverlayData = {
       {
         line_index: 0,
         word_index: 1,
-        bbox: [212, 66, 90, 110],
+        bbox: [212, 66, 90, 90],
         angle_deg: 12,
         vector: [250, 156, 269, 66],
         severity: "normal",
@@ -241,7 +241,7 @@ export const EXAMPLE_OVERLAY: DiagnosticOverlayData = {
       {
         line_index: 1,
         word_index: 1,
-        bbox: [235, 226, 90, 110],
+        bbox: [235, 226, 90, 90],
         angle_deg: 13,
         vector: [275, 316, 295, 226],
         severity: "normal",
@@ -273,7 +273,7 @@ export const EXAMPLE_OVERLAY: DiagnosticOverlayData = {
       {
         line_index: 0,
         word_index: 1,
-        bbox: [212, 66, 90, 110],
+        bbox: [212, 66, 90, 90],
         score: 76,
         band: "Satisfactory",
         severity: "normal",
@@ -303,7 +303,7 @@ export const EXAMPLE_OVERLAY: DiagnosticOverlayData = {
       {
         line_index: 1,
         word_index: 1,
-        bbox: [235, 226, 90, 110],
+        bbox: [235, 226, 90, 90],
         score: 82,
         band: "Excellent",
         severity: "normal",

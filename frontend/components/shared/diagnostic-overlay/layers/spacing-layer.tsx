@@ -53,20 +53,6 @@ export const SpacingLayer = memo(function SpacingLayer({
         const tickHeight = (isSpotlight ? 10 : 8) * hitScale;
         const id = `spacing-${ann.line_index}-${ann.gap_index}`;
         const title = isAttention ? "Spacing Needs Attention" : "Consistent Word Spacing";
-        const hoverPayload = {
-          id,
-          criterion: "spacing" as const,
-          title,
-          note,
-          severity,
-          x: x1 + width / 2,
-          y: y - 10,
-        };
-
-        const toggleAnnotation = () => {
-          onHoverAnnotation((prev) => (prev?.id === id ? null : hoverPayload));
-        };
-
         const isFocusable = isSpotlight || isAttention;
         const isActive = activeAnnotationId === id;
         const minHit = OVERLAY_WEIGHTS.minTargetSize * hitScale;
@@ -78,6 +64,42 @@ export const SpacingLayer = memo(function SpacingLayer({
         const spacingLabel = isAttention
           ? (gap_ratio < 1.2 ? "Tight gap" : "Wide gap")
           : "Good space";
+
+        // Check if an adjacent visible badge on the same line would collide horizontally
+        const hasCollision = annotations.some((other, oIdx) => {
+          if (oIdx === idx || other.line_index !== ann.line_index) return false;
+          const otherIsAttention = other.severity === "needs_attention";
+          const otherIsActive = activeAnnotationId === `spacing-${other.line_index}-${other.gap_index}`;
+          const otherIsVisible = isSpotlight && (otherIsAttention || otherIsActive);
+          const thisIsVisible = isSpotlight && (isAttention || isActive);
+          if (!otherIsVisible || !thisIsVisible) return false;
+
+          const otherWidth = Math.max(8, other.x2 - other.x1);
+          const otherCenterX = other.x1 + otherWidth / 2;
+          const thisCenterX = x1 + width / 2;
+          return Math.abs(otherCenterX - thisCenterX) < (badgeW + 6 * hitScale);
+        });
+
+        // When badges would collide horizontally on the same line, stagger them:
+        // Even gaps sit above the bracket, odd gaps sit below the bracket.
+        const isStaggeredBelow = hasCollision && (ann.gap_index % 2 === 1);
+        const badgeCenterY = isStaggeredBelow
+          ? y + 18 * hitScale
+          : y - 14 * hitScale;
+
+        const hoverPayload = {
+          id,
+          criterion: "spacing" as const,
+          title,
+          note,
+          severity,
+          x: x1 + width / 2,
+          y: isStaggeredBelow ? y + 18 * hitScale : y - 10,
+        };
+
+        const toggleAnnotation = () => {
+          onHoverAnnotation((prev) => (prev?.id === id ? null : hoverPayload));
+        };
 
         return (
           <g
@@ -182,7 +204,7 @@ export const SpacingLayer = memo(function SpacingLayer({
 
             {/* In spotlight mode, render ratio pill */}
             {isSpotlight && (isAttention || isActive) && (
-              <g transform={`translate(${x1 + width / 2}, ${y - 12 * hitScale})`}>
+              <g transform={`translate(${x1 + width / 2}, ${badgeCenterY})`}>
                 <title>{`${spacingLabel} (${gap_ratio.toFixed(2)}× midline height)`}</title>
                 <rect
                   x={-badgeW / 2}
