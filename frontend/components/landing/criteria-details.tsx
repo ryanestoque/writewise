@@ -77,6 +77,10 @@ export function CriteriaDetails() {
             Five fundamentals of fluent cursive.
           </h2>
         </div>
+        <p className={styles.sectionLede}>
+          Every worksheet is evaluated across five penmanship criteria. Instead of red pass-or-fail
+          marks, each score maps to a supportive four-tier developmental spectrum.
+        </p>
       </div>
 
       <div className={styles.bandSpectrumCard} aria-label="Developmental score bands">
