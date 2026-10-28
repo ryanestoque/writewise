@@ -74,7 +74,7 @@ export function AssessmentPreview() {
           keyboardScope="focused"
           showImageTools={false}
           autoAspectRatio={false}
-          aspectRatioClass="aspect-[62/43] min-h-[220px] sm:min-h-[260px]"
+          aspectRatioClass="aspect-[62/43] min-h-[240px] sm:min-h-[260px]"
         >
           <DiagnosticOverlay
             overlay={EXAMPLE_OVERLAY}

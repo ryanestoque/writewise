@@ -118,9 +118,11 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
       targetViewportY > viewportH + 30;
 
     // Fluid card width: dynamically scale down for narrow containers
-    const isNarrowOrShort = viewportW < 640 || viewportH < 320;
-    const baseCardWidth = isNarrowOrShort ? 220 : 256;
-    cardWidth = Math.min(baseCardWidth, Math.max(180, viewportW - 20));
+    const isNarrowOrShort = viewportW < 640 || viewportH < 340;
+    const baseCardWidth = isNarrowOrShort
+      ? Math.min(280, Math.max(220, viewportW - 24))
+      : 280;
+    cardWidth = Math.min(baseCardWidth, Math.max(200, viewportW - 16));
     const cardHalfWidth = cardWidth / 2;
     const margin = isNarrowOrShort ? 8 : 12;
 
@@ -146,22 +148,39 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
     const maxCaretOffset = Math.max(0, cardHalfWidth - 22);
     caretOffset = Math.max(-maxCaretOffset, Math.min(maxCaretOffset, deltaViewportX));
 
-    // Vertical placement: place below if pin is in upper part of viewport, place above if in lower part
-    const spaceAbove = targetViewportY;
-    const spaceBelow = viewportH - targetViewportY;
+    // Vertical placement: evaluate available clearance above and below target point
+    const vGap = isNarrowOrShort ? 8 : 10;
+    const vMargin = isNarrowOrShort ? 6 : 8;
+    const estimatedCardHeight = isNarrowOrShort ? 104 : 116;
 
-    if (targetViewportY < viewportH * 0.45) {
+    const spaceAbove = targetViewportY - vMargin;
+    const spaceBelow = viewportH - targetViewportY - vMargin;
+
+    if (spaceBelow >= estimatedCardHeight + vGap && spaceAbove < estimatedCardHeight + vGap) {
       isNearTop = true;
-    } else if (targetViewportY > viewportH * 0.55) {
+    } else if (spaceAbove >= estimatedCardHeight + vGap && spaceBelow < estimatedCardHeight + vGap) {
       isNearTop = false;
     } else {
       isNearTop = spaceBelow >= spaceAbove;
     }
 
-    const vGap = isNarrowOrShort ? 8 : 10;
-    const clampedLocalY = isNearTop
-      ? pixelY + vGap / effectiveZoom
-      : pixelY - vGap / effectiveZoom;
+    let clampedViewportY: number;
+    if (isNearTop) {
+      // Tooltip is placed below target stroke.
+      // Top of tooltip starts at targetViewportY + vGap, clamped within viewport bounds.
+      const desiredTop = targetViewportY + vGap;
+      const maxTop = Math.max(vMargin, viewportH - estimatedCardHeight - vMargin);
+      clampedViewportY = Math.min(desiredTop, maxTop);
+    } else {
+      // Tooltip is placed above target stroke.
+      // Bottom of tooltip is at targetViewportY - vGap, clamped within viewport bounds.
+      const desiredBottom = targetViewportY - vGap;
+      const minBottom = Math.min(viewportH - vMargin, estimatedCardHeight + vMargin);
+      clampedViewportY = Math.max(desiredBottom, minBottom);
+    }
+
+    const clampedLocalY =
+      containerH / 2 + (clampedViewportY - viewportH / 2 - panOffset.y) / effectiveZoom;
 
     leftPos = `${clampedLocalX}px`;
     topPos = `${clampedLocalY}px`;
@@ -170,7 +189,7 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
     const leftPct = Math.max(15, Math.min(85, (x / imageWidth) * 100));
     const topPct = Math.max(15, Math.min(85, (y / imageHeight) * 100));
     isNearTop = topPct < 45;
-    cardWidth = 220;
+    cardWidth = 260;
     leftPos = `${leftPct}%`;
     topPos = `${topPct}%`;
     caretOffset = 0;
@@ -275,7 +294,7 @@ function TooltipCard({
       <div
         style={{ maxWidth: `${cardWidth}px`, width: `${cardWidth}px` }}
         className={cn(
-          "p-2 sm:p-2.5 rounded-xl shadow-warm border backdrop-blur-md transition-colors relative",
+          "p-2.5 sm:p-3 rounded-xl shadow-warm border backdrop-blur-md transition-colors relative",
           isPinned ? "pointer-events-auto select-text" : "pointer-events-none select-none",
           "bg-popover/95 text-popover-foreground",
           isAttention
@@ -283,20 +302,20 @@ function TooltipCard({
             : "border-brand-600/40 dark:border-brand-500/50 ring-2 ring-brand-600/10"
         )}
       >
-        <div className="flex items-center gap-1 sm:gap-1.5 mb-0.5 sm:mb-1 min-w-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-1.5 min-w-0">
           {isAttention ? (
             <AlertCircle
-              className="size-3 sm:size-3.5 shrink-0 text-destructive dark:text-destructive"
+              className="size-3.5 sm:size-4 shrink-0 text-destructive dark:text-destructive"
               aria-hidden="true"
             />
           ) : (
             <CheckCircle2
-              className="size-3 sm:size-3.5 shrink-0 text-brand-600 dark:text-brand-400"
+              className="size-3.5 sm:size-4 shrink-0 text-brand-600 dark:text-brand-400"
               aria-hidden="true"
             />
           )}
           <span
-            className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-muted-foreground min-w-0 flex-1 truncate"
+            className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground min-w-0 truncate"
             title={CRITERION_FULL_LABELS[criterion] ?? criterion}
           >
             {CRITERION_LABELS[criterion] ?? criterion}
@@ -304,7 +323,7 @@ function TooltipCard({
           <Badge
             variant={isAttention ? "outline" : "secondary"}
             className={cn(
-              "ml-auto text-[10px] sm:text-[11px] px-1 sm:px-1.5 py-0 h-4 sm:h-4.5 font-medium border shrink-0",
+              "ml-auto text-[10.5px] sm:text-xs px-1.5 py-0.5 h-auto font-medium border shrink-0",
               isAttention
                 ? "border-destructive/30 text-destructive dark:text-destructive bg-destructive/10 dark:bg-destructive/20"
                 : "border-brand-300 dark:border-brand-800 text-brand-800 dark:text-brand-300 bg-brand-50/90 dark:bg-brand-950/60"
@@ -319,31 +338,31 @@ function TooltipCard({
                 e.stopPropagation();
                 onDismiss();
               }}
-              className="relative size-6 sm:size-6 rounded-md p-0 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer pointer-events-auto touch-manipulation shrink-0 ml-1 hover:bg-muted/80 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 sm:after:hidden after:content-['']"
+              className="relative !size-6 !min-h-0 !min-w-0 rounded-md p-0 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer pointer-events-auto touch-manipulation shrink-0 ml-0.5 hover:bg-muted/80 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
               aria-label="Dismiss pinned annotation details"
               title="Close annotation details"
             >
-              <X className="size-3 sm:size-3.5" aria-hidden="true" />
+              <X className="size-3.5" aria-hidden="true" />
             </button>
           )}
         </div>
 
-        <p className="text-[11.5px] sm:text-xs font-semibold leading-snug break-words line-clamp-1 sm:line-clamp-2">
+        <p className="text-xs sm:text-[13px] font-semibold leading-snug break-words line-clamp-2">
           {title}
         </p>
-        <p className="text-[10.5px] sm:text-xs text-muted-foreground leading-snug sm:leading-relaxed mt-0.5 sm:mt-1 break-words line-clamp-2 sm:line-clamp-none">
+        <p className="text-[11px] sm:text-xs text-muted-foreground leading-normal sm:leading-relaxed mt-0.5 sm:mt-1 break-words line-clamp-3 sm:line-clamp-none">
           {note}
         </p>
 
         {criterion === "letter_formation" && isAttention && (
-          <p className="text-[9.5px] sm:text-[10.5px] font-medium text-destructive dark:text-rose-400 mt-1 sm:mt-1.5 flex items-center gap-1.5">
+          <p className="text-[10px] sm:text-[11px] font-medium text-destructive dark:text-rose-400 mt-1 sm:mt-1.5 flex items-center gap-1.5">
             <span className="inline-block size-1.5 rounded-full bg-destructive animate-pulse shrink-0" />
             <span>Highlighted zones show stroke irregularities flagged by the CNN.</span>
           </p>
         )}
 
         {criterion === "spacing" && showMeasurementDetails && (
-          <p className="text-[9.5px] sm:text-[10.5px] font-medium text-muted-foreground mt-1 sm:mt-1.5 flex items-center gap-1.5">
+          <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground mt-1 sm:mt-1.5 flex items-center gap-1.5">
             <span className="inline-block size-1.5 rounded-full bg-violet-500 shrink-0" />
             <span>Measured relative to midline ruling (x-height). Normal range: 1.2× – 3.0×.</span>
           </p>

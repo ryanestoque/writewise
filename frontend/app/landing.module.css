@@ -1688,7 +1688,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .studioCard [data-inspector-container] button {
+  .studioCard [data-inspector-container] button:not(#diagnostic-annotation-tooltip button) {
     min-height: 44px;
     min-width: 44px;
   }
