@@ -72,7 +72,7 @@ export function AssessmentPreview() {
           keyboardScope="focused"
           showImageTools={false}
           autoAspectRatio={false}
-          aspectRatioClass="aspect-[62/43] min-h-[210px]"
+          aspectRatioClass="aspect-[62/43] min-h-[220px] sm:min-h-[260px]"
         >
           <DiagnosticOverlay
             overlay={EXAMPLE_OVERLAY}
@@ -140,16 +140,31 @@ export function AssessmentPreview() {
 
         <div className={styles.studioCoaching} aria-live="polite" aria-atomic="true">
           <div className={styles.studioCoachingHead}>
-            <span className={styles.studioCoachingTitle}>{focused.name} feedback</span>
-            <span className={styles.band} data-band={focusedBandKey}>
+            <span className={styles.studioCoachingTitle}>
+              {annotation ? `${annotation.title} details` : `${focused.name} feedback`}
+            </span>
+            <span
+              className={styles.band}
+              data-band={
+                annotation
+                  ? annotation.severity === "needs_attention"
+                    ? "needs"
+                    : "excellent"
+                  : focusedBandKey
+              }
+            >
               <span className={styles.bandDot} aria-hidden="true" />
-              {focused.score}% · {focusedBand.band}
+              {annotation
+                ? annotation.severity === "needs_attention"
+                  ? "Needs Attention"
+                  : "Consistent"
+                : `${focused.score}% · ${focusedBand.band}`}
             </span>
           </div>
           <dl className={styles.studioCoachingGrid}>
             <div>
-              <dt>What we see</dt>
-              <dd>{focused.observation}</dd>
+              <dt>{annotation ? "Selected stroke observation" : "What we see"}</dt>
+              <dd>{annotation ? annotation.note : focused.observation}</dd>
             </div>
             <div>
               <dt>Practice next</dt>

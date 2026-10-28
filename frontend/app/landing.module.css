@@ -27,11 +27,13 @@
   --gutter: clamp(20px, 5vw, 64px);
   --max: 1280px;
   --section: clamp(56px, 7vw, 96px);
+  --header-height: 72px;
   --anchor-offset: 88px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
   position: relative;
   min-height: 100vh;
+  padding-top: var(--header-height);
   background: var(--canvas);
   color: var(--ink);
   font-family: var(--font-sans), system-ui, sans-serif;
@@ -84,18 +86,21 @@
 /* ------------------------------ Header ------------------------------ */
 
 .header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 40;
-  background: rgb(247 248 247 / 0.92);
-  backdrop-filter: blur(10px);
+  height: var(--header-height);
+  background: var(--paper);
   border-bottom: 1px solid var(--rule);
 }
 
 .headerInner {
   max-width: var(--max);
+  height: 100%;
   margin: 0 auto;
-  padding: 12px var(--gutter);
+  padding: 0 var(--gutter);
   display: flex;
   align-items: center;
   gap: 32px;
@@ -357,9 +362,10 @@
   font-family: var(--font-heading), sans-serif;
   font-weight: 600;
   font-size: clamp(2.35rem, 4.6vw, 4.1rem);
-  line-height: 1.05;
+  line-height: 1.08;
   letter-spacing: -0.035em;
   color: var(--ink);
+  text-wrap: balance;
 }
 
 .heroLine {
@@ -1515,19 +1521,16 @@
 
 @media (max-width: 1023px) {
   .landing {
-    --anchor-offset: 136px;
+    --anchor-offset: 72px;
   }
 
   .headerInner {
-    flex-wrap: wrap;
-    row-gap: 8px;
+    flex-wrap: nowrap;
+    gap: 16px;
   }
 
   .nav {
-    order: 3;
-    flex-basis: 100%;
-    justify-content: flex-start;
-    gap: 24px;
+    gap: 20px;
     margin-left: 0;
     font-size: 0.875rem;
   }
@@ -1566,18 +1569,21 @@
 }
 
 @media (max-width: 767px) {
+  .landing {
+    --header-height: 60px;
+    --anchor-offset: 64px;
+  }
+
   .headerInner {
     gap: 12px;
   }
 
   .headerActions {
-    gap: 12px;
+    gap: 10px;
   }
 
   .nav {
-    justify-content: space-between;
-    gap: 12px;
-    font-size: 0.8125rem;
+    display: none;
   }
 
   .ctaSmall {
@@ -1616,6 +1622,18 @@
   .heroHighlights {
     grid-template-columns: minmax(0, 1fr);
     gap: 12px;
+  }
+
+  .viewerSwitchPill {
+    top: 8px;
+    right: 8px;
+    height: 26px;
+    padding: 0 4px 0 8px;
+    gap: 6px;
+  }
+
+  .viewerSwitchLabel {
+    font-size: 0.6875rem;
   }
 
   .studioCriteriaGrid {

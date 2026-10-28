@@ -100,10 +100,7 @@ export default async function Home() {
           <div className={styles.heroGrid}>
             <div className={styles.heroCopy}>
               <h1 id="hero-heading" className={styles.heroTitle} tabIndex={-1}>
-                <span className={styles.heroLine}>Practice on paper.</span>
-                <span className={styles.heroLine}>
-                  Growth you can <span className={styles.heroCursive}>see.</span>
-                </span>
+                Classroom to home, stroke by stroke.
               </h1>
               <p className={styles.heroLede}>
                 Photograph completed cursive worksheets to get clear, criterion-by-criterion
