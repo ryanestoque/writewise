@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +33,10 @@ import {
 type UserRole = "teacher" | "parent";
 
 function SignUpForm() {
-  const [role, setRole] = useState<UserRole>("teacher");
+  const searchParams = useSearchParams();
+  const [role, setRole] = useState<UserRole>(() =>
+    searchParams.get("role") === "parent" ? "parent" : "teacher"
+  );
   const [fullName, setFullName] = useState("");
   const [schoolName, setSchoolName] = useState("");
   const [email, setEmail] = useState("");

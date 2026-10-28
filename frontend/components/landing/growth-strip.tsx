@@ -1,0 +1,315 @@
+"use client";
+
+import { useId, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import styles from "@/app/landing.module.css";
+
+/* ------------------------------------------------------------------ */
+/* Synthetic practice data — illustrative only, never a real learner. */
+/* ------------------------------------------------------------------ */
+
+const GUIDE = { top: 34, mid: 74, base: 112 } as const;
+
+interface Word {
+  text: string;
+  x: number;
+  width: number;
+  /** Baseline offset (negative = floats above the line). */
+  dy: number;
+  /** Extra skew in degrees (positive = tips backward). */
+  skew: number;
+  scale: number;
+}
+
+type BandKey = "developing" | "satisfactory" | "excellent";
+
+interface Slip {
+  id: string;
+  label: string;
+  words: Word[];
+  criterion: string;
+  band: BandKey;
+  bandLabel: string;
+  observation: string;
+  next: string;
+  description: string;
+}
+
+const SLIPS: Slip[] = [
+  {
+    id: "week-1",
+    label: "Week 1",
+    words: [
+      { text: "kites", x: 18, width: 114, dy: 0, skew: 0, scale: 1 },
+      { text: "fly", x: 134, width: 60, dy: 0, skew: 0, scale: 1 },
+      { text: "high", x: 238, width: 94, dy: 0, skew: 0, scale: 1 },
+    ],
+    criterion: "Spacing",
+    band: "developing",
+    bandLabel: "Developing",
+    observation: "“kites” and “fly” touch, then a wide gap opens before “high.”",
+    next: "Leave one finger-width of space after every word before starting the next.",
+    description:
+      "Week 1 spacing example of “kites fly high”: the first two words touch, then a wide gap separates “fly” and “high.”",
+  },
+  {
+    id: "week-4",
+    label: "Week 4",
+    words: [
+      { text: "kites", x: 18, width: 114, dy: 0, skew: 0, scale: 1 },
+      { text: "fly", x: 148, width: 60, dy: 0, skew: 0, scale: 1 },
+      { text: "high", x: 236, width: 94, dy: 0, skew: 0, scale: 1 },
+    ],
+    criterion: "Spacing",
+    band: "satisfactory",
+    bandLabel: "Satisfactory",
+    observation: "Each word has its own space. The gap before “high” is still wider.",
+    next: "Keep the same finger-width gap after each word.",
+    description:
+      "Week 4 spacing example of “kites fly high”: the words are separated, but the gap before “high” is still wider.",
+  },
+  {
+    id: "week-8",
+    label: "Week 8",
+    words: [
+      { text: "kites", x: 18, width: 114, dy: 0, skew: 0, scale: 1 },
+      { text: "fly", x: 152, width: 60, dy: 0, skew: 0, scale: 1 },
+      { text: "high", x: 232, width: 94, dy: 0, skew: 0, scale: 1 },
+    ],
+    criterion: "Spacing",
+    band: "excellent",
+    bandLabel: "Excellent",
+    observation: "The gaps after “kites” and “fly” are even, so each word is easy to pick out.",
+    next: "Keep these even spaces across a full sentence on the next worksheet.",
+    description: "Week 8 spacing example of “kites fly high”: equal gaps separate all three words.",
+  },
+];
+
+const end = (w: Word) => w.x + w.width * w.scale;
+
+function spacingGaps(words: Word[]) {
+  const [a, b, c] = words;
+  const gaps = [
+    { after: a.text, x1: end(a), x2: b.x },
+    { after: b.text, x1: end(b), x2: c.x },
+  ];
+  const even = Math.abs(gaps[0].x2 - gaps[0].x1 - (gaps[1].x2 - gaps[1].x1)) < 2;
+
+  return gaps.map((gap, i) => ({
+    ...gap,
+    label:
+      gap.x2 - gap.x1 < 6 ? "touching" : even ? "even gap" : i === 0 ? "small gap" : "wide gap",
+  }));
+}
+
+/* ------------------------------------------------------------------ */
+
+function Guides() {
+  return (
+    <g aria-hidden="true">
+      <line className={styles.guideTop} x1="0" x2="360" y1={GUIDE.top} y2={GUIDE.top} />
+      <line className={styles.guideMid} x1="0" x2="360" y1={GUIDE.mid} y2={GUIDE.mid} />
+      <line className={styles.guideBase} x1="0" x2="360" y1={GUIDE.base} y2={GUIDE.base} />
+    </g>
+  );
+}
+
+function Handwriting({ words }: { words: Word[] }) {
+  return (
+    <g className={styles.ink}>
+      {words.map((w) => (
+        <text
+          key={w.text}
+          transform={`translate(${w.x} ${GUIDE.base + w.dy}) skewX(${w.skew}) scale(${w.scale})`}
+          textLength={w.width}
+          lengthAdjust="spacingAndGlyphs"
+        >
+          {w.text}
+        </text>
+      ))}
+    </g>
+  );
+}
+
+function SpacingNotes({ words }: { words: Word[] }) {
+  const gaps = spacingGaps(words);
+  const y = GUIDE.base + 16;
+  return (
+    <g className={styles.noteLayer}>
+      {gaps.map((gap) => {
+        const mid = (gap.x1 + gap.x2) / 2;
+        return (
+          <path
+            key={gap.after}
+            className={gap.label === "even gap" ? styles.markGood : styles.markWarm}
+            d={
+              gap.label === "touching"
+                ? `M${mid - 7},${y - 6} l5,6 l-5,6 M${mid + 7},${y - 6} l-5,6 l5,6`
+                : `M${gap.x1 + 2},${y - 5} v5 H${gap.x2 - 2} v-5`
+            }
+          />
+        );
+      })}
+    </g>
+  );
+}
+
+function SlipDrawing({ slip }: { slip: Slip }) {
+  return (
+    <span className={styles.slipDrawing} data-band={slip.band}>
+      <svg
+        className={styles.slipSvg}
+        viewBox="0 0 360 140"
+        role="img"
+        aria-label={slip.description}
+      >
+        <Guides />
+        <Handwriting words={slip.words} />
+        <SpacingNotes words={slip.words} />
+      </svg>
+      <span className={styles.spacingLabels} aria-hidden="true">
+        {spacingGaps(slip.words).map((gap) => (
+          <span key={gap.after}>
+            <span className={styles.spacingAfter}>After {gap.after}</span>
+            <span className={styles.spacingLabel}>{gap.label}</span>
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
+export function GrowthStrip() {
+  const [active, setActive] = useState(0);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const baseId = useId();
+  const slip = SLIPS[active];
+  const comparisonSlips = [SLIPS[0], active === 0 ? SLIPS[2] : slip];
+
+  const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    const keys: Record<string, number> = {
+      ArrowRight: 1,
+      ArrowDown: 1,
+      ArrowLeft: -1,
+      ArrowUp: -1,
+    };
+    let next: number | null = null;
+    if (event.key in keys) next = (active + keys[event.key] + SLIPS.length) % SLIPS.length;
+    if (event.key === "Home") next = 0;
+    if (event.key === "End") next = SLIPS.length - 1;
+    if (next === null) return;
+    event.preventDefault();
+    setActive(next);
+    tabRefs.current[next]?.focus();
+  };
+
+  return (
+    <figure className={styles.strip}>
+      <p className={styles.stripDisclosure}>
+        Synthetic spacing example. Choose a week; this is not an expected eight-week result.
+      </p>
+      <div
+        className={styles.slips}
+        role="tablist"
+        aria-label="Compare spacing across practice weeks"
+      >
+        {SLIPS.map((s, i) => {
+          const selected = i === active;
+          return (
+            <button
+              key={s.id}
+              ref={(el) => {
+                tabRefs.current[i] = el;
+              }}
+              id={`${baseId}-tab-${s.id}`}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              aria-controls={`${baseId}-panel`}
+              tabIndex={selected ? 0 : -1}
+              className={styles.slip}
+              data-selected={selected}
+              style={{ "--i": i } as CSSProperties}
+              onClick={() => setActive(i)}
+              onKeyDown={onKeyDown}
+            >
+              <span className={styles.slipHead}>
+                <span className={styles.slipWeek}>{s.label}</span>
+                <span className={styles.slipCriterion}>{s.criterion}</span>
+              </span>
+              <SlipDrawing slip={s} />
+            </button>
+          );
+        })}
+      </div>
+
+      <div className={styles.thread} aria-hidden="true">
+        <svg viewBox="0 0 600 64" preserveAspectRatio="none">
+          <path
+            className={styles.threadPath}
+            d="M100,52 C170,52 220,46 270,38 C330,28 380,24 430,18 C460,14 480,12 500,10"
+          />
+        </svg>
+        <span className={styles.threadNode} style={{ left: "16.667%", top: "81%" }} />
+        <span className={styles.threadNode} style={{ left: "50%", top: "52%" }} />
+        <span className={styles.threadNode} style={{ left: "83.333%", top: "16%" }} />
+      </div>
+
+      <div
+        id={`${baseId}-panel`}
+        role="tabpanel"
+        aria-labelledby={`${baseId}-tab-${slip.id}`}
+        className={styles.feedback}
+        tabIndex={0}
+      >
+        <div key={slip.id} className={styles.feedbackInner}>
+          <p className={styles.feedbackTitle}>
+            <span>
+              {slip.label}: {slip.criterion}
+            </span>
+            <span className={styles.band} data-band={slip.band}>
+              <span className={styles.bandDot} aria-hidden="true" />
+              {slip.bandLabel}
+            </span>
+          </p>
+          <div className={styles.mobileComparison}>
+            {comparisonSlips.map((sample) => (
+              <div
+                key={sample.id}
+                className={styles.comparisonSample}
+                data-selected={sample.id === slip.id}
+              >
+                <p className={styles.comparisonLabel}>
+                  <span>{sample.label}</span>
+                  <span>
+                    {sample.id === slip.id
+                      ? "Selected week"
+                      : sample.id === "week-1"
+                        ? "Starting point"
+                        : "Later example"}
+                  </span>
+                </p>
+                <SlipDrawing slip={sample} />
+              </div>
+            ))}
+          </div>
+          <dl className={styles.feedbackBody}>
+            <div>
+              <dt>What we see</dt>
+              <dd>{slip.observation}</dd>
+            </div>
+            <div>
+              <dt>Practice next</dt>
+              <dd>{slip.next}</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <figcaption className={styles.stripCaption}>
+        Illustrative handwriting and feedback. No real student data.
+      </figcaption>
+    </figure>
+  );
+}

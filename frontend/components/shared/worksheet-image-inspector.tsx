@@ -62,6 +62,10 @@ export interface WorksheetImageInspectorProps {
   diagnosticToolbar?: ReactNode;
   /** Whether to show keyboard shortcut legend below canvas (defaults to true) */
   showShortcutsLegend?: boolean;
+  /** Embedded previews only handle shortcuts while focus is inside this viewer. */
+  keyboardScope?: "global" | "focused";
+  /** Public demos can progressively disclose secondary image controls. */
+  imageToolsDisclosure?: boolean;
   /** Additional container classes */
   className?: string;
   /** Custom aspect ratio / height classes (optional, defaults to dynamic auto-fit) */
@@ -80,6 +84,8 @@ export function WorksheetImageInspector({
   headerIcon,
   diagnosticToolbar,
   showShortcutsLegend = true,
+  keyboardScope = "global",
+  imageToolsDisclosure = false,
   children,
   className,
   aspectRatioClass,
@@ -295,6 +301,13 @@ export function WorksheetImageInspector({
       const container = imageContainerRef.current;
       if (!container) return;
 
+      if (keyboardScope === "focused") {
+        const viewer = container.closest('[data-inspector-container="true"]');
+        if (!viewer?.contains(document.activeElement) || e.ctrlKey || e.metaKey || e.altKey) {
+          return;
+        }
+      }
+
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
@@ -355,6 +368,7 @@ export function WorksheetImageInspector({
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [
+    keyboardScope,
     zoomScale,
     handleZoomIn,
     handleZoomOut,
@@ -532,6 +546,8 @@ export function WorksheetImageInspector({
     }
   };
 
+  const CommandDeck = imageToolsDisclosure ? "details" : "div";
+
   return (
     <div
       data-inspector-container="true"
@@ -555,11 +571,22 @@ export function WorksheetImageInspector({
 
       {/* Action Controls: Unified Command Deck or Standalone Inspector Controls */}
       {diagnosticToolbar ? (
-        <div className="w-full flex flex-col rounded-xl border border-border/70 bg-muted/35 overflow-hidden shadow-2xs divide-y divide-border/60 shrink-0">
+        <CommandDeck className={cn(
+          "w-full rounded-xl border border-border/70 bg-muted/35 overflow-hidden shadow-2xs divide-y divide-border/60 shrink-0",
+          !imageToolsDisclosure && "flex flex-col"
+        )}>
+          {imageToolsDisclosure && (
+            <summary className="min-h-11 px-3 py-3 text-sm font-semibold cursor-pointer touch-manipulation">
+              Image tools
+            </summary>
+          )}
           <div className="p-1 sm:p-1.5">
             {diagnosticToolbar}
           </div>
-          <div className="w-full flex items-center justify-between gap-1 p-1 sm:p-1.5 text-xs">
+          <div className={cn(
+            "w-full flex items-center justify-between gap-1 p-1 sm:p-1.5 text-xs",
+            imageToolsDisclosure && "flex-wrap gap-y-2"
+          )}>
             {/* Left tools: Contrast & Loupe */}
             <div className="flex items-center gap-1">
               <Button
@@ -640,7 +667,7 @@ export function WorksheetImageInspector({
               </Button>
             </div>
           </div>
-        </div>
+        </CommandDeck>
       ) : (
         /* Standalone Inspector Action Controls */
         <div className="w-full flex items-center justify-between gap-1 bg-muted/50 p-1 rounded-xl border border-border/80 text-xs shadow-2xs shrink-0">
