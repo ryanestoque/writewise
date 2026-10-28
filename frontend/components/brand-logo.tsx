@@ -28,7 +28,7 @@ export function BrandIcon({
       width={size}
       height={size}
       priority={priority}
-      className={cn("object-contain shrink-0", className)}
+      className={cn("object-contain shrink-0 rounded-2xl", className)}
       {...props}
     />
   );
