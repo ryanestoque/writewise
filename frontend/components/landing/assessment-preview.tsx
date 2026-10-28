@@ -83,6 +83,7 @@ export function AssessmentPreview() {
             selectedAnnotation={annotation}
             onSelectAnnotation={setAnnotation}
             showGuideLines={showOverlay}
+            showMeasurementDetails={false}
           />
         </WorksheetImageInspector>
       </div>

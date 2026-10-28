@@ -103,9 +103,8 @@ export default async function Home() {
                 Classroom to home, stroke by stroke.
               </h1>
               <p className={styles.heroLede}>
-                Photograph completed cursive worksheets to get clear, criterion-by-criterion
-                coaching and follow each learner&rsquo;s progress over time—without taking students
-                off paper.
+                Snap a photo of any cursive worksheet for stroke-by-stroke feedback and progress
+                tracking—while keeping kids on paper.
               </p>
 
               <div className={styles.heroActions}>

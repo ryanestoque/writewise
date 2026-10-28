@@ -17,6 +17,8 @@ interface AnnotationTooltipProps {
   viewportHeight?: number;
   zoomScale?: number;
   panOffset?: { x: number; y: number };
+  /** Whether to show technical measurement footnotes in the card. Defaults to true. */
+  showMeasurementDetails?: boolean;
   onDismiss?: () => void;
 }
 
@@ -47,6 +49,7 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
   viewportHeight,
   zoomScale = 1,
   panOffset = { x: 0, y: 0 },
+  showMeasurementDetails = true,
   onDismiss,
 }: AnnotationTooltipProps) {
   if (!hover || imageWidth <= 0 || imageHeight <= 0) {
@@ -220,6 +223,7 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
         caretOffset={caretOffset}
         isNearTop={isNearTop}
         isPinned={isPinned}
+        showMeasurementDetails={showMeasurementDetails}
         onDismiss={onDismiss}
       />
     </div>
@@ -239,6 +243,7 @@ interface TooltipCardProps {
   caretOffset: number;
   isNearTop: boolean;
   isPinned: boolean;
+  showMeasurementDetails?: boolean;
   onDismiss?: () => void;
 }
 
@@ -251,6 +256,7 @@ function TooltipCard({
   caretOffset,
   isNearTop,
   isPinned,
+  showMeasurementDetails = true,
   onDismiss,
 }: TooltipCardProps) {
   return (
@@ -354,7 +360,7 @@ function TooltipCard({
           </p>
         )}
 
-        {criterion === "spacing" && (
+        {criterion === "spacing" && showMeasurementDetails && (
           <p className="text-[9.5px] sm:text-[10.5px] font-medium text-muted-foreground mt-1 sm:mt-1.5 flex items-center gap-1.5">
             <span className="inline-block size-1.5 rounded-full bg-violet-500 shrink-0" />
             <span>Measured relative to midline ruling (x-height). Normal range: 1.2× – 3.0×.</span>

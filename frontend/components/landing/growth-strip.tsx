@@ -223,9 +223,9 @@ export function GrowthStrip() {
             >
               <span className={styles.slipHead}>
                 <span className={styles.slipWeek}>{s.label}</span>
-                <span className={styles.band} data-band={s.band}>
+                <span className={`${styles.band} ${styles.slipBand}`} data-band={s.band}>
                   <span className={styles.bandDot} aria-hidden="true" />
-                  {s.bandLabel}
+                  <span className={styles.slipBandText}>{s.bandLabel}</span>
                 </span>
               </span>
               <SlipDrawing slip={s} />

@@ -60,6 +60,8 @@ interface DiagnosticOverlayProps {
   selectedAnnotation?: ActiveAnnotationHover | null;
   onSelectAnnotation?: (annotation: ActiveAnnotationHover | null) => void;
   showGuideLines?: boolean;
+  /** Whether to show technical measurement footnotes in annotation tooltips (e.g. midline ruling scale for spacing). Defaults to true. */
+  showMeasurementDetails?: boolean;
 }
 
 export const DiagnosticOverlay = memo(function DiagnosticOverlay({
@@ -72,6 +74,7 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
   selectedAnnotation,
   onSelectAnnotation,
   showGuideLines = true,
+  showMeasurementDetails = true,
 }: DiagnosticOverlayProps) {
   const inspectorContext = useInspectorContext();
   const effectiveZoom = zoomScale ?? inspectorContext.zoomScale ?? 1;
@@ -431,6 +434,7 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
         viewportHeight={viewportSize?.height}
         zoomScale={effectiveZoom}
         panOffset={panOffset}
+        showMeasurementDetails={showMeasurementDetails}
         onDismiss={() => {
           setHoveredAnnotation(null);
           onSelectAnnotation?.(null);
