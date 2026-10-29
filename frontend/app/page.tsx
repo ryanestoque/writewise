@@ -82,7 +82,7 @@ export default async function Home() {
         {/* ------------------------------ Hero ------------------------------ */}
         <section className={styles.hero} aria-labelledby="hero-heading">
           <div className={styles.heroGrid}>
-            <div className={styles.heroCopy} data-reveal="hero-copy">
+            <div className={styles.heroCopy}>
               <h1 id="hero-heading" className={styles.heroTitle} tabIndex={-1}>
                 <span className={styles.heroLine}>Classroom to home,</span>
                 <span className={styles.heroLine}>
@@ -122,7 +122,7 @@ export default async function Home() {
               </ul>
             </div>
 
-            <div className={styles.heroStudioWrap} data-reveal="hero-studio">
+            <div className={styles.heroStudioWrap}>
               <AssessmentPreview />
             </div>
           </div>

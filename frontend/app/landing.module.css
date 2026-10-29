@@ -1712,20 +1712,40 @@
     transform: translateY(0);
   }
 
-  /* Specific initial entrance for Hero */
-  .landing[data-scroll-ready="true"] [data-reveal="hero-copy"] {
-    opacity: 0;
-    transform: translateY(16px);
-    animation: heroSettle 700ms var(--ease-out) 80ms forwards;
+  /* Specific authored entrance for Hero section */
+  .landing[data-scroll-ready="true"] .heroTitle {
+    animation: heroReveal 700ms var(--ease-out) 80ms both;
   }
 
-  .landing[data-scroll-ready="true"] [data-reveal="hero-studio"] {
-    opacity: 0;
-    transform: translateY(20px);
-    animation: heroSettle 750ms var(--ease-out) 200ms forwards;
+  .landing[data-scroll-ready="true"] .heroLede {
+    animation: heroReveal 700ms var(--ease-out) 200ms both;
   }
 
-  /* Trace the actual letterforms once the hero copy is first observed. */
+  .landing[data-scroll-ready="true"] .heroStudioWrap {
+    animation: heroReveal 750ms var(--ease-out) 240ms both;
+  }
+
+  .landing[data-scroll-ready="true"] .heroActions {
+    animation: heroReveal 700ms var(--ease-out) 320ms both;
+  }
+
+  .landing[data-scroll-ready="true"] .heroHighlights li {
+    animation: heroReveal 550ms var(--ease-out) both;
+  }
+
+  .landing[data-scroll-ready="true"] .heroHighlights li:nth-child(1) {
+    animation-delay: 420ms;
+  }
+
+  .landing[data-scroll-ready="true"] .heroHighlights li:nth-child(2) {
+    animation-delay: 520ms;
+  }
+
+  .landing[data-scroll-ready="true"] .heroHighlights li:nth-child(3) {
+    animation-delay: 620ms;
+  }
+
+  /* Trace the actual letterforms once the hero is armed. */
   .landing[data-scroll-ready="true"] .heroCursiveText {
     opacity: 0;
   }
@@ -1737,9 +1757,6 @@
   .landing[data-scroll-ready="true"] .heroWritingStroke {
     stroke-dasharray: 100;
     stroke-dashoffset: 100;
-  }
-
-  .landing[data-scroll-ready="true"] [data-revealed="true"] .heroWritingStroke {
     animation: drawStroke var(--stroke-duration) linear var(--stroke-delay) both;
   }
 
@@ -1848,7 +1865,11 @@
   }
 }
 
-@keyframes heroSettle {
+@keyframes heroReveal {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1915,6 +1936,21 @@
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
+  }
+
+  .heroTitle,
+  .heroLede,
+  .heroStudioWrap,
+  .heroActions,
+  .heroHighlights li {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  .heroWritingStroke {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
   }
 
   .artFrame,

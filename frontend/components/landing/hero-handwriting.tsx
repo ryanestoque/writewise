@@ -22,7 +22,16 @@ const LETTERS = [
 ] as const;
 
 // Build a deterministic timeline once, outside React's render.
-const WRITING_TIME_SCALE = 0.315;
+// Entry handwriting animation scaled to 2.5 seconds (2500ms).
+const TARGET_WRITING_DURATION_MS = 2500;
+const RAW_DURATION_SUM = LETTERS.reduce((sum, [letter], index) => {
+  const glyph = HERO_GLYPHS[letter];
+  const pause = index === 6 || index === 8 ? 100 : 0;
+  const strokeSum = glyph.strokes.reduce((acc, stroke) => acc + stroke.duration, 0);
+  return sum + pause + strokeSum;
+}, 0);
+const WRITING_TIME_SCALE = TARGET_WRITING_DURATION_MS / RAW_DURATION_SUM;
+
 const WRITING_SEQUENCE = (() => {
   let delay = 380;
   return LETTERS.map(([letter, x], index) => {
