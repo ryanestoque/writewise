@@ -64,10 +64,19 @@ export function AssessmentPreview() {
     >
       <div className={styles.studioHeader}>
         <h2 className={styles.studioTitle}>Target text: &ldquo;kites fly high&rdquo;</h2>
-        <span className={styles.band} data-band="satisfactory">
-          <span className={styles.bandDot} aria-hidden="true" />
-          72% Overall · Satisfactory
-        </span>
+        <label
+          htmlFor={`${criterionId}-overlay-switch`}
+          className={styles.viewerSwitchPill}
+        >
+          <span className={styles.viewerSwitchLabel}>Assessment marks</span>
+          <Switch
+            id={`${criterionId}-overlay-switch`}
+            size="sm"
+            checked={showOverlay}
+            onCheckedChange={setShowOverlay}
+            aria-label="Toggle assessment marks overlay"
+          />
+        </label>
       </div>
 
       <div className={styles.studioViewerWrap}>
@@ -75,19 +84,6 @@ export function AssessmentPreview() {
           <span className={styles.studioViewerCaption}>
             Illustrative handwriting — no student data
           </span>
-          <label
-            htmlFor={`${criterionId}-overlay-switch`}
-            className={styles.viewerSwitchPill}
-          >
-            <span className={styles.viewerSwitchLabel}>Assessment marks</span>
-            <Switch
-              id={`${criterionId}-overlay-switch`}
-              size="sm"
-              checked={showOverlay}
-              onCheckedChange={setShowOverlay}
-              aria-label="Toggle assessment marks overlay"
-            />
-          </label>
         </div>
 
         <WorksheetImageInspector
