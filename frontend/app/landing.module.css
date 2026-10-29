@@ -421,14 +421,10 @@
   margin-top: 0.05em;
 }
 
-.heroCursiveWrap {
+.heroCursive {
   position: relative;
   display: inline-block;
   white-space: nowrap;
-}
-
-.heroCursive {
-  display: inline-block;
   font-family: var(--font-cursive), cursive;
   font-weight: 400;
   color: var(--teal);
@@ -440,22 +436,26 @@
   -webkit-text-stroke: 0.8px currentColor;
 }
 
-.heroFlourish {
+.heroWriting {
+  display: none;
   position: absolute;
-  left: 0;
-  bottom: -6px;
-  width: 100%;
-  height: 14px;
+  left: 0.02em;
+  top: calc(50% - 0.5em);
+  width: 4.44em;
+  height: 1em;
   overflow: visible;
   pointer-events: none;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1;
 }
 
-.heroFlourishPath {
-  stroke: var(--teal);
-  stroke-width: 2.2;
-  stroke-linecap: round;
+.heroWritingStroke {
   fill: none;
-  opacity: 0.85;
+  stroke: white;
+  stroke-width: 12;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .heroStudioWrap {
@@ -1293,7 +1293,9 @@
   border-radius: 50%;
   background: var(--paper);
   border: 2.5px solid var(--teal);
-  transition: transform 180ms var(--ease-out), background-color 180ms var(--ease-out);
+  transition:
+    transform 180ms var(--ease-out),
+    background-color 180ms var(--ease-out);
 }
 
 .threadNode[data-active="true"] {
@@ -1723,11 +1725,22 @@
     animation: heroSettle 750ms var(--ease-out) 200ms forwards;
   }
 
-  /* Hero cursive flourish: draws smoothly under 'stroke by stroke.' */
-  .heroFlourishPath {
-    stroke-dasharray: 270;
-    stroke-dashoffset: 270;
-    animation: drawFlourish 850ms var(--ease-out) 350ms forwards;
+  /* Trace the actual letterforms once the hero copy is first observed. */
+  .landing[data-scroll-ready="true"] .heroCursiveText {
+    opacity: 0;
+  }
+
+  .landing[data-scroll-ready="true"] .heroWriting {
+    display: block;
+  }
+
+  .landing[data-scroll-ready="true"] .heroWritingStroke {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+  }
+
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .heroWritingStroke {
+    animation: drawStroke var(--stroke-duration) linear var(--stroke-delay) both;
   }
 
   /* Stagger delays for list and card children */
@@ -1842,12 +1855,6 @@
   }
 }
 
-@keyframes drawFlourish {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
 @keyframes drawStroke {
   to {
     stroke-dashoffset: 0;
@@ -1910,7 +1917,6 @@
     transition: none !important;
   }
 
-  .heroFlourishPath,
   .artFrame,
   .artCheck,
   .artThread,

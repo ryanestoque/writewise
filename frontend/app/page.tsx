@@ -7,6 +7,7 @@ import { AssessmentPreview } from "@/components/landing/assessment-preview";
 import { BackToTop } from "@/components/landing/back-to-top";
 import { CriteriaDetails } from "@/components/landing/criteria-details";
 import { LandingHeader } from "@/components/landing/landing-header";
+import { HeroHandwriting } from "@/components/landing/hero-handwriting";
 import { LandingScrollEffects } from "@/components/landing/landing-scroll-effects";
 import { AssessArt, ProgressArt, UploadArt } from "@/components/landing/landing-art";
 import { createClient } from "@/lib/supabase/server";
@@ -85,21 +86,7 @@ export default async function Home() {
               <h1 id="hero-heading" className={styles.heroTitle} tabIndex={-1}>
                 <span className={styles.heroLine}>Classroom to home,</span>
                 <span className={styles.heroLine}>
-                  <span className={styles.heroCursiveWrap}>
-                    <span className={styles.heroCursive}>stroke by stroke.</span>
-                    <svg
-                      className={styles.heroFlourish}
-                      viewBox="0 0 260 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M4 11 C 60 14, 120 7, 180 9 C 210 10, 240 7, 256 5"
-                        className={styles.heroFlourishPath}
-                      />
-                    </svg>
-                  </span>
+                  <HeroHandwriting />
                 </span>
               </h1>
               <p className={styles.heroLede}>
