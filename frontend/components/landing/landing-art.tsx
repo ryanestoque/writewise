@@ -97,7 +97,7 @@ export function FormationSpecimen() {
   const fault = p[2];
   return (
     <Specimen label="Letter formation: a row of cursive l and e loops where one l loop is left open, with the intended closed loop drawn as a dashed guide.">
-      <path className={styles.pencil} d={strokes(p)} />
+      <path className={styles.pencil} pathLength={600} d={strokes(p)} />
       <g className={styles.specimenNotes}>
         <path
           className={styles.markCoolDash}
@@ -114,7 +114,7 @@ export function SizeSpecimen() {
   const p = place(20, tops.map((top) => ({ w: 32, top })));
   return (
     <Specimen label="Size consistency: small cursive loops of uneven heights, some rising above and some falling short of the midline.">
-      <path className={styles.pencil} d={strokes(p)} />
+      <path className={styles.pencil} pathLength={600} d={strokes(p)} />
       <g className={styles.specimenNotes}>
         <line className={styles.markCool} x1="10" x2="230" y1={G.mid} y2={G.mid} />
         {p.map((g, i) =>
@@ -147,7 +147,7 @@ export function SpacingSpecimen() {
   ];
   return (
     <Specimen label="Spacing: three cursive words where the first two nearly touch and the third sits after a wide gap.">
-      <path className={styles.pencil} d={strokes(p)} />
+      <path className={styles.pencil} pathLength={600} d={strokes(p)} />
       <g className={styles.specimenNotes}>
         {gaps.map(([a, b], i) => (
           <path
@@ -166,7 +166,7 @@ export function SlantSpecimen() {
   const p = place(18, leans.map((lean) => ({ w: 34, top: G.top, lean })));
   return (
     <Specimen label="Slant: a row of tall cursive loops leaning right, with one loop tipping backward against the slant guides.">
-      <path className={styles.pencil} d={strokes(p)} />
+      <path className={styles.pencil} pathLength={600} d={strokes(p)} />
       <g className={styles.specimenNotes}>
         {p.map((g, i) => (
           <line
@@ -188,7 +188,7 @@ export function BaselineSpecimen() {
   const p = place(18, bases.map((base, i) => ({ w: 32, top: i % 2 ? base - 62 : base - 30, base })));
   return (
     <Specimen label="Baseline alignment: cursive letters that drift upward away from the baseline as the word goes on.">
-      <path className={styles.pencil} d={strokes(p)} />
+      <path className={styles.pencil} pathLength={600} d={strokes(p)} />
       <g className={styles.specimenNotes}>
         <path
           className={styles.markWarmDash}
@@ -230,11 +230,12 @@ export function UploadArt() {
       <rect className={styles.artPhone} x="30" y="20" width="180" height="136" rx="16" />
       <path
         className={styles.artFrame}
+        pathLength={100}
         d="M42,42 v-10 h12 M186,32 h12 v10 M198,134 v10 h-12 M54,144 h-12 v-10"
       />
       <g transform="translate(166 8)">
         <circle className={styles.artCheckDisc} cx="16" cy="16" r="16" />
-        <path className={styles.artCheck} d="M9,16.5 l5,5 l9,-10" />
+        <path className={styles.artCheck} pathLength={30} d="M9,16.5 l5,5 l9,-10" />
       </g>
     </svg>
   );
@@ -259,7 +260,7 @@ export function AssessArt() {
       <line className={styles.guideTop} x1="10" x2="230" y1="40" y2="40" />
       <line className={styles.guideMid} x1="10" x2="230" y1="72" y2="72" />
       <line className={styles.guideBase} x1="10" x2="230" y1="104" y2="104" />
-      <path className={styles.pencil} d={strokes(p)} />
+      <path className={styles.pencil} pathLength={600} d={strokes(p)} />
       {p
         .filter((_, i) => i % 2 === 0)
         .map((g, i) => (
@@ -300,6 +301,7 @@ export function ProgressArt() {
       <path className={styles.artFaint} d="M28,104 C64,108 100,96 132,84 S184,58 216,52" />
       <path
         className={styles.artThread}
+        pathLength={400}
         d="M28,126 C62,124 80,108 106,98 C134,88 150,72 176,54 C192,44 204,40 216,36"
       />
       {[

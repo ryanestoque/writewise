@@ -30,6 +30,8 @@
   --header-height: 72px;
   --anchor-offset: 88px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-reveal: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-writing: cubic-bezier(0.35, 0, 0.25, 1);
 
   position: relative;
   min-height: 100vh;
@@ -1700,10 +1702,10 @@
   /* When LandingScrollEffects mounts and signals readiness, arm the animations */
   .landing[data-scroll-ready="true"] [data-reveal] {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(32px);
     transition:
-      opacity 650ms var(--ease-out),
-      transform 650ms var(--ease-out);
+      opacity 1200ms var(--ease-reveal),
+      transform 1200ms var(--ease-reveal);
     will-change: opacity, transform;
   }
 
@@ -1714,35 +1716,35 @@
 
   /* Specific authored entrance for Hero section — runs immediately on initial paint without waiting for JS hydration */
   .heroTitle {
-    animation: heroReveal 700ms var(--ease-out) 80ms both;
+    animation: heroReveal 950ms var(--ease-reveal) 100ms both;
   }
 
   .heroLede {
-    animation: heroReveal 700ms var(--ease-out) 200ms both;
+    animation: heroReveal 950ms var(--ease-reveal) 260ms both;
   }
 
   .heroStudioWrap {
-    animation: heroReveal 750ms var(--ease-out) 240ms both;
+    animation: heroReveal 1050ms var(--ease-reveal) 320ms both;
   }
 
   .heroActions {
-    animation: heroReveal 700ms var(--ease-out) 320ms both;
+    animation: heroReveal 950ms var(--ease-reveal) 420ms both;
   }
 
   .heroHighlights li {
-    animation: heroReveal 550ms var(--ease-out) both;
+    animation: heroReveal 750ms var(--ease-reveal) both;
   }
 
   .heroHighlights li:nth-child(1) {
-    animation-delay: 420ms;
+    animation-delay: 560ms;
   }
 
   .heroHighlights li:nth-child(2) {
-    animation-delay: 520ms;
+    animation-delay: 700ms;
   }
 
   .heroHighlights li:nth-child(3) {
-    animation-delay: 620ms;
+    animation-delay: 840ms;
   }
 
   /* Trace the actual letterforms once the hero begins */
@@ -1765,43 +1767,63 @@
     transition-delay: 0ms;
   }
   .landing[data-scroll-ready="true"] [data-reveal][data-index="1"] {
-    transition-delay: 110ms;
+    transition-delay: 180ms;
   }
   .landing[data-scroll-ready="true"] [data-reveal][data-index="2"] {
-    transition-delay: 220ms;
+    transition-delay: 360ms;
   }
   .landing[data-scroll-ready="true"] [data-reveal][data-index="3"] {
-    transition-delay: 330ms;
+    transition-delay: 540ms;
   }
   .landing[data-scroll-ready="true"] [data-reveal][data-index="4"] {
-    transition-delay: 440ms;
+    transition-delay: 720ms;
   }
 
   /* Authored Artwork: Step 1 (UploadArt) */
-  .landing[data-scroll-ready="true"] [data-revealed="true"] .artFrame {
+  .landing[data-scroll-ready="true"] .artFrame {
     stroke-dasharray: 100;
     stroke-dashoffset: 100;
-    animation: drawFrame 650ms var(--ease-out) 220ms forwards;
   }
 
-  .landing[data-scroll-ready="true"] [data-revealed="true"] .artCheckDisc {
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .artFrame {
+    animation: drawFrame 1300ms var(--ease-reveal) 250ms forwards;
+  }
+
+  .landing[data-scroll-ready="true"] .artCheckDisc {
     opacity: 0;
     transform: scale(0.6);
     transform-origin: 182px 24px;
-    animation: popDisc 420ms var(--ease-out) 480ms forwards;
+  }
+
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .artCheckDisc {
+    animation: popDisc 650ms var(--ease-reveal) 850ms forwards;
+  }
+
+  .landing[data-scroll-ready="true"] .artCheck {
+    stroke-dasharray: 30;
+    stroke-dashoffset: 30;
   }
 
   .landing[data-scroll-ready="true"] [data-revealed="true"] .artCheck {
-    stroke-dasharray: 30;
-    stroke-dashoffset: 30;
-    animation: drawCheck 320ms var(--ease-out) 620ms forwards;
+    animation: drawCheck 550ms var(--ease-reveal) 1150ms forwards;
   }
 
   /* Authored Artwork: Step 2 (AssessArt) */
-  .landing[data-scroll-ready="true"] [data-revealed="true"] .stepArt .pencil {
+  .landing[data-scroll-ready="true"] .stepArt .pencil {
     stroke-dasharray: 600;
     stroke-dashoffset: 600;
-    animation: drawStroke 750ms var(--ease-out) 150ms forwards;
+  }
+
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .stepArt .pencil {
+    animation: drawStroke 1500ms var(--ease-writing) 400ms forwards;
+  }
+
+  .landing[data-scroll-ready="true"] .stepArt .markWarm,
+  .landing[data-scroll-ready="true"] .stepArt .markCool,
+  .landing[data-scroll-ready="true"] .stepArt .markGood,
+  .landing[data-scroll-ready="true"] .stepArt .artChip,
+  .landing[data-scroll-ready="true"] .stepArt .artLine {
+    opacity: 0;
   }
 
   .landing[data-scroll-ready="true"] [data-revealed="true"] .stepArt .markWarm,
@@ -1809,55 +1831,118 @@
   .landing[data-scroll-ready="true"] [data-revealed="true"] .stepArt .markGood,
   .landing[data-scroll-ready="true"] [data-revealed="true"] .stepArt .artChip,
   .landing[data-scroll-ready="true"] [data-revealed="true"] .stepArt .artLine {
-    opacity: 0;
-    animation: fadeInOverlay 450ms var(--ease-out) 650ms forwards;
+    animation: fadeInOverlay 800ms var(--ease-reveal) 1500ms forwards;
   }
 
   /* Authored Artwork: Step 3 (ProgressArt) */
-  .landing[data-scroll-ready="true"] [data-revealed="true"] .artThread {
+  .landing[data-scroll-ready="true"] .artThread {
     stroke-dasharray: 400;
     stroke-dashoffset: 400;
-    animation: drawThread 850ms var(--ease-out) 200ms forwards;
   }
 
-  .landing[data-scroll-ready="true"] [data-revealed="true"] .artNode {
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .artThread {
+    animation: drawThread 1600ms var(--ease-writing) 550ms forwards;
+  }
+
+  .landing[data-scroll-ready="true"] .artNode {
     opacity: 0;
     transform: scale(0.6);
     transform-box: fill-box;
     transform-origin: center;
-    animation: popNode 400ms var(--ease-out) forwards;
+  }
+
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .artNode {
+    animation: popNode 550ms var(--ease-reveal) forwards;
   }
 
   .landing[data-scroll-ready="true"] [data-revealed="true"] .artNode:nth-of-type(1) {
-    animation-delay: 240ms;
+    animation-delay: 600ms;
   }
   .landing[data-scroll-ready="true"] [data-revealed="true"] .artNode:nth-of-type(2) {
-    animation-delay: 480ms;
+    animation-delay: 1100ms;
   }
   .landing[data-scroll-ready="true"] [data-revealed="true"] .artNode:nth-of-type(3) {
-    animation-delay: 700ms;
+    animation-delay: 1600ms;
   }
   .landing[data-scroll-ready="true"] [data-revealed="true"] .artNode:nth-of-type(4) {
-    animation-delay: 880ms;
+    animation-delay: 2100ms;
   }
 
-  /* Five Criteria Specimens: Pen stroke followed by diagnostic annotations */
-  .landing[data-scroll-ready="true"] [data-revealed="true"] .specimen .pencil {
+  /* Five Criteria Specimens: Stroke animation synchronized directly to each row's reveal */
+  .landing[data-scroll-ready="true"] .ledgerRow[data-reveal][data-index="0"] {
+    transition-delay: 0ms;
+  }
+  .landing[data-scroll-ready="true"] .ledgerRow[data-reveal][data-index="1"] {
+    transition-delay: 100ms;
+  }
+  .landing[data-scroll-ready="true"] .ledgerRow[data-reveal][data-index="2"] {
+    transition-delay: 200ms;
+  }
+  .landing[data-scroll-ready="true"] .ledgerRow[data-reveal][data-index="3"] {
+    transition-delay: 300ms;
+  }
+  .landing[data-scroll-ready="true"] .ledgerRow[data-reveal][data-index="4"] {
+    transition-delay: 400ms;
+  }
+
+  .landing[data-scroll-ready="true"] .specimen .pencil {
     stroke-dasharray: 600;
     stroke-dashoffset: 600;
-    animation: drawStroke 700ms var(--ease-out) 120ms forwards;
   }
 
-  .landing[data-scroll-ready="true"] [data-revealed="true"] .specimenNotes {
+  .landing[data-scroll-ready="true"] .ledgerRow[data-revealed="true"] .specimen .pencil {
+    animation: drawStroke 1350ms var(--ease-writing) 80ms forwards;
+  }
+
+  .landing[data-scroll-ready="true"] .ledgerRow[data-revealed="true"][data-index="0"] .specimen .pencil {
+    animation-delay: 80ms;
+  }
+  .landing[data-scroll-ready="true"] .ledgerRow[data-revealed="true"][data-index="1"] .specimen .pencil {
+    animation-delay: 180ms;
+  }
+  .landing[data-scroll-ready="true"] .ledgerRow[data-revealed="true"][data-index="2"] .specimen .pencil {
+    animation-duration: 1850ms;
+    animation-delay: 280ms;
+  }
+  .landing[data-scroll-ready="true"] .ledgerRow[data-revealed="true"][data-index="3"] .specimen .pencil {
+    animation-delay: 380ms;
+  }
+  .landing[data-scroll-ready="true"] .ledgerRow[data-revealed="true"][data-index="4"] .specimen .pencil {
+    animation-delay: 480ms;
+  }
+
+  .landing[data-scroll-ready="true"] .specimenNotes {
     opacity: 0;
-    animation: fadeInOverlay 400ms var(--ease-out) 520ms forwards;
+  }
+
+  .landing[data-scroll-ready="true"] .ledgerRow[data-revealed="true"] .specimenNotes {
+    animation: fadeInOverlay 600ms var(--ease-reveal) forwards;
+  }
+
+  .landing[data-scroll-ready="true"] .ledgerRow[data-revealed="true"][data-index="0"] .specimenNotes {
+    animation-delay: 1200ms;
+  }
+  .landing[data-scroll-ready="true"] .ledgerRow[data-revealed="true"][data-index="1"] .specimenNotes {
+    animation-delay: 1300ms;
+  }
+  .landing[data-scroll-ready="true"] .ledgerRow[data-revealed="true"][data-index="2"] .specimenNotes {
+    animation-delay: 1900ms;
+  }
+  .landing[data-scroll-ready="true"] .ledgerRow[data-revealed="true"][data-index="3"] .specimenNotes {
+    animation-delay: 1500ms;
+  }
+  .landing[data-scroll-ready="true"] .ledgerRow[data-revealed="true"][data-index="4"] .specimenNotes {
+    animation-delay: 1600ms;
   }
 
   /* Growth Strip thread */
-  .landing[data-scroll-ready="true"] [data-revealed="true"] .threadPath {
+  .landing[data-scroll-ready="true"] .threadPath {
     stroke-dasharray: 600;
     stroke-dashoffset: 600;
-    animation: drawThread 800ms var(--ease-out) 250ms forwards;
+  }
+
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .threadPath {
+    animation: drawThread 1300ms var(--ease-reveal) 400ms forwards;
   }
 
   .feedbackInner {
@@ -1868,7 +1953,7 @@
 @keyframes heroReveal {
   from {
     opacity: 0;
-    transform: translateY(22px);
+    transform: translateY(28px);
   }
   to {
     opacity: 1;
