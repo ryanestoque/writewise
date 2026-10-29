@@ -224,7 +224,7 @@ export default async function Home() {
                   </svg>
                 </Link>
                 <p className={styles.closeNote}>
-                  Link your child with a class code or teacher invite during or after signup.
+                  Link your child with a teacher invite during or after signup.
                 </p>
               </div>
             </div>
