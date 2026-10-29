@@ -50,6 +50,9 @@ export function AssessmentPreview() {
 
       <div className={styles.studioViewerWrap}>
         <div className={styles.studioViewerTopRow}>
+          <span className={styles.studioViewerCaption}>
+            Illustrative handwriting — no student data
+          </span>
           <label
             htmlFor={`${criterionId}-overlay-switch`}
             className={styles.viewerSwitchPill}
@@ -88,12 +91,6 @@ export function AssessmentPreview() {
             showMeasurementDetails={false}
           />
         </WorksheetImageInspector>
-
-        <div className={styles.studioViewerMeta}>
-          <span className={styles.studioViewerCaption}>
-            Illustrative handwriting — no student data
-          </span>
-        </div>
       </div>
 
       <div className={styles.studioControls}>

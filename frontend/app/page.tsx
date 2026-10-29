@@ -100,7 +100,10 @@ export default async function Home() {
           <div className={styles.heroGrid}>
             <div className={styles.heroCopy}>
               <h1 id="hero-heading" className={styles.heroTitle} tabIndex={-1}>
-                Classroom to home, stroke by stroke.
+                <span className={styles.heroLine}>Classroom to home,</span>
+                <span className={styles.heroLine}>
+                  <span className={styles.heroCursive}>stroke by stroke.</span>
+                </span>
               </h1>
               <p className={styles.heroLede}>
                 Snap a photo of any cursive worksheet for stroke-by-stroke feedback and progress
