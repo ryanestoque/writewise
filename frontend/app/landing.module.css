@@ -1712,49 +1712,49 @@
     transform: translateY(0);
   }
 
-  /* Specific authored entrance for Hero section */
-  .landing[data-scroll-ready="true"] .heroTitle {
+  /* Specific authored entrance for Hero section — runs immediately on initial paint without waiting for JS hydration */
+  .heroTitle {
     animation: heroReveal 700ms var(--ease-out) 80ms both;
   }
 
-  .landing[data-scroll-ready="true"] .heroLede {
+  .heroLede {
     animation: heroReveal 700ms var(--ease-out) 200ms both;
   }
 
-  .landing[data-scroll-ready="true"] .heroStudioWrap {
+  .heroStudioWrap {
     animation: heroReveal 750ms var(--ease-out) 240ms both;
   }
 
-  .landing[data-scroll-ready="true"] .heroActions {
+  .heroActions {
     animation: heroReveal 700ms var(--ease-out) 320ms both;
   }
 
-  .landing[data-scroll-ready="true"] .heroHighlights li {
+  .heroHighlights li {
     animation: heroReveal 550ms var(--ease-out) both;
   }
 
-  .landing[data-scroll-ready="true"] .heroHighlights li:nth-child(1) {
+  .heroHighlights li:nth-child(1) {
     animation-delay: 420ms;
   }
 
-  .landing[data-scroll-ready="true"] .heroHighlights li:nth-child(2) {
+  .heroHighlights li:nth-child(2) {
     animation-delay: 520ms;
   }
 
-  .landing[data-scroll-ready="true"] .heroHighlights li:nth-child(3) {
+  .heroHighlights li:nth-child(3) {
     animation-delay: 620ms;
   }
 
-  /* Trace the actual letterforms once the hero is armed. */
-  .landing[data-scroll-ready="true"] .heroCursiveText {
+  /* Trace the actual letterforms once the hero begins */
+  .heroCursiveText {
     opacity: 0;
   }
 
-  .landing[data-scroll-ready="true"] .heroWriting {
+  .heroWriting {
     display: block;
   }
 
-  .landing[data-scroll-ready="true"] .heroWritingStroke {
+  .heroWritingStroke {
     stroke-dasharray: 100;
     stroke-dashoffset: 100;
     animation: drawStroke var(--stroke-duration) linear var(--stroke-delay) both;
@@ -1951,6 +1951,14 @@
   .heroWritingStroke {
     animation: none !important;
     stroke-dashoffset: 0 !important;
+  }
+
+  .heroCursiveText {
+    opacity: 1 !important;
+  }
+
+  .heroWriting {
+    display: none !important;
   }
 
   .artFrame,
