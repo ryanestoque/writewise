@@ -257,7 +257,7 @@ export default async function Home() {
             {/* Brand & Purpose Column */}
             <div className={styles.footerBrandCol}>
               <Link href="/" aria-label="WriteWise home" className={styles.footerLogoLink}>
-                <BrandLogo size="md" />
+                <BrandLogo size="xl" />
               </Link>
               <p className={styles.footerBio}>
                 A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and
