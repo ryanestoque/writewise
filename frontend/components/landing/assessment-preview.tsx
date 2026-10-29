@@ -80,12 +80,6 @@ export function AssessmentPreview() {
       </div>
 
       <div className={styles.studioViewerWrap}>
-        <div className={styles.studioViewerTopRow}>
-          <span className={styles.studioViewerCaption}>
-            Illustrative handwriting — no student data
-          </span>
-        </div>
-
         <WorksheetImageInspector
           imageUrl={EXAMPLE_WORKSHEET}
           imageDimensions={EXAMPLE_WORKSHEET_DIMENSIONS}
@@ -95,8 +89,11 @@ export function AssessmentPreview() {
           keyboardScope="focused"
           showImageTools={false}
           autoAspectRatio={false}
-          aspectRatioClass="aspect-[62/34] min-h-[220px] sm:min-h-[260px]"
+          aspectRatioClass="aspect-[62/34]"
         >
+          <span className={styles.studioViewerPaperCaption}>
+            Illustrative handwriting — no student data
+          </span>
           <DiagnosticOverlay
             overlay={EXAMPLE_OVERLAY}
             imageUrl={EXAMPLE_WORKSHEET}
