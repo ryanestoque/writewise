@@ -1,10 +1,9 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState, type KeyboardEvent } from "react";
 import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
 import { DiagnosticOverlay } from "@/components/shared/diagnostic-overlay/diagnostic-overlay";
 import type { ActiveAnnotationHover } from "@/components/shared/diagnostic-overlay/types";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { getScoreBandLabel } from "@/lib/utils/submission-status";
 import {
@@ -18,6 +17,7 @@ import styles from "@/app/landing.module.css";
 /** Interactive hero worksheet studio with local sample data; never calls a submission API. */
 export function AssessmentPreview() {
   const criterionId = useId();
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [criterion, setCriterion] = useState<(typeof EXAMPLE_CRITERIA)[number]["id"]>("spacing");
   const [showOverlay, setShowOverlay] = useState(true);
   const [annotation, setAnnotation] = useState<ActiveAnnotationHover | null>(null);
@@ -32,6 +32,28 @@ export function AssessmentPreview() {
     setCriterion(selected.id);
     setAnnotation(null);
     setShowOverlay(true);
+  };
+
+  const onCriterionKeyDown = (
+    event: KeyboardEvent<HTMLButtonElement>,
+    index: number
+  ) => {
+    const keys: Record<string, number> = {
+      ArrowRight: 1,
+      ArrowDown: 1,
+      ArrowLeft: -1,
+      ArrowUp: -1,
+    };
+    let next: number | null = null;
+    if (event.key in keys) {
+      next = (index + keys[event.key] + EXAMPLE_CRITERIA.length) % EXAMPLE_CRITERIA.length;
+    }
+    if (event.key === "Home") next = 0;
+    if (event.key === "End") next = EXAMPLE_CRITERIA.length - 1;
+    if (next === null) return;
+    event.preventDefault();
+    selectCriterion(EXAMPLE_CRITERIA[next].id);
+    buttonRefs.current[next]?.focus();
   };
 
   return (
@@ -100,13 +122,12 @@ export function AssessmentPreview() {
           </span>
         </div>
 
-        <RadioGroup
-          value={criterion}
-          onValueChange={selectCriterion}
+        <div
+          role="radiogroup"
           aria-labelledby={`${criterionId}-heading`}
           className={styles.studioCriteriaGrid}
         >
-          {EXAMPLE_CRITERIA.map((item) => {
+          {EXAMPLE_CRITERIA.map((item, index) => {
             const band = getScoreBandLabel(item.score, { source: "calibrated" });
             const bandKey =
               band.band === "Needs Improvement" ? "needs" : band.band.toLowerCase();
@@ -114,17 +135,20 @@ export function AssessmentPreview() {
               band.band === "Needs Improvement" ? "Needs Impr." : band.band;
             const isSelected = item.id === criterion;
             return (
-              <label
+              <button
                 key={item.id}
-                htmlFor={`${criterionId}-${item.id}`}
+                ref={(el) => {
+                  buttonRefs.current[index] = el;
+                }}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                tabIndex={isSelected ? 0 : -1}
+                onClick={() => selectCriterion(item.id)}
+                onKeyDown={(e) => onCriterionKeyDown(e, index)}
                 className={styles.studioCriterionPill}
                 data-selected={isSelected}
               >
-                <RadioGroupItem
-                  id={`${criterionId}-${item.id}`}
-                  value={item.id}
-                  className={styles.srOnlyRadio}
-                />
                 <span className={styles.studioCriterionName}>{item.name}</span>
                 <span className={styles.studioCriterionMeta}>
                   <span className={styles.studioCriterionScore}>{item.score}%</span>
@@ -139,10 +163,10 @@ export function AssessmentPreview() {
                     </span>
                   </span>
                 </span>
-              </label>
+              </button>
             );
           })}
-        </RadioGroup>
+        </div>
 
         <div className={styles.studioCoaching} aria-live="polite" aria-atomic="true">
           <div className={styles.studioCoachingHead}>

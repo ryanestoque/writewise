@@ -175,7 +175,6 @@ export function GrowthStrip() {
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const baseId = useId();
   const slip = SLIPS[active];
-  const comparisonSlips = [SLIPS[0], active === 0 ? SLIPS[2] : slip];
 
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     const keys: Record<string, number> = {
@@ -223,10 +222,6 @@ export function GrowthStrip() {
             >
               <span className={styles.slipHead}>
                 <span className={styles.slipWeek}>{s.label}</span>
-                <span className={`${styles.band} ${styles.slipBand}`} data-band={s.band}>
-                  <span className={styles.bandDot} aria-hidden="true" />
-                  <span className={styles.slipBandText}>{s.bandLabel}</span>
-                </span>
               </span>
               <SlipDrawing slip={s} />
             </button>
@@ -276,25 +271,7 @@ export function GrowthStrip() {
             </span>
           </div>
           <div className={styles.mobileComparison}>
-            {comparisonSlips.map((sample) => (
-              <div
-                key={sample.id}
-                className={styles.comparisonSample}
-                data-selected={sample.id === slip.id}
-              >
-                <p className={styles.comparisonLabel}>
-                  <span>{sample.label}</span>
-                  <span>
-                    {sample.id === slip.id
-                      ? "Selected week"
-                      : sample.id === "week-1"
-                        ? "Starting point"
-                        : "Later week"}
-                  </span>
-                </p>
-                <SlipDrawing slip={sample} />
-              </div>
-            ))}
+            <SlipDrawing slip={slip} />
           </div>
           <dl className={styles.feedbackBody}>
             <div>
