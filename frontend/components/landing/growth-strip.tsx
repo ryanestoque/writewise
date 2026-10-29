@@ -172,6 +172,7 @@ function SlipDrawing({ slip }: { slip: Slip }) {
 
 export function GrowthStrip() {
   const [active, setActive] = useState(0);
+  const [isDrawn, setIsDrawn] = useState(false);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const baseId = useId();
   const slip = SLIPS[active];
@@ -233,6 +234,8 @@ export function GrowthStrip() {
         <svg viewBox="0 0 600 44" preserveAspectRatio="none">
           <path
             className={styles.threadPath}
+            data-drawn={isDrawn}
+            onAnimationEnd={() => setIsDrawn(true)}
             d="M100,36 C175,36 225,28 300,22 C375,16 425,10 500,8"
           />
         </svg>

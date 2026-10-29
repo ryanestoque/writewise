@@ -105,21 +105,6 @@ export default async function Home() {
                   I&rsquo;m a parent
                 </Link>
               </div>
-
-              <ul className={styles.heroHighlights} aria-label="Key capabilities">
-                <li>
-                  <strong>5 criteria</strong>
-                  <span>Formation, size, spacing, slant &amp; baseline</span>
-                </li>
-                <li>
-                  <strong>4 growth bands</strong>
-                  <span>Supportive, step-by-step coaching</span>
-                </li>
-                <li>
-                  <strong>Paper-only for kids</strong>
-                  <span>For teachers &amp; parents, no student logins</span>
-                </li>
-              </ul>
             </div>
 
             <div className={styles.heroStudioWrap}>
@@ -137,10 +122,6 @@ export default async function Home() {
                   From paper to progress in three steps.
                 </h2>
               </div>
-              <p className={styles.sectionLede}>
-                Teachers set the target words and students write on physical worksheets. WriteWise
-                handles the stroke measurements, diagnostic overlays, and progress history.
-              </p>
             </div>
 
             <ol className={styles.steps}>
@@ -170,13 +151,9 @@ export default async function Home() {
           <div className={styles.sectionHeader} data-reveal="fade-up">
             <div>
               <h2 id="progress-heading" className={styles.sectionTitle}>
-                Watch rhythm and spacing steady week by week.
+                Monitor progress over time.
               </h2>
             </div>
-            <p className={styles.sectionLede}>
-              Select a practice week below to see how word spacing and coaching notes evolve as a
-              learner practices the same phrase across multiple activities.
-            </p>
           </div>
 
           <div data-reveal="growth-card">

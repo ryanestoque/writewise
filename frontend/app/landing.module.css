@@ -305,6 +305,10 @@
   margin-bottom: clamp(32px, 4vw, 48px);
 }
 
+.sectionHeader > :only-child {
+  grid-column: 1 / -1;
+}
+
 .sectionTitle {
   margin: 0;
   font-family: var(--font-heading), sans-serif;
@@ -481,49 +485,6 @@
   margin-top: 28px;
 }
 
-.heroHighlights {
-  list-style: none;
-  margin: 36px 0 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.heroHighlights li {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: var(--paper);
-  border: 1px solid var(--rule);
-  box-shadow: 0 1px 3px rgb(30 40 35 / 0.04);
-  transition:
-    border-color 150ms var(--ease-out),
-    box-shadow 150ms var(--ease-out),
-    transform 150ms var(--ease-out);
-}
-
-.heroHighlights li:hover {
-  border-color: #b8ddd7;
-  box-shadow: 0 4px 14px -3px rgb(20 80 73 / 0.1);
-  transform: translateY(-1px);
-}
-
-.heroHighlights strong {
-  font-family: var(--font-heading), sans-serif;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--ink);
-  letter-spacing: -0.01em;
-}
-
-.heroHighlights span {
-  font-size: 0.8125rem;
-  line-height: 1.45;
-  color: var(--ink-soft);
-}
 
 /* --------------------- Hero Interactive Studio ---------------------- */
 
@@ -1726,22 +1687,6 @@
     animation: heroReveal 950ms var(--ease-reveal) 420ms both;
   }
 
-  .heroHighlights li {
-    animation: heroReveal 750ms var(--ease-reveal) both;
-  }
-
-  .heroHighlights li:nth-child(1) {
-    animation-delay: 560ms;
-  }
-
-  .heroHighlights li:nth-child(2) {
-    animation-delay: 700ms;
-  }
-
-  .heroHighlights li:nth-child(3) {
-    animation-delay: 840ms;
-  }
-
   /* Trace the actual letterforms once the hero begins */
   .heroCursiveText {
     opacity: 0;
@@ -1932,12 +1877,18 @@
 
   /* Growth Strip thread */
   .landing[data-scroll-ready="true"] .threadPath {
-    stroke-dasharray: 600;
-    stroke-dashoffset: 600;
+    stroke-dasharray: 1200;
+    stroke-dashoffset: 1200;
   }
 
   .landing[data-scroll-ready="true"] [data-revealed="true"] .threadPath {
-    animation: drawThread 1300ms var(--ease-reveal) 400ms forwards;
+    animation: drawThread 1800ms var(--ease-writing) 350ms forwards;
+  }
+
+  .landing[data-scroll-ready="true"] .threadPath[data-drawn="true"] {
+    stroke-dasharray: none !important;
+    stroke-dashoffset: 0 !important;
+    animation: none !important;
   }
 
   .feedbackInner {
@@ -2021,8 +1972,7 @@
   .heroTitle,
   .heroLede,
   .heroStudioWrap,
-  .heroActions,
-  .heroHighlights li {
+  .heroActions {
     opacity: 1 !important;
     transform: none !important;
     animation: none !important;
@@ -2046,6 +1996,7 @@
   .artThread,
   .threadPath,
   .pencil {
+    stroke-dasharray: none !important;
     stroke-dashoffset: 0 !important;
     animation: none !important;
     transition: none !important;
@@ -2173,11 +2124,6 @@
   .heroActions .cta,
   .heroActions .ctaSecondary {
     width: 100%;
-  }
-
-  .heroHighlights {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
   }
 
   .studioViewerTopRow {
