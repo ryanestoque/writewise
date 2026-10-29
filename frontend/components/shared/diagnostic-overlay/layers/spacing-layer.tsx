@@ -87,10 +87,11 @@ export const SpacingLayer = memo(function SpacingLayer({
           ? y + 18 * hitScale
           : y - 14 * hitScale;
 
-        const topAnchorY =
+        const rawTopAnchorY =
           isSpotlight && !isStaggeredBelow
             ? badgeCenterY - badgeH / 2 - 2
             : y - tickHeight - 2;
+        const topAnchorY = Math.min(y - 86, rawTopAnchorY);
         const bottomAnchorY =
           isSpotlight && isStaggeredBelow
             ? badgeCenterY + badgeH / 2 + 2

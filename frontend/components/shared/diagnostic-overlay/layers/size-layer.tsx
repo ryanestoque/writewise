@@ -63,8 +63,8 @@ export const SizeLayer = memo(function SizeLayer({
           severity: ann.severity,
           x: cx + cw / 2,
           y: cy - 4,
-          anchorTopY: cy - 2,
-          anchorBottomY: cy + ch + 2,
+          anchorTopY: Math.min(y, cy - 2),
+          anchorBottomY: Math.max(y + h, cy + ch + 2),
         };
 
         const toggleAnnotation = () => {

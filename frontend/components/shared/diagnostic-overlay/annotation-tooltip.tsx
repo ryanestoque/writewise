@@ -206,12 +206,12 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
       // Tooltip is placed below target word/mark (caret at top pointing up to targetBottomViewportY).
       const desiredTop = targetBottomViewportY + vGap;
       const maxTop = Math.max(vMargin, viewportH - effectiveCardHeight - vMargin);
-      clampedViewportY = Math.min(desiredTop, maxTop);
+      clampedViewportY = Math.max(vMargin, Math.min(desiredTop, maxTop));
     } else {
       // Tooltip is placed above target word/mark (caret at bottom pointing down to targetTopViewportY).
       const desiredBottom = targetTopViewportY - vGap;
       const minBottom = Math.min(viewportH - vMargin, effectiveCardHeight + vMargin);
-      clampedViewportY = Math.max(desiredBottom, minBottom);
+      clampedViewportY = Math.min(viewportH - vMargin, Math.max(minBottom, desiredBottom));
     }
 
     const clampedLocalY =

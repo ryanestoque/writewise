@@ -66,7 +66,7 @@ export function AssessmentPreview() {
         <h2 className={styles.studioTitle}>Target text: &ldquo;kites fly high&rdquo;</h2>
         <span className={styles.band} data-band="satisfactory">
           <span className={styles.bandDot} aria-hidden="true" />
-          74% Overall · Satisfactory
+          72% Overall · Satisfactory
         </span>
       </div>
 
@@ -94,12 +94,12 @@ export function AssessmentPreview() {
           imageUrl={EXAMPLE_WORKSHEET}
           imageDimensions={EXAMPLE_WORKSHEET_DIMENSIONS}
           headerLabel=""
-          altText="Cursive worksheet showing two lines of 'kites fly high': the first line has crowded then wide word spaces; the second has even word spaces."
+          altText="Cursive worksheet showing 'kites fly high' with crowded then wide word spacing."
           showShortcutsLegend={false}
           keyboardScope="focused"
           showImageTools={false}
           autoAspectRatio={false}
-          aspectRatioClass="aspect-[62/43] min-h-[240px] sm:min-h-[260px]"
+          aspectRatioClass="aspect-[62/34] min-h-[220px] sm:min-h-[260px]"
         >
           <DiagnosticOverlay
             overlay={EXAMPLE_OVERLAY}
@@ -129,10 +129,6 @@ export function AssessmentPreview() {
         >
           {EXAMPLE_CRITERIA.map((item, index) => {
             const band = getScoreBandLabel(item.score, { source: "calibrated" });
-            const bandKey =
-              band.band === "Needs Improvement" ? "needs" : band.band.toLowerCase();
-            const bandDisplay =
-              band.band === "Needs Improvement" ? "Needs Impr." : band.band;
             const isSelected = item.id === criterion;
             return (
               <button
@@ -143,6 +139,7 @@ export function AssessmentPreview() {
                 type="button"
                 role="radio"
                 aria-checked={isSelected}
+                aria-label={`${item.name}, ${item.score}%, ${band.band}`}
                 tabIndex={isSelected ? 0 : -1}
                 onClick={() => selectCriterion(item.id)}
                 onKeyDown={(e) => onCriterionKeyDown(e, index)}
@@ -150,19 +147,7 @@ export function AssessmentPreview() {
                 data-selected={isSelected}
               >
                 <span className={styles.studioCriterionName}>{item.name}</span>
-                <span className={styles.studioCriterionMeta}>
-                  <span className={styles.studioCriterionScore}>{item.score}%</span>
-                  <span
-                    className={`${styles.band} ${styles.previewBand}`}
-                    data-band={bandKey}
-                    title={band.band}
-                  >
-                    <span className={styles.bandDot} aria-hidden="true" />
-                    <span className={styles.previewBandText} aria-label={band.band}>
-                      {bandDisplay}
-                    </span>
-                  </span>
-                </span>
+                <span className={styles.studioCriterionScore}>{item.score}%</span>
               </button>
             );
           })}
