@@ -269,6 +269,13 @@ export const EXAMPLE_OVERLAY: DiagnosticOverlayData = {
         severity: "normal",
         transcription: "kites",
         note: "Clean entry strokes on “k” and clear connector into “i”.",
+        letter_zones: [
+          { char: "k", bbox: [60, 66, 41, 90], confidence: 0.94 },
+          { char: "i", bbox: [101, 66, 22, 90], confidence: 0.96 },
+          { char: "t", bbox: [123, 66, 28, 90], confidence: 0.93 },
+          { char: "e", bbox: [151, 66, 28, 90], confidence: 0.95 },
+          { char: "s", bbox: [179, 66, 31, 90], confidence: 0.92 },
+        ],
       },
       {
         line_index: 0,
@@ -279,6 +286,11 @@ export const EXAMPLE_OVERLAY: DiagnosticOverlayData = {
         severity: "normal",
         transcription: "fly",
         note: "Follow the loop through to the next letter without lifting the pencil.",
+        letter_zones: [
+          { char: "f", bbox: [212, 66, 22, 90], confidence: 0.93 },
+          { char: "l", bbox: [234, 66, 23, 90], confidence: 0.95 },
+          { char: "y", bbox: [257, 66, 45, 90], confidence: 0.92 },
+        ],
       },
       {
         line_index: 0,
@@ -289,6 +301,12 @@ export const EXAMPLE_OVERLAY: DiagnosticOverlayData = {
         severity: "normal",
         transcription: "high",
         note: "Loop of “h” is formed smoothly; keep subsequent arches rounded.",
+        letter_zones: [
+          { char: "h", bbox: [350, 64, 46, 90], confidence: 0.94 },
+          { char: "i", bbox: [396, 64, 23, 90], confidence: 0.97 },
+          { char: "g", bbox: [419, 64, 35, 90], confidence: 0.91 },
+          { char: "h", bbox: [454, 64, 46, 90], confidence: 0.93 },
+        ],
       },
       {
         line_index: 1,
@@ -299,6 +317,13 @@ export const EXAMPLE_OVERLAY: DiagnosticOverlayData = {
         severity: "normal",
         transcription: "kites",
         note: "Well-defined loops with consistent oval shapes.",
+        letter_zones: [
+          { char: "k", bbox: [60, 226, 41, 90], confidence: 0.96 },
+          { char: "i", bbox: [101, 226, 22, 90], confidence: 0.98 },
+          { char: "t", bbox: [123, 226, 28, 90], confidence: 0.95 },
+          { char: "e", bbox: [151, 226, 28, 90], confidence: 0.97 },
+          { char: "s", bbox: [179, 226, 31, 90], confidence: 0.94 },
+        ],
       },
       {
         line_index: 1,
@@ -309,6 +334,11 @@ export const EXAMPLE_OVERLAY: DiagnosticOverlayData = {
         severity: "normal",
         transcription: "fly",
         note: "Fluid join between “f” and “l” without pausing.",
+        letter_zones: [
+          { char: "f", bbox: [235, 226, 22, 90], confidence: 0.95 },
+          { char: "l", bbox: [257, 226, 23, 90], confidence: 0.96 },
+          { char: "y", bbox: [280, 226, 45, 90], confidence: 0.94 },
+        ],
       },
       {
         line_index: 1,
@@ -319,6 +349,12 @@ export const EXAMPLE_OVERLAY: DiagnosticOverlayData = {
         severity: "normal",
         transcription: "high",
         note: "Consistent undercurve links and clear final stroke.",
+        letter_zones: [
+          { char: "h", bbox: [350, 226, 46, 90], confidence: 0.95 },
+          { char: "i", bbox: [396, 226, 23, 90], confidence: 0.98 },
+          { char: "g", bbox: [419, 226, 35, 90], confidence: 0.93 },
+          { char: "h", bbox: [454, 226, 46, 90], confidence: 0.96 },
+        ],
       },
     ],
   },

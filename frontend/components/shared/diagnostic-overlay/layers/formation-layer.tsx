@@ -57,6 +57,7 @@ const FormationWordItem = memo(function FormationWordItem({
     4 * hitScale,
     (isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal) * hitScale
   );
+  const hasLetterZones = Boolean(ann.letter_zones && ann.letter_zones.length > 0);
   const id = `formation-${ann.line_index}-${ann.word_index}`;
   const title = isAttention
     ? ann.band
@@ -72,7 +73,11 @@ const FormationWordItem = memo(function FormationWordItem({
     severity: ann.severity,
     x: x + w / 2,
     y: underlineY + underlineHeight + 2,
-    anchorTopY: y - (isSpotlight ? 6 * hitScale : 2),
+    anchorTopY: isSpotlight
+      ? hasLetterZones
+        ? y - 40 * hitScale
+        : y - 22 * hitScale
+      : y - 2,
     anchorBottomY: underlineY + underlineHeight + 2,
   };
 
@@ -84,8 +89,10 @@ const FormationWordItem = memo(function FormationWordItem({
   const isActive = activeAnnotationId === id;
   const hitH = OVERLAY_WEIGHTS.minTargetSize * hitScale;
   const hitW = Math.max(hitH, w);
-  const badgeW = 34 * hitScale;
-  const badgeH = 20 * hitScale;
+  const scoreBadgeW = Math.max(38, 42 * hitScale);
+  const scoreBadgeH = Math.max(18, 20 * hitScale);
+  const scoreBadgeX = x + w / 2;
+  const scoreBadgeY = hasLetterZones ? y - 28 * hitScale : y - 10 * hitScale;
   const strokeW = Math.max(2, 2.5 * hitScale);
 
   return (
@@ -215,28 +222,29 @@ const FormationWordItem = memo(function FormationWordItem({
         className="transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
       />
 
-      {/* Score & Rubric Band Badge in Spotlight Mode */}
+      {/* Word Formation Scoring Percentage Pill in Spotlight Mode */}
       {isSpotlight && (
-        <g transform={`translate(${x + w}, ${y + 4 * hitScale})`}>
+        <g transform={`translate(${scoreBadgeX}, ${scoreBadgeY})`}>
           <rect
-            x={-badgeW / 2}
-            y={-badgeH / 2}
-            width={badgeW}
-            height={badgeH}
-            rx={badgeH / 2}
+            x={-scoreBadgeW / 2}
+            y={-scoreBadgeH / 2}
+            width={scoreBadgeW}
+            height={scoreBadgeH}
+            rx={scoreBadgeH / 2}
             fill={formationColor}
-            className="transition-transform group-hover:scale-110 motion-reduce:transform-none"
+            className="transition-transform group-hover:scale-105 motion-reduce:transform-none"
           />
           <text
             x={0}
-            y={4 * hitScale}
+            y={0}
+            dominantBaseline="central"
             textAnchor="middle"
             fill="#ffffff"
             fontSize={11 * hitScale}
-            fontWeight="600"
+            fontWeight="700"
             fontFamily="system-ui, sans-serif"
           >
-            {Math.round(ann.score)}
+            {Math.round(ann.score)}%
           </text>
         </g>
       )}

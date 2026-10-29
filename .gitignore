@@ -73,6 +73,7 @@ research/data/
 scratch/
 backend/scratch/
 output/
+.tmp/
 
 # Proposal paper
 docs/proposal_paper/

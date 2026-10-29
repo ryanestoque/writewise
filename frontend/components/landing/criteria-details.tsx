@@ -71,7 +71,7 @@ const bands = [
 export function CriteriaDetails() {
   return (
     <section id="criteria" className={styles.criteriaSection} aria-labelledby="criteria-heading">
-      <div className={styles.sectionHeader}>
+      <div className={styles.sectionHeader} data-reveal="fade-up">
         <div>
           <h2 id="criteria-heading" className={styles.sectionTitle}>
             Five fundamentals of fluent cursive.
@@ -83,13 +83,22 @@ export function CriteriaDetails() {
         </p>
       </div>
 
-      <div className={styles.bandSpectrumCard} aria-label="Developmental score bands">
+      <div
+        className={styles.bandSpectrumCard}
+        aria-label="Developmental score bands"
+        data-reveal="fade-up"
+      >
         <div className={styles.bandSpectrumHead}>
           <span className={styles.bandSpectrumTitle}>Developmental growth spectrum</span>
         </div>
         <ul className={styles.bandSpectrumGrid}>
-          {bands.map((b) => (
-            <li key={b.key} className={styles.bandSpectrumItem}>
+          {bands.map((b, i) => (
+            <li
+              key={b.key}
+              className={styles.bandSpectrumItem}
+              data-reveal="spectrum-item"
+              data-index={i}
+            >
               <span className={styles.band} data-band={b.key}>
                 <span className={styles.bandDot} aria-hidden="true" />
                 {b.label}
@@ -101,8 +110,13 @@ export function CriteriaDetails() {
       </div>
 
       <ul className={styles.ledger}>
-        {criteria.map(({ id, name, body, note, Specimen }) => (
-          <li key={id} className={styles.ledgerRow}>
+        {criteria.map(({ id, name, body, note, Specimen }, i) => (
+          <li
+            key={id}
+            className={styles.ledgerRow}
+            data-reveal="ledger-row"
+            data-index={i}
+          >
             <div className={styles.ledgerSpecimen}>
               <Specimen />
             </div>

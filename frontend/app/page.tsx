@@ -6,6 +6,8 @@ import { GrowthStrip } from "@/components/landing/growth-strip";
 import { AssessmentPreview } from "@/components/landing/assessment-preview";
 import { BackToTop } from "@/components/landing/back-to-top";
 import { CriteriaDetails } from "@/components/landing/criteria-details";
+import { LandingHeader } from "@/components/landing/landing-header";
+import { LandingScrollEffects } from "@/components/landing/landing-scroll-effects";
 import { AssessArt, ProgressArt, UploadArt } from "@/components/landing/landing-art";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./landing.module.css";
@@ -67,42 +69,37 @@ export default async function Home() {
   }
 
   return (
-    <div className={styles.landing}>
+    <div className={styles.landing} data-landing-root>
+      <LandingScrollEffects />
       <a className={styles.skipLink} href="#main-content">
         Skip to content
       </a>
 
-      <header className={styles.header}>
-        <div className={styles.headerInner}>
-          <Link href="/" aria-label="WriteWise home" className={styles.logoLink}>
-            <BrandLogo size="md" priority />
-          </Link>
-          <nav className={styles.nav} aria-label="Page sections">
-            <a href="#how-it-works">How it works</a>
-            <a href="#criteria">Five criteria</a>
-            <a href="#progress">Progress</a>
-          </nav>
-          <div className={styles.headerActions}>
-            <Link href="/login" className={styles.textLink}>
-              Sign in
-            </Link>
-            <Link href="/signup" className={`${styles.cta} ${styles.ctaSmall}`}>
-              <span className={styles.ctaDesktopText}>Create an account</span>
-              <span className={styles.ctaMobileText}>Sign up</span>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <LandingHeader />
 
       <main id="main-content" tabIndex={-1}>
         {/* ------------------------------ Hero ------------------------------ */}
         <section className={styles.hero} aria-labelledby="hero-heading">
           <div className={styles.heroGrid}>
-            <div className={styles.heroCopy}>
+            <div className={styles.heroCopy} data-reveal="hero-copy">
               <h1 id="hero-heading" className={styles.heroTitle} tabIndex={-1}>
                 <span className={styles.heroLine}>Classroom to home,</span>
                 <span className={styles.heroLine}>
-                  <span className={styles.heroCursive}>stroke by stroke.</span>
+                  <span className={styles.heroCursiveWrap}>
+                    <span className={styles.heroCursive}>stroke by stroke.</span>
+                    <svg
+                      className={styles.heroFlourish}
+                      viewBox="0 0 260 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M4 11 C 60 14, 120 7, 180 9 C 210 10, 240 7, 256 5"
+                        className={styles.heroFlourishPath}
+                      />
+                    </svg>
+                  </span>
                 </span>
               </h1>
               <p className={styles.heroLede}>
@@ -138,14 +135,16 @@ export default async function Home() {
               </ul>
             </div>
 
-            <AssessmentPreview />
+            <div className={styles.heroStudioWrap} data-reveal="hero-studio">
+              <AssessmentPreview />
+            </div>
           </div>
         </section>
 
         {/* ---------------------------- Workflow ---------------------------- */}
         <section id="how-it-works" className={styles.workflow} aria-labelledby="workflow-heading">
           <div className={styles.workflowInner}>
-            <div className={styles.sectionHeader}>
+            <div className={styles.sectionHeader} data-reveal="fade-up">
               <div>
                 <h2 id="workflow-heading" className={styles.sectionTitle}>
                   From paper to progress in three steps.
@@ -158,8 +157,13 @@ export default async function Home() {
             </div>
 
             <ol className={styles.steps}>
-              {steps.map(({ id, title, body, Art }) => (
-                <li key={id} className={styles.stepCard}>
+              {steps.map(({ id, title, body, Art }, i) => (
+                <li
+                  key={id}
+                  className={styles.stepCard}
+                  data-reveal="step-card"
+                  data-index={i}
+                >
                   <div className={styles.stepArtWrap}>
                     <Art />
                   </div>
@@ -176,7 +180,7 @@ export default async function Home() {
 
         {/* ---------------------------- Progress ---------------------------- */}
         <section id="progress" className={styles.progressSection} aria-labelledby="progress-heading">
-          <div className={styles.sectionHeader}>
+          <div className={styles.sectionHeader} data-reveal="fade-up">
             <div>
               <h2 id="progress-heading" className={styles.sectionTitle}>
                 Watch rhythm and spacing steady week by week.
@@ -188,20 +192,22 @@ export default async function Home() {
             </p>
           </div>
 
-          <GrowthStrip />
+          <div data-reveal="growth-card">
+            <GrowthStrip />
+          </div>
         </section>
 
         {/* ------------------------------ Close ----------------------------- */}
         <section id="for-you" className={styles.close} aria-labelledby="close-heading">
           <div className={styles.closeInner}>
-            <div className={styles.closeHeader}>
+            <div className={styles.closeHeader} data-reveal="fade-up">
               <h2 id="close-heading" className={styles.closeTitle}>
                 Start with one worksheet.
               </h2>
             </div>
 
             <div className={styles.signupGrid}>
-              <div className={styles.signupRole}>
+              <div className={styles.signupRole} data-reveal="signup-card" data-index="0">
                 <h3>For teachers</h3>
                 <p>
                   Create word and sentence activities, assess uploaded worksheets in seconds, spot
@@ -214,7 +220,7 @@ export default async function Home() {
                   </svg>
                 </Link>
               </div>
-              <div className={styles.signupRole}>
+              <div className={styles.signupRole} data-reveal="signup-card" data-index="1">
                 <h3>For parents</h3>
                 <p>
                   Follow your child&rsquo;s handwriting milestones, read encouraging coaching tips,
@@ -233,8 +239,13 @@ export default async function Home() {
             </div>
 
             <div className={styles.trustStrip} aria-label="Privacy and safety">
-              {trustPillars.map((pillar) => (
-                <div key={pillar.title} className={styles.trustItem}>
+              {trustPillars.map((pillar, i) => (
+                <div
+                  key={pillar.title}
+                  className={styles.trustItem}
+                  data-reveal="trust-item"
+                  data-index={i}
+                >
                   <h4>{pillar.title}</h4>
                   <p>{pillar.body}</p>
                 </div>

@@ -94,6 +94,32 @@
   height: var(--header-height);
   background: var(--paper);
   border-bottom: 1px solid var(--rule);
+  transition:
+    border-color 240ms var(--ease-out),
+    box-shadow 240ms var(--ease-out);
+}
+
+.header[data-scrolled="true"] {
+  background: var(--paper);
+  border-bottom-color: color-mix(in srgb, var(--rule) 70%, var(--teal));
+  box-shadow: 0 4px 20px -2px rgb(20 80 73 / 0.08);
+}
+
+.headerProgressBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2.5px;
+  background: linear-gradient(90deg, var(--teal), #2da396);
+  transform-origin: 0 50%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms var(--ease-out);
+}
+
+.header[data-scrolled="true"] .headerProgressBar {
+  opacity: 1;
 }
 
 .headerInner {
@@ -119,15 +145,34 @@
   font-weight: 500;
 }
 
-.nav a {
+.nav a,
+.navLink {
   color: var(--ink-soft);
   text-decoration: none;
   padding: 8px 0;
+  position: relative;
   transition: color 150ms ease-out;
 }
 
-.nav a:hover {
+.nav a:hover,
+.navLink:hover {
   color: var(--teal);
+}
+
+.navLink[data-active="true"] {
+  color: var(--teal);
+  font-weight: 600;
+}
+
+.navLink[data-active="true"]::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--teal);
+  border-radius: 1px;
 }
 
 .headerActions {
@@ -376,6 +421,12 @@
   margin-top: 0.05em;
 }
 
+.heroCursiveWrap {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+
 .heroCursive {
   display: inline-block;
   font-family: var(--font-cursive), cursive;
@@ -387,6 +438,29 @@
   padding: 0 0.06em 0 0.02em;
   vertical-align: baseline;
   -webkit-text-stroke: 0.8px currentColor;
+}
+
+.heroFlourish {
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  width: 100%;
+  height: 14px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.heroFlourishPath {
+  stroke: var(--teal);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  fill: none;
+  opacity: 0.85;
+}
+
+.heroStudioWrap {
+  position: relative;
+  width: 100%;
 }
 
 .heroLede {
@@ -1529,9 +1603,207 @@
 
 /* ------------------------------- Motion ----------------------------- */
 
+/* Progressive enhancement: default state is always 100% visible */
+.landing [data-reveal] {
+  opacity: 1;
+  transform: none;
+}
+
 @media (prefers-reduced-motion: no-preference) {
+  /* When LandingScrollEffects mounts and signals readiness, arm the animations */
+  .landing[data-scroll-ready="true"] [data-reveal] {
+    opacity: 0;
+    transform: translateY(20px);
+    transition:
+      opacity 650ms var(--ease-out),
+      transform 650ms var(--ease-out);
+    will-change: opacity, transform;
+  }
+
+  .landing[data-scroll-ready="true"] [data-reveal][data-revealed="true"] {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Specific initial entrance for Hero */
+  .landing[data-scroll-ready="true"] [data-reveal="hero-copy"] {
+    opacity: 0;
+    transform: translateY(16px);
+    animation: heroSettle 700ms var(--ease-out) 80ms forwards;
+  }
+
+  .landing[data-scroll-ready="true"] [data-reveal="hero-studio"] {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: heroSettle 750ms var(--ease-out) 200ms forwards;
+  }
+
+  /* Hero cursive flourish: draws smoothly under 'stroke by stroke.' */
+  .heroFlourishPath {
+    stroke-dasharray: 270;
+    stroke-dashoffset: 270;
+    animation: drawFlourish 850ms var(--ease-out) 350ms forwards;
+  }
+
+  /* Stagger delays for list and card children */
+  .landing[data-scroll-ready="true"] [data-reveal][data-index="0"] {
+    transition-delay: 0ms;
+  }
+  .landing[data-scroll-ready="true"] [data-reveal][data-index="1"] {
+    transition-delay: 110ms;
+  }
+  .landing[data-scroll-ready="true"] [data-reveal][data-index="2"] {
+    transition-delay: 220ms;
+  }
+  .landing[data-scroll-ready="true"] [data-reveal][data-index="3"] {
+    transition-delay: 330ms;
+  }
+  .landing[data-scroll-ready="true"] [data-reveal][data-index="4"] {
+    transition-delay: 440ms;
+  }
+
+  /* Authored Artwork: Step 1 (UploadArt) */
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .artFrame {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    animation: drawFrame 650ms var(--ease-out) 220ms forwards;
+  }
+
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .artCheckDisc {
+    opacity: 0;
+    transform: scale(0.6);
+    transform-origin: 182px 24px;
+    animation: popDisc 420ms var(--ease-out) 480ms forwards;
+  }
+
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .artCheck {
+    stroke-dasharray: 30;
+    stroke-dashoffset: 30;
+    animation: drawCheck 320ms var(--ease-out) 620ms forwards;
+  }
+
+  /* Authored Artwork: Step 2 (AssessArt) */
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .stepArt .pencil {
+    stroke-dasharray: 600;
+    stroke-dashoffset: 600;
+    animation: drawStroke 750ms var(--ease-out) 150ms forwards;
+  }
+
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .stepArt .markWarm,
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .stepArt .markCool,
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .stepArt .markGood,
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .stepArt .artChip,
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .stepArt .artLine {
+    opacity: 0;
+    animation: fadeInOverlay 450ms var(--ease-out) 650ms forwards;
+  }
+
+  /* Authored Artwork: Step 3 (ProgressArt) */
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .artThread {
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+    animation: drawThread 850ms var(--ease-out) 200ms forwards;
+  }
+
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .artNode {
+    opacity: 0;
+    transform: scale(0.6);
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: popNode 400ms var(--ease-out) forwards;
+  }
+
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .artNode:nth-of-type(1) {
+    animation-delay: 240ms;
+  }
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .artNode:nth-of-type(2) {
+    animation-delay: 480ms;
+  }
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .artNode:nth-of-type(3) {
+    animation-delay: 700ms;
+  }
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .artNode:nth-of-type(4) {
+    animation-delay: 880ms;
+  }
+
+  /* Five Criteria Specimens: Pen stroke followed by diagnostic annotations */
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .specimen .pencil {
+    stroke-dasharray: 600;
+    stroke-dashoffset: 600;
+    animation: drawStroke 700ms var(--ease-out) 120ms forwards;
+  }
+
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .specimenNotes {
+    opacity: 0;
+    animation: fadeInOverlay 400ms var(--ease-out) 520ms forwards;
+  }
+
+  /* Growth Strip thread */
+  .landing[data-scroll-ready="true"] [data-revealed="true"] .threadPath {
+    stroke-dasharray: 600;
+    stroke-dashoffset: 600;
+    animation: drawThread 800ms var(--ease-out) 250ms forwards;
+  }
+
   .feedbackInner {
     animation: noteIn 320ms var(--ease-out);
+  }
+}
+
+@keyframes heroSettle {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes drawFlourish {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes drawStroke {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes drawFrame {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes drawCheck {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes popDisc {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes drawThread {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes popNode {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeInOverlay {
+  to {
+    opacity: 1;
   }
 }
 
@@ -1540,9 +1812,38 @@
     opacity: 0;
     transform: translateY(4px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .landing[data-scroll-ready="true"] [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .heroFlourishPath,
+  .artFrame,
+  .artCheck,
+  .artThread,
+  .threadPath,
+  .pencil {
+    stroke-dashoffset: 0 !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .artCheckDisc,
+  .artNode,
+  .specimenNotes {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
   .ctaArrow,
   .threadNode {
     transition: none;
