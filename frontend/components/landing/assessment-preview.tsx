@@ -125,18 +125,18 @@ export function AssessmentPreview() {
                   value={item.id}
                   className={styles.srOnlyRadio}
                 />
-                <span className={styles.studioCriterionTop}>
-                  <span className={styles.studioCriterionName}>{item.name}</span>
+                <span className={styles.studioCriterionName}>{item.name}</span>
+                <span className={styles.studioCriterionMeta}>
                   <span className={styles.studioCriterionScore}>{item.score}%</span>
-                </span>
-                <span
-                  className={`${styles.band} ${styles.previewBand}`}
-                  data-band={bandKey}
-                  title={band.band}
-                >
-                  <span className={styles.bandDot} aria-hidden="true" />
-                  <span className={styles.previewBandText} aria-label={band.band}>
-                    {bandDisplay}
+                  <span
+                    className={`${styles.band} ${styles.previewBand}`}
+                    data-band={bandKey}
+                    title={band.band}
+                  >
+                    <span className={styles.bandDot} aria-hidden="true" />
+                    <span className={styles.previewBandText} aria-label={band.band}>
+                      {bandDisplay}
+                    </span>
                   </span>
                 </span>
               </label>
