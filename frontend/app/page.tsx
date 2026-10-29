@@ -258,17 +258,53 @@ export default async function Home() {
       </main>
 
       <footer className={styles.footer}>
-        <div className={styles.footerBrand}>
-          <BrandLogo size="sm" />
-          <p>Cursive handwriting assessment and progress monitoring for classrooms and families.</p>
+        {/* Signature Penmanship Ruled Guides */}
+        <div className={styles.footerGuides} aria-hidden="true">
+          <span className={styles.footerGuideTop} />
+          <span className={styles.footerGuideMid} />
+          <span className={styles.footerGuideBase} />
         </div>
-        <nav aria-label="Footer navigation">
-          <a href="#how-it-works">How it works</a>
-          <a href="#criteria">Five criteria</a>
-          <a href="#progress">Progress</a>
-          <Link href="/login">Sign in</Link>
-          <Link href="/signup">Create an account</Link>
-        </nav>
+
+        <div className={styles.footerInner}>
+          <div className={styles.footerMain}>
+            {/* Brand & Purpose Column */}
+            <div className={styles.footerBrandCol}>
+              <Link href="/" aria-label="WriteWise home" className={styles.footerLogoLink}>
+                <BrandLogo size="md" />
+              </Link>
+              <p className={styles.footerBio}>
+                A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and
+                Progress Monitoring System for Basic Education Teachers and Parents
+              </p>
+            </div>
+
+            {/* Platform Column */}
+            <div className={styles.footerCol}>
+              <h3 className={styles.footerColTitle}>Platform</h3>
+              <ul className={styles.footerLinkList}>
+                <li>
+                  <a href="#how-it-works">How it works</a>
+                </li>
+                <li>
+                  <a href="#assessment-preview">Interactive studio</a>
+                </li>
+                <li>
+                  <a href="#criteria">Developmental spectrum</a>
+                </li>
+                <li>
+                  <a href="#progress">Weekly progress strip</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Baseline Bar */}
+          <div className={styles.footerBottom}>
+            <p className={styles.footerCopy}>
+              &copy; {new Date().getFullYear()} WriteWise (80-4).
+            </p>
+          </div>
+        </div>
       </footer>
     </div>
   );

@@ -1489,46 +1489,131 @@
 /* ------------------------------- Footer ----------------------------- */
 
 .footer {
+  width: 100%;
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+}
+
+.footerGuides {
+  width: 100%;
+  height: 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.footerGuideTop {
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: var(--guide-top);
+  opacity: 0.45;
+}
+
+.footerGuideMid {
+  display: block;
+  width: 100%;
+  height: 1px;
+  background-image: linear-gradient(90deg, var(--guide-mid) 40%, transparent 40%);
+  background-size: 8px 1px;
+  opacity: 0.7;
+}
+
+.footerGuideBase {
+  display: block;
+  width: 100%;
+  height: 1.5px;
+  background: var(--guide-base);
+  opacity: 0.7;
+}
+
+.footerInner {
   max-width: var(--max);
   margin: 0 auto;
-  padding: 32px var(--gutter);
+  padding: clamp(40px, 5vw, 60px) var(--gutter) 32px;
+}
+
+.footerMain {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
   justify-content: space-between;
-  gap: 20px 32px;
-  font-size: 0.875rem;
-  color: var(--ink-muted);
-}
-
-.footerBrand {
-  display: flex;
+  align-items: flex-start;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 20px;
+  gap: clamp(28px, 4vw, 56px);
 }
 
-.footerBrand p {
+.footerBrandCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  max-width: 520px;
+}
+
+.footerLogoLink {
+  display: inline-flex;
+  border-radius: 8px;
+}
+
+.footerBio {
   margin: 0;
+  max-width: 52ch;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.footerCol {
+  min-width: 160px;
+}
+
+.footerColTitle {
+  margin: 0 0 16px;
+  font-family: var(--font-heading), sans-serif;
   font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--teal-night);
+}
+
+.footerLinkList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footerLinkList a {
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+  text-decoration: none;
+  padding: 2px 0;
+  transition: color 150ms ease-out;
+}
+
+.footerLinkList a:hover {
+  color: var(--teal);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.footerBottom {
+  margin-top: clamp(36px, 4.5vw, 48px);
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 0.8125rem;
   color: var(--ink-muted);
 }
 
-.footer nav {
-  display: flex;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-
-.footer nav a {
-  color: var(--ink-soft);
-  font-weight: 500;
-  text-decoration: none;
-  padding: 8px 0;
-}
-
-.footer nav a:hover {
-  color: var(--teal);
+.footerCopy {
+  margin: 0;
 }
 
 /* ---------------------------- Back to Top --------------------------- */
@@ -2148,6 +2233,12 @@
 
   .thread {
     display: none;
+  }
+
+  .footerBottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
   }
 }
 
