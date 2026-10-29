@@ -47,7 +47,7 @@
   color: var(--teal-night);
 }
 
-.landing :focus-visible {
+.landing :focus-visible:not(svg *) {
   outline: 3px solid var(--teal);
   outline-offset: 3px;
   border-radius: 6px;

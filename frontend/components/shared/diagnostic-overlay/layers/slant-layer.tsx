@@ -41,7 +41,7 @@ export const SlantLayer = memo(function SlantLayer({
       }}
     >
       {annotations.map((ann, idx) => {
-        const [x, y, w] = ann.bbox;
+        const [x, y, w, h] = ann.bbox;
         const [x1, y1, x2, y2] = ann.vector;
         const isAttention = ann.severity === "needs_attention";
 
@@ -57,6 +57,8 @@ export const SlantLayer = memo(function SlantLayer({
           : isConsistent
             ? "Consistent Slant"
             : "Acceptable Slant";
+        const topY = isSpotlight ? y - 22 * hitScale : Math.min(y, y2);
+        const bottomY = Math.max(y + h, y1);
         const hoverPayload = {
           id,
           criterion: "slant" as const,
@@ -64,7 +66,9 @@ export const SlantLayer = memo(function SlantLayer({
           note: ann.note,
           severity: ann.severity,
           x: x + w / 2,
-          y: y - 6,
+          y: topY,
+          anchorTopY: topY - 2,
+          anchorBottomY: bottomY + 2,
         };
 
         const toggleAnnotation = () => {

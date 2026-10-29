@@ -814,7 +814,7 @@ export function WorksheetImageInspector({
           <Skeleton className="size-full min-h-[280px] sm:min-h-[320px] rounded-none" />
         ) : imageUrl && !hasImageError && !isError ? (
           <div
-            className="size-full flex items-center justify-center p-2 motion-reduce:!transition-none"
+            className="absolute inset-0 size-full min-w-0 min-h-0 flex items-center justify-center p-2 motion-reduce:!transition-none"
             style={{
               transform: `translate3d(${panOffset.x}px, ${panOffset.y}px, 0) scale(${zoomScale})`,
               transformOrigin: "center center",
@@ -823,7 +823,7 @@ export function WorksheetImageInspector({
             }}
           >
             {/* Relative wrapper: positioning context for child overlays (e.g. guide-line SVG) */}
-            <div className="relative size-full">
+            <div className="relative size-full min-w-0 min-h-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imageUrl}

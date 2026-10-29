@@ -152,7 +152,9 @@ export const BaselineLayer = memo(function BaselineLayer({
           note: ann.note,
           severity: ann.severity,
           x: x + w / 2,
-          y: wordBottomY + 6,
+          y: wordBottomY + 4,
+          anchorTopY: wordBottomY - 4,
+          anchorBottomY: wordBottomY + 4,
         };
 
         const toggleAnnotation = () => {

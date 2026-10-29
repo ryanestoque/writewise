@@ -121,6 +121,10 @@ export interface ActiveAnnotationHover {
   severity: Severity;
   x: number;
   y: number;
+  /** Top edge of the target word/mark in image coordinates (used when placing tooltip above). */
+  anchorTopY?: number;
+  /** Bottom edge of the target word/mark in image coordinates (used when placing tooltip below). */
+  anchorBottomY?: number;
   lineIndex?: number;
   wordIndex?: number;
 }
@@ -156,6 +160,8 @@ export function getAttentionItems(
           severity: "needs_attention",
           x: x + w / 2,
           y: y + h + 4,
+          anchorTopY: y - 4,
+          anchorBottomY: y + h + 6,
           lineIndex: ann.line_index,
           wordIndex: ann.word_index,
         });
@@ -167,6 +173,7 @@ export function getAttentionItems(
     overlay.baseline?.annotations?.forEach((ann) => {
       if (ann.severity === "needs_attention") {
         const [x, y, w, h] = ann.bbox;
+        const wordBottomY = ann.measured_y ?? (y + h);
         items.push({
           id: `baseline-${ann.line_index}-${ann.word_index}`,
           criterion: "baseline_alignment",
@@ -174,7 +181,9 @@ export function getAttentionItems(
           note: ann.note,
           severity: "needs_attention",
           x: x + w / 2,
-          y: y + h + 6,
+          y: wordBottomY + 4,
+          anchorTopY: wordBottomY - 4,
+          anchorBottomY: wordBottomY + 4,
           lineIndex: ann.line_index,
           wordIndex: ann.word_index,
         });
@@ -185,7 +194,8 @@ export function getAttentionItems(
   if (filter === "all" || filter === "slant") {
     overlay.slant?.annotations?.forEach((ann) => {
       if (ann.severity === "needs_attention") {
-        const [x, y, w] = ann.bbox;
+        const [x, y, w, h] = ann.bbox;
+        const [, y1, , y2] = ann.vector;
         items.push({
           id: `slant-${ann.line_index}-${ann.word_index}`,
           criterion: "slant",
@@ -194,6 +204,8 @@ export function getAttentionItems(
           severity: "needs_attention",
           x: x + w / 2,
           y: y - 6,
+          anchorTopY: Math.min(y, y2) - 4,
+          anchorBottomY: Math.max(y + h, y1) + 4,
           lineIndex: ann.line_index,
           wordIndex: ann.word_index,
         });
@@ -212,6 +224,8 @@ export function getAttentionItems(
           severity: "needs_attention",
           x: (ann.x1 + ann.x2) / 2,
           y: ann.y - 10,
+          anchorTopY: ann.y - 12,
+          anchorBottomY: ann.y + 12,
           lineIndex: ann.line_index,
           wordIndex: ann.gap_index,
         });
@@ -223,14 +237,17 @@ export function getAttentionItems(
     overlay.size?.annotations?.forEach((ann) => {
       if (ann.severity === "needs_attention") {
         const [x, y, w, h] = ann.bbox;
+        const [cx, cy, cw, ch] = ann.core_bbox ?? [x, y, w, h];
         items.push({
           id: `size-${ann.line_index}-${ann.word_index}`,
           criterion: "size_consistency",
           title: "Inconsistent Size",
           note: ann.note,
           severity: "needs_attention",
-          x: x + w / 2,
-          y: y + h + 4,
+          x: cx + cw / 2,
+          y: cy + ch + 4,
+          anchorTopY: cy - 2,
+          anchorBottomY: cy + ch + 2,
           lineIndex: ann.line_index,
           wordIndex: ann.word_index,
         });

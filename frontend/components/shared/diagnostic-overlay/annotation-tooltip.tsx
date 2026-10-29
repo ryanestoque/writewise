@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useEffect, useRef, useState, type RefObject } from "react";
 import type { ActiveAnnotationHover } from "./types";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -52,11 +52,32 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
   showMeasurementDetails = true,
   onDismiss,
 }: AnnotationTooltipProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [measuredHeight, setMeasuredHeight] = useState<number>(0);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el || !hover) return;
+
+    const updateHeight = () => {
+      const h = Math.round(el.offsetHeight);
+      if (h > 0) {
+        setMeasuredHeight((prev) => (prev === h ? prev : h));
+      }
+    };
+
+    updateHeight();
+
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hover, isPinned, showMeasurementDetails, containerWidth, viewportWidth]);
+
   if (!hover || imageWidth <= 0 || imageHeight <= 0) {
     return null;
   }
 
-  const { title, note, severity, criterion, x, y } = hover;
+  const { title, note, severity, criterion, x, y, anchorTopY, anchorBottomY } = hover;
   const isAttention = severity === "needs_attention";
   const effectiveZoom = zoomScale && zoomScale > 0 ? zoomScale : 1;
   const counterScale = 1 / effectiveZoom;
@@ -73,7 +94,7 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
   let isNearTop = false;
   let caretOffset = 0;
   let isOffscreen = false;
-  let cardWidth = 256;
+  let cardWidth = 236;
 
   if (resolvedContainerW > 0 && resolvedContainerH > 0) {
     const containerW = resolvedContainerW;
@@ -100,31 +121,45 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
       offsetY = (containerH - renderedH) / 2;
     }
 
-    const pixelX = offsetX + (x / imageWidth) * renderedW;
-    const pixelY = offsetY + (y / imageHeight) * renderedH;
+    const topAnchor = anchorTopY ?? y;
+    const bottomAnchor = anchorBottomY ?? y;
 
-    // Target annotation point in visible viewport coordinates
+    const pixelX = offsetX + (x / imageWidth) * renderedW;
+    const pixelTopY = offsetY + (topAnchor / imageHeight) * renderedH;
+    const pixelBottomY = offsetY + (bottomAnchor / imageHeight) * renderedH;
+    const pixelCenterY = (pixelTopY + pixelBottomY) / 2;
+
+    // Target annotation points in visible viewport coordinates
     // Account for zoom center-scaling and pan offset
     const targetViewportX =
       viewportW / 2 + panOffset.x + (pixelX - containerW / 2) * effectiveZoom;
-    const targetViewportY =
-      viewportH / 2 + panOffset.y + (pixelY - containerH / 2) * effectiveZoom;
+    const targetTopViewportY =
+      viewportH / 2 + panOffset.y + (pixelTopY - containerH / 2) * effectiveZoom;
+    const targetBottomViewportY =
+      viewportH / 2 + panOffset.y + (pixelBottomY - containerH / 2) * effectiveZoom;
+    const targetCenterViewportY =
+      viewportH / 2 + panOffset.y + (pixelCenterY - containerH / 2) * effectiveZoom;
 
     // Fade out cleanly if target stroke has panned outside visible viewport bounds
     isOffscreen =
       targetViewportX < -30 ||
       targetViewportX > viewportW + 30 ||
-      targetViewportY < -30 ||
-      targetViewportY > viewportH + 30;
+      targetCenterViewportY < -30 ||
+      targetCenterViewportY > viewportH + 30;
 
-    // Fluid card width: dynamically scale down for narrow containers
+    // Fluid card width: dynamically scale down for compact mobile containers so it never overflows
+    const isCompactViewport = viewportW < 440 || viewportH < 300;
     const isNarrowOrShort = viewportW < 640 || viewportH < 340;
-    const baseCardWidth = isNarrowOrShort
-      ? Math.min(280, Math.max(220, viewportW - 24))
-      : 280;
-    cardWidth = Math.min(baseCardWidth, Math.max(200, viewportW - 16));
+    const margin = isCompactViewport ? 6 : isNarrowOrShort ? 8 : 12;
+    const maxAvailableWidth = Math.max(168, viewportW - margin * 2);
+
+    cardWidth = isCompactViewport
+      ? Math.min(232, maxAvailableWidth)
+      : isNarrowOrShort
+        ? Math.min(256, maxAvailableWidth)
+        : Math.min(280, maxAvailableWidth);
+
     const cardHalfWidth = cardWidth / 2;
-    const margin = isNarrowOrShort ? 8 : 12;
 
     // Clamp tooltip center horizontally within the visible viewport bounds
     const minCenterX = cardHalfWidth + margin;
@@ -142,23 +177,25 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
       containerW / 2 + (clampedViewportX - viewportW / 2 - panOffset.x) / effectiveZoom;
 
     // Caret offset: visual horizontal distance from card center to the pin
-    // Note: because the card is counter-scaled by scale(1 / effectiveZoom), 1px inside the card
+    // Because the card is counter-scaled by scale(1 / effectiveZoom), 1px inside the card
     // directly equals 1px on the screen.
     const deltaViewportX = targetViewportX - clampedViewportX;
-    const maxCaretOffset = Math.max(0, cardHalfWidth - 22);
+    const maxCaretOffset = Math.max(0, cardHalfWidth - 16);
     caretOffset = Math.max(-maxCaretOffset, Math.min(maxCaretOffset, deltaViewportX));
 
-    // Vertical placement: evaluate available clearance above and below target point
-    const vGap = isNarrowOrShort ? 8 : 10;
-    const vMargin = isNarrowOrShort ? 6 : 8;
-    const estimatedCardHeight = isNarrowOrShort ? 104 : 116;
+    // Vertical placement: evaluate available clearance above top of word and below bottom of word
+    const vGap = isCompactViewport ? 6 : isNarrowOrShort ? 8 : 10;
+    const vMargin = isCompactViewport ? 6 : 8;
+    const fallbackHeight = isCompactViewport ? 84 : isNarrowOrShort ? 96 : 114;
+    const effectiveCardHeight =
+      measuredHeight > 0 ? measuredHeight : fallbackHeight;
 
-    const spaceAbove = targetViewportY - vMargin;
-    const spaceBelow = viewportH - targetViewportY - vMargin;
+    const spaceAbove = targetTopViewportY - vMargin;
+    const spaceBelow = viewportH - targetBottomViewportY - vMargin;
 
-    if (spaceBelow >= estimatedCardHeight + vGap && spaceAbove < estimatedCardHeight + vGap) {
+    if (spaceBelow >= effectiveCardHeight + vGap && spaceAbove < effectiveCardHeight + vGap) {
       isNearTop = true;
-    } else if (spaceAbove >= estimatedCardHeight + vGap && spaceBelow < estimatedCardHeight + vGap) {
+    } else if (spaceAbove >= effectiveCardHeight + vGap && spaceBelow < effectiveCardHeight + vGap) {
       isNearTop = false;
     } else {
       isNearTop = spaceBelow >= spaceAbove;
@@ -166,16 +203,14 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
 
     let clampedViewportY: number;
     if (isNearTop) {
-      // Tooltip is placed below target stroke.
-      // Top of tooltip starts at targetViewportY + vGap, clamped within viewport bounds.
-      const desiredTop = targetViewportY + vGap;
-      const maxTop = Math.max(vMargin, viewportH - estimatedCardHeight - vMargin);
+      // Tooltip is placed below target word/mark (caret at top pointing up to targetBottomViewportY).
+      const desiredTop = targetBottomViewportY + vGap;
+      const maxTop = Math.max(vMargin, viewportH - effectiveCardHeight - vMargin);
       clampedViewportY = Math.min(desiredTop, maxTop);
     } else {
-      // Tooltip is placed above target stroke.
-      // Bottom of tooltip is at targetViewportY - vGap, clamped within viewport bounds.
-      const desiredBottom = targetViewportY - vGap;
-      const minBottom = Math.min(viewportH - vMargin, estimatedCardHeight + vMargin);
+      // Tooltip is placed above target word/mark (caret at bottom pointing down to targetTopViewportY).
+      const desiredBottom = targetTopViewportY - vGap;
+      const minBottom = Math.min(viewportH - vMargin, effectiveCardHeight + vMargin);
       clampedViewportY = Math.max(desiredBottom, minBottom);
     }
 
@@ -186,10 +221,16 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
     topPos = `${clampedLocalY}px`;
   } else {
     // Defensive fallback if measurements are somehow not yet settled
-    const leftPct = Math.max(15, Math.min(85, (x / imageWidth) * 100));
-    const topPct = Math.max(15, Math.min(85, (y / imageHeight) * 100));
-    isNearTop = topPct < 45;
-    cardWidth = 260;
+    const leftPct = Math.max(25, Math.min(75, (x / imageWidth) * 100));
+    const topAnchor = anchorTopY ?? y;
+    const bottomAnchor = anchorBottomY ?? y;
+    const midPct = (((topAnchor + bottomAnchor) / 2) / imageHeight) * 100;
+    isNearTop = midPct < 48;
+    const targetYPct = isNearTop
+      ? (bottomAnchor / imageHeight) * 100 + 2
+      : (topAnchor / imageHeight) * 100 - 2;
+    const topPct = Math.max(12, Math.min(88, targetYPct));
+    cardWidth = 224;
     leftPos = `${leftPct}%`;
     topPos = `${topPct}%`;
     caretOffset = 0;
@@ -216,6 +257,7 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
       }}
     >
       <TooltipCard
+        cardRef={cardRef}
         title={title}
         note={note}
         isAttention={isAttention}
@@ -236,6 +278,7 @@ export const AnnotationTooltip = memo(function AnnotationTooltip({
 /* -------------------------------------------------------------------------- */
 
 interface TooltipCardProps {
+  cardRef?: RefObject<HTMLDivElement | null>;
   title: string;
   note: string;
   isAttention: boolean;
@@ -249,6 +292,7 @@ interface TooltipCardProps {
 }
 
 function TooltipCard({
+  cardRef,
   title,
   note,
   isAttention,
@@ -292,9 +336,10 @@ function TooltipCard({
       </div>
 
       <div
+        ref={cardRef}
         style={{ maxWidth: `${cardWidth}px`, width: `${cardWidth}px` }}
         className={cn(
-          "p-2.5 sm:p-3 rounded-xl shadow-warm border backdrop-blur-md transition-colors relative",
+          "p-2 sm:p-3 rounded-xl shadow-warm border backdrop-blur-md transition-colors relative",
           isPinned ? "pointer-events-auto select-text" : "pointer-events-none select-none",
           "bg-popover/95 text-popover-foreground",
           isAttention
@@ -302,7 +347,7 @@ function TooltipCard({
             : "border-brand-600/40 dark:border-brand-500/50 ring-2 ring-brand-600/10"
         )}
       >
-        <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-1.5 min-w-0">
+        <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-1.5 min-w-0">
           {isAttention ? (
             <AlertCircle
               className="size-3.5 sm:size-4 shrink-0 text-destructive dark:text-destructive"
@@ -315,7 +360,7 @@ function TooltipCard({
             />
           )}
           <span
-            className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground min-w-0 truncate"
+            className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground min-w-0 truncate"
             title={CRITERION_FULL_LABELS[criterion] ?? criterion}
           >
             {CRITERION_LABELS[criterion] ?? criterion}
@@ -323,7 +368,7 @@ function TooltipCard({
           <Badge
             variant={isAttention ? "outline" : "secondary"}
             className={cn(
-              "ml-auto text-[10.5px] sm:text-xs px-1.5 py-0.5 h-auto font-medium border shrink-0",
+              "ml-auto text-[10px] sm:text-xs px-1.5 py-0 sm:py-0.5 h-auto font-medium border shrink-0 whitespace-nowrap",
               isAttention
                 ? "border-destructive/30 text-destructive dark:text-destructive bg-destructive/10 dark:bg-destructive/20"
                 : "border-brand-300 dark:border-brand-800 text-brand-800 dark:text-brand-300 bg-brand-50/90 dark:bg-brand-950/60"
@@ -338,31 +383,31 @@ function TooltipCard({
                 e.stopPropagation();
                 onDismiss();
               }}
-              className="relative !size-6 !min-h-0 !min-w-0 rounded-md p-0 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer pointer-events-auto touch-manipulation shrink-0 ml-0.5 hover:bg-muted/80 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
+              className="relative !size-5 sm:!size-6 !min-h-0 !min-w-0 rounded-md p-0 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer pointer-events-auto touch-manipulation shrink-0 ml-0.5 hover:bg-muted/80 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-2 after:content-['']"
               aria-label="Dismiss pinned annotation details"
               title="Close annotation details"
             >
-              <X className="size-3.5" aria-hidden="true" />
+              <X className="size-3 sm:size-3.5" aria-hidden="true" />
             </button>
           )}
         </div>
 
-        <p className="text-xs sm:text-[13px] font-semibold leading-snug break-words line-clamp-2">
+        <p className="text-[11.5px] sm:text-[13px] font-semibold leading-tight sm:leading-snug break-words line-clamp-1 sm:line-clamp-2">
           {title}
         </p>
-        <p className="text-[11px] sm:text-xs text-muted-foreground leading-normal sm:leading-relaxed mt-0.5 sm:mt-1 break-words line-clamp-3 sm:line-clamp-none">
+        <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug sm:leading-relaxed mt-0.5 sm:mt-1 break-words line-clamp-2 sm:line-clamp-none">
           {note}
         </p>
 
-        {criterion === "letter_formation" && isAttention && (
-          <p className="text-[10px] sm:text-[11px] font-medium text-destructive dark:text-rose-400 mt-1 sm:mt-1.5 flex items-center gap-1.5">
+        {criterion === "letter_formation" && isAttention && showMeasurementDetails && (
+          <p className="text-[10px] sm:text-[11px] font-medium text-destructive dark:text-rose-400 mt-1 sm:mt-1.5 hidden sm:flex items-center gap-1.5">
             <span className="inline-block size-1.5 rounded-full bg-destructive animate-pulse shrink-0" />
             <span>Highlighted zones show stroke irregularities flagged by the CNN.</span>
           </p>
         )}
 
         {criterion === "spacing" && showMeasurementDetails && (
-          <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground mt-1 sm:mt-1.5 flex items-center gap-1.5">
+          <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground mt-1 sm:mt-1.5 hidden sm:flex items-center gap-1.5">
             <span className="inline-block size-1.5 rounded-full bg-violet-500 shrink-0" />
             <span>Measured relative to midline ruling (x-height). Normal range: 1.2× – 3.0×.</span>
           </p>

@@ -87,6 +87,15 @@ export const SpacingLayer = memo(function SpacingLayer({
           ? y + 18 * hitScale
           : y - 14 * hitScale;
 
+        const topAnchorY =
+          isSpotlight && !isStaggeredBelow
+            ? badgeCenterY - badgeH / 2 - 2
+            : y - tickHeight - 2;
+        const bottomAnchorY =
+          isSpotlight && isStaggeredBelow
+            ? badgeCenterY + badgeH / 2 + 2
+            : y + tickHeight + 2;
+
         const hoverPayload = {
           id,
           criterion: "spacing" as const,
@@ -94,7 +103,9 @@ export const SpacingLayer = memo(function SpacingLayer({
           note,
           severity,
           x: x1 + width / 2,
-          y: isStaggeredBelow ? y + 18 * hitScale : y - 10,
+          y: isStaggeredBelow ? bottomAnchorY : topAnchorY,
+          anchorTopY: topAnchorY,
+          anchorBottomY: bottomAnchorY,
         };
 
         const toggleAnnotation = () => {

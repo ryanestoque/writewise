@@ -140,7 +140,46 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
   }, [selectedAnnotation, naturalSize, effectiveZoom]);
 
   // Measure container dimensions with ResizeObserver for exact letterbox compensation and visible viewport boundaries
+  const measureLayout = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const viewportEl =
+      inspectorContext.viewportRef?.current ??
+      el.closest<HTMLElement>('[role="region"]');
+
+    // Prefer clientWidth / clientHeight (unscaled CSS layout pixels) so zoom transforms never skew base coordinates
+    const cW = Math.round(
+      el.clientWidth || el.getBoundingClientRect().width / Math.max(effectiveZoom, 0.1)
+    );
+    const cH = Math.round(
+      el.clientHeight || el.getBoundingClientRect().height / Math.max(effectiveZoom, 0.1)
+    );
+    const vW = viewportEl
+      ? Math.round(viewportEl.clientWidth || viewportEl.getBoundingClientRect().width)
+      : cW;
+    const vH = viewportEl
+      ? Math.round(viewportEl.clientHeight || viewportEl.getBoundingClientRect().height)
+      : cH;
+
+    if (cW > 0 && cH > 0) {
+      setContainerSize((prev) =>
+        prev && prev.width === cW && prev.height === cH
+          ? prev
+          : { width: cW, height: cH }
+      );
+    }
+    if (vW > 0 && vH > 0) {
+      setViewportSize((prev) =>
+        prev && prev.width === vW && prev.height === vH
+          ? prev
+          : { width: vW, height: vH }
+      );
+    }
+  }, [inspectorContext.viewportRef, effectiveZoom]);
+
   useEffect(() => {
+    if (!visible || !overlay || !naturalSize) return;
     const el = containerRef.current;
     if (!el) return;
 
@@ -149,70 +188,38 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
       el.closest<HTMLElement>('[role="region"]');
 
     // Immediate synchronous measurement on mount/layout settling
-    const rect = el.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
-      const roundedW = Math.round(rect.width);
-      const roundedH = Math.round(rect.height);
-      setContainerSize((prev) =>
-        prev && prev.width === roundedW && prev.height === roundedH
-          ? prev
-          : { width: roundedW, height: roundedH }
-      );
-    }
-    if (viewportEl) {
-      const vRect = viewportEl.getBoundingClientRect();
-      if (vRect.width > 0 && vRect.height > 0) {
-        const roundedW = Math.round(vRect.width);
-        const roundedH = Math.round(vRect.height);
-        setViewportSize((prev) =>
-          prev && prev.width === roundedW && prev.height === roundedH
-            ? prev
-            : { width: roundedW, height: roundedH }
-        );
-      }
-    }
+    measureLayout();
 
     let rafId: number | null = null;
-    const observer = new ResizeObserver((entries) => {
+    const scheduleMeasure = () => {
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
       }
       rafId = requestAnimationFrame(() => {
-        for (const entry of entries) {
-          const roundedW = Math.round(entry.contentRect.width);
-          const roundedH = Math.round(entry.contentRect.height);
-          if (roundedW > 0 && roundedH > 0) {
-            if (entry.target === el) {
-              setContainerSize((prev) => {
-                if (prev && prev.width === roundedW && prev.height === roundedH) {
-                  return prev;
-                }
-                return { width: roundedW, height: roundedH };
-              });
-            } else {
-              setViewportSize((prev) => {
-                if (prev && prev.width === roundedW && prev.height === roundedH) {
-                  return prev;
-                }
-                return { width: roundedW, height: roundedH };
-              });
-            }
-          }
-        }
+        rafId = null;
+        measureLayout();
       });
-    });
+    };
 
+    const observer = new ResizeObserver(scheduleMeasure);
     observer.observe(el);
-    if (viewportEl) {
+    if (viewportEl && viewportEl !== el) {
       observer.observe(viewportEl);
     }
+
+    window.addEventListener("resize", scheduleMeasure, { passive: true });
+    const visualViewport = window.visualViewport;
+    visualViewport?.addEventListener("resize", scheduleMeasure, { passive: true });
+
     return () => {
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
       }
       observer.disconnect();
+      window.removeEventListener("resize", scheduleMeasure);
+      visualViewport?.removeEventListener("resize", scheduleMeasure);
     };
-  }, [naturalSize, inspectorContext.viewportRef]);
+  }, [visible, overlay, naturalSize, measureLayout, inspectorContext.viewportRef]);
 
   // Load natural dimensions of the image so SVG viewBox aligns 1:1 with pixel coordinates
   useEffect(() => {
@@ -253,6 +260,7 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
 
   const handleHoverAnnotation: HoverAnnotationCallback = useCallback(
     (hover) => {
+      measureLayout();
       if (typeof hover === "function") {
         // Toggle action triggered from user click or keyboard activation (Enter / Space)
         const currentSelected =
@@ -271,7 +279,7 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
         setHoveredAnnotation(hover);
       }
     },
-    [onSelectAnnotation]
+    [measureLayout, onSelectAnnotation]
   );
 
   // Global escape key listener to dismiss active annotation tooltip cleanly

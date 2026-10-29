@@ -53,6 +53,10 @@ const FormationWordItem = memo(function FormationWordItem({
     ? OVERLAY_COLORS.needs_attention.stroke
     : OVERLAY_COLORS.proficient.stroke;
   const underlineY = y + h + 3;
+  const underlineHeight = Math.max(
+    4 * hitScale,
+    (isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal) * hitScale
+  );
   const id = `formation-${ann.line_index}-${ann.word_index}`;
   const title = isAttention
     ? ann.band
@@ -67,7 +71,9 @@ const FormationWordItem = memo(function FormationWordItem({
     note: noteText,
     severity: ann.severity,
     x: x + w / 2,
-    y: underlineY + 10,
+    y: underlineY + underlineHeight + 2,
+    anchorTopY: y - (isSpotlight ? 6 * hitScale : 2),
+    anchorBottomY: underlineY + underlineHeight + 2,
   };
 
   const toggleAnnotation = () => {
