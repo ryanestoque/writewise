@@ -397,15 +397,28 @@
   padding: clamp(28px, 4.5vw, 56px) var(--gutter) var(--section);
 }
 
+@media (min-width: 1024px) {
+  .hero {
+    min-height: calc(100vh - var(--header-height));
+    display: flex;
+    flex-direction: column;
+  }
+
+  .heroGrid {
+    margin-block: auto;
+    width: 100%;
+  }
+}
+
 .heroGrid {
   display: grid;
   grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.18fr);
   gap: clamp(32px, 4vw, 56px);
-  align-items: start;
+  align-items: center;
 }
 
 .heroCopy {
-  padding-top: clamp(4px, 1.5vw, 16px);
+  padding-top: 0;
 }
 
 .heroTitle {
@@ -2019,6 +2032,10 @@
   .heroGrid,
   .sectionHeader {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .heroCopy {
+    padding-top: clamp(4px, 1.5vw, 16px);
   }
 
   .steps {
