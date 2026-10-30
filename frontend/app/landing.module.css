@@ -562,6 +562,7 @@
   cursor: pointer;
   user-select: none;
   touch-action: manipulation;
+  margin-left: auto;
   transition:
     background-color 150ms var(--ease-out),
     border-color 150ms var(--ease-out),
@@ -2215,6 +2216,7 @@
     padding: 0 8px 0 10px;
     gap: 8px;
     background: #fff;
+    margin-left: auto;
   }
 
   .viewerSwitchLabel {

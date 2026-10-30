@@ -76,11 +76,11 @@ function CoachingContent({
 export function AssessmentPreview() {
   const criterionId = useId();
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [criterion, setCriterion] = useState<CriterionItem["id"]>("spacing");
-  const [mobileExpanded, setMobileExpanded] = useState<string | null>("spacing");
+  const [criterion, setCriterion] = useState<CriterionItem["id"]>("letter_formation");
+  const [mobileExpanded, setMobileExpanded] = useState<string | null>("letter_formation");
   const [showOverlay, setShowOverlay] = useState(true);
   const [annotation, setAnnotation] = useState<ActiveAnnotationHover | null>(null);
-  const focused = EXAMPLE_CRITERIA.find((item) => item.id === criterion) ?? EXAMPLE_CRITERIA[2];
+  const focused = EXAMPLE_CRITERIA.find((item) => item.id === criterion) ?? EXAMPLE_CRITERIA[0];
 
   const selectCriterion = (next: string) => {
     const selected = EXAMPLE_CRITERIA.find((item) => item.id === next);
