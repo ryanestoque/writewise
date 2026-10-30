@@ -687,6 +687,10 @@
   flex-shrink: 0;
 }
 
+.studioCriterionBand {
+  display: none;
+}
+
 .studioAccordionChevron {
   display: none;
   width: 16px;
@@ -2253,11 +2257,22 @@
 
   .studioCriterionMeta {
     width: auto;
-    gap: 10px;
+    align-items: center;
+    gap: 8px;
   }
 
   .studioCriterionScore {
     font-size: 0.875rem;
+  }
+
+  .studioCriterionBand {
+    display: inline-flex;
+    height: 22px;
+    padding: 0 8px;
+    font-size: 0.6875rem;
+    line-height: 1;
+    gap: 5px;
+    flex-shrink: 0;
   }
 
   .studioAccordionChevron {

@@ -20,39 +20,44 @@ function CoachingContent({
   item,
   annotation,
   isAnnotationTarget,
+  isMobileAccordion = false,
 }: {
   item: CriterionItem;
   annotation: ActiveAnnotationHover | null;
   isAnnotationTarget: boolean;
+  isMobileAccordion?: boolean;
 }) {
   const band = getScoreBandLabel(item.score, { source: "calibrated" });
   const bandKey = band.band === "Needs Improvement" ? "needs" : band.band.toLowerCase();
   const showAnnotation = Boolean(annotation && isAnnotationTarget);
+  const showHead = !isMobileAccordion || showAnnotation;
 
   return (
     <>
-      <div className={styles.studioCoachingHead}>
-        <span className={styles.studioCoachingTitle}>
-          {showAnnotation && annotation ? `${annotation.title} details` : `${item.name} feedback`}
-        </span>
-        <span
-          className={styles.band}
-          data-band={
-            showAnnotation && annotation
+      {showHead && (
+        <div className={styles.studioCoachingHead}>
+          <span className={styles.studioCoachingTitle}>
+            {showAnnotation && annotation ? `${annotation.title} details` : `${item.name} feedback`}
+          </span>
+          <span
+            className={styles.band}
+            data-band={
+              showAnnotation && annotation
+                ? annotation.severity === "needs_attention"
+                  ? "needs"
+                  : "excellent"
+                : bandKey
+            }
+          >
+            <span className={styles.bandDot} aria-hidden="true" />
+            {showAnnotation && annotation
               ? annotation.severity === "needs_attention"
-                ? "needs"
-                : "excellent"
-              : bandKey
-          }
-        >
-          <span className={styles.bandDot} aria-hidden="true" />
-          {showAnnotation && annotation
-            ? annotation.severity === "needs_attention"
-              ? "Needs Attention"
-              : "Consistent"
-            : `${item.score}% · ${band.band}`}
-        </span>
-      </div>
+                ? "Needs Attention"
+                : "Consistent"
+              : `${item.score}% · ${band.band}`}
+          </span>
+        </div>
+      )}
       <dl className={styles.studioCoachingGrid}>
         <div>
           <dt>{showAnnotation ? "Selected stroke observation" : "What we see"}</dt>
@@ -191,6 +196,7 @@ export function AssessmentPreview() {
         >
           {EXAMPLE_CRITERIA.map((item, index) => {
             const band = getScoreBandLabel(item.score, { source: "calibrated" });
+            const bandKey = band.band === "Needs Improvement" ? "needs" : band.band.toLowerCase();
             const isSelected = item.id === criterion;
             const isExpanded = isSelected && mobileExpanded === item.id;
             const panelId = `${criterionId}-${item.id}-panel`;
@@ -221,6 +227,13 @@ export function AssessmentPreview() {
                   <span className={styles.studioCriterionName}>{item.name}</span>
                   <div className={styles.studioCriterionMeta}>
                     <span className={styles.studioCriterionScore}>{item.score}%</span>
+                    <span
+                      className={`${styles.band} ${styles.studioCriterionBand}`}
+                      data-band={bandKey}
+                    >
+                      <span className={styles.bandDot} aria-hidden="true" />
+                      {band.band}
+                    </span>
                     <svg
                       viewBox="0 0 20 20"
                       aria-hidden="true"
@@ -252,6 +265,7 @@ export function AssessmentPreview() {
                         item={item}
                         annotation={annotation}
                         isAnnotationTarget={isSelected}
+                        isMobileAccordion={true}
                       />
                     </div>
                   </div>
