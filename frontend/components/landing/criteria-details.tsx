@@ -12,7 +12,7 @@ const criteria = [
     id: "formation",
     name: "Letter formation",
     body: "Letters are shaped and joined the way they’re taught: loops close cleanly, strokes connect smoothly, and nothing floats loose.",
-    note: "Most loops close neatly. Next: finish the loop in “l” before joining the next letter.",
+    note: "Most loops close neatly. Next: finish the loop in ‘l’ before joining the next letter.",
     Specimen: FormationSpecimen,
   },
   {
@@ -79,8 +79,8 @@ export function CriteriaDetails() {
         </div>
         <div className={styles.criteriaHeaderMeta}>
           <p className={styles.sectionLede}>
-            Every stroke is evaluated across five penmanship criteria and mapped into four
-            supportive performance bands, never punitive red marks.
+            Every stroke is evaluated across five penmanship criteria—paired with constructive
+            coaching tips and mapped into four supportive performance bands, never punitive red marks.
           </p>
           <div className={styles.criteriaBands} aria-label="Performance bands">
             {bands.map((b) => (
@@ -113,10 +113,10 @@ export function CriteriaDetails() {
               <h3 className={styles.ledgerName}>{name}</h3>
               <p className={styles.ledgerBody}>{body}</p>
             </div>
-            <p className={styles.ledgerNote}>
-              <span className={styles.ledgerNoteLabel}>Sample coaching tip</span>
-              {note}
-            </p>
+            <blockquote className={styles.ledgerNote}>
+              <span className={styles.srOnly}>Sample coaching tip: </span>
+              &ldquo;{note}&rdquo;
+            </blockquote>
           </li>
         ))}
       </ul>

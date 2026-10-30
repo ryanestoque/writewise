@@ -1118,22 +1118,25 @@
 
 .ledgerNote {
   margin: 0;
-  padding-left: 20px;
+  padding: 4px 0 4px 18px;
   border-left: 2px solid #b8ddd7;
   color: var(--teal-deep);
-  font-size: 0.875rem;
-  line-height: 1.5;
-  max-width: 38ch;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  font-style: italic;
+  max-width: 40ch;
 }
 
-.ledgerNoteLabel {
-  display: block;
-  margin-bottom: 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--ink-muted);
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* --------------------- Longitudinal Progress ------------------------ */
