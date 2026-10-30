@@ -614,6 +614,94 @@
   gap: 8px;
 }
 
+.studioAccordionItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  border: 1px solid var(--rule);
+  background: var(--canvas);
+  overflow: hidden;
+  transition:
+    border-color 150ms ease-out,
+    background-color 150ms ease-out,
+    box-shadow 150ms ease-out;
+}
+
+.studioAccordionItem:hover {
+  background: var(--wash-soft);
+  border-color: #b8ddd7;
+}
+
+.studioAccordionItem[data-selected="true"] {
+  background: #fff;
+  border-color: var(--teal);
+  box-shadow:
+    0 0 0 1px var(--teal),
+    0 6px 16px -8px rgb(20 80 73 / 0.35);
+}
+
+.studioCriterionTrigger {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  gap: 8px;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  border-radius: inherit;
+  transition: color 150ms ease-out;
+}
+
+.studioCriterionTrigger:focus-visible {
+  outline: 3px solid var(--teal);
+  outline-offset: -1px;
+}
+
+.studioCriterionName {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.studioCriterionMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.studioCriterionScore {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--teal-deep);
+  flex-shrink: 0;
+}
+
+.studioAccordionChevron {
+  display: none;
+  width: 16px;
+  height: 16px;
+  color: var(--ink-muted);
+  flex-shrink: 0;
+  transition:
+    transform 250ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 150ms ease-out;
+}
+
+.studioAccordionPanel {
+  display: none;
+}
+
 .srOnlyRadio {
   position: absolute;
   width: 1px;
@@ -667,21 +755,8 @@
   outline-offset: 2px;
 }
 
-.studioCriterionName {
-  font-size: 0.75rem;
-  font-weight: 600;
-  line-height: 1.25;
-  color: var(--ink);
-}
-
-.studioCriterionScore {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--teal-deep);
-  flex-shrink: 0;
-}
-
-.studioCoaching {
+.studioCoaching,
+.studioCoachingDesktop {
   margin-top: 14px;
   padding: 14px 16px;
   border-radius: 12px;
@@ -1968,6 +2043,11 @@
     opacity: 1 !important;
   }
 
+  .studioAccordionPanel,
+  .studioAccordionChevron {
+    transition: none !important;
+  }
+
   .heroWriting {
     display: none !important;
   }
@@ -2133,8 +2213,93 @@
   }
 
   .studioCriteriaGrid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .studioAccordionItem {
+    border-radius: 12px;
+    background: var(--canvas);
+    border: 1px solid var(--rule);
+    transition:
+      border-color 200ms ease-out,
+      background-color 200ms ease-out,
+      box-shadow 200ms ease-out;
+  }
+
+  .studioAccordionItem[data-expanded="true"] {
+    background: #fff;
+    border-color: var(--teal);
+    box-shadow:
+      0 0 0 1px var(--teal),
+      0 8px 20px -8px rgb(20 80 73 / 0.18);
+  }
+
+  .studioCriterionTrigger {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 48px;
+    padding: 10px 14px;
+    gap: 12px;
+    touch-action: manipulation;
+  }
+
+  .studioCriterionName {
+    font-size: 0.875rem;
+    line-height: 1.3;
+  }
+
+  .studioCriterionMeta {
+    width: auto;
+    gap: 10px;
+  }
+
+  .studioCriterionScore {
+    font-size: 0.875rem;
+  }
+
+  .studioAccordionChevron {
+    display: inline-block;
+  }
+
+  .studioAccordionItem[data-expanded="true"] .studioAccordionChevron {
+    transform: rotate(180deg);
+    color: var(--teal);
+  }
+
+  .studioAccordionPanel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .studioAccordionPanel[data-expanded="true"] {
+    grid-template-rows: 1fr;
+  }
+
+  .studioAccordionContent {
+    overflow: hidden;
+  }
+
+  .studioAccordionBody {
+    padding: 12px 14px 14px;
+    border-top: 1px solid #d2e7e3;
+    background: var(--wash-soft);
+  }
+
+  .studioAccordionBody .studioCoachingHead {
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+  }
+
+  .studioAccordionBody .studioCoachingTitle {
+    font-size: 0.8125rem;
+  }
+
+  .studioCoachingDesktop {
+    display: none;
   }
 
   .studioCriterionPill {
@@ -2145,15 +2310,6 @@
     padding: 8px 12px;
     gap: 12px;
     touch-action: manipulation;
-  }
-
-  .studioCriterionName {
-    font-size: 0.8125rem;
-    line-height: 1.3;
-  }
-
-  .studioCriterionScore {
-    font-size: 0.875rem;
   }
 
   .studioCoachingGrid {

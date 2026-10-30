@@ -14,24 +14,88 @@ import {
 } from "./assessment-preview-data";
 import styles from "@/app/landing.module.css";
 
+type CriterionItem = (typeof EXAMPLE_CRITERIA)[number];
+
+function CoachingContent({
+  item,
+  annotation,
+  isAnnotationTarget,
+}: {
+  item: CriterionItem;
+  annotation: ActiveAnnotationHover | null;
+  isAnnotationTarget: boolean;
+}) {
+  const band = getScoreBandLabel(item.score, { source: "calibrated" });
+  const bandKey = band.band === "Needs Improvement" ? "needs" : band.band.toLowerCase();
+  const showAnnotation = Boolean(annotation && isAnnotationTarget);
+
+  return (
+    <>
+      <div className={styles.studioCoachingHead}>
+        <span className={styles.studioCoachingTitle}>
+          {showAnnotation && annotation ? `${annotation.title} details` : `${item.name} feedback`}
+        </span>
+        <span
+          className={styles.band}
+          data-band={
+            showAnnotation && annotation
+              ? annotation.severity === "needs_attention"
+                ? "needs"
+                : "excellent"
+              : bandKey
+          }
+        >
+          <span className={styles.bandDot} aria-hidden="true" />
+          {showAnnotation && annotation
+            ? annotation.severity === "needs_attention"
+              ? "Needs Attention"
+              : "Consistent"
+            : `${item.score}% · ${band.band}`}
+        </span>
+      </div>
+      <dl className={styles.studioCoachingGrid}>
+        <div>
+          <dt>{showAnnotation ? "Selected stroke observation" : "What we see"}</dt>
+          <dd>{showAnnotation && annotation ? annotation.note : item.observation}</dd>
+        </div>
+        <div>
+          <dt>Practice next</dt>
+          <dd>{item.next}</dd>
+        </div>
+      </dl>
+    </>
+  );
+}
+
 /** Interactive hero worksheet studio with local sample data; never calls a submission API. */
 export function AssessmentPreview() {
   const criterionId = useId();
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [criterion, setCriterion] = useState<(typeof EXAMPLE_CRITERIA)[number]["id"]>("spacing");
+  const [criterion, setCriterion] = useState<CriterionItem["id"]>("spacing");
+  const [mobileExpanded, setMobileExpanded] = useState<string | null>("spacing");
   const [showOverlay, setShowOverlay] = useState(true);
   const [annotation, setAnnotation] = useState<ActiveAnnotationHover | null>(null);
   const focused = EXAMPLE_CRITERIA.find((item) => item.id === criterion) ?? EXAMPLE_CRITERIA[2];
-  const focusedBand = getScoreBandLabel(focused.score, { source: "calibrated" });
-  const focusedBandKey =
-    focusedBand.band === "Needs Improvement" ? "needs" : focusedBand.band.toLowerCase();
 
   const selectCriterion = (next: string) => {
     const selected = EXAMPLE_CRITERIA.find((item) => item.id === next);
     if (!selected) return;
     setCriterion(selected.id);
+    setMobileExpanded(selected.id);
     setAnnotation(null);
     setShowOverlay(true);
+  };
+
+  const handleCriterionClick = (id: CriterionItem["id"]) => {
+    if (criterion === id) {
+      // Toggle accordion open/closed on mobile if clicking the active criterion
+      setMobileExpanded((prev) => (prev === id ? null : id));
+    } else {
+      setCriterion(id);
+      setMobileExpanded(id);
+      setAnnotation(null);
+      setShowOverlay(true);
+    }
   };
 
   const onCriterionKeyDown = (
@@ -101,7 +165,12 @@ export function AssessmentPreview() {
             activeCriterion={criterion}
             visible={showOverlay}
             selectedAnnotation={annotation}
-            onSelectAnnotation={setAnnotation}
+            onSelectAnnotation={(selectedAnn) => {
+              setAnnotation(selectedAnn);
+              if (selectedAnn) {
+                setMobileExpanded(criterion);
+              }
+            }}
             showGuideLines={showOverlay}
             showMeasurementDetails={false}
           />
@@ -116,69 +185,93 @@ export function AssessmentPreview() {
         </div>
 
         <div
-          role="radiogroup"
+          role="region"
           aria-labelledby={`${criterionId}-heading`}
           className={styles.studioCriteriaGrid}
         >
           {EXAMPLE_CRITERIA.map((item, index) => {
             const band = getScoreBandLabel(item.score, { source: "calibrated" });
             const isSelected = item.id === criterion;
+            const isExpanded = isSelected && mobileExpanded === item.id;
+            const panelId = `${criterionId}-${item.id}-panel`;
+            const buttonId = `${criterionId}-${item.id}-button`;
+
             return (
-              <button
+              <div
                 key={item.id}
-                ref={(el) => {
-                  buttonRefs.current[index] = el;
-                }}
-                type="button"
-                role="radio"
-                aria-checked={isSelected}
-                aria-label={`${item.name}, ${item.score}%, ${band.band}`}
-                tabIndex={isSelected ? 0 : -1}
-                onClick={() => selectCriterion(item.id)}
-                onKeyDown={(e) => onCriterionKeyDown(e, index)}
-                className={styles.studioCriterionPill}
+                className={styles.studioAccordionItem}
                 data-selected={isSelected}
+                data-expanded={isExpanded}
               >
-                <span className={styles.studioCriterionName}>{item.name}</span>
-                <span className={styles.studioCriterionScore}>{item.score}%</span>
-              </button>
+                <button
+                  ref={(el) => {
+                    buttonRefs.current[index] = el;
+                  }}
+                  id={buttonId}
+                  type="button"
+                  aria-expanded={isExpanded}
+                  aria-controls={panelId}
+                  aria-label={`${item.name}, ${item.score}%, ${band.band}`}
+                  tabIndex={isSelected ? 0 : -1}
+                  onClick={() => handleCriterionClick(item.id)}
+                  onKeyDown={(e) => onCriterionKeyDown(e, index)}
+                  className={styles.studioCriterionTrigger}
+                  data-selected={isSelected}
+                >
+                  <span className={styles.studioCriterionName}>{item.name}</span>
+                  <div className={styles.studioCriterionMeta}>
+                    <span className={styles.studioCriterionScore}>{item.score}%</span>
+                    <svg
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                      className={styles.studioAccordionChevron}
+                    >
+                      <path
+                        d="M5 7.5L10 12.5L15 7.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                </button>
+
+                <div
+                  id={panelId}
+                  role="region"
+                  aria-labelledby={buttonId}
+                  className={styles.studioAccordionPanel}
+                  data-expanded={isExpanded}
+                  aria-hidden={!isExpanded}
+                >
+                  <div className={styles.studioAccordionContent}>
+                    <div className={styles.studioAccordionBody}>
+                      <CoachingContent
+                        item={item}
+                        annotation={annotation}
+                        isAnnotationTarget={isSelected}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             );
           })}
         </div>
 
-        <div className={styles.studioCoaching} aria-live="polite" aria-atomic="true">
-          <div className={styles.studioCoachingHead}>
-            <span className={styles.studioCoachingTitle}>
-              {annotation ? `${annotation.title} details` : `${focused.name} feedback`}
-            </span>
-            <span
-              className={styles.band}
-              data-band={
-                annotation
-                  ? annotation.severity === "needs_attention"
-                    ? "needs"
-                    : "excellent"
-                  : focusedBandKey
-              }
-            >
-              <span className={styles.bandDot} aria-hidden="true" />
-              {annotation
-                ? annotation.severity === "needs_attention"
-                  ? "Needs Attention"
-                  : "Consistent"
-                : `${focused.score}% · ${focusedBand.band}`}
-            </span>
-          </div>
-          <dl className={styles.studioCoachingGrid}>
-            <div>
-              <dt>{annotation ? "Selected stroke observation" : "What we see"}</dt>
-              <dd>{annotation ? annotation.note : focused.observation}</dd>
-            </div>
-            <div>
-              <dt>Practice next</dt>
-              <dd>{focused.next}</dd>
-            </div>
-          </dl>
+        {/* Desktop-only dedicated feedback card (hidden on mobile via CSS) */}
+        <div
+          className={styles.studioCoachingDesktop}
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <CoachingContent
+            item={focused}
+            annotation={annotation}
+            isAnnotationTarget={true}
+          />
         </div>
       </div>
     </div>
