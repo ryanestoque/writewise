@@ -192,13 +192,22 @@
   font-weight: 600;
   font-size: 0.9375rem;
   text-decoration: none;
-  padding: 8px 4px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition:
+    color 160ms ease-out,
+    background-color 160ms ease-out,
+    transform 160ms ease-out;
 }
 
 .textLink:hover {
   color: var(--teal);
-  text-decoration: underline;
-  text-underline-offset: 4px;
+  background-color: var(--wash-soft);
+  text-decoration: none;
+}
+
+.textLink:active {
+  transform: scale(0.98);
 }
 
 /* ------------------------------ Buttons ----------------------------- */
@@ -224,7 +233,15 @@
     background-color 160ms ease-out,
     border-color 160ms ease-out,
     color 160ms ease-out,
-    box-shadow 160ms ease-out;
+    box-shadow 160ms ease-out,
+    transform 160ms ease-out;
+}
+
+.cta:active,
+.ctaSecondary:active,
+.ctaLight:active,
+.ctaOutlineLight:active {
+  transform: scale(0.98);
 }
 
 .cta {

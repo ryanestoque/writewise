@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { MIN_PASSWORD_LENGTH } from "@/lib/auth/password-policy";
-import { HandwritingGuidelineBackground } from "@/components/auth/handwriting-guideline-background";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -612,11 +612,13 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <main className="relative flex min-h-dvh items-center justify-center bg-background px-4 py-8 antialiased">
-      <HandwritingGuidelineBackground />
+    <AuthShell
+      backHref="/"
+      backLabel="Back to home"
+    >
       <Suspense fallback={<Spinner className="size-8 text-primary" />}>
         <ResetPasswordForm />
       </Suspense>
-    </main>
+    </AuthShell>
   );
 }

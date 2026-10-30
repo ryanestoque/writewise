@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { BrandLogo } from "@/components/brand-logo";
-import { HandwritingGuidelineBackground } from "@/components/auth/handwriting-guideline-background";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { MIN_PASSWORD_LENGTH } from "@/lib/auth/password-policy";
 import {
   CircleAlertIcon,
@@ -180,7 +180,13 @@ function SignUpForm() {
     <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs transition-all duration-200">
       <CardHeader className="space-y-1.5 text-center pb-2 pt-6">
         <div className="flex justify-center -my-1">
-          <BrandLogo size="xl" priority />
+          <Link
+            href="/"
+            aria-label="Back to WriteWise home"
+            className="inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <BrandLogo size="xl" priority className="view-transition-brand-logo" />
+          </Link>
         </div>
         <h1 className="sr-only">Create a WriteWise account</h1>
       </CardHeader>
@@ -508,11 +514,13 @@ function SignUpForm() {
 
 export default function SignUpPage() {
   return (
-    <main className="relative flex min-h-dvh items-center justify-center bg-background px-4 py-8 antialiased">
-      <HandwritingGuidelineBackground />
+    <AuthShell
+      backHref="/"
+      backLabel="Back to home"
+    >
       <Suspense fallback={<Spinner className="size-8 text-primary" />}>
         <SignUpForm />
       </Suspense>
-    </main>
+    </AuthShell>
   );
 }

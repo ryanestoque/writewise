@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { HandwritingGuidelineBackground } from "@/components/auth/handwriting-guideline-background";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -381,7 +381,13 @@ function LoginForm() {
     <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs transition-all duration-200">
       <CardHeader className="space-y-1.5 text-center pb-2 pt-6">
         <div className="flex justify-center -my-1">
-          <BrandLogo size="xl" priority />
+          <Link
+            href="/"
+            aria-label="Back to WriteWise home"
+            className="inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <BrandLogo size="xl" priority className="view-transition-brand-logo" />
+          </Link>
         </div>
         <h1 className="sr-only">WriteWise Login</h1>
       </CardHeader>
@@ -514,11 +520,13 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <main className="relative flex min-h-dvh items-center justify-center bg-background px-4 py-8 antialiased">
-      <HandwritingGuidelineBackground />
+    <AuthShell
+      backHref="/"
+      backLabel="Back to home"
+    >
       <Suspense fallback={<Spinner className="size-8 text-primary" />}>
         <LoginForm />
       </Suspense>
-    </main>
+    </AuthShell>
   );
 }

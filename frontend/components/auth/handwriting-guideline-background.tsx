@@ -7,7 +7,7 @@ export function HandwritingGuidelineBackground() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 -z-10 overflow-hidden select-none"
+      className="pointer-events-none absolute inset-0 -z-10 overflow-hidden select-none animate-auth-guidelines"
     >
       {/* Soft warm radial ambient glow */}
       <div className="absolute -top-32 left-1/2 -translate-x-1/2 size-[720px] rounded-full bg-brand-100/60 blur-3xl opacity-80 dark:bg-brand-900/25" />

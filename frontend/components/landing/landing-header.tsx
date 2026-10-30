@@ -67,7 +67,7 @@ export function LandingHeader() {
 
       <div className={styles.headerInner}>
         <Link href="/" aria-label="WriteWise home" className={styles.logoLink}>
-          <BrandLogo size="md" priority />
+          <BrandLogo size="md" priority className="view-transition-brand-logo" />
         </Link>
         <nav className={styles.nav} aria-label="Page sections">
           {NAV_LINKS.map(({ href, label, id }) => (

@@ -7,6 +7,9 @@ const backendUrl = (
 ).replace(/\/+$/, "");
 
 const nextConfig: NextConfig = {
+  experimental: {
+    viewTransition: true,
+  },
   images: {
     remotePatterns: [
       {
