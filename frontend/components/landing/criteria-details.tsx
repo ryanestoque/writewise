@@ -77,32 +77,25 @@ export function CriteriaDetails() {
             Five fundamentals of fluent cursive.
           </h2>
         </div>
-      </div>
-
-      <div
-        className={styles.bandSpectrumCard}
-        aria-label="Developmental score bands"
-        data-reveal="fade-up"
-      >
-        <div className={styles.bandSpectrumHead}>
-          <span className={styles.bandSpectrumTitle}>Developmental growth spectrum</span>
-        </div>
-        <ul className={styles.bandSpectrumGrid}>
-          {bands.map((b, i) => (
-            <li
-              key={b.key}
-              className={styles.bandSpectrumItem}
-              data-reveal="spectrum-item"
-              data-index={i}
-            >
-              <span className={styles.band} data-band={b.key}>
+        <div className={styles.criteriaHeaderMeta}>
+          <p className={styles.sectionLede}>
+            Every stroke is evaluated across five penmanship criteria and mapped into four
+            supportive performance bands—never punitive red marks.
+          </p>
+          <div className={styles.criteriaBands} aria-label="Performance bands">
+            {bands.map((b) => (
+              <span
+                key={b.key}
+                className={styles.band}
+                data-band={b.key}
+                title={b.desc}
+              >
                 <span className={styles.bandDot} aria-hidden="true" />
                 {b.label}
               </span>
-              <p className={styles.bandSpectrumDesc}>{b.desc}</p>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </div>
+        </div>
       </div>
 
       <ul className={styles.ledger}>

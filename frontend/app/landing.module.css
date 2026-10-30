@@ -1045,54 +1045,17 @@
   padding: var(--section) var(--gutter);
 }
 
-.bandSpectrumCard {
-  background: var(--paper);
-  border: 1px solid var(--rule);
-  border-radius: 14px;
-  padding: 20px 24px;
-  margin-bottom: 32px;
-  box-shadow: 0 2px 10px rgb(30 40 35 / 0.03);
-}
-
-.bandSpectrumHead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px 24px;
-  padding-bottom: 16px;
-  margin-bottom: 16px;
-  border-bottom: 1px solid var(--rule);
-}
-
-.bandSpectrumTitle {
-  font-family: var(--font-heading), sans-serif;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.bandSpectrumGrid {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px 24px;
-}
-
-.bandSpectrumItem {
+.criteriaHeaderMeta {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
+  gap: 14px;
 }
 
-.bandSpectrumDesc {
-  margin: 0;
-  font-size: 0.8125rem;
-  line-height: 1.45;
-  color: var(--ink-soft);
+.criteriaBands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
 }
 
 .ledger {
@@ -2126,10 +2089,6 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .bandSpectrumGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .ledgerRow {
     grid-template-columns: minmax(180px, 230px) minmax(0, 1fr);
   }
@@ -2336,7 +2295,6 @@
     min-width: 44px;
   }
 
-  .bandSpectrumGrid,
   .signupGrid,
   .feedbackBody {
     grid-template-columns: minmax(0, 1fr);

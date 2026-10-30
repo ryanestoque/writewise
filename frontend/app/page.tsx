@@ -253,7 +253,7 @@ export default async function Home() {
                   <a href="#assessment-preview">Interactive studio</a>
                 </li>
                 <li>
-                  <a href="#criteria">Developmental spectrum</a>
+                  <a href="#criteria">Assessment criteria</a>
                 </li>
                 <li>
                   <a href="#progress">Weekly progress strip</a>
