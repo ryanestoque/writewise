@@ -14,6 +14,7 @@ import { SlantLayer } from "./layers/slant-layer";
 import { FormationLayer } from "./layers/formation-layer";
 import { AnnotationTooltip } from "./annotation-tooltip";
 import { useInspectorContext } from "@/components/shared/worksheet-image-inspector";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 /**
  * Safely extracts DiagnosticOverlayData from a measurement record or raw_output object.
@@ -62,6 +63,8 @@ interface DiagnosticOverlayProps {
   showGuideLines?: boolean;
   /** Whether to show technical measurement footnotes in annotation tooltips (e.g. midline ruling scale for spacing). Defaults to true. */
   showMeasurementDetails?: boolean;
+  /** Explicitly override mobile viewport mode if needed. */
+  isMobile?: boolean;
 }
 
 export const DiagnosticOverlay = memo(function DiagnosticOverlay({
@@ -75,7 +78,9 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
   onSelectAnnotation,
   showGuideLines = true,
   showMeasurementDetails = true,
+  isMobile: isMobileProp,
 }: DiagnosticOverlayProps) {
+  const isMobileQuery = useIsMobile();
   const inspectorContext = useInspectorContext();
   const effectiveZoom = zoomScale ?? inspectorContext.zoomScale ?? 1;
   const panOffset = inspectorContext.panOffset ?? { x: 0, y: 0 };
@@ -325,6 +330,12 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
     return Math.ceil(rawScale * 4) / 4;
   }, [naturalSize, containerSize]);
 
+  const isMobile =
+    isMobileProp ??
+    (isMobileQuery ||
+      Boolean(viewportSize && viewportSize.width < 640) ||
+      Boolean(containerSize && containerSize.width < 640));
+
   if (!visible || !overlay) return null;
 
   // Asynchronous image decoding skeleton state: provide visual reassurance while natural dimensions resolve
@@ -424,6 +435,7 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
             data={overlay.letter_formation}
             activeCriterion={activeCriterion}
             hitScale={hitScale}
+            isMobile={isMobile}
             activeAnnotationId={activeAnnotation?.id}
             onHoverAnnotation={handleHoverAnnotation}
           />

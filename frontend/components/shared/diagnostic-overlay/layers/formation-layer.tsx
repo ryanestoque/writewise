@@ -14,6 +14,7 @@ interface FormationLayerProps {
   data: FormationOverlay;
   activeCriterion: CriterionFilter;
   hitScale?: number;
+  isMobile?: boolean;
   activeAnnotationId?: string | null;
   onHoverAnnotation: HoverAnnotationCallback;
 }
@@ -32,6 +33,7 @@ interface FormationWordItemProps {
   idx: number;
   isSpotlight: boolean;
   hitScale: number;
+  isMobile?: boolean;
   activeAnnotationId?: string | null;
   onHoverAnnotation: HoverAnnotationCallback;
 }
@@ -41,6 +43,7 @@ const FormationWordItem = memo(function FormationWordItem({
   idx,
   isSpotlight,
   hitScale,
+  isMobile = false,
   activeAnnotationId,
   onHoverAnnotation,
 }: FormationWordItemProps) {
@@ -65,6 +68,17 @@ const FormationWordItem = memo(function FormationWordItem({
       : "Letter Formation Developing"
     : "Clear Letter Formation";
   const noteText = ann.casing_note ? `${ann.note} (${ann.casing_note})` : ann.note;
+
+  const scoreBadgeW = Math.max(38, 42 * hitScale);
+  const scoreBadgeH = Math.max(18, 20 * hitScale);
+  const scoreBadgeX = x + w / 2;
+  const scoreBadgeY = isMobile
+    ? underlineY + underlineHeight + 4 * hitScale + scoreBadgeH / 2
+    : hasLetterZones
+      ? y - 28 * hitScale
+      : y - 10 * hitScale;
+  const strokeW = Math.max(2, 2.5 * hitScale);
+
   const hoverPayload = {
     id,
     criterion: "letter_formation" as const,
@@ -74,11 +88,18 @@ const FormationWordItem = memo(function FormationWordItem({
     x: x + w / 2,
     y: underlineY + underlineHeight + 2,
     anchorTopY: isSpotlight
-      ? hasLetterZones
-        ? y - 40 * hitScale
-        : y - 22 * hitScale
+      ? isMobile
+        ? hasLetterZones
+          ? y - 20 * hitScale
+          : y - 2
+        : hasLetterZones
+          ? y - 40 * hitScale
+          : y - 22 * hitScale
       : y - 2,
-    anchorBottomY: underlineY + underlineHeight + 2,
+    anchorBottomY:
+      isMobile && isSpotlight
+        ? scoreBadgeY + scoreBadgeH / 2 + 2
+        : underlineY + underlineHeight + 2,
   };
 
   const toggleAnnotation = () => {
@@ -89,11 +110,6 @@ const FormationWordItem = memo(function FormationWordItem({
   const isActive = activeAnnotationId === id;
   const hitH = OVERLAY_WEIGHTS.minTargetSize * hitScale;
   const hitW = Math.max(hitH, w);
-  const scoreBadgeW = Math.max(38, 42 * hitScale);
-  const scoreBadgeH = Math.max(18, 20 * hitScale);
-  const scoreBadgeX = x + w / 2;
-  const scoreBadgeY = hasLetterZones ? y - 28 * hitScale : y - 10 * hitScale;
-  const strokeW = Math.max(2, 2.5 * hitScale);
 
   return (
     <g
@@ -256,6 +272,7 @@ export const FormationLayer = memo(function FormationLayer({
   data,
   activeCriterion,
   hitScale = 1,
+  isMobile = false,
   activeAnnotationId,
   onHoverAnnotation,
 }: FormationLayerProps) {
@@ -282,6 +299,7 @@ export const FormationLayer = memo(function FormationLayer({
           idx={idx}
           isSpotlight={isSpotlight}
           hitScale={hitScale}
+          isMobile={isMobile}
           activeAnnotationId={activeAnnotationId}
           onHoverAnnotation={onHoverAnnotation}
         />
