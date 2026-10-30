@@ -78,10 +78,6 @@ export function CriteriaDetails() {
           </h2>
         </div>
         <div className={styles.criteriaHeaderMeta}>
-          <p className={styles.sectionLede}>
-            Every stroke is evaluated across five penmanship criteria—paired with constructive
-            coaching tips and mapped into four supportive performance bands, never punitive red marks.
-          </p>
           <div className={styles.criteriaBands} aria-label="Performance bands">
             {bands.map((b) => (
               <span
