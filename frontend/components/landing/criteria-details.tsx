@@ -80,7 +80,7 @@ export function CriteriaDetails() {
         <div className={styles.criteriaHeaderMeta}>
           <p className={styles.sectionLede}>
             Every stroke is evaluated across five penmanship criteria and mapped into four
-            supportive performance bands—never punitive red marks.
+            supportive performance bands, never punitive red marks.
           </p>
           <div className={styles.criteriaBands} aria-label="Performance bands">
             {bands.map((b) => (

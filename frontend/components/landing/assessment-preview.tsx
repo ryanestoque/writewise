@@ -161,7 +161,7 @@ export function AssessmentPreview() {
           aspectRatioClass="aspect-[62/34]"
         >
           <span className={styles.studioViewerPaperCaption}>
-            Illustrative handwriting — no student data
+            Illustrative handwriting (no student data)
           </span>
           <DiagnosticOverlay
             overlay={EXAMPLE_OVERLAY}

@@ -1,5 +1,5 @@
 /* =====================================================================
-   WriteWise Landing — "The Interactive Assessment Studio"
+   WriteWise Landing: "The Interactive Assessment Studio"
    Inherits the WriteWise design tokens: Deep Pine Teal, Soft Pine Wash,
    Crisp Page Canvas, Ruled Practice Paper, Poppins / Inter / Learning Curve.
    ===================================================================== */
@@ -1693,7 +1693,7 @@
     transform: translateY(0);
   }
 
-  /* Specific authored entrance for Hero section — runs immediately on initial paint without waiting for JS hydration */
+  /* Specific authored entrance for Hero section: runs immediately on initial paint without waiting for JS hydration */
   .heroTitle {
     animation: heroReveal 950ms var(--ease-reveal) 100ms both;
   }

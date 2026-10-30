@@ -43,7 +43,7 @@ const steps = [
 const trustPillars = [
   {
     title: "Students stay on paper",
-    body: "Learners write on physical ruled worksheets with a pencil—no student accounts, passwords, or screen time required.",
+    body: "Learners write on physical ruled worksheets with a pencil. No student accounts, passwords, or screen time required.",
   },
   {
     title: "Automatic photo privacy",
