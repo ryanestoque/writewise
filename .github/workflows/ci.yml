@@ -94,6 +94,9 @@ jobs:
       with:
         name: database-types
         path: frontend/types/database.ts
+
+    - name: Check committed database contract
+      run: git diff --exit-code -- frontend/types/database.ts
       
     - name: Run Backend Pytest
       working-directory: ./backend

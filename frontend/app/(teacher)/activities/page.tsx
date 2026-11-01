@@ -429,7 +429,7 @@ export default function ActivitiesPage() {
         </div>
       </div>
 
-      {/* Filter & Search Bar â€” only when activities exist */}
+      {/* Filter & Search Bar — only when activities exist */}
       {activities && activities.length > 0 && (
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
           {/* Search Input */}
@@ -471,7 +471,7 @@ export default function ActivitiesPage() {
                 >
                   <span>Newest First</span>
                   {sortBy === "newest" && (
-                    <span className="text-primary font-bold">âœ“</span>
+                    <span className="text-primary font-bold">✓</span>
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -480,7 +480,7 @@ export default function ActivitiesPage() {
                 >
                   <span>Oldest First</span>
                   {sortBy === "oldest" && (
-                    <span className="text-primary font-bold">âœ“</span>
+                    <span className="text-primary font-bold">✓</span>
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -489,7 +489,7 @@ export default function ActivitiesPage() {
                 >
                   <span>Most Submissions</span>
                   {sortBy === "most_submissions" && (
-                    <span className="text-primary font-bold">âœ“</span>
+                    <span className="text-primary font-bold">✓</span>
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -498,7 +498,7 @@ export default function ActivitiesPage() {
                 >
                   <span>Least Submissions</span>
                   {sortBy === "least_submissions" && (
-                    <span className="text-primary font-bold">âœ“</span>
+                    <span className="text-primary font-bold">✓</span>
                   )}
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -554,7 +554,7 @@ export default function ActivitiesPage() {
           ))}
         </div>
       ) : activities?.length === 0 ? (
-        /* Empty State â€” No activities */
+        /* Empty State — No activities */
         <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
           <Empty className="py-14 border-0">
             <EmptyMedia
@@ -587,7 +587,7 @@ export default function ActivitiesPage() {
           </Empty>
         </div>
       ) : filteredAndSortedActivities.length === 0 ? (
-        /* Empty State â€” No search / filter results */
+        /* Empty State — No search / filter results */
         <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
           <Empty className="py-12 border-0">
             <EmptyMedia

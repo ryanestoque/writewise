@@ -185,7 +185,7 @@ export function EditActivityDialog({
                     id="edit_target_text_hint"
                     className="text-xs text-muted-foreground leading-normal"
                   >
-                    Recommended: 5â€“25 words for standard 3-line worksheet.
+                    Recommended: 5–25 words for standard 3-line worksheet.
                   </p>
                   <span
                     className="text-xs font-medium text-muted-foreground tabular-nums shrink-0 ml-2"

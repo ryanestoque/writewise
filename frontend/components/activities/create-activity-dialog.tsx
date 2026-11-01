@@ -259,7 +259,7 @@ export function CreateActivityDialog({
                     id="target_text_hint"
                     className="text-xs text-muted-foreground leading-normal"
                   >
-                    Recommended: 5â€“25 words for standard 3-line ruled cursive worksheets.
+                    Recommended: 5–25 words for standard 3-line ruled cursive worksheets.
                   </p>
                 </div>
 

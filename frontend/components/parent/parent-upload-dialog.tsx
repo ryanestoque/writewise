@@ -518,6 +518,9 @@ function ParentUploadFlow({
       </DialogHeader>
 
       <div className="px-4 sm:px-6 py-4 max-h-[min(72dvh,calc(100vh-10rem))] overflow-y-auto overscroll-contain">
+        {!activitiesLoading && selectedActivityId && !selectedActivity && step !== 5 && <p role="alert" className="mb-3 rounded-lg border border-border bg-muted p-3 text-sm">
+          This activity is no longer available for parent uploads. It may be closed or no longer assigned to your child. Close this dialog and choose another activity.
+        </p>}
         {/* Step 4 — Uploading / Analyzing state */}
         {isUploading ? (
           <div
@@ -1067,7 +1070,7 @@ function ParentUploadFlow({
             <Button
               variant="outline"
               onClick={() => setStep(1)}
-              disabled={Boolean(prefilledActivityId)}
+              disabled={Boolean(prefilledActivityId) && !!selectedActivity}
               className="gap-1.5 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
             >
               <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
@@ -1087,7 +1090,7 @@ function ParentUploadFlow({
 
           {step === 1 && (
             <Button
-              disabled={!selectedActivityId}
+              disabled={!selectedActivity}
               onClick={() => setStep(2)}
               className="gap-2 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
             >
@@ -1098,7 +1101,7 @@ function ParentUploadFlow({
           {step === 3 && (
             <Button
               ref={submitButtonRef}
-              disabled={uploadMutation.isPending}
+              disabled={uploadMutation.isPending || !selectedActivity}
               onClick={handleRetryUpload}
               className="gap-2 h-10 sm:h-9 px-5 text-xs sm:text-sm font-semibold shadow-warm cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
             >
