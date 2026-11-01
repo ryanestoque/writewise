@@ -3,7 +3,9 @@
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { ActivityAssignmentFields, activitySchema, type ActivityFormValues } from "./activity-assignment-fields";
+import { toActivityDueAt } from "@/lib/utils/activity-deadlines";
+import { ApiError } from "@/lib/utils/api-error";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +23,7 @@ import {
   FieldError,
   FieldContent,
 } from "@/components/ui/field";
-import { useCreateActivity } from "@/lib/hooks/use-activities";
+import { type Activity, useCreateActivity } from "@/lib/hooks/use-activities";
 import {
   Loader2,
   ClipboardList,
@@ -32,16 +34,6 @@ import {
   Copy,
 } from "lucide-react";
 import { toast } from "sonner";
-
-const activitySchema = z.object({
-  target_text: z
-    .string()
-    .min(1, "Target text is required")
-    .refine((v) => v.trim().length > 0, "Target text must not be blank"),
-  is_take_home: z.boolean(),
-});
-
-type ActivityFormValues = z.infer<typeof activitySchema>;
 
 function getWordCount(text: string): number {
   const trimmed = text.trim();
@@ -71,10 +63,7 @@ const PROMPT_SUGGESTIONS = [
 interface CreateActivityDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialValues?: {
-    target_text?: string;
-    is_take_home?: boolean;
-  };
+  initialValues?: Partial<Activity>;
   isDuplicate?: boolean;
 }
 
@@ -89,6 +78,10 @@ export function CreateActivityDialog({
   const form = useForm<ActivityFormValues>({
     resolver: zodResolver(activitySchema),
     defaultValues: {
+      title: initialValues?.title ?? "",
+      instructions: initialValues?.instructions ?? "",
+      assignments: initialValues?.assignments ?? [],
+      due_input: "", close_after_due: false,
       target_text: initialValues?.target_text ?? "",
       is_take_home: initialValues?.is_take_home ?? false,
     },
@@ -101,15 +94,26 @@ export function CreateActivityDialog({
   useEffect(() => {
     if (open) {
       form.reset({
-        target_text: initialValues?.target_text ?? "",
+        title: initialValues?.title ?? "",
+      instructions: initialValues?.instructions ?? "",
+      assignments: initialValues?.assignments ?? [],
+      due_input: "", close_after_due: false,
+      target_text: initialValues?.target_text ?? "",
         is_take_home: initialValues?.is_take_home ?? false,
       });
     }
   }, [open, initialValues, form]);
 
   const onSubmit = (data: ActivityFormValues) => {
+    if (!data.assignments.length) {
+      form.setError("assignments", { message: "Choose at least one section or student." });
+      return;
+    }
     createActivity(
       {
+        title: data.title, instructions: data.instructions.trim() || null,
+        assignments: data.assignments,
+        due_at: toActivityDueAt(data.due_input), close_after_due: data.close_after_due,
         target_text: data.target_text,
         is_take_home: data.is_take_home,
       },
@@ -123,6 +127,9 @@ export function CreateActivityDialog({
           onOpenChange(false);
         },
         onError: (error: Error) => {
+          if (error instanceof ApiError && error.code === "INVALID_ASSIGNMENT_TARGET") {
+            form.setError("assignments", { message: "Choose sections or students from your current roster." });
+          }
           toast.error(error.message || "Failed to create activity.");
         },
       }
@@ -156,6 +163,7 @@ export function CreateActivityDialog({
         >
           <div className="overflow-y-auto overflow-x-hidden overscroll-contain px-1 py-1 flex-1 min-h-0">
             <FieldGroup>
+              <ActivityAssignmentFields form={form} />
               {/* Target Text */}
               <Field data-invalid={!!form.formState.errors.target_text}>
                 <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -251,7 +259,7 @@ export function CreateActivityDialog({
                     id="target_text_hint"
                     className="text-xs text-muted-foreground leading-normal"
                   >
-                    Recommended: 5–25 words for standard 3-line ruled cursive worksheets.
+                    Recommended: 5â€“25 words for standard 3-line ruled cursive worksheets.
                   </p>
                 </div>
 

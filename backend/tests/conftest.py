@@ -1,4 +1,11 @@
 import os
+from urllib.parse import urlparse
+
+# Reject hosted defaults before importing application modules or their .env settings.
+if os.environ.get("ENVIRONMENT") != "test" or urlparse(
+    os.environ.get("SUPABASE_URL", "")
+).hostname not in {"localhost", "127.0.0.1", "::1"}:
+    raise RuntimeError("Tests require ENVIRONMENT=test and an explicit localhost SUPABASE_URL")
 
 import pytest
 from fastapi.testclient import TestClient

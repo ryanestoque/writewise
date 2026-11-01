@@ -1,5 +1,6 @@
 "use client";
 
+import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
 import { memo } from "react";
 import Link from "next/link";
 import type { Activity } from "@/lib/hooks/use-activities";
@@ -99,9 +100,14 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
     >
       {/* Screen Reader Semantic Heading */}
       <h1 id="activity-prompt-heading" className="sr-only">
-        Activity: {activity.target_text || "Untitled Activity"}
+        Activity: {activity.title || "Untitled Activity"}
       </h1>
 
+      <div className="mb-4 flex flex-col gap-2">
+        <h2 className="font-heading text-xl font-semibold">{activity.title}</h2>
+        <p className="text-sm text-muted-foreground">{activity.due_at ? `Due ${formatActivityDueAt(activity.due_at)} (Manila)` : "No due date"}{activity.close_after_due ? " · Parent uploads close after due" : ""}</p>
+        {activity.instructions && <p className="whitespace-pre-wrap text-sm">{activity.instructions}</p>}
+      </div>
       {/* Archived Top Warning Banner if Archived */}
       {isArchived && (
         <div

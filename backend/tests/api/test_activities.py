@@ -4,6 +4,27 @@ from app.core.supabase import supabase_client
 from tests.conftest import TEST_TEACHER_ID
 
 
+@pytest.fixture(scope="module")
+def owned_section():
+    row = (
+        supabase_client.table("section")
+        .insert(
+            {
+                "teacher_id": TEST_TEACHER_ID,
+                "name": "Activity contract fixture",
+            }
+        )
+        .execute()
+        .data[0]
+    )
+    yield row["id"]
+    supabase_client.table("section").delete().eq("id", row["id"]).execute()
+
+
+def activity_fields(section_id):
+    return {"title": "Synthetic activity", "assignments": [{"section_id": section_id}]}
+
+
 @pytest.fixture
 def cleanup_activities():
     activity_ids = []
@@ -12,8 +33,12 @@ def cleanup_activities():
         supabase_client.table("activity").delete().eq("id", aid).execute()
 
 
-def test_create_activity(client, cleanup_activities):
-    payload = {"target_text": "the quick brown fox", "is_take_home": False}
+def test_create_activity(client, owned_section, cleanup_activities):
+    payload = {
+        **activity_fields(owned_section),
+        "target_text": "the quick brown fox",
+        "is_take_home": False,
+    }
     response = client.post("/api/activities", json=payload)
     assert response.status_code == 201
     data = response.json()
@@ -32,8 +57,12 @@ def test_create_activity(client, cleanup_activities):
     assert res.data[0]["created_by"] == TEST_TEACHER_ID
 
 
-def test_create_take_home_activity(client, cleanup_activities):
-    payload = {"target_text": "cursive letters a b c", "is_take_home": True}
+def test_create_take_home_activity(client, owned_section, cleanup_activities):
+    payload = {
+        **activity_fields(owned_section),
+        "target_text": "cursive letters a b c",
+        "is_take_home": True,
+    }
     response = client.post("/api/activities", json=payload)
     assert response.status_code == 201
     data = response.json()
@@ -43,8 +72,8 @@ def test_create_take_home_activity(client, cleanup_activities):
     cleanup_activities.append(data["id"])
 
 
-def test_create_activity_defaults_not_take_home(client, cleanup_activities):
-    payload = {"target_text": "hello world"}
+def test_create_activity_defaults_not_take_home(client, owned_section, cleanup_activities):
+    payload = {**activity_fields(owned_section), "target_text": "hello world"}
     response = client.post("/api/activities", json=payload)
     assert response.status_code == 201
     data = response.json()
@@ -53,22 +82,30 @@ def test_create_activity_defaults_not_take_home(client, cleanup_activities):
     cleanup_activities.append(data["id"])
 
 
-def test_create_activity_empty_text_fails(client):
-    payload = {"target_text": "   ", "is_take_home": False}
+def test_create_activity_empty_text_fails(client, owned_section):
+    payload = {**activity_fields(owned_section), "target_text": "   ", "is_take_home": False}
     response = client.post("/api/activities", json=payload)
     assert response.status_code == 422
 
 
-def test_update_activity(client, cleanup_activities):
+def test_update_activity(client, owned_section, cleanup_activities):
     # 1. Create
-    payload = {"target_text": "original text", "is_take_home": False}
+    payload = {
+        **activity_fields(owned_section),
+        "target_text": "original text",
+        "is_take_home": False,
+    }
     create_res = client.post("/api/activities", json=payload)
     assert create_res.status_code == 201
     act_id = create_res.json()["id"]
     cleanup_activities.append(act_id)
 
     # 2. Update
-    update_payload = {"target_text": "updated cursive sentence", "is_take_home": True}
+    update_payload = {
+        **activity_fields(owned_section),
+        "target_text": "updated cursive sentence",
+        "is_take_home": True,
+    }
     update_res = client.patch(f"/api/activities/{act_id}", json=update_payload)
     assert update_res.status_code == 200
     updated_data = update_res.json()
@@ -76,9 +113,13 @@ def test_update_activity(client, cleanup_activities):
     assert updated_data["is_take_home"] is True
 
 
-def test_delete_activity(client):
+def test_delete_activity(client, owned_section):
     # 1. Create
-    payload = {"target_text": "temp to delete", "is_take_home": False}
+    payload = {
+        **activity_fields(owned_section),
+        "target_text": "temp to delete",
+        "is_take_home": False,
+    }
     create_res = client.post("/api/activities", json=payload)
     assert create_res.status_code == 201
     act_id = create_res.json()["id"]
@@ -93,10 +134,11 @@ def test_delete_activity(client):
     assert del_res2.status_code == 404
 
 
-def test_toggle_archive_activity(client, cleanup_activities):
+def test_toggle_archive_activity(client, owned_section, cleanup_activities):
     # 1. Create
     create_res = client.post(
-        "/api/activities", json={"target_text": "archive me", "is_take_home": False}
+        "/api/activities",
+        json={**activity_fields(owned_section), "target_text": "archive me", "is_take_home": False},
     )
     assert create_res.status_code == 201
     act_id = create_res.json()["id"]
@@ -120,17 +162,19 @@ def test_toggle_archive_activity(client, cleanup_activities):
     assert res.data[0]["is_archived"] is False
 
 
-def test_toggle_archive_activity_not_found(client):
+def test_toggle_archive_activity_not_found(client, owned_section):
     response = client.patch("/api/activities/99999999-9999-9999-9999-999999999999/archive")
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "NOT_FOUND"
 
 
-def test_bulk_archive_activities(client, cleanup_activities):
+def test_bulk_archive_activities(client, owned_section, cleanup_activities):
     # 1. Create two activities
     ids = []
     for text in ["bulk one", "bulk two"]:
-        create_res = client.post("/api/activities", json={"target_text": text})
+        create_res = client.post(
+            "/api/activities", json={**activity_fields(owned_section), "target_text": text}
+        )
         assert create_res.status_code == 201
         ids.append(create_res.json()["id"])
     cleanup_activities.extend(ids)
@@ -152,9 +196,11 @@ def test_bulk_archive_activities(client, cleanup_activities):
     assert sorted(restore_res.json()["updated"]) == sorted(ids)
 
 
-def test_bulk_archive_skips_non_owned_ids(client, cleanup_activities):
+def test_bulk_archive_skips_non_owned_ids(client, owned_section, cleanup_activities):
     # 1. Create one owned activity
-    create_res = client.post("/api/activities", json={"target_text": "owned activity"})
+    create_res = client.post(
+        "/api/activities", json={**activity_fields(owned_section), "target_text": "owned activity"}
+    )
     assert create_res.status_code == 201
     owned_id = create_res.json()["id"]
     cleanup_activities.append(owned_id)
@@ -171,7 +217,7 @@ def test_bulk_archive_skips_non_owned_ids(client, cleanup_activities):
     assert body["skipped"] == [foreign_id]
 
 
-def test_bulk_archive_empty_ids(client):
+def test_bulk_archive_empty_ids(client, owned_section):
     response = client.post("/api/activities/bulk-archive", json={"ids": [], "archived": True})
     assert response.status_code == 200
     assert response.json() == {"updated": [], "skipped": []}

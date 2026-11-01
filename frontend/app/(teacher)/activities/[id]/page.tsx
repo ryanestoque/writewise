@@ -8,6 +8,8 @@ import {
   useActivity,
   useToggleArchive,
 } from "@/lib/hooks/use-activities";
+import { ActivityWorkStatus } from "@/components/activities/activity-work-status";
+import { activityAssignedTo } from "@/lib/utils/activity-work";
 import { useStudents } from "@/lib/hooks/use-students";
 import {
   type Submission,
@@ -185,7 +187,8 @@ export default function ActivityDetailPage({
   }, [submissions]);
 
   const uniqueStudentsCount = submittedStudentIds.size;
-  const totalStudents = students?.length ?? 0;
+  const assignedStudents = (students ?? []).filter((student) => !!activity && activityAssignedTo(activity, student));
+  const totalStudents = assignedStudents.length;
   const totalScansCount = submissions?.length ?? 0;
   const completionRate =
     totalStudents > 0
@@ -848,6 +851,16 @@ export default function ActivityDetailPage({
         onToggleArchive={handleToggleArchive}
       />
 
+      <section aria-labelledby="assigned-work-heading" className="rounded-xl border border-border bg-card p-4">
+        <h2 id="assigned-work-heading" className="mb-3 font-heading text-lg font-semibold">Assigned students ({assignedStudents.length})</h2>
+        {!assignedStudents.length && <p className="text-sm text-muted-foreground">Edit this activity to choose sections or students.</p>}
+        <ul className="divide-y divide-border">
+          {assignedStudents.map((student) => <li key={student.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+            <span className="text-sm font-medium">{student.full_name}</span>
+            <ActivityWorkStatus dueAt={activity.due_at} attempts={(submissions ?? []).filter((s) => s.student_id === student.id)} />
+          </li>)}
+        </ul>
+      </section>
       {/* Submissions Section */}
       <section aria-labelledby="submissions-heading" className="space-y-4">
         {/* Section Header with Controls */}
@@ -1252,6 +1265,7 @@ export default function ActivityDetailPage({
         open={isDuplicateOpen}
         onOpenChange={setIsDuplicateOpen}
         initialValues={{
+          ...activity, due_at: null, close_after_due: false,
           target_text: activity.target_text,
           is_take_home: activity.is_take_home,
         }}

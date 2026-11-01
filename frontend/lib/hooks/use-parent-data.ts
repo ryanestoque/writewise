@@ -1,3 +1,4 @@
+import type { WorkAttempt } from "@/lib/utils/activity-work";
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "../supabase/client";
 import { getBandFromScore, computeCompositeFromCriteria, type ScoreBand } from "../utils/scoring";
@@ -53,6 +54,12 @@ export interface TakeHomeActivitySubmission {
 }
 
 export interface TakeHomeActivity {
+  title: string;
+  instructions: string | null;
+  isTakeHome: boolean;
+  dueAt: string | null;
+  closeAfterDue: boolean;
+  attempts: WorkAttempt[];
   id: string;
   targetText: string;
   createdAt: string;
@@ -383,14 +390,27 @@ export function useTakeHomeActivities(childId: string | null) {
       const teacherIds = (teacherLinks || []).map((t) => t.teacher_id);
       if (teacherIds.length === 0) return [];
 
-      // 2. Fetch take-home activities created by this child's teacher(s)
+      // Scope targets to this child before reading activities. RLS alone is a sibling union.
+      const { data: child, error: childError } = await supabase.from("student")
+        .select("section_id").eq("id", childId).single();
+      if (childError) throw childError;
+      const match = child.section_id
+        ? `student_id.eq.${childId},section_id.eq.${child.section_id}`
+        : `student_id.eq.${childId}`;
+      const { data: targets, error: targetsError } = await supabase.from("activity_assignment")
+        .select("activity_id").or(match);
+      if (targetsError) throw targetsError;
+      const assignedIds = [...new Set((targets ?? []).map((t) => t.activity_id))];
+      if (!assignedIds.length) return [];
+
+      // Both assigned modes are visible; only take-home allows parent uploads.
       const { data: activitiesData, error } = await supabase
         .from("activity")
-        .select("id, target_text, created_at, created_by")
-        .eq("is_take_home", true)
+        .select("id, title, instructions, target_text, is_take_home, due_at, close_after_due, created_at, created_by")
+        .in("id", assignedIds)
         .eq("is_archived", false)
         .in("created_by", teacherIds)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false }).order("id", { ascending: false });
 
       if (error) throw new Error(error.message);
       if (!activitiesData || activitiesData.length === 0) return [];
@@ -399,8 +419,9 @@ export function useTakeHomeActivities(childId: string | null) {
 
       // Batch-fetch the latest submission per activity for this child in a single query (eliminating N+1)
       const submissionsMap: Record<string, TakeHomeActivitySubmission> = {};
+      const attemptsMap: Record<string, WorkAttempt[]> = {};
       if (childId && activityIds.length > 0) {
-        const { data: subsData } = await supabase
+        const { data: subsData, error: subsError } = await supabase
           .from("submission")
           .select(`
             id,
@@ -421,10 +442,12 @@ export function useTakeHomeActivities(childId: string | null) {
           `)
           .eq("student_id", childId)
           .in("activity_id", activityIds)
-          .order("created_at", { ascending: false });
+          .order("created_at", { ascending: false }).order("id", { ascending: false });
 
+        if (subsError) throw subsError;
         if (subsData) {
           for (const sub of subsData) {
+            (attemptsMap[sub.activity_id] ??= []).push({ id: sub.id, status: sub.status, created_at: sub.created_at });
             // Since sorted created_at desc, the first time we see an activity_id is the latest
             if (!submissionsMap[sub.activity_id]) {
               const m = Array.isArray(sub.measurement) ? sub.measurement[0] : sub.measurement;
@@ -449,6 +472,8 @@ export function useTakeHomeActivities(childId: string | null) {
 
       return activitiesData.map((row) => ({
         id: row.id,
+        title: row.title, instructions: row.instructions, isTakeHome: row.is_take_home,
+        dueAt: row.due_at, closeAfterDue: row.close_after_due, attempts: attemptsMap[row.id] ?? [],
         targetText: row.target_text,
         createdAt: row.created_at,
         submission: submissionsMap[row.id] ?? null,
@@ -459,7 +484,7 @@ export function useTakeHomeActivities(childId: string | null) {
     refetchInterval: (query) => {
       const data = query.state.data;
       const hasProcessing = data?.some((a) => a.submission?.status === "processing");
-      return hasProcessing ? 3000 : false;
+      return hasProcessing ? 3000 : 60000;
     },
   });
 }

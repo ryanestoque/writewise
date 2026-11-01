@@ -22,16 +22,17 @@ def _make_test_jpeg(width: int = 100, height: int = 100) -> bytes:
 
 
 @pytest.fixture
-def test_activity():
+def test_activity(test_student):
     """Create a temporary activity owned by the test teacher.
 
     Target text has 6 words to match the default make_segmented_worksheet
-    output (2 lines × 3 words_per_line = 6 words).
+    output (2 lines Ã— 3 words_per_line = 6 words).
     """
     res = (
         supabase_client.table("activity")
         .insert(
             {
+                "title": "Synthetic worksheet",
                 "target_text": "one two three four five six",
                 "is_take_home": False,
                 "created_by": TEST_TEACHER_ID,
@@ -40,6 +41,12 @@ def test_activity():
         .execute()
     )
     activity = res.data[0]
+    supabase_client.table("activity_assignment").insert(
+        {
+            "activity_id": activity["id"],
+            "student_id": test_student["id"],
+        }
+    ).execute()
     yield activity
     supabase_client.table("activity").delete().eq("id", activity["id"]).execute()
 
@@ -73,9 +80,9 @@ def cleanup_submissions():
     submissions = []
     yield submissions
     for sub in submissions:
-        # Delete manual_score first (FK: manual_score.submission_id → submission.id, RESTRICT)
+        # Delete manual_score first (FK: manual_score.submission_id â†’ submission.id, RESTRICT)
         supabase_client.table("manual_score").delete().eq("submission_id", sub["id"]).execute()
-        # Delete measurement (FK: measurement.submission_id → submission.id, RESTRICT)
+        # Delete measurement (FK: measurement.submission_id â†’ submission.id, RESTRICT)
         supabase_client.table("measurement").delete().eq("submission_id", sub["id"]).execute()
         # Delete submission row
         supabase_client.table("submission").delete().eq("id", sub["id"]).execute()
@@ -89,7 +96,7 @@ def cleanup_submissions():
 class TestCreateSubmission:
     def test_successful_upload(self, client, test_activity, test_student, cleanup_submissions):
         """Upload a valid worksheet image and verify the full pipeline runs:
-        quality gate → CV pipeline → measurement persisted → status completed.
+        quality gate â†’ CV pipeline â†’ measurement persisted â†’ status completed.
         """
         jpeg_bytes = make_segmented_worksheet()
         response = client.post(
@@ -105,7 +112,7 @@ class TestCreateSubmission:
         assert "submission_id" in data
         assert data["status"] == "completed"
 
-        # API_SPEC §3.3 response shape
+        # API_SPEC Â§3.3 response shape
         assert "measurement" in data
         measurement = data["measurement"]
         assert "aggregate" in measurement
@@ -560,7 +567,7 @@ class TestCreateSubmission:
     def test_rejected_submission_has_no_measurement(
         self, client, test_activity, test_student, cleanup_submissions
     ):
-        """A rejected submission should NOT have a measurement row (DATABASE §8 lifecycle note)."""
+        """A rejected submission should NOT have a measurement row (DATABASE Â§8 lifecycle note)."""
         response = self._post_blurry_upload(client, test_activity, test_student)
         assert response.status_code == 422
         submission_id = response.json()["error"]["details"]["submission_id"]

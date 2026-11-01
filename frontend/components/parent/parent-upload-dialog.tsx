@@ -27,6 +27,9 @@ import {
   QualityErrorCard,
   type QualityError,
 } from "@/components/submissions/quality-error-card";
+import { useActivityNow } from "@/components/activities/activity-work-status";
+import { activitySubmissionsClosed } from "@/lib/utils/activity-deadlines";
+import { ApiError } from "@/lib/utils/api-error";
 import { toast } from "sonner";
 import {
   UploadCloudIcon,
@@ -178,12 +181,14 @@ function ParentUploadFlow({
   );
   const [processingStageIndex, setProcessingStageIndex] = useState(0);
 
-  const { data: activities, isLoading: activitiesLoading } =
+  const { data: assignedActivities, isLoading: activitiesLoading } =
     useTakeHomeActivities(childId);
   const { data: priorSubmission } = useChildSubmissionForActivity(
     childId,
     selectedActivityId ?? ""
   );
+  const now = useActivityNow();
+  const activities = useMemo(() => assignedActivities?.filter((a) => a.isTakeHome && !activitySubmissionsClosed({ due_at: a.dueAt, close_after_due: a.closeAfterDue }, now)), [assignedActivities, now]);
   const uploadMutation = useUploadSubmission();
   const queryClient = useQueryClient();
 
@@ -323,6 +328,7 @@ function ParentUploadFlow({
 
   const handleSubmit = (bypassTextCheck = false) => {
     if (!selectedFile || !selectedActivityId || !childId) return;
+    if (!selectedActivity) { toast.error("This activity is no longer available for uploads."); onClose(); return; }
 
     setStep(4);
     setUploadError(null);
@@ -353,6 +359,12 @@ function ParentUploadFlow({
           setStep(5);
         },
         onError: (err) => {
+          if (err instanceof ApiError && (err.code === "ACTIVITY_NOT_ASSIGNED" || err.code === "SUBMISSIONS_CLOSED")) {
+            queryClient.invalidateQueries({ queryKey: ["parent-take-home-activities", childId] });
+            toast.error(err.code === "SUBMISSIONS_CLOSED" ? "Submissions have closed for this activity." : "This activity is no longer assigned to your child.");
+            onClose();
+            return;
+          }
           console.error("Submission upload failed:", err);
           let error: UploadError;
           if (err && typeof err === "object" && "code" in err) {
@@ -382,8 +394,8 @@ function ParentUploadFlow({
   const isStepNavigable = (targetStep: Step): boolean => {
     if (isUploading) return false;
     if (targetStep === 1) return !prefilledActivityId;
-    if (targetStep === 2) return Boolean(selectedActivityId);
-    if (targetStep === 3) return Boolean(selectedActivityId && selectedFile);
+    if (targetStep === 2) return Boolean(selectedActivity);
+    if (targetStep === 3) return Boolean(selectedActivity && selectedFile);
     return false;
   };
 
@@ -592,7 +604,7 @@ function ParentUploadFlow({
                         >
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-semibold text-foreground line-clamp-2">
-                              &ldquo;{act.targetText}&rdquo;
+                              {act.title}
                             </span>
                             {isSelected && (
                               <CheckCircle2Icon

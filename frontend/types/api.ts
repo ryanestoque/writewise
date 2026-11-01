@@ -282,20 +282,84 @@ export interface components {
         };
         /** ActivityCreate */
         ActivityCreate: {
+            /** Title */
+            title: string;
             /** Target Text */
             target_text: string;
+            /** Assignments */
+            assignments: components["schemas"]["AssignmentTarget"][];
+            /** Instructions */
+            instructions?: string | null;
             /**
              * Is Take Home
              * @default false
              */
             is_take_home: boolean;
+            /** Due At */
+            due_at?: string | null;
+            /**
+             * Close After Due
+             * @default false
+             */
+            close_after_due: boolean;
+        };
+        /** ActivityResponse */
+        ActivityResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Target Text */
+            target_text: string;
+            /** Assignments */
+            assignments: components["schemas"]["AssignmentTarget"][];
+            /** Instructions */
+            instructions: string | null;
+            /** Is Take Home */
+            is_take_home: boolean;
+            /** Is Archived */
+            is_archived: boolean;
+            /** Due At */
+            due_at: string | null;
+            /** Close After Due */
+            close_after_due: boolean;
+            /**
+             * Created By
+             * Format: uuid
+             */
+            created_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** ActivityUpdate */
         ActivityUpdate: {
+            /** Title */
+            title?: string | null;
             /** Target Text */
             target_text?: string | null;
+            /** Assignments */
+            assignments?: components["schemas"]["AssignmentTarget"][] | null;
+            /** Instructions */
+            instructions?: string | null;
             /** Is Take Home */
             is_take_home?: boolean | null;
+            /** Due At */
+            due_at?: string | null;
+            /** Close After Due */
+            close_after_due?: boolean | null;
+        };
+        /** AssignmentTarget */
+        AssignmentTarget: {
+            /** Section Id */
+            section_id?: string | null;
+            /** Student Id */
+            student_id?: string | null;
         };
         /** BatchDeleteSubmissionsRequest */
         BatchDeleteSubmissionsRequest: {
@@ -689,7 +753,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ActivityResponse"];
                 };
             };
             /** @description Validation Error */
@@ -755,7 +819,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ActivityResponse"];
                 };
             };
             /** @description Validation Error */

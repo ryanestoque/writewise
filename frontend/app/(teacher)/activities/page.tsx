@@ -7,6 +7,7 @@ import {
   useToggleArchive,
   useBulkArchive,
 } from "@/lib/hooks/use-activities";
+import { activityAssignedTo } from "@/lib/utils/activity-work";
 import { useStudents } from "@/lib/hooks/use-students";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import { CreateActivityDialog } from "@/components/activities/create-activity-dialog";
@@ -82,7 +83,6 @@ export default function ActivitiesPage() {
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const totalStudents = students?.length ?? 0;
 
   // Counts for filter pills
   const counts = useMemo(() => {
@@ -141,7 +141,7 @@ export default function ActivitiesPage() {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter((activity) =>
-        activity.target_text.toLowerCase().includes(query)
+        `${activity.title} ${activity.target_text}`.toLowerCase().includes(query)
       );
     }
 
@@ -429,7 +429,7 @@ export default function ActivitiesPage() {
         </div>
       </div>
 
-      {/* Filter & Search Bar — only when activities exist */}
+      {/* Filter & Search Bar â€” only when activities exist */}
       {activities && activities.length > 0 && (
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
           {/* Search Input */}
@@ -471,7 +471,7 @@ export default function ActivitiesPage() {
                 >
                   <span>Newest First</span>
                   {sortBy === "newest" && (
-                    <span className="text-primary font-bold">✓</span>
+                    <span className="text-primary font-bold">âœ“</span>
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -480,7 +480,7 @@ export default function ActivitiesPage() {
                 >
                   <span>Oldest First</span>
                   {sortBy === "oldest" && (
-                    <span className="text-primary font-bold">✓</span>
+                    <span className="text-primary font-bold">âœ“</span>
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -489,7 +489,7 @@ export default function ActivitiesPage() {
                 >
                   <span>Most Submissions</span>
                   {sortBy === "most_submissions" && (
-                    <span className="text-primary font-bold">✓</span>
+                    <span className="text-primary font-bold">âœ“</span>
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -498,7 +498,7 @@ export default function ActivitiesPage() {
                 >
                   <span>Least Submissions</span>
                   {sortBy === "least_submissions" && (
-                    <span className="text-primary font-bold">✓</span>
+                    <span className="text-primary font-bold">âœ“</span>
                   )}
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -554,7 +554,7 @@ export default function ActivitiesPage() {
           ))}
         </div>
       ) : activities?.length === 0 ? (
-        /* Empty State — No activities */
+        /* Empty State â€” No activities */
         <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
           <Empty className="py-14 border-0">
             <EmptyMedia
@@ -587,7 +587,7 @@ export default function ActivitiesPage() {
           </Empty>
         </div>
       ) : filteredAndSortedActivities.length === 0 ? (
-        /* Empty State — No search / filter results */
+        /* Empty State â€” No search / filter results */
         <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
           <Empty className="py-12 border-0">
             <EmptyMedia
@@ -648,7 +648,7 @@ export default function ActivitiesPage() {
               activity={activity}
               isSelected={selectedIds.has(activity.id)}
               isSelectMode={isSelectMode}
-              totalStudents={totalStudents}
+              totalStudents={(students ?? []).filter((s) => activityAssignedTo(activity, s)).length}
               onToggleSelect={handleToggleSelect}
               onUpload={handleUpload}
               onDuplicate={handleDuplicate}
@@ -744,6 +744,8 @@ export default function ActivitiesPage() {
         initialValues={
           duplicatingActivity
             ? {
+                ...duplicatingActivity,
+                due_at: null, close_after_due: false,
                 target_text: duplicatingActivity.target_text,
                 is_take_home: duplicatingActivity.is_take_home,
               }

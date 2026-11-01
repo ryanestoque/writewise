@@ -1,5 +1,6 @@
 "use client";
 
+import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
 import { memo, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -90,7 +91,7 @@ export const ActivityCard = memo(function ActivityCard({
   const router = useRouter();
 
   const isArchived = activity.is_archived;
-  const displayTargetText = activity.target_text?.trim() || "Untitled Activity";
+  const displayTargetText = activity.title?.trim() || "Untitled Activity";
   const wordCount = useMemo(() => getWordCount(activity.target_text ?? ""), [activity.target_text]);
   const relativeTime = useMemo(() => getRelativeTime(activity.created_at), [activity.created_at]);
 
@@ -286,6 +287,10 @@ export const ActivityCard = memo(function ActivityCard({
           }}
           className="block group-hover:opacity-95 transition-opacity focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
         >
+          <h3 className="mb-1 font-heading text-base font-semibold">{activity.title}</h3>
+          <p className="mb-3 text-xs text-muted-foreground">
+            {activity.due_at ? `Due ${formatActivityDueAt(activity.due_at)} (Manila)` : "No due date"}
+          </p>
           <div className="relative p-3.5 sm:p-4 pb-5 sm:pb-6 rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 mb-3.5 overflow-hidden shadow-warm-sm">
             <div className="relative max-h-[148px] sm:max-h-[156px] overflow-hidden">
               {/* Authentic 3-line ruling aligned with Cedarville Cursive baseline */}
