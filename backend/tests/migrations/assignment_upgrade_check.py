@@ -100,6 +100,26 @@ def main():
             .execute()
             .data
         )
+        # A teacher with no roster or sections needs no invented backfill target.
+        empty_tag = uuid4().hex
+        empty_user = admin.auth.admin.create_user(
+            {
+                **credentials(empty_tag),
+                "email_confirm": True,
+                "user_metadata": {"role": "teacher", "full_name": "Synthetic Empty Teacher"},
+            }
+        ).user
+        empty_activity = (
+            admin.table("activity")
+            .insert(
+                {
+                    "created_by": empty_user.id,
+                    "target_text": "Synthetic empty roster legacy",
+                }
+            )
+            .execute()
+            .data[0]
+        )
         visible = []
         for identity in [parent, other_parent]:
             client = signed_in(identity)
@@ -125,6 +145,8 @@ def main():
                     "children": children,
                     "activities": [a["id"] for a in activities],
                     "visible": visible,
+                    "empty_teacher": empty_user.id,
+                    "empty_activity": empty_activity["id"],
                 }
             ),
             encoding="utf-8",
@@ -133,6 +155,20 @@ def main():
         return
 
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+    empty = (
+        admin.rpc(
+            "update_assigned_activity",
+            {
+                "actor_id": manifest["empty_teacher"],
+                "target_activity_id": manifest["empty_activity"],
+                "payload": {"instructions": "An unrelated legacy edit"},
+            },
+        )
+        .execute()
+        .data
+    )
+    assert empty["assignments"] == []
+    assert empty["instructions"] == "An unrelated legacy edit"
     for identity in manifest["users"][2:]:
         client = signed_in(identity)
         links = client.table("student_parent").select("student_id").execute().data

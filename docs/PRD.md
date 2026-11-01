@@ -95,6 +95,10 @@ The scoring system cannot be "designed" up front the normal way — the rubric t
 
 **Once calibration is done:** swap the manual-entry step for the calibrated auto-scoring engine (a backend integration, not a UI rebuild) — the manual teacher-score field is then **removed** from the live product.
 
+### Phase 3 — Classroom activities, Slice 1
+
+Implementation authorized after the defense milestone on 2026-11-01. Slice 1 adds activity titles/instructions, owned section and individual-student targeting, optional Manila-time deadlines, and parent upload closure. Teachers retain deadline override through their upload role. Parents see both assigned modes for their selected child; in-class work is read-only. Assigned/Missing/Turned in and a Late badge derive from the latest completed attempt; newer processing/rejection attempts retain separate feedback. Returns, release gates, notifications, points and comments remain later slices. Implementation/verification/deployment state belongs in IMPLEMENTATION_STATUS.md.
+
 ### Suggested Timeline (Aug–Oct)
 | Window | Focus |
 |---|---|

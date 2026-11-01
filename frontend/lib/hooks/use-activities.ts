@@ -4,6 +4,7 @@ import { getAuthToken } from "../supabase/auth-helper";
 import { handleApiResponse } from "../utils/api-error";
 
 import type { components } from "@/types/api";
+import type { Database } from "@/types/database";
 
 export interface ActivitySubmissionSummary {
   id: string;
@@ -12,7 +13,8 @@ export interface ActivitySubmissionSummary {
   created_at: string;
 }
 
-export type Activity = components["schemas"]["ActivityResponse"] & {
+export type Activity = Database["public"]["Tables"]["activity"]["Row"] & {
+  assignments: Pick<Database["public"]["Tables"]["activity_assignment"]["Row"], "section_id" | "student_id">[];
   submissions?: ActivitySubmissionSummary[];
 };
 

@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 import pytest
 
 from app.api.deps import get_current_teacher, get_current_user
@@ -89,3 +91,36 @@ def test_parent_cannot_create_assigned_activity(client, targets):
     )
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "FORBIDDEN"
+
+
+def test_cross_teacher_patch_preserves_activity_and_targets(client, targets):
+    result = client.post(
+        "/api/activities",
+        json={
+            "title": "Owned loops",
+            "target_text": "one two three four five six",
+            "assignments": [{"section_id": targets["section"]}],
+        },
+    )
+    assert result.status_code == 201
+    row = result.json()
+    try:
+        app.dependency_overrides[get_current_teacher] = lambda: {
+            "sub": str(uuid4()),
+            "role": "teacher",
+        }
+        response = client.patch(f"/api/activities/{row['id']}", json={"title": "Stolen"})
+        assert response.status_code == 404
+        assert response.json()["error"]["code"] == "NOT_FOUND"
+        after = (
+            admin.rpc(
+                "update_assigned_activity",
+                {"actor_id": TEST_TEACHER_ID, "target_activity_id": row["id"], "payload": {}},
+            )
+            .execute()
+            .data
+        )
+        assert after["title"] == "Owned loops"
+        assert after["assignments"] == row["assignments"]
+    finally:
+        admin.table("activity").delete().eq("id", row["id"]).execute()

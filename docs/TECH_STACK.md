@@ -285,13 +285,13 @@ FastAPI auto-generates interactive docs at **`/docs`** (Swagger UI) from the sam
 | `MODEL_STORAGE_BUCKET` / `MODEL_ARTIFACT_PATH` | Supabase Storage location of the CNN model artifact, downloaded at container startup (ARCHITECTURE §9) |
 | `SCORING_ENGINE` | `manual` \| `calibrated` — the Phase 1→2 scoring-provider swap flag (ARCHITECTURE §10) |
 | `CORS_ALLOWED_ORIGINS` | Vercel frontend URL(s) — dev preview + prod |
-| `ENVIRONMENT` | `dev` \| `prod` \| `test` — tags structured logs (ARCHITECTURE §15). `test` is CI-only: set automatically by the GitHub Actions workflow (never in a local `.env` file), and skips the real CNN model download/load in favor of TESTING.md §3.2's mocked inference function |
+| `ENVIRONMENT` | `dev` \| `prod` \| `test` — tags structured logs (ARCHITECTURE §15). `test` is set in CI or a disposable local test process (never in the development `.env` file), and skips the real CNN model download/load in favor of TESTING.md §3.2's mocked inference function |
 
 ---
 
 ## 9. Local Development — Getting Started
 
-No Docker required anywhere in this workflow — dev connects directly to the hosted `writewise-dev` Supabase project (ARCHITECTURE §3), not a local emulated stack.
+Everyday development connects directly to the hosted `writewise-dev` Supabase project (ARCHITECTURE §3) and needs no Docker. Running the backend integration suite locally requires a Docker-compatible runtime and the disposable Supabase stack described in TESTING.md §3.1.1.
 
 ```bash
 # 1. Clone

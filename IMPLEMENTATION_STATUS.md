@@ -2,18 +2,19 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-10-20
+**Last updated:** 2026-11-01 (Phase 3 repository audit; legacy summary reconciled with the entries below)
 
 ## Summary
 
 | Phase | Done / Total |
 |---|---|
-| Phase 0 — Setup | 15 / 18 |
-| Phase 1 — Teacher Tooling & Raw CV Pipeline | 25 / 25 |
-| Between Phases — Calibration | 6 / 9 *(+3 code-ready)* |
+| Phase 0 — Setup | 16 / 19 |
+| Phase 1 — Teacher Tooling & Raw CV Pipeline | 26 / 26 |
+| Between Phases — Calibration | 9 / 9 |
 | Phase 2 — Calibrated Scoring & Full System | 13 / 14 |
+| Phase 3 — Classroom-Style Activities | 0 / 6 slices verified |
 
-*(Update this table whenever you check off an item below.)*
+*Update this table whenever an item's status changes. Phase 0–2 counts reflect the existing detailed records, not a fresh verification of cloud provisioning, model artifacts, deployments, or research results. Some Done rows still have explicit verification caveats. Phase 3 uses the evidence and verification gates defined below.*
 
 ---
 
@@ -143,4 +144,134 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
 | ScoreProvider abstraction (`ManualScoreProvider` & `CalibratedScoreProvider`) | Done | Built in `backend/app/scoring/`, integrated with `create_submission` | ARCHITECTURE §10, ML_PIPELINE §6.5 |
-| Flip `SCORING_ENGINE` flag to calibrated; remove manual-score field | Ready / Awaiting Calibration | Blocked on Stage 2 calibration completion | PRD §5, DATABASE §9.1 |
+| Activate calibrated scoring; verify manual-score entry UI gating | Ready / Activation unverified | Stage 2 training and artifact export are recorded Done above, so the former calibration blocker is stale. Deployed `SCORING_ENGINE`, successful artifact loading, and the integrated scoring flow still need runtime confirmation. Preserve historical manual scores for calibration/export. | PRD §5, DATABASE §9.1 |
+
+---
+
+## Phase 3 — Classroom-Style Activities
+
+**Audit date:** 2026-11-01. **Baseline:** local checkout at `3377875`; no Phase 3 application changes were present in the inspected files. This is a repository audit, not a hosted-database or deployment audit. The calendar date does not establish that the defense has happened or authorize a production rollout.
+
+**Design reference:** [Phase 3 proposal](docs/next_steps/PHASE_3_CLASSROOM_ACTIVITIES.md), especially §2 decisions, §8 slices, and §9 open details. Its SQL and API surface remain sketches, not implemented contracts.
+
+**Next implementation plan:** [Slice ① — Assignment and deadlines](docs/superpowers/plans/2026-11-01-phase3-assignment-deadlines.md). The plan records proposed resolutions to the audit findings; review those resolutions before implementation.
+
+### Status and evidence rules
+
+- **Not started:** no implementation of the Phase 3 deliverable found in the inspected repository. Existing reusable infrastructure does not make a new feature Partial.
+- **Partial:** some required behavior exists; list precisely what remains.
+- **Implemented, verification pending:** code and contracts exist, but a required check or manual flow has not passed.
+- **Verified:** relevant lint/type checks, backend tests against the ephemeral stack, generated types, documentation, and applicable teacher/parent manual QA have passed with dated evidence. Deployment is tracked separately; Verified does not imply deployed.
+
+Only count a slice in the summary after all its deliverables are Verified. Update evidence with file paths and actual check results; do not infer Done from a plan, a checked design decision, or a migration file alone.
+
+### Existing foundation (reuse, not Phase 3 completion)
+
+| Capability | Repository evidence | Boundary |
+|---|---|---|
+| Teacher activity create/edit/archive/delete | `backend/app/api/activities.py`; `frontend/lib/hooks/use-activities.ts`; `frontend/components/activities/` | Create/edit payloads contain target text and take-home mode; archive is separate. No targeting, title, instructions, or deadline contract. |
+| Sections and roster relationships | `supabase/migrations/0020_class_sections.sql`; `backend/app/api/sections.py`; `frontend/lib/hooks/use-sections.ts` | `student.section_id` is nullable. Sections alone do not assign activities. |
+| Parent activity listing and uploads | `frontend/lib/hooks/use-parent-data.ts` (`useTakeHomeActivities`); `backend/app/api/submissions.py`; `supabase/migrations/0009_rls_policies.sql` | Activities are selected by the child's teacher, not by an assignment to that child/section. Parent uploads require take-home mode and roster/parent links. |
+| Submission history, scoring, diagnostics, trends | `frontend/lib/hooks/use-submissions.ts`, `use-dashboard.ts`, `use-parent-data.ts`; `backend/app/scoring/provider.py` | No shared active-attempt view, Return state, release gate, or gradebook points. |
+| CSV download and account email | `frontend/lib/utils/csv-export.ts`; `backend/app/api/students.py`; teacher/parent settings pages | Roster/activity exports and Auth invitation emails are not the Phase 3 gradebook export or notification email system. |
+| Backend integration tests and CI | `backend/tests/api/test_activities.py`, `test_submissions.py`, `test_submissions_parent.py`; `.github/workflows/ci.yml` | Existing tests are reusable patterns; they do not verify new assignment or release policies. `tests/conftest.py` queries Supabase during collection. |
+
+### Slice ① — Assignment and deadlines
+
+**Dependency:** approved Slice ① contract and reproducible ephemeral-stack setup. **Status: Partial — implementation present; database contract generation, CI and signed-in portal QA pending.**
+
+**Prerequisite setup in progress (2026-11-01):** User approved proceeding after the defense milestone. Work is isolated on `feat/phase3-assignment-deadlines` in `.worktrees/phase3-assignment-deadlines`; the original checkout's pending changes were preserved. Supabase CLI 2.115.0 generated `supabase/config.toml`; CI anonymous-key capture and local reset configuration are prepared, with reproduction commands in `docs/TESTING.md` §3.1.1. Startup failed with `LegacyDockerLifecycleInspectError` because Docker/Podman is unavailable. Migration/seed baseline and all feature implementation/verification remain pending. No Phase 3 deliverable is upgraded on this setup evidence.
+
+**Setup checks (2026-11-01):** Generated TOML parsed with Python `tomllib`; project ID, migration/seed enablement, and seed file path were checked. The documented PowerShell block passed syntax parsing. CLI 2.115.0 help confirmed `db reset --local` and `stop --no-backup`. `git diff --check` passed. Ruff, ESLint, and `tsc --noEmit --incremental false` passed using the original checkout's installed tools (application source has no changes in this worktree). These checks do not establish database, migration, Auth, Storage, RLS, or feature correctness.
+
+| Deliverable | Status | Evidence / remaining work |
+|---|---|---|
+| Activity title, instructions, due date, close-after-due | Implemented, verification pending | Migration `20261101132822_phase3_assignments.sql`, `activity_contracts.py`, shared `activity-assignment-fields.tsx`; request models and date conversion smoke checks pass locally. CI migration replay and portal QA pending. |
+| Section/student assignments and ownership validation | Implemented, verification pending | Assignment table, scoped helper and service-only transactional RPCs; Python validates ownership before writes. Signed-in RLS/rollback tests added in `tests/rls/test_activity_assignments.py`; awaiting CI. |
+| Backfill and RLS-scoped reads | Implemented, verification pending | Migration backfills owned sections plus direct targets for uncovered roster children. Parent policy includes assigned in-class metadata; `use-parent-data.ts` scopes targets to the selected child. Synthetic upgrade proof covers null/foreign-section and empty-roster cases; awaiting CI. |
+| Upload eligibility and deadline enforcement | Implemented, verification pending | `assignment_access.py` checks both-role assignment and parent-only closure after existing authorization and before image work. Real-route/SDK tests against controlled HTTP responses pass, including exact-boundary and denial-before-decode cases. Full integration pending. |
+| Teacher/parent UI, types, documentation, verification | Partial | Forms, duplicate clearing, assignment-filtered uploads, child-scoped listing and latest-completed work status are implemented. OpenAPI types regenerated; database types await CI artifact. Contract docs updated. Static review findings on stale targets/invalid prefills fixed; signed-in portal QA pending. Full Phase 3 status precedence waits for Slice ②. |
+
+**Implementation evidence (2026-11-01):** User approved CI-only database verification and specifically approved publishing the feature branch to public `ryanestoque/writewise`. Initial commit `c4efd0a` is pushed; [initial CI run](https://github.com/ryanestoque/writewise/actions/runs/41313276573) is running. Local Ruff, ESLint and TypeScript checks passed; 28 database-free contract/SDK transport cases passed (one upstream TestClient deprecation warning). Manual helper smoke checks passed under America/New_York and UTC, both displaying the same Manila deadline. Schema/backend static review found no confirmed blocker; UI review found stale-target editing and invalid-prefill recovery gaps, subsequently fixed. Runtime RLS/migration/rollback evidence and signed-in teacher/parent QA are still required before Verified.
+
+### Slice ② — Return and release
+
+**Dependency:** Slice ①. **Status: Not started.**
+
+| Deliverable | Status | Evidence / remaining work |
+|---|---|---|
+| Returned submission lifecycle and retained rubric history | Not started | Enum/types remain processing/completed/rejected; no return fields or route found. Preserve historical scores and rejected/returned attempts. |
+| Student work, due override, pinning, active-attempt view | Not started | No `student_work` or `active_submission` implementation found. Centralize selection; update dashboard, latest-score, and history consumers. |
+| Draft/released score authorization | Not started | No `released_at` found. Current measurement/manual-score parent policies have no release predicate. Cover every score/diagnostic read path; backfill old results as released. |
+| Return/release UI and verification | Not started | Add Return dialog, single/bulk release actions, effective due-date controls, generated contracts, privacy/RLS tests, and teacher/parent manual QA. |
+| Calibration export compatibility | Not started | `research/export_dataset.py` currently selects completed submissions only. Extend that authorized exporter and its tests for scored returns and active-attempt flags; never export gradebook points. |
+
+### Slice ③ — In-app notifications
+
+**Dependency:** Slices ①–② for assignment, effective due dates, return, release, and active-attempt events. **Status: Not started.**
+
+| Deliverable | Status | Evidence / remaining work |
+|---|---|---|
+| Notification schema and recipient-only reads | Not started | No notification table/type in migrations or generated database types. Store IDs only; browser reads remain RLS-gated. |
+| Event emitters and mark-read API | Not started | No notification routes/emitters registered in `backend/app/main.py`. Add the §5 event catalog and single/all read mutations. |
+| Due-soon/missing scheduler and deduplication | Not started | No scheduler function or cron job found. Verify idempotency, effective-due-date re-arming, and exclusion of excused/completed work. |
+| Header bell, deep links, contracts, verification | Not started | No bell flow in `frontend/components/teacher-header.tsx` or `parent-nav.tsx`. Add read state, polling, links, recipient-isolation tests, and manual QA. |
+
+### Slice ④ — Email notifications
+
+**Dependency:** Slice ③. **Status: Not started.**
+
+| Deliverable | Status | Evidence / remaining work |
+|---|---|---|
+| Service-only email outbox and preferences | Not started | No `email_outbox` or `email_notifications` columns found. Existing profile/password settings do not implement this preference. |
+| Dispatcher and Resend integration | Not started | No dispatcher endpoint or Resend configuration in backend source. Add authenticated internal dispatch, retry/claim behavior, and stubbed-provider tests. |
+| Cron/pg_net/Vault configuration | Not started | No Phase 3 scheduled dispatch configuration found. Keep secrets outside migrations; document dev provisioning separately from production authorization. |
+| Privacy-safe templates and verification | Not started | Add Returned/Due-soon email templates, preference checks, and tests proving no scores, images, teacher notes, comment text, or recipient PII in logs. |
+
+### Slice ⑤ — Points and gradebook
+
+**Dependency:** Slices ①–②; follows Slice ④ in the proposed delivery sequence. Resolve Q-A before implementation. **Status: Not started.**
+
+| Deliverable | Status | Evidence / remaining work |
+|---|---|---|
+| Optional activity points, overrides, excused/Assign 0 | Not started | No points/excused fields or routes found. Keep these values separate from `manual_score` and research exports. |
+| Provider-owned points and overall percentage | Not started | `backend/app/scoring/provider.py` provides rubric scores, not activity points. Resolve manual band-ladder vs raw-composite scaling behind ScoreProvider; test denominator/release edge cases. |
+| Teacher section grid and parent child row | Not started | Existing dashboard/trend hooks are not a gradebook. Add active-attempt-aware cells and released-only parent totals. |
+| FastAPI CSV export and verification | Not started | Existing CSV helpers are browser-side exports. Add teacher-owned-section gradebook CSV generated by FastAPI, contracts, authorization tests, and manual QA. |
+
+### Slice ⑥ — Private comments
+
+**Dependency:** Slices ②–③; gradebook unread dot also needs Slice ⑤. **Status: Not started.**
+
+| Deliverable | Status | Evidence / remaining work |
+|---|---|---|
+| Student-work thread, participants, text-only comments | Not started | No `private_comment` or comment routes found. Thread belongs to student × activity and includes owning teacher plus all linked parents. |
+| Transactional posting, author deletion, thread locking | Not started | Add participant checks, assignment checks, 1–1000 character validation, body scrubbing on delete, and teacher lock control. |
+| Coalesced unread notifications and return timeline | Not started | Add `comment_posted`, one unread notification per recipient/thread, and read-only Return events ordered by return time. Never copy return events into comment rows. |
+| Teacher/parent panels and privacy verification | Not started | Add side panel, parent thread, gradebook unread dot, deep links, RLS/coalescing/deletion tests, and checks that bodies are never logged or exported. |
+
+### Findings to resolve before the affected slice
+
+These are audit findings and planning recommendations, not silent amendments to the agreed design.
+
+| ID | Slice | Finding | Recommended resolution / acceptance evidence |
+|---|---|---|---|
+| A1 | ① | Q18 says parents see no change, while §4.7 adds in-class activity visibility. | Preserve every previously visible take-home activity; explicitly document in-class metadata visibility as an intentional expansion. Keep parent upload limited to take-home work. Verify both roles and modes. |
+| A2 | ① | Section-only backfill misses roster students with null or mismatched `section_id`. | Backfill all owned sections plus direct student targets for existing roster students not covered by those sections. Compare pre/post-upgrade take-home visibility sets using synthetic legacy fixtures. |
+| A3 | ① | Parent RLS returns activities for any linked child; the existing selected-child hook filters only by teacher. | Filter assignment targets for the selected child before fetching activities. Test siblings in different sections under the same teacher. |
+| A4 | ①–② | Slice ① promises status chips, but effective due overrides and the active-attempt view arrive in ②. | In ① derive only Assigned/Missing and a Late badge from the latest completed attempt and activity due date; retain processing/rejection feedback separately. In ② switch consumers to the shared view and full precedence table. |
+| A5 | ① | Activity/target mutations use separate REST operations unless explicitly made transactional. | Add service-only database RPCs for create/update plus target replacement, with application authorization before every write and DB ownership validation in the transaction. Failure must preserve the previous activity and assignments. |
+| A6 | ① | `supabase/config.toml` is absent although CI invokes `supabase start`; tests query a DB during collection. | Establish checked-in local configuration and seed prerequisites as part of Slice ① verification setup. Never point test resets at hosted dev/prod or interpret service-role API tests as RLS proof. |
+| A7 | ⑤ | Q-A leaves manual-score-to-points scaling open. | Decide before points implementation; keep source selection/normalization inside ScoreProvider. This does not block Slice ①. |
+| A8 | ⑥ | §4.8 says merged thread entries use `created_at`, but a Return occurs after upload. | Sort Return entries by `returned_at`, comments by `created_at`, with deterministic ID tie-breaking. Confirm this when specifying the thread contract. |
+
+The proposal's Q-B–Q-F remain slice-specific decisions; carry them into the relevant plan rather than treating their recommended defaults as implemented behavior. Its post-defense scheduling statement remains a product constraint until explicitly revisited.
+
+### Audit and verification record
+
+- Inspected all 21 versioned migration files through `0021_harden_auth_metadata.sql`, activity/submission API paths, portal read hooks and forms, scoring/export boundaries, existing test modules, CI, and generated-type locations.
+- A repository search across backend source/tests, frontend source/types, migrations, research, and workflows found none of the proposed `activity_assignment`, `student_work`, `active_submission`, `private_comment`, `email_outbox`, deadline, release, points, or dispatcher identifiers. This supports Not started in this checkout; it does not prove hosted environments match the repo.
+- Generated files live at `frontend/types/database.ts` and `frontend/types/api.ts`; the setup examples naming `frontend/src/types/` do not match this checkout. Use the real paths in the Slice ① plan.
+- Phase 0–2 summary arithmetic was reconciled with existing rows. No historical Done claim was upgraded to fresh verification. Calibration activation and cloud/artifact checklist inconsistencies still need owner/runtime evidence.
+- Phase 3 integration/RLS/manual QA has not run because the features do not exist. Record implementation verification results here when each slice is built.
+- Documentation-change checks on 2026-11-01: Ruff, ESLint, and TypeScript type checking passed using `.venv/Scripts/ruff.exe check .` from `backend/` and `node node_modules/eslint/bin/eslint.js .` / `node node_modules/typescript/bin/tsc --noEmit --incremental false` from `frontend/`. These are equivalent installed-tool fallbacks: the `uv run` wrapper hit an inaccessible cache and PowerShell blocked `npx.ps1`. No execution-policy or global configuration changes were needed. These checks do not verify Phase 3 functionality.

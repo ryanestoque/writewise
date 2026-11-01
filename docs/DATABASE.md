@@ -207,7 +207,15 @@ create table public.activity (
 );
 ```
 
-Implicitly class-wide — any student linked to `created_by` via `teacher_student` is eligible for a submission against it. `is_take_home` is the only thing distinguishing PRD §6's parent-upload flow: the parent portal's "assigned activities" list is just activities where `is_take_home = true` and the creating teacher is linked to the parent's child. No per-student assignment table — the PRD's activity-creation flow never describes picking a subset of students, so that would be unscoped complexity.
+**Slice 1 schema (migration `20261101132822_phase3_assignments.sql`):** adds nonblank required `title`, nullable `instructions`/`due_at timestamptz`, and `close_after_due boolean default false`. Closure requires a due date. Existing titles use the first 60 trimmed target-text characters (blank legacy text falls back to Handwriting practice). Browser displays use Asia/Manila; storage uses timestamptz.
+
+`activity_assignment` has UUID primary key, cascading activity/section/student foreign keys, a timestamp, and exactly one section/student target per row. Partial unique indexes prevent repeated targets, and target-first indexes support child lookups. Section membership remains live: a student must still belong to the activity owner's roster, and a section target applies to that child's current owned section. A direct target does not survive roster removal as upload authorization.
+
+Backfill targets all of the owning teacher's sections and adds direct targets for legacy roster students not covered by those sections (null/foreign section included). Empty-roster teachers keep zero targets. No submission history is rewritten. New creation/replacement requires nonempty targets; unrelated legacy edits may omit them.
+
+`is_assigned(activity_id, student_id)` is a scoped SECURITY DEFINER lookup with an empty search path, fully qualified references, and no PUBLIC/anon execution. It checks caller ownership/parent link/service-role claims and current roster membership before returning a result, avoiding recursive activity/assignment RLS. Authenticated callers receive SELECT-only target access under RLS: teachers see their activity targets; parents see only target rows matching their own children. Parent activity metadata now includes assigned in-class work; uploads remain take-home only. UI queries must additionally filter for the selected child because parent RLS covers all linked siblings.
+
+Service-only SECURITY INVOKER `create_assigned_activity` and `update_assigned_activity` RPCs accept the authenticated teacher ID supplied by FastAPI, independently validate ownership, lock updates, and persist fields/target replacement in one transaction. SQLSTATE `22023` maps to INVALID_ASSIGNMENT_TARGET; `P0002` maps to NOT_FOUND. All other database failures remain INTERNAL_ERROR without exposing provider details.
 
 ---
 
@@ -473,23 +481,13 @@ create policy "teacher can view own sections"
   on public.section for select
   using (teacher_id = auth.uid());
 
--- activity: creator teacher sees their own; a parent sees take-home activities
--- from any teacher linked to their child.
-alter table public.activity enable row level security;
-create policy "teacher can view own activities"
-  on public.activity for select
-  using (created_by = auth.uid());
-create policy "parent can view assigned take-home activities"
-  on public.activity for select
-  using (
-    is_take_home
-    and exists (
-      select 1
-      from public.teacher_student ts
-      join public.student_parent sp on sp.student_id = ts.student_id
-      where ts.teacher_id = activity.created_by
-        and sp.parent_id = auth.uid()
-    )
+-- activity (Slice 1): teacher ownership policy is retained.
+-- The previous teacher-wide parent policy is replaced by assigned-child access:
+create policy "parent can view assigned child activities"
+  on public.activity for select to authenticated using (
+    exists (select 1 from public.student_parent sp
+            where sp.parent_id = (select auth.uid())
+              and public.is_assigned(activity.id, sp.student_id))
   );
 
 -- submission: visible to the student's teacher or parent.

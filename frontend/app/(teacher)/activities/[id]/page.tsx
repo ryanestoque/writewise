@@ -183,8 +183,10 @@ export default function ActivityDetailPage({
   // Roster Metrics: Unique enrolled students with submissions
   const submittedStudentIds = useMemo(() => {
     if (!submissions) return new Set<string>();
-    return new Set(submissions.map((s) => s.student_id).filter(Boolean));
-  }, [submissions]);
+    return new Set(submissions.filter((s) => s.status === "completed" &&
+      students?.some((student) => student.id === s.student_id && !!activity && activityAssignedTo(activity, student))
+    ).map((s) => s.student_id));
+  }, [submissions, students, activity]);
 
   const uniqueStudentsCount = submittedStudentIds.size;
   const assignedStudents = (students ?? []).filter((student) => !!activity && activityAssignedTo(activity, student));

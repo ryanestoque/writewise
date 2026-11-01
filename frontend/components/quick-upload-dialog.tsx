@@ -167,8 +167,8 @@ export function QuickUploadDialog({
 
 function UploadFlow({
   onClose,
-  prefilledActivityId,
-  prefilledStudentId,
+  prefilledActivityId: requestedActivityId,
+  prefilledStudentId: requestedStudentId,
   onUploadingChange,
 }: {
   onClose: () => void;
@@ -227,6 +227,14 @@ function UploadFlow({
 
   const { data: activities } = useActivities();
   const { data: students } = useStudents();
+  const prefilledActivityId = activities?.some((a) => a.id === requestedActivityId)
+    ? requestedActivityId : undefined;
+  const chosenActivity = activities?.find((a) => a.id === (prefilledActivityId ?? activityChoice?.value));
+  const prefilledStudentId = students?.some((s) => s.id === requestedStudentId && !!chosenActivity && activityAssignedTo(chosenActivity, s))
+    ? requestedStudentId : undefined;
+  const invalidPrefill = !!activities && !!students && (
+    (!!requestedActivityId && !prefilledActivityId) || (!!requestedStudentId && !prefilledStudentId)
+  );
   const uploadMutation = useUploadSubmission();
 
   const isMobile = useSyncExternalStore(
@@ -817,6 +825,9 @@ function UploadFlow({
             {/* Step 1 — Select student & activity */}
             {step === 1 && (
               <>
+                {invalidPrefill && !canProceed && <p role="status" className="rounded-lg border border-border bg-muted p-3 text-sm">
+                  The previous selection is no longer available. Choose an assigned student below, or edit the activity&apos;s assignments first.
+                </p>}
                 <Field className="gap-1.5">
                   <FieldLabel
                     htmlFor={activityInputId}

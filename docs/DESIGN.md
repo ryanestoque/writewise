@@ -411,3 +411,16 @@ Consistent with ARCHITECTURE.md §17 — things this document deliberately left 
 - **Simulated loading timing** (§7.2) needs calibration against real per-stage logging data once Phase 1 is live — revisit the interval values once actual processing-time data exists.
 - **Diagnostic note templates** (§8.2) are a first draft — worth a quick read-through with a participating teacher before Phase 2 ships, since they're reading these professionally and may catch tone issues a non-teacher wouldn't.
 - **Dark mode** (§3) is structurally supported but not designed — revisit only if a real need surfaces post-pilot.
+
+
+## Phase 3 Slice 1 — Assignment and deadline flow
+
+Contract implemented on the feature branch; verification status is in IMPLEMENTATION_STATUS.md. Create/edit retains the existing modal visual system and adds required title, optional plain-text instructions, section checkboxes, optional individual targets, and a datetime-local input labelled Manila. Clearing due clears closure. Empty target selection receives inline feedback; no targets links to roster management. Retained targets no longer in the current roster have explicit removal controls. Unchanged targets are omitted from unrelated PATCH edits. Failed saves preserve entered values.
+
+Duplicate copies title, prompt, instructions, mode and targets, clearing due/closure. Cards/details use title as the primary heading and retain the cursive prompt. The teacher activity page lists every assigned roster child, including children with no uploads, with Assigned/Missing/Turned in and Late. Quick upload filters choices by assignment and unlocks invalid prefills with explanatory recovery copy.
+
+Parent activity reads are scoped to the selected child before fetching activity rows. Cards show title, instructions, mode, due date in Manila and coursework status; newer rejection/processing feedback is separate. In-class cards have no visible upload action. Closed take-home cards explain closure and disable upload; history remains available. Assignment/closure server errors refresh the list, close invalid upload flows and use error.code. Read errors show a retry state instead of an empty assignment list.
+
+Statuses use the latest completed attempt ordered by created_at then ID descending. Without one, work is Assigned through the deadline and Missing strictly afterward. Late compares the completed attempt's persisted creation time with due. Timers refresh displayed status/closure while open. No draft/release/return/excused status is introduced in this slice.
+
+Manual QA must cover create/edit/duplicate, section/direct/overlapping targets, roster removal/reselection, empty legacy activity edits, sibling isolation, both modes, open/closed/exact-boundary deadlines, processing/rejection after a completed attempt, timezone changes, keyboard controls, narrow screens, and archive/delete regressions. Component-only checks do not substitute for signed-in portal QA.

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { useSections } from "@/lib/hooks/use-sections";
 import { useStudents } from "@/lib/hooks/use-students";
@@ -128,6 +129,40 @@ export function ActivityAssignmentFields({ form }: { form: UseFormReturn<Activit
             </div>
           </details>
         )}
+        {sections &&
+          students &&
+          targets
+            .filter((target) =>
+              target.student_id
+                ? !students.some((s) => s.id === target.student_id)
+                : !sections.some((s) => s.id === target.section_id)
+            )
+            .map((target) => (
+              <div
+                key={target.student_id ?? target.section_id}
+                className="flex items-center justify-between gap-2 text-sm"
+              >
+                <span className="text-muted-foreground">
+                  {target.student_id
+                    ? "Student no longer on your roster"
+                    : "Section no longer available"}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    toggle(
+                      target.student_id ? "student_id" : "section_id",
+                      (target.student_id ?? target.section_id)!,
+                      false
+                    )
+                  }
+                >
+                  Remove target
+                </Button>
+              </div>
+            ))}
         <FieldError id={`${id}-targets-error`} errors={[form.formState.errors.assignments]} />
       </fieldset>
       <Field data-invalid={!!form.formState.errors.due_input}>

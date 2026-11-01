@@ -87,7 +87,7 @@ export function EditActivityDialog({
         id: activity.id,
         data: {
           title: data.title, instructions: data.instructions.trim() || null,
-          ...(data.assignments.length ? { assignments: data.assignments } : {}),
+          ...(form.formState.dirtyFields.assignments && data.assignments.length ? { assignments: data.assignments } : {}),
           due_at: toActivityDueAt(data.due_input), close_after_due: data.close_after_due,
           target_text: data.target_text,
           is_take_home: data.is_take_home,

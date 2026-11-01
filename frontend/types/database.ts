@@ -7,37 +7,69 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.15"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
       activity: {
         Row: {
+          close_after_due: boolean
           created_at: string
           created_by: string
+          due_at: string | null
           id: string
+          instructions: string | null
           is_archived: boolean
           is_take_home: boolean
           target_text: string
+          title: string
         }
         Insert: {
+          close_after_due?: boolean
           created_at?: string
           created_by: string
+          due_at?: string | null
           id?: string
+          instructions?: string | null
           is_archived?: boolean
           is_take_home?: boolean
           target_text: string
+          title: string
         }
         Update: {
+          close_after_due?: boolean
           created_at?: string
           created_by?: string
+          due_at?: string | null
           id?: string
+          instructions?: string | null
           is_archived?: boolean
           is_take_home?: boolean
           target_text?: string
+          title?: string
         }
         Relationships: [
           {
@@ -45,6 +77,52 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "teacher"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activity_assignment: {
+        Row: {
+          activity_id: string
+          created_at: string
+          id: string
+          section_id: string | null
+          student_id: string | null
+        }
+        Insert: {
+          activity_id: string
+          created_at?: string
+          id?: string
+          section_id?: string | null
+          student_id?: string | null
+        }
+        Update: {
+          activity_id?: string
+          created_at?: string
+          id?: string
+          section_id?: string | null
+          student_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_assignment_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_assignment_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "section"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_assignment_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student"
             referencedColumns: ["id"]
           },
         ]
@@ -447,6 +525,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_assigned_activity: {
+        Args: { actor_id: string; payload: Json }
+        Returns: Json
+      }
+      is_assigned: {
+        Args: { target_activity_id: string; target_student_id: string }
+        Returns: boolean
+      }
       is_parent_of_student: {
         Args: { target_student_id: string }
         Returns: boolean
@@ -454,6 +540,10 @@ export type Database = {
       is_teacher_of_student: {
         Args: { target_student_id: string }
         Returns: boolean
+      }
+      update_assigned_activity: {
+        Args: { actor_id: string; payload: Json; target_activity_id: string }
+        Returns: Json
       }
     }
     Enums: {
@@ -479,12 +569,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -508,11 +598,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -533,11 +623,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -558,11 +648,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -575,11 +665,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -589,6 +679,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       score_band: [
@@ -602,3 +695,4 @@ export const Constants = {
     },
   },
 } as const
+

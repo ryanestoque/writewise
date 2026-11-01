@@ -70,7 +70,7 @@ export function TakeHomeActivities({
   const [internalExpanded, setInternalExpanded] = useState(false);
   const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
   const toggleExpanded = onToggleExpanded || (() => setInternalExpanded((prev) => !prev));
-  const { data: activities, isLoading } = useTakeHomeActivities(childId);
+  const { data: activities, isLoading, isError, refetch } = useTakeHomeActivities(childId);
 
   // Intelligently prioritize activities: Photo Retake Needed first, then Practice Focus match, then newest
   const sortedActivities = useMemo(() => {
@@ -103,6 +103,11 @@ export function TakeHomeActivities({
       </div>
     );
   }
+
+  if (isError) return <div role="alert" className="flex flex-col items-start gap-2 rounded-xl border border-border p-4">
+    <p className="text-sm">Could not load assigned activities.</p>
+    <Button variant="outline" onClick={() => refetch()}>Try again</Button>
+  </div>;
 
   if (!sortedActivities || sortedActivities.length === 0) {
     return (
