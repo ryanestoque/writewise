@@ -399,7 +399,7 @@ def test_notice_failure_rolls_back_entire_coursework_mutation(family, event_acti
                 "create trigger fail_coursework_notice before insert on public.notification "
                 "for each row execute function pg_temp.fail_coursework_notice()"
             )
-            with pytest.raises(asyncpg.InternalError, match="synthetic_notice_failure"):
+            with pytest.raises(asyncpg.InternalServerError, match="synthetic_notice_failure"):
                 async with connection.transaction():
                     if event == "assignment":
                         await connection.fetchval(
