@@ -1,19 +1,30 @@
 -- Internal assignment lookup works for service RPCs and JWT-free cron sessions.
-create function writewise_internal.assigned_activity_students(target_activity uuid)
+create function writewise_internal.assigned_activity_students(target_activity uuid, roster jsonb default null)
 returns table(student_id uuid) language sql stable security invoker set search_path = '' as $$
-  select distinct st.id
+  with members as (
+    select st.id as student_id, st.section_id
+    from public.activity a
+    join public.teacher_student ts on ts.teacher_id = a.created_by
+    join public.student st on st.id = ts.student_id
+    where a.id = target_activity and roster is null
+    union all
+    select snapshot.student_id, snapshot.section_id
+    from jsonb_to_recordset(coalesce(roster, '[]'::jsonb))
+      as snapshot(student_id uuid, section_id uuid)
+    where roster is not null
+  )
+  select distinct member.student_id
   from public.activity a
-  join public.teacher_student ts on ts.teacher_id = a.created_by
-  join public.student st on st.id = ts.student_id
+  cross join members member
   join public.activity_assignment aa on aa.activity_id = a.id
   where a.id = target_activity and (
-    aa.student_id = st.id or (aa.section_id = st.section_id and exists (
+    aa.student_id = member.student_id or (aa.section_id = member.section_id and exists (
       select 1 from public.section sec where sec.id = aa.section_id and sec.teacher_id = a.created_by
     ))
   );
 $$;
-revoke all on function writewise_internal.assigned_activity_students(uuid) from public,anon,authenticated;
-grant execute on function writewise_internal.assigned_activity_students(uuid) to service_role;
+revoke all on function writewise_internal.assigned_activity_students(uuid,jsonb) from public,anon,authenticated;
+grant execute on function writewise_internal.assigned_activity_students(uuid,jsonb) to service_role;
 
 create or replace function public.update_assigned_activity(actor_id uuid, target_activity_id uuid, payload jsonb)
 returns jsonb language plpgsql security invoker set search_path = ''
@@ -26,6 +37,7 @@ declare
   before_ids uuid[];
   changed_student uuid;
   transition_id uuid;
+  roster_snapshot jsonb;
 begin
   select * into current_activity from public.activity
     where id = target_activity_id and created_by = actor_id for update;
@@ -33,8 +45,16 @@ begin
     raise exception using errcode = 'P0002', message = 'Activity not found';
   end if;
 
-  before_ids := array(select member.student_id
-    from writewise_internal.assigned_activity_students(target_activity_id) member);
+  if payload ? 'assignments' then
+    -- Freeze just roster IDs/sections once: an unrelated concurrent roster move
+    -- must not become an assignment event between before/after target reads.
+    select coalesce(jsonb_agg(jsonb_build_object('student_id', st.id, 'section_id', st.section_id)), '[]'::jsonb)
+      into roster_snapshot
+    from public.teacher_student ts join public.student st on st.id = ts.student_id
+    where ts.teacher_id = actor_id;
+    before_ids := array(select member.student_id
+      from writewise_internal.assigned_activity_students(target_activity_id, roster_snapshot) member);
+  end if;
 
   if payload ? 'assignments' then
     if jsonb_typeof(payload -> 'assignments') is distinct from 'array' then
@@ -76,15 +96,18 @@ begin
     select distinct target_activity_id, (value ->> 'section_id')::uuid, (value ->> 'student_id')::uuid
     from jsonb_array_elements(payload -> 'assignments');
   end if;
-  for changed_student in
-    select member.student_id from writewise_internal.assigned_activity_students(target_activity_id) member
-    where not (member.student_id = any(before_ids))
-    order by member.student_id
-  loop
-    if transition_id is null then transition_id := gen_random_uuid(); end if;
-    perform writewise_internal.notify_work_parents('activity_assigned', target_activity_id,
-      changed_student, null, transition_id::text);
-  end loop;
+  if payload ? 'assignments' then
+    for changed_student in
+      select member.student_id
+      from writewise_internal.assigned_activity_students(target_activity_id, roster_snapshot) member
+      where not (member.student_id = any(before_ids))
+      order by member.student_id
+    loop
+      if transition_id is null then transition_id := gen_random_uuid(); end if;
+      perform writewise_internal.notify_work_parents('activity_assigned', target_activity_id,
+        changed_student, null, transition_id::text);
+    end loop;
+  end if;
   return to_jsonb(current_activity) || jsonb_build_object('assignments', coalesce((
     select jsonb_agg(jsonb_build_object('section_id', aa.section_id, 'student_id', aa.student_id)
                      order by aa.section_id, aa.student_id)

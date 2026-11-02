@@ -104,6 +104,7 @@ interface WorksheetViewDialogProps {
   /** Optional back action when opened from a parent history view */
   onBack?: () => void;
   backLabel?: string;
+  returnNote?: string | null;
 }
 
 export function WorksheetViewDialog({
@@ -125,6 +126,7 @@ export function WorksheetViewDialog({
   backLabel = "Back to History",
   submissionId,
   canDelete = false,
+  returnNote,
 }: WorksheetViewDialogProps) {
   const [showGuideLines, setShowGuideLines] = useState(false);
   const [criterionOverride, setCriterionOverride] = useState<CriterionFilter | null>(null);
@@ -257,6 +259,7 @@ export function WorksheetViewDialog({
               </DialogDescription>
             </div>
           </div>
+          {returnNote && <p className="text-sm whitespace-pre-wrap">{returnNote}</p>}
         </DialogHeader>
 
         {/* Content Body: Split View */}

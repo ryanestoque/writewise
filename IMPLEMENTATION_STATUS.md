@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-02 (Phase 3 Slice 2 verified following user-reported portal QA sign-off)
+**Last updated:** 2026-11-03 (Phase 3 Slice 3 implemented; final CI and signed-in portal QA pending)
 
 ## Summary
 
@@ -154,7 +154,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 
 **Design reference:** [Phase 3 proposal](docs/next_steps/PHASE_3_CLASSROOM_ACTIVITIES.md), especially §2 decisions, §8 slices, and §9 open details. Promoted contracts for implemented slices live in `docs/API_SPEC.md` and `docs/DATABASE.md`; later-slice sketches remain proposals.
 
-**Completed implementation records:** [Slice ② — Return and release](docs/superpowers/plans/2026-11-02-phase3-return-release.md) and [Slice ① — Assignment and deadlines](docs/superpowers/plans/2026-11-01-phase3-assignment-deadlines.md). Slice ③, in-app notifications, is next and has not started.
+**Implementation records:** [Slice ③ — In-app notifications](docs/superpowers/plans/2026-11-03-phase3-in-app-notifications.md) is implemented with verification pending. [Slice ② — Return and release](docs/superpowers/plans/2026-11-02-phase3-return-release.md) and [Slice ① — Assignment and deadlines](docs/superpowers/plans/2026-11-01-phase3-assignment-deadlines.md) are verified.
 
 ### Status and evidence rules
 
@@ -223,14 +223,16 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 ### Slice ③ — In-app notifications
 
-**Dependency:** Slices ①–② for assignment, effective due dates, return, release, and active-attempt events. **Status: Not started.**
+**Dependency:** Slices ①–② for assignment, effective due dates, return, release, and active-attempt events. **Status: Implemented, verification pending.** The user authorized execution, feature pushes, and GitHub CI's ephemeral stack on 2026-11-03. No hosted migration or deployment is evidenced.
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|
-| Notification schema and recipient-only reads | Not started | No notification table/type in migrations or generated database types. Store IDs only; browser reads remain RLS-gated. |
-| Event emitters and mark-read API | Not started | No notification routes/emitters registered in `backend/app/main.py`. Add the §5 event catalog and single/all read mutations. |
-| Due-soon/missing scheduler and deduplication | Not started | No scheduler function or cron job found. Verify idempotency, effective-due-date re-arming, and exclusion of excused/completed work. |
-| Header bell, deep links, contracts, verification | Not started | No bell flow in `frontend/components/teacher-header.tsx` or `parent-nav.tsx`. Add read state, polling, links, recipient-isolation tests, and manual QA. |
+| Notification schema and recipient-only reads | Implemented, verification pending | Five migrations starting `20261103010000`; IDs-only public rows, private durable delivery receipts, recipient-only SELECT RLS, denied browser writes/helpers. Initial nine storage regressions passed in CI; generated DB contract came from the migrated ephemeral stack. Final drift/advisor gate pending. |
+| Event emitters and mark-read API | Implemented, verification pending | Explicit assignment/Return/rejection/release/completion RPC emission and verified-identity single/all-read endpoints; generated OpenAPI types. Database-free suite has 73 passing cases. CI proved rollback, release/retry/pin and read-snapshot cases; two reproduced roster-race failures have fixes awaiting CI. |
+| Due-soon/missing scheduler and deduplication | Implemented, verification pending | Private fixed-time sweep and one named 15-minute pg_cron job; exact effective deadline, live roster/assignment, archive and active-attempt predicates. Boundary, concurrent-sweep and completion-lock tests passed in CI. Excused suppression belongs to Slice 5, where that field is introduced. |
+| Header bell, deep links, contracts, verification | Implemented, verification pending | Shared teacher/parent bell, 60-second foreground polling, retained keyset pages, read actions, account cleanup and exact child/activity/attempt destinations. Local lint/types/production build and controlled SDK race checks passed; focused reviews found no remaining blocker after fixes. Final CI/upgrade proof and signed-in teacher/parent/mobile/keyboard QA remain. |
+
+**Evidence (2026-11-03):** [Initial red run](https://github.com/ryanestoque/writewise/actions/runs/41486464310): 429 passed, nine new tests failed on absent storage. [Event run](https://github.com/ryanestoque/writewise/actions/runs/41490582078): 463 passed, one intentionally missing release-emitter case failed. [Race run](https://github.com/ryanestoque/writewise/actions/runs/41494149833): 473 passed, two concurrent-roster assignment cases failed; metadata edits now skip fanout and explicit target edits compare against one frozen roster snapshot. Final verification is recorded in the execution plan. Browser inventory exposed no connected browser for this slice's walkthrough; no signed-in portal QA is claimed. Keep the summary at **2/6 verified** until that gate closes.
 
 ### Slice ④ — Email notifications
 

@@ -9,6 +9,9 @@ import {
 } from "@/components/shared/diagnostic-overlay";
 import type { StudentScoreHistoryItem } from "./use-dashboard";
 import type { ActivityWorkState } from "./use-activity-work";
+import type { ParentNotificationTarget } from "@/lib/notifications/data";
+import { notificationKeys } from "@/lib/notifications/query-keys";
+import type { Database } from "@/types/database";
 
 // --- Types ---
 
@@ -71,11 +74,11 @@ export interface TakeHomeActivity {
 
 // --- Hooks ---
 
-export function useLinkedChildren() {
+export function useLinkedChildren(userId?: string) {
   const supabase = createClient();
 
   return useQuery({
-    queryKey: ["parent-linked-children"],
+    queryKey: ["parent-linked-children", userId],
     queryFn: async (): Promise<LinkedChild[]> => {
       // student_parent RLS: parent can view own links
       // student RLS: parent can view own child
@@ -236,16 +239,59 @@ export function useChildLatestScores(childId: string | null) {
   });
 }
 
-export function useChildScoreHistory(childId: string | null) {
+export function useParentNotificationWork(userId: string, target: ParentNotificationTarget | null) {
+  type Activity = Pick<Database["public"]["Tables"]["activity"]["Row"],
+    "id" | "title" | "target_text" | "instructions" | "is_take_home" | "is_archived" | "due_at" | "close_after_due">;
+  const history = useChildScoreHistory(target?.submissionId ? target.childId : null,
+    target?.submissionId ? { activityId: target.activityId, submissionId: target.submissionId, accountId: userId } : undefined);
+  const meta = useQuery({
+    queryKey: [...notificationKeys.account(userId), "work", target?.childId, target?.activityId, target?.submissionId],
+    enabled: !!target,
+    refetchOnMount: "always",
+    refetchInterval: 15_000,
+    queryFn: async ({ signal }) => {
+      if (!target) return null;
+      const supabase = createClient();
+      const [activity, work, assigned] = await Promise.all([
+        supabase.from("activity").select("id,title,target_text,instructions,is_take_home,is_archived,due_at,close_after_due")
+          .eq("id", target.activityId).abortSignal(signal).maybeSingle(),
+        supabase.from("activity_work_state").select("*").eq("activity_id", target.activityId)
+          .eq("student_id", target.childId).abortSignal(signal).maybeSingle(),
+        supabase.rpc("is_assigned", { target_activity_id: target.activityId, target_student_id: target.childId }).abortSignal(signal),
+      ]);
+      if (activity.error) throw activity.error;
+      if (work.error) throw work.error;
+      if (assigned.error) throw assigned.error;
+      return { activity: activity.data as Activity | null, work: work.data as ActivityWorkState | null,
+        assigned: Boolean(assigned.data) };
+    },
+  });
+  const retry = () => { void meta.refetch(); if (target?.submissionId) void history.refetch(); };
+  if (!target) return { status: "unavailable" as const, retry };
+  if (meta.isError || (target.submissionId && history.isError)) return { status: "error" as const, retry };
+  if (!meta.isFetchedAfterMount || (target.submissionId && !history.isFetchedAfterMount))
+    return { status: "loading" as const, retry };
+  const item = target.submissionId ? history.data?.find((row) =>
+    row.submissionId === target.submissionId && row.activityId === target.activityId) ?? null : null;
+  if (!meta.data?.activity || !meta.data.work || (target.submissionId && !item))
+    return { status: "unavailable" as const, retry };
+  return { status: "ready" as const, retry, activity: meta.data.activity,
+    work: meta.data.work, assigned: meta.data.assigned, item };
+}
+
+export function useChildScoreHistory(childId: string | null,
+  target?: { activityId: string; submissionId: string; accountId: string }) {
   const supabase = createClient();
 
   return useQuery({
-    queryKey: ["parent-child-score-history", childId],
+    queryKey: target ? [...notificationKeys.account(target.accountId), "work-attempt", childId,
+      target.activityId, target.submissionId] : ["parent-child-score-history", childId],
     refetchInterval: 15000,
-    queryFn: async (): Promise<StudentScoreHistoryItem[]> => {
+    refetchOnMount: target ? "always" : true,
+    queryFn: async ({ signal }): Promise<StudentScoreHistoryItem[]> => {
       if (!childId) return [];
 
-      const [historyResult, activeResult] = await Promise.all([supabase
+      let historyQuery = supabase
         .from("submission")
         .select(`
           id,
@@ -283,8 +329,10 @@ export function useChildScoreHistory(childId: string | null) {
           )
         `)
         .eq("student_id", childId)
-        .order("created_at", { ascending: true }).order("id", { ascending: true }),
-        supabase.from("active_submission").select("id").eq("student_id", childId),
+        .order("created_at", { ascending: true }).order("id", { ascending: true }).abortSignal(signal);
+      if (target) historyQuery = historyQuery.eq("activity_id", target.activityId).eq("id", target.submissionId);
+      const [historyResult, activeResult] = await Promise.all([historyQuery,
+        supabase.from("active_submission").select("id").eq("student_id", childId).abortSignal(signal),
       ]);
 
       const { data, error } = historyResult;

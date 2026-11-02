@@ -35,9 +35,10 @@ import { createClient } from "@/lib/supabase/client";
 import type { LinkedChild } from "@/lib/hooks/use-parent-data";
 import { Loader2, LogOut, PenTool, Settings, Upload, Users } from "lucide-react";
 import { toast } from "sonner";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 interface ParentNavProps {
-  user: { fullName: string; email: string };
+  user: { id: string; fullName: string; email: string };
   selectedChildId: string | null;
   linkedChildren: LinkedChild[];
   onChildChange: (childId: string) => void;
@@ -163,6 +164,7 @@ export function ParentNav({
 
           {/* Right: Upload utility button + User menu */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <NotificationBell key={user.id} userId={user.id} role="parent" />
             {onCursiveGuideClick && (
               <Button
                 variant="outline"

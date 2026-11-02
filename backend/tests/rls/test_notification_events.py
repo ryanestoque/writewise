@@ -340,6 +340,118 @@ def test_return_notice_failure_rolls_back_work_and_delivery(family, event_activi
     asyncio.run(exercise())
 
 
+@pytest.mark.parametrize("event", ["assignment", "release", "rejection", "completion"])
+def test_notice_failure_rolls_back_entire_coursework_mutation(family, event_activity, event):
+    activity, student = event_activity, family["students"][0]
+    submission = None
+    if event in {"release", "completion"}:
+        submission = complete(family, record(family, activity, role="teacher"))
+        if event == "completion":
+            work(family, activity, submission["id"], "return", reason="incomplete")
+            submission = record(family, activity)
+        else:
+            admin.table("measurement").insert(
+                {
+                    "submission_id": submission["id"],
+                    "raw_output": {},
+                    **{
+                        f"{criterion}_score": 80
+                        for criterion in (
+                            "letter_formation",
+                            "size_consistency",
+                            "spacing",
+                            "slant",
+                            "baseline_alignment",
+                        )
+                    },
+                }
+            ).execute()
+
+    async def exercise():
+        connection = await asyncpg.connect(os.environ["SUPABASE_DB_URL"])
+        transaction = connection.transaction()
+        await transaction.start()
+        try:
+
+            async def state():
+                # Compare persisted work and delivery evidence, not just the error.
+                return {
+                    table: await connection.fetchval(
+                        f"select coalesce(jsonb_agg(to_jsonb(row) order by to_jsonb(row)::text),"
+                        f"'[]'::jsonb) from {table} row where {column}=$1",
+                        activity,
+                    )
+                    for table, column in (
+                        ("public.activity", "id"),
+                        ("public.activity_assignment", "activity_id"),
+                        ("public.student_work", "activity_id"),
+                        ("public.submission", "activity_id"),
+                        ("public.notification", "activity_id"),
+                        ("writewise_internal.notification_delivery", "activity_id"),
+                    )
+                }
+
+            before = await state()
+            await connection.execute(
+                "create function pg_temp.fail_coursework_notice() returns trigger "
+                "language plpgsql as $$ begin raise exception using "
+                "errcode='XX000',message='synthetic_notice_failure'; end $$; "
+                "create trigger fail_coursework_notice before insert on public.notification "
+                "for each row execute function pg_temp.fail_coursework_notice()"
+            )
+            with pytest.raises(asyncpg.InternalError, match="synthetic_notice_failure"):
+                async with connection.transaction():
+                    if event == "assignment":
+                        await connection.fetchval(
+                            "select public.update_assigned_activity($1,$2,$3::jsonb)",
+                            family["teacher"],
+                            activity,
+                            json.dumps(
+                                {
+                                    "title": "Must roll back",
+                                    "assignments": [{"student_id": family["students"][1]}],
+                                }
+                            ),
+                        )
+                    elif event == "release":
+                        await connection.fetchval(
+                            "select public.mutate_student_work($1,$2,$3,'release',$4::jsonb)",
+                            family["teacher"],
+                            activity,
+                            student,
+                            json.dumps({"submission_id": submission["id"]}),
+                        )
+                    elif event == "rejection":
+                        target = str(uuid4())
+                        await connection.fetchval(
+                            "select public.record_student_submission($1,$2,$3,$4::jsonb)",
+                            family["parent"],
+                            activity,
+                            student,
+                            json.dumps(
+                                {
+                                    "id": target,
+                                    "image_path": f"{student}/{target}.jpg",
+                                    "uploader_role": "parent",
+                                    "status": "rejected",
+                                    "rejection_code": "IMAGE_TOO_BLURRY",
+                                }
+                            ),
+                        )
+                    else:
+                        await connection.fetchval(
+                            "select public.complete_student_submission($1,$2)",
+                            family["parent"],
+                            submission["id"],
+                        )
+            assert await state() == before
+        finally:
+            await transaction.rollback()
+            await connection.close()
+
+    asyncio.run(exercise())
+
+
 @pytest.mark.parametrize("change_targets", [False, True])
 def test_concurrent_roster_move_does_not_become_an_assignment_event(
     family, assigned_activity, change_targets

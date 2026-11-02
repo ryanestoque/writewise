@@ -16,6 +16,12 @@
 
 **Execution update (2026-11-03):** The user authorized GitHub CI's ephemeral stack and feature-commit pushes to `ryanestoque/writewise`. [Initial CI run](https://github.com/ryanestoque/writewise/actions/runs/41486464310) on `dafc89e` proves the initial red state: 429 existing tests passed and all 9 new storage tests failed on the absent notification relation/private helpers. Task 1 schema implementation follows this evidence. While CI provisioned the stack, independent Task 5 real-route/SDK tests were run red locally before implementing routes; the database-free suite then passed 73 tests. One fixture was corrected to include PostgREST's required `hint` error field. A missing-authentication regression proved the existing bearer failure was incorrectly normalized as `INTERNAL_ERROR`; the shared bearer now emits `UNAUTHORIZED`, preserving the HTTP challenge header. Database receipt RPCs and full Task 5 verification remain pending.
 
+**Implementation checkpoint (2026-11-03):** Tasks 1–8 are implemented on `feat/phase3-notifications-implementation`; Task 9's upgrade proof, contracts and review are prepared. [Storage/event red run](https://github.com/ryanestoque/writewise/actions/runs/41488226329): 448 passed, 16 failed on missing later RPC/emission behavior (plus a corrected generated-score fixture). [Release red run](https://github.com/ryanestoque/writewise/actions/runs/41490582078): 463 passed, one absent-release-emitter failure. [Race run](https://github.com/ryanestoque/writewise/actions/runs/41494149833): 473 passed, two reproduced concurrent-roster failures. The reviewed correction skips metadata fanout and compares explicit target edits against one frozen roster snapshot; final CI is pending. Generated DB types were downloaded from CI and included with the schema commits; the final workflow checks both API and DB drift, three upgrade proofs, security advisors and the full suite.
+
+**Review and local evidence (2026-11-03):** Focused database and frontend reviewers found no remaining blocking issue after corrections. Controlled SDK/source checks first reproduced, then passed fixes for exact-token account switching and pagination racing a poll. Feed checks covered 20 → 40 retained rows, 25 new arrivals, ties/microseconds/timezone offsets, deletion and read changes. Whole backend Ruff, whole frontend ESLint/TypeScript and 73 database-free tests passed. The production webpack build passed with dummy localhost settings. These are controlled checks, not a signed-in portal walkthrough; browser discovery returned no connected browser. Manual role/sibling/mobile/keyboard/network QA remains open and Slice 3 stays **Implemented, verification pending (2/6 verified)**.
+
+**Execution refinements:** Real route tests exercise response contracts directly; no separate model-mirroring `test_notification_contracts.py` was added. The private `assigned_activity_students(target_activity uuid, roster jsonb default null)` helper uses a frozen roster only for target edits and the live roster for cron. The public JWT-scoped `is_assigned` helper is unchanged. Read requests verify the exact bearer token they send and abort on account changes. Pagination cancels the competing feed fetch, reconciles the whole new coverage window, then resumes polling. Fault-injection tests cover assignment and each lifecycle mutation; they await final CI. Related commits were grouped by dependency rather than the illustrative per-task commit subjects below. Historical execution paragraphs above describe their checkpoints, not current pending work.
+
 **Assignment lookup adjustment:** Inspection shows `public.is_assigned` deliberately requires JWT identity/service context; a cron-owner SQL connection has no JWT and would receive false. Tasks 2/4 therefore share a private security-invoker assignment lookup using the existing roster/section/direct-target rules, with no browser grants. The public auth-scoped helper and browser policies remain unchanged. Fixed-clock tests run directly as database owner without JWT to cover this distinction.
 
 ## Global Constraints
@@ -95,8 +101,8 @@ public.mark_all_notifications_read(actor_id uuid) returns jsonb;
 
 **Interfaces:** Consumes existing `family` and `assigned_activity` fixtures. Produces the enum/public table/private delivery table and all three shared insertion/key helpers above. `second_parent` yields `{id, client}` for another authenticated parent linked to `family['students'][0]`, and removes that link/account on teardown. New test data is scoped to the function's activity.
 
-- [ ] Inspect branch/worktree state before execution; use the git-worktree skill if isolation is needed, preserving the existing checkout and user files. Discover CLI commands with `supabase --help`, `supabase db --help`, and `supabase migration --help`. Use `docs/TESTING.md` §3.1.1 for localhost setup and baseline checks. If no container runtime is available, record that limitation and arrange an authorized CI execution path before claiming database verification.
-- [ ] Write a failing RLS test that inserts two notices with the service fixture, then reads with signed-in anon-key clients. Add negative SELECT-count, INSERT/UPDATE/DELETE, foreign embedded relation, and private/public helper EXECUTE cases. Example assertion:
+- [x] Inspect branch/worktree state before execution; use the git-worktree skill if isolation is needed, preserving the existing checkout and user files. Discover CLI commands with `supabase --help`, `supabase db --help`, and `supabase migration --help`. Use `docs/TESTING.md` §3.1.1 for localhost setup and baseline checks. If no container runtime is available, record that limitation and arrange an authorized CI execution path before claiming database verification.
+- [x] Write a failing RLS test that inserts two notices with the service fixture, then reads with signed-in anon-key clients. Add negative SELECT-count, INSERT/UPDATE/DELETE, foreign embedded relation, and private/public helper EXECUTE cases. Example assertion:
 
 ```python
 def test_parent_sees_only_own_notifications(family, assigned_activity):
@@ -119,8 +125,8 @@ def test_parent_sees_only_own_notifications(family, assigned_activity):
     assert own == [{'id': own_id}]
 ```
 
-- [ ] Run `uv run pytest tests/rls/test_notifications.py -q` on the pre-feature ephemeral stack and record the missing-relation failure.
-- [ ] Create the enum/table with required recipient/activity/student references, nullable submission reference, `read_at`, `created_at`, and unique `dedupe_key`. Add cascade FKs and the submission-kind constraint:
+- [x] Run `uv run pytest tests/rls/test_notifications.py -q` on the pre-feature ephemeral stack and record the missing-relation failure.
+- [x] Create the enum/table with required recipient/activity/student references, nullable submission reference, `read_at`, `created_at`, and unique `dedupe_key`. Add cascade FKs and the submission-kind constraint:
 
 ```sql
 check ((submission_id is not null) = (type in (
@@ -137,8 +143,8 @@ for select to authenticated
 using (recipient_id = (select auth.uid()));
 ```
 
-- [ ] Create private `writewise_internal.notification_delivery(dedupe_key text primary key, recipient_id uuid not null, activity_id uuid not null, student_id uuid not null, created_at timestamptz not null default now())`, with cascading FKs to auth user/activity/student and lookup indexes for those FK paths. Revoke PUBLIC/anon/authenticated access, enable RLS with no browser policies, and explicitly grant service_role the required privileges. It has no submission FK: delivery evidence survives attempt deletion, while deleting its recipient/activity/student removes it. This resolves the design's deletion/retry conflict without changing public notification cascade behavior.
-- [ ] Implement the shared helpers as security-invoker functions with `set search_path = ''` and qualified names. `put_notification` rejects a mismatched submission/activity/student before claiming a delivery key. Fan-out calls it for distinct current `student_parent.parent_id` values in ID order. Revoke helper EXECUTE from PUBLIC/anon/authenticated; grant only service_role, retaining schema isolation. Claim delivery and insert the notice in one transaction; a notice failure must roll back the claim. The critical insert/key expressions are:
+- [x] Create private `writewise_internal.notification_delivery(dedupe_key text primary key, recipient_id uuid not null, activity_id uuid not null, student_id uuid not null, created_at timestamptz not null default now())`, with cascading FKs to auth user/activity/student and lookup indexes for those FK paths. Revoke PUBLIC/anon/authenticated access, enable RLS with no browser policies, and explicitly grant service_role the required privileges. It has no submission FK: delivery evidence survives attempt deletion, while deleting its recipient/activity/student removes it. This resolves the design's deletion/retry conflict without changing public notification cascade behavior.
+- [x] Implement the shared helpers as security-invoker functions with `set search_path = ''` and qualified names. `put_notification` rejects a mismatched submission/activity/student before claiming a delivery key. Fan-out calls it for distinct current `student_parent.parent_id` values in ID order. Revoke helper EXECUTE from PUBLIC/anon/authenticated; grant only service_role, retaining schema isolation. Claim delivery and insert the notice in one transaction; a notice failure must roll back the claim. The critical insert/key expressions are:
 
 ```sql
 insert into writewise_internal.notification_delivery(dedupe_key, recipient_id,
@@ -158,7 +164,7 @@ returning id;
 select trunc(extract(epoch from value) * 1000000)::text;
 ```
 
-- [ ] Add real-SQL assertions for duplicate insertion, claim rollback on notice failure, mismatched submission rejection, distinct microsecond keys/equivalent timezone instants, multi-parent fan-out, and cascade cleanup. Prove a submission deletion removes its public notice but preserves the private delivery key; deleting the recipient/activity/student removes both. Use `asyncpg` via `SUPABASE_DB_URL` for private helper calls, not a new browser-exposed RPC.
+- [x] Add real-SQL assertions for duplicate insertion, claim rollback on notice failure, mismatched submission rejection, distinct microsecond keys/equivalent timezone instants, multi-parent fan-out, and cascade cleanup. Prove a submission deletion removes its public notice but preserves the private delivery key; deleting the recipient/activity/student removes both. Use `asyncpg` via `SUPABASE_DB_URL` for private helper calls, not a new browser-exposed RPC.
 - [ ] Replay migrations; rerun the RLS module, required lint/type checks, and full ephemeral backend suite. Generate database types with `supabase gen types typescript --local` into `frontend/types/database.ts` using UTF-8 output. Commit migration/tests/generated types together: `feat: add private notification storage`.
 
 ## Task 2: Assignment-change events in the existing transaction
@@ -167,7 +173,7 @@ select trunc(extract(epoch from value) * 1000000)::text;
 
 **Interfaces:** Consumes `notify_work_parents` and the existing `update_assigned_activity(actor_id, target_activity_id, payload)` signature/JSON response. Produces assignment notifications without changing API payloads or adding a roster/link emitter.
 
-- [ ] Add a failing assignment test using existing fixtures and a second linked parent. Filter counts by activity/student/type so notifications from fixture creation do not corrupt lifecycle assertions:
+- [x] Add a failing assignment test using existing fixtures and a second linked parent. Filter counts by activity/student/type so notifications from fixture creation do not corrupt lifecycle assertions:
 
 ```python
 def test_equivalent_target_edit_does_not_repeat_assignment(family, assigned_activity):
@@ -188,8 +194,8 @@ def test_equivalent_target_edit_does_not_repeat_assignment(family, assigned_acti
     assert {row['id'] for row in after} == {row['id'] for row in before}
 ```
 
-- [ ] Run `uv run pytest tests/rls/test_notification_events.py -q`; before emitters, the nonempty assertion must fail.
-- [ ] Replace only the current update RPC in the new migration, preserving validation, authorization, lock acquisition, field omission/null semantics, response shape, and grants. After its activity lock and before changing fields/targets, collect distinct assigned roster student IDs. After target replacement collect again; creation already delegates with an empty pre-set. The shared set-selection query is:
+- [x] Run `uv run pytest tests/rls/test_notification_events.py -q`; before emitters, the nonempty assertion must fail.
+- [x] Replace only the current update RPC in the new migration, preserving validation, authorization, lock acquisition, field omission/null semantics, response shape, and grants. For an explicit target edit, capture one owned roster snapshot after the activity lock, then compare both target sets using `writewise_internal.assigned_activity_students(target_activity_id, roster_snapshot)`. Skip fanout when assignments are omitted. Creation delegates with an empty pre-set. Do not use the JWT-scoped public helper in a service/cron session. The original browser-context set-selection sketch was:
 
 ```sql
 select coalesce(array_agg(st.id order by st.id), '{}'::uuid[])
@@ -199,7 +205,7 @@ where ts.teacher_id = actor_id
   and public.is_assigned(target_activity_id, st.id);
 ```
 
-- [ ] For post-set IDs absent from the pre-set, call `notify_work_parents('activity_assigned', activity, student, null, transition_id::text)`. Generate one `gen_random_uuid()` transition ID only when the difference is nonempty. Keep inserts in the same transaction; no exception suppression or Python post-write side effect.
+- [x] For post-set IDs absent from the pre-set, call `notify_work_parents('activity_assigned', activity, student, null, transition_id::text)`. Generate one `gen_random_uuid()` transition ID only when the difference is nonempty. Keep inserts in the same transaction; no exception suppression or Python post-write side effect.
 - [ ] Add and run cases for creation, siblings, second parent, overlapping section/direct targets, metadata-only edits, empty/foreign target validation, remove/re-add, and retrying the same PATCH. Verify section joining/moving and parent linking change visibility without creating `activity_assigned` events.
 - [ ] Prove rollback by using a temporary test-transaction trigger on `notification` that raises SQLSTATE `XX000`; call the update/create function inside a nested transaction and confirm both targets/activity and notification rows remain unchanged afterward. Remove fault injection with transaction rollback, never leave a permanent test trigger in migrations.
 - [ ] Run assignment/RLS regressions plus the full ephemeral suite, regenerate types, and commit: `feat: notify parents of new activity assignments`.
@@ -210,7 +216,7 @@ where ts.teacher_id = actor_id
 
 **Interfaces:** Consume the Task 1 helpers. Preserve signatures/JSON/SQLSTATE contracts of `mutate_student_work`, `record_student_submission`, and `complete_student_submission`. `release_activity_results` continues delegating to the single-release branch, so it needs no parallel emitter.
 
-- [ ] Write failing cases for each event using existing lifecycle fixtures/RPCs. A duplicate-release case must count events, rather than infer success from an unchanged release timestamp:
+- [x] Write failing cases for each event using existing lifecycle fixtures/RPCs. A duplicate-release case must count events, rather than infer success from an unchanged release timestamp:
 
 ```python
 def test_release_retry_emits_once(family, assigned_activity, attempts):
@@ -230,11 +236,11 @@ def test_release_retry_emits_once(family, assigned_activity, attempts):
 ```
 
   The existing `attempts` fixture currently lives in `test_submission_lifecycle.py`; move it verbatim into `tests/rls/conftest.py` when sharing it, removing its old definition. Do not import one test module from another.
-- [ ] Run the new event cases and observe absent-event failures before editing RPC definitions.
-- [ ] In the Return branch, call parent fan-out after the successful status update using the returned submission ID as event identity. Preserve all current Return metadata and historical/pin behavior. A failed Return emits nothing.
-- [ ] In `record_student_submission`, after inserting a rejected row, emit `submission_rejected` only when the trusted stored `uploader_role` is parent, targeting only `actor_id`. Use the inserted submission ID in the key. Processing rows and teacher rejections emit nothing. Preserve upload hardening order, accepted timestamp, persisted rejected row, and 422 API envelope.
-- [ ] In the release branch, capture whether `released_at` was null before the update; only that transition fans out. Use `submission_id || ':' || notification_epoch_us(released_at)` as identity. Identical release retries keep their stamp; manual-score changes still redraft. Test genuine re-release in a separate committed transaction so its timestamp can differ.
-- [ ] In completion, keep activity-before-work locks and all reauthorization. Capture pre-completion active ID and newest returned upload ID ordered by `(created_at desc, id desc)`. Complete the row; reread `active_submission`. Emit to `activity.created_by` only when the stored uploader is parent, the pre-active ID is null, the Return barrier exists, and the post-active ID equals the completed row. Key by that Return barrier and teacher; `submission_id` points to this successful attempt.
+- [x] Run the new event cases and observe absent-event failures before editing RPC definitions.
+- [x] In the Return branch, call parent fan-out after the successful status update using the returned submission ID as event identity. Preserve all current Return metadata and historical/pin behavior. A failed Return emits nothing.
+- [x] In `record_student_submission`, after inserting a rejected row, emit `submission_rejected` only when the trusted stored `uploader_role` is parent, targeting only `actor_id`. Use the inserted submission ID in the key. Processing rows and teacher rejections emit nothing. Preserve upload hardening order, accepted timestamp, persisted rejected row, and 422 API envelope.
+- [x] In the release branch, capture whether `released_at` was null before the update; only that transition fans out. Use `submission_id || ':' || notification_epoch_us(released_at)` as identity. Identical release retries keep their stamp; manual-score changes still redraft. Test genuine re-release in a separate committed transaction so its timestamp can differ.
+- [x] In completion, keep activity-before-work locks and all reauthorization. Capture pre-completion active ID and newest returned upload ID ordered by `(created_at desc, id desc)`. Complete the row; reread `active_submission`. Emit to `activity.created_by` only when the stored uploader is parent, the pre-active ID is null, the Return barrier exists, and the post-active ID equals the completed row. Key by that Return barrier and teacher; `submission_id` points to this successful attempt.
 - [ ] Cover rejected/abandoned retries then success, ordinary first upload, teacher upload, explicit pin, newer active work, equal upload timestamps, repeated completion, deletion/retry within the same Return cycle, and a later Return cycle. Verify dedupe even when a retry arrives under a different parent account.
 - [ ] Add atomic rollback fault-injection cases for Return/release/rejection/completion. Add real-route parent rejection and successful parent response regressions, plus a stale-release-notification case proving redrafting still hides both score tables/diagnostics.
 - [ ] Run `uv run pytest tests/rls/test_notification_events.py tests/rls/test_submission_lifecycle.py tests/api/test_submissions_parent.py -q`, then the full ephemeral suite; regenerate types and commit: `feat: notify coursework lifecycle events`.
@@ -245,7 +251,7 @@ def test_release_retry_emits_once(family, assigned_activity, attempts):
 
 **Interfaces:** Produce both private sweep signatures in the file-map contract. Consume exact effective due, `active_submission`, current roster/assignment, and the shared key helper. Return actual inserted-row count, not candidate count.
 
-- [ ] Write a failing fixed-clock test. Use direct `asyncpg` connections from the existing localhost-only `SUPABASE_DB_URL`; private functions stay outside PostgREST:
+- [x] Write a failing fixed-clock test. Use direct `asyncpg` connections from the existing localhost-only `SUPABASE_DB_URL`; private functions stay outside PostgREST:
 
 ```python
 def test_repeated_due_sweep_is_idempotent(family, assigned_activity):
@@ -276,9 +282,9 @@ def test_repeated_due_sweep_is_idempotent(family, assigned_activity):
     assert len(notices) == 1
 ```
 
-- [ ] Run the module before migration; observe missing-function failure. Provision pg_cron in the new migration using current installed extension/CLI capabilities, with failure propagated rather than hidden. Keep browser roles without cron/helper execution privileges.
-- [ ] Implement the fixed-time sweep with ordered per-activity locking, followed by a fresh eligibility query after the lock. Recheck unarchived state, current teacher roster, and `is_assigned`; exclude null due and any existing active attempt. Do not select historical-only pairs from `activity_work_state`. Do not create `student_work` rows for reminders.
-- [ ] Implement exact event boundaries and keys:
+- [x] Run the module before migration; observe missing-function failure. Provision pg_cron in the new migration using current installed extension/CLI capabilities, with failure propagated rather than hidden. Keep browser roles without cron/helper execution privileges.
+- [x] Implement the fixed-time sweep with ordered per-activity locking, followed by a fresh eligibility query after the lock. Recheck unarchived state, current teacher roster, and `is_assigned`; exclude null due and any existing active attempt. Do not select historical-only pairs from `activity_work_state`. Do not create `student_work` rows for reminders.
+- [x] Implement exact event boundaries and keys:
 
 ```sql
 -- effective_due = coalesce(w.due_at_override, a.due_at)
@@ -289,7 +295,7 @@ def test_repeated_due_sweep_is_idempotent(family, assigned_activity):
 ```
 
   Call parent fan-out inside the same sweep transaction. The zero-argument wrapper calls the fixed-time function with one captured database `now()`. No wall-clock parameter is exposed to a browser.
-- [ ] Register exactly one migration-owned job. Use a named schedule and test its name, command, frequency, and active state:
+- [x] Register exactly one migration-owned job. Use a named schedule and test its name, command, frequency, and active state:
 
 ```sql
 select cron.schedule(
@@ -299,7 +305,7 @@ select cron.schedule(
 ```
 
   Verify re-registering the name replaces rather than multiplies it. Do not provision email/HTTP dispatch.
-- [ ] Add a session-autouse test fixture that checks `to_regclass('cron.job')`, captures this named job's original `jobid/active` state, pauses just that job using `cron.alter_job`, and restores the captured state in `finally`. Use `select cron.alter_job($1, active := false)` and restore its original boolean through the same API, as documented in the [upstream pg_cron reference](https://github.com/citusdata/pg_cron#altering-a-cron-job). Preserve other jobs and support earlier-schema upgrade phases where the table/job is absent. Tests assert registration while allowing the harness pause; restore-and-inspect proves the deployed active setting. Never disable the extension.
+- [x] Add a session-autouse test fixture that checks `to_regclass('cron.job')`, captures this named job's original `jobid/active` state, pauses just that job using `cron.alter_job`, and restores the captured state in `finally`. Use `select cron.alter_job($1, active := false)` and restore its original boolean through the same API, as documented in the [upstream pg_cron reference](https://github.com/citusdata/pg_cron#altering-a-cron-job). Preserve other jobs and support earlier-schema upgrade phases where the table/job is absent. Tests assert registration while allowing the harness pause; restore-and-inspect proves the deployed active setting. Never disable the extension.
 - [ ] Add boundary/null/override tests, equivalent timezone/microsecond keys, changed/restored deadlines, completed/draft/released/pinned work, pending/rejected work, archive, section/target/roster changes, both modes, no stored work row, multiple recipients, and two concurrent sweeps. Coordinate separate asyncpg transactions to prove completion/deadline edits committed before the sweep lock affect its result; avoid sleeps as race synchronization.
 - [ ] Run scheduler/assignment/lifecycle modules and the full ephemeral suite, regenerate types, and commit: `feat: schedule deduplicated deadline notifications`. Explicitly record that excused suppression belongs to Slice 5, since no such field exists yet.
 
@@ -309,7 +315,7 @@ select cron.schedule(
 
 **Interfaces:** Produce the two public service-only RPCs above and `NotificationReadResponse(id: UUID, read_at: AwareDatetime)`, `NotificationsReadAllResponse(updated_count: int >= 0, read_at: AwareDatetime)`. Routes are POST `/{notification_id}/read` and POST `/read-all` under `/api/notifications`.
 
-- [ ] Follow the existing real-route/SDK `httpx.MockTransport` pattern. Write failing route cases with controlled notification SELECT/RPC responses and the real `get_current_user` dependency overridden only for identity. Register the fixture as `notification_route_case` with fields `client`, `calls`, `owned`, `db_error`, and `actor_id` so tests remain independent of lifecycle fixtures. The transport asserts the actor and recipient filter before accepting any mutation.
+- [x] Follow the existing real-route/SDK `httpx.MockTransport` pattern. Write failing route cases with controlled notification SELECT/RPC responses and the real `get_current_user` dependency overridden only for identity. Register the fixture as `notification_route_case` with fields `client`, `calls`, `owned`, `db_error`, and `actor_id` so tests remain independent of lifecycle fixtures. The transport asserts the actor and recipient filter before accepting any mutation.
 
 ```python
 def test_foreign_read_never_starts_mutation(notification_route_case):
@@ -323,11 +329,11 @@ def test_foreign_read_never_starts_mutation(notification_route_case):
     assert not [call for call in case.calls if '/rpc/' in call['path']]
 ```
 
-- [ ] Run `uv run pytest --confcutdir=tests/unit tests/unit/test_notification_contracts.py tests/unit/test_notification_routes.py -q` with explicit dummy localhost test settings; observe missing contracts/routes. Keep imports from triggering root `tests/conftest.py`.
-- [ ] Implement typed responses and routes using `Depends(get_current_user)` and its verified `sub`, independent of role metadata. Individual precheck selects by both ID and recipient. The RPC repeats recipient restriction and raises `WW404` on a race; map it to 404 `NOT_FOUND`, all other database errors to generic 500 `INTERNAL_ERROR`. Do not expose DB prose or require a new role branch. Register `/read-all` before the UUID route and include the router in `main.py`.
-- [ ] Implement single-read with `read_at = coalesce(read_at, statement_timestamp())` and one-row return. Implement all-read with one captured cutoff, restricting `recipient_id = actor_id`, unread rows, and `created_at <= cutoff`; return changed-row count and cutoff. Preserve preexisting read timestamps. Revoke browser EXECUTE on both functions and explicitly grant service_role.
+- [x] Run `uv run pytest --confcutdir=tests/unit tests/unit/test_notification_routes.py -q` with explicit dummy localhost test settings; observe missing contracts/routes. Contracts are covered through real responses rather than a separate mirrored declaration test. Keep imports from triggering root `tests/conftest.py`.
+- [x] Implement typed responses and routes using `Depends(get_current_user)` and its verified `sub`, independent of role metadata. Individual precheck selects by both ID and recipient. The RPC repeats recipient restriction and raises `WW404` on a race; map it to 404 `NOT_FOUND`, all other database errors to generic 500 `INTERNAL_ERROR`. Do not expose DB prose or require a new role branch. Register `/read-all` before the UUID route and include the router in `main.py`.
+- [x] Implement single-read with `read_at = coalesce(read_at, statement_timestamp())` and one-row return. Implement all-read with one captured cutoff, restricting `recipient_id = actor_id`, unread rows, and `created_at <= cutoff`; return changed-row count and cutoff. Preserve preexisting read timestamps. Revoke browser EXECUTE on both functions and explicitly grant service_role.
 - [ ] Add route cases for valid parent/teacher identities, missing/invalid token behavior, malformed UUID, empty all-read, spoofed recipient body/query being unused, already-read stability, foreign/missing/deleted rows, and raw database errors. Add real database cases for recipient scoping, replay no-op, one shared all-read timestamp, and an insert after the statement snapshot remaining unread.
-- [ ] Generate OpenAPI JSON from the final FastAPI app in explicit test/stub mode, then generate `frontend/types/api.ts` with the installed openapi-typescript runner; generate database types from the migrated local stack. Standard command shapes:
+- [x] Generate OpenAPI JSON from the final FastAPI app in explicit test/stub mode, then generate `frontend/types/api.ts` with the installed openapi-typescript runner; generate database types from the migrated local stack. Standard command shapes:
 
 ```powershell
 # Backend cwd; test environment configured as documented in TESTING.md.
@@ -374,11 +380,11 @@ export type NotificationWindow = {
 ```
 
 - [ ] Document/manual-seed a feed with 45 notices, including identical timestamps, and a second account's rows. The pre-feature manual baseline has no bell/feed. Use this fixture through Tasks 6–8; never seed identifiable child data or ad hoc rows into hosted production.
-- [ ] Implement count as `.select('id', { count: 'exact', head: true }).eq('recipient_id', userId).is('read_at', null)` and throw on error. Unknown count stays unknown. Select feed by recipient, ordered by `created_at DESC, id DESC`; read 21 rows, return 20, and derive `hasMore` from the extra row.
-- [ ] Build keyset predicates from validated UUID/timestamp cursors only. Before-cursor means `(created_at < cursor.created_at) OR (created_at = cursor.created_at AND id < cursor.id)`. Include account ID, page size, coverage cursor, and any filter in query keys. No offset pagination or sibling filter.
-- [ ] Implement anchored refresh: remember the oldest loaded tuple as coverage. Poll from the newest page through that inclusive tuple using 20-row keyset pages; normalize unique IDs and order, update read states, and drop rows actually deleted/inaccessible. New notices expand the window rather than pushing previously loaded rows out. More than 20 arrivals must be bridged by additional pages. Load more advances coverage to the next page's oldest tuple. Keep the previous visible window while a new coverage query resolves, and preserve the old window on error. Initial load establishes its coverage once without a refetch loop.
-- [ ] Batch unique student IDs and activity IDs across visible rows, fetch both label sets concurrently via current browser RLS, and key label caches by account and sorted ID sets. Missing related data uses generic labels; a real fetch error gets a retry state. Do not add per-row requests, service hydration, or notification payload copies.
-- [ ] Implement read hooks with `getAuthToken(createClient())`, `handleApiResponse`, generated response types, and `error.code`. Invalidate count/feed after successful single/all reads. Use server-confirmed timestamps; do not silently retain an optimistic success after failure. Count polls every 60 seconds in foreground; feed refreshes while loaded, on focus, and when the bell opens. Cancel notification queries and remove their cache on auth sign-out/account change; ignore results from canceled old-account work.
+- [x] Implement count as `.select('id', { count: 'exact', head: true }).eq('recipient_id', userId).is('read_at', null)` and throw on error. Unknown count stays unknown. Select feed by recipient, ordered by `created_at DESC, id DESC`; read 21 rows, return 20, and derive `hasMore` from the extra row.
+- [x] Build keyset predicates from validated UUID/timestamp cursors only. Before-cursor means `(created_at < cursor.created_at) OR (created_at = cursor.created_at AND id < cursor.id)`. Include account ID, page size, coverage cursor, and any filter in query keys. No offset pagination or sibling filter.
+- [x] Implement anchored refresh: remember the oldest loaded tuple as coverage. Poll from the newest page through that inclusive tuple using 20-row keyset pages; normalize unique IDs and order, update read states, and drop rows actually deleted/inaccessible. New notices expand the window rather than pushing previously loaded rows out. More than 20 arrivals must be bridged by additional pages. Load more advances coverage to the next page's oldest tuple. Keep the previous visible window while a new coverage query resolves, and preserve the old window on error. Initial load establishes its coverage once without a refetch loop.
+- [x] Batch unique student IDs and activity IDs across visible rows, fetch both label sets concurrently via current browser RLS, and key label caches by account and sorted ID sets. Missing related data uses generic labels; a real fetch error gets a retry state. Do not add per-row requests, service hydration, or notification payload copies.
+- [x] Implement read hooks with `getAuthToken(createClient())`, `handleApiResponse`, generated response types, and `error.code`. Invalidate count/feed after successful single/all reads. Use server-confirmed timestamps; do not silently retain an optimistic success after failure. Count polls every 60 seconds in foreground; feed refreshes while loaded, on focus, and when the bell opens. Cancel notification queries and remove their cache on auth sign-out/account change; ignore results from canceled old-account work.
 - [ ] Manually prove 20 → 40 loaded rows, then 25 new arrivals, a timestamp tie, one deleted loaded notice, and one read change in another tab: no lost retained row, duplicate ID, missing arrival, or wrong count. Sign out/in as another account and verify no prior cached row/label appears. Use browser network inspection to verify batched labels and foreground polling. Run ESLint/TypeScript and commit: `feat: add recipient-scoped notification queries`.
 
 ## Task 7: Shared accessible bell and portal integration
@@ -387,8 +393,8 @@ export type NotificationWindow = {
 
 **Interfaces:** `NotificationBell({ userId, role }: { userId: string; role: 'teacher' | 'parent' })`; `NotificationList` consumes the Task 6 window/labels and read/load/retry actions; `NotificationRowItem` renders a real destination Link plus a separate mark-read button, avoiding a name collision with the generated row type. Header identity comes from the verified server Auth user.
 
-- [ ] Before composing UI, inspect installed `components.json` and primitives; run the project shadcn runner's `info` and `docs popover button badge scroll-area` commands and fetch returned documentation. Use the installed Base UI `render` API rather than assuming Radix `asChild`. Apply React guidance for parallel label reads, narrowly scoped subscriptions, and lazy loading of heavy attempt viewers.
-- [ ] Add the bell trigger, actual unread count in its accessible label, `99+` visual cap, PopoverTitle, Mark all read, semantic list, Load more, and explicit loading/empty/error/retry states. Keep widths safe at 320px; use existing semantic tokens and UI variants. The trigger composition must follow this installed API shape:
+- [x] Before composing UI, inspect installed `components.json` and primitives; run the project shadcn runner's `info` and `docs popover button badge scroll-area` commands and fetch returned documentation. Use the installed Base UI `render` API rather than assuming Radix `asChild`. Apply React guidance for parallel label reads, narrowly scoped subscriptions, and lazy loading of heavy attempt viewers.
+- [x] Add the bell trigger, actual unread count in its accessible label, `99+` visual cap, PopoverTitle, Mark all read, semantic list, Load more, and explicit loading/empty/error/retry states. Keep widths safe at 320px; use existing semantic tokens and UI variants. The trigger composition must follow this installed API shape:
 
 ```tsx
 <PopoverTrigger
@@ -399,9 +405,9 @@ export type NotificationWindow = {
 ```
 
   `accessibleLabel` is built from count state, e.g. `Notifications, 7 unread`, or `Notifications, unread count unavailable`. Show unread text/indicator in addition to color; use exact timestamp labels and no scores, images, notes, or rejection details.
-- [ ] On row activation, close the popover and attempt the read mutation while allowing normal link navigation, including modified-click/new-tab behavior. A failed mutation shows neutral feedback and does not cancel navigation. Opening the popover alone marks nothing read. Disable only the pending read/all/load action; retain focus targets and keyboard close/return behavior.
-- [ ] Pass `user.id` from teacher layout to `TeacherHeader` and from parent layout through `ParentPortalProvider`/`ParentNav`; render one account-keyed bell per portal. Never derive notification authorization from the selected child or user metadata role. Auth-change cleanup from Task 6 covers successful sign-out; keep existing sign-out error behavior.
-- [ ] Add `invalidateNotifications` to successful assignment, upload/rejection, Return, and release paths. Rejected uploads return 422 after persistence, so upload `onError` must also invalidate when a structured rejection includes a `submission_id`; unrelated failures should not simulate a created notification. A teacher browser cannot invalidate a parent's separate cache: the 60-second poll is the cross-account refresh mechanism.
+- [x] On row activation, close the popover and attempt the read mutation while allowing normal link navigation, including modified-click/new-tab behavior. A failed mutation shows neutral feedback and does not cancel navigation. Opening the popover alone marks nothing read. Disable only the pending read/all/load action; retain focus targets and keyboard close/return behavior.
+- [x] Pass `user.id` from teacher layout to `TeacherHeader` and from parent layout through `ParentPortalProvider`/`ParentNav`; render one account-keyed bell per portal. Never derive notification authorization from the selected child or user metadata role. Auth-change cleanup from Task 6 covers successful sign-out; keep existing sign-out error behavior.
+- [x] Add `invalidateNotifications` to successful assignment, upload/rejection, Return, and release paths. Rejected uploads return 422 after persistence, so upload `onError` must also invalidate when a structured rejection includes a `submission_id`; unrelated failures should not simulate a created notification. A teacher browser cannot invalidate a parent's separate cache: the 60-second poll is the cross-account refresh mechanism.
 - [ ] Do a manual desktop/mobile/keyboard pass for both roles, count above 99, empty data, list/read errors, read-all with unseen pages, scrolling/focus during polling, and unrelated account isolation. Run Ruff/ESLint/TypeScript and the production frontend build, then commit: `feat: add teacher and parent notification bells`.
 
 ## Task 8: Parent links to the exact child, activity, and attempt
@@ -410,7 +416,7 @@ export type NotificationWindow = {
 
 **Interfaces:** `ParentNotificationTarget = { childId: string; activityId: string; submissionId: string | null }`; `NotificationWorkDestination({ target, onClose })` consumes a validated target. Add `useParentNotificationWork(target)` in `use-parent-data.ts`, returning a discriminated loading/error/unavailable/ready result with RLS-visible activity, work state, and exact attempt. Use existing `StudentScoreHistoryItem` for a resolved attempt rather than a second score model.
 
-- [ ] Extend `notificationHref` with literal route outcomes, and use these as manual acceptance examples:
+- [x] Extend `notificationHref` with literal route outcomes, and use these as manual acceptance examples:
 
 ```text
 teacher resubmission:
@@ -422,11 +428,11 @@ parent Return/rejection/release:
 ```
 
   Parse all supplied IDs as UUIDs. A malformed supplied `submission` is invalid, not equivalent to an omitted submission. Construct only same-origin application paths.
-- [ ] Read URL intent through the existing server `progress/page.tsx` searchParams and pass serialized UUID strings to the client, or put a small `useSearchParams` reader under Suspense if needed. Keep URL updates/back/forward reactive; confirm with a production build. Do not spread search parameters into Supabase queries.
-- [ ] After `useLinkedChildren` resolves, verify the URL child belongs to the account before selecting it. If selection changes from a previous child, discard old destination data/actions immediately. Do not display the provider's default child while a different requested child's membership is unresolved. Unknown/unlinked targets show neutral unavailability and never fall back to a different child.
-- [ ] Query the exact activity and attempt with the browser client, filtering attempt by all three IDs. Query current assignment for upload eligibility separately from historical read permission. Use currently RLS-visible score rows and `released_at`; do not infer result access from notification type, a stale feed row, or a past release timestamp alone.
-- [ ] Implement a compact activity-work destination showing permitted title/instructions/effective due/Return metadata, then focus/open the exact requested attempt. Reuse the pending viewer when current score access is absent and the released viewer only with current RLS-visible released scores. Include in-class activities and historical submissions after reassignment. No implicit upload dialog; an explicit eligible take-home upload action may use the existing provider.
-- [ ] Keep the destination reachable even when the normal activity list is collapsed, the activity is outside its first two cards, or mobile Tasks is not active. Activity-only links reveal that work; submission links select the specific historical attempt, even if another result is latest. Closing removes only destination parameters and returns focus sensibly; reload/back/forward must reproduce the target.
+- [x] Read URL intent through the existing server `progress/page.tsx` searchParams and pass serialized UUID strings to the client, or put a small `useSearchParams` reader under Suspense if needed. Keep URL updates/back/forward reactive; confirm with a production build. Do not spread search parameters into Supabase queries.
+- [x] After `useLinkedChildren` resolves, verify the URL child belongs to the account before selecting it. If selection changes from a previous child, discard old destination data/actions immediately. Do not display the provider's default child while a different requested child's membership is unresolved. Unknown/unlinked targets show neutral unavailability and never fall back to a different child.
+- [x] Query the exact activity and attempt with the browser client, filtering attempt by all three IDs. Query current assignment for upload eligibility separately from historical read permission. Use currently RLS-visible score rows and `released_at`; do not infer result access from notification type, a stale feed row, or a past release timestamp alone.
+- [x] Implement a compact activity-work destination showing permitted title/instructions/effective due/Return metadata, then focus/open the exact requested attempt. Reuse the pending viewer when current score access is absent and the released viewer only with current RLS-visible released scores. Include in-class activities and historical submissions after reassignment. No implicit upload dialog; an explicit eligible take-home upload action may use the existing provider.
+- [x] Keep the destination reachable even when the normal activity list is collapsed, the activity is outside its first two cards, or mobile Tasks is not active. Activity-only links reveal that work; submission links select the specific historical attempt, even if another result is latest. Closing removes only destination parameters and returns focus sensibly; reload/back/forward must reproduce the target.
 - [ ] Manually verify two siblings with the same teacher, direct reload, modified-click link, target older than the latest result, returned/rejected/unreleased/in-class/historical work, deleted submission, unlinked child, invalid/mismatched IDs, transient fetch error, and a previously released result redrafted before click. Confirm no cross-child flash or unreleased score/overlay appears.
 - [ ] Run ESLint/TypeScript/production build and backend release-privacy regressions. Commit: `feat: deep link parent coursework notifications`.
 
@@ -451,10 +457,10 @@ supabase db reset --local
 ```
 
   The bash paths above are CI commands; use a temporary directory under the workspace or OS temp directory in PowerShell. Retain the existing assignment and release upgrade steps. The reset baseline has no notification migration, so the sweep/cron pause harness must also tolerate its absence.
-- [ ] Extend CI branch triggers for `feat/phase3-in-app-notifications` if branch-push CI is the authorized verification route. Keep generated-type comparison/artifact, full pytest, security-advisor error gate, and `always()` stack teardown. Do not reinterpret CI as deployment or publish a branch to obtain evidence without existing authorization.
-- [ ] Promote exact event/API/table/RLS/scheduler/copy/deep-link contracts to the docs. Record no new error codes unless a distinct final API contract requires one. Add `API_SPEC` endpoint descriptions and module wiring, an ADR for explicit transactional insertion/private scheduling/polling, and deployment instructions for inspecting/pausing the one named job. Document reminder first-sweep catch-up, archived exclusion, same-deadline dedupe, and the later Slice 5 excused predicate.
+- [x] Extend CI branch triggers for the isolated implementation branch `feat/phase3-notifications-implementation`, the user-authorized verification route. Keep generated-type comparison/artifact, full pytest, security-advisor error gate, and `always()` stack teardown. Do not reinterpret CI as deployment.
+- [x] Promote exact event/API/table/RLS/scheduler/copy/deep-link contracts to the docs. Record no new error codes unless a distinct final API contract requires one. Add `API_SPEC` endpoint descriptions and module wiring, an ADR for explicit transactional insertion/private scheduling/polling, and deployment instructions for inspecting/pausing the one named job. Document reminder first-sweep catch-up, archived exclusion, same-deadline dedupe, and the later Slice 5 excused predicate.
 - [ ] Add log-capture checks around new API/event paths proving names, emails, scores, notes, rejection prose, and image bytes are absent. Avoid adding notification-specific logs unless necessary; preserve AGENTS.md's existing logging limits. Verify the notification table contains no copied content and that research export contracts are unchanged.
-- [ ] Request a focused code review against the spec and feature diff using the available code-review skill. Cover recipient authorization/grants, rollback, concurrency, exact time boundaries, event semantics, feed preservation/cache cleanup, sibling routing, accessibility, generated types, and release privacy. Fix material findings and rerun their affected checks.
+- [x] Request a focused code review against the spec and feature diff using the available code-review skill. Cover recipient authorization/grants, rollback, concurrency, exact time boundaries, event semantics, feed preservation/cache cleanup, sibling routing, accessibility, generated types, and release privacy. Fix material findings and rerun their affected checks.
 - [ ] Run final Ruff, whole-frontend ESLint/TypeScript, production build, both existing upgrade proofs plus the new proof, generated-contract comparison, security advisors, and the full backend pytest suite on the ephemeral migrated stack. Use the installed-tool equivalents recorded in `TESTING.md` if wrappers hit existing PowerShell/cache restrictions. Missing local containers require recorded CI evidence; do not convert transport tests or lint into a database/RLS success claim.
 - [ ] Regenerate `frontend/types/database.ts` from the final migrated stack and `frontend/types/api.ts` from the final FastAPI schema, then verify regeneration produces no drift. Keep the generation in the same changeset as migrations/API work.
 - [ ] Complete and record manual QA: teacher, both linked parents, two siblings, desktop/320px mobile, keyboard/focus, exact/deleted/revoked targets, all read actions, foreground polling/retry, pagination under new arrivals, and stale release notifications. Record observed evidence separately from user-reported sign-off. A build/type check does not close the manual portal gate.
@@ -476,4 +482,4 @@ supabase db reset --local
 
 Review checkpoints occur after Tasks 1–3 (data/event semantics), Tasks 4–5 (time/API authorization), and Tasks 6–8 (portal behavior), before final closeout. No checkbox is completion evidence by itself. The planned helper/API/type names above are shared contracts; update consumers and this plan together if a name changes during implementation.
 
-Self-review completed for planning on 2026-11-03: every design section maps to tasks above, later-slice fields are excluded, test scaffolding stays tied to its deliverable, and no application/migration implementation is claimed. Execution remains a separate user-requested step.
+Planning self-review completed on 2026-11-03: every design section maps to tasks above and later-slice fields are excluded. Execution was subsequently requested; its dated evidence and remaining manual gates are recorded above.

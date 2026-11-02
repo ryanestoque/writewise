@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ParentPortalProvider } from "@/components/parent-portal-provider";
+import { Suspense } from "react";
 
 export default async function ParentLayout({
   children,
@@ -32,8 +33,10 @@ export default async function ParentLayout({
   const email = user.email || "";
 
   return (
-    <ParentPortalProvider user={{ fullName, email }}>
+    <Suspense fallback={<p role="status" className="p-6">Loading parent portal…</p>}>
+    <ParentPortalProvider user={{ id: user.id, fullName, email }}>
       {children}
     </ParentPortalProvider>
+    </Suspense>
   );
 }

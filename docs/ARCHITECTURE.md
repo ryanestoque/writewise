@@ -278,3 +278,11 @@ backend/app/diagnostic/
 **How it fits:** the submission-upload endpoint (`app/api/submissions.py`) calls `generate_diagnostic_overlay()` synchronously after scoring completes, persisting the result as the `measurement.overlay` JSON field (DATABASE.md §8). The frontend reads this field via direct Supabase reads (RLS-gated) and renders it as an interactive SVG overlay — no additional API call needed.
 
 **Design rationale:** keeping diagnostic logic as a deterministic function with its own typed models (not inline in the API handler or mixed into CV code) means the overlay output is independently testable and the coaching-tip rules can evolve without touching pipeline or scoring code.
+
+## Notification scheduling — Phase 3 Slice 3
+
+Coursework writes insert their notifications within the existing authorized service-only RPC transaction. Private delivery receipts enforce idempotency across retries and submission deletion. The public table is read through recipient RLS; names/titles resolve through their existing RLS reads. FastAPI provides the individual/all-read mutations.
+
+Deadline checks run inside Postgres through one named pg_cron job every 15 minutes. They use a private JWT-independent assignment lookup, current roster membership, effective due dates, shared active-attempt selection, and activity-first locks. This introduces scheduled work for notifications; CV/CNN processing retains its synchronous, in-process, single-worker contract. No service process, HTTP dispatcher, or email worker is added.
+
+The client polls notifications every 60 seconds in foreground. Account-scoped cache keys/cancellation, serialized cursor pagination, and token-bound read mutations keep concurrent refreshes and account switches coherent. Design decisions and alternatives are in [ADR 0005](adr/0005-transactional-notifications-and-scheduling.md).

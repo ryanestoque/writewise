@@ -89,12 +89,13 @@ def test_foreign_read_never_mutates(notice_case):
 @pytest.mark.parametrize(
     "db_code,status,code", [("WW404", 404, "NOT_FOUND"), ("XX000", 500, "INTERNAL_ERROR")]
 )
-def test_read_error_sanitization(notice_case, db_code, status, code):
+def test_read_error_sanitization(notice_case, db_code, status, code, caplog):
     notice_case.error = db_code
     response = notice_case.client.post(f"/api/notifications/{NOTICE}/read")
     assert response.status_code == status
     assert response.json()["error"]["code"] == code
     assert "private detail" not in response.text
+    assert "private detail" not in caplog.text
 
 
 def test_bad_uuid_returns_validation_error(notice_case):
