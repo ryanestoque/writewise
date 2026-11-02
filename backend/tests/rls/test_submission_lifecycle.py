@@ -260,6 +260,7 @@ def test_inactive_release_and_mismatched_pin_roll_back(family, assigned_activity
 
 def test_work_deadline_and_parent_draft_status(family, assigned_activity, attempts):
     activity = assigned_activity["id"]
+    student = family["students"][0]
     due = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
     mutate(family, activity, "update", {"due_at_override": due})
     teacher = (
@@ -267,16 +268,20 @@ def test_work_deadline_and_parent_draft_status(family, assigned_activity, attemp
         .table("activity_work_state")
         .select("work_status,effective_due_at")
         .eq("activity_id", activity)
+        .eq("student_id", student)
+        .single()
         .execute()
-        .data[0]
+        .data
     )
     parent = (
         family["parent_client"]
         .table("activity_work_state")
         .select("work_status,effective_due_at")
         .eq("activity_id", activity)
+        .eq("student_id", student)
+        .single()
         .execute()
-        .data[0]
+        .data
     )
     assert teacher["work_status"] == "Draft"
     assert parent["work_status"] == "Turned in"
