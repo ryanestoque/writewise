@@ -20,6 +20,7 @@ interface CriterionFeedbackRowProps {
   highlightBadge?: "top_strength" | "practice_focus" | null;
   homePracticeTip?: string | null;
   isActive?: boolean;
+  showScoreDetails?: boolean;
 }
 
 export function CriterionFeedbackRow({
@@ -33,6 +34,7 @@ export function CriterionFeedbackRow({
   highlightBadge,
   homePracticeTip,
   isActive = false,
+  showScoreDetails = true,
 }: CriterionFeedbackRowProps) {
   const meta = PARENT_CRITERIA_METADATA[criterionKey];
   const displayLabel = label || meta?.label || criterionKey;
@@ -53,6 +55,11 @@ export function CriterionFeedbackRow({
             }
           : undefined
       }
+      aria-label={
+        onInspect
+          ? `Inspect ${displayLabel} feedback and worksheet guide lines. Rating: ${band ? band.replace("_", " ") : "Pending"}`
+          : undefined
+      }
       className={cn(
         "py-2.5 sm:py-3 first:pt-1 last:pb-1 transition-colors space-y-1.5",
         onInspect &&
@@ -70,13 +77,13 @@ export function CriterionFeedbackRow({
               {displayLabel}
             </span>
             {highlightBadge === "top_strength" && (
-              <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 px-1.5 py-0.5 rounded-md border border-band-4/30 dark:border-band-4/40 shrink-0">
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 px-1.5 py-0.5 rounded-md border border-band-4/30 dark:border-band-4/40 shrink-0">
                 <span className="size-1.5 rounded-full bg-band-4 shrink-0" aria-hidden="true" />
                 Top Strength
               </span>
             )}
             {highlightBadge === "practice_focus" && (
-              <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 px-1.5 py-0.5 rounded-md border border-band-2/30 dark:border-band-2/40 shrink-0">
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 px-1.5 py-0.5 rounded-md border border-band-2/30 dark:border-band-2/40 shrink-0">
                 <span className="size-1.5 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
                 Practice Focus
               </span>
@@ -86,7 +93,7 @@ export function CriterionFeedbackRow({
 
         {/* Right: Score and BandBadge */}
         <div className="shrink-0 flex items-center gap-1.5 sm:gap-2 pt-0.5 sm:pt-0">
-          {score != null && (
+          {showScoreDetails && score != null && (
             <span className="text-xs sm:text-sm font-semibold font-sans tabular-nums text-foreground">
               {Math.round(score)}%
             </span>

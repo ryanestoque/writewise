@@ -28,10 +28,10 @@ import {
   FileText,
   Loader2,
   Eye,
-  ZoomIn,
   Lightbulb,
   CheckCircle2,
   ChevronRight,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -55,6 +55,19 @@ export function LatestSubmissionCard({
   const openWorksheetForCriterion = useCallback((criterion: CriterionFilter = "all") => {
     setSelectedCriterionForView(criterion);
     setViewImageOpen(true);
+  }, []);
+
+  const navigateToTakeHome = useCallback(() => {
+    const el = document.getElementById("assigned-take-home-section");
+    if (el && el.offsetParent !== null) {
+      el.scrollIntoView({ behavior: "smooth" });
+    } else {
+      const mobileTasksTab = document.getElementById("mobile-tab-tasks");
+      if (mobileTasksTab) {
+        mobileTasksTab.click();
+        mobileTasksTab.scrollIntoView({ behavior: "smooth" });
+      }
+    }
   }, []);
 
   // Compute Top Strength and Primary Practice Focus based on criterion scores
@@ -96,11 +109,8 @@ export function LatestSubmissionCard({
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => {
-              const el = document.getElementById("assigned-take-home-section");
-              el?.scrollIntoView({ behavior: "smooth" });
-            }}
-            className="min-h-[40px] text-xs font-medium cursor-pointer"
+            onClick={navigateToTakeHome}
+            className="min-h-[40px] sm:min-h-[36px] text-xs font-medium cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
           >
             View Assigned Take-Home Worksheets
           </Button>
@@ -144,7 +154,7 @@ export function LatestSubmissionCard({
               onClick={() => openWorksheetForCriterion("all")}
               aria-label={`View ${childName}'s scored worksheet with interactive guide lines`}
               aria-haspopup="dialog"
-              className="group relative w-full h-48 sm:h-56 rounded-xl overflow-hidden border border-border/80 bg-muted/20 dark:bg-muted/10 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 shadow-xs block text-left transition-colors hover:border-brand-500/50 hover:shadow-warm p-2.5 sm:p-3"
+              className="group relative w-full h-48 sm:h-56 rounded-xl overflow-hidden border border-border/80 bg-muted/20 dark:bg-muted/10 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 shadow-xs block text-left transition-colors hover:border-brand-500/50 hover:shadow-warm p-2.5 sm:p-3 touch-manipulation"
             >
               <div className="relative w-full h-full rounded-lg overflow-hidden bg-background/50 shadow-inner">
                 <Image
@@ -157,13 +167,12 @@ export function LatestSubmissionCard({
                   className="object-contain object-center transition-opacity"
                 />
               </div>
-              {/* Warm, legible top-right glass chip (compact on mobile) */}
+              {/* Clean, single-icon top-right glass badge */}
               <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-1.5 z-10">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-brand-950/85 hover:bg-brand-900 text-brand-50 backdrop-blur-md border border-brand-400/30 text-xs font-medium shadow-xs transition-colors group-hover:bg-brand-900 group-hover:border-brand-400/60">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-950/85 hover:bg-brand-900 text-brand-50 backdrop-blur-md border border-brand-400/30 text-xs font-medium shadow-xs transition-colors group-hover:bg-brand-900 group-hover:border-brand-400/60">
                   <Eye className="size-3.5 text-brand-200" aria-hidden="true" />
                   <span className="hidden sm:inline">View Worksheet &amp; Feedback</span>
                   <span className="sm:hidden">Inspect Worksheet</span>
-                  <ZoomIn className="size-3.5 text-brand-300 ml-0.5" aria-hidden="true" />
                 </span>
               </div>
             </button>
@@ -206,7 +215,7 @@ export function LatestSubmissionCard({
                     type="button"
                     onClick={() => setShowScoreDetails((prev) => !prev)}
                     aria-pressed={showScoreDetails}
-                    className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-brand-500 rounded px-2.5 py-1 border border-brand-200/60 dark:border-brand-800/60 bg-brand-50/50 dark:bg-brand-950/30 transition-colors"
+                    className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-md px-3 py-1.5 min-h-[40px] sm:min-h-[36px] flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
                   >
                     {showScoreDetails ? "Hide percentages" : "Show percentages"}
                   </button>
@@ -217,13 +226,20 @@ export function LatestSubmissionCard({
             <BandPositionBar
               score={latest.scores.composite}
               height="default"
-              showThresholds
+              showThresholds={showScoreDetails}
               ariaLabel={
                 showScoreDetails && latest.scores.composite != null
                   ? `Diagnostic score position: ${Math.round(latest.scores.composite)}% overall`
                   : compositeBandMeta
                     ? `Developmental milestone: ${compositeBandMeta.label}`
                     : "Developmental milestone not yet available"
+              }
+              ariaValueText={
+                showScoreDetails && latest.scores.composite != null
+                  ? `${Math.round(latest.scores.composite)}% overall`
+                  : compositeBandMeta
+                    ? compositeBandMeta.label
+                    : undefined
               }
             />
 
@@ -252,7 +268,7 @@ export function LatestSubmissionCard({
               ) : (
                 <>
                   {topStrength && (
-                    <div className="flex flex-col justify-between gap-2 p-3.5 rounded-lg bg-band-4/15 dark:bg-band-4/25 border border-band-4/30 dark:border-band-4/40">
+                    <div className="flex flex-col justify-between gap-3 p-3.5 rounded-lg bg-band-4/15 dark:bg-band-4/25 border border-band-4/30 dark:border-band-4/40 min-h-full">
                       <div className="flex items-start gap-2.5">
                         <span className="size-2 rounded-full bg-band-4 mt-1 shrink-0" aria-hidden="true" />
                         <div className="min-w-0 space-y-0.5">
@@ -264,45 +280,53 @@ export function LatestSubmissionCard({
                           </p>
                         </div>
                       </div>
+
+                      {/* Balanced encouragement note matching practice focus height */}
+                      <div className="pt-2 border-t border-band-4/25 flex items-start gap-2 text-band-4-text dark:text-emerald-300">
+                        <Sparkles className="size-3.5 shrink-0 text-band-4 mt-0.5" aria-hidden="true" />
+                        <p className="leading-relaxed text-[11px] sm:text-xs">
+                          <span className="font-semibold text-band-4-text dark:text-emerald-300">Praise: </span>
+                          Celebrate this strong foundation with {childName} to build cursive confidence!
+                        </p>
+                      </div>
                     </div>
                   )}
 
                   {practiceFocus && (
-                    <div className="flex flex-col gap-2.5 p-3.5 rounded-lg bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40">
-                      <div className="flex items-start gap-2.5">
-                        <span className="size-2 rounded-full bg-band-2 mt-1 shrink-0" aria-hidden="true" />
-                        <div className="min-w-0 space-y-0.5">
-                          <span className="text-xs font-semibold text-band-2-text dark:text-amber-200 block">
-                            Practice Focus: {practiceFocus.meta.label}
-                          </span>
-                          <p className="text-xs text-muted-foreground leading-snug">
-                            {practiceFocus.meta.shortDescription}
-                          </p>
+                    <div className="flex flex-col justify-between gap-3 p-3.5 rounded-lg bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40 min-h-full">
+                      <div className="space-y-2.5">
+                        <div className="flex items-start gap-2.5">
+                          <span className="size-2 rounded-full bg-band-2 mt-1 shrink-0" aria-hidden="true" />
+                          <div className="min-w-0 space-y-0.5">
+                            <span className="text-xs font-semibold text-band-2-text dark:text-amber-200 block">
+                              Practice Focus: {practiceFocus.meta.label}
+                            </span>
+                            <p className="text-xs text-muted-foreground leading-snug">
+                              {practiceFocus.meta.shortDescription}
+                            </p>
+                          </div>
                         </div>
+
+                        {practiceFocus.meta.homeTip && (
+                          <div className="pt-2 border-t border-band-2/25 flex items-start gap-2 text-band-2-text dark:text-amber-200">
+                            <Lightbulb className="size-3.5 shrink-0 text-band-2-text dark:text-amber-200 mt-0.5" aria-hidden="true" />
+                            <p className="leading-relaxed text-[11px] sm:text-xs">
+                              <span className="font-semibold text-band-2-text dark:text-amber-200">At-Home Tip: </span>
+                              {practiceFocus.meta.homeTip}
+                            </p>
+                          </div>
+                        )}
                       </div>
 
-                      {practiceFocus.meta.homeTip && (
-                        <div className="pt-2 border-t border-band-2/25 flex items-start gap-2 text-band-2-text dark:text-amber-200">
-                          <Lightbulb className="size-3.5 shrink-0 text-band-2 mt-0.5" aria-hidden="true" />
-                          <p className="leading-relaxed">
-                            <span className="font-semibold text-band-2-text dark:text-amber-200">At-Home Tip: </span>
-                            {practiceFocus.meta.homeTip}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Action bridge linking diagnosis directly to take-home practice */}
+                      {/* Action bridge linking diagnosis directly to take-home practice with comfortable touch target */}
                       <div className="pt-2 border-t border-band-2/20 flex items-center justify-between">
                         <button
                           type="button"
-                          onClick={() => {
-                            const el = document.getElementById("assigned-take-home-section");
-                            el?.scrollIntoView({ behavior: "smooth" });
-                          }}
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-band-2-text dark:text-amber-200 hover:text-amber-900 dark:hover:text-amber-100 hover:underline cursor-pointer group focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-brand-500 rounded py-0.5"
+                          onClick={navigateToTakeHome}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-band-2-text dark:text-amber-200 hover:text-amber-900 dark:hover:text-amber-100 hover:underline cursor-pointer group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded px-1.5 py-1.5 min-h-[40px] sm:min-h-[36px] touch-manipulation"
                         >
                           <span>Practice this skill with take-home sheets</span>
-                          <ChevronRight className="size-3 text-band-2 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+                          <ChevronRight className="size-3.5 text-band-2-text dark:text-amber-200 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
                         </button>
                       </div>
                     </div>
@@ -320,7 +344,7 @@ export function LatestSubmissionCard({
                 size="sm"
                 onClick={() => openWorksheetForCriterion("all")}
                 aria-haspopup="dialog"
-                className="w-full h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium gap-2 border-brand-200 dark:border-brand-900 bg-brand-50/50 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 hover:bg-brand-100/60 dark:hover:bg-brand-900/50 cursor-pointer shadow-xs"
+                className="w-full h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium gap-2 border-brand-200 dark:border-brand-900 bg-brand-50/50 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 hover:bg-brand-100/60 dark:hover:bg-brand-900/50 cursor-pointer shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 touch-manipulation"
               >
                 <Eye className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                 <span>View Worksheet &amp; Guidelines</span>
@@ -360,7 +384,7 @@ export function LatestSubmissionCard({
                   onClick={() => openWorksheetForCriterion(criterion.key)}
                   aria-label={`Inspect ${criterion.label} feedback and worksheet guide lines. Rating: ${bandMeta?.label ?? "Pending"}`}
                   aria-haspopup="dialog"
-                  className="w-full text-left p-3.5 sm:p-4 space-y-2 hover:bg-muted/30 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 transition-colors group cursor-pointer block"
+                  className="w-full text-left p-3.5 sm:p-4 space-y-2 hover:bg-muted/30 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 transition-colors group cursor-pointer block touch-manipulation"
                 >
                   {/* Header Row: Title, Badges, Score, and Inspect Affordance */}
                   <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -422,6 +446,7 @@ export function LatestSubmissionCard({
         compositeScore={latest.scores.composite}
         scoreSource={latest.scoreSource}
         initialCriterion={selectedCriterionForView}
+        initialShowScoreDetails={showScoreDetails}
         scores={latest.scores}
         bands={latest.bands}
         guideLines={latest.guideLines}

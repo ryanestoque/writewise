@@ -9,6 +9,7 @@ interface BandPositionBarProps {
   height?: "sm" | "default";
   className?: string;
   ariaLabel?: string;
+  ariaValueText?: string;
 }
 
 export function BandPositionBar({
@@ -18,6 +19,7 @@ export function BandPositionBar({
   height = "default",
   className,
   ariaLabel,
+  ariaValueText,
 }: BandPositionBarProps) {
   const numericScore =
     typeof score === "number" && !isNaN(score)
@@ -32,6 +34,7 @@ export function BandPositionBar({
           aria-valuenow={numericScore !== null ? Math.round(numericScore) : undefined}
           aria-valuemin={0}
           aria-valuemax={100}
+          aria-valuetext={ariaValueText}
           aria-label={
             ariaLabel ??
             (numericScore !== null
