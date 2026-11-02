@@ -1,12 +1,17 @@
 """Events are emitted by the actual transactional coursework RPCs."""
 
+import asyncio
+import json
+import os
 from datetime import datetime, timezone
 from uuid import uuid4
 
+import asyncpg
 import pytest
 from postgrest.exceptions import APIError
 
 from app.core.supabase import supabase_client as admin
+from tests.rls.notification_support import wait_for_database_lock
 
 
 def notices(activity, kind, student=None):
@@ -242,3 +247,166 @@ def test_release_retry_and_redraft_release(family, event_activity, second_parent
     )
     work(family, event_activity, submission["id"], "release")
     assert len(notices(event_activity, "score_released")) == 4
+
+
+def test_bulk_release_uses_single_emitter_and_retry_is_silent(
+    family, event_activity, second_parent
+):
+    submission = complete(family, record(family, event_activity, role="teacher"))
+    admin.table("measurement").insert(
+        {
+            "submission_id": submission["id"],
+            "raw_output": {},
+            **{
+                f"{criterion}_score": 80
+                for criterion in (
+                    "letter_formation",
+                    "size_consistency",
+                    "spacing",
+                    "slant",
+                    "baseline_alignment",
+                )
+            },
+        }
+    ).execute()
+    parameters = {"actor_id": family["teacher"], "target_activity_id": event_activity}
+    assert admin.rpc("release_activity_results", parameters).execute().data["released_count"] == 1
+    assert admin.rpc("release_activity_results", parameters).execute().data["released_count"] == 0
+    rows = notices(event_activity, "score_released")
+    assert len(rows) == 2
+    assert {row["recipient_id"] for row in rows} == {family["parent"], second_parent["id"]}
+
+
+def test_explicit_pin_prevents_false_resubmission(family, event_activity):
+    first = complete(family, record(family, event_activity))
+    second = complete(family, record(family, event_activity))
+    work(family, event_activity, second["id"], "return", reason="incomplete")
+    admin.rpc(
+        "mutate_student_work",
+        {
+            "actor_id": family["teacher"],
+            "target_activity_id": event_activity,
+            "target_student_id": family["students"][0],
+            "operation": "update",
+            "payload": {"pinned_submission_id": first["id"]},
+        },
+    ).execute()
+    complete(family, record(family, event_activity))
+    assert notices(event_activity, "resubmitted_after_return") == []
+
+
+def test_return_notice_failure_rolls_back_work_and_delivery(family, event_activity):
+    submission = complete(family, record(family, event_activity, role="teacher"))
+
+    async def exercise():
+        connection = await asyncpg.connect(os.environ["SUPABASE_DB_URL"])
+        transaction = connection.transaction()
+        await transaction.start()
+        try:
+            await connection.execute(
+                "create function pg_temp.fail_return_notice() returns trigger "
+                "language plpgsql as $$ "
+                "begin raise exception 'synthetic_return_failure'; end $$; "
+                "create trigger fail_return_notice before insert on public.notification "
+                "for each row execute function pg_temp.fail_return_notice()"
+            )
+            with pytest.raises(asyncpg.PostgresError, match="synthetic_return_failure"):
+                async with connection.transaction():
+                    await connection.fetchval(
+                        "select public.mutate_student_work($1,$2,$3,'return',$4::jsonb)",
+                        family["teacher"],
+                        event_activity,
+                        family["students"][0],
+                        json.dumps({"submission_id": submission["id"], "reason": "incomplete"}),
+                    )
+            assert (
+                await connection.fetchval(
+                    "select status::text from public.submission where id=$1", submission["id"]
+                )
+                == "completed"
+            )
+            assert (
+                await connection.fetchval(
+                    "select count(*) from writewise_internal.notification_delivery "
+                    "where activity_id=$1 and dedupe_key like 'submission_returned:%'",
+                    event_activity,
+                )
+                == 0
+            )
+        finally:
+            await transaction.rollback()
+            await connection.close()
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("change_targets", [False, True])
+def test_concurrent_roster_move_does_not_become_an_assignment_event(
+    family, assigned_activity, change_targets
+):
+    activity, student = assigned_activity["id"], family["students"][1]
+    payload = (
+        {"assignments": assigned_activity["assignments"]}
+        if change_targets
+        else {"title": "Updated title"}
+    )
+    assert notices(activity, "activity_assigned", student) == []
+
+    async def exercise():
+        locker, worker, observer = [
+            await asyncpg.connect(os.environ["SUPABASE_DB_URL"]) for _ in range(3)
+        ]
+        lock_transaction, work_transaction = locker.transaction(), worker.transaction()
+        await lock_transaction.start()
+        await work_transaction.start()
+        task = None
+        lock_key = int(uuid4().hex[:14], 16)
+        try:
+            await locker.execute("select pg_advisory_xact_lock($1::bigint)", lock_key)
+            await worker.execute(
+                "create function pg_temp.pause_activity_edit() returns trigger "
+                "language plpgsql as $$ "
+                "begin perform pg_advisory_xact_lock(TG_ARGV[0]::bigint); return NEW; end $$; "
+                "create trigger pause_activity_edit before update on public.activity "
+                f"for each row execute function pg_temp.pause_activity_edit('{lock_key}')"
+            )
+            task = asyncio.create_task(
+                worker.fetchval(
+                    "select public.update_assigned_activity($1,$2,$3::jsonb)",
+                    family["teacher"],
+                    activity,
+                    json.dumps(payload),
+                )
+            )
+            await wait_for_database_lock(observer, worker.get_server_pid())
+            admin.table("student").update({"section_id": family["sections"][0]}).eq(
+                "id", student
+            ).execute()
+            await lock_transaction.commit()
+            await task
+            assert (
+                await worker.fetchval(
+                    "select count(*) from public.notification where activity_id=$1 "
+                    "and student_id=$2 and type='activity_assigned'",
+                    activity,
+                    student,
+                )
+                == 0
+            )
+        finally:
+            if task and not task.done():
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+            if worker.is_in_transaction():
+                await work_transaction.rollback()
+            if locker.is_in_transaction():
+                await lock_transaction.rollback()
+            for connection in (locker, worker, observer):
+                await connection.close()
+
+    try:
+        asyncio.run(exercise())
+    finally:
+        admin.table("student").update({"section_id": family["sections"][1]}).eq(
+            "id", student
+        ).execute()

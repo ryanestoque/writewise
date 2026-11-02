@@ -7,6 +7,7 @@ declare
   w public.student_work;
   s public.submission;
   selected uuid;
+  new_release boolean;
 begin
   a := writewise_internal.authorize_work(actor_id, target_activity_id, target_student_id);
   w := writewise_internal.lock_work(target_activity_id, target_student_id);
@@ -61,8 +62,13 @@ begin
       or not writewise_internal.is_graded(s.id) then
       raise exception using errcode = 'WW410', message = 'Attempt cannot be released';
     end if;
+    new_release := s.released_at is null;
     update public.submission set released_at = coalesce(released_at, now())
       where id = s.id returning * into s;
+    if new_release then
+      perform writewise_internal.notify_work_parents('score_released', s.activity_id,
+        s.student_id, s.id, s.id::text || ':' || writewise_internal.notification_epoch_us(s.released_at));
+    end if;
     return jsonb_build_object('submission_id', s.id, 'released_at', s.released_at);
   end if;
   raise exception using errcode = 'WW422', message = 'Invalid work operation';

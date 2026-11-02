@@ -11,7 +11,7 @@ from postgrest.exceptions import APIError
 from supabase import create_client
 
 from app.core.supabase import supabase_client as admin
-from tests.rls.notification_support import db_value
+from tests.rls.notification_support import db_value, wait_for_database_lock
 
 
 def seed_notice(family, activity, recipient=None):
@@ -123,7 +123,7 @@ def test_failed_notice_rolls_back_delivery_claim(family, assigned_activity):
                 "create trigger fail_notice before insert on public.notification "
                 "for each row execute function pg_temp.fail_notice()"
             )
-            with pytest.raises(asyncpg.PostgresError):
+            with pytest.raises(asyncpg.PostgresError, match="synthetic failure"):
                 async with connection.transaction():
                     await connection.fetchval(
                         "select writewise_internal.put_notification($1,'activity_assigned',"
@@ -234,3 +234,50 @@ def test_all_read_counts_only_unread_recipient_rows(family, assigned_activity, s
     assert admin.table("notification").select("read_at").eq("id", foreign["id"]).execute().data == [
         {"read_at": None}
     ]
+
+
+def test_read_all_leaves_notification_inserted_while_waiting_unread(
+    family, assigned_activity, second_parent
+):
+    recipient = second_parent["id"]
+    admin.table("notification").delete().eq("recipient_id", recipient).execute()
+    old = seed_notice(family, assigned_activity["id"], recipient)
+
+    async def exercise():
+        locker, worker, observer = [
+            await asyncpg.connect(os.environ["SUPABASE_DB_URL"]) for _ in range(3)
+        ]
+        transaction = locker.transaction()
+        await transaction.start()
+        task = None
+        try:
+            await locker.execute(
+                "select id from public.notification where id=$1 for update", old["id"]
+            )
+            task = asyncio.create_task(
+                worker.fetchval("select public.mark_all_notifications_read($1)", recipient)
+            )
+            await wait_for_database_lock(observer, worker.get_server_pid())
+            new = seed_notice(family, assigned_activity["id"], recipient)
+            await transaction.commit()
+            await task
+            assert admin.table("notification").select("read_at").eq(
+                "id", new["id"]
+            ).execute().data == [{"read_at": None}]
+            assert (
+                admin.table("notification")
+                .select("read_at")
+                .eq("id", old["id"])
+                .execute()
+                .data[0]["read_at"]
+                is not None
+            )
+        finally:
+            if task and not task.done():
+                task.cancel()
+            if locker.is_in_transaction():
+                await transaction.rollback()
+            for connection in (locker, worker, observer):
+                await connection.close()
+
+    asyncio.run(exercise())

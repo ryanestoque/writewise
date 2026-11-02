@@ -8,7 +8,7 @@ import asyncpg
 import pytest
 
 from app.core.supabase import supabase_client as admin
-from tests.rls.notification_support import db_value
+from tests.rls.notification_support import db_value, wait_for_database_lock
 
 NOW = datetime(2030, 1, 1, 12, tzinfo=timezone.utc)
 SWEEP = "select writewise_internal.enqueue_time_based_notifications_at($1)"
@@ -35,11 +35,14 @@ def count(activity, student, kind):
         (timedelta(microseconds=-1), 0, 1),
     ],
 )
-def test_exact_deadline_boundaries_without_jwt(family, assigned_activity, offset, soon, missing):
+@pytest.mark.parametrize("take_home", [True, False])
+def test_exact_deadline_boundaries_without_jwt(
+    family, assigned_activity, offset, soon, missing, take_home
+):
     activity, student = assigned_activity["id"], family["students"][0]
-    admin.table("activity").update({"due_at": (NOW + offset).isoformat()}).eq(
-        "id", activity
-    ).execute()
+    admin.table("activity").update(
+        {"due_at": (NOW + offset).isoformat(), "is_take_home": take_home}
+    ).eq("id", activity).execute()
     db_value(SWEEP, NOW)
     db_value(SWEEP, NOW)
     assert count(activity, student, "due_soon") == soon
@@ -159,3 +162,55 @@ def test_one_named_private_cron_job():
         "select has_function_privilege('authenticated', "
         "'writewise_internal.enqueue_time_based_notifications()', 'EXECUTE')"
     )
+
+
+def test_completion_committed_before_sweep_lock_suppresses_reminder(family, assigned_activity):
+    from uuid import uuid4
+
+    activity, student = assigned_activity["id"], family["students"][0]
+    admin.table("activity").update({"due_at": NOW.isoformat()}).eq("id", activity).execute()
+    submission = (
+        admin.table("submission")
+        .insert(
+            {
+                "activity_id": activity,
+                "student_id": student,
+                "image_path": f"{student}/{uuid4()}.jpg",
+                "status": "processing",
+                "uploader_id": family["teacher"],
+                "uploader_role": "teacher",
+            }
+        )
+        .execute()
+        .data[0]["id"]
+    )
+
+    async def exercise():
+        locker, worker, observer = [
+            await asyncpg.connect(os.environ["SUPABASE_DB_URL"]) for _ in range(3)
+        ]
+        transaction = locker.transaction()
+        await transaction.start()
+        task = None
+        try:
+            await locker.execute("select id from public.activity where id=$1 for update", activity)
+            task = asyncio.create_task(worker.fetchval(SWEEP, NOW))
+            await wait_for_database_lock(observer, worker.get_server_pid())
+            await locker.fetchval(
+                "select public.complete_student_submission($1,$2)", family["teacher"], submission
+            )
+            await transaction.commit()
+            await task
+            assert count(activity, student, "due_soon") == 0
+        finally:
+            if task and not task.done():
+                task.cancel()
+            if locker.is_in_transaction():
+                await transaction.rollback()
+            for connection in (locker, worker, observer):
+                await connection.close()
+
+    try:
+        asyncio.run(exercise())
+    finally:
+        admin.table("submission").delete().eq("id", submission).execute()
