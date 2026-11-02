@@ -290,6 +290,7 @@ create function public.record_student_submission(
   actor_id uuid, target_activity_id uuid, target_student_id uuid, payload jsonb
 ) returns jsonb language plpgsql security invoker set search_path = '' as $$
 declare a public.activity; w public.student_work; s public.submission; due timestamptz;
+  accepted timestamptz;
 begin
   select * into a from public.activity where id = target_activity_id for update;
   if not found or not exists (select 1 from public.teacher_student ts
@@ -311,17 +312,20 @@ begin
   end if;
   w := writewise_internal.lock_work(target_activity_id, target_student_id);
   due := coalesce(w.due_at_override, a.due_at);
-  if payload->>'uploader_role' = 'parent' and a.close_after_due and now() > due then
+  -- Only the backend service can supply this timestamp, captured before CV/Storage work.
+  accepted := coalesce((payload->>'accepted_at')::timestamptz, now());
+  if payload->>'uploader_role' = 'parent' and a.close_after_due and accepted > due then
     raise exception using errcode = 'WW411', message = 'Submissions closed';
   end if;
   if payload->>'status' not in ('processing', 'rejected') then
     raise exception using errcode = 'WW422', message = 'Invalid initial status';
   end if;
   insert into public.submission(id, activity_id, student_id, image_path, status,
-    uploader_id, uploader_role, rejection_code, rejection_details)
+    uploader_id, uploader_role, rejection_code, rejection_details, created_at)
   values ((payload->>'id')::uuid, target_activity_id, target_student_id, payload->>'image_path',
     (payload->>'status')::public.submission_status, actor_id,
-    (payload->>'uploader_role')::public.user_role, payload->>'rejection_code', payload->'rejection_details')
+    (payload->>'uploader_role')::public.user_role, payload->>'rejection_code', payload->'rejection_details',
+    accepted)
   returning * into s;
   return to_jsonb(s);
 end;

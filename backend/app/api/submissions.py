@@ -227,7 +227,8 @@ async def create_submission(
             detail={"code": "FORBIDDEN", "message": "Invalid role.", "details": {}},
         )
 
-    assert_upload_allowed(activity_row, student_id, caller_role, datetime.now(timezone.utc))
+    accepted_at = datetime.now(timezone.utc)
+    assert_upload_allowed(activity_row, student_id, caller_role, accepted_at)
 
     # 5. Image hardening: magic-byte check, decompression-bomb cap, EXIF strip
     hardened_bytes = validate_and_harden_image(file_bytes)
@@ -362,6 +363,7 @@ async def create_submission(
                 "rejection_code": rejection["code"] if rejection else None,
                 "rejection_details": rejection["message"] if rejection else None,
                 "uploader_role": caller_role,
+                "accepted_at": accepted_at.isoformat(),
             },
         },
         client=supabase_client,

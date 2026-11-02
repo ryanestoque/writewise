@@ -369,6 +369,8 @@ Database-free tests live in `tests/unit/test_submission_contracts.py`, `test_sub
 
 CI additionally resets to the last Slice 1 migration and runs `tests/migrations/release_upgrade_check.py prepare`, applies the new migrations, then runs `verify`. This proves old parent-visible results remain released and the first new upload is draft. The existing legacy assignment upgrade proof remains. Database types are generated from that migrated local stack, uploaded as a CI artifact, and compared with the committed contract. Security advisors run with `--local --type security --level warn --fail-on error`.
 
+Deadline regressions exercise both the real record RPC and the HTTP upload route: an upload accepted exactly at due is persisted with its acceptance timestamp even when processing ends after closure. A quality-rejected attempt is retained, and a completed attempt is not marked Late. The RPC regression was first observed failing with `WW411` before the acceptance-time fix.
+
 On this Windows host, Docker/Podman is unavailable; the user authorized publishing `feat/phase3-return-release` to `ryanestoque/writewise` and using its ephemeral CI stack. Never substitute a hosted dev/prod database for test resets. The implementation tracker records dated CI and local check results separately from deployment/manual QA.
 
 Required signed-in manual QA:

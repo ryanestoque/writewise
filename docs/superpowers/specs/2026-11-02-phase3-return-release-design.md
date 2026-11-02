@@ -82,6 +82,8 @@ Status precedence for this slice is:
 
 Late is an additional badge when the active attempt's upload time is strictly after effective due. At the exact due instant, submissions remain accepted and work is not yet Missing. Processing and quality-gate rejection remain separately visible feedback and do not become competing stored work statuses.
 
+FastAPI captures the upload's acceptance time before image hardening, CV, and Storage work. The service-only record transaction uses that timestamp for closure and `created_at`, so processing across the deadline cannot reject an accepted upload or add a Late badge. Current authorization, assignment, and effective due are still rechecked under the transaction lock; clients cannot supply the acceptance timestamp.
+
 ## 5. Authorization and transactions
 
 FastAPI establishes the current teacher, owning activity, and roster relationship before every write. An unowned or missing resource returns `NOT_FOUND`. Teacher actions on historical work may continue when a submission exists for that owned activity/student pair even if a section move removed the current assignment; otherwise the pair must currently be assigned. Parent uploads always retain the existing current-assignment and take-home requirements.
