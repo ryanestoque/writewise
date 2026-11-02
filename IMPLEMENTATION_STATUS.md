@@ -203,7 +203,7 @@ Local Ruff, ESLint and TypeScript checks passed using installed-tool equivalents
 
 **Dependency:** Slice ①. **Status: Not started.**
 
-**Design preparation (2026-11-02):** User approved proceeding with Slice 2. The repository audit and [return/release design](docs/superpowers/specs/2026-11-02-phase3-return-release-design.md) are prepared for review. The draft covers parent upload-response redaction, both score-table release policies, shared active-attempt selection, atomic lifecycle changes, historical-result backfill, and research compatibility. It proposes an explicit resolution of older-attempt fallback after Return; application implementation and verification have not started.
+**Design preparation (2026-11-02):** User approved proceeding with Slice 2. The repository audit and [return/release design](docs/superpowers/specs/2026-11-02-phase3-return-release-design.md) are prepared for review. The draft covers parent upload-response redaction, both score-table release policies, shared active-attempt selection, atomic lifecycle changes, historical-result backfill, and research compatibility. The user confirmed that Return keeps work Returned/Missing until a new completed upload, with an explicit teacher pin permitting an older attempt. Full written-spec approval, application implementation, and verification remain pending.
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|

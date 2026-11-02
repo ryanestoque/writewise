@@ -30,9 +30,9 @@ Use the existing FastAPI authorization plus service-only transactional database 
 
 Use an RLS-respecting `active_submission` view as the only selector of counted attempts. A second view, `activity_work_state`, supplies the assigned student's effective due date and role-appropriate status even when no upload or stored `student_work` row exists. A frontend-only selector would leave dashboards, exports, and release eligibility with different answers.
 
-### 3.1 Proposed resolution of the return/fallback ambiguity
+### 3.1 Confirmed return/fallback decision
 
-The original proposal combines latest-completed fallback with a Returned state. This design proposes the following explicit refinement, submitted to the user as a choice before implementation:
+The original proposal combines latest-completed fallback with a Returned state. On 2026-11-02, the user selected: "Keep the work Returned/Missing until a new completed upload; the teacher may explicitly pin an older attempt." The following selection details implement that decision and remain part of the written-spec review:
 
 - A Return prevents automatic fallback to completed attempts uploaded before the returned attempt.
 - A newer completed upload becomes active. A newer processing or rejected upload does not satisfy the resubmission request; its feedback appears separately.
@@ -41,7 +41,7 @@ The original proposal combines latest-completed fallback with a Returned state. 
 
 The selection order is: a valid pinned completed attempt; otherwise the newest completed attempt newer than the newest returned attempt in upload order; otherwise no active attempt. Upload order is `(created_at DESC, id DESC)` and is deterministic when timestamps tie. The return barrier uses the returned attempt's upload order, rather than its `returned_at`, so returning an old upload cannot invalidate work uploaded afterward. All completed attempts qualify when no returned attempt exists.
 
-This proposed rule is a product clarification, not a claim that §3.3 of the original proposal already states it. The user's written-spec approval will accept this rule or replace it with the alternative they select.
+The core return/fallback choice is confirmed. It clarifies §3.3 of the original proposal; full written-spec approval is still pending.
 
 ## 4. Data contract
 
@@ -168,6 +168,6 @@ No standalone Docker/Podman or Supabase CLI was found on this host during the in
 
 ## 13. Review and implementation handoff
 
-Review this written contract, particularly §3.1 (Return prevents automatic older-attempt fallback), §4.1 (previously released returned scores remain readable in history), §5 (editing a released rubric creates a draft), and §6 (the existing deletion rule remains authoritative).
+The user has confirmed the core return/fallback choice in §3.1. Review the remaining written contract, particularly §4.1 (previously released returned scores remain readable in history), §5 (editing a released rubric creates a draft), and §6 (the existing deletion rule remains authoritative).
 
 After user approval, create the detailed implementation plan using `writing-plans`, arrange feature-branch isolation without losing the pending Slice 1 status update, then implement and verify each dependency in order. This design file does not claim implementation, database verification, merge, or deployment.
