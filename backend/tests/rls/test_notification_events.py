@@ -373,6 +373,12 @@ def test_notice_failure_rolls_back_entire_coursework_mutation(family, event_acti
         transaction = connection.transaction()
         await transaction.start()
         try:
+            # Match the backend service SDK's JWT context for the caller-scoped
+            # assignment check, while retaining owner access for test-only DDL.
+            await connection.execute(
+                "select set_config('request.jwt.claims', $1, true)",
+                json.dumps({"role": "service_role"}),
+            )
 
             async def state():
                 # Compare persisted work and delivery evidence, not just the error.
