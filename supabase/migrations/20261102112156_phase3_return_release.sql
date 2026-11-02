@@ -148,31 +148,32 @@ create schema writewise_internal;
 revoke all on schema writewise_internal from public, anon, authenticated;
 grant usage on schema writewise_internal to service_role;
 
-create function writewise_internal.authorize_work(actor_id uuid, activity uuid, student uuid)
+create function writewise_internal.authorize_work(actor_id uuid, work_activity uuid, work_student uuid)
 returns public.activity language plpgsql security invoker set search_path = '' as $$
 declare a public.activity;
 begin
   -- Every lifecycle path locks activity first, then student work. Bulk uses the same order.
-  select * into a from public.activity where id = activity and created_by = actor_id for update;
+  select * into a from public.activity where id = work_activity and created_by = actor_id for update;
   if not found or not exists (select 1 from public.teacher_student ts
-                             where ts.teacher_id = actor_id and ts.student_id = student) then
+                             where ts.teacher_id = actor_id and ts.student_id = work_student) then
     raise exception using errcode = 'WW404', message = 'Work not found';
   end if;
-  if not public.is_assigned(activity, student) and not exists (
-    select 1 from public.submission s where s.activity_id = activity and s.student_id = student
+  if not public.is_assigned(work_activity, work_student) and not exists (
+    select 1 from public.submission s
+    where s.activity_id = work_activity and s.student_id = work_student
   ) then raise exception using errcode = 'WW404', message = 'Work not found'; end if;
   return a;
 end;
 $$;
 
-create function writewise_internal.lock_work(activity uuid, student uuid)
+create function writewise_internal.lock_work(work_activity uuid, work_student uuid)
 returns public.student_work language plpgsql security invoker set search_path = '' as $$
 declare w public.student_work;
 begin
-  insert into public.student_work(activity_id, student_id) values (activity, student)
+  insert into public.student_work(activity_id, student_id) values (work_activity, work_student)
     on conflict (activity_id, student_id) do nothing;
   select * into w from public.student_work
-    where activity_id = activity and student_id = student for update;
+    where activity_id = work_activity and student_id = work_student for update;
   return w;
 end;
 $$;

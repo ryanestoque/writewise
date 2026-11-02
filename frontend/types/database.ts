@@ -188,6 +188,27 @@ export type Database = {
             foreignKeyName: "manual_score_submission_id_fkey"
             columns: ["submission_id"]
             isOneToOne: true
+            referencedRelation: "active_submission"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manual_score_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["active_submission_id"]
+          },
+          {
+            foreignKeyName: "manual_score_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["latest_submission_id"]
+          },
+          {
+            foreignKeyName: "manual_score_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
             referencedRelation: "submission"
             referencedColumns: ["id"]
           },
@@ -270,6 +291,27 @@ export type Database = {
           word_spacing_std?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "measurement_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "active_submission"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "measurement_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["active_submission_id"]
+          },
+          {
+            foreignKeyName: "measurement_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["latest_submission_id"]
+          },
           {
             foreignKeyName: "measurement_submission_id_fkey"
             columns: ["submission_id"]
@@ -406,6 +448,73 @@ export type Database = {
           },
         ]
       }
+      student_work: {
+        Row: {
+          activity_id: string
+          due_at_override: string | null
+          pinned_submission_id: string | null
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          activity_id: string
+          due_at_override?: string | null
+          pinned_submission_id?: string | null
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          activity_id?: string
+          due_at_override?: string | null
+          pinned_submission_id?: string | null
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_work_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_work_pinned_submission_id_fkey"
+            columns: ["pinned_submission_id"]
+            isOneToOne: false
+            referencedRelation: "active_submission"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_work_pinned_submission_id_fkey"
+            columns: ["pinned_submission_id"]
+            isOneToOne: false
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["active_submission_id"]
+          },
+          {
+            foreignKeyName: "student_work_pinned_submission_id_fkey"
+            columns: ["pinned_submission_id"]
+            isOneToOne: false
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["latest_submission_id"]
+          },
+          {
+            foreignKeyName: "student_work_pinned_submission_id_fkey"
+            columns: ["pinned_submission_id"]
+            isOneToOne: false
+            referencedRelation: "submission"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_work_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       submission: {
         Row: {
           activity_id: string
@@ -414,6 +523,11 @@ export type Database = {
           image_path: string
           rejection_code: string | null
           rejection_details: Json | null
+          released_at: string | null
+          return_note: string | null
+          return_reason: Database["public"]["Enums"]["return_reason"] | null
+          returned_at: string | null
+          returned_by: string | null
           status: Database["public"]["Enums"]["submission_status"]
           student_id: string
           updated_at: string
@@ -427,6 +541,11 @@ export type Database = {
           image_path: string
           rejection_code?: string | null
           rejection_details?: Json | null
+          released_at?: string | null
+          return_note?: string | null
+          return_reason?: Database["public"]["Enums"]["return_reason"] | null
+          returned_at?: string | null
+          returned_by?: string | null
           status?: Database["public"]["Enums"]["submission_status"]
           student_id: string
           updated_at?: string
@@ -440,6 +559,11 @@ export type Database = {
           image_path?: string
           rejection_code?: string | null
           rejection_details?: Json | null
+          released_at?: string | null
+          return_note?: string | null
+          return_reason?: Database["public"]["Enums"]["return_reason"] | null
+          returned_at?: string | null
+          returned_by?: string | null
           status?: Database["public"]["Enums"]["submission_status"]
           student_id?: string
           updated_at?: string
@@ -452,6 +576,13 @@ export type Database = {
             columns: ["activity_id"]
             isOneToOne: false
             referencedRelation: "activity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submission_returned_by_fkey"
+            columns: ["returned_by"]
+            isOneToOne: false
+            referencedRelation: "teacher"
             referencedColumns: ["id"]
           },
           {
@@ -522,9 +653,105 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      active_submission: {
+        Row: {
+          activity_id: string | null
+          created_at: string | null
+          id: string | null
+          image_path: string | null
+          rejection_code: string | null
+          rejection_details: Json | null
+          released_at: string | null
+          return_note: string | null
+          return_reason: Database["public"]["Enums"]["return_reason"] | null
+          returned_at: string | null
+          returned_by: string | null
+          status: Database["public"]["Enums"]["submission_status"] | null
+          student_id: string | null
+          updated_at: string | null
+          uploader_id: string | null
+          uploader_role: Database["public"]["Enums"]["user_role"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submission_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submission_returned_by_fkey"
+            columns: ["returned_by"]
+            isOneToOne: false
+            referencedRelation: "teacher"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submission_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activity_work_state: {
+        Row: {
+          active_created_at: string | null
+          active_submission_id: string | null
+          activity_id: string | null
+          due_at_override: string | null
+          effective_due_at: string | null
+          late: boolean | null
+          latest_rejection_code: string | null
+          latest_status: Database["public"]["Enums"]["submission_status"] | null
+          latest_submission_id: string | null
+          pinned_submission_id: string | null
+          released_at: string | null
+          return_note: string | null
+          return_reason: Database["public"]["Enums"]["return_reason"] | null
+          returned_at: string | null
+          student_id: string | null
+          work_status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_work_pinned_submission_id_fkey"
+            columns: ["pinned_submission_id"]
+            isOneToOne: false
+            referencedRelation: "active_submission"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_work_pinned_submission_id_fkey"
+            columns: ["pinned_submission_id"]
+            isOneToOne: false
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["active_submission_id"]
+          },
+          {
+            foreignKeyName: "student_work_pinned_submission_id_fkey"
+            columns: ["pinned_submission_id"]
+            isOneToOne: false
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["latest_submission_id"]
+          },
+          {
+            foreignKeyName: "student_work_pinned_submission_id_fkey"
+            columns: ["pinned_submission_id"]
+            isOneToOne: false
+            referencedRelation: "submission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      complete_student_submission: {
+        Args: { actor_id: string; target_submission_id: string }
+        Returns: Json
+      }
       create_assigned_activity: {
         Args: { actor_id: string; payload: Json }
         Returns: Json
@@ -541,18 +768,51 @@ export type Database = {
         Args: { target_student_id: string }
         Returns: boolean
       }
+      mutate_student_work: {
+        Args: {
+          actor_id: string
+          operation: string
+          payload: Json
+          target_activity_id: string
+          target_student_id: string
+        }
+        Returns: Json
+      }
+      record_student_submission: {
+        Args: {
+          actor_id: string
+          payload: Json
+          target_activity_id: string
+          target_student_id: string
+        }
+        Returns: Json
+      }
+      release_activity_results: {
+        Args: { actor_id: string; target_activity_id: string }
+        Returns: Json
+      }
+      save_manual_submission_score: {
+        Args: { actor_id: string; payload: Json; target_submission_id: string }
+        Returns: Json
+      }
       update_assigned_activity: {
         Args: { actor_id: string; payload: Json; target_activity_id: string }
         Returns: Json
       }
     }
     Enums: {
+      return_reason:
+        | "wrong_worksheet"
+        | "blurry_or_cropped"
+        | "wrong_target_text"
+        | "incomplete"
+        | "other"
       score_band:
         | "needs_improvement"
         | "developing"
         | "satisfactory"
         | "excellent"
-      submission_status: "processing" | "completed" | "rejected"
+      submission_status: "processing" | "completed" | "rejected" | "returned"
       user_role: "teacher" | "parent"
     }
     CompositeTypes: {
@@ -684,13 +944,20 @@ export const Constants = {
   },
   public: {
     Enums: {
+      return_reason: [
+        "wrong_worksheet",
+        "blurry_or_cropped",
+        "wrong_target_text",
+        "incomplete",
+        "other",
+      ],
       score_band: [
         "needs_improvement",
         "developing",
         "satisfactory",
         "excellent",
       ],
-      submission_status: ["processing", "completed", "rejected"],
+      submission_status: ["processing", "completed", "rejected", "returned"],
       user_role: ["teacher", "parent"],
     },
   },
