@@ -65,6 +65,7 @@ import {
 import { SubmissionRejectionCard } from "./submission-rejection-card";
 import { RawMeasurementsTable } from "./raw-measurements-table";
 import { getScoreBandLabel } from "@/lib/utils/submission-status";
+import { useScoringEngine } from "@/lib/hooks/use-scoring-engine";
 
 
 
@@ -119,6 +120,11 @@ export function SubmissionDetailContent({
   variant,
 }: SubmissionDetailContentProps) {
   const { openUpload } = useTeacherModals();
+  const scoringEngine = useScoringEngine();
+  const canEditRubric =
+    scoringEngine.isSuccess &&
+    !scoringEngine.isFetching &&
+    scoringEngine.data === "manual";
   const [isScrolledPastInspector, setIsScrolledPastInspector] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -510,7 +516,9 @@ export function SubmissionDetailContent({
     activeCriterionInfo &&
     (hasCalibratedScores ||
       phase1Tab === "metrics" ||
-      (phase1Tab === "rubric" && submission.manual_score && !isEditingRubric))
+      (phase1Tab === "rubric" &&
+        submission.manual_score &&
+        (!isEditingRubric || !canEditRubric)))
   );
 
   // Reusable actions toolbar (Delete attempt + student navigation carousel)
@@ -1089,7 +1097,7 @@ export function SubmissionDetailContent({
                         aria-labelledby="phase1-tab-rubric"
                         className="space-y-2.5"
                       >
-                        {submission.manual_score && !isEditingRubric ? (
+                        {submission.manual_score && (!isEditingRubric || !canEditRubric) ? (
                           /* READ-ONLY / CONFIRMED RUBRIC STATE */
                           <div className="p-2.5 sm:p-3 rounded-xl bg-surface dark:bg-card border border-border/80 shadow-xs space-y-2">
                             <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/60">
@@ -1123,18 +1131,20 @@ export function SubmissionDetailContent({
                                   </Badge>
                                 )}
                               </div>
-                              <Button
-                                ref={editButtonRef}
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setIsEditingRubric(true)}
-                                className="h-9 sm:h-7 min-h-[38px] sm:min-h-0 px-3 sm:px-2.5 text-xs text-brand-800 dark:text-brand-200 border-brand-300 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 gap-1.5 cursor-pointer touch-manipulation shrink-0 font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
-                                aria-label="Edit recorded rubric scores"
-                              >
-                                <Edit3 className="size-3" aria-hidden="true" />
-                                <span>Edit</span>
-                              </Button>
+                              {canEditRubric && (
+                                <Button
+                                  ref={editButtonRef}
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setIsEditingRubric(true)}
+                                  className="h-9 sm:h-7 min-h-[38px] sm:min-h-0 px-3 sm:px-2.5 text-xs text-brand-800 dark:text-brand-200 border-brand-300 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 gap-1.5 cursor-pointer touch-manipulation shrink-0 font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                                  aria-label="Edit recorded rubric scores"
+                                >
+                                  <Edit3 className="size-3" aria-hidden="true" />
+                                  <span>Edit</span>
+                                </Button>
+                              )}
                             </div>
 
                             <div className="space-y-1 pt-0.5" role="group" aria-label="Recorded criterion breakdown">
@@ -1247,7 +1257,7 @@ export function SubmissionDetailContent({
                               })}
                             </div>
                           </div>
-                        ) : (
+                        ) : canEditRubric ? (
                           /* INTERACTIVE RUBRIC ENTRY FORM */
                           <ManualRubricEntryForm
                             key={submission.id}
@@ -1273,6 +1283,14 @@ export function SubmissionDetailContent({
                               }
                             }}
                           />
+                        ) : (
+                          <p className="rounded-xl border border-border/80 bg-surface p-3 text-xs text-muted-foreground dark:bg-card">
+                            {scoringEngine.isPending || scoringEngine.isFetching
+                              ? "Checking the active scoring mode…"
+                              : scoringEngine.isError
+                              ? "Rubric editing is unavailable because the scoring mode could not be confirmed."
+                              : "Manual rubric scoring is unavailable while calibrated scoring is active."}
+                          </p>
                         )}
                       </div>
                     )}

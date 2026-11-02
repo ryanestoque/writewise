@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-01 (Slice 1 implementation and CI evidence; signed-in portal QA pending)
+**Last updated:** 2026-11-02 (Slice 1 implementation and CI evidence; signed-in portal QA pending; local Phase 2 teacher rubric UI gate)
 
 ## Summary
 
@@ -144,7 +144,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 | Item | Status | Blocked Reason | Doc Pointer |
 |---|---|---|---|
 | ScoreProvider abstraction (`ManualScoreProvider` & `CalibratedScoreProvider`) | Done | Built in `backend/app/scoring/`, integrated with `create_submission` | ARCHITECTURE §10, ML_PIPELINE §6.5 |
-| Activate calibrated scoring; verify manual-score entry UI gating | Ready / Activation unverified | Stage 2 training and artifact export are recorded Done above, so the former calibration blocker is stale. Deployed `SCORING_ENGINE`, successful artifact loading, and the integrated scoring flow still need runtime confirmation. Preserve historical manual scores for calibration/export. | PRD §5, DATABASE §9.1 |
+| Activate calibrated scoring; verify manual-score entry UI gating | Deployed scoring verified / UI gate deployment pending | Stage 2 training and artifact export are recorded Done above. User reported local UI checks and a worksheet upload with persisted scores visible in teacher and parent views working on 2026-11-02. User also reported the deployed `writewise.tech` upload and teacher/parent score flow working on 2026-11-02, and confirmed its `environment=dev` configuration is deliberate. Screenshots of local and public `/api/health` show `scoring_engine=calibrated` and `model_stub=false`. The new teacher UI gate is implemented and locally checked; deployment of that specific change is not yet evidenced. Preserve historical manual scores for calibration/export. | PRD §5, DATABASE §9.1 |
 
 ---
 
