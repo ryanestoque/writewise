@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { BandBadge } from "@/components/shared/band-badge";
 import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { WorksheetViewDialog } from "./worksheet-view-dialog";
+import { PendingWorksheetDialog } from "./pending-worksheet-dialog";
+import { Badge } from "@/components/ui/badge";
 import { PARENT_CRITERIA_LIST } from "@/lib/utils/scoring";
 import type { StudentScoreHistoryItem } from "@/lib/hooks/use-dashboard";
 import type { CriterionFilter } from "@/components/shared/diagnostic-overlay";
@@ -60,16 +62,20 @@ export function SubmissionHistoryDialog({
   // Build items with permanent chronological attempt numbers & previous-attempt deltas
   const processedHistory = useMemo(() => {
     // history is in chronological order (earliest = index 0)
+    let previousActiveScore: number | null = null;
+    const countedItems = history.filter((item) => item.isActiveAttempt && !!item.releasedAt && item.compositeScore != null);
     const items = history.map((item, idx) => {
-      const prevItem = idx > 0 ? history[idx - 1] : null;
+      const counted = !!item.isActiveAttempt && !!item.releasedAt && item.compositeScore != null;
       const currentScore = item.compositeScore;
-      const prevScore = prevItem?.compositeScore;
+      const prevScore = previousActiveScore;
       const delta =
-        currentScore != null && prevScore != null ? currentScore - prevScore : null;
+        counted && currentScore != null && prevScore != null ? currentScore - prevScore : null;
+      const isBaseline = counted && prevScore == null && countedItems.length > 1;
+      if (counted) previousActiveScore = currentScore;
       return {
         ...item,
         attemptNumber: idx + 1,
-        isBaseline: idx === 0 && history.length > 1,
+        isBaseline,
         delta,
       };
     });
@@ -80,7 +86,7 @@ export function SubmissionHistoryDialog({
 
   // Restore scroll position and keyboard focus when returning from the worksheet photo viewer
   useEffect(() => {
-    if (!isViewingWorksheet && scrollContainerRef.current && savedScrollTopRef.current > 0) {
+    if (!isViewingWorksheet && scrollContainerRef.current) {
       const scrollEl = scrollContainerRef.current;
       const targetScroll = savedScrollTopRef.current;
       requestAnimationFrame(() => {
@@ -163,9 +169,10 @@ export function SubmissionHistoryDialog({
 
   // Compute longitudinal trajectory from earliest to latest attempt
   const overallStats = useMemo(() => {
-    if (history.length < 2) return null;
-    const newestScore = history[history.length - 1]?.compositeScore;
-    const oldestScore = history[0]?.compositeScore;
+    const counted = history.filter((item) => item.isActiveAttempt && !!item.releasedAt && item.compositeScore != null);
+    if (counted.length < 2) return null;
+    const newestScore = counted[counted.length - 1]?.compositeScore;
+    const oldestScore = counted[0]?.compositeScore;
     if (newestScore == null || oldestScore == null) return null;
     const overallDelta = newestScore - oldestScore;
     return {
@@ -379,7 +386,7 @@ export function SubmissionHistoryDialog({
                         </h4>
 
                         <p className="text-xs text-muted-foreground">
-                          Assessed on {formattedDate}
+                          Uploaded on {formattedDate}
                         </p>
                       </div>
 
@@ -413,8 +420,21 @@ export function SubmissionHistoryDialog({
                       </div>
                     </div>
 
-                    {/* 5-Skill Overview & Expand Toggle */}
-                    <div className="space-y-2 pt-1 border-t border-border/50">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary">{item.status === "returned" ? "Returned"
+                        : item.status === "rejected" ? "Photo needs retake"
+                          : item.status === "processing" ? "Processing"
+                            : item.compositeScore != null ? "Released" : "Turned in"}</Badge>
+                      <Badge variant="outline">{item.isActiveAttempt ? "Counted attempt" : "History only"}</Badge>
+                    </div>
+                    {item.returnedAt && <div className="flex flex-col gap-1 text-sm">
+                      <p>Returned: {item.returnReason?.replaceAll("_", " ")}</p>
+                      {item.returnNote && <p className="whitespace-pre-wrap">{item.returnNote}</p>}
+                    </div>}
+                    {item.status === "completed" && item.compositeScore == null &&
+                      <p className="text-sm text-muted-foreground">Your teacher will share scores and feedback after review.</p>}
+                    {/* Feedback remains absent until a result is released. */}
+                    {item.compositeScore != null && <div className="space-y-2 pt-1 border-t border-border/50">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
                         {/* Organic non-truncating skill pills */}
                         <div className="flex flex-wrap items-center gap-1.5 min-w-0">
@@ -462,10 +482,10 @@ export function SubmissionHistoryDialog({
                           />
                         </button>
                       </div>
-                    </div>
+                    </div>}
 
                     {/* Detailed Accordion Breakdown (Streamlined & Unboxed) */}
-                    {isExpanded && (
+                    {isExpanded && item.compositeScore != null && (
                       <div
                         id={`details-${item.submissionId}`}
                         className="pt-3 animate-in fade-in-50 duration-200 motion-reduce:animate-none space-y-2.5 border-t border-border/60"
@@ -523,7 +543,9 @@ export function SubmissionHistoryDialog({
       </Dialog>
 
       {/* Sub-Modal: Individual Historical Worksheet Photo Viewer */}
-      {selectedItemForView && (
+      {selectedItemForView && selectedItemForView.compositeScore == null && <PendingWorksheetDialog
+        item={selectedItemForView} childName={childName} onBack={handleBackFromWorksheetView} />}
+      {selectedItemForView && selectedItemForView.compositeScore != null && (
         <WorksheetViewDialog
           open={!!selectedItemForView}
           onOpenChange={(openNext) => {

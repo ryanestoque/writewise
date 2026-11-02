@@ -48,7 +48,7 @@ auth.users ──1:1──► parent ────┼──M:N──► student_p
                                processing completes)    renamed away post-calibration)
 ```
 
-Nine tables total, matching ARCHITECTURE §6 exactly: `teacher`, `parent`, `student`, `teacher_student`, `student_parent`, `activity`, `submission`, `measurement`, `manual_score`.
+The original core has nine tables: `teacher`, `parent`, `student`, `teacher_student`, `student_parent`, `activity`, `submission`, `measurement`, `manual_score`. Current migrations also add `section`, `activity_assignment`, and `student_work` (Slice 2, §15).
 
 ---
 
@@ -63,6 +63,8 @@ create type public.submission_status as enum ('processing', 'completed', 'reject
 
 create type public.score_band as enum ('needs_improvement', 'developing', 'satisfactory', 'excellent');
 ```
+
+Migration `20261102112153_phase3_returned_status.sql` subsequently adds `returned`; its separate transaction allows the following migration to use the enum value.
 
 `score_band` encodes exactly the four qualitative bands ML_PIPELINE.md §6.4 defines for both the Phase 1 manual rubric entry and Phase 2's diagnostic feedback — one enum, reused for both purposes rather than inventing two.
 
@@ -383,23 +385,11 @@ Wide, mirroring `measurement`'s shape exactly (band-enum + generated-numeric col
 
 The band, not a raw number, is the thing of record — ML_PIPELINE.md §6.4 confirms the Phase 1 UI is a segmented-button-group over 4 qualitative bands, not a free numeric input. The generated numeric column (12.5 / 37.5 / 62.5 / 87.5, same anchors ML_PIPELINE.md §6.4 defines) is what the Spearman's Rho calibration script and Stage 2's regression-head training actually consume — same "generated column, single source of truth" pattern as `composite_score` above, so the mapping can never drift between what's stored and what's computed from it.
 
-### 9.1 Removal migration (post-calibration)
+### 9.1 Retained rubric history
 
-PRD §5 and ARCHITECTURE §6 both call for this table to be "removed from the schema" once Phase 2 ships. Given what's inside it is the literal raw input to the thesis's Spearman's Rho validation — something a defense panel could reasonably ask to see again — this is a rename, not a drop:
+Independent rubric rows remain in `manual_score` across scoring-engine changes. The approved Slice 2 contract supersedes the earlier illustrative archive/rename proposal: historical rubric evidence supports calibration export and returned-attempt history. Calibrated mode disables manual rubric writes through the existing backend configuration gate; it does not rename or discard old scores.
 
-```sql
--- migration: 00XX_archive_manual_score.sql (illustrative filename —
--- run once CalibratedScoreProvider is confirmed stable in production)
-
-alter table public.manual_score rename to manual_score_archived;
-
-drop policy if exists "teacher can view own submitted manual scores" on public.manual_score_archived;
--- (no new policy added — the archived table is intentionally off the live
--- app/RLS surface entirely; access afterward is direct SQL by a team member,
--- same access model as the research export script in ARCHITECTURE §16)
-```
-
-A straight `drop table` is irreversible; the cost of keeping a renamed, inert table around is effectively zero, and needing this data again mid-defense-prep with no clean recovery path would be a real problem a rename entirely avoids.
+Return preserves the rubric. Completed-only manual scoring prevents editing returned evidence, and changing a released completed rubric resets its release timestamp in the same transaction. Parents may read it only after release. Offline dataset export remains exclusively through `research/export_dataset.py`; gradebook values and return notes are excluded.
 
 ---
 
@@ -615,5 +605,21 @@ values ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-2222222
 
 - **`uploader_role` isn't DB-enforced against the matching profile table** (§7) — a deliberate trade for RLS simplicity. If this ever proves too loose in practice (e.g. a bug lets a teacher-flagged upload actually come from a parent), the fallback is the two-nullable-FK-with-`check` pattern considered and set aside during design.
 - **Reactive indexing (§12) is unvalidated** — the "small cohort, don't bother" call is based on the pilot's stated scale, not a benchmark. If Phase 2's dashboard queries come in slow once real data is flowing, `submission(student_id)`/`submission(activity_id)` are the first candidates, not a deeper redesign.
-- **`manual_score_archived` (§9.1) has no defined long-term retention policy** — it's kept indefinitely as of this document. Worth a decision once the thesis defense (and any panel follow-up) is fully behind the team, but not before.
+- **Retained `manual_score` evidence (§9.1) has no defined long-term retirement date** — the live table supports calibration export and returned-attempt history; any later retention change needs an explicit project decision.
 - **This document assumes CV_PIPELINE.md §8's output schema is stable enough to hardcode into `measurement`'s raw columns.** CV_PIPELINE §12 flags several of its own constants (word-gap multiplier, quality-gate thresholds) as unvalidated starting defaults — if the *shape* of the aggregate output changes (not just its threshold values), `measurement`'s 6 raw column pairs would need a migration to match. The values, not the shape, are what's expected to move during calibration.
+
+## 15. Phase 3 Slice 2 — Return, active work, and release
+
+Migrations `20261102112153_phase3_returned_status.sql` and `20261102112156_phase3_return_release.sql` introduce the returned enum value separately, followed by return/release columns, `student_work`, views, policies, and service-only transactions. Migrations remain the executable source of truth.
+
+`submission` gains `returned_at`, `returned_by` (teacher FK), `return_reason`, `return_note` (at most 2,000 characters), and `released_at`. Returned rows require complete return metadata; other states cannot carry return metadata. Existing submissions receive their old `updated_at` as release time. New uploads default to unreleased; a Return preserves old release timestamps and independent rubric/measurement history.
+
+`student_work` has primary key `(activity_id, student_id)`, nullable `due_at_override`, nullable `pinned_submission_id`, and `updated_at`. Activity/student deletion cascades; deleting the pinned submission clears the pin. A trigger rejects pins outside the exact pair or to non-completed attempts. Rows are created on demand. Effective due is the override or activity deadline. Student and pin lookup indexes complement the primary key; submissions are indexed by activity/student/upload order.
+
+`active_submission` is a security-invoker view: a valid completed pin wins; otherwise select the newest completed upload after the newest returned upload, ordered by `(created_at, id)`. No older attempt automatically returns to the totals after Return. Rejected/processing attempts remain history/feedback. `activity_work_state` computes effective due, active/latest IDs, return metadata, role-appropriate status, and Late. Parents see Turned in for drafts because score rows remain hidden. Historical work and activity metadata survive section/target changes for the child's linked parents.
+
+Parent SELECT on both `measurement` and `manual_score` requires the child's submission to have `released_at`. Submission metadata and Storage image access retain their existing family boundaries. Teacher rubric reads also allow the owning roster teacher to inspect retained rubric evidence. `student_work` is readable by the owning roster teacher or linked parent; browser mutations are denied.
+
+FastAPI invokes only service-granted RPCs: `mutate_student_work`, `release_activity_results`, `record_student_submission`, `complete_student_submission`, and `save_manual_submission_score`. Private security-invoker helpers use an empty search path and are not exposed through PostgREST. All operations lock activity before work and recheck actor/eligibility. Bulk release skips ineligible work. A changed rubric atomically clears release; identical band saves preserve it. No points, excused flags, notifications, email, or comment columns are introduced in this slice.
+
+The backend captures `accepted_at` before image processing and passes it only through the service-only upload record payload. The record transaction compares that time with effective due and persists it as `created_at`; accepted uploads, including quality rejections, survive processing past the deadline and retain their correct lateness. Existing internal callers without this payload field default to transaction time. Current authorization and assignment are rechecked inside the transaction.

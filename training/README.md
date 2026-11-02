@@ -207,3 +207,7 @@ Separate from the scoring CNN pipeline above — this trains the SimpleHTR model
     uv run --directory backend python ../training/upload_model.py artifacts/writewise-model.keras --dest-name writewise-model.keras
     ```
 15. **Update env vars & reload** — ensure `MODEL_ARTIFACT_PATH=writewise-model.keras` in `backend/.env` (and Railway dashboard for prod) and restart the FastAPI service.
+
+### Phase 3 returned samples
+
+Stage 2 reads the lifecycle flags written by `research/export_dataset.py` to `paired_crops.csv`. It excludes wrong worksheet, blurry/cropped and wrong target text returns by default, while preserving legacy CSV compatibility and other retained scored attempts. `--include-invalid-returns` explicitly opts into those invalid-return samples for offline experiments. This changes input filtering only; it does not retrain, publish or replace a model automatically. Return notes and gradebook points are never training targets.

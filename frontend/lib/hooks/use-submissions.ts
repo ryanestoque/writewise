@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "../supabase/client";
 import { getAuthToken } from "../supabase/auth-helper";
 import { handleApiResponse, ApiError } from "../utils/api-error";
+import { invalidateWorkQueries } from "./use-activity-work";
 
 export type ScoreBand =
   | "needs_improvement"
@@ -35,7 +36,12 @@ export interface Submission {
   activity_id: string;
   student_id: string;
   image_path: string;
-  status: "processing" | "completed" | "rejected";
+  status: "processing" | "completed" | "rejected" | "returned";
+  released_at: string | null;
+  returned_at: string | null;
+  returned_by: string | null;
+  return_reason: string | null;
+  return_note: string | null;
   uploader_id: string;
   uploader_role: "teacher" | "parent";
   rejection_code: string | null;
@@ -84,6 +90,7 @@ export function useSubmissions(activityId: string) {
         .select(
           `id, activity_id, student_id, image_path, status, uploader_id,
            uploader_role, rejection_code, rejection_details, created_at, updated_at,
+           released_at, returned_at, returned_by, return_reason, return_note,
            student:student_id(full_name),
            activity:activity_id(target_text),
            measurement(
@@ -179,10 +186,7 @@ export function useUploadSubmission() {
 
       return handleApiResponse(response);
     },
-    onSuccess: () => {
-      // Invalidate all submission lists so any visible list refreshes
-      queryClient.invalidateQueries({ queryKey: ["submissions"] });
-    },
+    onSuccess: () => invalidateWorkQueries(queryClient),
   });
 }
 
@@ -235,11 +239,7 @@ export function useSubmitManualScore() {
 
       return handleApiResponse(response);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["submissions"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-scores"] });
-      queryClient.invalidateQueries({ queryKey: ["student-trend"] });
-    },
+    onSuccess: () => invalidateWorkQueries(queryClient),
   });
 }
 
@@ -258,18 +258,20 @@ export function useDeleteSubmission() {
         },
       });
 
-      return handleApiResponse<{ id: string; deleted: boolean }>(response);
+      try {
+        return await handleApiResponse<{ id: string; deleted: boolean }>(response);
+      } catch (error) {
+        if (error instanceof ApiError && error.code === "SUBMISSION_ALREADY_GRADED") {
+          throw new ApiError({ code: error.code,
+            message: "That worksheet cannot be deleted right now. Refresh to see available actions.", details: {} });
+        }
+        throw error;
+      }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["submissions"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-scores"] });
-      queryClient.invalidateQueries({ queryKey: ["student-trend"] });
-      queryClient.invalidateQueries({ queryKey: ["parent-child-latest-scores"] });
-      queryClient.invalidateQueries({ queryKey: ["parent-child-score-history"] });
-      queryClient.invalidateQueries({ queryKey: ["parent-take-home-activities"] });
-      queryClient.invalidateQueries({ queryKey: ["parent-child-submission"] });
-      queryClient.invalidateQueries({ queryKey: ["parent-all-submissions"] });
+    onError: (error) => {
+      if (error instanceof ApiError && error.code === "SUBMISSION_ALREADY_GRADED") invalidateWorkQueries(queryClient);
     },
+    onSuccess: () => invalidateWorkQueries(queryClient),
   });
 }
 
@@ -295,15 +297,6 @@ export function useBatchDeleteSubmissions() {
         response
       );
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["submissions"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-scores"] });
-      queryClient.invalidateQueries({ queryKey: ["student-trend"] });
-      queryClient.invalidateQueries({ queryKey: ["parent-child-latest-scores"] });
-      queryClient.invalidateQueries({ queryKey: ["parent-child-score-history"] });
-      queryClient.invalidateQueries({ queryKey: ["parent-take-home-activities"] });
-      queryClient.invalidateQueries({ queryKey: ["parent-child-submission"] });
-      queryClient.invalidateQueries({ queryKey: ["parent-all-submissions"] });
-    },
+    onSuccess: () => invalidateWorkQueries(queryClient),
   });
 }

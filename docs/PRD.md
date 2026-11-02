@@ -97,7 +97,11 @@ The scoring system cannot be "designed" up front the normal way — the rubric t
 
 ### Phase 3 — Classroom activities, Slice 1
 
-Implementation authorized after the defense milestone on 2026-11-01. Slice 1 adds activity titles/instructions, owned section and individual-student targeting, optional Manila-time deadlines, and parent upload closure. Teachers retain deadline override through their upload role. Parents see both assigned modes for their selected child; in-class work is read-only. Assigned/Missing/Turned in and a Late badge derive from the latest completed attempt; newer processing/rejection attempts retain separate feedback. Returns, release gates, notifications, points and comments remain later slices. Implementation/verification/deployment state belongs in IMPLEMENTATION_STATUS.md.
+Implementation authorized after the defense milestone on 2026-11-01. Slice 1 adds activity titles/instructions, owned section and individual-student targeting, optional Manila-time deadlines, and parent upload closure. Teachers retain deadline override through their upload role. Parents see both assigned modes for their selected child; in-class work is read-only. Slice 1's limited status display is superseded by the shared student-work state in Slice 2 below. Implementation/verification/deployment state belongs in IMPLEMENTATION_STATUS.md.
+
+### Phase 3 — Classroom activities, Slice 2
+
+Approved on 2026-11-02: teachers can Return a completed attempt with a reason and optional parent-visible note, set a student's deadline, pin a completed attempt, and release single/bulk graded results. Return leaves work Returned/Missing until a newer completed upload or explicit pin; it never automatically resurrects an older score. Raw measurements and independent rubrics remain available as research evidence. New results are drafts; parents receive scores and diagnostics after release. Existing results are backfilled as released, and previously released returned results remain inspectable in history. Dashboards/trends count the shared active attempt per activity; parent trends require release. Notifications, email, points/gradebook, and comments remain later slices.
 
 ### Suggested Timeline (Aug–Oct)
 | Window | Focus |

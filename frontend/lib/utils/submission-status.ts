@@ -311,6 +311,12 @@ export function getRejectionSummary(code: string | null): {
 }
 
 export const statusConfig = {
+  returned: {
+    label: "Returned",
+    icon: AlertCircle,
+    className: "bg-secondary text-secondary-foreground border-border",
+    dotClass: "bg-muted-foreground",
+  },
   processing: {
     label: "Processing",
     icon: Clock,

@@ -47,6 +47,9 @@ from pathlib import Path
 
 import numpy as np
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from research.calibration_filters import read_calibration_csv  # noqa: E402
+
 # Band mapping per ML_PIPELINE §6.4
 BAND_TO_SCORE = {
     "needs_improvement": 12.5,
@@ -106,6 +109,11 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=0.0,
         help="Dropout rate before output layer (default: 0.0 per ML_PIPELINE §6.3).",
+    )
+    parser.add_argument(
+        "--include-invalid-returns",
+        action="store_true",
+        help="Include wrong-worksheet, blurry/cropped and wrong-target returns in training",
     )
     return parser.parse_args()
 
@@ -173,10 +181,13 @@ def initialize_baseline_head(model, baseline_target: float = 72.5):
     return model
 
 
-def load_paired_dataset(csv_path: str, batch_size: int = 32):
+def load_paired_dataset(
+    csv_path: str,
+    batch_size: int = 32,
+    *,
+    include_invalid_returns: bool = False,
+):
     """Load paired crop paths and rubric scores from CSV."""
-    import csv
-
     import cv2
     import tensorflow as tf
 
@@ -184,31 +195,29 @@ def load_paired_dataset(csv_path: str, batch_size: int = 32):
     scores = []
     csv_dir = Path(csv_path).resolve().parent
 
-    with open(csv_path, "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            raw_path = row.get("crop_path") or row.get("image_path")
-            if not raw_path:
-                continue
+    for row in read_calibration_csv(csv_path, include_invalid_returns=include_invalid_returns):
+        raw_path = row.get("crop_path") or row.get("image_path")
+        if not raw_path:
+            continue
 
-            crop_file = Path(raw_path)
-            if not crop_file.is_absolute():
-                crop_file = csv_dir / crop_file
+        crop_file = Path(raw_path)
+        if not crop_file.is_absolute():
+            crop_file = csv_dir / crop_file
 
-            if not crop_file.exists():
-                continue
+        if not crop_file.exists():
+            continue
 
-            # Parse score or band
-            if row.get("score"):
-                score_val = float(row["score"])
-            elif row.get("band"):
-                band_key = row["band"].strip().lower()
-                score_val = BAND_TO_SCORE.get(band_key, 62.5)
-            else:
-                continue
+        # Parse score or band
+        if row.get("score"):
+            score_val = float(row["score"])
+        elif row.get("band"):
+            band_key = row["band"].strip().lower()
+            score_val = BAND_TO_SCORE.get(band_key, 62.5)
+        else:
+            continue
 
-            crops.append(str(crop_file))
-            scores.append(score_val)
+        crops.append(str(crop_file))
+        scores.append(score_val)
 
     if not crops:
         raise ValueError(f"No valid image pairs found in CSV: {csv_path}")
@@ -261,7 +270,13 @@ def load_paired_dataset(csv_path: str, batch_size: int = 32):
             pad_left = (side - w) // 2
             pad_right = side - w - pad_left
             padded = cv2.copyMakeBorder(
-                img, pad_top, pad_bottom, pad_left, pad_right, cv2.BORDER_CONSTANT, value=255
+                img,
+                pad_top,
+                pad_bottom,
+                pad_left,
+                pad_right,
+                cv2.BORDER_CONSTANT,
+                value=255,
             )
 
             # Resize to 96x96 and 3 channels
@@ -315,7 +330,11 @@ def main():
         model = initialize_baseline_head(model)
     else:
         print(f"\n--- Training on Paired Data: {args.paired_data_path} ---")
-        train_ds, val_ds = load_paired_dataset(args.paired_data_path, batch_size=args.batch_size)
+        train_ds, val_ds = load_paired_dataset(
+            args.paired_data_path,
+            batch_size=args.batch_size,
+            include_invalid_returns=args.include_invalid_returns,
+        )
 
         model.compile(
             optimizer=tf.keras.optimizers.Adam(learning_rate=args.learning_rate),

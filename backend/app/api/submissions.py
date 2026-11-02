@@ -9,6 +9,8 @@ from pydantic import BaseModel
 
 from app.api.assignment_access import assert_upload_allowed
 from app.api.deps import get_current_teacher, get_current_user
+from app.api.submission_contracts import SubmissionCreateResponse, create_upload_response
+from app.api.submission_lifecycle import lifecycle_rpc
 from app.core.config import settings
 from app.core.image_hardening import validate_and_harden_image
 from app.core.supabase import supabase_client
@@ -99,7 +101,7 @@ def _delete_submission_artifacts(submissions: list[dict[str, Any]]) -> list[str]
     return [row["id"] for row in (deleted.data or [])]
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=SubmissionCreateResponse)
 async def create_submission(
     image: UploadFile = File(...),
     activity_id: str = Form(...),
@@ -225,7 +227,8 @@ async def create_submission(
             detail={"code": "FORBIDDEN", "message": "Invalid role.", "details": {}},
         )
 
-    assert_upload_allowed(activity_row, student_id, caller_role, datetime.now(timezone.utc))
+    accepted_at = datetime.now(timezone.utc)
+    assert_upload_allowed(activity_row, student_id, caller_role, accepted_at)
 
     # 5. Image hardening: magic-byte check, decompression-bomb cap, EXIF strip
     hardened_bytes = validate_and_harden_image(file_bytes)
@@ -345,10 +348,13 @@ async def create_submission(
         )
 
     # 10. Insert submission row
-    db_res = (
-        supabase_client.table("submission")
-        .insert(
-            {
+    lifecycle_rpc(
+        "record_student_submission",
+        {
+            "actor_id": caller_id,
+            "target_activity_id": activity_id,
+            "target_student_id": student_id,
+            "payload": {
                 "id": submission_id,
                 "activity_id": activity_id,
                 "student_id": student_id,
@@ -356,22 +362,12 @@ async def create_submission(
                 "status": "rejected" if rejection else "processing",
                 "rejection_code": rejection["code"] if rejection else None,
                 "rejection_details": rejection["message"] if rejection else None,
-                "uploader_id": caller_id,
                 "uploader_role": caller_role,
-            }
-        )
-        .execute()
-    )
-
-    if not db_res.data:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "code": "INTERNAL_ERROR",
-                "message": "Failed to create submission record.",
-                "details": {},
+                "accepted_at": accepted_at.isoformat(),
             },
-        )
+        },
+        client=supabase_client,
+    )
 
     # 11. Rejected: return 422 with the standard error envelope (API_SPEC §3.3)
     if rejection:
@@ -553,12 +549,17 @@ async def create_submission(
         )
 
     # 13. Update submission status to 'completed' (ARCHITECTURE §8 step 8)
-    supabase_client.table("submission").update({"status": "completed"}).eq(
-        "id", submission_id
-    ).execute()
+    lifecycle_rpc(
+        "complete_student_submission",
+        {
+            "actor_id": caller_id,
+            "target_submission_id": submission_id,
+        },
+        client=supabase_client,
+    )
 
     # 14. Return API_SPEC §3.3 success response shape
-    return {
+    result = {
         "submission_id": submission_id,
         "status": "completed",
         "measurement": {
@@ -590,6 +591,7 @@ async def create_submission(
             "overlay": overlay_dict,
         },
     }
+    return create_upload_response(submission_id, result["measurement"], caller_role)
 
 
 @router.patch("/{submission_id}/manual-score")
@@ -633,7 +635,7 @@ async def submit_manual_score(
     # 3. Verify submission exists
     sub_res = (
         supabase_client.table("submission")
-        .select("id, student_id, status")
+        .select("id, activity_id, student_id, status")
         .eq("id", submission_id)
         .execute()
     )
@@ -647,6 +649,24 @@ async def submit_manual_score(
             },
         )
     submission = sub_res.data[0]
+
+    activity = (
+        supabase_client.table("activity")
+        .select("id")
+        .eq("id", submission["activity_id"])
+        .eq("created_by", teacher_id)
+        .execute()
+        .data
+    )
+    if not activity:
+        raise HTTPException(
+            404,
+            detail={
+                "code": "NOT_FOUND",
+                "message": "Submission not found.",
+                "details": {},
+            },
+        )
 
     # 4. Verify student is on this teacher's roster
     roster_res = (
@@ -677,15 +697,7 @@ async def submit_manual_score(
             },
         )
 
-    # 6. Check if manual_score already exists
-    existing = (
-        supabase_client.table("manual_score")
-        .select("id")
-        .eq("submission_id", submission_id)
-        .execute()
-    )
-
-    # 7. Upsert / update or insert manual_score record
+    # 6. Save rubric and redraft changed results in the same work transaction.
     score_payload = {
         "letter_formation_band": body.letter_formation_band.value,
         "size_consistency_band": body.size_consistency_band.value,
@@ -695,39 +707,15 @@ async def submit_manual_score(
         "graded_by": teacher_id,
     }
 
-    try:
-        if existing.data:
-            save_res = (
-                supabase_client.table("manual_score")
-                .update(score_payload)
-                .eq("submission_id", submission_id)
-                .execute()
-            )
-        else:
-            score_payload["submission_id"] = submission_id
-            save_res = supabase_client.table("manual_score").insert(score_payload).execute()
-    except Exception as exc:
-        err_msg = str(exc)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "code": "INTERNAL_ERROR",
-                "message": "Failed to save manual rubric score.",
-                "details": {"error": err_msg},
-            },
-        )
-
-    if not save_res.data:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "code": "INTERNAL_ERROR",
-                "message": "Failed to save manual rubric score.",
-                "details": {},
-            },
-        )
-
-    row = save_res.data[0]
+    row = lifecycle_rpc(
+        "save_manual_submission_score",
+        {
+            "actor_id": teacher_id,
+            "target_submission_id": submission_id,
+            "payload": score_payload,
+        },
+        client=supabase_client,
+    )
 
     # 8. Return response matching API_SPEC §3.3
     return {

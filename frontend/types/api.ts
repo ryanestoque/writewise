@@ -89,6 +89,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/submissions/{submission_id}/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Return Submission */
+        post: operations["return_submission_api_submissions__submission_id__return_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/submissions/{submission_id}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Release Submission */
+        post: operations["release_submission_api_submissions__submission_id__release_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activity_id}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Release Activity */
+        post: operations["release_activity_api_activities__activity_id__release_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activity_id}/students/{student_id}/work": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Student Work */
+        put: operations["update_student_work_api_activities__activity_id__students__student_id__work_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sections": {
         parameters: {
             query?: never;
@@ -393,6 +461,69 @@ export interface components {
             slant_band: components["schemas"]["ScoreBandEnum"];
             baseline_alignment_band: components["schemas"]["ScoreBandEnum"];
         };
+        /** ReleaseActivityResponse */
+        ReleaseActivityResponse: {
+            /** Released Count */
+            released_count: number;
+            /** Submission Ids */
+            submission_ids: string[];
+        };
+        /** ReleaseSubmissionResponse */
+        ReleaseSubmissionResponse: {
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+            /**
+             * Released At
+             * Format: date-time
+             */
+            released_at: string;
+        };
+        /**
+         * ReturnReason
+         * @enum {string}
+         */
+        ReturnReason: "wrong_worksheet" | "blurry_or_cropped" | "wrong_target_text" | "incomplete" | "other";
+        /** ReturnSubmissionRequest */
+        ReturnSubmissionRequest: {
+            reason: components["schemas"]["ReturnReason"];
+            /** Note */
+            note?: string | null;
+            /** Resubmit Due At */
+            resubmit_due_at?: string | null;
+        };
+        /** ReturnSubmissionResponse */
+        ReturnSubmissionResponse: {
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+            /**
+             * Status
+             * @constant
+             */
+            status: "returned";
+            /**
+             * Returned At
+             * Format: date-time
+             */
+            returned_at: string;
+            /**
+             * Returned By
+             * Format: uuid
+             */
+            returned_by: string;
+            return_reason: components["schemas"]["ReturnReason"];
+            /** Return Note */
+            return_note: string | null;
+            /** Released At */
+            released_at: string | null;
+            /** Effective Due At */
+            effective_due_at: string | null;
+        };
         /**
          * ScoreBandEnum
          * @enum {string}
@@ -442,6 +573,56 @@ export interface components {
             section_id?: string | null;
             /** Parent Email */
             parent_email?: string | null;
+        };
+        /** StudentWorkResponse */
+        StudentWorkResponse: {
+            /**
+             * Activity Id
+             * Format: uuid
+             */
+            activity_id: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Due At Override */
+            due_at_override: string | null;
+            /** Pinned Submission Id */
+            pinned_submission_id: string | null;
+            /** Effective Due At */
+            effective_due_at: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** StudentWorkUpdate */
+        StudentWorkUpdate: {
+            /** Due At Override */
+            due_at_override?: string | null;
+            /** Pinned Submission Id */
+            pinned_submission_id?: string | null;
+        };
+        /** SubmissionCreateResponse */
+        SubmissionCreateResponse: {
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+            /**
+             * Status
+             * @constant
+             */
+            status: "completed";
+            /** Released At */
+            released_at?: string | null;
+            /** Measurement */
+            measurement: {
+                [key: string]: unknown;
+            } | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -602,6 +783,139 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    return_submission_api_submissions__submission_id__return_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReturnSubmissionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnSubmissionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    release_submission_api_submissions__submission_id__release_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReleaseSubmissionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    release_activity_api_activities__activity_id__release_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReleaseActivityResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_student_work_api_activities__activity_id__students__student_id__work_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: string;
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudentWorkUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentWorkResponse"];
                 };
             };
             /** @description Validation Error */
@@ -916,7 +1230,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["SubmissionCreateResponse"];
                 };
             };
             /** @description Validation Error */

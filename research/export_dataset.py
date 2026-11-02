@@ -86,14 +86,15 @@ def filter_paired_records(
     submissions: List[Dict[str, Any]],
     measurements: Dict[str, Dict[str, Any]],
     manual_scores: Dict[str, Dict[str, Any]],
+    active_submission_ids: Optional[set[str]] = None,
 ) -> List[Dict[str, Any]]:
-    """Filter to only completed submissions having both measurement and manual_score."""
+    """Keep completed/scored returned evidence; active flags come from the shared view."""
     paired = []
     for sub in submissions:
         sub_id = sub.get("id")
         if not sub_id:
             continue
-        if sub.get("status") != "completed":
+        if sub.get("status") not in {"completed", "returned"}:
             continue
 
         meas = measurements.get(sub_id)
@@ -105,6 +106,7 @@ def filter_paired_records(
                     "submission": sub,
                     "measurement": meas,
                     "manual_score": m_score,
+                    "is_active_attempt": sub_id in (active_submission_ids or set()),
                 }
             )
     return paired
@@ -114,14 +116,14 @@ def fetch_paired_records(
     client,
     limit: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
-    """Fetch completed submissions, measurements, and manual scores from Supabase."""
-    logger.info("Fetching completed submissions...")
-    sub_query = client.table("submission").select("*").eq("status", "completed")
+    """Fetch retained evidence and authoritative active flags for offline research."""
+    logger.info("Fetching completed and returned submissions...")
+    sub_query = client.table("submission").select("*").in_("status", ["completed", "returned"])
     if limit:
         sub_query = sub_query.limit(limit)
     sub_res = sub_query.execute()
     submissions = sub_res.data or []
-    logger.info("Retrieved %d completed submissions.", len(submissions))
+    logger.info("Retrieved %d completed or returned submissions.", len(submissions))
 
     if not submissions:
         return []
@@ -131,6 +133,7 @@ def fetch_paired_records(
     # Chunk queries if needed for supabase in_ filter
     measurements_map: Dict[str, Dict[str, Any]] = {}
     manual_scores_map: Dict[str, Dict[str, Any]] = {}
+    active_submission_ids: set[str] = set()
 
     chunk_size = 100
     for i in range(0, len(sub_ids), chunk_size):
@@ -144,8 +147,16 @@ def fetch_paired_records(
         for ms in ms_res.data or []:
             manual_scores_map[ms["submission_id"]] = ms
 
-    paired = filter_paired_records(submissions, measurements_map, manual_scores_map)
-    logger.info("Found %d paired records (having both measurement and manual score).", len(paired))
+        active_res = client.table("active_submission").select("id").in_("id", chunk).execute()
+        active_submission_ids.update(row["id"] for row in active_res.data or [])
+
+    paired = filter_paired_records(
+        submissions, measurements_map, manual_scores_map, active_submission_ids
+    )
+    logger.info(
+        "Found %d paired records (having both measurement and manual score).",
+        len(paired),
+    )
     return paired
 
 
@@ -168,6 +179,8 @@ def build_measurements_records(
         row = {
             "student_code": student_code,
             "submission_code": submission_code,
+            "return_reason": sub.get("return_reason"),
+            "is_active_attempt": bool(item.get("is_active_attempt", False)),
             # Raw CV / CNN measurements (6 metric pairs)
             "slant_mean": meas.get("slant_mean"),
             "slant_std": meas.get("slant_std"),
@@ -229,6 +242,8 @@ def build_crop_records(
                         "crop_path": crop_rel_path,
                         "submission_code": submission_code,
                         "word_index": word_count,
+                        "return_reason": sub.get("return_reason"),
+                        "is_active_attempt": bool(item.get("is_active_attempt", False)),
                         "band": ms.get("letter_formation_band"),
                         "score": ms.get("letter_formation_score"),
                         "bbox": word.get("bbox"),
@@ -246,7 +261,6 @@ def download_and_extract_crops(
 ) -> Tuple[List[Dict[str, Any]], int]:
     """Download images from Storage and extract word crops."""
     import cv2
-
     from app.cv.guide_lines import detect_and_deskew
     from app.cv.preprocessing import preprocess
     from app.cv.segmentation import segment_lines_and_words
@@ -297,6 +311,8 @@ def download_and_extract_crops(
                             "crop_path": f"crops/{crop_filename}",
                             "submission_code": submission_code,
                             "word_index": word_idx,
+                            "return_reason": sub.get("return_reason"),
+                            "is_active_attempt": bool(item.get("is_active_attempt", False)),
                             "band": ms.get("letter_formation_band"),
                             "score": ms.get("letter_formation_score"),
                         }
@@ -427,7 +443,15 @@ def run_export(
 
         crops_csv_path = output_dir / "paired_crops.csv"
         if crop_records:
-            fieldnames = ["crop_path", "submission_code", "word_index", "band", "score"]
+            fieldnames = [
+                "crop_path",
+                "submission_code",
+                "word_index",
+                "band",
+                "score",
+                "return_reason",
+                "is_active_attempt",
+            ]
             with open(crops_csv_path, "w", newline="", encoding="utf-8") as f:
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()

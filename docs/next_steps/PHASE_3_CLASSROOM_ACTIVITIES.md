@@ -82,7 +82,7 @@ Status is **computed, never stored**, so it can't drift. Effective due = `coales
 | Status | Condition (first match wins) |
 |---|---|
 | **Excused** | `student_work.excused` |
-| **Returned** | Latest submission is `returned` and no newer upload exists, and effective due not passed |
+| **Returned** | No active attempt after Return and effective due not passed; newer processing/rejected uploads retain separate feedback |
 | **Missing** | No active submission, and effective due has passed |
 | **Assigned** | No active submission, and not yet due (or no due date) |
 | **Draft** | Active submission is graded but `released_at is null` |
@@ -96,10 +96,12 @@ The parent's view replaces **Draft** with **Turned in**, since they must not lea
 
 ```
 active attempt = pinned submission (if pinned and still completed)
-               else latest submission where status = 'completed'
+               else latest completed upload newer than the newest returned upload
 ```
 
 `rejected` (quality gate) and `returned` (teacher) never count. All attempts stay visible in submission history.
+
+**Accepted Slice 2 clarification (2026-11-02):** The user chose to keep work Returned/Missing until a new completed upload; only an explicit valid teacher pin can count an older completed attempt. Upload order is `(created_at, id)`, with deterministic ID tie-breaking. Returning a historical attempt does not displace a newer completed one. Both portals use the shared `active_submission` view; full history remains separate from counted trends. The [approved Slice 2 design](../superpowers/specs/2026-11-02-phase3-return-release-design.md) and promoted API/database docs define the implemented contract.
 
 ---
 

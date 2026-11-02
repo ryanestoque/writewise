@@ -76,8 +76,11 @@ The frontend branches on `error.code`, never on parsing `message` text (ARCHITEC
 | `NOT_FOUND` | 404 | Referenced `student_id` / `activity_id` / `section_id` / `submission_id` doesn't exist or caller has no access |
 | `SECTION_NAME_EXISTS` | 409 | Section creation/rename — teacher already has a section with that case-insensitive name |
 | `SECTION_NOT_EMPTY` | 409 | Section deletion refused — students are currently assigned to the section |
-| `MANUAL_SCORE_ALREADY_EXISTS` | 409 | `manual_score.submission_id` is `unique` (DATABASE §9) — no re-grade flow (§3.3) |
+| `MANUAL_SCORE_ALREADY_EXISTS` | 409 | Reserved legacy conflict code; current authorized manual rubric writes upsert the rubric |
 | `SUBMISSION_ALREADY_GRADED` | 409 | Attempt deletion — parent attempted to delete an already graded submission (§3.3) |
+| `SUBMISSION_NOT_RETURNABLE` | 409 | Return requested for a processing, rejected, or already returned attempt |
+| `SUBMISSION_NOT_RELEASABLE` | 409 | Release requested for an inactive, ungraded, rejected, or returned attempt |
+| `INVALID_WORK_SELECTION` | 422 | Pin does not reference a completed attempt for this student and activity |
 | `QUALITY_GATE_BLUR` | 422 | CV_PIPELINE §2 |
 | `QUALITY_GATE_BRIGHTNESS` | 422 | CV_PIPELINE §2 |
 | `QUALITY_GATE_CONTRAST` | 422 | CV_PIPELINE §2 |
@@ -378,6 +381,8 @@ Response (`200 OK`):
 
 ### 3.4 Submissions
 
+**Slice 2 result visibility:** New uploads are drafts. Teacher upload responses include measurements for review; parent upload responses contain `measurement: null` and `released_at: null`. Both roles still receive the submission ID and completed status. Existing rows are backfilled as released. Parent reads of measurements, manual rubrics, raw output and diagnostics require release, including embedded and view-backed reads.
+
 #### `POST /api/submissions`
 
 **Caller:** Teacher or Parent (parent only for assigned take-home work for their own child). Both roles require a current roster relationship and section/direct assignment. Parent uploads are additionally blocked when `close_after_due` is true and server UTC time is strictly greater than `due_at`; exactly at due is accepted. Teachers bypass closure only. Relationship denial stays `NOT_FOUND`; assignment denial is `ACTIVITY_NOT_ASSIGNED` and closure denial is `SUBMISSIONS_CLOSED`. These checks occur before image decoding/processing or Storage writes and create no photo-rejection record. Existing photo-quality/segmentation rejections remain persisted as before.
@@ -567,6 +572,34 @@ Response (`200 OK`):
 ```
 
 ---
+
+#### `POST /api/submissions/{submission_id}/return`
+
+Teacher only: the activity owner must still teach the student. A historical attempt can be returned after its current assignment changes. Body:
+
+```json
+{ "reason": "incomplete", "note": "Please finish the last line.", "resubmit_due_at": "2026-11-05T16:00:00+08:00" }
+```
+
+`reason` is `wrong_worksheet`, `blurry_or_cropped`, `wrong_target_text`, `incomplete`, or `other`. Optional notes are trimmed plain text, blank becomes null, maximum 2,000 characters. Omitting `resubmit_due_at` preserves the override; explicit null restores the activity deadline. Dates require a UTC offset. Only completed attempts are returnable (`409 SUBMISSION_NOT_RETURNABLE` otherwise).
+
+The transaction retains the image, measurements, rubric and existing release timestamp, clears a matching pin, and applies the supplied deadline change. Success (`200`) contains `submission_id`, `status: returned`, `returned_at`, `returned_by`, `return_reason`, `return_note`, `released_at`, and `effective_due_at`. Return does not automatically count an older attempt: a newer completed upload or an explicit valid pin is required.
+
+#### `POST /api/submissions/{submission_id}/release`
+
+Teacher only, owning the activity and roster relationship. No body. The active completed attempt must have a manual rubric or all five calibrated criterion scores. Ineligible attempts return `409 SUBMISSION_NOT_RELEASABLE`; a repeated release of the same eligible result preserves its timestamp. Success: `{ "submission_id": "<uuid>", "released_at": "<timestamp>" }`.
+
+#### `POST /api/activities/{activity_id}/release`
+
+Teacher owner only. No body. Atomically releases active graded drafts for eligible roster students, skipping inactive, ungraded, returned and already released attempts. Success: `{ "released_count": 1, "submission_ids": ["<uuid>"] }`. This does not create notifications or send email in Slice 2.
+
+#### `PUT /api/activities/{activity_id}/students/{student_id}/work`
+
+Teacher owner/roster only; the pair must be currently assigned or have submission history. Accepts a partial update containing `due_at_override` and/or `pinned_submission_id`. Omitted properties are preserved; null clears an override or pin. Empty requests, unknown properties, malformed UUIDs, and naive dates return `VALIDATION_ERROR`. A pin must reference a completed attempt for this exact activity/student (`422 INVALID_WORK_SELECTION`).
+
+Success contains `activity_id`, `student_id`, `due_at_override`, `pinned_submission_id`, `effective_due_at`, and `updated_at`. Effective due is the student override or the activity deadline. Parent close-after-due uses this same deadline; the exact due instant remains open. Teachers may upload after due.
+
+Lifecycle operations recheck eligibility inside short transactions using activity-then-work locks. Manual rubric writes use the same lock protocol; changed bands clear `released_at`, while saving unchanged bands preserves it. Returned rubrics remain historical evidence. Score formulas and the manual/calibrated configuration gate are unchanged.
 
 ### 3.5 Health & Config
 

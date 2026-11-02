@@ -424,3 +424,15 @@ Parent activity reads are scoped to the selected child before fetching activity 
 Statuses use the latest completed attempt ordered by created_at then ID descending. Without one, work is Assigned through the deadline and Missing strictly afterward. Late compares the completed attempt's persisted creation time with due. Timers refresh displayed status/closure while open. No draft/release/return/excused status is introduced in this slice.
 
 Manual QA must cover create/edit/duplicate, section/direct/overlapping targets, roster removal/reselection, empty legacy activity edits, sibling isolation, both modes, open/closed/exact-boundary deadlines, processing/rejection after a completed attempt, timezone changes, keyboard controls, narrow screens, and archive/delete regressions. Component-only checks do not substitute for signed-in portal QA.
+
+## Phase 3 Slice 2 — Return and release flow
+
+Teacher submission detail shows the work state and whether the inspected attempt is counted/pinned. Completed attempts offer Return; the active graded draft offers Release result. Count this attempt pins a completed historical attempt; Use automatic selection clears the pin. Returned attempts retain their reason, note, photo and historical assessment, with rubric editing disabled.
+
+The Return dialog requires a reason (wrong worksheet, blurry/cropped photo, wrong target text, incomplete, other), allows a plain-text parent note of up to 2,000 characters, and optionally sets a Manila-time resubmission deadline. Leaving the deadline blank preserves it. Returning an attempt requests fresh work without automatically counting an older attempt. A valid teacher pin can deliberately count an older completed attempt.
+
+Assigned-student rows show the shared work status and Work settings. Settings change only fields the teacher edits: clear the student deadline to restore the activity deadline, or select an eligible completed attempt to pin. Past deadlines explain the resulting Missing state. Release results shows the draft count and confirms before bulk sharing; the server rechecks eligibility and reports the actual count.
+
+Parent activity cards use the effective deadline and counted attempt for scores. Newer processing/rejection feedback stays separate. Returned work displays the teacher's reason/note and offers another upload when assigned, take-home and open. The exact due instant stays open; a future student extension reopens a closed activity for that child. In-class activities remain read-only for parents.
+
+Upload completion says Worksheet turned in and explains that the teacher shares results after review. Drafts show no score, raw measurement or diagnostic panels. Full worksheet history includes processing, rejected, returned, draft, released and inactive attempts. Photos remain inspectable; a photo-only dialog handles unreleased attempts. Previously released returned results remain inspectable, while progress charts and trajectory summaries use only released counted results. All new forms use existing semantic tokens, labels, pending/error states and dialog primitives.

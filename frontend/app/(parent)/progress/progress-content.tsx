@@ -84,8 +84,10 @@ export function ProgressPageContent() {
     [openUploadDialog]
   );
 
-  const { data: history, isLoading: historyLoading } =
+  const { data: allHistory, isLoading: historyLoading } =
     useChildScoreHistory(selectedChildId);
+  const history = useMemo(() => allHistory?.filter((row) => row.isActiveAttempt &&
+    row.status === "completed" && !!row.releasedAt && row.compositeScore != null), [allHistory]);
   const { data: activities } =
     useTakeHomeActivities(selectedChildId);
   const { data: latestScores } =
@@ -122,8 +124,9 @@ export function ProgressPageContent() {
     );
   }
 
-  const historyCount = history?.length ?? 0;
-  const isZeroState = !historyLoading && historyCount === 0;
+  const historyCount = allHistory?.length ?? 0;
+  const scoredCount = history?.length ?? 0;
+  const isZeroState = !historyLoading && scoredCount === 0;
   const pendingActivitiesCount =
     activities?.filter(
       (a) => !a.submission || a.submission.status === "rejected"
@@ -484,7 +487,7 @@ export function ProgressPageContent() {
               <div className="rounded-xl border border-border bg-card shadow-warm p-4 sm:p-5 min-w-0">
                 <CriterionTrendChart history={history} />
               </div>
-            ) : historyCount === 1 && history?.[0] ? (
+            ) : scoredCount === 1 && history?.[0] ? (
               <div className="rounded-xl border border-brand-200 dark:border-brand-900 bg-brand-50/20 dark:bg-brand-950/20 shadow-warm p-5 sm:p-6 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="space-y-1">
@@ -565,7 +568,7 @@ export function ProgressPageContent() {
       <SubmissionHistoryDialog
         open={historyOpen}
         onOpenChange={setHistoryOpen}
-        history={history ?? []}
+        history={allHistory ?? []}
         childName={selectedChild.fullName}
         onOpenRubric={handleOpenRubric}
       />

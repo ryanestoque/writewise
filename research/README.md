@@ -43,3 +43,9 @@ python analyze_correlations.py \
 1. Check that Spearman's $\rho \ge 0.70$ ($p < 0.05$) per criterion in `output/correlation_analysis_report.md`.
 2. Copy the recommended constants into `backend/app/scoring/provider.py`.
 3. Set `SCORING_ENGINE=calibrated` in the backend environment.
+
+### Returned attempts and calibration inputs (Phase 3 Slice 2)
+
+The authorized exporter retains completed and returned attempts with both measurements and an independent manual rubric. Both `paired_measurements.csv` and the actual `paired_crops.csv` include `return_reason` and `is_active_attempt`. Active flags come from the shared database view even when a newer counted attempt has no manual rubric. Return notes, names and gradebook values are not exported.
+
+Correlation analysis and Stage 2 data loading exclude `wrong_worksheet`, `blurry_or_cropped` and `wrong_target_text` returns by default. The export keeps the evidence; filtering happens at calibration input. Both analysis and Stage 2 accept `--include-invalid-returns` for deliberate offline inclusion. Older CSVs without these fields retain their previous behavior. Incomplete/other returns and inactive scored attempts remain eligible calibration evidence unless excluded by a separate study decision.

@@ -1,4 +1,5 @@
 import io
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -203,6 +204,8 @@ class TestParentSubmissionAuthorization:
         data = response.json()
         assert "submission_id" in data
         assert data["status"] == "completed"
+        assert data["measurement"] is None
+        assert data["released_at"] is None
 
         # Verify submission record in DB has uploader_role = 'parent'
         # and uploader_id = TEST_PARENT_ID
@@ -219,6 +222,48 @@ class TestParentSubmissionAuthorization:
         cleanup_submissions.append(
             {"id": data["submission_id"], "image_path": sub_row.data["image_path"]}
         )
+
+    def test_upload_accepted_at_due_is_saved_on_time_after_processing(
+        self, parent_client, take_home_activity, linked_student, cleanup_submissions, monkeypatch
+    ):
+        accepted = datetime.now(timezone.utc) - timedelta(seconds=5)
+        supabase_client.table("activity").update(
+            {"due_at": accepted.isoformat(), "close_after_due": True}
+        ).eq("id", take_home_activity["id"]).execute()
+
+        class AcceptanceTime(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return accepted.astimezone(tz)
+
+        monkeypatch.setattr("app.api.submissions.datetime", AcceptanceTime)
+        response = parent_client.post(
+            "/api/submissions",
+            data={"activity_id": take_home_activity["id"], "student_id": linked_student["id"]},
+            files={"image": ("test.jpg", io.BytesIO(make_segmented_worksheet()), "image/jpeg")},
+        )
+        assert response.status_code == 201, response.json()
+        submission_id = response.json()["submission_id"]
+        row = (
+            supabase_client.table("submission")
+            .select("*")
+            .eq("id", submission_id)
+            .single()
+            .execute()
+            .data
+        )
+        cleanup_submissions.append({"id": row["id"], "image_path": row["image_path"]})
+        assert datetime.fromisoformat(row["created_at"]) == accepted
+        work = (
+            supabase_client.table("activity_work_state")
+            .select("late,active_submission_id")
+            .eq("activity_id", take_home_activity["id"])
+            .eq("student_id", linked_student["id"])
+            .single()
+            .execute()
+            .data
+        )
+        assert work == {"late": False, "active_submission_id": submission_id}
 
 
 class TestDeleteSubmissionParent:

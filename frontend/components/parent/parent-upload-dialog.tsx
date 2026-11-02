@@ -1027,13 +1027,12 @@ function ParentUploadFlow({
 
                 <div className="space-y-1.5 max-w-sm">
                   <h3 className="text-base sm:text-lg font-semibold text-foreground tracking-tight font-heading">
-                    Worksheet Assessed!
+                    Worksheet turned in!
                   </h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     The cursive sample for{" "}
                     <strong className="text-foreground font-medium">{childName}</strong>{" "}
-                    has been analyzed. The diagnostic feedback has been updated on your
-                    progress page.
+                    has been uploaded. The teacher will share the scores and diagnostic feedback after review.
                   </p>
                 </div>
 

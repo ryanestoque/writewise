@@ -119,7 +119,17 @@ def assert_upload_allowed(activity: dict, student_id: str, caller_role: str, now
                 "details": {},
             },
         )
-    due_at = datetime.fromisoformat(activity["due_at"]) if activity.get("due_at") else None
+    work = (
+        supabase_client.table("student_work")
+        .select("due_at_override")
+        .eq("activity_id", activity["id"])
+        .eq("student_id", student_id)
+        .limit(1)
+        .execute()
+        .data
+    )
+    effective_due = (work[0].get("due_at_override") if work else None) or activity.get("due_at")
+    due_at = datetime.fromisoformat(effective_due) if effective_due else None
     if caller_role == "parent" and activity.get("close_after_due") and due_at and now > due_at:
         raise HTTPException(
             409,
