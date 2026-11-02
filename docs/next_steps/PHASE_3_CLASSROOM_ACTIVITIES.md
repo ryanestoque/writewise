@@ -82,7 +82,7 @@ Status is **computed, never stored**, so it can't drift. Effective due = `coales
 | Status | Condition (first match wins) |
 |---|---|
 | **Excused** | `student_work.excused` |
-| **Returned** | Latest submission is `returned` and no newer upload exists, and effective due not passed |
+| **Returned** | No active attempt after Return and effective due not passed; newer processing/rejected uploads retain separate feedback |
 | **Missing** | No active submission, and effective due has passed |
 | **Assigned** | No active submission, and not yet due (or no due date) |
 | **Draft** | Active submission is graded but `released_at is null` |

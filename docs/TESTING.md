@@ -373,6 +373,8 @@ Deadline regressions exercise both the real record RPC and the HTTP upload route
 
 On this Windows host, Docker/Podman is unavailable; the user authorized publishing `feat/phase3-return-release` to `ryanestoque/writewise` and using its ephemeral CI stack. Never substitute a hosted dev/prod database for test resets. The implementation tracker records dated CI and local check results separately from deployment/manual QA.
 
+Local checks passed for the full backend Ruff scope, all frontend ESLint/TypeScript, and the four changed research/calibration Python files. An additional broad `research/ training/` Ruff sweep found 75 existing issues in untouched Stage 1/HTR scripts and notebooks; those files have no diff from `origin/main` and are outside this slice. Do not describe that broader sweep as passing.
+
 Required signed-in manual QA:
 
 - Teacher Return a completed draft/released attempt, check reason/note and retained rubric, then confirm old attempts do not count automatically.
