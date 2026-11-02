@@ -50,7 +50,7 @@ Resolve recipients from current database relationships inside the transaction. F
 | `due_soon` | All linked parents of currently assigned students | Deadline sweep; no active attempt; effective deadline is between the sweep time and 24 hours ahead, inclusive | Activity + student + recipient + exact effective deadline |
 | `activity_missing` | All linked parents of currently assigned students | Deadline sweep; no active attempt; effective deadline is strictly before sweep time | Activity + student + recipient + exact effective deadline |
 
-Prefix every deduplication key with the event type. Use opaque IDs and UTC epoch microseconds for timestamp components, preserving PostgreSQL timestamp precision. A unique constraint plus `ON CONFLICT (dedupe_key) DO NOTHING` is authoritative under concurrent execution.
+Prefix every deduplication key with the event type. Use opaque IDs and UTC epoch microseconds for timestamp components, preserving PostgreSQL timestamp precision. A unique delivery-record claim plus `ON CONFLICT (dedupe_key) DO NOTHING` is authoritative under concurrent execution; the public notification also retains its unique key.
 
 ### 4.1 Assignment changes
 
@@ -91,6 +91,8 @@ Create `public.notification_type` with the seven Slice 3 values, and `public.not
 All current event types have an activity and child, so those references are required rather than inheriting nullable sketch fields. Internal insertion validates that any referenced submission belongs to that same activity/student. Add a check constraint for which types require a submission.
 
 Indexes: `(recipient_id, created_at DESC, id DESC)` for deterministic feed order; a partial index on unread `recipient_id`; and indexes on activity/student/submission FKs where not already covered by an index prefix, supporting cascade cleanup. Do not add a JSON payload or duplicate business data.
+
+**Planning refinement (2026-11-03):** A successful-attempt deletion cascades its notification, so a key stored only on that notification cannot preserve §4.2's no-repeat rule for deletion/retry in one Return cycle. Add a private `writewise_internal.notification_delivery` record containing the unique dedupe key, recipient/activity/student IDs, and creation time. It cascades with those three owners, but has no submission FK, so delivery evidence survives attempt deletion. The insertion helper claims this key and inserts the public notification in one transaction; either both commit or both roll back. The private record has no browser privileges, no copied content, and no separate retention/job subsystem. Test deletion/retry against this record rather than assuming a vanished public row still enforces uniqueness.
 
 ### 5.2 Browser reads and trusted writers
 
