@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-03 (Phase 3 Slice 3 implemented; final CI and signed-in portal QA pending)
+**Last updated:** 2026-11-03 (Phase 3 Slice 3 automated checks passed; signed-in portal QA pending)
 
 ## Summary
 
@@ -227,12 +227,14 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|
-| Notification schema and recipient-only reads | Implemented, verification pending | Five migrations starting `20261103010000`; IDs-only public rows, private durable delivery receipts, recipient-only SELECT RLS, denied browser writes/helpers. Initial nine storage regressions passed in CI; generated DB contract came from the migrated ephemeral stack. Final drift/advisor gate pending. |
-| Event emitters and mark-read API | Implemented, verification pending | Explicit assignment/Return/rejection/release/completion RPC emission and verified-identity single/all-read endpoints; generated OpenAPI types. Database-free suite has 73 passing cases. CI proved rollback, release/retry/pin and read-snapshot cases; two reproduced roster-race failures have fixes awaiting CI. |
+| Notification schema and recipient-only reads | Implemented, verification pending | Five migrations starting `20261103010000`; IDs-only public rows, private durable delivery receipts, recipient-only SELECT RLS, denied browser writes/helpers. Full ephemeral CI passed, including schema/RLS proofs, generated-type drift and the security-advisor error gate. Portal QA remains open. |
+| Event emitters and mark-read API | Implemented, verification pending | Explicit assignment/Return/rejection/release/completion RPC emission and verified-identity single/all-read endpoints; generated OpenAPI types. CI passed rollback for assignment and every lifecycle event, release/retry/pin, cross-parent delivery dedupe, read snapshots and both corrected roster races. Portal QA remains open. |
 | Due-soon/missing scheduler and deduplication | Implemented, verification pending | Private fixed-time sweep and one named 15-minute pg_cron job; exact effective deadline, live roster/assignment, archive and active-attempt predicates. Boundary, concurrent-sweep and completion-lock tests passed in CI. Excused suppression belongs to Slice 5, where that field is introduced. |
-| Header bell, deep links, contracts, verification | Implemented, verification pending | Shared teacher/parent bell, 60-second foreground polling, retained keyset pages, read actions, account cleanup and exact child/activity/attempt destinations. Local lint/types/production build and controlled SDK race checks passed; focused reviews found no remaining blocker after fixes. Final CI/upgrade proof and signed-in teacher/parent/mobile/keyboard QA remain. |
+| Header bell, deep links, contracts, verification | Implemented, verification pending | Shared teacher/parent bell, 60-second foreground polling, retained keyset pages, read actions, account cleanup and exact child/activity/attempt destinations. Local lint/types/production build, controlled SDK race checks, final CI and all three upgrade proofs passed. Focused reviews found no remaining blocker after fixes. Signed-in teacher/parent/mobile/keyboard QA remains. |
 
 **Evidence (2026-11-03):** [Initial red run](https://github.com/ryanestoque/writewise/actions/runs/41486464310): 429 passed, nine new tests failed on absent storage. [Event run](https://github.com/ryanestoque/writewise/actions/runs/41490582078): 463 passed, one intentionally missing release-emitter case failed. [Race run](https://github.com/ryanestoque/writewise/actions/runs/41494149833): 473 passed, two concurrent-roster assignment cases failed; metadata edits now skip fanout and explicit target edits compare against one frozen roster snapshot. Final verification is recorded in the execution plan. Browser inventory exposed no connected browser for this slice's walkthrough; no signed-in portal QA is claimed. Keep the summary at **2/6 verified** until that gate closes.
+
+**Automated closeout (2026-11-03):** [PR CI on `a13098a`](https://github.com/ryanestoque/writewise/actions/runs/41500638054) passed **481 tests**, all three legacy upgrade proofs, Ruff/ESLint/TypeScript, generated API/database comparisons and security advisors. Additional lock-observed cases cover activity-deadline and student-override edits committed before a waiting sweep. A raw-session rollback fixture was corrected to carry transaction-local service JWT claims, and cross-parent fixture teardown now deletes uploads before their Auth account. Both changes were reviewed. Local database-free tests passed 73 cases; production webpack build and controlled SDK/source race checks passed. [Draft PR #6](https://github.com/ryanestoque/writewise/pull/6) remains open for the manual portal gate; no hosted migrations or deployment were performed. The implementation worktree is `.worktrees/phase3-in-app-notifications` on `feat/phase3-notifications-implementation`.
 
 ### Slice ④ — Email notifications
 
