@@ -86,7 +86,7 @@ export function SubmissionHistoryDialog({
 
   // Restore scroll position and keyboard focus when returning from the worksheet photo viewer
   useEffect(() => {
-    if (!isViewingWorksheet && scrollContainerRef.current && savedScrollTopRef.current > 0) {
+    if (!isViewingWorksheet && scrollContainerRef.current) {
       const scrollEl = scrollContainerRef.current;
       const targetScroll = savedScrollTopRef.current;
       requestAnimationFrame(() => {

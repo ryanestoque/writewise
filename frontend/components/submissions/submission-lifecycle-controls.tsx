@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -143,6 +143,7 @@ function ReturnForm({ submission, onDone }: { submission: Submission; onDone: ()
 }
 
 export function SubmissionLifecycleControls({ submission }: { submission: Submission }) {
+  const focusTarget = useRef<HTMLElement>(null);
   const { data: states, isError } = useActivityWork(submission.activity_id);
   const work = states?.find((row) => row.student_id === submission.student_id);
   const release = useReleaseSubmission();
@@ -172,6 +173,8 @@ export function SubmissionLifecycleControls({ submission }: { submission: Submis
   return (
     <section
       aria-label="Worksheet return and release"
+      ref={focusTarget}
+      tabIndex={-1}
       className="border-border bg-card my-3 flex flex-col gap-3 rounded-xl border p-3"
     >
       <div className="flex flex-wrap items-center gap-2">
@@ -247,7 +250,7 @@ export function SubmissionLifecycleControls({ submission }: { submission: Submis
         </p>
       )}
       <Dialog open={returnOpen} onOpenChange={(open) => setReturnOpen(open)}>
-        <DialogContent>
+        <DialogContent finalFocus={focusTarget}>
           <DialogHeader>
             <DialogTitle>Return worksheet</DialogTitle>
             <DialogDescription>
@@ -389,13 +392,20 @@ export function StudentWorkControls(props: {
   attempts: Submission[];
 }) {
   const [open, setOpen] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
   return (
     <>
-      <Button size="sm" variant="outline" onClick={() => setOpen(true)} disabled={!props.state}>
+      <Button
+        ref={trigger}
+        size="sm"
+        variant="outline"
+        onClick={() => setOpen(true)}
+        disabled={!props.state}
+      >
         Work settings
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent finalFocus={trigger}>
           <DialogHeader>
             <DialogTitle>Work settings</DialogTitle>
             <DialogDescription>
@@ -410,6 +420,7 @@ export function StudentWorkControls(props: {
 }
 
 export function ReleaseActivityButton({ activityId }: { activityId: string }) {
+  const focusTarget = useRef<HTMLSpanElement>(null);
   const { data: states } = useActivityWork(activityId);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -428,7 +439,7 @@ export function ReleaseActivityButton({ activityId }: { activityId: string }) {
     }
   }
   return (
-    <>
+    <span ref={focusTarget} tabIndex={-1} className="inline-flex">
       <Button
         variant="outline"
         disabled={!count}
@@ -445,7 +456,7 @@ export function ReleaseActivityButton({ activityId }: { activityId: string }) {
           if (!mutation.isPending) setOpen(next);
         }}
       >
-        <DialogContent>
+        <DialogContent finalFocus={focusTarget}>
           <DialogHeader>
             <DialogTitle>Release results to parents?</DialogTitle>
             <DialogDescription>
@@ -468,6 +479,6 @@ export function ReleaseActivityButton({ activityId }: { activityId: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </span>
   );
 }
