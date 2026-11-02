@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.activities import router as activities_router
+from app.api.notifications import router as notifications_router
 from app.api.sections import router as sections_router
 from app.api.students import router as students_router
 from app.api.submission_lifecycle import router as submission_lifecycle_router
@@ -44,7 +45,9 @@ app.add_middleware(
 async def http_exception_handler(request: Request, exc: HTTPException):
     # Normalize error to standard format
     if isinstance(exc.detail, dict) and "code" in exc.detail:
-        return JSONResponse(status_code=exc.status_code, content={"error": exc.detail})
+        return JSONResponse(
+            status_code=exc.status_code, content={"error": exc.detail}, headers=exc.headers
+        )
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": {"code": "INTERNAL_ERROR", "message": str(exc.detail), "details": {}}},
@@ -108,6 +111,7 @@ def health_check():
 
 
 app.include_router(students_router, prefix="/api/students", tags=["students"])
+app.include_router(notifications_router, prefix="/api/notifications", tags=["notifications"])
 app.include_router(submission_lifecycle_router, prefix="/api", tags=["student-work"])
 app.include_router(sections_router, prefix="/api/sections", tags=["sections"])
 app.include_router(activities_router, prefix="/api/activities", tags=["activities"])

@@ -11,6 +11,7 @@ from postgrest.exceptions import APIError
 from supabase import create_client
 
 from app.core.supabase import supabase_client as admin
+from tests.rls.notification_support import db_value
 
 
 def seed_notice(family, activity, recipient=None):
@@ -28,17 +29,6 @@ def seed_notice(family, activity, recipient=None):
         .execute()
         .data[0]
     )
-
-
-def db_value(query, *parameters):
-    async def execute():
-        connection = await asyncpg.connect(os.environ["SUPABASE_DB_URL"])
-        try:
-            return await connection.fetchval(query, *parameters)
-        finally:
-            await connection.close()
-
-    return asyncio.run(execute())
 
 
 def test_recipient_reads_only_own_rows_and_count(family, assigned_activity):
@@ -198,3 +188,49 @@ def test_delivery_survives_submission_deletion(family, assigned_activity):
         )
     finally:
         admin.table("submission").delete().in_("id", ids).execute()
+
+
+def test_single_read_is_recipient_scoped_and_preserves_first_stamp(family, assigned_activity):
+    notice = seed_notice(family, assigned_activity["id"])
+    parameters = {"actor_id": family["parent"], "target_notification_id": notice["id"]}
+    first = admin.rpc("mark_notification_read", parameters).execute().data
+    assert first["id"] == notice["id"]
+    assert first["read_at"] is not None
+    assert admin.rpc("mark_notification_read", parameters).execute().data == first
+    with pytest.raises(APIError) as failure:
+        admin.rpc(
+            "mark_notification_read", {**parameters, "actor_id": family["other_parent"]}
+        ).execute()
+    assert failure.value.code == "WW404"
+    with pytest.raises(APIError):
+        family["parent_client"].rpc("mark_notification_read", parameters).execute()
+
+
+def test_all_read_counts_only_unread_recipient_rows(family, assigned_activity, second_parent):
+    recipient = second_parent["id"]
+    admin.table("notification").delete().eq("recipient_id", recipient).execute()
+    own = [seed_notice(family, assigned_activity["id"], recipient) for _ in range(3)]
+    foreign = seed_notice(family, assigned_activity["id"])
+    old_stamp = "2020-01-01T00:00:00+00:00"
+    admin.table("notification").update({"read_at": old_stamp}).eq("id", own[0]["id"]).execute()
+    result = admin.rpc("mark_all_notifications_read", {"actor_id": recipient}).execute().data
+    assert result["updated_count"] == 2
+    rows = (
+        admin.table("notification")
+        .select("id,read_at")
+        .in_("id", [row["id"] for row in own])
+        .execute()
+        .data
+    )
+    stamps = {row["id"]: row["read_at"] for row in rows}
+    assert stamps[own[0]["id"]] == old_stamp
+    assert stamps[own[1]["id"]] == stamps[own[2]["id"]] == result["read_at"]
+    assert (
+        admin.rpc("mark_all_notifications_read", {"actor_id": recipient})
+        .execute()
+        .data["updated_count"]
+        == 0
+    )
+    assert admin.table("notification").select("read_at").eq("id", foreign["id"]).execute().data == [
+        {"read_at": None}
+    ]
