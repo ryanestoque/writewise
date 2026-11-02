@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-02 (Slice 1 implementation and CI evidence; signed-in portal QA pending; local Phase 2 teacher rubric UI gate)
+**Last updated:** 2026-11-02 (Phase 3 Slice 1 user sign-off and Slice 2 design draft; local Phase 2 teacher rubric UI gate)
 
 ## Summary
 
@@ -12,7 +12,7 @@ Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §
 | Phase 1 — Teacher Tooling & Raw CV Pipeline | 26 / 26 |
 | Between Phases — Calibration | 9 / 9 |
 | Phase 2 — Calibrated Scoring & Full System | 13 / 14 |
-| Phase 3 — Classroom-Style Activities | 0 / 6 slices verified |
+| Phase 3 — Classroom-Style Activities | 1 / 6 slices verified |
 
 *Update this table whenever an item's status changes. Phase 0–2 counts reflect the existing detailed records, not a fresh verification of cloud provisioning, model artifacts, deployments, or research results. Some Done rows still have explicit verification caveats. Phase 3 uses the evidence and verification gates defined below.*
 
@@ -154,7 +154,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 
 **Design reference:** [Phase 3 proposal](docs/next_steps/PHASE_3_CLASSROOM_ACTIVITIES.md), especially §2 decisions, §8 slices, and §9 open details. Its SQL and API surface remain sketches, not implemented contracts.
 
-**Next implementation plan:** [Slice ① — Assignment and deadlines](docs/superpowers/plans/2026-11-01-phase3-assignment-deadlines.md). The plan records proposed resolutions to the audit findings; review those resolutions before implementation.
+**Slice ① implementation plan:** [Assignment and deadlines](docs/superpowers/plans/2026-11-01-phase3-assignment-deadlines.md). Slice ② (Return and release) is next in the proposed build order.
 
 ### Status and evidence rules
 
@@ -178,7 +178,7 @@ Only count a slice in the summary after all its deliverables are Verified. Updat
 
 ### Slice ① — Assignment and deadlines
 
-**Dependency:** approved Slice ① contract and reproducible ephemeral-stack setup. **Status: Implemented, verification pending — signed-in portal QA remains required.**
+**Dependency:** approved Slice ① contract and reproducible ephemeral-stack setup. **Status: Verified.** The user confirmed on 2026-11-02 that Slice 1 is all good, closing the signed-in portal QA requirement. This is user-reported sign-off; the portal walkthrough was not independently observed in this repository audit.
 
 **Initial prerequisite record (2026-11-01, superseded by CI evidence below):** User approved proceeding after the defense milestone. Work is isolated on `feat/phase3-assignment-deadlines` in `.worktrees/phase3-assignment-deadlines`; the original checkout's pending changes were preserved. Supabase CLI 2.115.0 generated `supabase/config.toml`; CI anonymous-key capture and local reset configuration are prepared, with reproduction commands in `docs/TESTING.md` §3.1.1. Startup failed with `LegacyDockerLifecycleInspectError` because Docker/Podman is unavailable. At that point the migration baseline and feature work were pending. The user subsequently approved CI-only verification; current results follow below.
 
@@ -186,22 +186,24 @@ Only count a slice in the summary after all its deliverables are Verified. Updat
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|
-| Activity title, instructions, due date, close-after-due | Implemented, verification pending | Migration `20261101132822_phase3_assignments.sql`, `activity_contracts.py`, shared `activity-assignment-fields.tsx`; request models and date conversion smoke checks pass locally. CI migration replay passed; portal QA pending. |
-| Section/student assignments and ownership validation | Implemented, verification pending | Assignment table, scoped helper and service-only transactional RPCs; Python validates ownership before writes. Signed-in RLS/rollback tests added in `tests/rls/test_activity_assignments.py`; passed in CI. |
-| Backfill and RLS-scoped reads | Implemented, verification pending | Migration backfills owned sections plus direct targets for uncovered roster children. Parent policy includes assigned in-class metadata; `use-parent-data.ts` scopes targets to the selected child. Synthetic upgrade proof covers null/foreign-section and empty-roster cases and passed in CI. |
-| Upload eligibility and deadline enforcement | Implemented, verification pending | `assignment_access.py` checks both-role assignment and parent-only closure after existing authorization and before image work. Real-route/SDK tests against controlled HTTP responses pass, including exact-boundary and denial-before-decode cases. Full backend suite passed in CI. |
-| Teacher/parent UI, types, documentation, verification | Implemented, verification pending | Forms, duplicate clearing, assignment-filtered uploads, child-scoped listing and latest-completed work status are implemented. OpenAPI types regenerated locally; database types generated from the migrated CI stack and committed in `116818b`. Contract docs updated. Static review findings on stale targets/invalid prefills fixed; signed-in portal QA pending. Full Phase 3 status precedence waits for Slice ②. |
+| Activity title, instructions, due date, close-after-due | Verified | Migration `20261101132822_phase3_assignments.sql`, `activity_contracts.py`, shared `activity-assignment-fields.tsx`; request models and date conversion smoke checks passed locally. CI migration replay passed; user signed off on Slice 1 portal behavior on 2026-11-02. |
+| Section/student assignments and ownership validation | Verified | Assignment table, scoped helper and service-only transactional RPCs; Python validates ownership before writes. Signed-in RLS/rollback tests in `tests/rls/test_activity_assignments.py` passed in CI. |
+| Backfill and RLS-scoped reads | Verified | Migration backfills owned sections plus direct targets for uncovered roster children. Parent policy includes assigned in-class metadata; `use-parent-data.ts` scopes targets to the selected child. Synthetic upgrade proof covers null/foreign-section and empty-roster cases and passed in CI. |
+| Upload eligibility and deadline enforcement | Verified | `assignment_access.py` checks both-role assignment and parent-only closure after existing authorization and before image work. Real-route/SDK tests against controlled HTTP responses passed, including exact-boundary and denial-before-decode cases. Full backend suite passed in CI. |
+| Teacher/parent UI, types, documentation, verification | Verified | Forms, duplicate clearing, assignment-filtered uploads, child-scoped listing and latest-completed work status are implemented. OpenAPI types regenerated locally; database types generated from the migrated CI stack and committed in `116818b`. Contract docs updated. Static review findings on stale targets/invalid prefills fixed; user signed off on Slice 1 portal behavior on 2026-11-02. Full Phase 3 status precedence waits for Slice ②. |
 
 **Implementation evidence (2026-11-01):** User approved CI-only database verification and publishing the feature branch to public `ryanestoque/writewise`. [CI run for `116818b`](https://github.com/ryanestoque/writewise/actions/runs/41313820267) passed migration/reset, the synthetic old-schema upgrade proof (including empty-roster edits), generated types and the full backend suite: **363 passed, 15 dependency deprecation warnings**. Tests include authenticated parent/teacher isolation, denied browser/RPC writes, roster/section changes, atomic rollback and upload regressions. The initial run's test-module naming collision was fixed by packaging `tests/rls/`; it was a test-collection failure rather than a migration failure.
 
 Local Ruff, ESLint and TypeScript checks passed using installed-tool equivalents; 28 database-free contract/SDK transport cases passed (one upstream TestClient warning). The production frontend build passed at `116818b` with dummy localhost settings; the later parent-dialog eligibility guard passed lint/type checking. Manual helper smoke checks passed under America/New_York and UTC, both displaying the same Manila deadline. Static schema/backend and UI reviews found no remaining material issue after fixing stale-target edits and invalid-prefill recovery.
 
-**Remaining verification:** Signed-in teacher/parent manual QA has not passed. Computer Use ended because it could not determine the Windows browser URL confidently enough to enforce its policy; no rendered-browser or portal pass is claimed. The temporary synthetic preview route/server were removed/stopped. No hosted migration, merge or deployment was performed. Keep the slice out of the Verified count until the documented QA flows pass. A final push also adds parent-dialog eligibility feedback and a CI check requiring generated database types to match the committed contract.
+**Verification closeout (2026-11-02):** The user confirmed Slice 1 is all good, providing sign-off for the remaining signed-in portal QA. The earlier computer-use attempt did not yield an independently observed browser pass. The temporary synthetic preview route/server were removed/stopped. Slice 1 was merged into `main` as `30d2a4e`; hosted migration and deployment were not assessed by this repository audit. The final push added parent-dialog eligibility feedback and a CI check requiring generated database types to match the committed contract.
 
 
 ### Slice ② — Return and release
 
 **Dependency:** Slice ①. **Status: Not started.**
+
+**Design preparation (2026-11-02):** User approved proceeding with Slice 2. The repository audit and [return/release design](docs/superpowers/specs/2026-11-02-phase3-return-release-design.md) are prepared for review. The draft covers parent upload-response redaction, both score-table release policies, shared active-attempt selection, atomic lifecycle changes, historical-result backfill, and research compatibility. It proposes an explicit resolution of older-attempt fallback after Return; application implementation and verification have not started.
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|
