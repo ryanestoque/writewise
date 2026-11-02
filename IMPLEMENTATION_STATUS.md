@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-02 (Phase 3 Slice 2 implementation and CI evidence; signed-in portal QA pending)
+**Last updated:** 2026-11-02 (Phase 3 Slice 2 verified following user-reported portal QA sign-off)
 
 ## Summary
 
@@ -12,7 +12,7 @@ Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §
 | Phase 1 — Teacher Tooling & Raw CV Pipeline | 26 / 26 |
 | Between Phases — Calibration | 9 / 9 |
 | Phase 2 — Calibrated Scoring & Full System | 13 / 14 |
-| Phase 3 — Classroom-Style Activities | 1 / 6 slices verified |
+| Phase 3 — Classroom-Style Activities | 2 / 6 slices verified |
 
 *Update this table whenever an item's status changes. Phase 0–2 counts reflect the existing detailed records, not a fresh verification of cloud provisioning, model artifacts, deployments, or research results. Some Done rows still have explicit verification caveats. Phase 3 uses the evidence and verification gates defined below.*
 
@@ -154,7 +154,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 
 **Design reference:** [Phase 3 proposal](docs/next_steps/PHASE_3_CLASSROOM_ACTIVITIES.md), especially §2 decisions, §8 slices, and §9 open details. Promoted contracts for implemented slices live in `docs/API_SPEC.md` and `docs/DATABASE.md`; later-slice sketches remain proposals.
 
-**Current implementation plan:** [Slice ② — Return and release](docs/superpowers/plans/2026-11-02-phase3-return-release.md). [Slice ① plan](docs/superpowers/plans/2026-11-01-phase3-assignment-deadlines.md) is retained as its implementation record.
+**Completed implementation records:** [Slice ② — Return and release](docs/superpowers/plans/2026-11-02-phase3-return-release.md) and [Slice ① — Assignment and deadlines](docs/superpowers/plans/2026-11-01-phase3-assignment-deadlines.md). Slice ③, in-app notifications, is next and has not started.
 
 ### Status and evidence rules
 
@@ -201,17 +201,17 @@ Local Ruff, ESLint and TypeScript checks passed using installed-tool equivalents
 
 ### Slice ② — Return and release
 
-**Dependency:** Slice ①. **Status: Implemented, verification pending — signed-in portal QA remains required.**
+**Dependency:** Slice ①. **Status: Verified.** After receiving the manual QA checklist and pinning instructions, the user reported Slice 2 was all good and explicitly requested closeout on 2026-11-02. This closes the portal QA gate as user-reported sign-off; the walkthrough was not independently observed by the agent.
 
 **Authorization and design (2026-11-02):** User approved the [full return/release design](docs/superpowers/specs/2026-11-02-phase3-return-release-design.md) after confirming that Return keeps work Returned/Missing until a new completed upload or explicit teacher pin. Work is isolated on `feat/phase3-return-release` in `.worktrees/phase3-return-release`. Local Supabase startup confirmed Docker/Podman is absent. Automatic approval review initially rejected publishing to an unapproved destination; the user then explicitly authorized publishing this branch to `https://github.com/ryanestoque/writewise.git` and using its CI stack. No hosted database reset, migration, merge, or deployment was performed.
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|
-| Returned submission lifecycle and retained rubric history | Implemented, verification pending | Enum migration `20261102112153_phase3_returned_status.sql`, lifecycle migration `20261102112156_phase3_return_release.sql`, typed lifecycle router and transactions. Return preserves scored history; new uploads are drafts. Backend/RLS cases passed in CI; portal QA pending. |
-| Student work, due override, pinning, active-attempt view | Implemented, verification pending | `student_work`, `active_submission`, and `activity_work_state` centralize selection/status. Per-student due, pin/unpin, historical metadata, dashboard/latest/trend consumers implemented. Deadline boundary/override, pin, rollback, section-move and lock-coordinated Return/release tests passed in CI; portal QA pending. |
-| Draft/released score authorization | Implemented, verification pending | Both score-table parent policies and parent upload response are gated. Existing results backfilled released; changed rubric bands redraft atomically. Direct/embedded/view isolation and synthetic release-upgrade proof passed in CI. |
-| Return/release UI and verification | Implemented, verification pending | Teacher Return/single/bulk release/work-settings controls and parent returned/draft/released/history flows implemented. API/database types generated, production build passed, and static review findings fixed. Signed-in portal QA remains pending. |
-| Calibration export compatibility | Implemented, verification pending | Authorized exporter retains scored returns and writes return/active flags to measurement and crop CSVs. Analysis/Stage 2 filter invalid return reasons by default with explicit opt-in and legacy CSV support. Builder, actual CSV writer, and real loader tests passed locally and in CI; portal QA remains the slice gate. |
+| Returned submission lifecycle and retained rubric history | Verified | Enum migration `20261102112153_phase3_returned_status.sql`, lifecycle migration `20261102112156_phase3_return_release.sql`, typed lifecycle router and transactions. Return preserves scored history; new uploads are drafts. Backend/RLS cases passed in CI; user-reported portal QA signed off on 2026-11-02. |
+| Student work, due override, pinning, active-attempt view | Verified | `student_work`, `active_submission`, and `activity_work_state` centralize selection/status. Per-student due, pin/unpin, historical metadata, dashboard/latest/trend consumers implemented. Deadline boundary/override, pin, rollback, section-move and lock-coordinated Return/release tests passed in CI; user-reported portal QA signed off on 2026-11-02. |
+| Draft/released score authorization | Verified | Both score-table parent policies and parent upload response are gated. Existing results backfilled released; changed rubric bands redraft atomically. Direct/embedded/view isolation and synthetic release-upgrade proof passed in CI. |
+| Return/release UI and verification | Verified | Teacher Return/single/bulk release/work-settings controls and parent returned/draft/released/history flows implemented. API/database types generated, production build passed, and static review findings fixed. User-reported portal QA signed off on 2026-11-02. |
+| Calibration export compatibility | Verified | Authorized exporter retains scored returns and writes return/active flags to measurement and crop CSVs. Analysis/Stage 2 filter invalid return reasons by default with explicit opt-in and legacy CSV support. Builder, actual CSV writer, and real loader tests passed locally and in CI. |
 
 **Implementation evidence (2026-11-02):** [CI run for `d262007`](https://github.com/ryanestoque/writewise/actions/runs/41448467286) passed migration replay, both synthetic upgrade proofs, generated-contract comparison, security-advisor gating, and the full backend suite: **429 passed, 21 dependency warnings**. Coverage includes lock-coordinated Return/release, completion authorization revocation, deterministic ordering, pin cleanup/cross-child denial, incomplete-grade denial, and upload acceptance across the deadline. Security advisors reported no errors and one pre-existing warning: mutable search path on `public.set_updated_at`.
 
@@ -219,7 +219,7 @@ Earlier red runs proved draft-score exposure, missing lifecycle functions, and t
 
 Local database-free route/contract/deadline/research checks passed (**88 tests**, one upstream TestClient warning). Backend Ruff, changed research/calibration Ruff, whole-frontend ESLint/TypeScript, and the production build with dummy localhost configuration (`next build --webpack`) passed. An extra broad lint sweep found 75 existing issues in untouched Stage 1/HTR scripts and notebooks; see TESTING.md §13. Read-only code reviews covered API authorization/contracts, migrations, active/released UI, research compatibility, acceptance timestamps, and dialog focus. Material findings were fixed: historical parent work after reassignment, counted-score display after pinning, neutral deletion-conflict recovery, omission of untouched work fields, and actual crop CSV lifecycle columns. No real export or training run was performed.
 
-**Remaining verification:** Signed-in teacher/parent and phone-width manual QA; the user confirmed this is still pending on 2026-11-02. Computer Use stopped because it could not confidently determine the current Windows browser URL; no rendered or signed-in portal pass is claimed. The temporary synthetic preview route was removed and both local preview servers stopped. Keep the slice out of the Verified count until the documented portal flows pass. The PR remains draft; merge, hosted migration, and production deployment remain separate.
+**Verification closeout (2026-11-02):** The user subsequently reported QA was all good and requested Slice 2 closeout, superseding the earlier pending-QA record. [CI on PR head `7790687`](https://github.com/ryanestoque/writewise/actions/runs/41450044024) passed the full 429-test suite, migrations, both upgrade proofs, generated types and security-advisor error gate. Computer Use had stopped because it could not confidently determine the Windows browser URL; user sign-off does not imply an independently observed agent walkthrough. The temporary preview route/servers were removed/stopped. Local QA in this worktree uses `npm run dev -- --webpack` because its `node_modules` junction points outside Turbopack's inferred root. [PR #4](https://github.com/ryanestoque/writewise/pull/4) is the integration record; hosted migration and deployment are assessed separately. Preserve the worktree for the user's local environment.
 
 ### Slice ③ — In-app notifications
 

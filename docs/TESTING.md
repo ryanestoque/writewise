@@ -385,3 +385,5 @@ Required signed-in manual QA:
 - Inspect full history and phone-width dialogs; unreleased photos use the photo-only viewer and returned/inactive attempts stay out of trends.
 
 Browser QA attempt on 2026-11-02 was stopped by Computer Use because it could not confidently determine the current Windows browser URL. No rendered or signed-in portal QA pass is claimed. The temporary synthetic preview route was removed and its servers stopped.
+
+**User-reported QA closeout (2026-11-02):** After receiving this manual checklist and counted-attempt instructions, the user reported all good and explicitly requested Slice 2 closeout. This closes the manual gate as user-reported sign-off; it does not establish an independently observed agent browser pass. In the Slice 2 worktree, start the frontend with `npm run dev -- --webpack`: its shared `node_modules` junction resolves outside Turbopack's inferred filesystem root. The backend and frontend must use the same dev Supabase project for local QA.

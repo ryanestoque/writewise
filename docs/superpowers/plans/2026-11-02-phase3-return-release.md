@@ -111,7 +111,7 @@ assert response.json()['status'] == 'returned'
 - [x] Show Return metadata, effective due, and eligible resubmission in the parent portal. Unreleased results say Turned in and render no score/overlay panels; keep photos and history available.
 - [x] Implement stable dialog focus targets and labeled form controls. Return/release targets remain focusable when the original action disappears or becomes disabled.
 - [x] Run ESLint, TypeScript and a production build; commit the UI and documentation.
-- [ ] Verify focus behavior, phone-width layouts, and the signed-in manual QA matrix from the approved spec. Computer Use stopped before browser inspection because the Windows browser URL could not be determined confidently; no visual pass is claimed.
+- [x] Close the manual QA gate with user-reported sign-off on 2026-11-02 after providing the focus/phone-width/signed-in checklist. Computer Use stopped before browser inspection; no independently observed agent walkthrough is claimed.
 
 ## Task 6: Research export and calibration compatibility
 
@@ -133,11 +133,13 @@ assert response.json()['status'] == 'returned'
 - [x] Run Ruff, ESLint, TypeScript, affected unit/research tests, production frontend build, and the full backend suite on the ephemeral migrated stack.
 - [x] Generate database types from that stack and OpenAPI types from the final schema; verify no generated drift.
 - [x] If local containers remain unavailable, obtain migration/RLS/full-suite/type evidence in CI on this feature branch. Record any missing verification accurately; never point resets at hosted dev/prod.
-- [ ] Complete signed-in manual QA for teacher Return/release/pin/due and parent draft/resubmit/released/history flows, including siblings and mobile controls.
-- [x] Update promoted docs and tracker with dated test/manual evidence; keep Slice 2 verification pending and Phase 3 at 1/6 until portal QA passes. Keep merge/deployment separate from local completion.
+- [x] Obtain user-reported manual QA sign-off after the teacher/parent/sibling/mobile checklist; the user reported all good and explicitly requested closeout on 2026-11-02.
+- [x] Update promoted docs and tracker with dated test/manual evidence; mark Slice 2 Verified and Phase 3 at 2/6 following user sign-off. Track PR integration and hosted deployment separately.
 
 ## Plan review
 
 **Execution adjustments:** New lifecycle route tests use `tests/unit/test_submission_lifecycle_routes.py` with the real FastAPI routes/Supabase SDK and controlled external HTTP responses; database behavior is exercised independently through the signed-in RLS suite. This avoids duplicating the API identity fixtures while retaining live database transaction coverage. Initial red CI proved missing lifecycle behavior and existing draft exposure. The later deadline regression failed with `WW411` before the acceptance-timestamp fix. CI `41448467286` then passed 429 backend tests, both upgrade proofs, generated-contract comparison, and the security-advisor error gate. An unordered child-status test was subsequently made explicitly child-scoped. Local checks and remaining portal QA are recorded in `IMPLEMENTATION_STATUS.md`; the user confirmed manual QA is still pending. Draft PR: https://github.com/ryanestoque/writewise/pull/4.
+
+**Closeout (2026-11-02):** The user subsequently reported QA was all good and requested closeout, superseding the pending-QA statement above. CI `41450044024` on `7790687` passed all 429 tests and the migration/type/advisor gates. User-reported sign-off closes the remaining manual gate; no independently observed agent browser pass is claimed. Worktree dev startup uses `npm run dev -- --webpack` for its shared dependency junction. PR #4 is the integration record; preserve the user's worktree and local environment.
 
 The tasks cover the approved design's lifecycle, selection, backfill, release privacy, deadline, concurrency, portal, research, and verification contracts. The Return barrier and parent upload response are explicitly tested. No later-slice data fields or notifications are introduced. Follow the actual generated-type paths under `frontend/types/`.
