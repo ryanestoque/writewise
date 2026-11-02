@@ -166,7 +166,7 @@ export function ActivityAssignmentFields({ form }: { form: UseFormReturn<Activit
         <FieldError id={`${id}-targets-error`} errors={[form.formState.errors.assignments]} />
       </fieldset>
       <Field data-invalid={!!form.formState.errors.due_input}>
-        <FieldLabel htmlFor={`${id}-due`}>Due date and time (Manila, optional)</FieldLabel>
+        <FieldLabel htmlFor={`${id}-due`}>Due date and time (optional)</FieldLabel>
         <Input
           id={`${id}-due`}
           type="datetime-local"

@@ -105,7 +105,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
 
       <div className="mb-4 flex flex-col gap-2">
         <h2 className="font-heading text-xl font-semibold">{activity.title}</h2>
-        <p className="text-sm text-muted-foreground">{activity.due_at ? `Due ${formatActivityDueAt(activity.due_at)} (Manila)` : "No due date"}{activity.close_after_due ? " · Parent uploads close after due" : ""}</p>
+        <p className="text-sm text-muted-foreground">{activity.due_at ? `Due ${formatActivityDueAt(activity.due_at)}` : "No due date"}{activity.close_after_due ? " · Parent uploads close after due" : ""}</p>
         {activity.instructions && <p className="whitespace-pre-wrap text-sm">{activity.instructions}</p>}
       </div>
       {/* Archived Top Warning Banner if Archived */}

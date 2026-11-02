@@ -272,7 +272,7 @@ function ActivityCard({
           </span>
         </div>
         <h3 className="text-base font-semibold">{work.title}</h3>
-        <p className="text-xs text-muted-foreground">{work.isTakeHome ? "Take home" : "In class"} · {work.dueAt ? `Due ${formatActivityDueAt(work.dueAt)} (Manila)` : "No due date"}</p>
+        <p className="text-xs text-muted-foreground">{work.isTakeHome ? "Take home" : "In class"} · {work.dueAt ? `Due ${formatActivityDueAt(work.dueAt)}` : "No due date"}</p>
         {work.instructions && <p className="whitespace-pre-wrap text-sm">{work.instructions}</p>}
         <ActivityWorkStatus dueAt={work.dueAt} attempts={work.attempts} />
         {closed && work.isTakeHome && <p role="status" className="text-sm text-muted-foreground">Submissions are closed. Your teacher can help with another attempt.</p>}

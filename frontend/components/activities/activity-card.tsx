@@ -289,7 +289,7 @@ export const ActivityCard = memo(function ActivityCard({
         >
           <h3 className="mb-1 font-heading text-base font-semibold">{activity.title}</h3>
           <p className="mb-3 text-xs text-muted-foreground">
-            {activity.due_at ? `Due ${formatActivityDueAt(activity.due_at)} (Manila)` : "No due date"}
+            {activity.due_at ? `Due ${formatActivityDueAt(activity.due_at)}` : "No due date"}
           </p>
           <div className="relative p-3.5 sm:p-4 pb-5 sm:pb-6 rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 mb-3.5 overflow-hidden shadow-warm-sm">
             <div className="relative max-h-[148px] sm:max-h-[156px] overflow-hidden">
