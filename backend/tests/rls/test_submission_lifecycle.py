@@ -92,6 +92,40 @@ def active_ids(client, activity):
     ]
 
 
+def test_parent_historical_work_survives_section_move(family, assigned_activity, attempts):
+    activity = assigned_activity["id"]
+    student = family["students"][0]
+    admin.table("activity").update({"due_at": "2030-01-01T00:00:00Z"}).eq("id", activity).execute()
+    try:
+        admin.table("student").update({"section_id": family["sections"][1]}).eq(
+            "id", student
+        ).execute()
+        rows = (
+            family["parent_client"]
+            .table("activity_work_state")
+            .select("student_id,effective_due_at")
+            .eq("activity_id", activity)
+            .eq("student_id", student)
+            .execute()
+            .data
+        )
+        assert rows == [{"student_id": student, "effective_due_at": "2030-01-01T00:00:00+00:00"}]
+        assert (
+            family["other_parent_client"]
+            .table("activity_work_state")
+            .select("student_id")
+            .eq("activity_id", activity)
+            .eq("student_id", student)
+            .execute()
+            .data
+            == []
+        )
+    finally:
+        admin.table("student").update({"section_id": family["sections"][0]}).eq(
+            "id", student
+        ).execute()
+
+
 def test_new_drafts_hide_both_score_tables_and_embedded_diagnostics(
     family, assigned_activity, attempts
 ):
@@ -243,6 +277,148 @@ def test_work_deadline_and_parent_draft_status(family, assigned_activity, attemp
     assert teacher["work_status"] == "Draft"
     assert parent["work_status"] == "Turned in"
     assert parent["effective_due_at"] == teacher["effective_due_at"]
+
+
+def test_release_view_embeds_score_tables_under_parent_rls(family, assigned_activity, attempts):
+    activity = assigned_activity["id"]
+    parent = family["parent_client"]
+    rows = (
+        parent.table("active_submission")
+        .select("id,measurement(*),manual_score(*)")
+        .eq("activity_id", activity)
+        .execute()
+        .data
+    )
+    assert [row["id"] for row in rows] == [attempts[-1]["id"]]
+    assert rows[0]["measurement"] in (None, [])
+    assert rows[0]["manual_score"] in (None, [])
+
+
+@pytest.mark.parametrize("status", ["processing", "rejected"])
+def test_only_completed_attempt_can_be_returned(family, assigned_activity, attempts, status):
+    current = attempts[-1]["id"]
+    admin.table("submission").update({"status": status}).eq("id", current).execute()
+    with pytest.raises(APIError) as error:
+        mutate(
+            family,
+            assigned_activity["id"],
+            "return",
+            {
+                "submission_id": current,
+                "reason": "incomplete",
+            },
+        )
+    assert error.value.code == "WW409"
+
+
+def test_resubmission_completion_replaces_return_without_old_fallback(
+    family, assigned_activity, attempts
+):
+    activity = assigned_activity["id"]
+    student = family["students"][0]
+    mutate(
+        family,
+        activity,
+        "return",
+        {
+            "submission_id": attempts[-1]["id"],
+            "reason": "incomplete",
+        },
+    )
+    new_id = str(uuid4())
+    admin.rpc(
+        "record_student_submission",
+        {
+            "actor_id": family["teacher"],
+            "target_activity_id": activity,
+            "target_student_id": student,
+            "payload": {
+                "id": new_id,
+                "image_path": f"{student}/{new_id}.jpg",
+                "status": "processing",
+                "uploader_role": "teacher",
+            },
+        },
+    ).execute()
+    assert active_ids(family["parent_client"], activity) == []
+    admin.table("measurement").insert({"submission_id": new_id, "raw_output": {}}).execute()
+    admin.rpc(
+        "complete_student_submission",
+        {
+            "actor_id": family["teacher"],
+            "target_submission_id": new_id,
+        },
+    ).execute()
+    assert active_ids(family["parent_client"], activity) == [new_id]
+    assert (
+        family["parent_client"]
+        .table("measurement")
+        .select("id")
+        .eq("submission_id", new_id)
+        .execute()
+        .data
+        == []
+    )
+
+
+def test_bulk_release_skips_inactive_and_repeated_results(family, assigned_activity, attempts):
+    parameters = {"actor_id": family["teacher"], "target_activity_id": assigned_activity["id"]}
+    result = admin.rpc("release_activity_results", parameters).execute().data
+    assert result == {"released_count": 1, "submission_ids": [attempts[-1]["id"]]}
+    assert admin.rpc("release_activity_results", parameters).execute().data == {
+        "released_count": 0,
+        "submission_ids": [],
+    }
+
+
+def test_changed_rubric_redrafts_but_unchanged_save_preserves_release(
+    family, assigned_activity, attempts
+):
+    current = attempts[-1]["id"]
+    released = mutate(family, assigned_activity["id"], "release", {"submission_id": current})
+    bands = {
+        f"{criterion}_band": "excellent"
+        for criterion in (
+            "letter_formation",
+            "size_consistency",
+            "spacing",
+            "slant",
+            "baseline_alignment",
+        )
+    }
+    parameters = {"actor_id": family["teacher"], "target_submission_id": current, "payload": bands}
+    admin.rpc("save_manual_submission_score", parameters).execute()
+    assert admin.table("submission").select("released_at").eq("id", current).execute().data == [
+        {
+            "released_at": released["released_at"],
+        }
+    ]
+    bands["spacing_band"] = "developing"
+    admin.rpc("save_manual_submission_score", parameters).execute()
+    assert (
+        family["parent_client"]
+        .table("manual_score")
+        .select("id")
+        .eq("submission_id", current)
+        .execute()
+        .data
+        == []
+    )
+
+
+def test_service_rpc_rechecks_foreign_teacher(family, assigned_activity, attempts):
+    with pytest.raises(APIError) as error:
+        admin.rpc(
+            "mutate_student_work",
+            {
+                "actor_id": family["other_teacher"],
+                "target_activity_id": assigned_activity["id"],
+                "target_student_id": family["students"][0],
+                "operation": "return",
+                "payload": {"submission_id": attempts[-1]["id"], "reason": "incomplete"},
+            },
+        ).execute()
+    assert error.value.code == "WW404"
 
 
 @pytest.mark.parametrize("client_key", ["teacher_client", "parent_client", "other_parent_client"])

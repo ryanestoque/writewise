@@ -78,6 +78,9 @@ The frontend branches on `error.code`, never on parsing `message` text (ARCHITEC
 | `SECTION_NOT_EMPTY` | 409 | Section deletion refused — students are currently assigned to the section |
 | `MANUAL_SCORE_ALREADY_EXISTS` | 409 | `manual_score.submission_id` is `unique` (DATABASE §9) — no re-grade flow (§3.3) |
 | `SUBMISSION_ALREADY_GRADED` | 409 | Attempt deletion — parent attempted to delete an already graded submission (§3.3) |
+| `SUBMISSION_NOT_RETURNABLE` | 409 | Return requested for a processing, rejected, or already returned attempt |
+| `SUBMISSION_NOT_RELEASABLE` | 409 | Release requested for an inactive, ungraded, rejected, or returned attempt |
+| `INVALID_WORK_SELECTION` | 422 | Pin does not reference a completed attempt for this student and activity |
 | `QUALITY_GATE_BLUR` | 422 | CV_PIPELINE §2 |
 | `QUALITY_GATE_BRIGHTNESS` | 422 | CV_PIPELINE §2 |
 | `QUALITY_GATE_CONTRAST` | 422 | CV_PIPELINE §2 |

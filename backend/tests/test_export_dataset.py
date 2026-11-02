@@ -24,6 +24,40 @@ from export_dataset import (  # noqa: E402
 )
 
 
+def test_scored_returns_survive_export_and_active_flags_do_not_assume_paired_successors():
+    submissions = [
+        {"id": "old", "status": "completed"},
+        {"id": "returned", "status": "returned", "return_reason": "incomplete"},
+        {"id": "new", "status": "completed"},
+        {"id": "rejected", "status": "rejected"},
+    ]
+    measurements = {key: {"id": key} for key in ("old", "returned", "new", "rejected")}
+    scores = {key: {"id": key} for key in ("old", "returned", "rejected")}
+    paired = filter_paired_records(submissions, measurements, scores, {"new"})
+    assert [item["submission"]["id"] for item in paired] == ["old", "returned"]
+    assert [item["is_active_attempt"] for item in paired] == [False, False]
+
+
+def test_return_flags_reach_both_anonymized_outputs_without_teacher_notes(sample_paired_data):
+    sample = sample_paired_data[0]
+    sample["submission"].update(
+        {
+            "status": "returned",
+            "return_reason": "blurry_or_cropped",
+            "return_note": "Private note",
+        }
+    )
+    sample["is_active_attempt"] = False
+    sample["measurement"]["raw_output"] = {"lines": [{"words": [{"bbox": [1, 2, 3, 4]}]}]}
+    rows = build_measurements_records([sample], {}, {})
+    crops = build_crop_records([sample], {})
+    for row in [rows[0], crops[0]]:
+        assert row["return_reason"] == "blurry_or_cropped"
+        assert row["is_active_attempt"] is False
+        assert "return_note" not in row
+        assert "Private note" not in str(row)
+
+
 @pytest.fixture
 def sample_paired_data():
     """Create sample submission, measurement, and manual_score records."""

@@ -21,9 +21,30 @@ SECTION = "44444444-4444-4444-4444-444444444444"
 NOW = datetime(2026, 11, 2, 4, tzinfo=timezone.utc)
 
 
+@pytest.mark.parametrize(
+    "activity_due,override,denied",
+    [
+        ("2026-11-01T04:00:00Z", "2026-11-03T04:00:00Z", False),
+        ("2026-11-03T04:00:00Z", "2026-11-01T04:00:00Z", True),
+        ("2026-11-03T04:00:00Z", None, False),
+    ],
+)
+def test_student_deadline_override_controls_parent_closure(case, activity_due, override, denied):
+    case.activity["due_at"] = activity_due
+    case.work = {"due_at_override": override}
+    if denied:
+        with pytest.raises(HTTPException) as error:
+            assignment_access.assert_upload_allowed(case.activity, STUDENT, "parent", NOW)
+        assert error.value.detail["code"] == "SUBMISSIONS_CLOSED"
+    else:
+        assignment_access.assert_upload_allowed(case.activity, STUDENT, "parent", NOW)
+
+
 @pytest.fixture
 def case(monkeypatch):
-    state = SimpleNamespace(assigned=True, role="teacher", owned=True, rpc_error=None, calls=[])
+    state = SimpleNamespace(
+        assigned=True, role="teacher", owned=True, rpc_error=None, calls=[], work=None
+    )
     state.activity = {
         "id": ACTIVITY,
         "created_by": TEACHER,
@@ -65,6 +86,8 @@ def case(monkeypatch):
             return httpx.Response(200, json=[{"id": SECTION}] if state.owned else [])
         if path in ("teacher_student", "student_parent"):
             return httpx.Response(200, json=[{"student_id": STUDENT}])
+        if path == "student_work":
+            return httpx.Response(200, json=[state.work] if state.work else [])
         raise AssertionError(f"Unexpected database/image side effect: {path}")
 
     http = httpx.Client(transport=httpx.MockTransport(respond))

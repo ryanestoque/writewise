@@ -86,6 +86,20 @@ jobs:
         cd ..
         supabase db reset --local
 
+    - name: Verify legacy result release upgrade
+      env:
+        ENVIRONMENT: test
+      run: |
+        supabase db reset --local --version 20261101132822
+        cd backend
+        uv run python tests/migrations/release_upgrade_check.py prepare --manifest /tmp/release-upgrade.json
+        cd ..
+        supabase migration up --local
+        cd backend
+        uv run python tests/migrations/release_upgrade_check.py verify --manifest /tmp/release-upgrade.json
+        cd ..
+        supabase db reset --local
+
     - name: Generate database contract
       run: supabase gen types typescript --local > frontend/types/database.ts
 
@@ -95,14 +109,14 @@ jobs:
         name: database-types
         path: frontend/types/database.ts
 
-    - name: Check committed database contract
-      run: git diff --exit-code -- frontend/types/database.ts
-      
     - name: Run Backend Pytest
       working-directory: ./backend
       env:
         ENVIRONMENT: test
       run: uv run pytest
+
+    - name: Check committed database contract
+      run: git diff --exit-code -- frontend/types/database.ts
       
     - name: Teardown Supabase
       if: always()

@@ -19,6 +19,13 @@ from app.core.supabase import supabase_client
 router = APIRouter()
 
 _ERRORS = {
+    "WW411": (409, "SUBMISSIONS_CLOSED", "Submissions are closed for this activity."),
+    "WW412": (404, "ACTIVITY_NOT_ASSIGNED", "Activity is not assigned to this student."),
+    "WW413": (
+        400,
+        "INVALID_SUBMISSION_STATUS",
+        "This attempt cannot be changed in its current state.",
+    ),
     "WW404": (404, "NOT_FOUND", "Work not found."),
     "WW409": (409, "SUBMISSION_NOT_RETURNABLE", "This attempt cannot be returned."),
     "WW410": (409, "SUBMISSION_NOT_RELEASABLE", "Only the active graded attempt can be released."),
@@ -105,9 +112,10 @@ def _owned_submission(actor_id: str, submission_id: str) -> dict:
     return row
 
 
-def lifecycle_rpc(name: str, parameters: dict) -> dict:
+def lifecycle_rpc(name: str, parameters: dict, *, client=None) -> dict:
     try:
-        data = supabase_client.rpc(name, parameters).execute().data
+        sdk = supabase_client if client is None else client
+        data = sdk.rpc(name, parameters).execute().data
     except APIError as exc:
         status, code, message = _ERRORS.get(
             exc.code,

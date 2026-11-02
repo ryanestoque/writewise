@@ -203,6 +203,8 @@ class TestParentSubmissionAuthorization:
         data = response.json()
         assert "submission_id" in data
         assert data["status"] == "completed"
+        assert data["measurement"] is None
+        assert data["released_at"] is None
 
         # Verify submission record in DB has uploader_role = 'parent'
         # and uploader_id = TEST_PARENT_ID
