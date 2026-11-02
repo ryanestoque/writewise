@@ -516,6 +516,78 @@ def test_completion_rechecks_roster_relationship(family, assigned_activity, atte
         ).execute()
 
 
+def test_equal_upload_timestamps_use_deterministic_id_order(family, assigned_activity, attempts):
+    ids = ["00000000-0000-4000-8000-000000000001", "00000000-0000-4000-8000-000000000002"]
+    for submission_id in ids:
+        admin.table("submission").insert(
+            {
+                "id": submission_id,
+                "activity_id": assigned_activity["id"],
+                "student_id": family["students"][0],
+                "status": "completed",
+                "image_path": "synthetic/tied.jpg",
+                "uploader_id": family["teacher"],
+                "uploader_role": "teacher",
+                "created_at": "2030-01-01T00:00:00Z",
+            }
+        ).execute()
+    assert active_ids(family["parent_client"], assigned_activity["id"]) == [ids[1]]
+
+
+def test_deleting_a_pinned_attempt_clears_pin_and_uses_eligible_successor(
+    family,
+    assigned_activity,
+    attempts,
+):
+    activity = assigned_activity["id"]
+    mutate(family, activity, "update", {"pinned_submission_id": attempts[0]["id"]})
+    admin.table("submission").delete().eq("id", attempts[0]["id"]).execute()
+    assert active_ids(family["parent_client"], activity) == [attempts[-1]["id"]]
+    work = (
+        admin.table("student_work")
+        .select("pinned_submission_id")
+        .eq("activity_id", activity)
+        .execute()
+        .data
+    )
+    assert work == [{"pinned_submission_id": None}]
+
+
+def test_incomplete_measurement_without_rubric_is_not_releasable(
+    family, assigned_activity, attempts
+):
+    current = attempts[-1]["id"]
+    admin.table("manual_score").delete().eq("submission_id", current).execute()
+    admin.table("measurement").update({"spacing_score": None}).eq(
+        "submission_id", current
+    ).execute()
+    with pytest.raises(APIError) as error:
+        mutate(family, assigned_activity["id"], "release", {"submission_id": current})
+    assert error.value.code == "WW410"
+
+
+def test_pin_cannot_select_another_childs_completed_attempt(family, assigned_activity, attempts):
+    activity = assigned_activity["id"]
+    foreign = (
+        admin.table("submission")
+        .insert(
+            {
+                "activity_id": activity,
+                "student_id": family["students"][2],
+                "status": "completed",
+                "image_path": "synthetic/foreign.jpg",
+                "uploader_id": family["teacher"],
+                "uploader_role": "teacher",
+            }
+        )
+        .execute()
+        .data[0]["id"]
+    )
+    with pytest.raises(APIError) as error:
+        mutate(family, activity, "update", {"pinned_submission_id": foreign})
+    assert error.value.code == "WW422"
+
+
 @pytest.mark.parametrize("client_key", ["teacher_client", "parent_client", "other_parent_client"])
 def test_browser_cannot_mutate_work_or_call_service_rpc(family, assigned_activity, client_key):
     client = family[client_key]
