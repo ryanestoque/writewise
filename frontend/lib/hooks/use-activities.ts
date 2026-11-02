@@ -3,20 +3,20 @@ import { createClient } from "../supabase/client";
 import { getAuthToken } from "../supabase/auth-helper";
 import { handleApiResponse } from "../utils/api-error";
 
+import type { components } from "@/types/api";
+import type { Database } from "@/types/database";
+
 export interface ActivitySubmissionSummary {
   id: string;
   status: "processing" | "completed" | "rejected";
+  student_id: string;
+  created_at: string;
 }
 
-export interface Activity {
-  id: string;
-  target_text: string;
-  is_take_home: boolean;
-  is_archived: boolean;
-  created_by: string;
-  created_at: string;
+export type Activity = Database["public"]["Tables"]["activity"]["Row"] & {
+  assignments: Pick<Database["public"]["Tables"]["activity_assignment"]["Row"], "section_id" | "student_id">[];
   submissions?: ActivitySubmissionSummary[];
-}
+};
 
 export function useActivities() {
   const supabase = createClient();
@@ -27,7 +27,7 @@ export function useActivities() {
       const { data, error } = await supabase
         .from("activity")
         .select(
-          "id, target_text, is_take_home, is_archived, created_by, created_at, submissions:submission(id, status)"
+          "*, assignments:activity_assignment(section_id, student_id), submissions:submission(id, status, student_id, created_at)"
         )
         .order("created_at", { ascending: false });
 
@@ -48,7 +48,7 @@ export function useActivity(id: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("activity")
-        .select("id, target_text, is_take_home, is_archived, created_by, created_at")
+        .select("*, assignments:activity_assignment(section_id, student_id)")
         .eq("id", id)
         .single();
 
@@ -67,10 +67,7 @@ export function useCreateActivity() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (activityData: {
-      target_text: string;
-      is_take_home?: boolean;
-    }) => {
+    mutationFn: async (activityData: components["schemas"]["ActivityCreate"]) => {
       const token = await getAuthToken(supabase);
 
       const response = await fetch("/api/activities", {
@@ -82,7 +79,7 @@ export function useCreateActivity() {
         body: JSON.stringify(activityData),
       });
 
-      return handleApiResponse(response);
+      return handleApiResponse<components["schemas"]["ActivityResponse"]>(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["activities"] });
@@ -100,10 +97,7 @@ export function useUpdateActivity() {
       data: updateData,
     }: {
       id: string;
-      data: {
-        target_text?: string;
-        is_take_home?: boolean;
-      };
+      data: components["schemas"]["ActivityUpdate"];
     }) => {
       const token = await getAuthToken(supabase);
 
@@ -116,7 +110,7 @@ export function useUpdateActivity() {
         body: JSON.stringify(updateData),
       });
 
-      return handleApiResponse(response);
+      return handleApiResponse<components["schemas"]["ActivityResponse"]>(response);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["activities"] });
@@ -140,7 +134,7 @@ export function useDeleteActivity() {
         },
       });
 
-      return handleApiResponse(response);
+      return handleApiResponse<{ id: string; deleted: boolean }>(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["activities"] });

@@ -1,11 +1,13 @@
 import logging
 import uuid
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel
 
+from app.api.assignment_access import assert_upload_allowed
 from app.api.deps import get_current_teacher, get_current_user
 from app.core.config import settings
 from app.core.image_hardening import validate_and_harden_image
@@ -142,7 +144,7 @@ async def create_submission(
     # 3. Fetch activity details
     activity_res = (
         supabase_client.table("activity")
-        .select("id, target_text, is_take_home, created_by")
+        .select("id, target_text, is_take_home, created_by, due_at, close_after_due")
         .eq("id", activity_id)
         .execute()
     )
@@ -222,6 +224,8 @@ async def create_submission(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"code": "FORBIDDEN", "message": "Invalid role.", "details": {}},
         )
+
+    assert_upload_allowed(activity_row, student_id, caller_role, datetime.now(timezone.utc))
 
     # 5. Image hardening: magic-byte check, decompression-bomb cap, EXIF strip
     hardened_bytes = validate_and_harden_image(file_bytes)

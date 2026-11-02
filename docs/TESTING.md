@@ -45,7 +45,74 @@ Integration and security tests need a real Postgres + Auth + Storage to run agai
 
 **Decision:** every CI run spins up its own disposable Postgres/Auth/Storage stack via the Supabase CLI (`supabase start`), applies `supabase/migrations/*.sql` (the same migration files DATABASE.md treats as the schema's source of truth — no second schema definition to maintain), runs the full pytest suite against it, then tears it down. Nothing persists between runs.
 
-> **Why not the shared `writewise-dev` project, and why not a fourth environment either:** ARCHITECTURE.md §3 is explicit that there is no third staging environment, on purpose — adding a persistent `writewise-test` project would contradict that. An ephemeral, CI-only stack that exists for the duration of one workflow run and is discarded immediately after isn't a *persistent* environment in the sense ARCHITECTURE §3 means, so it doesn't reopen that decision. It also keeps TECH_STACK.md §9's "no Docker required" promise intact for local dev — the Docker dependency this introduces is confined entirely to the GitHub Actions runner, never something a teammate needs installed on their own machine.
+> **Why not the shared `writewise-dev` project, and why not a fourth environment either:** ARCHITECTURE.md §3 is explicit that there is no third staging environment. The disposable local/CI stack is not another hosted project. Everyday development still uses hosted dev without Docker; running integration tests locally requires a Docker-compatible runtime, as required by AGENTS.md §5 for API, scoring, or migration changes.
+
+### CI-only database verification exception (Slice 1)
+
+On 2026-11-01 the user approved continuing without local Docker and using GitHub Actions for the disposable Supabase checks instead of AGENTS.md §5's local run. The suite, real authenticated RLS checks and migration-upgrade proof remain required; only their location changes. Local lint/type checking and database-free contract/HTTP-transport checks still run. Do not use hosted dev for destructive test resets or claim Verified until the CI checks and portal QA pass.
+
+CI replays migrations through 0021, prepares synthetic legacy visibility fixtures, applies the new migration, checks visibility preservation (including sectionless/foreign-section and empty-roster cases), resets again, regenerates database types and uploads them as an artifact, then runs the full suite. Commit the resulting database contract to this same feature branch/PR. The full-suite conftest refuses hosted or implicit .env URLs before importing application clients.
+
+Run the database-free checks from backend with explicit dummy local Supabase variables and ENVIRONMENT=test using `uv run pytest --confcutdir=tests/unit tests/unit`. These tests exercise request models and real routes/SDK against controlled HTTP responses. They do not establish Postgres constraints, RLS or rollback.
+
+### 3.1.1 Reproduce CI locally (PowerShell)
+
+Install and start Docker Desktop (or another Docker-compatible runtime), install backend dependencies with `uv sync`, and use Supabase CLI **2.115.0**, matching `.github/workflows/ci.yml`. The checked-in `supabase/config.toml` was generated with that CLI. Its `writewise-test` project ID names local containers only; it does not link a hosted project. `db.seed` loads `supabase/seed.sql`, which supplies the synthetic teacher and parent currently required during test collection.
+
+Run the following from the repository root in a **fresh PowerShell window**, then close that window afterward to discard its test-only environment. The commands obtain credentials from the local stack rather than the development `.env`. Run them in the same checkout as the migrations being tested. On Windows, `npx.cmd --yes supabase@2.115.0` also works when no standalone CLI is installed.
+
+```powershell
+# When using npx, replace each `supabase` below with:
+# npx.cmd --yes supabase@2.115.0
+try {
+    supabase start
+    if ($LASTEXITCODE -ne 0) { throw 'Local Supabase startup failed' }
+
+    $localStackJson = supabase status -o json
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot read local Supabase status' }
+    $localStack = $localStackJson | ConvertFrom-Json
+    $localApi = [uri]$localStack.API_URL
+    $localDb = [uri]$localStack.DB_URL
+    if ($localApi.Host -notin @('localhost', '127.0.0.1', '::1') -or
+        $localDb.Host -notin @('localhost', '127.0.0.1', '::1')) {
+        throw 'Tests require localhost Supabase URLs'
+    }
+    foreach ($key in @('SERVICE_ROLE_KEY', 'ANON_KEY', 'JWT_SECRET')) {
+        if ([string]::IsNullOrWhiteSpace($localStack.$key)) {
+            throw "Local Supabase status is missing $key"
+        }
+    }
+
+    $env:SUPABASE_URL = $localStack.API_URL
+    $env:SUPABASE_DB_URL = $localStack.DB_URL
+    $env:SUPABASE_SERVICE_ROLE_KEY = $localStack.SERVICE_ROLE_KEY
+    $env:SUPABASE_ANON_KEY = $localStack.ANON_KEY
+    $env:SUPABASE_JWT_SECRET = $localStack.JWT_SECRET
+    $env:ENVIRONMENT = 'test'
+    $env:SCORING_ENGINE = 'manual'
+    $env:MODEL_ARTIFACT_PATH = 'test/model.keras'
+    $env:HTR_MODEL_ARTIFACT_PATH = ''
+    $env:CORS_ALLOWED_ORIGINS = 'http://localhost:3000'
+
+    # --local is explicit: never use --linked or --db-url here.
+    supabase db reset --local
+    if ($LASTEXITCODE -ne 0) { throw 'Local migration/seed reset failed' }
+
+    Push-Location backend
+    try {
+        uv run pytest
+        if ($LASTEXITCODE -ne 0) { throw 'Backend tests failed' }
+    } finally {
+        Pop-Location
+    }
+} finally {
+    supabase stop --no-backup
+}
+```
+
+For the pre-Slice-1 baseline, replace `uv run pytest` with `uv run pytest tests/api/test_activities.py tests/api/test_submissions_parent.py`. Do not print the captured status JSON or put its credentials in committed files. Anonymous-key clients are needed for forthcoming authenticated RLS tests; service-role API tests alone do not verify RLS.
+
+**Setup verification, 2026-11-01:** CLI initialization succeeded with 2.115.0. Startup stopped with `LegacyDockerLifecycleInspectError` because neither Docker nor Podman was installed. Migrations, seeding, and the baseline/full suites remain unverified; configuration presence is not proof those checks pass.
 
 ### 3.2 CNN Mocking in Tests
 

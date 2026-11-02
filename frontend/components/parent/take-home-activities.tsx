@@ -1,4 +1,8 @@
 "use client";
+import { ActivityWorkStatus, useActivityNow } from "@/components/activities/activity-work-status";
+import { activitySubmissionsClosed, formatActivityDueAt } from "@/lib/utils/activity-deadlines";
+import type { TakeHomeActivity } from "@/lib/hooks/use-parent-data";
+
 
 import { useState, useMemo } from "react";
 import {
@@ -66,7 +70,7 @@ export function TakeHomeActivities({
   const [internalExpanded, setInternalExpanded] = useState(false);
   const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
   const toggleExpanded = onToggleExpanded || (() => setInternalExpanded((prev) => !prev));
-  const { data: activities, isLoading } = useTakeHomeActivities(childId);
+  const { data: activities, isLoading, isError, refetch } = useTakeHomeActivities(childId);
 
   // Intelligently prioritize activities: Photo Retake Needed first, then Practice Focus match, then newest
   const sortedActivities = useMemo(() => {
@@ -100,6 +104,11 @@ export function TakeHomeActivities({
     );
   }
 
+  if (isError) return <div role="alert" className="flex flex-col items-start gap-2 rounded-xl border border-border p-4">
+    <p className="text-sm">Could not load assigned activities.</p>
+    <Button variant="outline" onClick={() => refetch()}>Try again</Button>
+  </div>;
+
   if (!sortedActivities || sortedActivities.length === 0) {
     return (
       <Empty className="border border-border rounded-xl shadow-warm bg-card py-10">
@@ -107,7 +116,7 @@ export function TakeHomeActivities({
           <ClipboardList className="size-6" />
         </EmptyMedia>
         <EmptyHeader>
-          <EmptyTitle>No Take-Home Worksheets Due Yet</EmptyTitle>
+          <EmptyTitle>No Assigned Activities Yet</EmptyTitle>
           <EmptyDescription className="text-xs sm:text-sm max-w-md mx-auto">
             Your child&apos;s teacher will assign practice activities here as classroom cursive lessons progress. No immediate submission is needed.
           </EmptyDescription>
@@ -127,6 +136,7 @@ export function TakeHomeActivities({
         {visibleActivities.map((activity) => (
           <ActivityCard
             key={activity.id}
+            work={activity}
             activityId={activity.id}
             targetText={activity.targetText}
             createdAt={activity.createdAt}
@@ -168,6 +178,7 @@ export function TakeHomeActivities({
 }
 
 function ActivityCard({
+  work,
   activityId,
   targetText,
   createdAt,
@@ -176,6 +187,7 @@ function ActivityCard({
   onUploadClick,
   practiceFocusKey,
 }: {
+  work: TakeHomeActivity;
   activityId: string;
   targetText: string;
   createdAt: string;
@@ -217,6 +229,8 @@ function ActivityCard({
     day: "numeric",
   });
 
+  const now = useActivityNow();
+  const closed = activitySubmissionsClosed({ due_at: work.dueAt, close_after_due: work.closeAfterDue }, now);
   const isProcessing = submission?.status === "processing";
   const isCompleted = submission?.status === "completed";
   const isRejected = submission?.status === "rejected";
@@ -257,6 +271,12 @@ function ActivityCard({
               : `Focus: ${skillMeta.shortLabel}`}
           </span>
         </div>
+        <h3 className="text-base font-semibold">{work.title}</h3>
+        <p className="text-xs text-muted-foreground">{work.isTakeHome ? "Take home" : "In class"} · {work.dueAt ? `Due ${formatActivityDueAt(work.dueAt)}` : "No due date"}</p>
+        {work.instructions && <p className="whitespace-pre-wrap text-sm">{work.instructions}</p>}
+        <ActivityWorkStatus dueAt={work.dueAt} attempts={work.attempts} />
+        {closed && work.isTakeHome && <p role="status" className="text-sm text-muted-foreground">Submissions are closed. Your teacher can help with another attempt.</p>}
+        {!work.isTakeHome && <p className="text-sm text-muted-foreground">Completed in class; your teacher uploads the worksheet.</p>}
         <p className="text-sm font-semibold text-foreground line-clamp-2 leading-snug">
           &ldquo;{targetText}&rdquo;
         </p>
@@ -295,6 +315,8 @@ function ActivityCard({
                 size="sm"
                 className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 w-full font-medium cursor-pointer border-warning/50 dark:border-warning/60 bg-warning/10 dark:bg-warning/20 hover:bg-warning/20 dark:hover:bg-warning/30 text-warning-foreground transition-colors shadow-2xs"
                 onClick={onUploadClick}
+                hidden={!work.isTakeHome}
+                disabled={closed}
                 aria-label={`Retake photo for "${targetText}"`}
               >
                 <Camera className="size-4 text-warning-foreground" aria-hidden="true" />
@@ -349,7 +371,8 @@ function ActivityCard({
                   size="sm"
                   className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-medium gap-1.5 cursor-pointer shrink-0 border-border/80 hover:bg-muted/50"
                   onClick={onUploadClick}
-                  disabled={isProcessing}
+                hidden={!work.isTakeHome}
+                  disabled={isProcessing || closed}
                   aria-label={
                     isCompleted
                       ? `Submit another practice attempt for "${targetText}"`
@@ -393,6 +416,8 @@ function ActivityCard({
                   : "border-border/80 hover:border-border hover:bg-muted/60 text-foreground"
               )}
               onClick={onUploadClick}
+                hidden={!work.isTakeHome}
+              disabled={closed}
               aria-label={`Upload worksheet for "${targetText}"`}
             >
               <Upload

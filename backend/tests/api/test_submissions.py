@@ -22,7 +22,7 @@ def _make_test_jpeg(width: int = 100, height: int = 100) -> bytes:
 
 
 @pytest.fixture
-def test_activity():
+def test_activity(test_student):
     """Create a temporary activity owned by the test teacher.
 
     Target text has 6 words to match the default make_segmented_worksheet
@@ -32,6 +32,7 @@ def test_activity():
         supabase_client.table("activity")
         .insert(
             {
+                "title": "Synthetic worksheet",
                 "target_text": "one two three four five six",
                 "is_take_home": False,
                 "created_by": TEST_TEACHER_ID,
@@ -40,6 +41,12 @@ def test_activity():
         .execute()
     )
     activity = res.data[0]
+    supabase_client.table("activity_assignment").insert(
+        {
+            "activity_id": activity["id"],
+            "student_id": test_student["id"],
+        }
+    ).execute()
     yield activity
     supabase_client.table("activity").delete().eq("id", activity["id"]).execute()
 

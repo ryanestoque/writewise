@@ -3,7 +3,9 @@
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { ActivityAssignmentFields, activitySchema, type ActivityFormValues } from "./activity-assignment-fields";
+import { toActivityDueAt, toActivityDueInput } from "@/lib/utils/activity-deadlines";
+import { ApiError } from "@/lib/utils/api-error";
 import {
   Dialog,
   DialogContent,
@@ -28,16 +30,6 @@ import {
 import { Loader2, Edit3, Home, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
-const activitySchema = z.object({
-  target_text: z
-    .string()
-    .min(1, "Target text is required")
-    .refine((v) => v.trim().length > 0, "Target text must not be blank"),
-  is_take_home: z.boolean(),
-});
-
-type ActivityFormValues = z.infer<typeof activitySchema>;
-
 function getWordCount(text: string): number {
   const trimmed = text.trim();
   if (!trimmed) return 0;
@@ -60,6 +52,9 @@ export function EditActivityDialog({
   const form = useForm<ActivityFormValues>({
     resolver: zodResolver(activitySchema),
     defaultValues: {
+      title: activity?.title ?? "", instructions: activity?.instructions ?? "",
+      assignments: activity?.assignments ?? [],
+      due_input: toActivityDueInput(activity?.due_at ?? null), close_after_due: activity?.close_after_due ?? false,
       target_text: activity?.target_text ?? "",
       is_take_home: activity?.is_take_home ?? false,
     },
@@ -72,6 +67,8 @@ export function EditActivityDialog({
   useEffect(() => {
     if (activity && open) {
       form.reset({
+        title: activity.title, instructions: activity.instructions ?? "", assignments: activity.assignments,
+        due_input: toActivityDueInput(activity.due_at), close_after_due: activity.close_after_due,
         target_text: activity.target_text,
         is_take_home: activity.is_take_home,
       });
@@ -80,11 +77,18 @@ export function EditActivityDialog({
 
   const onSubmit = (data: ActivityFormValues) => {
     if (!activity) return;
+    if (!data.assignments.length && activity.assignments.length) {
+      form.setError("assignments", { message: "Choose at least one section or student." });
+      return;
+    }
 
     updateActivity(
       {
         id: activity.id,
         data: {
+          title: data.title, instructions: data.instructions.trim() || null,
+          ...(form.formState.dirtyFields.assignments && data.assignments.length ? { assignments: data.assignments } : {}),
+          due_at: toActivityDueAt(data.due_input), close_after_due: data.close_after_due,
           target_text: data.target_text,
           is_take_home: data.is_take_home,
         },
@@ -95,6 +99,9 @@ export function EditActivityDialog({
           onOpenChange(false);
         },
         onError: (error: Error) => {
+          if (error instanceof ApiError && error.code === "INVALID_ASSIGNMENT_TARGET") {
+            form.setError("assignments", { message: "Choose sections or students from your current roster." });
+          }
           toast.error(error.message || "Failed to update activity.");
         },
       }
@@ -109,7 +116,7 @@ export function EditActivityDialog({
             Edit Activity
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Update the target text or take-home assignment setting.
+            Update the title, instructions, target text, assignments, due date, or take-home setting.
           </DialogDescription>
         </DialogHeader>
 
@@ -119,6 +126,7 @@ export function EditActivityDialog({
         >
           <div className="overflow-y-auto overflow-x-hidden overscroll-contain px-1 py-1 flex-1 min-h-0">
             <FieldGroup>
+              <ActivityAssignmentFields form={form} />
               {/* Target Text */}
               <Field data-invalid={!!form.formState.errors.target_text}>
                 <FieldLabel

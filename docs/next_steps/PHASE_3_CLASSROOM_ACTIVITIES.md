@@ -1,9 +1,11 @@
 # Phase 3 — Classroom-Style Activities (Deadlines, Returns, Notifications, Gradebook)
 
 **As of:** October 22, 2026
-**Status:** 📐 Design agreed — **not scheduled before the defense.** Build starts after the October 2026 technical defense.
+**Status:** Slice ① implementation authorized on 2026-11-01 after the user confirmed the defense milestone. Its fields/policies/workflow contract is promoted to API_SPEC §3.3–3.4, DATABASE §6 and DESIGN; verification/deployment remain tracked separately. Slices ②–⑥ remain future design.
 **Origin:** Design-tree grill session, 2026-10-19 (19 decisions, all accepted). **Amended 2026-10-22:** private comments (Q20–Q28, Slice ⑥); Q16 revised.
 **Supersedes (when promoted):** PRD §13 "Notifications" deferred item, PRODUCT.md "Push notifications" deferred item.
+
+**Repository audit (2026-11-01):** Implementation progress is tracked in [IMPLEMENTATION_STATUS.md](../../IMPLEMENTATION_STATUS.md#phase-3--classroom-style-activities). See the [Slice ① implementation plan](../superpowers/plans/2026-11-01-phase3-assignment-deadlines.md) for the proposed assignment/deadline contract and audit findings requiring review. This design document is not evidence that a feature is implemented.
 
 ---
 
@@ -20,7 +22,7 @@ WriteWise already handles *assessment* well (CV pipeline, rubric scoring, diagno
 Phase 3 adds that loop without touching the CV/CNN pipeline or the calibration study.
 
 > [!IMPORTANT]
-> **Defense framing:** present this document as *Future Work*. Nothing here is built before the defense — calibration data collection (`9-20-2026.md` §1) remains the critical path.
+> **Defense framing:** present this document as *Future Work*. The original timing decision was to build after the defense — calibration data collection (`9-20-2026.md` §1) remains the critical path.
 
 ---
 
@@ -45,7 +47,7 @@ Phase 3 adds that loop without touching the CV/CNN pipeline or the calibration s
 | Q15 | Missing / Excused | Missing doesn't affect the % until the teacher clicks **Assign 0** or **Excuse** (per cell or bulk per activity). Excused work is removed from both earned and possible points |
 | Q16 | Extra fields | `title` and `instructions` only. **Out:** PDF attachments, scheduled publish, activity drafts, public/class-wide comment streams. *(Amended 2026-10-22: private per-student comments are **in**, see Q20–Q28)* |
 | Q17 | Calibration | Export keeps returned submissions that have a score, flagged with `return_reason` and `is_active_attempt`. Analysis excludes blur/crop/wrong-worksheet returns by default. Gradebook points are **never** exported |
-| Q18 | Migration | Backfill: existing activities assigned to **all** of the teacher's sections, no due date, no points; existing submissions marked **Released**. Parents see no change |
+| Q18 | Migration | Backfill: existing activities assigned to **all** of the teacher's sections, no due date, no points; existing submissions marked **Released**. Legacy take-home visibility is preserved, including null/foreign-section fallback; assigned in-class metadata is additionally visible. Parent uploads stay take-home only |
 | Q19 | Build order | Six slices, §8 *(Slice ⑥ added 2026-10-22)* |
 | Q20 | Private comments: scope | Added as **Slice ⑥**, built after Slice ③ (needs the bell). Post-defense like the rest of Phase 3 |
 | Q21 | Thread anchor | One thread per **student × activity** (keyed on `student_work`). Exists before any upload; survives returns and resubmissions |

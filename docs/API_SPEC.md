@@ -63,6 +63,9 @@ The frontend branches on `error.code`, never on parsing `message` text (ARCHITEC
 | `INVITE_FAILED` | 400 | Parent email invitation delivery failed via Supabase Auth admin API |
 | `UNSUPPORTED_FILE_TYPE` | 400 | Submission upload — file isn't `image/jpeg` or `image/png` (§3.3) |
 | `FILE_TOO_LARGE` | 400 | Submission upload — file exceeds 15 MB (§3.3) |
+| `ACTIVITY_NOT_ASSIGNED` | 404 | Authorized upload relationship exists, but the activity does not target this student |
+| `SUBMISSIONS_CLOSED` | 409 | Assigned parent take-home upload after a closed due date |
+| `INVALID_ASSIGNMENT_TARGET` | 422 | Empty assignment replacement or section/student outside the teacher's ownership |
 | `ACTIVITY_HAS_SUBMISSIONS` | 400 | `DELETE /api/activities/{id}` — refused because student submissions already exist |
 | `UNAUTHORIZED` | 401 | Missing, invalid, or expired JWT |
 | `FORBIDDEN` | 403 | Authenticated, but wrong role for this route |
@@ -279,59 +282,35 @@ Response (`200 OK`):
 
 #### `POST /api/activities`
 
-**Caller:** Teacher only.
+**Caller:** Teacher only. **Slice 1 contract:** implemented in the feature branch; integration verification and deployment are tracked separately in IMPLEMENTATION_STATUS.md.
 
-Request:
+Request example:
+
 ```json
 {
-  "target_text": "the quick brown fox",
-  "is_take_home": false
+  "title": "Loop and join practice",
+  "target_text": "the quick brown fox jumps over the lazy dog",
+  "instructions": "Copy each word carefully on ruled paper.",
+  "is_take_home": true,
+  "assignments": [{ "section_id": "55555555-5555-5555-5555-555555555555" }],
+  "due_at": "2026-11-02T17:00:00+08:00",
+  "close_after_due": false
 }
 ```
 
-Response (`201 Created`):
-```json
-{
-  "id": "33333333-3333-3333-3333-333333333333",
-  "target_text": "the quick brown fox",
-  "is_take_home": false,
-  "created_by": "11111111-1111-1111-1111-111111111111",
-  "created_at": "2026-08-08T09:00:00Z"
-}
-```
+Required fields: trimmed nonblank `title`, nonblank `target_text`, and a nonempty `assignments` array. Each target contains exactly one non-null UUID: `section_id` or `student_id`; unknown target keys and malformed UUIDs return `VALIDATION_ERROR` (422). Sections must belong to the caller; individual students must be on their roster. Empty/non-owned targets return `INVALID_ASSIGNMENT_TARGET` (422). Repeated exact targets are deduplicated; overlapping section/student targets are permitted.
 
-`created_by` is derived from the caller's JWT (§2.5), never accepted from the request body.
+`instructions` and `due_at` default to null; `is_take_home` and `close_after_due` default to false. Due timestamps require an explicit offset. Closure with no due date returns `VALIDATION_ERROR` (422).
 
-> **Expected word count is not a stored field.** CV_PIPELINE §5.3's post-segmentation gate needs "expected word count" to compare detected segmentation against — this is computed server-side at submission-processing time as `len(target_text.split())`, not stored redundantly on `activity` or entered separately by the teacher. It's a pure function of `target_text`; storing it separately would just be a second source of truth that could drift.
+Response (201) is `ActivityResponse`: `id`, `title`, `target_text`, `instructions`, `is_take_home`, `is_archived`, `assignments` (section/student UUID pairs), `due_at`, `close_after_due`, `created_by`, and `created_at`. Dates are ISO timestamps. `created_by` comes from the authenticated actor. Both fields and targets are saved in one database transaction through a service-only RPC, after Python ownership checks.
 
----
+Expected word count remains computed at processing time as `len(target_text.split())`.
 
 #### `PATCH /api/activities/{activity_id}`
 
-**Caller:** Teacher only (ownership verified).
+**Caller:** Owning teacher; otherwise `404 NOT_FOUND`. Accepts the same editable fields as creation. Omitted fields are preserved. `instructions: null` and `due_at: null` clear those values. Explicit null for title/target text/assignments/mode/closure is invalid. Present assignments replace the entire set atomically and cannot be empty. A legacy activity with zero targets can still receive unrelated edits with assignments omitted. To clear a due date with closure enabled, also send `close_after_due: false`.
 
-Updates activity properties (`target_text` and/or `is_take_home`).
-
-Request:
-```json
-{
-  "target_text": "the quick brown fox jumps",
-  "is_take_home": true
-}
-```
-
-Response (`200 OK`):
-```json
-{
-  "id": "33333333-3333-3333-3333-333333333333",
-  "target_text": "the quick brown fox jumps",
-  "is_take_home": true,
-  "created_by": "11111111-1111-1111-1111-111111111111",
-  "created_at": "2026-08-08T09:00:00Z"
-}
-```
-
-If the activity does not exist or isn't owned by the caller → `404 NOT_FOUND`.
+Response (200) is the same `ActivityResponse` contract. Failed validation/replacement preserves the previous fields and targets. Archive/bulk archive/delete routes are unchanged.
 
 ---
 
@@ -401,7 +380,7 @@ Response (`200 OK`):
 
 #### `POST /api/submissions`
 
-**Caller:** Teacher or Parent (parent only for a take-home activity assigned to their own child, per ARCHITECTURE §5's identity model — checked server-side).
+**Caller:** Teacher or Parent (parent only for assigned take-home work for their own child). Both roles require a current roster relationship and section/direct assignment. Parent uploads are additionally blocked when `close_after_due` is true and server UTC time is strictly greater than `due_at`; exactly at due is accepted. Teachers bypass closure only. Relationship denial stays `NOT_FOUND`; assignment denial is `ACTIVITY_NOT_ASSIGNED` and closure denial is `SUBMISSIONS_CLOSED`. These checks occur before image decoding/processing or Storage writes and create no photo-rejection record. Existing photo-quality/segmentation rejections remain persisted as before.
 
 `multipart/form-data`:
 ```

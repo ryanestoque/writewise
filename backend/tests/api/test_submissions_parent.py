@@ -31,12 +31,13 @@ def parent_client():
 
 
 @pytest.fixture
-def take_home_activity():
+def take_home_activity(linked_student):
     """Create a temporary take-home activity owned by the test teacher."""
     res = (
         supabase_client.table("activity")
         .insert(
             {
+                "title": "Synthetic worksheet",
                 "target_text": "one two three four five six",
                 "is_take_home": True,
                 "created_by": TEST_TEACHER_ID,
@@ -45,17 +46,24 @@ def take_home_activity():
         .execute()
     )
     activity = res.data[0]
+    supabase_client.table("activity_assignment").insert(
+        {
+            "activity_id": activity["id"],
+            "student_id": linked_student["id"],
+        }
+    ).execute()
     yield activity
     supabase_client.table("activity").delete().eq("id", activity["id"]).execute()
 
 
 @pytest.fixture
-def in_class_activity():
+def in_class_activity(linked_student):
     """Create a temporary non-take-home activity owned by the test teacher."""
     res = (
         supabase_client.table("activity")
         .insert(
             {
+                "title": "Synthetic worksheet",
                 "target_text": "one two three four five six",
                 "is_take_home": False,
                 "created_by": TEST_TEACHER_ID,
@@ -64,6 +72,12 @@ def in_class_activity():
         .execute()
     )
     activity = res.data[0]
+    supabase_client.table("activity_assignment").insert(
+        {
+            "activity_id": activity["id"],
+            "student_id": linked_student["id"],
+        }
+    ).execute()
     yield activity
     supabase_client.table("activity").delete().eq("id", activity["id"]).execute()
 

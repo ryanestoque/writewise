@@ -7,6 +7,7 @@ import {
   useToggleArchive,
   useBulkArchive,
 } from "@/lib/hooks/use-activities";
+import { activityAssignedTo } from "@/lib/utils/activity-work";
 import { useStudents } from "@/lib/hooks/use-students";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import { CreateActivityDialog } from "@/components/activities/create-activity-dialog";
@@ -82,7 +83,6 @@ export default function ActivitiesPage() {
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const totalStudents = students?.length ?? 0;
 
   // Counts for filter pills
   const counts = useMemo(() => {
@@ -141,7 +141,7 @@ export default function ActivitiesPage() {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter((activity) =>
-        activity.target_text.toLowerCase().includes(query)
+        `${activity.title} ${activity.target_text}`.toLowerCase().includes(query)
       );
     }
 
@@ -648,7 +648,7 @@ export default function ActivitiesPage() {
               activity={activity}
               isSelected={selectedIds.has(activity.id)}
               isSelectMode={isSelectMode}
-              totalStudents={totalStudents}
+              totalStudents={(students ?? []).filter((s) => activityAssignedTo(activity, s)).length}
               onToggleSelect={handleToggleSelect}
               onUpload={handleUpload}
               onDuplicate={handleDuplicate}
@@ -744,6 +744,8 @@ export default function ActivitiesPage() {
         initialValues={
           duplicatingActivity
             ? {
+                ...duplicatingActivity,
+                due_at: null, close_after_due: false,
                 target_text: duplicatingActivity.target_text,
                 is_take_home: duplicatingActivity.is_take_home,
               }

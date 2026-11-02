@@ -1,0 +1,1 @@
+"""Authenticated database authorization tests."""

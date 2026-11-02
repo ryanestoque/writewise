@@ -32,6 +32,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
+import { activityAssignedTo } from "@/lib/utils/activity-work";
 import { useActivities } from "@/lib/hooks/use-activities";
 import { useStudents } from "@/lib/hooks/use-students";
 import { useUploadSubmission } from "@/lib/hooks/use-submissions";
@@ -166,8 +167,8 @@ export function QuickUploadDialog({
 
 function UploadFlow({
   onClose,
-  prefilledActivityId,
-  prefilledStudentId,
+  prefilledActivityId: requestedActivityId,
+  prefilledStudentId: requestedStudentId,
   onUploadingChange,
 }: {
   onClose: () => void;
@@ -226,6 +227,14 @@ function UploadFlow({
 
   const { data: activities } = useActivities();
   const { data: students } = useStudents();
+  const prefilledActivityId = activities?.some((a) => a.id === requestedActivityId)
+    ? requestedActivityId : undefined;
+  const chosenActivity = activities?.find((a) => a.id === (prefilledActivityId ?? activityChoice?.value));
+  const prefilledStudentId = students?.some((s) => s.id === requestedStudentId && !!chosenActivity && activityAssignedTo(chosenActivity, s))
+    ? requestedStudentId : undefined;
+  const invalidPrefill = !!activities && !!students && (
+    (!!requestedActivityId && !prefilledActivityId) || (!!requestedStudentId && !prefilledStudentId)
+  );
   const uploadMutation = useUploadSubmission();
 
   const isMobile = useSyncExternalStore(
@@ -319,20 +328,23 @@ function UploadFlow({
     return (
       activities?.map((a) => ({
         value: a.id,
-        label: a.target_text,
+        label: a.title,
       })) ?? []
     );
   }, [activities]);
 
   const studentChoices: Choice[] = useMemo(() => {
     return (
-      students?.map((s) => ({
+      students?.filter((s) => {
+        const activity = activities?.find((a) => a.id === (prefilledActivityId ?? activityChoice?.value));
+        return !!activity && activityAssignedTo(activity, s);
+      }).map((s) => ({
         value: s.id,
         label: s.full_name,
         sublabel: s.section,
       })) ?? []
     );
-  }, [students]);
+  }, [students, activities, prefilledActivityId, activityChoice]);
 
   const selectedActivity = useMemo(() => {
     if (prefilledActivityId) {
@@ -343,10 +355,10 @@ function UploadFlow({
 
   const selectedStudent = useMemo(() => {
     if (prefilledStudentId) {
-      return students?.find((s) => s.id === prefilledStudentId) ?? null;
+      return students?.find((s) => s.id === prefilledStudentId && !!selectedActivity && activityAssignedTo(selectedActivity, s)) ?? null;
     }
-    return students?.find((s) => s.id === studentChoice?.value) ?? null;
-  }, [students, studentChoice, prefilledStudentId]);
+    return students?.find((s) => s.id === studentChoice?.value && !!selectedActivity && activityAssignedTo(selectedActivity, s)) ?? null;
+  }, [students, studentChoice, prefilledStudentId, selectedActivity]);
 
   const handleClearFile = () => {
     handleStopDesktopCamera();
@@ -575,7 +587,7 @@ function UploadFlow({
   const handleSubmit = (bypassTextCheck = false) => {
     const activityId = prefilledActivityId ?? activityChoice?.value;
     const studentId = prefilledStudentId ?? studentChoice?.value;
-    if (!selectedFile || !activityId || !studentId) return;
+    if (!selectedFile || !activityId || !studentId || !selectedActivity || !selectedStudent) return;
 
     setStep(4);
     setUploadError(null);
@@ -642,8 +654,7 @@ function UploadFlow({
   };
 
   const canProceed = Boolean(
-    (prefilledActivityId ?? activityChoice) &&
-      (prefilledStudentId ?? studentChoice)
+    selectedActivity && selectedStudent
   );
 
   const isDuplicateSubmission = useMemo(() => {
@@ -814,6 +825,9 @@ function UploadFlow({
             {/* Step 1 — Select student & activity */}
             {step === 1 && (
               <>
+                {invalidPrefill && !canProceed && <p role="status" className="rounded-lg border border-border bg-muted p-3 text-sm">
+                  The previous selection is no longer available. Choose an assigned student below, or edit the activity&apos;s assignments first.
+                </p>}
                 <Field className="gap-1.5">
                   <FieldLabel
                     htmlFor={activityInputId}
@@ -859,7 +873,7 @@ function UploadFlow({
                       <Combobox
                         items={activityChoices}
                         value={activityChoice}
-                        onValueChange={setActivityChoice}
+                        onValueChange={(choice) => { setActivityChoice(choice); setStudentChoice(null); }}
                         itemToStringLabel={(c: Choice | null) => c?.label ?? ""}
                         itemToStringValue={(c: Choice | null) => c?.value ?? ""}
                         isItemEqualToValue={(a: Choice, b: Choice) =>
