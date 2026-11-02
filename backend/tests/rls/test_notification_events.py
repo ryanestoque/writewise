@@ -377,8 +377,9 @@ def test_notice_failure_rolls_back_entire_coursework_mutation(family, event_acti
                 # Compare persisted work and delivery evidence, not just the error.
                 return {
                     table: await connection.fetchval(
-                        f"select coalesce(jsonb_agg(to_jsonb(row) order by to_jsonb(row)::text),"
-                        f"'[]'::jsonb) from {table} row where {column}=$1",
+                        "select coalesce(jsonb_agg(to_jsonb(entry) "
+                        "order by to_jsonb(entry)::text),"
+                        f"'[]'::jsonb) from {table} entry where {column}=$1",
                         activity,
                     )
                     for table, column in (
