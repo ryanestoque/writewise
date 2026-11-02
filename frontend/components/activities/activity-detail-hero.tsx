@@ -218,7 +218,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                   className="cursor-pointer text-xs flex items-center min-h-[44px] sm:min-h-[36px]"
                 >
                   <Edit3 className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
-                  <span>Edit Details</span>
+                  <span>Edit Activity</span>
                 </DropdownMenuItem>
 
                 <DropdownMenuItem

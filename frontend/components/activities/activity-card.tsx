@@ -236,7 +236,7 @@ export const ActivityCard = memo(function ActivityCard({
                 className="cursor-pointer gap-2 text-xs min-h-[36px]"
               >
                 <Edit3 className="size-3.5" />
-                <span>Edit Target Text</span>
+                <span>Edit Activity</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => router.push(`/activities/${activity.id}`)}

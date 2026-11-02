@@ -116,7 +116,7 @@ export function EditActivityDialog({
             Edit Activity
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Update the target text or take-home assignment setting.
+            Update the title, instructions, target text, assignments, due date, or take-home setting.
           </DialogDescription>
         </DialogHeader>
 
