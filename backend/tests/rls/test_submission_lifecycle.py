@@ -534,6 +534,46 @@ def test_equal_upload_timestamps_use_deterministic_id_order(family, assigned_act
     assert active_ids(family["parent_client"], assigned_activity["id"]) == [ids[1]]
 
 
+def test_parent_upload_accepted_at_due_survives_processing_past_due(family, assigned_activity):
+    activity = assigned_activity["id"]
+    accepted = datetime.now(timezone.utc) - timedelta(seconds=5)
+    admin.table("activity").update(
+        {
+            "due_at": accepted.isoformat(),
+            "close_after_due": True,
+        }
+    ).eq("id", activity).execute()
+    parent_id = family["parent_client"].auth.get_session().user.id
+    submission_id = str(uuid4())
+    row = (
+        admin.rpc(
+            "record_student_submission",
+            {
+                "actor_id": parent_id,
+                "target_activity_id": activity,
+                "target_student_id": family["students"][0],
+                "payload": {
+                    "id": submission_id,
+                    "image_path": "synthetic/deadline.jpg",
+                    "status": "rejected",
+                    "uploader_role": "parent",
+                    "rejection_code": "QUALITY_GATE_BLUR",
+                    "rejection_details": "Synthetic retake",
+                    "accepted_at": accepted.isoformat(),
+                },
+            },
+        )
+        .execute()
+        .data
+    )
+    try:
+        assert datetime.fromisoformat(row["created_at"]) == accepted
+        assert row["status"] == "rejected"
+        assert row["released_at"] is None
+    finally:
+        admin.table("submission").delete().eq("id", submission_id).execute()
+
+
 def test_deleting_a_pinned_attempt_clears_pin_and_uses_eligible_successor(
     family,
     assigned_activity,
