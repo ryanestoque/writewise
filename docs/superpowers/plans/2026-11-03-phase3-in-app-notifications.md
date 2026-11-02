@@ -12,6 +12,8 @@
 
 **Baseline:** `d67576f` on `feat/phase3-in-app-notifications`, based on `13cea31` (`main`, merged Slice 2). All task boxes below start unchecked. Only planning documents are changed by this planning pass.
 
+**Execution record (2026-11-03):** The user requested execution with the executing-plans skill. Work starts from the published plan commit `e15df4c`, isolated in `.worktrees/phase3-in-app-notifications` on `feat/phase3-notifications-implementation`; the original planning checkout is preserved. Existing database-free unit baseline: 66 passed with one upstream Starlette/TestClient deprecation warning; backend Ruff, frontend ESLint, and TypeScript passed. Installed dependencies are reused through local directory junctions. Docker/Podman commands, the Docker engine pipe, and the standard Docker Desktop executable are absent. The Supabase CLI bootstrap through npm was denied network/cache access in the sandbox; no hosted database was contacted. Task 1 tests and its CI branch trigger are prepared, but no new database test has run and no migration or application implementation has been written. The user has been asked whether to authorize GitHub CI pushes for the ephemeral database verification or supply a local container runtime. This prerequisite remains open; no execution checkbox is complete.
+
 ## Global Constraints
 
 - “Browser reads use Supabase RLS; FastAPI authorizes read-state writes.”

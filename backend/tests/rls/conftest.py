@@ -82,6 +82,8 @@ def family():
             "teacher_client": teacher_client,
             "other_teacher": other_teacher,
             "other_teacher_client": other_teacher_client,
+            "parent": parent,
+            "other_parent": other_parent,
             "parent_client": parent_client,
             "other_parent_client": other_parent_client,
             "students": students,
@@ -118,3 +120,26 @@ def assigned_activity(family):
     )
     yield row
     admin.table("activity").delete().eq("id", row["id"]).execute()
+
+
+@pytest.fixture
+def second_parent(family):
+    tag = uuid4().hex
+    credentials = {"email": f"notification-{tag}@example.com", "password": f"Notice!{tag}Aa1"}
+    user = admin.auth.admin.create_user(
+        {
+            **credentials,
+            "email_confirm": True,
+            "user_metadata": {"role": "parent", "full_name": "Synthetic Notification Parent"},
+        }
+    ).user
+    client = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_ANON_KEY"])
+    try:
+        client.auth.sign_in_with_password(credentials)
+        admin.table("student_parent").insert(
+            {"student_id": family["students"][0], "parent_id": user.id}
+        ).execute()
+        yield {"id": user.id, "client": client}
+    finally:
+        admin.table("student_parent").delete().eq("parent_id", user.id).execute()
+        admin.auth.admin.delete_user(user.id)
