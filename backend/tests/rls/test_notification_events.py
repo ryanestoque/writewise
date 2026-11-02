@@ -168,13 +168,14 @@ def test_parent_rejection_is_uploader_only_and_not_resubmitted(
     assert len(notices(event_activity, "submission_rejected")) == 1
 
 
-def test_return_retry_completion_and_deletion_dedupe(family, event_activity):
+def test_return_retry_completion_and_deletion_dedupe(family, event_activity, second_parent):
     initial = complete(family, record(family, event_activity, role="teacher"))
     work(family, event_activity, initial["id"], "return", reason="incomplete")
     returned = notices(event_activity, "submission_returned")
-    assert [(row["recipient_id"], row["submission_id"]) for row in returned] == [
-        (family["parent"], initial["id"])
-    ]
+    assert {(row["recipient_id"], row["submission_id"]) for row in returned} == {
+        (family["parent"], initial["id"]),
+        (second_parent["id"], initial["id"]),
+    }
     record(family, event_activity, status="rejected")
     assert notices(event_activity, "resubmitted_after_return") == []
     retry = complete(family, record(family, event_activity))
@@ -183,7 +184,7 @@ def test_return_retry_completion_and_deletion_dedupe(family, event_activity):
         (family["teacher"], retry["id"])
     ]
     admin.table("submission").delete().eq("id", retry["id"]).execute()
-    second = complete(family, record(family, event_activity))
+    second = complete(family, record({**family, "parent": second_parent["id"]}, event_activity))
     assert notices(event_activity, "resubmitted_after_return") == []
     work(family, event_activity, second["id"], "return", reason="incomplete")
     third = complete(family, record(family, event_activity))

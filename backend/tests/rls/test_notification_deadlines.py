@@ -1,6 +1,7 @@
 """Fixed-clock sweeps run as the cron/database owner without an application JWT."""
 
 import asyncio
+import json
 import os
 from datetime import datetime, timedelta, timezone
 
@@ -164,7 +165,8 @@ def test_one_named_private_cron_job():
     )
 
 
-def test_completion_committed_before_sweep_lock_suppresses_reminder(family, assigned_activity):
+@pytest.mark.parametrize("change", ["completion", "deadline", "override"])
+def test_change_committed_before_sweep_lock_suppresses_reminder(family, assigned_activity, change):
     from uuid import uuid4
 
     activity, student = assigned_activity["id"], family["students"][0]
@@ -196,9 +198,26 @@ def test_completion_committed_before_sweep_lock_suppresses_reminder(family, assi
             await locker.execute("select id from public.activity where id=$1 for update", activity)
             task = asyncio.create_task(worker.fetchval(SWEEP, NOW))
             await wait_for_database_lock(observer, worker.get_server_pid())
-            await locker.fetchval(
-                "select public.complete_student_submission($1,$2)", family["teacher"], submission
-            )
+            if change == "completion":
+                await locker.fetchval(
+                    "select public.complete_student_submission($1,$2)",
+                    family["teacher"],
+                    submission,
+                )
+            elif change == "deadline":
+                await locker.execute(
+                    "update public.activity set due_at=$2 where id=$1",
+                    activity,
+                    NOW + timedelta(hours=48),
+                )
+            else:
+                await locker.fetchval(
+                    "select public.mutate_student_work($1,$2,$3,'update',$4::jsonb)",
+                    family["teacher"],
+                    activity,
+                    student,
+                    json.dumps({"due_at_override": (NOW + timedelta(hours=48)).isoformat()}),
+                )
             await transaction.commit()
             await task
             assert count(activity, student, "due_soon") == 0
