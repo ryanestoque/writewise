@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-02
 
-**Status:** Proposed for user review; no Slice 2 application changes have been made.
+**Status:** Approved by the user on 2026-11-02; implementation plan prepared for execution.
 
 **Baseline:** `5741734` on `main`, plus the Slice 1 sign-off recorded in `IMPLEMENTATION_STATUS.md`.
 
@@ -41,7 +41,7 @@ The original proposal combines latest-completed fallback with a Returned state. 
 
 The selection order is: a valid pinned completed attempt; otherwise the newest completed attempt newer than the newest returned attempt in upload order; otherwise no active attempt. Upload order is `(created_at DESC, id DESC)` and is deterministic when timestamps tie. The return barrier uses the returned attempt's upload order, rather than its `returned_at`, so returning an old upload cannot invalidate work uploaded afterward. All completed attempts qualify when no returned attempt exists.
 
-The core return/fallback choice is confirmed. It clarifies §3.3 of the original proposal; full written-spec approval is still pending.
+The core return/fallback choice and full written spec were approved by the user on 2026-11-02. This clarifies §3.3 of the original proposal.
 
 ## 4. Data contract
 
@@ -170,4 +170,4 @@ No standalone Docker/Podman or Supabase CLI was found on this host during the in
 
 The user has confirmed the core return/fallback choice in §3.1. Review the remaining written contract, particularly §4.1 (previously released returned scores remain readable in history), §5 (editing a released rubric creates a draft), and §6 (the existing deletion rule remains authoritative).
 
-After user approval, create the detailed implementation plan using `writing-plans`, arrange feature-branch isolation without losing the pending Slice 1 status update, then implement and verify each dependency in order. This design file does not claim implementation, database verification, merge, or deployment.
+The user approved the full spec on 2026-11-02. Execute the [implementation plan](../plans/2026-11-02-phase3-return-release.md) in the isolated feature worktree. This design file does not claim application implementation, database verification, merge, or deployment.

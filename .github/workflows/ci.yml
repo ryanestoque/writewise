@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ "main", "feat/phase3-assignment-deadlines" ]
+    branches: [ "main", "feat/phase3-assignment-deadlines", "feat/phase3-return-release" ]
   pull_request:
     branches: [ "main" ]
 
