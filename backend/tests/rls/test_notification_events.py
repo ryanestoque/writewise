@@ -201,7 +201,11 @@ def test_release_retry_and_redraft_release(family, event_activity, second_parent
         {
             "submission_id": submission["id"],
             "raw_output": {},
-            "composite_score": 80,
+            "letter_formation_score": 80,
+            "size_consistency_score": 80,
+            "spacing_score": 80,
+            "slant_score": 80,
+            "baseline_alignment_score": 80,
         }
     ).execute()
     first = work(family, event_activity, submission["id"], "release")

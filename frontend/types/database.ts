@@ -847,6 +847,11 @@ export type Database = {
         Args: { target_student_id: string }
         Returns: boolean
       }
+      mark_all_notifications_read: { Args: { actor_id: string }; Returns: Json }
+      mark_notification_read: {
+        Args: { actor_id: string; target_notification_id: string }
+        Returns: Json
+      }
       mutate_student_work: {
         Args: {
           actor_id: string
