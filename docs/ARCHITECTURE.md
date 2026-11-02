@@ -121,9 +121,14 @@ Schema is authored SQL-first via Supabase CLI migrations (`supabase/migrations/*
 | **teacher_student** | join table — many-to-many (supports co-taught sections, mid-year class changes) |
 | **student_parent** | join table — many-to-many (supports multiple guardians per student) |
 | **activity** | target text, creator (teacher), created date |
-| **submission** | activity ref, student ref, image path (Storage), timestamp, uploader, **status**: `processing` \| `completed` \| `rejected` |
+| **submission** | activity ref, student ref, image path, uploader, status: `processing` \| `completed` \| `rejected` \| `returned`; return metadata and `released_at` |
 | **measurement** | per-submission, per-criterion raw CV values (Phase 1) or calibrated scores (Phase 2); overlay annotation coordinates stored here as JSON (not a baked image) |
-| **manual_score** | Phase 1 only — teacher's independent rubric rating per criterion, per submission. **Removed from the schema after calibration ships**, per the PRD. |
+| **manual_score** | Teacher's independent rubric rating per criterion, retained for calibration/export, including scored returned attempts |
+| **student_work** | Per activity/student deadline override and pinned attempt; rows created on demand |
+
+**Slice 2 lifecycle:** Browser score reads remain in Supabase under RLS. `active_submission` and `activity_work_state` are security-invoker views shared by portals and offline active flags. FastAPI authorizes activity ownership and roster access, then invokes service-only transactional functions. Each mutation locks activity before student work, rechecks eligibility, and commits Return/release/pin/deadline changes atomically. Upload record/finalization and manual-rubric writes follow the same lock order. Image processing and Storage calls occur outside these short database locks; the in-process CV/CNN deployment is unchanged.
+
+New results are drafts. Parent upload responses omit measurement content (`measurement: null`), and both score-table parent policies require release. Existing results receive a release timestamp during migration. Changed manual rubric bands reset release; returned rubric history is preserved. Parent activity metadata remains readable for their own child's historical submissions after targeting or section changes.
 
 **Rejected submissions are persisted, not discarded.** A submission that fails the quality gate still creates a `submission` row with `status = 'rejected'` and a failure reason, keeping the rejected image and reason for later analysis (e.g. "X% of Phase 1 uploads were rejected for blur" — real, citable usability data for the ISO/IEC 25010 writeup, not something bolted on after the fact).
 

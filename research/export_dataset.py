@@ -443,7 +443,15 @@ def run_export(
 
         crops_csv_path = output_dir / "paired_crops.csv"
         if crop_records:
-            fieldnames = ["crop_path", "submission_code", "word_index", "band", "score"]
+            fieldnames = [
+                "crop_path",
+                "submission_code",
+                "word_index",
+                "band",
+                "score",
+                "return_reason",
+                "is_active_attempt",
+            ]
             with open(crops_csv_path, "w", newline="", encoding="utf-8") as f:
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()

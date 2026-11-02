@@ -48,7 +48,11 @@ export function useDashboardScores() {
   return useQuery({
     queryKey: ["dashboard-scores"],
     queryFn: async () => {
-      // Query students linked to teacher with their submissions, manual scores, and measurement scores
+      const { data: activeRows, error: activeError } = await supabase.from("active_submission")
+        .select("id");
+      if (activeError) throw activeError;
+      const activeIds = new Set((activeRows ?? []).map((row) => row.id));
+      // Roster remains visible for children with no active result.
       const { data, error } = await supabase
         .from("student")
         .select(`
@@ -110,8 +114,8 @@ export function useDashboardScores() {
         // Filter only completed submissions that have either manual_score or measurement
         const scoredSubmissions = studentSubmissions
           .filter(
-            (s: { status: string; manual_score?: unknown; measurement?: unknown }) =>
-              s.status === "completed"
+            (s: { id: string; status: string; manual_score?: unknown; measurement?: unknown }) =>
+              activeIds.has(s.id)
           )
           .sort(
             (a: { created_at: string }, b: { created_at: string }) =>
@@ -306,13 +310,19 @@ export function useDashboardScores() {
 }
 
 export interface StudentScoreHistoryItem {
+  status?: string;
+  isActiveAttempt?: boolean;
+  releasedAt?: string | null;
+  returnedAt?: string | null;
+  returnReason?: string | null;
+  returnNote?: string | null;
   submissionId: string;
   submissionDate: string;
   activityId: string;
   targetText: string;
   isTakeHome: boolean;
   imagePath?: string | null;
-  scoreSource: "manual" | "calibrated";
+  scoreSource: "manual" | "calibrated" | "none";
   compositeScore: number | null;
   compositeBand: ScoreBand | null;
   scores: {
@@ -343,7 +353,7 @@ export function useStudentScoreHistory(studentId: string | null) {
       if (!studentId) return [];
 
       const { data, error } = await supabase
-        .from("submission")
+        .from("active_submission")
         .select(`
           id,
           created_at,

@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   type Submission,
   useSubmissionImageUrl,
+  useSubmissions,
 } from "@/lib/hooks/use-submissions";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
@@ -66,6 +67,7 @@ import { SubmissionRejectionCard } from "./submission-rejection-card";
 import { RawMeasurementsTable } from "./raw-measurements-table";
 import { getScoreBandLabel } from "@/lib/utils/submission-status";
 import { useScoringEngine } from "@/lib/hooks/use-scoring-engine";
+import { SubmissionLifecycleControls } from "./submission-lifecycle-controls";
 
 
 
@@ -111,7 +113,7 @@ export interface SubmissionDetailContentProps {
 }
 
 export function SubmissionDetailContent({
-  submission,
+  submission: initialSubmission,
   submissions,
   currentIndex,
   onNavigate,
@@ -119,12 +121,14 @@ export function SubmissionDetailContent({
   onClose,
   variant,
 }: SubmissionDetailContentProps) {
+  const { data: currentSubmissions } = useSubmissions(initialSubmission.activity_id);
+  const submission = currentSubmissions?.find((row) => row.id === initialSubmission.id) ?? initialSubmission;
   const { openUpload } = useTeacherModals();
   const scoringEngine = useScoringEngine();
   const canEditRubric =
     scoringEngine.isSuccess &&
     !scoringEngine.isFetching &&
-    scoringEngine.data === "manual";
+    scoringEngine.data === "manual" && submission.status === "completed";
   const [isScrolledPastInspector, setIsScrolledPastInspector] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -675,6 +679,7 @@ export function SubmissionDetailContent({
         </header>
       )}
 
+      <SubmissionLifecycleControls submission={submission} />
       {/* Body: Split view (Image + Diagnostic details) */}
       <div
         ref={variant === "modal" ? scrollContainerRef : undefined}
@@ -886,7 +891,7 @@ export function SubmissionDetailContent({
             )}
 
             {/* COMPLETED STATE */}
-            {submission.status === "completed" && (
+            {(submission.status === "completed" || submission.status === "returned") && (
               <div className="space-y-2.5">
                 {hasCalibratedScores ? (
                   <>

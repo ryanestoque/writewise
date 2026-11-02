@@ -1,8 +1,12 @@
 """Real signed-in clients verify release privacy and counted-attempt selection."""
 
+import asyncio
+import json
+import os
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
+import asyncpg
 import pytest
 from postgrest.exceptions import APIError
 
@@ -419,6 +423,97 @@ def test_service_rpc_rechecks_foreign_teacher(family, assigned_activity, attempt
             },
         ).execute()
     assert error.value.code == "WW404"
+
+
+def test_release_waits_for_return_and_rechecks_eligibility_after_lock(
+    family,
+    assigned_activity,
+    attempts,
+):
+    """A queued release must not publish the attempt returned by the lock owner."""
+
+    async def exercise():
+        connection = await asyncpg.connect(os.environ["SUPABASE_DB_URL"], command_timeout=15)
+        queued = None
+        try:
+            async with connection.transaction():
+                await connection.execute(
+                    "select id from public.activity where id=$1::uuid for update",
+                    assigned_activity["id"],
+                )
+                queued = asyncio.get_running_loop().run_in_executor(
+                    None,
+                    lambda: mutate(
+                        family,
+                        assigned_activity["id"],
+                        "release",
+                        {
+                            "submission_id": attempts[-1]["id"],
+                        },
+                    ),
+                )
+                blocked = False
+                for _ in range(100):
+                    await connection.execute("select pg_stat_clear_snapshot()")
+                    blocked = await connection.fetchval(
+                        "select exists(select 1 from pg_stat_activity p "
+                        "where pg_backend_pid() = any(pg_blocking_pids(p.pid)))"
+                    )
+                    if blocked:
+                        break
+                    if queued.done():
+                        break
+                    await asyncio.sleep(0.05)
+                assert blocked, "Release did not wait for the activity transaction"
+                await connection.fetchval(
+                    "select public.mutate_student_work("
+                    "$1::uuid,$2::uuid,$3::uuid,'return',$4::jsonb)",
+                    family["teacher"],
+                    assigned_activity["id"],
+                    family["students"][0],
+                    json.dumps({"submission_id": attempts[-1]["id"], "reason": "incomplete"}),
+                )
+            with pytest.raises(APIError) as error:
+                await asyncio.wait_for(queued, timeout=10)
+            assert error.value.code == "WW410"
+        finally:
+            await connection.close()
+
+    asyncio.run(exercise())
+    row = (
+        admin.table("submission")
+        .select("status,released_at")
+        .eq("id", attempts[-1]["id"])
+        .execute()
+        .data[0]
+    )
+    assert row == {"status": "returned", "released_at": None}
+
+
+def test_completion_rechecks_roster_relationship(family, assigned_activity, attempts):
+    current = attempts[-1]["id"]
+    student = family["students"][0]
+    admin.table("submission").update({"status": "processing"}).eq("id", current).execute()
+    admin.table("teacher_student").delete().eq("teacher_id", family["teacher"]).eq(
+        "student_id", student
+    ).execute()
+    try:
+        with pytest.raises(APIError) as error:
+            admin.rpc(
+                "complete_student_submission",
+                {
+                    "actor_id": family["teacher"],
+                    "target_submission_id": current,
+                },
+            ).execute()
+        assert error.value.code == "WW404"
+    finally:
+        admin.table("teacher_student").insert(
+            {
+                "teacher_id": family["teacher"],
+                "student_id": student,
+            }
+        ).execute()
 
 
 @pytest.mark.parametrize("client_key", ["teacher_client", "parent_client", "other_parent_client"])

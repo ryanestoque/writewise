@@ -360,3 +360,24 @@ backend/tests/
 - ~~The TECH_STACK.md §8.3 dependency (§11) is not yet implemented there~~ — **Resolved**, see §11.
 - **Manual QA and the milestone checklists (§7, §8, §9) are process, not automation** — they depend on someone actually running them, the same category of risk SECURITY §11 already flags for the backup/restore test. A checklist that exists but never gets executed provides zero actual assurance.
 - **No numeric coverage target (§4) is a deliberate choice, not an oversight** — if it ever proves too loose in practice (real bugs slipping through untested code paths), the fallback is introducing a coverage tool as a *visibility* aid, not a gate, without changing the underlying "named checklist over percentage" philosophy.
+
+## 13. Phase 3 Slice 2 verification
+
+Database-free tests live in `tests/unit/test_submission_contracts.py`, `test_submission_lifecycle_routes.py`, `test_assignment_access.py`, and `test_calibration_returns.py`. They exercise strict contracts, omission versus null, real HTTP route/SDK boundaries with controlled external responses, SQLSTATE redaction, parent upload-response redaction, deadline overrides, and the actual analysis/training data loaders. Research exporter tests include the final crop CSV writer, not only metadata builders. No real model artifact or hosted export is needed.
+
+`tests/rls/test_submission_lifecycle.py` uses signed-in anonymous-key clients against the ephemeral stack. Cases cover both score tables, direct/embedded/view reads, family isolation, denied browser writes/RPCs, Return barriers, explicit pinning, active-only release, retained historical grades, resubmission, bulk/idempotent release, rollback, historical work after a section move, and changed-rubric redrafting. A lock-coordinated test queues release behind a transaction that returns the attempt; release must recheck eligibility and reject after the lock is released. Completion also rechecks roster authorization.
+
+CI additionally resets to the last Slice 1 migration and runs `tests/migrations/release_upgrade_check.py prepare`, applies the new migrations, then runs `verify`. This proves old parent-visible results remain released and the first new upload is draft. The existing legacy assignment upgrade proof remains. Database types are generated from that migrated local stack, uploaded as a CI artifact, and compared with the committed contract. Security advisors run with `--local --type security --level warn --fail-on error`.
+
+On this Windows host, Docker/Podman is unavailable; the user authorized publishing `feat/phase3-return-release` to `ryanestoque/writewise` and using its ephemeral CI stack. Never substitute a hosted dev/prod database for test resets. The implementation tracker records dated CI and local check results separately from deployment/manual QA.
+
+Required signed-in manual QA:
+
+- Teacher Return a completed draft/released attempt, check reason/note and retained rubric, then confirm old attempts do not count automatically.
+- Parent sees the returned note/effective deadline, resubmits eligible take-home work, and sees Turned in with no scores/diagnostics until release.
+- Single and bulk release expose only eligible counted results; an edited manual rubric becomes draft again.
+- Pin/unpin a completed historical attempt and reset/extend a student deadline; save only edited fields while another tab changes the other field.
+- Verify a sibling/foreign family cannot see the work and that historical work survives reassignment.
+- Inspect full history and phone-width dialogs; unreleased photos use the photo-only viewer and returned/inactive attempts stay out of trends.
+
+Browser QA attempt on 2026-11-02 was stopped by Computer Use because it could not confidently determine the current Windows browser URL. No rendered or signed-in portal QA pass is claimed. The temporary synthetic preview route was removed and its servers stopped.

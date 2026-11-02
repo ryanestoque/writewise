@@ -9,6 +9,8 @@ import {
   useToggleArchive,
 } from "@/lib/hooks/use-activities";
 import { ActivityWorkStatus } from "@/components/activities/activity-work-status";
+import { useActivityWork } from "@/lib/hooks/use-activity-work";
+import { ReleaseActivityButton, StudentWorkControls } from "@/components/submissions/submission-lifecycle-controls";
 import { activityAssignedTo } from "@/lib/utils/activity-work";
 import { useStudents } from "@/lib/hooks/use-students";
 import {
@@ -80,7 +82,7 @@ import {
 } from "@/components/activities/activity-detail-hero";
 import { SubmissionCard } from "@/components/activities/submission-card";
 
-type SubmissionFilter = "all" | "completed" | "processing" | "rejected";
+type SubmissionFilter = "all" | "completed" | "processing" | "rejected" | "returned";
 type SubmissionSort =
   | "newest"
   | "oldest"
@@ -103,6 +105,9 @@ export default function ActivityDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const workQuery = useActivityWork(id);
+  const activeIds = useMemo(() => new Set((workQuery.data ?? [])
+    .map((row) => row.active_submission_id).filter((id): id is string => !!id)), [workQuery.data]);
   const router = useRouter();
 
   const { data: activity, isLoading, error, refetch } = useActivity(id);
@@ -183,10 +188,10 @@ export default function ActivityDetailPage({
   // Roster Metrics: Unique enrolled students with submissions
   const submittedStudentIds = useMemo(() => {
     if (!submissions) return new Set<string>();
-    return new Set(submissions.filter((s) => s.status === "completed" &&
+    return new Set(submissions.filter((s) => activeIds.has(s.id) &&
       students?.some((student) => student.id === s.student_id && !!activity && activityAssignedTo(activity, student))
     ).map((s) => s.student_id));
-  }, [submissions, students, activity]);
+  }, [submissions, students, activity, activeIds]);
 
   const uniqueStudentsCount = submittedStudentIds.size;
   const assignedStudents = (students ?? []).filter((student) => !!activity && activityAssignedTo(activity, student));
@@ -203,7 +208,7 @@ export default function ActivityDetailPage({
     const scoredSubmissions = submissions
       .map((s) => ({ submission: s, resolved: resolveSubmissionScore(s) }))
       .filter(
-        (item) => item.submission.status === "completed" && item.resolved.isScored
+        (item) => activeIds.has(item.submission.id) && item.resolved.isScored
       );
     if (scoredSubmissions.length === 0) return null;
 
@@ -286,7 +291,7 @@ export default function ActivityDetailPage({
           ? criteriaList[criteriaList.length - 1]
           : null,
     };
-  }, [submissions]);
+  }, [submissions, activeIds]);
 
   // Student Grouping
   const studentGroups = useMemo<StudentSubmissionGroup[]>(() => {
@@ -327,10 +332,11 @@ export default function ActivityDetailPage({
   // Counts for filter pills
   const counts = useMemo(() => {
     if (!submissions)
-      return { all: 0, completed: 0, processing: 0, rejected: 0 };
+      return { all: 0, completed: 0, processing: 0, rejected: 0, returned: 0 };
     if (viewMode === "grouped") {
       return {
         all: studentGroups.length,
+        returned: studentGroups.filter((group) => group.latestSubmission.status === "returned").length,
         completed: studentGroups.filter(
           (g) => g.latestSubmission.status === "completed"
         ).length,
@@ -344,6 +350,7 @@ export default function ActivityDetailPage({
     }
     return {
       all: submissions.length,
+      returned: submissions.filter((row) => row.status === "returned").length,
       completed: submissions.filter((s) => s.status === "completed").length,
       processing: submissions.filter((s) => s.status === "processing").length,
       rejected: submissions.filter((s) => s.status === "rejected").length,
@@ -358,6 +365,7 @@ export default function ActivityDetailPage({
       { id: "completed", label: "Completed", count: counts.completed },
       { id: "processing", label: "Processing", count: counts.processing },
       { id: "rejected", label: "Rejected", count: counts.rejected },
+      { id: "returned", label: "Returned", count: counts.returned },
     ];
   }, [counts]);
 
@@ -854,12 +862,23 @@ export default function ActivityDetailPage({
       />
 
       <section aria-labelledby="assigned-work-heading" className="rounded-xl border border-border bg-card p-4">
-        <h2 id="assigned-work-heading" className="mb-3 font-heading text-lg font-semibold">Assigned students ({assignedStudents.length})</h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 id="assigned-work-heading" className="font-heading text-lg font-semibold">Assigned students ({assignedStudents.length})</h2>
+          <ReleaseActivityButton activityId={id} />
+        </div>
+        {workQuery.isError && <div role="alert" className="flex items-center gap-2 text-sm">
+          Could not load work status. <Button variant="outline" size="sm" onClick={() => workQuery.refetch()}>Try again</Button>
+        </div>}
         {!assignedStudents.length && <p className="text-sm text-muted-foreground">Edit this activity to choose sections or students.</p>}
         <ul className="divide-y divide-border">
           {assignedStudents.map((student) => <li key={student.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
             <span className="text-sm font-medium">{student.full_name}</span>
-            <ActivityWorkStatus dueAt={activity.due_at} attempts={(submissions ?? []).filter((s) => s.student_id === student.id)} />
+            <div className="flex flex-wrap items-center gap-2">
+              <ActivityWorkStatus state={workQuery.data?.find((row) => row.student_id === student.id)} />
+              <StudentWorkControls activityId={id} studentId={student.id} studentName={student.full_name}
+                state={workQuery.data?.find((row) => row.student_id === student.id) ?? null}
+                attempts={(submissions ?? []).filter((row) => row.student_id === student.id)} />
+            </div>
           </li>)}
         </ul>
       </section>

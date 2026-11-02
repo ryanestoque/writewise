@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { deriveActivityWorkStatus, type WorkAttempt } from "@/lib/utils/activity-work";
+import type { ActivityWorkState } from "@/lib/hooks/use-activity-work";
 
 export function useActivityNow() {
   const [now, setNow] = useState(() => Date.now());
@@ -14,14 +14,12 @@ export function useActivityNow() {
 }
 
 export function ActivityWorkStatus({
-  dueAt,
-  attempts,
+  state,
 }: {
-  dueAt: string | null;
-  attempts: WorkAttempt[];
+  state?: ActivityWorkState | null;
 }) {
-  const now = useActivityNow();
-  const work = deriveActivityWorkStatus(dueAt, now, attempts);
+  if (!state) return <span className="text-sm text-muted-foreground">Loading work status…</span>;
+  const work = { status: state.work_status, late: state.late };
   return (
     <span className="inline-flex flex-wrap gap-1.5">
       <Badge variant={work.status === "Missing" ? "destructive" : "secondary"}>{work.status}</Badge>

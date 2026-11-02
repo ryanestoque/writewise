@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-02 (Phase 3 Slice 1 user sign-off and Slice 2 design draft; local Phase 2 teacher rubric UI gate)
+**Last updated:** 2026-11-02 (Phase 3 Slice 2 implementation and CI evidence; signed-in portal QA pending)
 
 ## Summary
 
@@ -152,9 +152,9 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 
 **Audit date:** 2026-11-01. **Baseline:** local checkout at `3377875`; no Phase 3 application changes were present in the inspected files. This is a repository audit, not a hosted-database or deployment audit. The calendar date does not establish that the defense has happened or authorize a production rollout.
 
-**Design reference:** [Phase 3 proposal](docs/next_steps/PHASE_3_CLASSROOM_ACTIVITIES.md), especially §2 decisions, §8 slices, and §9 open details. Its SQL and API surface remain sketches, not implemented contracts.
+**Design reference:** [Phase 3 proposal](docs/next_steps/PHASE_3_CLASSROOM_ACTIVITIES.md), especially §2 decisions, §8 slices, and §9 open details. Promoted contracts for implemented slices live in `docs/API_SPEC.md` and `docs/DATABASE.md`; later-slice sketches remain proposals.
 
-**Slice ① implementation plan:** [Assignment and deadlines](docs/superpowers/plans/2026-11-01-phase3-assignment-deadlines.md). Slice ② (Return and release) is next in the proposed build order.
+**Current implementation plan:** [Slice ② — Return and release](docs/superpowers/plans/2026-11-02-phase3-return-release.md). [Slice ① plan](docs/superpowers/plans/2026-11-01-phase3-assignment-deadlines.md) is retained as its implementation record.
 
 ### Status and evidence rules
 
@@ -201,17 +201,23 @@ Local Ruff, ESLint and TypeScript checks passed using installed-tool equivalents
 
 ### Slice ② — Return and release
 
-**Dependency:** Slice ①. **Status: Not started.**
+**Dependency:** Slice ①. **Status: Implemented, verification pending — signed-in portal QA remains required.**
 
-**Design preparation (2026-11-02):** User approved proceeding with Slice 2. The repository audit and [return/release design](docs/superpowers/specs/2026-11-02-phase3-return-release-design.md) are prepared for review. The draft covers parent upload-response redaction, both score-table release policies, shared active-attempt selection, atomic lifecycle changes, historical-result backfill, and research compatibility. The user confirmed that Return keeps work Returned/Missing until a new completed upload, with an explicit teacher pin permitting an older attempt. Full written-spec approval, application implementation, and verification remain pending.
+**Authorization and design (2026-11-02):** User approved the [full return/release design](docs/superpowers/specs/2026-11-02-phase3-return-release-design.md) after confirming that Return keeps work Returned/Missing until a new completed upload or explicit teacher pin. Work is isolated on `feat/phase3-return-release` in `.worktrees/phase3-return-release`. Local Supabase startup confirmed Docker/Podman is absent. Automatic approval review initially rejected publishing to an unapproved destination; the user then explicitly authorized publishing this branch to `https://github.com/ryanestoque/writewise.git` and using its CI stack. No hosted database reset, migration, merge, or deployment was performed.
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|
-| Returned submission lifecycle and retained rubric history | Not started | Enum/types remain processing/completed/rejected; no return fields or route found. Preserve historical scores and rejected/returned attempts. |
-| Student work, due override, pinning, active-attempt view | Not started | No `student_work` or `active_submission` implementation found. Centralize selection; update dashboard, latest-score, and history consumers. |
-| Draft/released score authorization | Not started | No `released_at` found. Current measurement/manual-score parent policies have no release predicate. Cover every score/diagnostic read path; backfill old results as released. |
-| Return/release UI and verification | Not started | Add Return dialog, single/bulk release actions, effective due-date controls, generated contracts, privacy/RLS tests, and teacher/parent manual QA. |
-| Calibration export compatibility | Not started | `research/export_dataset.py` currently selects completed submissions only. Extend that authorized exporter and its tests for scored returns and active-attempt flags; never export gradebook points. |
+| Returned submission lifecycle and retained rubric history | Implemented, verification pending | Enum migration `20261102112153_phase3_returned_status.sql`, lifecycle migration `20261102112156_phase3_return_release.sql`, typed lifecycle router and transactions. Return preserves scored history; new uploads are drafts. Backend/RLS cases passed in CI; portal QA pending. |
+| Student work, due override, pinning, active-attempt view | Implemented, verification pending | `student_work`, `active_submission`, and `activity_work_state` centralize selection/status. Per-student due, pin/unpin, historical metadata, dashboard/latest/trend consumers implemented. Deadline boundary/override, pin, rollback and section-move tests passed in CI; final concurrency check and portal QA pending. |
+| Draft/released score authorization | Implemented, verification pending | Both score-table parent policies and parent upload response are gated. Existing results backfilled released; changed rubric bands redraft atomically. Direct/embedded/view isolation and synthetic release-upgrade proof passed in CI. |
+| Return/release UI and verification | Implemented, verification pending | Teacher Return/single/bulk release/work-settings controls and parent returned/draft/released/history flows implemented. API/database types generated, production build passed, and static review findings fixed. Signed-in portal QA remains pending. |
+| Calibration export compatibility | Implemented, verification pending | Authorized exporter retains scored returns and writes return/active flags to measurement and crop CSVs. Analysis/Stage 2 filter invalid return reasons by default with explicit opt-in and legacy CSV support. Builder, actual CSV writer, and real loader tests pass locally; final CI pending. |
+
+**Implementation evidence (2026-11-02):** [CI run for `d1af1ef`](https://github.com/ryanestoque/writewise/actions/runs/41439418274) passed migration replay, both synthetic upgrade proofs, generated-contract comparison, and the full backend suite: **420 passed, 21 dependency warnings**. The earlier red run proved existing draft-score exposure and missing lifecycle functions; the first implementation run found an ambiguous PL/pgSQL parameter, corrected before this green run. The migrated CI stack generated database types (artifact `13138445152`), committed in `d1af1ef`; OpenAPI types were regenerated from the application schema.
+
+Local database-free route/contract/deadline/research checks passed (**88 tests**, one upstream TestClient warning). The production frontend build passed with dummy localhost configuration using `next build --webpack`. Read-only code reviews covered API authorization/contracts, migrations, active/released UI, and research compatibility. Material findings were fixed: historical parent work after reassignment, counted-score display after pinning, neutral deletion-conflict recovery, omission of untouched work fields, and actual crop CSV lifecycle columns. No real export or training run was performed.
+
+**Remaining verification:** Final concurrency/security-advisor CI and signed-in teacher/parent manual QA. Computer Use stopped because it could not confidently determine the current Windows browser URL; no rendered or signed-in portal pass is claimed. The temporary synthetic preview route was removed and both local preview servers stopped. Keep the slice out of the Verified count until the documented portal flows pass. Deployment remains separate.
 
 ### Slice ③ — In-app notifications
 
@@ -280,5 +286,5 @@ The proposal's Q-B–Q-F remain slice-specific decisions; carry them into the re
 - A repository search across backend source/tests, frontend source/types, migrations, research, and workflows found none of the proposed `activity_assignment`, `student_work`, `active_submission`, `private_comment`, `email_outbox`, deadline, release, points, or dispatcher identifiers. This supports Not started in this checkout; it does not prove hosted environments match the repo.
 - Generated files live at `frontend/types/database.ts` and `frontend/types/api.ts`; the setup examples naming `frontend/src/types/` do not match this checkout. Use the real paths in the Slice ① plan.
 - Phase 0–2 summary arithmetic was reconciled with existing rows. No historical Done claim was upgraded to fresh verification. Calibration activation and cloud/artifact checklist inconsistencies still need owner/runtime evidence.
-- At audit baseline `3377875`, Phase 3 features and their integration/RLS/portal QA did not exist. Slice 1 implementation and current evidence are recorded above; Slices ②–⑥ remain unimplemented.
+- At audit baseline `3377875`, Phase 3 features and their integration/RLS/portal QA did not exist. Slice 1 is verified by user sign-off; Slice 2 implementation and remaining verification are recorded above. Slices ③–⑥ remain unimplemented.
 - Documentation-change checks on 2026-11-01: Ruff, ESLint, and TypeScript type checking passed using `.venv/Scripts/ruff.exe check .` from `backend/` and `node node_modules/eslint/bin/eslint.js .` / `node node_modules/typescript/bin/tsc --noEmit --incremental false` from `frontend/`. These are equivalent installed-tool fallbacks: the `uv run` wrapper hit an inaccessible cache and PowerShell blocked `npx.ps1`. No execution-policy or global configuration changes were needed. These checks do not verify Phase 3 functionality.

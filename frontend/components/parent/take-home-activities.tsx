@@ -231,11 +231,11 @@ function ActivityCard({
 
   const now = useActivityNow();
   const closed = activitySubmissionsClosed({ due_at: work.dueAt, close_after_due: work.closeAfterDue }, now);
-  const isProcessing = submission?.status === "processing";
+  const isProcessing = submission?.status === "processing" || work.latestSubmission?.status === "processing";
   const isCompleted = submission?.status === "completed";
   const isRejected = submission?.status === "rejected";
 
-  const needsUpload = !submission || isRejected;
+  const needsUpload = !submission || isRejected || submission.status === "returned";
 
   const skillMeta = useMemo(() => getActivitySkillMeta(targetText), [targetText]);
   const isPracticeFocusMatch =
@@ -274,7 +274,16 @@ function ActivityCard({
         <h3 className="text-base font-semibold">{work.title}</h3>
         <p className="text-xs text-muted-foreground">{work.isTakeHome ? "Take home" : "In class"} · {work.dueAt ? `Due ${formatActivityDueAt(work.dueAt)}` : "No due date"}</p>
         {work.instructions && <p className="whitespace-pre-wrap text-sm">{work.instructions}</p>}
-        <ActivityWorkStatus dueAt={work.dueAt} attempts={work.attempts} />
+        <ActivityWorkStatus state={work.workState} />
+        {work.latestSubmission?.submissionId !== submission?.submissionId && work.latestSubmission?.status === "rejected" &&
+          <p role="status" className="text-sm text-muted-foreground">Latest upload needs a retake: {getRejectionSummary(work.latestSubmission.rejectionCode).label}. Your previous counted result is kept.</p>}
+        {work.latestSubmission?.submissionId !== submission?.submissionId && work.latestSubmission?.status === "processing" &&
+          <p role="status" className="text-sm text-muted-foreground">A newer upload is processing. Your previous counted result is kept until it completes.</p>}
+        {work.workState?.returned_at && !work.workState.active_submission_id && <div className="flex flex-col gap-1 rounded-lg border border-border p-3 text-sm">
+          <p className="font-medium">Your teacher requested another attempt.</p>
+          <p>Reason: {work.workState.return_reason?.replaceAll("_", " ")}</p>
+          {work.workState.return_note && <p className="whitespace-pre-wrap">{work.workState.return_note}</p>}
+        </div>}
         {closed && work.isTakeHome && <p role="status" className="text-sm text-muted-foreground">Submissions are closed. Your teacher can help with another attempt.</p>}
         {!work.isTakeHome && <p className="text-sm text-muted-foreground">Completed in class; your teacher uploads the worksheet.</p>}
         <p className="text-sm font-semibold text-foreground line-clamp-2 leading-snug">
@@ -334,12 +343,14 @@ function ActivityCard({
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 dark:text-brand-300">
                     <CheckCircle2 className="size-4 shrink-0 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                    Completed
+                    {work.workState?.work_status === "Released" ? "Released" : "Turned in"}
                   </span>
                   {submission.compositeScore != null && (
                     <BandBadge score={submission.compositeScore} size="sm" />
                   )}
                 </div>
+              ) : submission.status === "returned" ? (
+                <span className="text-sm font-medium">Returned for another attempt</span>
               ) : (
                 <div role="status" aria-live="polite" className="flex items-center gap-2 min-w-0">
                   <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-warning-foreground bg-warning/15 dark:bg-warning/25 px-2.5 py-0.5 rounded-md border border-warning/30 shadow-2xs">
@@ -387,7 +398,7 @@ function ActivityCard({
                   ) : (
                     <>
                       <Upload className="size-3.5" aria-hidden="true" />
-                      <span>Practice Again</span>
+                      <span>{submission.status === "returned" ? "Submit another attempt" : "Practice Again"}</span>
                     </>
                   )}
                 </Button>
@@ -400,7 +411,7 @@ function ActivityCard({
                 aria-live="polite"
                 className="text-xs text-muted-foreground bg-muted/40 border border-border/60 p-2.5 rounded-md leading-normal"
               >
-                Analyzing your child&apos;s handwriting now (usually takes 10–20 seconds). Results will appear automatically.
+                Processing the worksheet. Your teacher will share results after review.
               </p>
             )}
           </div>

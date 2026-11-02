@@ -352,3 +352,32 @@ def test_run_export_mocked(tmp_path, sample_paired_data, monkeypatch):
         assert reader[0]["student_code"] == "STUDENT_001"
         assert reader[0]["submission_code"] == "SUBMISSION_001"
         assert float(reader[0]["slant_mean"]) == 12.5
+
+
+def test_run_export_writes_crop_lifecycle_flags(tmp_path, sample_paired_data, monkeypatch):
+    monkeypatch.setattr(
+        "export_dataset.fetch_paired_records", lambda client, limit=None: sample_paired_data
+    )
+    monkeypatch.setattr("export_dataset.get_supabase_client", lambda env_file=None: object())
+    monkeypatch.setattr(
+        "export_dataset.download_and_extract_crops",
+        lambda *args, **kwargs: (
+            [
+                {
+                    "crop_path": "crops/SUBMISSION_001_word_000.jpg",
+                    "submission_code": "SUBMISSION_001",
+                    "word_index": 0,
+                    "band": "excellent",
+                    "score": 87.5,
+                    "return_reason": "wrong_target_text",
+                    "is_active_attempt": False,
+                }
+            ],
+            0,
+        ),
+    )
+    run_export(output_dir=tmp_path, include_crops=True)
+    with (tmp_path / "paired_crops.csv").open(encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    assert rows[0]["return_reason"] == "wrong_target_text"
+    assert rows[0]["is_active_attempt"] == "False"

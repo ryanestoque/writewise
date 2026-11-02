@@ -115,6 +115,9 @@ jobs:
         ENVIRONMENT: test
       run: uv run pytest
 
+    - name: Check database security advisors
+      run: supabase db advisors --local --type security --level warn --fail-on error
+
     - name: Check committed database contract
       run: git diff --exit-code -- frontend/types/database.ts
       

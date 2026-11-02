@@ -8,6 +8,7 @@ import {
   type DiagnosticOverlayData,
 } from "@/components/shared/diagnostic-overlay";
 import type { StudentScoreHistoryItem } from "./use-dashboard";
+import type { ActivityWorkState } from "./use-activity-work";
 
 // --- Types ---
 
@@ -54,6 +55,8 @@ export interface TakeHomeActivitySubmission {
 }
 
 export interface TakeHomeActivity {
+  workState: ActivityWorkState | null;
+  latestSubmission: TakeHomeActivitySubmission | null;
   title: string;
   instructions: string | null;
   isTakeHome: boolean;
@@ -103,11 +106,12 @@ export function useChildLatestScores(childId: string | null) {
 
   return useQuery({
     queryKey: ["parent-child-latest-scores", childId],
+    refetchInterval: 15000,
     queryFn: async (): Promise<ChildLatestScores | null> => {
       if (!childId) return null;
 
       const { data, error } = await supabase
-        .from("submission")
+        .from("active_submission")
         .select(`
           id,
           created_at,
@@ -143,8 +147,9 @@ export function useChildLatestScores(childId: string | null) {
         `)
         .eq("student_id", childId)
         .eq("status", "completed")
+        .not("released_at", "is", null)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .order("id", { ascending: false });
 
       if (error) throw new Error(error.message);
 
@@ -236,10 +241,11 @@ export function useChildScoreHistory(childId: string | null) {
 
   return useQuery({
     queryKey: ["parent-child-score-history", childId],
+    refetchInterval: 15000,
     queryFn: async (): Promise<StudentScoreHistoryItem[]> => {
       if (!childId) return [];
 
-      const { data, error } = await supabase
+      const [historyResult, activeResult] = await Promise.all([supabase
         .from("submission")
         .select(`
           id,
@@ -247,6 +253,7 @@ export function useChildScoreHistory(childId: string | null) {
           status,
           image_path,
           uploader_role,
+          released_at, returned_at, return_reason, return_note,
           activity:activity_id(
             id,
             target_text,
@@ -276,8 +283,13 @@ export function useChildScoreHistory(childId: string | null) {
           )
         `)
         .eq("student_id", childId)
-        .eq("status", "completed")
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: true }).order("id", { ascending: true }),
+        supabase.from("active_submission").select("id").eq("student_id", childId),
+      ]);
+
+      const { data, error } = historyResult;
+      if (activeResult.error) throw activeResult.error;
+      const activeIds = new Set((activeResult.data ?? []).map((row) => row.id));
 
       if (error) throw new Error(error.message);
 
@@ -290,7 +302,6 @@ export function useChildScoreHistory(childId: string | null) {
 
         const computedCalibratedComp = computeCompositeFromCriteria(rawMeasurement);
         const isCalibrated = Boolean(rawMeasurement && (rawMeasurement.composite_score != null || computedCalibratedComp != null));
-        if (!isCalibrated && !rawManual) continue;
 
         let lfScore: number | null = null;
         let scScore: number | null = null;
@@ -336,13 +347,19 @@ export function useChildScoreHistory(childId: string | null) {
         const compBand = compScore !== null ? getBandFromScore(compScore) : null;
 
         history.push({
+          status: row.status,
+          isActiveAttempt: activeIds.has(row.id),
+          releasedAt: row.released_at,
+          returnedAt: row.returned_at,
+          returnReason: row.return_reason,
+          returnNote: row.return_note,
           submissionId: row.id,
           submissionDate: row.created_at,
           activityId: (rawActivity as { id: string } | null)?.id || "",
           targetText: (rawActivity as { target_text: string } | null)?.target_text || "Handwriting Activity",
           isTakeHome: Boolean((rawActivity as { is_take_home?: boolean } | null)?.is_take_home),
           imagePath: (row.image_path as string) || null,
-          scoreSource: isCalibrated ? "calibrated" : "manual",
+          scoreSource: isCalibrated ? "calibrated" : rawManual ? "manual" : "none",
           compositeScore: compScore,
           compositeBand: compBand,
           scores: {
@@ -416,9 +433,15 @@ export function useTakeHomeActivities(childId: string | null) {
       if (!activitiesData || activitiesData.length === 0) return [];
 
       const activityIds = activitiesData.map((a) => a.id);
+      const { data: workRows, error: workError } = await supabase.from("activity_work_state")
+        .select("*").eq("student_id", childId).in("activity_id", activityIds);
+      if (workError) throw workError;
+      const workByActivity = new Map((workRows as ActivityWorkState[] ?? [])
+        .map((row) => [row.activity_id, row]));
 
       // Batch-fetch the latest submission per activity for this child in a single query (eliminating N+1)
       const submissionsMap: Record<string, TakeHomeActivitySubmission> = {};
+      const submissionsById = new Map<string, TakeHomeActivitySubmission>();
       const attemptsMap: Record<string, WorkAttempt[]> = {};
       if (childId && activityIds.length > 0) {
         const { data: subsData, error: subsError } = await supabase
@@ -449,7 +472,7 @@ export function useTakeHomeActivities(childId: string | null) {
           for (const sub of subsData) {
             (attemptsMap[sub.activity_id] ??= []).push({ id: sub.id, status: sub.status, created_at: sub.created_at });
             // Since sorted created_at desc, the first time we see an activity_id is the latest
-            if (!submissionsMap[sub.activity_id]) {
+            {
               const m = Array.isArray(sub.measurement) ? sub.measurement[0] : sub.measurement;
               const compositeScore = m?.composite_score != null
                 ? Number(m.composite_score)
@@ -457,7 +480,7 @@ export function useTakeHomeActivities(childId: string | null) {
               const hasManualScore = Array.isArray(sub.manual_score)
                 ? sub.manual_score.length > 0
                 : !!sub.manual_score;
-              submissionsMap[sub.activity_id] = {
+              const model: TakeHomeActivitySubmission = {
                 submissionId: sub.id,
                 status: sub.status,
                 rejectionCode: sub.rejection_code,
@@ -465,6 +488,8 @@ export function useTakeHomeActivities(childId: string | null) {
                 compositeBand: getBandFromScore(compositeScore),
                 canDelete: sub.uploader_role === "parent" && !hasManualScore,
               };
+              submissionsById.set(sub.id, model);
+              submissionsMap[sub.activity_id] ??= model;
             }
           }
         }
@@ -473,17 +498,21 @@ export function useTakeHomeActivities(childId: string | null) {
       return activitiesData.map((row) => ({
         id: row.id,
         title: row.title, instructions: row.instructions, isTakeHome: row.is_take_home,
-        dueAt: row.due_at, closeAfterDue: row.close_after_due, attempts: attemptsMap[row.id] ?? [],
+        dueAt: workByActivity.get(row.id)?.effective_due_at ?? row.due_at,
+        workState: workByActivity.get(row.id) ?? null,
+        closeAfterDue: row.close_after_due, attempts: attemptsMap[row.id] ?? [],
         targetText: row.target_text,
         createdAt: row.created_at,
-        submission: submissionsMap[row.id] ?? null,
+        latestSubmission: submissionsMap[row.id] ?? null,
+        submission: submissionsById.get(workByActivity.get(row.id)?.active_submission_id ?? "")
+          ?? submissionsMap[row.id] ?? null,
       }));
     },
     enabled: !!childId,
     // Auto-poll every 3s if any activity submission is currently processing
     refetchInterval: (query) => {
       const data = query.state.data;
-      const hasProcessing = data?.some((a) => a.submission?.status === "processing");
+      const hasProcessing = data?.some((a) => a.latestSubmission?.status === "processing");
       return hasProcessing ? 3000 : 60000;
     },
   });
@@ -499,6 +528,13 @@ export function useChildSubmissionForActivity(
     queryKey: ["parent-child-submission", childId, activityId],
     queryFn: async (): Promise<TakeHomeActivitySubmission | null> => {
       if (!childId || !activityId) return null;
+
+      const { data: work, error: workError } = await supabase.from("activity_work_state")
+        .select("active_submission_id,latest_submission_id").eq("student_id", childId)
+        .eq("activity_id", activityId).maybeSingle();
+      if (workError) throw workError;
+      const submissionId = work?.active_submission_id ?? work?.latest_submission_id;
+      if (!submissionId) return null;
 
       const { data, error } = await supabase
         .from("submission")
@@ -519,7 +555,7 @@ export function useChildSubmissionForActivity(
         `)
         .eq("student_id", childId)
         .eq("activity_id", activityId)
-        .order("created_at", { ascending: false })
+        .eq("id", submissionId)
         .limit(1);
 
       if (error) throw new Error(error.message);
