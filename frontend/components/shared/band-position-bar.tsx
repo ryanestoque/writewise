@@ -8,6 +8,7 @@ interface BandPositionBarProps {
   showThresholds?: boolean;
   height?: "sm" | "default";
   className?: string;
+  ariaLabel?: string;
 }
 
 export function BandPositionBar({
@@ -16,6 +17,7 @@ export function BandPositionBar({
   showThresholds = false,
   height = "default",
   className,
+  ariaLabel,
 }: BandPositionBarProps) {
   const numericScore =
     typeof score === "number" && !isNaN(score)
@@ -31,9 +33,10 @@ export function BandPositionBar({
           aria-valuemin={0}
           aria-valuemax={100}
           aria-label={
-            numericScore !== null
+            ariaLabel ??
+            (numericScore !== null
               ? `Diagnostic score position: ${Math.round(numericScore)}%`
-              : "Diagnostic score not yet available"
+              : "Diagnostic score not yet available")
           }
           className={cn(
             "relative flex-1 rounded-full overflow-hidden bg-muted/40 border border-border/50 grid grid-cols-4 p-0.5",

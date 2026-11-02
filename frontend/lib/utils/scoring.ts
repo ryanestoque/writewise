@@ -322,7 +322,7 @@ export function computeStrengthAndFocus(
   scores: Record<string, number | null> | undefined | null,
   bands: Record<string, ScoreBand | null> | undefined | null
 ) {
-  if (!scores || !bands) return { topStrength: null, practiceFocus: null };
+  if (!scores || !bands) return { topStrength: null, practiceFocus: null, isBalanced: false };
 
   const validCriteria = PARENT_CRITERIA_LIST.map((c) => {
     const score = scores[c.key];
@@ -336,16 +336,22 @@ export function computeStrengthAndFocus(
   }).filter((c) => c.score != null);
 
   if (validCriteria.length === 0) {
-    return { topStrength: null, practiceFocus: null };
+    return { topStrength: null, practiceFocus: null, isBalanced: false };
   }
 
   const sorted = [...validCriteria].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
   const top = sorted[0];
   const focus = sorted[sorted.length - 1];
 
+  // If score difference between highest and lowest criterion is under 5 points,
+  // treat development as balanced across skills rather than singling out an arbitrary deficit.
+  const delta = (top.score ?? 0) - (focus.score ?? 0);
+  const isBalanced = validCriteria.length >= 2 && delta < 5;
+
   return {
-    topStrength: top,
-    practiceFocus: focus.key !== top.key ? focus : null,
+    topStrength: isBalanced ? null : top,
+    practiceFocus: isBalanced ? null : (focus.key !== top.key ? focus : null),
+    isBalanced,
   };
 }
 

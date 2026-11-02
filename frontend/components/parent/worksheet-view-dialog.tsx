@@ -275,7 +275,7 @@ export function WorksheetViewDialog({
             >
               <span>Scores &amp; Skills</span>
               {compositeScore != null && (
-                <span className="text-[11px] font-sans tabular-nums px-1.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-800 dark:text-brand-300 font-semibold border border-brand-200/60 dark:border-brand-800/60">
+                <span className="text-xs font-sans tabular-nums px-1.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-800 dark:text-brand-300 font-semibold border border-brand-200/60 dark:border-brand-800/60">
                   {Math.round(compositeScore)}%
                 </span>
               )}
@@ -352,8 +352,8 @@ export function WorksheetViewDialog({
                   type="button"
                   onClick={() => setShowGuideLines((prev) => !prev)}
                   className={`self-start px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer flex items-center gap-1.5 min-h-[40px] sm:min-h-[36px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 ${showGuideLines
-                      ? "bg-brand-100 text-brand-900 border-brand-300 dark:bg-brand-950 dark:text-brand-200 dark:border-brand-800"
-                      : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted/70 hover:text-foreground"
+                    ? "bg-brand-100 text-brand-900 border-brand-300 dark:bg-brand-950 dark:text-brand-200 dark:border-brand-800"
+                    : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted/70 hover:text-foreground"
                     }`}
                   aria-pressed={showGuideLines}
                   aria-label={showGuideLines ? "Hide detected guide lines on worksheet" : "Show detected guide lines on worksheet"}
@@ -422,8 +422,8 @@ export function WorksheetViewDialog({
                       const next = Array.isArray(val)
                         ? (val as string[])
                         : val
-                        ? [val as string]
-                        : [];
+                          ? [val as string]
+                          : [];
                       if (next.length > 0) {
                         const selected = next[next.length - 1] as CriterionKey;
                         handleCriterionSelect(selected, false);
@@ -440,8 +440,8 @@ export function WorksheetViewDialog({
                       const highlightBadge = isTop
                         ? "top_strength"
                         : isFocus
-                        ? "practice_focus"
-                        : null;
+                          ? "practice_focus"
+                          : null;
                       const score = scores[criterion.key];
                       const band = bands[criterion.key];
                       const diagnosticNote = band ? DIAGNOSTIC_NOTES[criterion.key][band] : null;
@@ -462,13 +462,13 @@ export function WorksheetViewDialog({
                                   {criterion.label}
                                 </span>
                                 {highlightBadge === "top_strength" && (
-                                  <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 px-1.5 py-0.5 rounded-md border border-band-4/30 dark:border-band-4/40 shrink-0">
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 px-1.5 py-0.5 rounded-md border border-band-4/30 dark:border-band-4/40 shrink-0">
                                     <span className="size-1.5 rounded-full bg-band-4 shrink-0" aria-hidden="true" />
                                     Top Strength
                                   </span>
                                 )}
                                 {highlightBadge === "practice_focus" && (
-                                  <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 px-1.5 py-0.5 rounded-md border border-band-2/30 dark:border-band-2/40 shrink-0">
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 px-1.5 py-0.5 rounded-md border border-band-2/30 dark:border-band-2/40 shrink-0">
                                     <span className="size-1.5 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
                                     Practice Focus
                                   </span>

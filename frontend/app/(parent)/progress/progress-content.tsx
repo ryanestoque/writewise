@@ -339,7 +339,7 @@ export function ProgressPageContent() {
               >
                 <span>Tasks</span>
                 {pendingActivitiesCount > 0 && (
-                  <span className="size-4 rounded-full bg-brand-600 dark:bg-brand-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                  <span className="min-w-4 h-4 px-1 rounded-full bg-brand-600 dark:bg-brand-500 text-white text-xs font-bold leading-none flex items-center justify-center shrink-0">
                     {pendingActivitiesCount}
                   </span>
                 )}
