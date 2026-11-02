@@ -168,7 +168,7 @@ def test_parent_rejection_is_uploader_only_and_not_resubmitted(
     assert len(notices(event_activity, "submission_rejected")) == 1
 
 
-def test_return_retry_completion_and_deletion_dedupe(family, event_activity, second_parent):
+def test_return_retry_completion_and_deletion_dedupe(family, second_parent, event_activity):
     initial = complete(family, record(family, event_activity, role="teacher"))
     work(family, event_activity, initial["id"], "return", reason="incomplete")
     returned = notices(event_activity, "submission_returned")
