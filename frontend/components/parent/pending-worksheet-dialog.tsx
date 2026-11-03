@@ -16,10 +16,12 @@ export function PendingWorksheetDialog({
   item,
   childName,
   onBack,
+  backLabel = "Back to history",
 }: {
   item: StudentScoreHistoryItem;
   childName: string;
   onBack: () => void;
+  backLabel?: string;
 }) {
   const image = useSubmissionImageUrl(item.imagePath ?? null);
   return (
@@ -52,7 +54,7 @@ export function PendingWorksheetDialog({
           altText={`Worksheet uploaded for ${item.targetText}`}
         />
         <Button variant="outline" onClick={onBack}>
-          Back to history
+          {backLabel}
         </Button>
       </DialogContent>
     </Dialog>

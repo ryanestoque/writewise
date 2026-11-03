@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { invalidateNotifications } from "./use-notifications";
 import { createClient } from "../supabase/client";
 import { getAuthToken } from "../supabase/auth-helper";
 import { handleApiResponse } from "../utils/api-error";
@@ -82,6 +83,7 @@ export function useCreateActivity() {
       return handleApiResponse<components["schemas"]["ActivityResponse"]>(response);
     },
     onSuccess: () => {
+      void invalidateNotifications(queryClient);
       queryClient.invalidateQueries({ queryKey: ["activities"] });
     },
   });
@@ -113,6 +115,7 @@ export function useUpdateActivity() {
       return handleApiResponse<components["schemas"]["ActivityResponse"]>(response);
     },
     onSuccess: (_, variables) => {
+      void invalidateNotifications(queryClient);
       queryClient.invalidateQueries({ queryKey: ["activities"] });
       queryClient.invalidateQueries({ queryKey: ["activities", variables.id] });
     },

@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-02
 
-**Status:** Written specification awaiting user review. The user approved proceeding with the Slice 3 scope; the detailed decisions below have not yet been approved or implemented.
+**Status:** Execution requested by the user on 2026-11-03 through the executing-plans skill, using the published implementation plan and this design. Implementation/verification progress is recorded in that plan; this status does not claim the feature is implemented.
 
 **Baseline:** `13cea31` on `main`, including merged Slice 2 PR #4. `IMPLEMENTATION_STATUS.md` records Slices 1–2 as verified and Slice 3 as not started.
 
@@ -54,7 +54,7 @@ Prefix every deduplication key with the event type. Use opaque IDs and UTC epoch
 
 ### 4.1 Assignment changes
 
-Capture the pre-mutation set after acquiring the activity lock; compare it with the post-mutation set before returning. Creating an activity starts with an empty set. Overlapping section/direct targets yield one notification per recipient/student. Metadata-only edits and equivalent target replacement emit nothing. Removing then explicitly re-adding a student may notify again: one fresh transition UUID is generated only for an operation with newly covered students. Retrying an unchanged PATCH has an empty set difference and emits nothing.
+For an explicit target edit, capture one owned roster snapshot after acquiring the activity lock; compare the old and new assignment targets against that same snapshot before returning. Skip assignment fanout entirely when no assignments field is supplied. This prevents concurrent roster moves from becoming assignment events during metadata or equivalent-target edits. Creating an activity starts with an empty set. Overlapping section/direct targets yield one notification per recipient/student. Metadata-only edits and equivalent target replacement emit nothing. Removing then explicitly re-adding a student may notify again: one fresh transition UUID is generated only for an operation with newly covered students. Retrying an unchanged PATCH has an empty set difference and emits nothing.
 
 Roster imports, joining/moving sections, and parent-link creation do not emit `activity_assigned` (Q-B). Assignment visibility still follows current sections (Q-C). These operations can affect future deadline sweeps. Existing activities/returns/releases are not replayed during migration.
 

@@ -6,6 +6,7 @@ import { getAuthToken } from "@/lib/supabase/auth-helper";
 import { handleApiResponse } from "@/lib/utils/api-error";
 import type { components } from "@/types/api";
 import type { Database } from "@/types/database";
+import { invalidateNotifications } from "./use-notifications";
 
 export interface ActivityWorkState extends Omit<
   Database["public"]["Views"]["activity_work_state"]["Row"],
@@ -18,6 +19,7 @@ export interface ActivityWorkState extends Omit<
 }
 
 export function invalidateWorkQueries(client: QueryClient) {
+  void invalidateNotifications(client);
   for (const key of [
     "activity-work",
     "submissions",

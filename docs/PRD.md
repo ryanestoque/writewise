@@ -237,5 +237,9 @@ The program has not issued specific required thresholds, so the following are pr
 - Dedicated Admin role (needed only if expanding beyond a single school)
 - Curriculum-aligned template library for activity creation (DepEd word/sentence sets)
 - Background/async processing (revisit if per-submission processing time becomes a bottleneck)
-- Notifications (e.g., parent alerted when a new assessment is ready)
+- Email notifications (Phase 3 Slice 4; in-app notifications are Slice 3)
 - Permanent manual-score override for teachers post-calibration
+
+### Phase 3 — Classroom activities, Slice 3
+
+Teachers and parents receive private in-app coursework notifications through a header bell. Events cover new assignments, due-soon/missing work, returned/rejected attempts, released results, and successful parent resubmissions after Return. Parents see updates for every linked child; teachers receive the successful-resubmission event. Opening a notice leads to the exact permitted activity/attempt. Read actions, deadline deduplication/re-arming, and current result-release privacy are included. Email, points/gradebook, excused work, and comments remain later slices. Implementation verification and deployment are tracked separately in `IMPLEMENTATION_STATUS.md`.

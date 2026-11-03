@@ -1,13 +1,11 @@
 "use client";
 
+import { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  createContext,
-  useContext,
-  useState,
-  useMemo,
-  useCallback,
-  type ReactNode,
-} from "react";
+  parseParentNotificationTarget,
+  type ParsedNotificationTarget,
+} from "@/lib/notifications/data";
 import { ParentNav } from "@/components/parent-nav";
 import { ParentUploadDialog } from "@/components/parent/parent-upload-dialog";
 import { CursiveGuideDialog } from "@/components/cursive-guide-dialog";
@@ -18,6 +16,9 @@ import {
 } from "@/lib/hooks/use-parent-data";
 
 interface ParentPortalContextValue {
+  userId: string;
+  notificationTarget: ParsedNotificationTarget;
+  dismissNotificationTarget: () => void;
   selectedChildId: string | null;
   setSelectedChildId: (id: string) => void;
   selectedChild: LinkedChild | null;
@@ -43,28 +44,58 @@ export function useParentPortal() {
 }
 
 interface ParentPortalProviderProps {
-  user: { fullName: string; email: string };
+  user: { id: string; fullName: string; email: string };
   children: ReactNode;
 }
 
-export function ParentPortalProvider({
-  user,
-  children: pageChildren,
-}: ParentPortalProviderProps) {
-  const { data: linkedChildren, isLoading } = useLinkedChildren();
-  const [selectedChildIdState, setSelectedChildId] = useState<string | null>(null);
+export function ParentPortalProvider({ user, children: pageChildren }: ParentPortalProviderProps) {
+  const { data: linkedChildren, isLoading } = useLinkedChildren(user.id);
+  const [selectedChildIdState, setSelectedChildIdState] = useState<string | null>(null);
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const notificationTarget = useMemo<ParsedNotificationTarget>(
+    () =>
+      pathname === "/progress" ? parseParentNotificationTarget(searchParams) : { kind: "none" },
+    [pathname, searchParams]
+  );
+  const requestedChild =
+    notificationTarget.kind === "valid" ? notificationTarget.target.childId : null;
   const [uploadOpen, setUploadOpen] = useState(false);
   const [cursiveGuideOpen, setCursiveGuideOpen] = useState(false);
   const [prefilledActivityId, setPrefilledActivityId] = useState<string | undefined>();
 
   // Derive the active selected child without cascading effect renders
   const selectedChildId =
-    selectedChildIdState && linkedChildren?.some((c) => c.id === selectedChildIdState)
-      ? selectedChildIdState
-      : linkedChildren?.[0]?.id ?? null;
+    notificationTarget.kind === "invalid"
+      ? null
+      : requestedChild
+        ? linkedChildren?.some((c) => c.id === requestedChild)
+          ? requestedChild
+          : null
+        : selectedChildIdState && linkedChildren?.some((c) => c.id === selectedChildIdState)
+          ? selectedChildIdState
+          : (linkedChildren?.[0]?.id ?? null);
 
-  const selectedChild =
-    linkedChildren?.find((c) => c.id === selectedChildId) ?? null;
+  const selectedChild = linkedChildren?.find((c) => c.id === selectedChildId) ?? null;
+
+  const clearTargetUrl = useCallback(() => {
+    if (notificationTarget.kind === "none") return;
+    const next = new URLSearchParams(searchParams.toString());
+    for (const name of ["child", "activity", "submission"]) next.delete(name);
+    router.replace(`${pathname}${next.size ? `?${next}` : ""}`, { scroll: false });
+  }, [notificationTarget.kind, pathname, router, searchParams]);
+  const setSelectedChildId = useCallback(
+    (id: string) => {
+      setSelectedChildIdState(id);
+      clearTargetUrl();
+    },
+    [clearTargetUrl]
+  );
+  const dismissNotificationTarget = useCallback(() => {
+    if (selectedChildId) setSelectedChildIdState(selectedChildId);
+    clearTargetUrl();
+  }, [clearTargetUrl, selectedChildId]);
 
   const { data: activities } = useTakeHomeActivities(selectedChildId);
   const hasActivities = (activities?.length ?? 0) > 0;
@@ -80,6 +111,9 @@ export function ParentPortalProvider({
 
   const contextValue: ParentPortalContextValue = useMemo(
     () => ({
+      userId: user.id,
+      notificationTarget,
+      dismissNotificationTarget,
       selectedChildId,
       setSelectedChildId,
       selectedChild,
@@ -94,6 +128,10 @@ export function ParentPortalProvider({
       openCursiveGuide,
     }),
     [
+      user.id,
+      notificationTarget,
+      dismissNotificationTarget,
+      setSelectedChildId,
       selectedChildId,
       selectedChild,
       linkedChildren,
@@ -108,7 +146,7 @@ export function ParentPortalProvider({
 
   return (
     <ParentPortalContext.Provider value={contextValue}>
-      <div className="flex min-h-dvh flex-col bg-background text-foreground">
+      <div className="bg-background text-foreground flex min-h-dvh flex-col">
         <ParentNav
           user={user}
           selectedChildId={selectedChildId}
@@ -118,7 +156,7 @@ export function ParentPortalProvider({
           onCursiveGuideClick={openCursiveGuide}
           hasActivities={hasActivities}
         />
-        <main className="flex-1 min-w-0 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+        <main className="mx-auto w-full max-w-7xl min-w-0 flex-1 space-y-6 px-4 py-6 sm:px-6 sm:py-8">
           {pageChildren}
         </main>
       </div>
@@ -137,10 +175,7 @@ export function ParentPortalProvider({
         />
       )}
 
-      <CursiveGuideDialog
-        open={cursiveGuideOpen}
-        onOpenChange={setCursiveGuideOpen}
-      />
+      <CursiveGuideDialog open={cursiveGuideOpen} onOpenChange={setCursiveGuideOpen} />
     </ParentPortalContext.Provider>
   );
 }

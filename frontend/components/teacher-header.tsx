@@ -17,6 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Kbd } from "@/components/ui/kbd";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 const routeTitles: Record<string, string> = {
   dashboard: "Dashboard",
@@ -25,7 +26,7 @@ const routeTitles: Record<string, string> = {
   settings: "Account Settings",
 };
 
-export function TeacherHeader() {
+export function TeacherHeader({ userId }: { userId: string }) {
   const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
 
@@ -106,6 +107,7 @@ export function TeacherHeader() {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
+      <NotificationBell key={userId} userId={userId} role="teacher" />
     </header>
   );
 }

@@ -8,6 +8,7 @@ import { CriterionTrendChart } from "@/components/dashboard/criterion-trend-char
 import { RubricReferenceDialog } from "@/components/rubric-reference-dialog";
 import { SubmissionHistoryDialog } from "@/components/parent/submission-history-dialog";
 import { SampleReportPreview } from "@/components/parent/sample-report-preview";
+import { NotificationWorkDestination } from "@/components/parent/notification-work-destination";
 import {
   useChildScoreHistory,
   useTakeHomeActivities,
@@ -48,6 +49,9 @@ export function ProgressPageContent() {
     isLoading: childrenLoading,
     openUploadDialog,
     openCursiveGuide,
+    userId,
+    notificationTarget,
+    dismissNotificationTarget,
   } = useParentPortal();
 
   const handleMobileTabKeyDown = useCallback(
@@ -84,14 +88,15 @@ export function ProgressPageContent() {
     [openUploadDialog]
   );
 
+  const progressChildId = notificationTarget.kind === "none" ? selectedChildId : null;
   const { data: allHistory, isLoading: historyLoading } =
-    useChildScoreHistory(selectedChildId);
+    useChildScoreHistory(progressChildId);
   const history = useMemo(() => allHistory?.filter((row) => row.isActiveAttempt &&
     row.status === "completed" && !!row.releasedAt && row.compositeScore != null), [allHistory]);
   const { data: activities } =
-    useTakeHomeActivities(selectedChildId);
+    useTakeHomeActivities(progressChildId);
   const { data: latestScores } =
-    useChildLatestScores(selectedChildId);
+    useChildLatestScores(progressChildId);
 
   const { practiceFocus } = useMemo(() => {
     return computeStrengthAndFocus(latestScores?.scores, latestScores?.bands);
@@ -104,6 +109,19 @@ export function ProgressPageContent() {
         <p className="text-sm text-muted-foreground">Loading child profile...</p>
       </div>
     );
+  }
+
+  if (notificationTarget.kind !== "none") {
+    const target = notificationTarget.kind === "valid" &&
+      selectedChild?.id === notificationTarget.target.childId ? notificationTarget.target : null;
+    return <div className="flex flex-col items-start gap-3 py-6">
+      <h1 className="font-heading text-xl font-semibold">Activity update</h1>
+      <p className="text-sm text-muted-foreground">View this update, then return to your child&apos;s progress.</p>
+      <Button variant="outline" onClick={dismissNotificationTarget}>Back to progress</Button>
+      <NotificationWorkDestination key={`${target?.childId}:${target?.activityId}:${target?.submissionId}`}
+        userId={userId} target={target} childName={selectedChild?.fullName ?? "Student"}
+        onClose={dismissNotificationTarget} />
+    </div>;
   }
 
   if (!selectedChild) {

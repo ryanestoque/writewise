@@ -43,7 +43,7 @@ export default async function TeacherLayout({
       <SidebarProvider>
         <TeacherSidebar user={{ fullName, email, schoolName }} />
         <SidebarInset>
-          <TeacherHeader />
+          <TeacherHeader userId={user.id} />
           <div className="flex-1 min-w-0 w-full px-4 sm:px-6 py-6 space-y-6">
             {children}
           </div>

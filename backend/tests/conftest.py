@@ -1,3 +1,4 @@
+import asyncio
 import os
 from urllib.parse import urlparse
 
@@ -7,6 +8,7 @@ if os.environ.get("ENVIRONMENT") != "test" or urlparse(
 ).hostname not in {"localhost", "127.0.0.1", "::1"}:
     raise RuntimeError("Tests require ENVIRONMENT=test and an explicit localhost SUPABASE_URL")
 
+import asyncpg
 import pytest
 from fastapi.testclient import TestClient
 
@@ -56,3 +58,37 @@ def client():
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def pause_notification_job():
+    """Pause only the app's wall-clock sweep; fixed-time function tests remain real."""
+
+    async def set_active(original=None):
+        connection = await asyncpg.connect(os.environ["SUPABASE_DB_URL"])
+        try:
+            if not await connection.fetchval("select to_regclass('cron.job')"):
+                return []
+            if original is None:
+                jobs = await connection.fetch(
+                    "select jobid, active from cron.job "
+                    "where jobname='writewise-deadline-notifications'"
+                )
+                for job in jobs:
+                    await connection.execute(
+                        "select cron.alter_job($1::bigint, active := false)", job["jobid"]
+                    )
+                return [(job["jobid"], job["active"]) for job in jobs]
+            for job_id, active in original:
+                await connection.execute(
+                    "select cron.alter_job($1::bigint, active := $2::boolean)", job_id, active
+                )
+            return []
+        finally:
+            await connection.close()
+
+    original = asyncio.run(set_active())
+    try:
+        yield
+    finally:
+        asyncio.run(set_active(original))

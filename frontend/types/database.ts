@@ -321,6 +321,85 @@ export type Database = {
           },
         ]
       }
+      notification: {
+        Row: {
+          activity_id: string
+          created_at: string
+          dedupe_key: string
+          id: string
+          read_at: string | null
+          recipient_id: string
+          student_id: string
+          submission_id: string | null
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Insert: {
+          activity_id: string
+          created_at?: string
+          dedupe_key: string
+          id?: string
+          read_at?: string | null
+          recipient_id: string
+          student_id: string
+          submission_id?: string | null
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Update: {
+          activity_id?: string
+          created_at?: string
+          dedupe_key?: string
+          id?: string
+          read_at?: string | null
+          recipient_id?: string
+          student_id?: string
+          submission_id?: string | null
+          type?: Database["public"]["Enums"]["notification_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "active_submission"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["active_submission_id"]
+          },
+          {
+            foreignKeyName: "notification_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["latest_submission_id"]
+          },
+          {
+            foreignKeyName: "notification_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "submission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parent: {
         Row: {
           created_at: string
@@ -768,6 +847,11 @@ export type Database = {
         Args: { target_student_id: string }
         Returns: boolean
       }
+      mark_all_notifications_read: { Args: { actor_id: string }; Returns: Json }
+      mark_notification_read: {
+        Args: { actor_id: string; target_notification_id: string }
+        Returns: Json
+      }
       mutate_student_work: {
         Args: {
           actor_id: string
@@ -801,6 +885,14 @@ export type Database = {
       }
     }
     Enums: {
+      notification_type:
+        | "activity_assigned"
+        | "due_soon"
+        | "submission_returned"
+        | "submission_rejected"
+        | "score_released"
+        | "activity_missing"
+        | "resubmitted_after_return"
       return_reason:
         | "wrong_worksheet"
         | "blurry_or_cropped"
@@ -944,6 +1036,15 @@ export const Constants = {
   },
   public: {
     Enums: {
+      notification_type: [
+        "activity_assigned",
+        "due_soon",
+        "submission_returned",
+        "submission_rejected",
+        "score_released",
+        "activity_missing",
+        "resubmitted_after_return",
+      ],
       return_reason: [
         "wrong_worksheet",
         "blurry_or_cropped",

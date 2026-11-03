@@ -247,3 +247,21 @@ Things this document surfaced that need a small edit elsewhere, not resolved her
 - **Second Railway/Supabase-prod key-holder** is still unnamed (mirrors SECURITY.md §11's existing open item) — needs a name before Phase 1 launch, since §7's access restriction depends on knowing who the second person is.
 - **Region availability at Railway signup** should be verified at actual provisioning time (§4) rather than assumed — regional options can vary by plan and change over time.
 - **`writewise-dev`'s auto-pause exposure post-defense** (§9, §14): once active development stops but before the 6-month decommission point, `writewise-dev` has no health-ping covering it and could auto-pause. Low-stakes since it only holds seeded fake data, but worth a conscious decision rather than an accidental pause if `dev` is still wanted for any reason during that window.
+
+## Phase 3 Slice 3 — Notification operations
+
+Apply the five versioned `20261103010000`–`20261103010004` migrations through the approved dev migration workflow before running the new portal code against `writewise-dev`. Confirm the intended project explicitly. Ephemeral CI verification never resets a hosted project, and repository verification does not establish that hosted migrations/deployment occurred. Production access remains restricted by AGENTS.md §6.
+
+The deadline migration enables pg_cron and registers one job. Verify its registration and recent execution using read-only SQL:
+
+```sql
+select jobid,jobname,schedule,command,active from cron.job
+where jobname='writewise-deadline-notifications';
+select jobid,status,start_time,end_time from cron.job_run_details
+where jobid=(select jobid from cron.job where jobname='writewise-deadline-notifications')
+order by start_time desc limit 10;
+```
+
+Expected schedule is `*/15 * * * *` and command is `select writewise_internal.enqueue_time_based_notifications();`. The first sweep can notify current missing work; historical assignments/returns/releases are not replayed by migration. Authenticated browser users cannot call the private sweep.
+
+If an authorized operator must pause this app's sweep, use `cron.alter_job(job_id, active := false)` and restore the original state afterward. Do not disable pg_cron, which removes unrelated jobs. No Resend, email-dispatch, Vault, or pg_net configuration is needed for Slice 3. New deadlines/microsecond overrides re-arm events; restoring an already-delivered instant does not resend.

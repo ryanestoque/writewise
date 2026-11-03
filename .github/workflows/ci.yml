@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ "main", "feat/phase3-assignment-deadlines", "feat/phase3-return-release" ]
+    branches: [ "main", "feat/phase3-assignment-deadlines", "feat/phase3-return-release", "feat/phase3-notifications-implementation" ]
   pull_request:
     branches: [ "main" ]
 
@@ -99,6 +99,35 @@ jobs:
         uv run python tests/migrations/release_upgrade_check.py verify --manifest /tmp/release-upgrade.json
         cd ..
         supabase db reset --local
+
+    - name: Verify legacy notification upgrade
+      env:
+        ENVIRONMENT: test
+      run: |
+        supabase db reset --local --version 20261102112156
+        cd backend
+        uv run python tests/migrations/notification_upgrade_check.py prepare --manifest /tmp/notification-upgrade.json
+        cd ..
+        supabase migration up --local
+        cd backend
+        uv run python tests/migrations/notification_upgrade_check.py verify --manifest /tmp/notification-upgrade.json
+        cd ..
+        supabase db reset --local
+
+    - name: Check generated API contract
+      env:
+        ENVIRONMENT: test
+      run: |
+        cd backend
+        uv run python - <<'PY'
+        import json
+        from pathlib import Path
+        from app.main import app
+        Path('/tmp/writewise-openapi.json').write_text(json.dumps(app.openapi()), encoding='utf-8')
+        PY
+        cd ../frontend
+        npx --yes openapi-typescript@7.13.0 /tmp/writewise-openapi.json -o types/api.ts
+        git diff --exit-code -- types/api.ts
 
     - name: Generate database contract
       run: supabase gen types typescript --local > frontend/types/database.ts

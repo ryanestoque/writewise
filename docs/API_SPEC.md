@@ -621,6 +621,22 @@ Response (`200 OK`):
 
 ---
 
+### 3.6 Notifications
+
+Notifications are read directly from `public.notification` through the authenticated recipient's Supabase client and RLS. The feed is account-wide across linked children, newest first by `(created_at DESC, id DESC)`, with 20-row keyset pages and a separate exact unread count. Labels are hydrated through current RLS-protected child/activity reads. No notification-list API or browser writes are added.
+
+#### `POST /api/notifications/{notification_id}/read`
+
+Both roles use a verified access-token identity; no recipient body/query parameter is accepted as authority. FastAPI checks `id` and `recipient_id` before invoking `mark_notification_read`, which repeats the ownership predicate transactionally. Success: `200 { "id": "<uuid>", "read_at": "<offset-aware timestamp>" }`. Preserve the first read timestamp on repeated calls. Foreign/missing/deleted rows all return `404 NOT_FOUND`; invalid UUIDs use `422 VALIDATION_ERROR`.
+
+#### `POST /api/notifications/read-all`
+
+Success: `200 { "updated_count": 3, "read_at": "<offset-aware timestamp>" }`. Marks only the caller's unread rows visible to the statement with `created_at` no later than its database cutoff. Existing read timestamps are preserved; rows arriving during the operation stay unread. Empty/repeated calls return count zero. Body/query recipient IDs never select another account.
+
+Both endpoints use `401 UNAUTHORIZED` for missing/invalid authentication and generic `500 INTERNAL_ERROR` for unexpected database failures. Bearer authentication errors preserve the standard envelope and `WWW-Authenticate: Bearer` challenge. No new error code is introduced. Browser read mutations verify their exact submitted token against the expected account and abort on account changes.
+
+Event types: `activity_assigned`, `due_soon`, `submission_returned`, `submission_rejected`, `score_released`, `activity_missing`, `resubmitted_after_return`. Rejections go only to the parent uploader; successful parent retries resolving Return go to the activity owner. Other current events fan out to all linked parents. Release retries are silent; genuine redraft/re-release can notify again. Event inserts share the coursework RPC transaction. Module: `backend/app/api/notifications.py`; response contracts: `notification_contracts.py`.
+
 ## 4. Cross-Reference: Endpoints ↔ PRD §7 Modules
 
 | Endpoint | PRD module |

@@ -3,7 +3,17 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.supabase import supabase_client
 
-security = HTTPBearer()
+
+class EnvelopeHTTPBearer(HTTPBearer):
+    def make_not_authenticated_error(self) -> HTTPException:
+        return HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "UNAUTHORIZED", "message": "Authentication required.", "details": {}},
+            headers=self.make_authenticate_headers(),
+        )
+
+
+security = EnvelopeHTTPBearer(scheme_name="HTTPBearer")
 
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:

@@ -187,6 +187,11 @@ export function useUploadSubmission() {
       return handleApiResponse(response);
     },
     onSuccess: () => invalidateWorkQueries(queryClient),
+    onError: (error) => {
+      if (error instanceof ApiError && typeof error.details?.submission_id === "string") {
+        invalidateWorkQueries(queryClient);
+      }
+    },
   });
 }
 
