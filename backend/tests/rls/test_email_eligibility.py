@@ -196,6 +196,82 @@ def test_in_class_deadlines_are_also_email_eligible(email_case):
     assert prepare_at(row["id"], processing_claim(row["id"], NOW), NOW)["state"] == "ready"
 
 
+def test_removed_teacher_roster_suppresses_queued_email(family, email_case):
+    _, row = email_case
+    link = {"teacher_id": family["teacher"], "student_id": family["students"][0]}
+    try:
+        admin.table("teacher_student").delete().eq("teacher_id", link["teacher_id"]).eq(
+            "student_id", link["student_id"]
+        ).execute()
+        assert prepare_at(row["id"], processing_claim(row["id"], NOW), NOW) == {
+            "state": "skipped",
+            "code": "relationship_revoked",
+        }
+    finally:
+        admin.table("teacher_student").upsert(link).execute()
+
+
+@pytest.mark.parametrize(
+    "earlier,ready", [(timedelta(0), True), (timedelta(microseconds=1), False)]
+)
+def test_dispatch_rechecks_twenty_four_hour_boundary(email_case, earlier, ready):
+    _, row = email_case
+    check = NOW - timedelta(hours=22) - earlier
+    result = prepare_at(row["id"], processing_claim(row["id"], check), check)
+    assert result["state"] == ("ready" if ready else "skipped")
+
+
+@pytest.mark.parametrize("changed", [False, True])
+def test_equivalent_override_preserves_event_but_changed_override_skips(
+    family, email_case, changed
+):
+    activity, row = email_case
+    due = NOW + timedelta(hours=2, microseconds=int(changed))
+    admin.rpc(
+        "mutate_student_work",
+        {
+            "actor_id": family["teacher"],
+            "target_activity_id": activity,
+            "target_student_id": family["students"][0],
+            "operation": "update",
+            "payload": {
+                "due_at_override": due.astimezone(timezone(timedelta(hours=8))).isoformat()
+            },
+        },
+    ).execute()
+    result = prepare_at(row["id"], processing_claim(row["id"], NOW), NOW)
+    assert result["state"] == ("skipped" if changed else "ready")
+    if changed:
+        assert result["code"] == "deadline_changed"
+
+
+@pytest.mark.parametrize("status", ["processing", "completed"])
+def test_only_completed_retry_suppresses_outstanding_return(family, assigned_activity, status):
+    activity = assigned_activity["id"]
+    try:
+        return_submission(family, activity)
+        row = outbox_rows(activity)[0]
+        later = completed_submission(family, activity)
+        if status == "processing":
+            admin.table("submission").update({"status": status}).eq("id", later["id"]).execute()
+        check = datetime.now(timezone.utc)
+        result = prepare_at(row["id"], processing_claim(row["id"], check), check)
+        assert result["state"] == ("ready" if status == "processing" else "skipped")
+    finally:
+        admin.table("submission").delete().eq("activity_id", activity).execute()
+
+
+def test_suppressed_preference_does_not_replay_when_enabled(family, email_case):
+    _, row = email_case
+    token = processing_claim(row["id"], NOW)
+    admin.table("parent").update({"email_notifications": False}).eq(
+        "id", family["parent"]
+    ).execute()
+    assert prepare_at(row["id"], token, NOW)["state"] == "skipped"
+    admin.table("parent").update({"email_notifications": True}).eq("id", family["parent"]).execute()
+    assert prepare_at(row["id"], token, NOW) == {"state": "lost"}
+
+
 @pytest.mark.parametrize("change", ["deadline", "preference", "completion"])
 def test_change_committed_before_waiting_preparation_is_observed(family, email_case, change):
     activity, row = email_case

@@ -196,3 +196,53 @@ def test_exhausted_budget_releases_claim_before_reservation(monkeypatch):
     assert "authorize_email_delivery" not in names
     assert "provider" not in names
     assert state.calls[-1][1]["delivery_outcome"] == "released"
+
+
+def test_rpc_has_a_real_total_deadline_and_does_not_block_the_event_loop():
+    from app.email.queue import EmailQueue
+
+    async def exercise():
+        started = asyncio.Event()
+        healthy = asyncio.Event()
+
+        async def stalled(_request):
+            started.set()
+            await asyncio.Event().wait()
+
+        async def other_request():
+            await started.wait()
+            healthy.set()
+
+        async with httpx.AsyncClient(
+            base_url="http://127.0.0.1:54321/rest/v1/",
+            transport=httpx.MockTransport(stalled),
+        ) as client:
+            observer = asyncio.create_task(other_request())
+            with pytest.raises(RuntimeError, match="Email queue operation failed"):
+                await asyncio.wait_for(EmailQueue(client).claim(), timeout=3)
+            await observer
+            assert healthy.is_set()
+
+    asyncio.run(exercise())
+
+
+def test_invocation_has_a_real_twenty_second_total_deadline():
+    from app.email.dispatcher import dispatch_emails
+
+    class StalledQueue:
+        async def claim(self):
+            await asyncio.Event().wait()
+
+    async def exercise():
+        with pytest.raises(RuntimeError, match="Email dispatch exceeded its time budget"):
+            await asyncio.wait_for(
+                dispatch_emails(
+                    StalledQueue(),
+                    None,
+                    sender_address="synthetic@example.com",
+                    app_origin="https://example.com",
+                ),
+                timeout=21,
+            )
+
+    asyncio.run(exercise())

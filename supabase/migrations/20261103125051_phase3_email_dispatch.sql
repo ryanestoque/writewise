@@ -8,7 +8,9 @@ create extension if not exists supabase_vault with schema vault;
 revoke all on schema net, vault from public, anon, authenticated, service_role;
 revoke all on all tables in schema net, vault from public, anon, authenticated, service_role;
 revoke all on all sequences in schema net, vault from public, anon, authenticated, service_role;
-revoke all on all functions in schema net, vault from public, anon, authenticated, service_role;
+revoke all on all functions in schema net from public, anon, authenticated, service_role;
+-- Vault's internal crypto functions belong to the Supabase extension owner.
+-- Keep those internal grants intact; denied schema/data access prevents browser use.
 
 create function writewise_internal.request_email_dispatch()
 returns bigint language plpgsql security invoker set search_path = '' as $$
