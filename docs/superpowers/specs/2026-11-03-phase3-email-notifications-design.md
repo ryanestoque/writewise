@@ -1,6 +1,6 @@
 # Phase 3 Slice 4 — Email notifications design
 
-**Date:** 2026-11-03. **Status:** Proposed; awaiting review of this written design before implementation planning. This document does not claim implementation, sending-domain verification, hosted provisioning, or delivery.
+**Date:** 2026-11-03. **Status:** Approved by the user on 2026-11-03, including the existing bounded retry/quota behavior. The user requested the [implementation plan](../plans/2026-11-03-phase3-email-notifications.md). This document does not claim implementation, independently observed sending-domain verification, hosted provisioning, or delivery.
 
 **Baseline:** local `main` at `c3369cd`, which includes the merge of Slice 3 PR #6. Slices 1–3 are recorded as verified. Preserve their application behavior, notification receipts, upgrade proofs, and existing local worktrees.
 
@@ -16,11 +16,11 @@ No historical notification is converted to an email during migration. Deployment
 
 **Sender prerequisite (user-confirmed, 2026-11-03):** A verified Resend sending domain already exists. The user will supply sender details later. Domain verification was not independently inspected; implementation can use stubs while the concrete sender address and environment credentials remain unconfigured.
 
-### 1.1 Proposed refinements requiring review
+### 1.1 Approved refinements
 
 The original proposal leaves recovery and stale-event behavior unspecified. This design resolves them as follows:
 
-| Detail | Proposed contract |
+| Detail | Approved contract |
 |---|---|
 | Personalization | Fixed generic wording and a login link; no child name or activity title. `student` has only `full_name`, so deriving a reliable first name would require an additional product/data decision. This narrows Q9/§5.3's permitted content. |
 | Current eligibility | Recheck parent linkage, confirmed Auth address, preference, archive state, and event relevance immediately before authorizing each send. |

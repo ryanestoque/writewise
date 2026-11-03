@@ -244,7 +244,7 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 **Dependency:** Slice ③. **Status: Not started.**
 
-**Design preparation (2026-11-03):** The user authorized developing the next slice. A [detailed email design](docs/superpowers/specs/2026-11-03-phase3-email-notifications-design.md) is proposed for review, covering transactional enqueue, recoverable claims, stale-event and preference checks, bounded Resend retries, scheduler permissions, settings, and verification. It proposes generic email wording because the current schema has no structured first-name field. Written-design approval and implementation planning remain pending; no application code, migration, hosted configuration, or email delivery is claimed.
+**Design and planning (2026-11-03):** The user approved the [detailed email design](docs/superpowers/specs/2026-11-03-phase3-email-notifications-design.md), including its bounded retry/quota behavior, and requested the [implementation plan](docs/superpowers/plans/2026-11-03-phase3-email-notifications.md). The plan covers transactional enqueue, recoverable claims, stale-event and preference checks, bounded Resend delivery, private scheduling, account settings, and verification. Generic email wording is approved because the current schema has no structured first-name field. The user reports an existing verified Resend domain and will supply sender details later. All execution tasks remain unchecked; no application code, migration, hosted configuration, or email delivery is claimed.
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|
