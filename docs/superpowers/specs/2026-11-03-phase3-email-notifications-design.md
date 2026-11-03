@@ -14,6 +14,8 @@ This slice adds a service-only outbox, recoverable claims, bounded FastAPI dispa
 
 No historical notification is converted to an email during migration. Deployment, Resend/DNS provisioning, Vault values, and any real recipient smoke test are operational follow-up steps with their own evidence. Automated verification never sends email.
 
+**Sender prerequisite (user-confirmed, 2026-11-03):** A verified Resend sending domain already exists. The user will supply sender details later. Domain verification was not independently inspected; implementation can use stubs while the concrete sender address and environment credentials remain unconfigured.
+
 ### 1.1 Proposed refinements requiring review
 
 The original proposal leaves recovery and stale-event behavior unspecified. This design resolves them as follows:
