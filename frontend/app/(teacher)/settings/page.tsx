@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileSettingsCard } from "@/components/settings/profile-settings-card";
 import { SecuritySettingsCard } from "@/components/settings/security-settings-card";
+import { NotificationSettingsCard } from "@/components/settings/notification-settings-card";
+import { Separator } from "@/components/ui/separator";
 
 export const metadata: Metadata = {
   title: "Account Settings — WriteWise",
@@ -19,27 +21,22 @@ export default async function SettingsPage() {
     redirect("/login");
   }
 
-  const { data: teacherProfile } = await supabase
+  const { data: teacherProfile, error: profileError } = await supabase
     .from("teacher")
-    .select("full_name, school_name, email")
+    .select("full_name, school_name, email, email_notifications")
     .eq("id", user.id)
     .single();
 
-  const fullName =
-    teacherProfile?.full_name ||
-    (user.user_metadata?.full_name as string) ||
-    "";
+  const fullName = teacherProfile?.full_name || (user.user_metadata?.full_name as string) || "";
   const schoolName =
-    teacherProfile?.school_name ||
-    (user.user_metadata?.school_name as string) ||
-    "";
+    teacherProfile?.school_name || (user.user_metadata?.school_name as string) || "";
   const email = user.email || teacherProfile?.email || "";
 
   return (
     <div className="w-full min-w-0 space-y-10 pb-20 sm:pb-16">
       {/* Page Header */}
-      <div className="border-b border-border pb-6">
-        <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
+      <div className="border-border border-b pb-6">
+        <h1 className="font-heading text-foreground text-2xl font-semibold tracking-tight sm:text-3xl">
           Account Settings
         </h1>
       </div>
@@ -52,10 +49,21 @@ export default async function SettingsPage() {
       />
 
       {/* Section Divider */}
-      <div className="border-t border-border" />
+      <div className="border-border border-t" />
 
       {/* Password & Security Section */}
       <SecuritySettingsCard email={email} />
+      <Separator />
+      <NotificationSettingsCard
+        key={`${user.id}:teacher`}
+        accountId={user.id}
+        role="teacher"
+        initialEnabled={
+          !profileError && typeof teacherProfile?.email_notifications === "boolean"
+            ? teacherProfile.email_notifications
+            : null
+        }
+      />
     </div>
   );
 }
