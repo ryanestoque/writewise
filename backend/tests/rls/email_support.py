@@ -81,10 +81,12 @@ def outbox_rows(activity):
 
 def processing_claim(row_id, as_of):
     token = uuid4()
+    baseline = outbox_row(row_id)["attempts"]
     admin.table("email_outbox").update(
         {
             "status": "processing",
             "claim_token": str(token),
+            "claim_attempts": baseline,
             "lease_expires_at": (as_of + timedelta(minutes=2)).isoformat(),
         }
     ).eq("id", row_id).execute()

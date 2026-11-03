@@ -927,6 +927,10 @@ export type Database = {
         }
         Returns: Json
       }
+      prepare_email_delivery: {
+        Args: { expected_claim_token: string; target_outbox_id: string }
+        Returns: Json
+      }
       record_student_submission: {
         Args: {
           actor_id: string
