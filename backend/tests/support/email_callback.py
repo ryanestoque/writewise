@@ -34,7 +34,7 @@ class Callback(BaseHTTPRequestHandler):
         valid = all(state[key] for key in ("authenticated", "path_ok", "body_ok"))
         self.reply(
             200 if valid else 400,
-            dict.fromkeys(("claimed", "sent", "retry", "failed", "skipped"), 0),
+            dict.fromkeys(("claimed", "sent", "retried", "failed", "skipped"), 0),
         )
 
 

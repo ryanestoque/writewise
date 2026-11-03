@@ -7,9 +7,14 @@ from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import asyncpg
+import httpx
 import pytest
+from postgrest.exceptions import APIError
 
 from app.core.supabase import supabase_client as admin
+from app.email.dispatcher import dispatch_emails
+from app.email.provider import ResendSender
+from app.email.queue import EmailQueue
 from tests.rls.email_support import (
     authorize_at,
     claim_at,
@@ -192,3 +197,106 @@ def test_supplied_recipient_must_match_canonical_address(queued_email):
         queued_email["id"], claim["claim_token"], "foreign@example.com", "a" * 64, NOW
     ) == {"state": "skipped", "code": "payload_changed"}
     assert outbox_row(queued_email["id"])["attempts"] == 0
+
+
+@pytest.mark.parametrize("role", ["parent_client", "teacher_client", "other_parent_client"])
+@pytest.mark.parametrize(
+    "rpc,payload",
+    [
+        ("claim_email_delivery", {}),
+        (
+            "prepare_email_delivery",
+            {"target_outbox_id": str(uuid4()), "expected_claim_token": str(uuid4())},
+        ),
+        (
+            "authorize_email_delivery",
+            {
+                "target_outbox_id": str(uuid4()),
+                "expected_claim_token": str(uuid4()),
+                "payload_recipient": "synthetic@example.com",
+                "payload_sha256": "a" * 64,
+            },
+        ),
+        (
+            "finish_email_delivery",
+            {
+                "target_outbox_id": str(uuid4()),
+                "expected_claim_token": str(uuid4()),
+                "delivery_outcome": "sent",
+                "provider_id": PROVIDER,
+                "error_code": None,
+                "retry_at": None,
+            },
+        ),
+    ],
+)
+def test_browser_cannot_call_delivery_rpcs(family, role, rpc, payload):
+    with pytest.raises(APIError):
+        family[role].rpc(rpc, payload).execute()
+
+
+@pytest.mark.parametrize("minutes", [0, 60, 61])
+def test_retry_requires_a_future_in_window_instant(queued_email, minutes):
+    _, _, allowed = reserve(queued_email)
+    with pytest.raises(asyncpg.CheckViolationError):
+        finish_at(
+            queued_email["id"],
+            allowed["claim_token"],
+            "retry",
+            NOW,
+            error_code="provider_timeout",
+            retry_at=NOW + timedelta(minutes=minutes),
+        )
+    assert outbox_row(queued_email["id"])["status"] == "processing"
+
+
+def test_real_rpc_transactions_release_locks_before_async_provider(family, assigned_activity):
+    at = datetime.now(timezone.utc)
+    row = seed_due_email(family, assigned_activity["id"], at)
+    for other in outbox_rows(assigned_activity["id"]):
+        if other["id"] != row["id"]:
+            admin.table("email_outbox").update(
+                {"status": "skipped", "last_error": "event_obsolete"}
+            ).eq("id", other["id"]).execute()
+
+    async def exercise():
+        calls = []
+
+        async def provider(request):
+            calls.append(request)
+            connection = await asyncpg.connect(os.environ["SUPABASE_DB_URL"])
+            try:
+                async with connection.transaction():
+                    await connection.execute("set local lock_timeout='500ms'")
+                    await connection.fetchval(
+                        "select id from public.activity where id=$1 for update nowait",
+                        assigned_activity["id"],
+                    )
+                    await connection.fetchval(
+                        "select id from public.email_outbox where id=$1 for update nowait",
+                        row["id"],
+                    )
+                await asyncio.sleep(0)
+                return httpx.Response(200, json={"id": PROVIDER})
+            finally:
+                await connection.close()
+
+        key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+        async with (
+            httpx.AsyncClient(
+                base_url=os.environ["SUPABASE_URL"] + "/rest/v1/",
+                headers={"apikey": key, "Authorization": "Bearer " + key},
+            ) as rpc,
+            httpx.AsyncClient(transport=httpx.MockTransport(provider)) as external,
+        ):
+            counts = await dispatch_emails(
+                EmailQueue(rpc),
+                ResendSender(external, "synthetic-key"),
+                sender_address="WriteWise <synthetic@example.com>",
+                app_origin="https://example.com",
+            )
+        assert counts.sent == 1 and len(calls) == 1
+        assert calls[0].headers["Idempotency-Key"] == "writewise-email/" + row["id"]
+        assert outbox_row(row["id"])["status"] == "sent"
+
+    asyncio.run(exercise())

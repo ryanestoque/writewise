@@ -118,7 +118,7 @@ def test_pg_net_callback_only_runs_after_commit_and_not_after_rollback(vault_con
             )
             await transaction.commit()
             assert await response(request) == dict.fromkeys(
-                ("claimed", "sent", "retry", "failed", "skipped"), 0
+                ("claimed", "sent", "retried", "failed", "skipped"), 0
             )
             after = await state()
             assert after == {
@@ -139,6 +139,43 @@ def test_pg_net_callback_only_runs_after_commit_and_not_after_rollback(vault_con
             )
             assert await state() == after
         finally:
+            await connection.close()
+
+    asyncio.run(exercise())
+
+
+def test_vault_entry_names_are_unique(vault_config):
+    vault_config(SECRET, "writewise_email_dispatch_secret")
+    with pytest.raises(asyncpg.UniqueViolationError):
+        vault_config(SECRET, "writewise_email_dispatch_secret")
+
+
+def test_invalid_secret_is_value_free(vault_config):
+    vault_config("http://127.0.0.1:8765", "writewise_backend_url")
+    vault_config("short-synthetic-secret", "writewise_email_dispatch_secret")
+    with pytest.raises(asyncpg.InvalidParameterValueError) as caught:
+        db_value("select writewise_internal.request_email_dispatch()")
+    assert str(caught.value) == "Invalid email dispatch configuration"
+
+
+def test_named_schedule_replacement_never_duplicates_job():
+    async def exercise():
+        connection = await asyncpg.connect(os.environ["SUPABASE_DB_URL"])
+        transaction = connection.transaction()
+        await transaction.start()
+        try:
+            await connection.fetchval(
+                "select cron.schedule('writewise-email-dispatch','*/5 * * * *',"
+                "'select writewise_internal.request_email_dispatch();')"
+            )
+            assert (
+                await connection.fetchval(
+                    "select count(*) from cron.job where jobname='writewise-email-dispatch'"
+                )
+                == 1
+            )
+        finally:
+            await transaction.rollback()
             await connection.close()
 
     asyncio.run(exercise())
