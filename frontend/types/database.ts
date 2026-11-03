@@ -127,6 +127,65 @@ export type Database = {
           },
         ]
       }
+      email_outbox: {
+        Row: {
+          attempts: number
+          claim_token: string | null
+          created_at: string
+          due_at: string | null
+          first_attempt_at: string | null
+          id: string
+          last_error: string | null
+          lease_expires_at: string | null
+          next_attempt_at: string
+          notification_id: string
+          payload_sha256: string | null
+          provider_message_id: string | null
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          claim_token?: string | null
+          created_at?: string
+          due_at?: string | null
+          first_attempt_at?: string | null
+          id?: string
+          last_error?: string | null
+          lease_expires_at?: string | null
+          next_attempt_at?: string
+          notification_id: string
+          payload_sha256?: string | null
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          claim_token?: string | null
+          created_at?: string
+          due_at?: string | null
+          first_attempt_at?: string | null
+          id?: string
+          last_error?: string | null
+          lease_expires_at?: string | null
+          next_attempt_at?: string
+          notification_id?: string
+          payload_sha256?: string | null
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_outbox_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: true
+            referencedRelation: "notification"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manual_score: {
         Row: {
           baseline_alignment_band: Database["public"]["Enums"]["score_band"]
@@ -404,18 +463,21 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          email_notifications: boolean
           full_name: string
           id: string
         }
         Insert: {
           created_at?: string
           email: string
+          email_notifications?: boolean
           full_name: string
           id: string
         }
         Update: {
           created_at?: string
           email?: string
+          email_notifications?: boolean
           full_name?: string
           id?: string
         }
@@ -677,6 +739,7 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          email_notifications: boolean
           full_name: string
           id: string
           school_name: string | null
@@ -684,6 +747,7 @@ export type Database = {
         Insert: {
           created_at?: string
           email: string
+          email_notifications?: boolean
           full_name: string
           id: string
           school_name?: string | null
@@ -691,6 +755,7 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string
+          email_notifications?: boolean
           full_name?: string
           id?: string
           school_name?: string | null

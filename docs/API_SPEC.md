@@ -93,6 +93,7 @@ The frontend branches on `error.code`, never on parsing `message` text (ARCHITEC
 | `RATE_LIMIT_EXCEEDED` | 429 | Upstream Supabase Auth email rate limit exceeded during parent invitation dispatch |
 | `MODEL_INFERENCE_ERROR` | 500 | ML_PIPELINE §9's `ModelInferenceError` |
 | `INTERNAL_ERROR` | 500 | Unhandled failures, or an incomplete submission deletion (Storage/database failure; retry the deletion) |
+| `EMAIL_DISPATCH_UNAVAILABLE` | 503 | Authenticated internal email dispatch is disabled; no queue claims or sends occur |
 
 ### 2.5 Actor-Derived Fields
 
@@ -636,6 +637,16 @@ Success: `200 { "updated_count": 3, "read_at": "<offset-aware timestamp>" }`. Ma
 Both endpoints use `401 UNAUTHORIZED` for missing/invalid authentication and generic `500 INTERNAL_ERROR` for unexpected database failures. Bearer authentication errors preserve the standard envelope and `WWW-Authenticate: Bearer` challenge. No new error code is introduced. Browser read mutations verify their exact submitted token against the expected account and abort on account changes.
 
 Event types: `activity_assigned`, `due_soon`, `submission_returned`, `submission_rejected`, `score_released`, `activity_missing`, `resubmitted_after_return`. Rejections go only to the parent uploader; successful parent retries resolving Return go to the activity owner. Other current events fan out to all linked parents. Release retries are silent; genuine redraft/re-release can notify again. Event inserts share the coursework RPC transaction. Module: `backend/app/api/notifications.py`; response contracts: `notification_contracts.py`.
+
+### 3.7 Internal classroom email dispatch
+
+`POST /api/internal/dispatch-emails` uses `X-Dispatch-Secret`, not a teacher/parent bearer token. Authenticate a nonblank configured secret before queue access. Missing/wrong authentication gives `401 UNAUTHORIZED`; valid authentication with delivery disabled gives `503 EMAIL_DISPATCH_UNAVAILABLE`. Both use fixed messages and empty details.
+
+The server selects at most ten rows and runs at most twenty seconds. Request bodies/query parameters cannot choose a recipient, outbox ID, provider URL, or limit. Success is `200 { claimed, sent, retried, failed, skipped }`, with nonnegative integer counts for this invocation's acknowledged outcomes. An empty queue returns all zeros. A released unused or lost claim can make claimed exceed the four outcome counters. Sent means provider acceptance, not inbox delivery.
+
+Each send follows committed claim, current eligibility, and single-use authorization RPCs. Provider HTTP occurs outside database transactions. Transient failures use the same payload/idempotency key and bounded retries; quota/credential-wide failures stop this invocation after persisting the outcome. Unexpected infrastructure failure yields sanitized `500 INTERNAL_ERROR`; earlier committed outcomes remain durable, and uncertain reservations recover through their leases. No portal calls this endpoint. Operational activation/scheduling remains separate from the API contract.
+
+---
 
 ## 4. Cross-Reference: Endpoints ↔ PRD §7 Modules
 
