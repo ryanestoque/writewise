@@ -253,7 +253,10 @@ def test_retry_requires_a_future_in_window_instant(queued_email, minutes):
     assert outbox_row(queued_email["id"])["status"] == "processing"
 
 
-def test_real_rpc_transactions_release_locks_before_async_provider(family, assigned_activity):
+@pytest.mark.parametrize("lose_finalization", [False, True])
+def test_real_rpc_transactions_release_locks_before_async_provider(
+    family, assigned_activity, lose_finalization
+):
     at = datetime.now(timezone.utc)
     row = seed_due_email(family, assigned_activity["id"], at)
     for other in outbox_rows(assigned_activity["id"]):
@@ -264,6 +267,7 @@ def test_real_rpc_transactions_release_locks_before_async_provider(family, assig
 
     async def exercise():
         calls = []
+        drop_finish = lose_finalization
 
         async def provider(request):
             calls.append(request)
@@ -286,20 +290,56 @@ def test_real_rpc_transactions_release_locks_before_async_provider(family, assig
 
         key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
         async with (
+            httpx.AsyncClient() as network,
             httpx.AsyncClient(
                 base_url=os.environ["SUPABASE_URL"] + "/rest/v1/",
                 headers={"apikey": key, "Authorization": "Bearer " + key},
             ) as rpc,
             httpx.AsyncClient(transport=httpx.MockTransport(provider)) as external,
         ):
+
+            async def forward(request):
+                nonlocal drop_finish
+                if drop_finish and request.url.path.endswith("/finish_email_delivery"):
+                    drop_finish = False
+                    return httpx.Response(500, json={"message": "Synthetic lost finalization"})
+                return await network.send(request)
+
+            if lose_finalization:
+                async with httpx.AsyncClient(
+                    base_url=os.environ["SUPABASE_URL"] + "/rest/v1/",
+                    headers={"apikey": key, "Authorization": "Bearer " + key},
+                    transport=httpx.MockTransport(forward),
+                ) as uncertain:
+                    with pytest.raises(RuntimeError, match="Email queue operation failed"):
+                        await dispatch_emails(
+                            EmailQueue(uncertain),
+                            ResendSender(external, "synthetic-key"),
+                            sender_address="WriteWise <synthetic@example.com>",
+                            app_origin="https://example.com",
+                        )
+                assert outbox_row(row["id"])["status"] == "processing"
+                connection = await asyncpg.connect(os.environ["SUPABASE_DB_URL"])
+                try:
+                    await connection.execute(
+                        "update public.email_outbox set lease_expires_at=clock_timestamp() "
+                        "- interval '1 second' where id=$1",
+                        row["id"],
+                    )
+                finally:
+                    await connection.close()
             counts = await dispatch_emails(
                 EmailQueue(rpc),
                 ResendSender(external, "synthetic-key"),
                 sender_address="WriteWise <synthetic@example.com>",
                 app_origin="https://example.com",
             )
-        assert counts.sent == 1 and len(calls) == 1
+        assert counts.sent == 1 and len(calls) == (2 if lose_finalization else 1)
         assert calls[0].headers["Idempotency-Key"] == "writewise-email/" + row["id"]
+        if lose_finalization:
+            assert calls[0].content == calls[1].content
+            assert calls[0].headers["Idempotency-Key"] == calls[1].headers["Idempotency-Key"]
+            assert outbox_row(row["id"])["attempts"] == 2
         assert outbox_row(row["id"])["status"] == "sent"
 
     asyncio.run(exercise())

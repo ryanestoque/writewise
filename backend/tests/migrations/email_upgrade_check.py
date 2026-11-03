@@ -28,6 +28,38 @@ async def database_snapshot(activity):
         await connection.close()
 
 
+async def verify_scheduler():
+    connection = await asyncpg.connect(os.environ["SUPABASE_DB_URL"])
+    try:
+        jobs = await connection.fetch(
+            "select jobname,schedule,command,active from cron.job where jobname in "
+            "('writewise-email-dispatch','writewise-deadline-notifications')"
+        )
+        assert {
+            row["jobname"]: (row["schedule"], row["command"], row["active"]) for row in jobs
+        } == {
+            "writewise-email-dispatch": (
+                "*/5 * * * *",
+                "select writewise_internal.request_email_dispatch();",
+                True,
+            ),
+            "writewise-deadline-notifications": (
+                "*/15 * * * *",
+                "select writewise_internal.enqueue_time_based_notifications();",
+                True,
+            ),
+        }
+        assert len(jobs) == 2
+        for role in ("anon", "authenticated", "service_role"):
+            assert not await connection.fetchval(
+                "select has_function_privilege($1,"
+                "'writewise_internal.request_email_dispatch()','EXECUTE')",
+                role,
+            )
+    finally:
+        await connection.close()
+
+
 def capture(admin, parent, manifest):
     activity = manifest["activity"]
     return {
@@ -208,6 +240,7 @@ def main():
             admin.table("email_outbox").select("id").in_("notification_id", notices).execute().data
             == []
         )
+        asyncio.run(verify_scheduler())
         print(
             "Email upgrade verified: work, scores, notices, receipts and reads preserved; "
             "default-on preferences; no email replay"
