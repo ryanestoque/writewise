@@ -12,6 +12,8 @@
 
 **Planning baseline:** `e29b006` on `docs/phase3-email-design`, based on local `main` merge `c3369cd`. This pass changes planning/status documents only. All execution checkboxes start unchecked; no application implementation, migrated stack, provider delivery, publication, or deployment is claimed.
 
+**Execution start (2026-11-03):** The user selected inline execution. Work is isolated in `.worktrees/phase3-email-notifications` on `feat/phase3-email-notifications`, starting at `11e23e7`. A separate worktree-root `.venv` was synchronized from the frozen lockfile after the original environment lacked pytest. Two baseline calibration-loader cases require the TensorFlow library even in test mode; the full locked dependency set is now installed. Fresh database-free baseline: **73 passed**, one upstream Starlette/TestClient deprecation warning. Ruff, ESLint and TypeScript passed. Supabase CLI 2.115.0 was loaded through npm; local startup failed with `LegacyDockerLifecycleInspectError` because neither Docker nor Podman is available. Task 1 event/RLS/fault tests and a feature-branch CI trigger are prepared; their database red run is pending an authorized ephemeral runner. Tasks 4–5 may proceed independently under this plan; 25 new template/config tests first failed on absent delivery modules/settings. No migration or application implementation is claimed at this checkpoint.
+
 ## Global Constraints
 
 - “No historical notification is converted to an email during migration.”
