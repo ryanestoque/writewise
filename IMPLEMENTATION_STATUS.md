@@ -250,7 +250,7 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 |---|---|---|
 | Service-only email outbox and preferences | Partial | Transactional two-event enqueue, default-on owner preferences, canonical recipient/event checks and bounded recoverable queue implemented; database tests pass. Settings controls built; signed-in portal QA pending. |
 | Dispatcher and Resend integration | Partial | Async secret-authenticated internal route, fixed templates, stable key/digest, retry/timeout/quota handling and controlled-provider tests implemented. Final full CI pending. |
-| Cron/pg_net/Vault configuration | Partial | Versioned private scheduler/network-grant migration and synthetic container callback tests implemented. Full callback/advisor gate pending; no hosted secrets provisioned. |
+| Cron/pg_net/Vault configuration | Partial | Synthetic loopback callback and four upgrade proofs passed. CI found Supabase-owned network grants require owner provisioning; helper now refuses HTTP until safe. Final owner-provisioned CI/advisor gate pending; hosted owner setup and secrets remain unconfigured. |
 | Privacy-safe templates and verification | Partial | Generic templates omit names, educational content and account tokens. Automated privacy/config/provider checks pass; final upgrade/contract/CI and portal gates remain open. |
 
 ### Slice ⑤ — Points and gradebook

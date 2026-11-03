@@ -47,6 +47,31 @@ def test_browser_cannot_read_vault_or_network_queues_or_send(role):
     )
 
 
+@pytest.mark.parametrize("role", ["anon", "authenticated"])
+@pytest.mark.parametrize(
+    "statement",
+    [
+        "select 1 from net.http_request_queue limit 0",
+        "select 1 from net._http_response limit 0",
+        "select 1 from vault.decrypted_secrets limit 0",
+        "select net.http_post('http://127.0.0.1:8765/api/internal/dispatch-emails')",
+    ],
+)
+def test_actual_browser_role_cannot_read_or_invoke_network(role, statement):
+    async def exercise():
+        connection = await asyncpg.connect(os.environ["SUPABASE_DB_URL"])
+        try:
+            async with connection.transaction():
+                await connection.execute(f"set local role {role}")
+                with pytest.raises(asyncpg.InsufficientPrivilegeError):
+                    async with connection.transaction():
+                        await connection.execute(statement)
+        finally:
+            await connection.close()
+
+    asyncio.run(exercise())
+
+
 @pytest.fixture
 def vault_config():
     ids = []
