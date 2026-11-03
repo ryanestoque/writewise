@@ -31,7 +31,7 @@ def delivery_case(**options):
     )
 
 
-async def run_case(state):
+async def run_case(state, started=None, resume=None):
     from app.email.dispatcher import dispatch_emails
     from app.email.provider import ResendSender
     from app.email.queue import EmailQueue
@@ -97,8 +97,11 @@ async def run_case(state):
         )
         return httpx.Response(200, json=state.finish)
 
-    def provider_response(request):
+    async def provider_response(request):
         state.calls.append(("provider", json.loads(request.content)))
+        if started is not None:
+            started.set()
+            await resume.wait()
         assert "apikey" not in request.headers
         if state.provider_status == 200:
             return httpx.Response(200, json={"id": PROVIDER})
@@ -244,5 +247,26 @@ def test_invocation_has_a_real_twenty_second_total_deadline():
                 ),
                 timeout=21,
             )
+
+    asyncio.run(exercise())
+
+
+def test_app_health_responds_while_provider_is_pending():
+    from app.main import app
+
+    async def exercise():
+        started, resume = asyncio.Event(), asyncio.Event()
+        delivery = asyncio.create_task(run_case(delivery_case(), started, resume))
+        try:
+            await asyncio.wait_for(started.wait(), timeout=1)
+            async with httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+            ) as browser:
+                response = await asyncio.wait_for(browser.get("/api/health"), timeout=1)
+            assert response.status_code == 200 and response.json()["status"] == "ok"
+            assert not delivery.done()
+        finally:
+            resume.set()
+            await delivery
 
     asyncio.run(exercise())

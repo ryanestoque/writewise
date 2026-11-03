@@ -85,6 +85,9 @@ def test_finalize_requires_the_current_authorization_token(queued_email):
     assert stored["status"] == "sent"
     assert stored["provider_message_id"] == PROVIDER
     assert stored["claim_token"] is None
+    assert not finish_at(
+        queued_email["id"], allowed["claim_token"], "sent", NOW, provider_id=PROVIDER
+    )
     assert claim_at(NOW + timedelta(hours=1)) is None
 
 
@@ -300,3 +303,60 @@ def test_real_rpc_transactions_release_locks_before_async_provider(family, assig
         assert outbox_row(row["id"])["status"] == "sent"
 
     asyncio.run(exercise())
+
+
+def test_two_sessions_claim_disjoint_ready_rows_in_order(family, assigned_activity):
+    seed_due_email(family, assigned_activity["id"], NOW)
+    expected = sorted(
+        outbox_rows(assigned_activity["id"]),
+        key=lambda row: (row["next_attempt_at"], row["created_at"], row["id"]),
+    )
+    assert len(expected) >= 2
+
+    async def exercise():
+        first, second = [await asyncpg.connect(os.environ["SUPABASE_DB_URL"]) for _ in range(2)]
+        transaction = first.transaction()
+        await transaction.start()
+        try:
+            raw = await first.fetchval("select writewise_internal.claim_email_delivery_at($1)", NOW)
+            first_claim = json.loads(raw)
+            raw = await asyncio.wait_for(
+                second.fetchval("select writewise_internal.claim_email_delivery_at($1)", NOW),
+                timeout=2,
+            )
+            second_claim = json.loads(raw)
+            assert [first_claim["outbox_id"], second_claim["outbox_id"]] == [
+                row["id"] for row in expected[:2]
+            ]
+            assert first_claim["claim_token"] != second_claim["claim_token"]
+        finally:
+            await transaction.rollback()
+            await first.close()
+            await second.close()
+
+    asyncio.run(exercise())
+
+
+def test_known_pending_retry_expires_without_another_reservation(queued_email):
+    _, _, allowed = reserve(queued_email)
+    assert finish_at(
+        queued_email["id"],
+        allowed["claim_token"],
+        "retry",
+        NOW,
+        error_code="provider_timeout",
+        retry_at=NOW + timedelta(minutes=5),
+    )
+    assert claim_at(NOW + timedelta(hours=1)) is None
+    stored = outbox_row(queued_email["id"])
+    assert stored["status"] == "failed" and stored["attempts"] == 1
+    assert stored["last_error"] == "retry_window_expired"
+
+
+def test_null_delivery_outcome_is_rejected_without_changing_the_reservation(queued_email):
+    _, _, allowed = reserve(queued_email)
+    with pytest.raises(asyncpg.CheckViolationError):
+        finish_at(
+            queued_email["id"], allowed["claim_token"], None, NOW, error_code="provider_timeout"
+        )
+    assert outbox_row(queued_email["id"])["status"] == "processing"
