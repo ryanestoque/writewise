@@ -238,9 +238,13 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 **Verification closeout (2026-11-03):** The user's subsequent overall QA sign-off supersedes the pending manual-gate records above. [Final documentation-head CI on `d578116`](https://github.com/ryanestoque/writewise/actions/runs/41502563699) completed successfully, including the full suite and existing upgrade/contract/advisor gates. Phase 3 is now **3/6 verified**. [PR #6](https://github.com/ryanestoque/writewise/pull/6) is still open/draft and unmerged at this closeout; no merge or deployment is claimed. Preserve the implementation worktree and local env files for further testing.
 
+**Integration follow-up (2026-11-03):** The local checkout's `main` now contains merge commit `c3369cd` for PR #6. This supersedes the earlier unmerged integration note; it does not establish hosted migration or deployment status.
+
 ### Slice ④ — Email notifications
 
 **Dependency:** Slice ③. **Status: Not started.**
+
+**Design preparation (2026-11-03):** The user authorized developing the next slice. A [detailed email design](docs/superpowers/specs/2026-11-03-phase3-email-notifications-design.md) is proposed for review, covering transactional enqueue, recoverable claims, stale-event and preference checks, bounded Resend retries, scheduler permissions, settings, and verification. It proposes generic email wording because the current schema has no structured first-name field. Written-design approval and implementation planning remain pending; no application code, migration, hosted configuration, or email delivery is claimed.
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|

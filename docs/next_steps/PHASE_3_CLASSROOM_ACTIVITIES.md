@@ -7,6 +7,8 @@
 
 **Repository audit (2026-11-01):** Implementation progress is tracked in [IMPLEMENTATION_STATUS.md](../../IMPLEMENTATION_STATUS.md#phase-3--classroom-style-activities). See the [Slice ① implementation plan](../superpowers/plans/2026-11-01-phase3-assignment-deadlines.md) for the proposed assignment/deadline contract and audit findings requiring review. This design document is not evidence that a feature is implemented.
 
+**Slice ④ design preparation (2026-11-03):** The [detailed email design](../superpowers/specs/2026-11-03-phase3-email-notifications-design.md) is proposed for review. Its queue recovery, eligibility, privacy, settings, and operational decisions refine the sketches below; they are not yet approved or implemented. Slices ①–③ remain the only verified slices.
+
 ---
 
 ## 1. Why
