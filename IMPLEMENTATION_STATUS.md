@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-03 (Phase 3 Slice 3 automated checks passed; signed-in portal QA pending)
+**Last updated:** 2026-11-03 (Phase 3 Slice 3 verified following user-reported portal QA sign-off)
 
 ## Summary
 
@@ -12,7 +12,7 @@ Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §
 | Phase 1 — Teacher Tooling & Raw CV Pipeline | 26 / 26 |
 | Between Phases — Calibration | 9 / 9 |
 | Phase 2 — Calibrated Scoring & Full System | 13 / 14 |
-| Phase 3 — Classroom-Style Activities | 2 / 6 slices verified |
+| Phase 3 — Classroom-Style Activities | 3 / 6 slices verified |
 
 *Update this table whenever an item's status changes. Phase 0–2 counts reflect the existing detailed records, not a fresh verification of cloud provisioning, model artifacts, deployments, or research results. Some Done rows still have explicit verification caveats. Phase 3 uses the evidence and verification gates defined below.*
 
@@ -154,7 +154,7 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 
 **Design reference:** [Phase 3 proposal](docs/next_steps/PHASE_3_CLASSROOM_ACTIVITIES.md), especially §2 decisions, §8 slices, and §9 open details. Promoted contracts for implemented slices live in `docs/API_SPEC.md` and `docs/DATABASE.md`; later-slice sketches remain proposals.
 
-**Implementation records:** [Slice ③ — In-app notifications](docs/superpowers/plans/2026-11-03-phase3-in-app-notifications.md) is implemented with verification pending. [Slice ② — Return and release](docs/superpowers/plans/2026-11-02-phase3-return-release.md) and [Slice ① — Assignment and deadlines](docs/superpowers/plans/2026-11-01-phase3-assignment-deadlines.md) are verified.
+**Implementation records:** [Slice ③ — In-app notifications](docs/superpowers/plans/2026-11-03-phase3-in-app-notifications.md), [Slice ② — Return and release](docs/superpowers/plans/2026-11-02-phase3-return-release.md) and [Slice ① — Assignment and deadlines](docs/superpowers/plans/2026-11-01-phase3-assignment-deadlines.md) are verified. Slice ④ email notifications is next.
 
 ### Status and evidence rules
 
@@ -223,18 +223,20 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 ### Slice ③ — In-app notifications
 
-**Dependency:** Slices ①–② for assignment, effective due dates, return, release, and active-attempt events. **Status: Implemented, verification pending.** The user authorized execution, feature pushes, and GitHub CI's ephemeral stack on 2026-11-03. No hosted migration or deployment is evidenced.
+**Dependency:** Slices ①–② for assignment, effective due dates, return, release, and active-attempt events. **Status: Verified.** On 2026-11-03, after receiving the local setup and portal test checklist, the user reported the slice was all good. This closes the manual gate as user-reported overall sign-off; it is not an independently observed, itemized browser walkthrough. Hosted migration/deployment and PR integration remain separate.
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|
-| Notification schema and recipient-only reads | Implemented, verification pending | Five migrations starting `20261103010000`; IDs-only public rows, private durable delivery receipts, recipient-only SELECT RLS, denied browser writes/helpers. Full ephemeral CI passed, including schema/RLS proofs, generated-type drift and the security-advisor error gate. Portal QA remains open. |
-| Event emitters and mark-read API | Implemented, verification pending | Explicit assignment/Return/rejection/release/completion RPC emission and verified-identity single/all-read endpoints; generated OpenAPI types. CI passed rollback for assignment and every lifecycle event, release/retry/pin, cross-parent delivery dedupe, read snapshots and both corrected roster races. Portal QA remains open. |
-| Due-soon/missing scheduler and deduplication | Implemented, verification pending | Private fixed-time sweep and one named 15-minute pg_cron job; exact effective deadline, live roster/assignment, archive and active-attempt predicates. Boundary, concurrent-sweep and completion-lock tests passed in CI. Excused suppression belongs to Slice 5, where that field is introduced. |
-| Header bell, deep links, contracts, verification | Implemented, verification pending | Shared teacher/parent bell, 60-second foreground polling, retained keyset pages, read actions, account cleanup and exact child/activity/attempt destinations. Local lint/types/production build, controlled SDK race checks, final CI and all three upgrade proofs passed. Focused reviews found no remaining blocker after fixes. Signed-in teacher/parent/mobile/keyboard QA remains. |
+| Notification schema and recipient-only reads | Verified | Five migrations starting `20261103010000`; IDs-only public rows, private durable delivery receipts, recipient-only SELECT RLS, denied browser writes/helpers. Full ephemeral CI passed, including schema/RLS proofs, generated-type drift and the security-advisor error gate. User-reported portal QA sign-off received on 2026-11-03. |
+| Event emitters and mark-read API | Verified | Explicit assignment/Return/rejection/release/completion RPC emission and verified-identity single/all-read endpoints; generated OpenAPI types. CI passed rollback for assignment and every lifecycle event, release/retry/pin, cross-parent delivery dedupe, read snapshots and both corrected roster races. User-reported portal QA sign-off received on 2026-11-03. |
+| Due-soon/missing scheduler and deduplication | Verified | Private fixed-time sweep and one named 15-minute pg_cron job; exact effective deadline, live roster/assignment, archive and active-attempt predicates. Boundary, concurrent-sweep and completion-lock tests passed in CI. Excused suppression belongs to Slice 5, where that field is introduced. |
+| Header bell, deep links, contracts, verification | Verified | Shared teacher/parent bell, 60-second foreground polling, retained keyset pages, read actions, account cleanup and exact child/activity/attempt destinations. Local lint/types/production build, controlled SDK race checks, final CI and all three upgrade proofs passed. Focused reviews found no remaining blocker after fixes. Overall portal QA sign-off received from the user on 2026-11-03. |
 
 **Evidence (2026-11-03):** [Initial red run](https://github.com/ryanestoque/writewise/actions/runs/41486464310): 429 passed, nine new tests failed on absent storage. [Event run](https://github.com/ryanestoque/writewise/actions/runs/41490582078): 463 passed, one intentionally missing release-emitter case failed. [Race run](https://github.com/ryanestoque/writewise/actions/runs/41494149833): 473 passed, two concurrent-roster assignment cases failed; metadata edits now skip fanout and explicit target edits compare against one frozen roster snapshot. Final verification is recorded in the execution plan. Browser inventory exposed no connected browser for this slice's walkthrough; no signed-in portal QA is claimed. Keep the summary at **2/6 verified** until that gate closes.
 
 **Automated closeout (2026-11-03):** [PR CI on `a13098a`](https://github.com/ryanestoque/writewise/actions/runs/41500638054) passed **481 tests**, all three legacy upgrade proofs, Ruff/ESLint/TypeScript, generated API/database comparisons and security advisors. Additional lock-observed cases cover activity-deadline and student-override edits committed before a waiting sweep. A raw-session rollback fixture was corrected to carry transaction-local service JWT claims, and cross-parent fixture teardown now deletes uploads before their Auth account. Both changes were reviewed. Local database-free tests passed 73 cases; production webpack build and controlled SDK/source race checks passed. [Draft PR #6](https://github.com/ryanestoque/writewise/pull/6) remains open for the manual portal gate; no hosted migrations or deployment were performed. The implementation worktree is `.worktrees/phase3-in-app-notifications` on `feat/phase3-notifications-implementation`.
+
+**Verification closeout (2026-11-03):** The user's subsequent overall QA sign-off supersedes the pending manual-gate records above. [Final documentation-head CI on `d578116`](https://github.com/ryanestoque/writewise/actions/runs/41502563699) completed successfully, including the full suite and existing upgrade/contract/advisor gates. Phase 3 is now **3/6 verified**. [PR #6](https://github.com/ryanestoque/writewise/pull/6) is still open/draft and unmerged at this closeout; no merge or deployment is claimed. Preserve the implementation worktree and local env files for further testing.
 
 ### Slice ④ — Email notifications
 

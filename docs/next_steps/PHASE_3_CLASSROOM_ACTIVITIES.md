@@ -1,7 +1,7 @@
 # Phase 3 — Classroom-Style Activities (Deadlines, Returns, Notifications, Gradebook)
 
 **As of:** October 22, 2026
-**Status:** Slices ①–② are verified, with contracts promoted to API_SPEC, DATABASE and DESIGN. Slice ③ is implemented with automated checks passed and signed-in portal QA pending; see its [execution record](../superpowers/plans/2026-11-03-phase3-in-app-notifications.md), API_SPEC §3.6, DATABASE §16 and ADR 0005. Slices ④–⑥ remain future design. Verification and deployment are tracked separately in IMPLEMENTATION_STATUS.md; later-slice SQL and endpoint sketches below are proposals.
+**Status:** Slices ①–③ are verified, with Slice ③'s manual gate closed by user-reported overall QA sign-off on 2026-11-03. See its [execution record](../superpowers/plans/2026-11-03-phase3-in-app-notifications.md), API_SPEC §3.6, DATABASE §16 and ADR 0005. Slice ④ email notifications is next; Slices ④–⑥ remain future design. Verification, PR integration and deployment are tracked separately in IMPLEMENTATION_STATUS.md; later-slice SQL and endpoint sketches below are proposals.
 **Origin:** Design-tree grill session, 2026-10-19 (19 decisions, all accepted). **Amended 2026-10-22:** private comments (Q20–Q28, Slice ⑥); Q16 revised.
 **Supersedes (when promoted):** PRD §13 "Notifications" deferred item, PRODUCT.md "Push notifications" deferred item.
 
