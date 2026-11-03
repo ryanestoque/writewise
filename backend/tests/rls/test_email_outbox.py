@@ -84,6 +84,49 @@ def test_opt_out_keeps_in_app_event_and_terminally_skips_email(family, email_act
     assert repeated["status"] == "skipped"
 
 
+def test_linked_parent_opt_out_does_not_change_other_parent_or_bell(
+    family, email_activity, second_parent
+):
+    family["parent_client"].table("parent").update({"email_notifications": False}).eq(
+        "id", family["parent"]
+    ).execute()
+    assert (
+        second_parent["client"]
+        .table("parent")
+        .select("email_notifications")
+        .eq("id", second_parent["id"])
+        .single()
+        .execute()
+        .data["email_notifications"]
+        is True
+    )
+    return_submission(family, email_activity)
+    notices = (
+        admin.table("notification")
+        .select("id,recipient_id")
+        .eq("activity_id", email_activity)
+        .eq("type", "submission_returned")
+        .execute()
+        .data
+    )
+    recipients = {notice["id"]: notice["recipient_id"] for notice in notices}
+    assert {
+        recipients[row["notification_id"]]: row["status"] for row in outbox_rows(email_activity)
+    } == {family["parent"]: "skipped", second_parent["id"]: "pending"}
+    for client in (family["parent_client"], second_parent["client"]):
+        assert (
+            len(
+                client.table("notification")
+                .select("id")
+                .eq("activity_id", email_activity)
+                .eq("type", "submission_returned")
+                .execute()
+                .data
+            )
+            == 1
+        )
+
+
 @pytest.mark.parametrize("role", ["parent", "teacher"])
 def test_profile_preference_update_is_owner_scoped(family, role):
     actor, foreign = family[role], family[f"other_{role}"]

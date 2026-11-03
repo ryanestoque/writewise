@@ -245,18 +245,18 @@ def test_equivalent_override_preserves_event_but_changed_override_skips(
         assert result["code"] == "deadline_changed"
 
 
-@pytest.mark.parametrize("status", ["processing", "completed"])
+@pytest.mark.parametrize("status", ["processing", "rejected", "completed"])
 def test_only_completed_retry_suppresses_outstanding_return(family, assigned_activity, status):
     activity = assigned_activity["id"]
     try:
         return_submission(family, activity)
         row = outbox_rows(activity)[0]
         later = completed_submission(family, activity)
-        if status == "processing":
+        if status != "completed":
             admin.table("submission").update({"status": status}).eq("id", later["id"]).execute()
         check = datetime.now(timezone.utc)
         result = prepare_at(row["id"], processing_claim(row["id"], check), check)
-        assert result["state"] == ("ready" if status == "processing" else "skipped")
+        assert result["state"] == ("skipped" if status == "completed" else "ready")
     finally:
         admin.table("submission").delete().eq("activity_id", activity).execute()
 
@@ -270,6 +270,48 @@ def test_suppressed_preference_does_not_replay_when_enabled(family, email_case):
     assert prepare_at(row["id"], token, NOW)["state"] == "skipped"
     admin.table("parent").update({"email_notifications": True}).eq("id", family["parent"]).execute()
     assert prepare_at(row["id"], token, NOW) == {"state": "lost"}
+
+
+@pytest.mark.parametrize(
+    "state", ["ungraded", "draft", "released", "pinned", "processing", "rejected"]
+)
+def test_current_work_state_controls_due_email_independently_of_grading(family, email_case, state):
+    activity, row = email_case
+    submission = completed_submission(family, activity)
+    if state in {"processing", "rejected"}:
+        admin.table("submission").update({"status": state}).eq("id", submission["id"]).execute()
+    if state in {"draft", "released"}:
+        criteria = (
+            "letter_formation",
+            "size_consistency",
+            "spacing",
+            "slant",
+            "baseline_alignment",
+        )
+        admin.table("manual_score").insert(
+            {
+                "submission_id": submission["id"],
+                "graded_by": family["teacher"],
+                **{f"{criterion}_band": "excellent" for criterion in criteria},
+            }
+        ).execute()
+    if state == "released":
+        admin.table("submission").update({"released_at": NOW.isoformat()}).eq(
+            "id", submission["id"]
+        ).execute()
+    if state == "pinned":
+        admin.rpc(
+            "mutate_student_work",
+            {
+                "actor_id": family["teacher"],
+                "target_activity_id": activity,
+                "target_student_id": family["students"][0],
+                "operation": "update",
+                "payload": {"pinned_submission_id": submission["id"]},
+            },
+        ).execute()
+    result = prepare_at(row["id"], processing_claim(row["id"], NOW), NOW)
+    assert result["state"] == ("ready" if state in {"processing", "rejected"} else "skipped")
 
 
 @pytest.mark.parametrize("change", ["deadline", "preference", "completion"])
