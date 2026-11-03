@@ -138,6 +138,14 @@ jobs:
         name: database-types
         path: frontend/types/database.ts
 
+    - name: Start synthetic email callback
+      run: |
+        docker inspect supabase_db_writewise-test >/dev/null
+        docker run --detach --rm --name writewise-email-callback \
+          --network container:supabase_db_writewise-test \
+          --mount type=bind,src="$PWD/backend/tests/support/email_callback.py",dst=/callback.py,readonly \
+          python:3.13-slim python /callback.py
+
     - name: Run Backend Pytest
       working-directory: ./backend
       env:
@@ -150,6 +158,13 @@ jobs:
     - name: Check committed database contract
       run: git diff --exit-code -- frontend/types/database.ts
       
+    - name: Stop synthetic email callback
+      if: always()
+      run: |
+        if docker container inspect writewise-email-callback >/dev/null 2>&1; then
+          docker container rm --force writewise-email-callback
+        fi
+
     - name: Teardown Supabase
       if: always()
       run: |

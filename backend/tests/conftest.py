@@ -72,7 +72,8 @@ def pause_notification_job():
             if original is None:
                 jobs = await connection.fetch(
                     "select jobid, active from cron.job "
-                    "where jobname='writewise-deadline-notifications'"
+                    "where jobname in "
+                    "('writewise-deadline-notifications', 'writewise-email-dispatch')"
                 )
                 for job in jobs:
                     await connection.execute(
