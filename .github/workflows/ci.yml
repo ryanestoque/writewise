@@ -114,6 +114,20 @@ jobs:
         cd ..
         supabase db reset --local
 
+    - name: Verify legacy email upgrade
+      env:
+        ENVIRONMENT: test
+      run: |
+        supabase db reset --local --version 20261103010004
+        cd backend
+        uv run python tests/migrations/email_upgrade_check.py prepare --manifest /tmp/email-upgrade.json
+        cd ..
+        supabase migration up --local
+        cd backend
+        uv run python tests/migrations/email_upgrade_check.py verify --manifest /tmp/email-upgrade.json
+        cd ..
+        supabase db reset --local
+
     - name: Check generated API contract
       env:
         ENVIRONMENT: test
