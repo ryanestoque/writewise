@@ -1,5 +1,6 @@
 """Synthetic email events emitted by the real coursework transactions."""
 
+import json
 from datetime import timedelta
 from uuid import uuid4
 
@@ -76,3 +77,22 @@ def outbox_rows(activity):
         .execute()
         .data
     )
+
+
+def processing_claim(row_id, as_of):
+    token = uuid4()
+    admin.table("email_outbox").update(
+        {
+            "status": "processing",
+            "claim_token": str(token),
+            "lease_expires_at": (as_of + timedelta(minutes=2)).isoformat(),
+        }
+    ).eq("id", row_id).execute()
+    return token
+
+
+def prepare_at(row_id, token, as_of):
+    raw = db_value(
+        "select writewise_internal.prepare_email_delivery_at($1,$2,$3)", row_id, token, as_of
+    )
+    return json.loads(raw) if isinstance(raw, str) else raw
