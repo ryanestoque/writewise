@@ -62,10 +62,10 @@ import { useDeleteSubmission } from "@/lib/hooks/use-submissions";
 import { toast } from "sonner";
 
 const PARENT_BAND_EXPLANATIONS: Record<string, string> = {
-  excellent: "Fluent, highly consistent handwriting meeting grade-level goals.",
-  satisfactory: "Solid cursive foundation with minor areas to refine.",
-  developing: "Actively learning and building muscle memory — a normal, key stage in cursive.",
-  needs_improvement: "Working on basic letter strokes and pencil control with guided practice.",
+  excellent: "Fluent, consistent cursive handwriting that meets grade-level goals.",
+  satisfactory: "Solid cursive foundation with small areas to refine during practice.",
+  developing: "Actively learning and building muscle memory — a normal, healthy stage in cursive.",
+  needs_improvement: "Working on basic letter shapes and pencil control with guided practice.",
 };
 
 interface WorksheetViewDialogProps {
@@ -97,11 +97,8 @@ interface WorksheetViewDialogProps {
     baseline_alignment: ScoreBand | null;
     composite?: ScoreBand | null;
   };
-  /** CV pipeline guide-line coordinates from raw_output */
   guideLines?: GuideLines | null;
-  /** Diagnostic Engine overlay coordinates and findings */
   overlay?: DiagnosticOverlayData | null;
-  /** Optional back action when opened from a parent history view */
   onBack?: () => void;
   backLabel?: string;
   returnNote?: string | null;
@@ -123,7 +120,7 @@ export function WorksheetViewDialog({
   guideLines,
   overlay,
   onBack,
-  backLabel = "Back to History",
+  backLabel = "Back",
   submissionId,
   canDelete = false,
   returnNote,
@@ -137,7 +134,6 @@ export function WorksheetViewDialog({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<"photo" | "scores">("photo");
 
-  // Synchronize score details visibility when dialog open state changes
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
     setPrevOpen(open);
@@ -156,7 +152,7 @@ export function WorksheetViewDialog({
     if (!submissionId) return;
     try {
       await deleteMutation.mutateAsync(submissionId);
-      toast.success("Worksheet removed. You can upload a new photo anytime.");
+      toast.success("Photo removed. You can send a new photo anytime.");
       setIsDeleteDialogOpen(false);
       onOpenChange(false);
     } catch (err: unknown) {
@@ -191,14 +187,12 @@ export function WorksheetViewDialog({
     }
   };
 
-  // Respect user intent: honor initialCriterion ("all" by default), never force-filter to weakest criterion
   const effectiveInitialCriterion: CriterionFilter = useMemo(() => {
     return initialCriterion ?? "all";
   }, [initialCriterion]);
 
   const activeCriterion = criterionOverride ?? effectiveInitialCriterion;
 
-  // Auto-focus first attention item when overlay data is present to avoid unselected/empty pager state
   const activeAttentionItem = useMemo(() => {
     if (selectedAttentionItem) return selectedAttentionItem;
     if (!overlay || activeCriterion === "all") return null;
@@ -238,16 +232,14 @@ export function WorksheetViewDialog({
                 </button>
               )}
               <DialogTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
-                Scored Worksheet Photo
+                Worksheet Photo &amp; Guide Lines
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
+              <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
                 <span className="font-medium text-foreground">
                   {childName}
                 </span>
                 <span>&middot;</span>
-                <span>
-                  {formattedDate}
-                </span>
+                <span>{formattedDate}</span>
                 {targetText && (
                   <>
                     <span>&middot;</span>
@@ -300,7 +292,7 @@ export function WorksheetViewDialog({
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <span>Scores &amp; Skills</span>
+              <span>5 Skills</span>
               {compositeBandMeta && (
                 <span
                   className={cn("size-2 rounded-full shrink-0", compositeBandMeta.dotColor)}
@@ -384,31 +376,32 @@ export function WorksheetViewDialog({
                 <button
                   type="button"
                   onClick={() => setShowGuideLines((prev) => !prev)}
-                  className={`self-start px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer flex items-center gap-1.5 min-h-[40px] sm:min-h-[36px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 ${showGuideLines
-                    ? "bg-brand-100 text-brand-900 border-brand-300 dark:bg-brand-950 dark:text-brand-200 dark:border-brand-800"
-                    : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted/70 hover:text-foreground"
-                    }`}
+                  className={cn(
+                    "self-start px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer flex items-center gap-1.5 min-h-[40px] sm:min-h-[36px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
+                    showGuideLines
+                      ? "bg-brand-100 text-brand-900 border-brand-300 dark:bg-brand-950 dark:text-brand-200 dark:border-brand-800"
+                      : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted/70 hover:text-foreground"
+                  )}
                   aria-pressed={showGuideLines}
-                  aria-label={showGuideLines ? "Hide detected guide lines on worksheet" : "Show detected guide lines on worksheet"}
-                  title={showGuideLines ? "Hide detected guide lines" : "Show detected guide lines on worksheet"}
+                  aria-label={showGuideLines ? "Hide guide lines on worksheet" : "Show guide lines on worksheet"}
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0" aria-hidden="true">
                     <line x1="1" y1="4" x2="13" y2="4" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2" />
                     <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.6" strokeDasharray="2 2" />
                     <line x1="1" y1="10" x2="13" y2="10" stroke="currentColor" strokeWidth="1.5" />
                   </svg>
-                  <span>Guidelines</span>
+                  <span>Writing Lines</span>
                 </button>
               )}
 
-              {/* Mobile Diagnostic Context Bridge: keeps parents informed while inspecting the photo */}
-              <div className="lg:hidden p-3.5 rounded-xl border border-brand-200/60 dark:border-brand-800/60 bg-brand-50/60 dark:bg-brand-950/40 space-y-2 text-xs shadow-xs">
+              {/* Mobile Context Bridge */}
+              <div className="lg:hidden p-4 rounded-xl border border-brand-200/60 dark:border-brand-800/60 bg-brand-50/60 dark:bg-brand-950/40 space-y-2 text-sm shadow-xs">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="size-2 rounded-full bg-brand-600 dark:bg-brand-400 shrink-0" aria-hidden="true" />
                     <span className="font-semibold text-foreground truncate">
                       {activeCriterion === "all"
-                        ? "All Handwriting Guidelines"
+                        ? "All Writing Lines"
                         : PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.label ?? activeCriterion}
                     </span>
                     {activeCriterion !== "all" && bands && bands[activeCriterion as CriterionKey] && (
@@ -420,18 +413,17 @@ export function WorksheetViewDialog({
                     onClick={() => setMobileTab("scores")}
                     className="text-xs font-semibold text-brand-700 dark:text-brand-300 hover:underline shrink-0 min-h-[40px] flex items-center px-2 -my-2 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
                   >
-                    View Skills &rarr;
+                    See 5 skills &rarr;
                   </button>
                 </div>
 
-                <p className="text-muted-foreground leading-relaxed">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   {activeCriterion === "all"
-                    ? "Showing baseline, slant, and spacing guides across the worksheet. Pinch to zoom in on specific strokes."
+                    ? "Showing writing line, slant, and spacing guides on the photo. Pinch to zoom in on letters."
                     : (bands && bands[activeCriterion as CriterionKey] && DIAGNOSTIC_NOTES[activeCriterion as CriterionKey]?.[bands[activeCriterion as CriterionKey]!]) ||
                       PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.shortDescription}
                 </p>
 
-                {/* Active At-Home Coaching Tip if available */}
                 {(() => {
                   const tip =
                     activeCriterion === "all"
@@ -442,9 +434,9 @@ export function WorksheetViewDialog({
                   if (!tip) return null;
                   return (
                     <div className="pt-2 border-t border-brand-200/50 dark:border-brand-800/50 flex items-start gap-2 text-band-2-text dark:text-amber-200">
-                      <Lightbulb className="size-3.5 shrink-0 mt-0.5 text-band-2-text dark:text-amber-200" aria-hidden="true" />
-                      <p className="leading-relaxed text-[11px] sm:text-xs">
-                        <span className="font-semibold">At-Home Tip: </span>
+                      <Lightbulb className="size-4 shrink-0 mt-0.5 text-band-2-text dark:text-amber-200" aria-hidden="true" />
+                      <p className="leading-relaxed text-sm">
+                        <span className="font-semibold">Home tip: </span>
                         {tip}
                       </p>
                     </div>
@@ -453,57 +445,42 @@ export function WorksheetViewDialog({
               </div>
             </div>
 
-            {/* Right: Worksheet Details & Criterion Feedback */}
+            {/* Right: Overall Result & 5 Skills */}
             <div
               id="mobile-panel-scores"
               role="tabpanel"
               aria-labelledby="mobile-tab-scores"
               className={cn("lg:col-span-5 space-y-4", mobileTab !== "scores" && "hidden lg:block")}
             >
-              {/* Activity Target Text */}
-              <div className="p-3.5 rounded-xl border border-border/80 bg-card/60 space-y-1 shadow-xs">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Assigned Target Text
-                </span>
-                <p className="text-sm font-semibold text-foreground leading-snug">
-                  &ldquo;{targetText}&rdquo;
-                </p>
-              </div>
-
-              {/* Composite Score Card (Qualitative Milestone First) */}
               {compositeScore != null && (
                 <div className="p-4 rounded-xl border border-border/80 bg-card space-y-3 shadow-xs">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Current Milestone
-                    </span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {compositeBandMeta && (
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cn("size-2.5 rounded-full shrink-0", compositeBandMeta.dotColor)}
+                            aria-hidden="true"
+                          />
+                          <h3 className="text-lg font-heading font-semibold text-foreground">
+                            {compositeBandMeta.label}
+                          </h3>
+                        </div>
+                      )}
+                      {showScoreDetails && (
+                        <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/60">
+                          {Math.round(compositeScore)}% overall
+                        </span>
+                      )}
+                    </div>
                     <button
                       type="button"
                       onClick={() => setShowScoreDetails((prev) => !prev)}
                       aria-pressed={showScoreDetails}
                       className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-md px-2.5 py-1 min-h-[40px] sm:min-h-[36px] flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
                     >
-                      {showScoreDetails ? "Hide percentages" : "Show percentages"}
+                      {showScoreDetails ? "Hide details" : "Show details"}
                     </button>
-                  </div>
-
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    {compositeBandMeta && (
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={cn("size-2.5 rounded-full shrink-0", compositeBandMeta.dotColor)}
-                          aria-hidden="true"
-                        />
-                        <h4 className="text-lg sm:text-xl font-heading font-semibold text-foreground">
-                          {compositeBandMeta.label}
-                        </h4>
-                      </div>
-                    )}
-                    {showScoreDetails && (
-                      <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/60">
-                        {Math.round(compositeScore)}% overall
-                      </span>
-                    )}
                   </div>
 
                   <BandPositionBar
@@ -512,10 +489,10 @@ export function WorksheetViewDialog({
                     showThresholds={showScoreDetails}
                     ariaLabel={
                       showScoreDetails
-                        ? `Diagnostic score position: ${Math.round(compositeScore)}% overall`
+                        ? `Overall score: ${Math.round(compositeScore)}%`
                         : compositeBandMeta
-                          ? `Developmental milestone: ${compositeBandMeta.label}`
-                          : "Developmental milestone not yet available"
+                          ? `Overall level: ${compositeBandMeta.label}`
+                          : "Overall level not yet available"
                     }
                     ariaValueText={
                       showScoreDetails
@@ -527,24 +504,19 @@ export function WorksheetViewDialog({
                   />
 
                   {compositeBand && PARENT_BAND_EXPLANATIONS[compositeBand] && (
-                    <p className="text-xs text-muted-foreground leading-relaxed pt-0.5">
+                    <p className="text-sm text-muted-foreground leading-relaxed pt-0.5">
                       {PARENT_BAND_EXPLANATIONS[compositeBand]}
                     </p>
                   )}
                 </div>
               )}
 
-              {/* Criteria Feedback Breakdown */}
+              {/* 5 Handwriting Skills Breakdown */}
               {scores && bands && (
-                <div className="p-3.5 rounded-xl border border-border/80 bg-muted/10 space-y-2.5 shadow-xs">
-                  <div className="flex items-center justify-between pb-1 border-b border-border/50">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Skill Breakdown
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      5 skills
-                    </span>
-                  </div>
+                <div className="space-y-2">
+                  <h4 className="text-sm font-heading font-semibold text-foreground px-1">
+                    5 Handwriting Skills
+                  </h4>
 
                   <Accordion
                     value={activeCriterion === "all" ? [] : [activeCriterion]}
@@ -584,11 +556,10 @@ export function WorksheetViewDialog({
                           key={criterion.key}
                           className="border-0 hover:bg-muted/10 transition-colors"
                         >
-                          <AccordionTrigger className="hover:no-underline px-3.5 py-2.5 sm:py-3 items-center gap-3 cursor-pointer">
+                          <AccordionTrigger className="hover:no-underline px-3.5 py-3 items-center gap-3 cursor-pointer">
                             <div className="flex items-center justify-between flex-1 min-w-0 pr-1 gap-2">
-                              {/* Left: Title + Highlight Badge */}
                               <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                                <span className="text-xs sm:text-sm font-semibold text-foreground truncate">
+                                <span className="text-sm font-semibold text-foreground truncate">
                                   {criterion.label}
                                 </span>
                                 {highlightBadge === "top_strength" && (
@@ -605,10 +576,9 @@ export function WorksheetViewDialog({
                                 )}
                               </div>
 
-                              {/* Right: Score + BandBadge */}
                               <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 text-right">
                                 {showScoreDetails && score != null && (
-                                  <span className="font-sans text-xs font-semibold tabular-nums text-muted-foreground">
+                                  <span className="font-sans text-xs sm:text-sm font-semibold tabular-nums text-muted-foreground">
                                     {Math.round(score)}%
                                   </span>
                                 )}
@@ -618,7 +588,6 @@ export function WorksheetViewDialog({
                           </AccordionTrigger>
 
                           <AccordionContent className="px-3.5 pb-3.5 pt-0 space-y-2.5 border-0">
-                            {/* Compact Band Position Bar with Accessible Values */}
                             <div className="pt-0.5 pb-1">
                               <BandPositionBar
                                 score={score}
@@ -634,33 +603,30 @@ export function WorksheetViewDialog({
                               />
                             </div>
 
-                            {/* Diagnostic Note */}
                             {diagnosticNote && (
-                              <p className="text-xs text-muted-foreground leading-relaxed">
+                              <p className="text-sm text-muted-foreground leading-relaxed">
                                 {diagnosticNote}
                               </p>
                             )}
 
-                            {/* Home Practice Coaching Tip */}
                             {homeTip && (
-                              <div className="p-2.5 rounded-xl bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40 text-xs text-band-2-text dark:text-amber-200 shadow-2xs">
+                              <div className="p-3 rounded-xl bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40 text-sm text-band-2-text dark:text-amber-200 shadow-2xs">
                                 <p className="leading-relaxed">
-                                  <strong className="font-semibold text-band-2-text dark:text-amber-200">Tip:</strong> {homeTip}
+                                  <strong className="font-semibold text-band-2-text dark:text-amber-200">Home tip:</strong> {homeTip}
                                 </p>
                               </div>
                             )}
 
-                            {/* Mobile shortcut to switch to photo inspection */}
                             <div className="lg:hidden pt-1">
                               <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setMobileTab("photo")}
-                                className="w-full h-10 min-h-[40px] text-xs font-medium gap-1.5 border-brand-200 dark:border-brand-900 bg-brand-50/50 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+                                className="w-full h-10 min-h-[40px] text-xs sm:text-sm font-medium gap-1.5 border-brand-200 dark:border-brand-900 bg-brand-50/50 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
                               >
                                 <Eye className="size-3.5" aria-hidden="true" />
-                                <span>Inspect on Photo</span>
+                                <span>See on worksheet</span>
                               </Button>
                             </div>
                           </AccordionContent>
@@ -696,10 +662,10 @@ export function WorksheetViewDialog({
                 onClick={() => setIsDeleteDialogOpen(true)}
                 disabled={deleteMutation.isPending}
                 className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-3 text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive rounded-xl border border-destructive/20 gap-1.5 cursor-pointer transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-destructive"
-                title="Delete this uploaded worksheet"
+                title="Delete this photo"
               >
                 <Trash2 className="size-3.5" aria-hidden="true" />
-                <span>Delete Upload</span>
+                <span>Delete Photo</span>
               </Button>
             )}
           </div>
@@ -718,10 +684,9 @@ export function WorksheetViewDialog({
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this uploaded worksheet?</AlertDialogTitle>
+            <AlertDialogTitle>Delete this photo?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove your uploaded worksheet photo. You will be able to take and upload
-              a new photo for this activity. This action cannot be undone.
+              This removes your uploaded worksheet photo. You can take and send a new photo anytime.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -746,7 +711,7 @@ export function WorksheetViewDialog({
                   <span>Deleting...</span>
                 </>
               ) : (
-                "Delete Upload"
+                "Delete Photo"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
