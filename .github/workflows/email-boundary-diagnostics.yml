@@ -1,0 +1,28 @@
+name: Email boundary diagnostics
+on:
+  push:
+    branches: ["feat/phase3-email-notifications"]
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.115.0
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: supabase start
+      - name: Inspect only role and object metadata
+        run: |
+          docker exec supabase_db_writewise-test psql -X -U postgres -d postgres -c "select n.nspname,pg_get_userbyid(n.nspowner) as owner,n.nspacl from pg_namespace n where n.nspname in ('net','vault');"
+          docker exec supabase_db_writewise-test psql -X -U postgres -d postgres -c "select c.oid::regclass,pg_get_userbyid(c.relowner) as owner,c.relacl from pg_class c where c.oid in ('net.http_request_queue'::regclass,'net._http_response'::regclass,'vault.decrypted_secrets'::regclass);"
+          docker exec supabase_db_writewise-test psql -X -U postgres -d postgres -c "select r,has_schema_privilege(r,'net','USAGE') as net_usage,has_schema_privilege(r,'vault','USAGE') as vault_usage,has_table_privilege(r,'net.http_request_queue','SELECT') as queue_select from unnest(array['anon','authenticated','service_role']) r;"
+      - name: Prove actual anonymous network table denial
+        run: |
+          if docker exec supabase_db_writewise-test psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres -c "set role anon; select count(*) from net.http_request_queue;"; then
+            echo "Anonymous network table access unexpectedly succeeded"
+            exit 1
+          fi
+      - name: Teardown
+        if: always()
+        run: supabase stop
