@@ -1,13 +1,13 @@
 # Phase 3 — Classroom-Style Activities (Deadlines, Returns, Notifications, Gradebook)
 
 **As of:** October 22, 2026
-**Status:** Slices ①–③ are verified, with Slice ③'s manual gate closed by user-reported overall QA sign-off on 2026-11-03. See its [execution record](../superpowers/plans/2026-11-03-phase3-in-app-notifications.md), API_SPEC §3.6, DATABASE §16 and ADR 0005. Slice ④ email notifications is next; Slices ④–⑥ remain future design. Verification, PR integration and deployment are tracked separately in IMPLEMENTATION_STATUS.md; later-slice SQL and endpoint sketches below are proposals.
+**Status:** Slices ①–③ are verified, with Slice ③'s manual gate closed by user-reported overall QA sign-off on 2026-11-03. Slice ④ email implementation is Partial on its feature branch while final automated/manual gates remain open; Slices ⑤–⑥ remain future design. See IMPLEMENTATION_STATUS.md and the Slice 4 execution record. Verification, PR integration and deployment remain separate; superseded email sketches below are historical proposals.
 **Origin:** Design-tree grill session, 2026-10-19 (19 decisions, all accepted). **Amended 2026-10-22:** private comments (Q20–Q28, Slice ⑥); Q16 revised.
 **Supersedes (when promoted):** PRD §13 "Notifications" deferred item, PRODUCT.md "Push notifications" deferred item.
 
 **Repository audit (2026-11-01):** Implementation progress is tracked in [IMPLEMENTATION_STATUS.md](../../IMPLEMENTATION_STATUS.md#phase-3--classroom-style-activities). See the [Slice ① implementation plan](../superpowers/plans/2026-11-01-phase3-assignment-deadlines.md) for the proposed assignment/deadline contract and audit findings requiring review. This design document is not evidence that a feature is implemented.
 
-**Slice ④ design and planning (2026-11-03):** The user approved the [detailed email design](../superpowers/specs/2026-11-03-phase3-email-notifications-design.md), including its bounded retry/quota behavior, and requested the [implementation plan](../superpowers/plans/2026-11-03-phase3-email-notifications.md). The approved design's queue recovery, eligibility, generic email wording, settings, and operational decisions refine the sketches below. Implementation has not started; Slices ①–③ remain the only verified slices.
+**Slice ④ implementation (2026-11-03):** The approved [email design](../superpowers/specs/2026-11-03-phase3-email-notifications-design.md) is implemented on the email feature branch, with final CI and signed-in portal QA pending. See its [execution plan](../superpowers/plans/2026-11-03-phase3-email-notifications.md), API_SPEC §3.7 and DATABASE §17 for current contracts. Those contracts supersede email sketches below; Slices ①–③ remain the only verified slices until remaining gates close. Hosted configuration and delivery are separate.
 
 ---
 
@@ -40,7 +40,7 @@ Phase 3 adds that loop without touching the CV/CNN pipeline or the calibration s
 | Q6 | Channels | In-app `notification` table + header bell (source of truth). **Email** only for *Returned* and *Due in 24h* |
 | Q7 | Events | See §5.1 |
 | Q8 | Scheduler | `pg_cron` every 15 min → SQL function inserts *due-soon* / *missing* notifications (idempotent through a dedupe key). Emails queued in an outbox |
-| Q9 | Email sender | FastAPI `POST /api/internal/dispatch-emails` (shared-secret header), called by `pg_cron` through `pg_net`, sending via **Resend**. Emails have no scores, images or teacher notes: child's first name + login link only |
+| Q9 | Email sender | FastAPI `POST /api/internal/dispatch-emails` (shared-secret header), called by private `pg_cron`/`pg_net`, sending via **Resend**. Fixed generic wording and login/settings links; no child/activity names, scores, images or notes |
 | Q10 | Preferences | One global **Email me** toggle (default on) + **Mark all read**. In-app notifications always on |
 | Q11 | Activity score | Optional **points** per activity (no points = shows bands only). Score = composite scaled to points. Teacher can override the final points |
 | Q12 | Release | **Draft → Released** (`released_at`), enforced in RLS. Release per submission or in bulk per activity. Fires *score released* |
@@ -299,8 +299,7 @@ pg_cron  */5  * * * *  → pg_net POST {BACKEND_URL}/api/internal/dispatch-email
 
 - Claims up to *N* pending rows (`for update skip locked`), sends via Resend, marks `sent` / `failed` (max 3 attempts) / `skipped` (recipient has `email_notifications = false`).
 - Kept short and bounded: the single Uvicorn worker (Rule 15) also serves CV requests.
-- **Content rules (RA 10173 minimization):** child's **first name only**, activity title, a fixed template sentence, and a login link. No scores, bands, images, measurements or teacher notes.
-  - e.g. *"Juan's handwriting activity needs a retake. Open WriteWise to see the teacher's note."*
+- **Content rules (approved Slice 4 refinement):** fixed generic wording and login/settings links only. No child/activity names, scores, bands, images, measurements or teacher notes. Exact templates live in `backend/app/email/templates.py`.
 - Logs: `notification_id` + outcome only (Rule 4).
 
 ---
@@ -347,8 +346,8 @@ Parent: their own child's row only, released scores only.
 | `PUT /api/activities/{id}/students/{student_id}/work` | `due_at_override`, `pinned_submission_id`, `points_override`, `excused` | ②/⑤ |
 | `POST /api/activities/{id}/assign-zero-missing` | Bulk Assign 0 | ⑤ |
 | `POST /api/notifications/{id}/read` · `POST /api/notifications/read-all` | Mark read | ③ |
-| `PATCH /api/me/settings` | + `email_notifications` | ④ |
-| `POST /api/internal/dispatch-emails` | Shared-secret, excluded from public OpenAPI tags | ④ |
+| Owner-RLS teacher/parent preference PATCH | Exact verified account token; explicit saved value | ④ |
+| `POST /api/internal/dispatch-emails` | Shared-secret internal API; typed OpenAPI security contract | ④ |
 | `GET /api/sections/{id}/gradebook.csv` | CSV export | ⑤ |
 | `POST /api/activities/{id}/students/{student_id}/comments` | `{ body }` — participant check, upsert `student_work`, insert, emit `comment_posted` | ⑥ |
 | `DELETE /api/comments/{id}` | Author only; scrubs body. Non-author → `NOT_FOUND`; already deleted → 204 (idempotent) | ⑥ |
@@ -404,7 +403,7 @@ Each slice can ship on its own and unblocks the next.
 
 - [ ] **R1:** bell and gradebook read through RLS; the service-role key stays in FastAPI and the dispatcher.
 - [ ] **R2:** all seven new error codes added to API_SPEC §2.4; frontend branches on `error.code`.
-- [ ] **R4:** notifications store IDs only; dispatcher logs `notification_id` only; emails use first name only; comment bodies never logged (comment `id` only).
+- [ ] **R4:** notifications store IDs only; email messages use fixed generic wording with no names/educational content; dispatcher never logs addresses/bodies; future comment bodies must never be logged.
 - [ ] **R1 (⑥):** comments read through RLS; writes only via FastAPI.
 - [ ] **R3/R5 (⑥):** N/A by design — comments are text-only, no new image path (Q23).
 - [ ] **R11 (⑥):** `private_comment` is never included by `research/export_dataset.py`.

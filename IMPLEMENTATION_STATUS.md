@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-03 (Phase 3 Slice 3 verified following user-reported portal QA sign-off)
+**Last updated:** 2026-11-03 (Slice 4 email implementation on feature branch; final CI/manual gates pending)
 
 ## Summary
 
@@ -242,16 +242,16 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 ### Slice ④ — Email notifications
 
-**Dependency:** Slice ③. **Status: Not started.**
+**Dependency:** Slice ③. **Status: Partial — implemented on feature branch; final verification pending.**
 
-**Design and planning (2026-11-03):** The user approved the [detailed email design](docs/superpowers/specs/2026-11-03-phase3-email-notifications-design.md), including its bounded retry/quota behavior, and requested the [implementation plan](docs/superpowers/plans/2026-11-03-phase3-email-notifications.md). The plan covers transactional enqueue, recoverable claims, stale-event and preference checks, bounded Resend delivery, private scheduling, account settings, and verification. Generic email wording is approved because the current schema has no structured first-name field. The user reports an existing verified Resend domain and will supply sender details later. All execution tasks remain unchecked; no application code, migration, hosted configuration, or email delivery is claimed.
+**Implementation (2026-11-03):** The approved [email design](docs/superpowers/specs/2026-11-03-phase3-email-notifications-design.md) and [execution plan](docs/superpowers/plans/2026-11-03-phase3-email-notifications.md) are being implemented inline in `.worktrees/phase3-email-notifications`, branch `feat/phase3-email-notifications`. The user authorized branch pushes for GitHub's disposable-stack tests because Docker/Podman are absent locally. [Queue checkpoint CI](https://github.com/ryanestoque/writewise/actions/runs/41638422162) passed 612 tests, all three existing upgrade checks, API generation and security advisors; its expected DB drift was resolved with actual generated types from that exact head. Scheduler red tests then passed those 612 and failed nine absent-helper/pg_net tests before implementation. Local Ruff, ESLint, TypeScript, production webpack build and 150 unit tests passed; eight controlled preference transport checks passed. Full scheduler/fourth-upgrade/type/advisor CI and signed-in portal QA remain open. Phase 3 remains **3/6 verified**. A verified Resend domain is user-reported; sender details, hosted migration/configuration and actual email delivery are not established.
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|
-| Service-only email outbox and preferences | Not started | No `email_outbox` or `email_notifications` columns found. Existing profile/password settings do not implement this preference. |
-| Dispatcher and Resend integration | Not started | No dispatcher endpoint or Resend configuration in backend source. Add authenticated internal dispatch, retry/claim behavior, and stubbed-provider tests. |
-| Cron/pg_net/Vault configuration | Not started | No Phase 3 scheduled dispatch configuration found. Keep secrets outside migrations; document dev provisioning separately from production authorization. |
-| Privacy-safe templates and verification | Not started | Add Returned/Due-soon email templates, preference checks, and tests proving no scores, images, teacher notes, comment text, or recipient PII in logs. |
+| Service-only email outbox and preferences | Partial | Transactional two-event enqueue, default-on owner preferences, canonical recipient/event checks and bounded recoverable queue implemented; database tests pass. Settings controls built; signed-in portal QA pending. |
+| Dispatcher and Resend integration | Partial | Async secret-authenticated internal route, fixed templates, stable key/digest, retry/timeout/quota handling and controlled-provider tests implemented. Final full CI pending. |
+| Cron/pg_net/Vault configuration | Partial | Versioned private scheduler/network-grant migration and synthetic container callback tests implemented. Full callback/advisor gate pending; no hosted secrets provisioned. |
+| Privacy-safe templates and verification | Partial | Generic templates omit names, educational content and account tokens. Automated privacy/config/provider checks pass; final upgrade/contract/CI and portal gates remain open. |
 
 ### Slice ⑤ — Points and gradebook
 

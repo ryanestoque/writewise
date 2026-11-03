@@ -265,3 +265,29 @@ order by start_time desc limit 10;
 Expected schedule is `*/15 * * * *` and command is `select writewise_internal.enqueue_time_based_notifications();`. The first sweep can notify current missing work; historical assignments/returns/releases are not replayed by migration. Authenticated browser users cannot call the private sweep.
 
 If an authorized operator must pause this app's sweep, use `cron.alter_job(job_id, active := false)` and restore the original state afterward. Do not disable pg_cron, which removes unrelated jobs. No Resend, email-dispatch, Vault, or pg_net configuration is needed for Slice 3. New deadlines/microsecond overrides re-arm events; restoring an already-delivered instant does not resend.
+
+## Phase 3 Slice 4 — Optional email activation
+
+Repository verification does not configure a hosted environment. Apply the versioned email migrations through the approved dev workflow only after checking the intended project. Do not reset hosted databases. Production remains restricted to the two key-holders. The user reports a verified Resend domain; sender identity, keys, deployment origins, tracking settings and any live recipient still require configuration/authorization.
+
+Backend settings (see `backend/.env.example`):
+
+| Setting | Default / activation requirement |
+|---|---|
+| `EMAIL_DISPATCH_ENABLED` | `false`; enable only after the other prerequisites are ready |
+| `EMAIL_DISPATCH_SECRET` | SecretStr; at least 32 printable ASCII characters; match the Vault entry |
+| `RESEND_API_KEY` | Backend-only secret; required when enabled |
+| `EMAIL_FROM` | Valid sender address/display name on the verified domain; supplied later |
+| `APP_BASE_URL` | Canonical frontend HTTPS origin, no path/query/fragment/credentials; literal loopback HTTP is test-only |
+
+Enabled configuration fails startup with fixed field-name errors when invalid. Do not paste secret values into chat, commits, logs or screenshots. Resend keys never belong in frontend variables or Vault's scheduler entries. Keep dispatch disabled while preparing/reviewing configuration.
+
+Scheduled invocation uses exactly two unique Vault names: `writewise_backend_url` (plain canonical backend origin) and `writewise_email_dispatch_secret` (matching backend dispatch secret). An absent/blank value makes the helper a no-op. Populate/update these with an authorized secret-entry workflow; inspect names/IDs only, never select decrypted values for a screenshot. The named `writewise-email-dispatch` job runs every five minutes and contains only `select writewise_internal.request_email_dispatch();`. Preserve the existing deadline job and unrelated jobs. Inspect job metadata/recent status without request headers. pg_net acceptance of a request is not evidence of provider acceptance.
+
+Before activation, confirm the sender domain and sender identity in Resend and explicitly check click/open tracking is disabled for these privacy-safe messages. Review the account's current quota/billing settings with its owner. Paid-plan overages are provider billing behavior; WriteWise implements no application spending cap. The app's maximum three reservations within one hour and stop-on-quota behavior bound retries, not total account expenditure. See the [approved design and primary provider references](superpowers/specs/2026-11-03-phase3-email-notifications-design.md#12-sources-checked-during-design).
+
+For an authorized live smoke test, designate a synthetic account and exact recipient first, verify canonical confirmed Auth email and linked coursework, then enable dispatch and trigger one eligible new event. Check safe dispatch counts/outbox state and the designated recipient inbox without exporting message/address payloads. `sent` means Resend accepted the request, not successful inbox placement. Verify opt-out leaves the bell working and re-enable creates no historical replay. This task's CI only uses a synthetic loopback callback and mocked Resend; no hosted migration, provider send or inbox delivery is claimed.
+
+Operational failures: 429 records a bounded retry and stops that invocation; 401/403 records terminal provider configuration failure and stops the batch. Timeouts/5xx use the retry policy; three reserved attempts or one-hour expiry end recovery. Skipped/failed rows are not automatically reset. Coursework and the in-app bell remain usable during email provider failure. The scheduler's thirty-second HTTP timeout exceeds the dispatcher's twenty-second budget.
+
+For emergency pause, set backend dispatch off and pause only this named cron job, preserving its former state. For dispatch-secret rotation, pause the email job, disable dispatch, replace the backend value and matching Vault entry through private settings, redeploy/restart as needed, verify authenticated behavior with synthetic data, then restore the original job state and enable dispatch. Rotate a Resend key only in backend settings. Configuration changes can invalidate an in-flight payload fingerprint; do not replay terminal rows or alter stored digests to force sends.
