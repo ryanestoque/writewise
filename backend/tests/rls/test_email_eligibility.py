@@ -1,8 +1,12 @@
 """Preparation rechecks current event/recipient authority using fixed database time."""
 
+import asyncio
+import json
+import os
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
+import asyncpg
 import pytest
 
 from app.core.supabase import supabase_client as admin
@@ -14,6 +18,7 @@ from tests.rls.email_support import (
     return_submission,
     seed_due_email,
 )
+from tests.rls.notification_support import db_value, wait_for_database_lock
 
 NOW = datetime(2030, 1, 1, 12, tzinfo=timezone.utc)
 
@@ -126,3 +131,133 @@ def test_a_later_return_supersedes_an_unsent_earlier_request(family, assigned_ac
         }
     finally:
         admin.table("submission").delete().eq("activity_id", activity).execute()
+
+
+@pytest.mark.parametrize("field", ["email_confirmed_at", "banned_until", "deleted_at"])
+def test_unavailable_auth_account_is_not_emailed(family, email_case, field):
+    _, row = email_case
+    original = db_value(f"select {field} from auth.users where id=$1", family["parent"])
+    replacement = None if field == "email_confirmed_at" else NOW + timedelta(days=1)
+    try:
+        db_value(
+            f"update auth.users set {field}=$2 where id=$1 returning id",
+            family["parent"],
+            replacement,
+        )
+        assert prepare_at(row["id"], processing_claim(row["id"], NOW), NOW) == {
+            "state": "skipped",
+            "code": "recipient_unavailable",
+        }
+    finally:
+        db_value(
+            f"update auth.users set {field}=$2 where id=$1 returning id", family["parent"], original
+        )
+
+
+def test_unassigned_due_work_is_not_reminded(family, email_case):
+    activity, row = email_case
+    admin.rpc(
+        "update_assigned_activity",
+        {
+            "actor_id": family["teacher"],
+            "target_activity_id": activity,
+            "payload": {"assignments": [{"student_id": family["students"][2]}]},
+        },
+    ).execute()
+    assert prepare_at(row["id"], processing_claim(row["id"], NOW), NOW) == {
+        "state": "skipped",
+        "code": "event_obsolete",
+    }
+
+
+def test_historical_return_remains_relevant_after_reassignment(family, assigned_activity):
+    activity = assigned_activity["id"]
+    try:
+        return_submission(family, activity)
+        row = outbox_rows(activity)[0]
+        admin.rpc(
+            "update_assigned_activity",
+            {
+                "actor_id": family["teacher"],
+                "target_activity_id": activity,
+                "payload": {"assignments": [{"student_id": family["students"][2]}]},
+            },
+        ).execute()
+        result = prepare_at(row["id"], processing_claim(row["id"], NOW), NOW)
+        assert result["state"] == "ready"
+        assert result["event_type"] == "submission_returned"
+    finally:
+        admin.table("submission").delete().eq("activity_id", activity).execute()
+
+
+def test_in_class_deadlines_are_also_email_eligible(email_case):
+    activity, row = email_case
+    admin.table("activity").update({"is_take_home": False}).eq("id", activity).execute()
+    assert prepare_at(row["id"], processing_claim(row["id"], NOW), NOW)["state"] == "ready"
+
+
+@pytest.mark.parametrize("change", ["deadline", "preference", "completion"])
+def test_change_committed_before_waiting_preparation_is_observed(family, email_case, change):
+    activity, row = email_case
+    token = processing_claim(row["id"], NOW)
+    submission = completed_submission(family, activity)
+    admin.table("submission").update({"status": "processing"}).eq("id", submission["id"]).execute()
+
+    async def exercise():
+        locker, worker, observer = [
+            await asyncpg.connect(os.environ["SUPABASE_DB_URL"]) for _ in range(3)
+        ]
+        transaction = locker.transaction()
+        await transaction.start()
+        task = None
+        try:
+            await locker.execute("select id from public.activity where id=$1 for update", activity)
+            task = asyncio.create_task(
+                worker.fetchval(
+                    "select writewise_internal.prepare_email_delivery_at($1,$2,$3)",
+                    row["id"],
+                    token,
+                    NOW,
+                )
+            )
+            await wait_for_database_lock(observer, worker.get_server_pid())
+            if change == "deadline":
+                await locker.execute(
+                    "update public.activity set due_at=$2 where id=$1",
+                    activity,
+                    NOW + timedelta(hours=3),
+                )
+            elif change == "preference":
+                await locker.execute(
+                    "update public.parent set email_notifications=false where id=$1",
+                    family["parent"],
+                )
+            else:
+                await locker.execute(
+                    "select set_config('request.jwt.claims',$1,true)",
+                    json.dumps({"role": "service_role", "sub": family["teacher"]}),
+                )
+                await locker.fetchval(
+                    "select public.complete_student_submission($1,$2)",
+                    family["teacher"],
+                    submission["id"],
+                )
+            await transaction.commit()
+            result = await task
+            result = json.loads(result) if isinstance(result, str) else result
+            expected = {
+                "deadline": "deadline_changed",
+                "preference": "preference_off",
+                "completion": "event_obsolete",
+            }[change]
+            assert result == {"state": "skipped", "code": expected}
+        finally:
+            if task is not None and not task.done():
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+            if locker.is_in_transaction():
+                await transaction.rollback()
+            for connection in (locker, worker, observer):
+                await connection.close()
+
+    asyncio.run(exercise())

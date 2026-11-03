@@ -96,3 +96,37 @@ def prepare_at(row_id, token, as_of):
         "select writewise_internal.prepare_email_delivery_at($1,$2,$3)", row_id, token, as_of
     )
     return json.loads(raw) if isinstance(raw, str) else raw
+
+
+def claim_at(as_of):
+    raw = db_value("select writewise_internal.claim_email_delivery_at($1)", as_of)
+    return json.loads(raw) if isinstance(raw, str) else raw
+
+
+def authorize_at(row_id, token, recipient, digest, as_of):
+    raw = db_value(
+        "select writewise_internal.authorize_email_delivery_at($1,$2,$3,$4,$5)",
+        row_id,
+        token,
+        recipient,
+        digest,
+        as_of,
+    )
+    return json.loads(raw) if isinstance(raw, str) else raw
+
+
+def finish_at(row_id, token, outcome, as_of, *, provider_id=None, error_code=None, retry_at=None):
+    return db_value(
+        "select writewise_internal.finish_email_delivery_at($1,$2,$3,$4,$5,$6,$7)",
+        row_id,
+        token,
+        outcome,
+        provider_id,
+        error_code,
+        retry_at,
+        as_of,
+    )
+
+
+def outbox_row(row_id):
+    return admin.table("email_outbox").select("*").eq("id", row_id).execute().data[0]
