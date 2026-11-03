@@ -1,13 +1,13 @@
 # Phase 3 — Classroom-Style Activities (Deadlines, Returns, Notifications, Gradebook)
 
 **As of:** October 22, 2026
-**Status:** Slices ①–③ are verified, with Slice ③'s manual gate closed by user-reported overall QA sign-off on 2026-11-03. Slice ④ email implementation is Partial on its feature branch while final automated/manual gates remain open; Slices ⑤–⑥ remain future design. See IMPLEMENTATION_STATUS.md and the Slice 4 execution record. Verification, PR integration and deployment remain separate; superseded email sketches below are historical proposals.
+**Status:** Slices ①–③ are verified. Slice ④ email implementation passed all automated gates (671 tests, four upgrades, contracts and advisors) and remains Partial pending signed-in portal QA. Slices ⑤–⑥ remain future design. See IMPLEMENTATION_STATUS.md and the Slice 4 execution record. Verification, PR integration and hosted activation remain separate; superseded email sketches below are historical proposals.
 **Origin:** Design-tree grill session, 2026-10-19 (19 decisions, all accepted). **Amended 2026-10-22:** private comments (Q20–Q28, Slice ⑥); Q16 revised.
 **Supersedes (when promoted):** PRD §13 "Notifications" deferred item, PRODUCT.md "Push notifications" deferred item.
 
 **Repository audit (2026-11-01):** Implementation progress is tracked in [IMPLEMENTATION_STATUS.md](../../IMPLEMENTATION_STATUS.md#phase-3--classroom-style-activities). See the [Slice ① implementation plan](../superpowers/plans/2026-11-01-phase3-assignment-deadlines.md) for the proposed assignment/deadline contract and audit findings requiring review. This design document is not evidence that a feature is implemented.
 
-**Slice ④ implementation (2026-11-03):** The approved [email design](../superpowers/specs/2026-11-03-phase3-email-notifications-design.md) is implemented on the email feature branch, with final CI and signed-in portal QA pending. See its [execution plan](../superpowers/plans/2026-11-03-phase3-email-notifications.md), API_SPEC §3.7 and DATABASE §17 for current contracts. Those contracts supersede email sketches below; Slices ①–③ remain the only verified slices until remaining gates close. Hosted configuration and delivery are separate.
+**Slice ④ implementation (2026-11-03):** The approved [email design](../superpowers/specs/2026-11-03-phase3-email-notifications-design.md) is implemented and automated checks pass on the email feature branch; signed-in portal QA remains open. See its [execution record](../superpowers/plans/2026-11-03-phase3-email-notifications.md), API_SPEC §3.7 and DATABASE §17. Those contracts supersede email sketches below; Slices ①–③ remain the only verified slices until the manual gate closes. Hosted activation additionally requires sender details and Supabase-owner permission provisioning; no hosted change or live delivery is claimed.
 
 ---
 

@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-03 (Slice 4 email implementation on feature branch; final CI/manual gates pending)
+**Last updated:** 2026-11-03 (Slice 4 email automated verification passed; signed-in portal QA pending)
 
 ## Summary
 
@@ -242,16 +242,16 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 ### Slice ④ — Email notifications
 
-**Dependency:** Slice ③. **Status: Partial — implemented on feature branch; final verification pending.**
+**Dependency:** Slice ③. **Status: Partial — implemented and automated checks passed; manual portal gate open.**
 
-**Implementation (2026-11-03):** The approved [email design](docs/superpowers/specs/2026-11-03-phase3-email-notifications-design.md) and [execution plan](docs/superpowers/plans/2026-11-03-phase3-email-notifications.md) are being implemented inline in `.worktrees/phase3-email-notifications`, branch `feat/phase3-email-notifications`. The user authorized branch pushes for GitHub's disposable-stack tests because Docker/Podman are absent locally. [Queue checkpoint CI](https://github.com/ryanestoque/writewise/actions/runs/41638422162) passed 612 tests, all three existing upgrade checks, API generation and security advisors; its expected DB drift was resolved with actual generated types from that exact head. Scheduler red tests then passed those 612 and failed nine absent-helper/pg_net tests before implementation. Local Ruff, ESLint, TypeScript, production webpack build and 150 unit tests passed; eight controlled preference transport checks passed. Full scheduler/fourth-upgrade/type/advisor CI and signed-in portal QA remain open. Phase 3 remains **3/6 verified**. A verified Resend domain is user-reported; sender details, hosted migration/configuration and actual email delivery are not established.
+**Implementation (2026-11-03):** The approved [email design](docs/superpowers/specs/2026-11-03-phase3-email-notifications-design.md) and [execution record](docs/superpowers/plans/2026-11-03-phase3-email-notifications.md) were implemented inline in `.worktrees/phase3-email-notifications`, branch `feat/phase3-email-notifications`. The user authorized branch pushes for disposable CI because Docker/Podman are absent locally. [CI on c7ccf76](https://github.com/ryanestoque/writewise/actions/runs/41644323667) passed **671 tests**, all four upgrade proofs, synthetic post-commit/rollback callback, fail-closed/owner-provisioned network checks, actual browser-role denials, generated API/database comparisons and security advisors. Local Ruff, ESLint, TypeScript and production webpack build passed; eight controlled preference transport checks passed. Signed-in portal QA remains open because computer-use reported no native pipe or browser surfaces. Phase 3 remains **3/6 verified**. Hosted migrations, owner/support provisioning, sender credentials/tracking review and live email are not established; the verified domain is user-reported. The branch is unmerged and email activation remains off.
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|
 | Service-only email outbox and preferences | Partial | Transactional two-event enqueue, default-on owner preferences, canonical recipient/event checks and bounded recoverable queue implemented; database tests pass. Settings controls built; signed-in portal QA pending. |
-| Dispatcher and Resend integration | Partial | Async secret-authenticated internal route, fixed templates, stable key/digest, retry/timeout/quota handling and controlled-provider tests implemented. Final full CI pending. |
-| Cron/pg_net/Vault configuration | Partial | Synthetic loopback callback and four upgrade proofs passed. CI found Supabase-owned network grants require owner provisioning; helper now refuses HTTP until safe. Final owner-provisioned CI/advisor gate pending; hosted owner setup and secrets remain unconfigured. |
-| Privacy-safe templates and verification | Partial | Generic templates omit names, educational content and account tokens. Automated privacy/config/provider checks pass; final upgrade/contract/CI and portal gates remain open. |
+| Dispatcher and Resend integration | Partial | Async secret-authenticated route, fixed templates, stable key/digest, retries/timeouts/quota isolation and lost-finalization replay passed full CI. Actual provider activation is deferred. |
+| Cron/pg_net/Vault configuration | Partial | Four upgrade proofs, fail-closed guard, owner-provisioned ACLs, actual role denials and synthetic callback passed CI. Hosted owner/support setup and secrets remain unconfigured. |
+| Privacy-safe templates and verification | Partial | Generic templates omit names, educational content and tokens. Full automated/contract/advisor gates pass; signed-in portal QA remains open. |
 
 ### Slice ⑤ — Points and gradebook
 

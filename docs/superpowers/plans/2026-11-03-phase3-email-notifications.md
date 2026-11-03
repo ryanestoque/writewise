@@ -1,4 +1,4 @@
-# Phase 3 Slice 4 â€” Email notifications implementation plan
+# Phase 3 Slice 4 Ã¢â‚¬â€ Email notifications implementation plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Read the approved spec and this entire plan before execution. Execute inline unless the user selects delegation; this planning pass does not dispatch agents.
 
@@ -12,7 +12,7 @@
 
 **Planning baseline:** `e29b006` on `docs/phase3-email-design`, based on local `main` merge `c3369cd`. This pass changes planning/status documents only. All execution checkboxes start unchecked; no application implementation, migrated stack, provider delivery, publication, or deployment is claimed.
 
-**Execution start (2026-11-03):** The user selected inline execution. Work is isolated in `.worktrees/phase3-email-notifications` on `feat/phase3-email-notifications`, starting at `11e23e7`. A separate worktree-root `.venv` was synchronized from the frozen lockfile after the original environment lacked pytest. Two baseline calibration-loader cases require the TensorFlow library even in test mode; the full locked dependency set is now installed. Fresh database-free baseline: **73 passed**, one upstream Starlette/TestClient deprecation warning. Ruff, ESLint and TypeScript passed. Supabase CLI 2.115.0 was loaded through npm; local startup failed with `LegacyDockerLifecycleInspectError` because neither Docker nor Podman is available. Task 1 event/RLS/fault tests and a feature-branch CI trigger are prepared; their database red run is pending an authorized ephemeral runner. Tasks 4â€“5 may proceed independently under this plan; 25 new template/config tests first failed on absent delivery modules/settings. No migration or application implementation is claimed at this checkpoint.
+**Execution start (2026-11-03):** The user selected inline execution. Work is isolated in `.worktrees/phase3-email-notifications` on `feat/phase3-email-notifications`, starting at `11e23e7`. A separate worktree-root `.venv` was synchronized from the frozen lockfile after the original environment lacked pytest. Two baseline calibration-loader cases require the TensorFlow library even in test mode; the full locked dependency set is now installed. Fresh database-free baseline: **73 passed**, one upstream Starlette/TestClient deprecation warning. Ruff, ESLint and TypeScript passed. Supabase CLI 2.115.0 was loaded through npm; local startup failed with `LegacyDockerLifecycleInspectError` because neither Docker nor Podman is available. Task 1 event/RLS/fault tests and a feature-branch CI trigger are prepared; their database red run is pending an authorized ephemeral runner. Tasks 4Ã¢â‚¬â€œ5 may proceed independently under this plan; 25 new template/config tests first failed on absent delivery modules/settings. No migration or application implementation is claimed at this checkpoint.
 
 **Independent delivery work (2026-11-03):** The user explicitly authorized pushing this feature branch and subsequent checkpoints to `ryanestoque/writewise` for GitHub's disposable SQL runner. Initial test commit `0c987b1` is published as [CI run 41630758560](https://github.com/ryanestoque/writewise/actions/runs/41630758560). Template/configuration implementation `10fda14` passed its 25 new cases and the 98-case database-free suite. Provider/retry work first failed 29 missing-feature cases; inline review added five boundary cases and reproduced two failures where an oversized response hid quota/credential status. Classification now checks those HTTP statuses before body parsing. All **132 database-free tests** pass with the same upstream warning. HTTPX was declared directly at its existing `0.28.1` lock version without other dependency upgrades. The SQL runner and later API/UI/manual/operational gates remain separate; no email was sent.
 
@@ -24,18 +24,18 @@
 
 ## Global Constraints
 
-- â€œNo historical notification is converted to an email during migration.â€
-- â€œOne global account preference defaults on; in-app notifications remain enabled.â€
-- â€œFixed generic wording and a login link; no child name or activity title.â€
-- â€œOff at event time or at dispatch means terminal `skipped`; enabling later never replays skipped emails.â€
-- â€œFailure of any outbox insert rolls back the new notification, its receipt, and its originating coursework change.â€ Provider availability does not participate in that transaction.
-- â€œNo business or outbox lock remains held during provider I/O.â€
-- â€œAt most 10 claimed rows and 20 seconds of total dispatcher work per invocation.â€
-- â€œAt most three durable send reservations.â€ â€œAt or beyond one hour from the first reservation, make no additional external send.â€
+- Ã¢â‚¬Å“No historical notification is converted to an email during migration.Ã¢â‚¬Â
+- Ã¢â‚¬Å“One global account preference defaults on; in-app notifications remain enabled.Ã¢â‚¬Â
+- Ã¢â‚¬Å“Fixed generic wording and a login link; no child name or activity title.Ã¢â‚¬Â
+- Ã¢â‚¬Å“Off at event time or at dispatch means terminal `skipped`; enabling later never replays skipped emails.Ã¢â‚¬Â
+- Ã¢â‚¬Å“Failure of any outbox insert rolls back the new notification, its receipt, and its originating coursework change.Ã¢â‚¬Â Provider availability does not participate in that transaction.
+- Ã¢â‚¬Å“No business or outbox lock remains held during provider I/O.Ã¢â‚¬Â
+- Ã¢â‚¬Å“At most 10 claimed rows and 20 seconds of total dispatcher work per invocation.Ã¢â‚¬Â
+- Ã¢â‚¬Å“At most three durable send reservations.Ã¢â‚¬Â Ã¢â‚¬Å“At or beyond one hour from the first reservation, make no additional external send.Ã¢â‚¬Â
 - Retry transient failures after five minutes following reservation 1 and fifteen minutes following reservation 2. The lease is two minutes; the provider attempt budget is five seconds; pg_net's timeout is 30 seconds.
 - Use `Idempotency-Key: writewise-email/<outbox UUID>` unchanged across retries. Compare the canonical request digest and never invent a new key for a terminal delivery.
-- â€œ`sent` means Resend acknowledged acceptance; it is not proof of inbox delivery.â€
-- â€œA preference/link/work change after authorization may race with an email already in flight; it cannot recall an accepted message.â€
+- Ã¢â‚¬Å“`sent` means Resend acknowledged acceptance; it is not proof of inbox delivery.Ã¢â‚¬Â
+- Ã¢â‚¬Å“A preference/link/work change after authorization may race with an email already in flight; it cannot recall an accepted message.Ã¢â‚¬Â
 - Only `submission_returned` and `due_soon` enqueue email. Preserve the seven existing notification types, their identities, read state, retained delivery receipts, and the 15-minute deadline job.
 - Add no app-level rate limiter. Per-invocation bounds and retry scheduling implement the approved dispatcher contract, not a new rate-limiting subsystem.
 - SQL-first migrations only; keep applied migration files untouched. Regenerate actual `frontend/types/database.ts` and `frontend/types/api.ts`, never hand-edit generated types. Pair schema/API delivery commits with their generated contracts.
@@ -61,7 +61,7 @@ Migration names below are logical names passed to `supabase migration new`; the 
 | Preference UI | New `frontend/components/settings/notification-settings-card.tsx`, `frontend/lib/notifications/preferences.ts`; modify both settings pages | Actual stored value, RLS update, exact-token/account-switch protection |
 | Generated contracts/docs | `frontend/types/database.ts`, `frontend/types/api.ts`; existing companion docs, proposal, tracker, ADR 0005 | Executable/generated contracts, operations, acceptance evidence |
 
-Dependency order: Task 1 â†’ Task 2 â†’ Task 3 for SQL; Task 4 â†’ Task 5 for database-free delivery code; both chains â†’ Task 6; Task 7 follows Tasks 1â€“6; Task 8 follows generated schema from Task 1; Task 9 closes all gates. Tasks 4â€“5 can progress while an ephemeral SQL runner is being established, without claiming SQL verification.
+Dependency order: Task 1 Ã¢â€ â€™ Task 2 Ã¢â€ â€™ Task 3 for SQL; Task 4 Ã¢â€ â€™ Task 5 for database-free delivery code; both chains Ã¢â€ â€™ Task 6; Task 7 follows Tasks 1Ã¢â‚¬â€œ6; Task 8 follows generated schema from Task 1; Task 9 closes all gates. Tasks 4Ã¢â‚¬â€œ5 can progress while an ephemeral SQL runner is being established, without claiming SQL verification.
 
 ## Shared interfaces
 
@@ -92,7 +92,7 @@ Backend interfaces:
 
 The queue client uses the existing `/rest/v1/rpc/` service-only protocol through HTTPX asynchronously. This deliberately avoids running the current synchronous global Supabase SDK on the event loop, adding a raw database pool, or relying on unverified async SDK constructor options. An owned client supplies the backend service headers once; the internal HTTP caller cannot choose its URL or credentials.
 
-## Execution prerequisite â€” isolation and a real SQL runner
+## Execution prerequisite Ã¢â‚¬â€ isolation and a real SQL runner
 
 - [x] Read applicable skills and `AGENTS.md`; inspect `git status`, `git rev-parse --git-dir`, `git rev-parse --git-common-dir`, and `git rev-parse --show-superproject-working-tree`. Use using-git-worktrees at execution time. Keep this planning branch and the user's previous env/worktrees intact; proposed implementation branch: `feat/phase3-email-notifications`.
 - [x] Discover tools without changing global configuration:
@@ -126,7 +126,7 @@ uv run pytest --confcutdir=tests/unit tests/unit -q
 
 **Files:** Create CLI-named `phase3_email_store` migration, `backend/tests/rls/email_support.py`, `backend/tests/rls/test_email_outbox.py`. Modify `frontend/types/database.ts` through generation; extend existing event tests where their established fixtures already cover Return/rollback.
 
-**Interfaces:** Preserve `put_notification(uuid, notification_type, uuid, uuid, uuid, text) -> uuid` and `notify_work_parents(notification_type, uuid, uuid, uuid, text) -> integer`. Produce the exact outbox columns/constraints in spec Â§4.2 and `email_notifications` on teacher/parent. No delivery RPC is needed yet.
+**Interfaces:** Preserve `put_notification(uuid, notification_type, uuid, uuid, uuid, text) -> uuid` and `notify_work_parents(notification_type, uuid, uuid, uuid, text) -> integer`. Produce the exact outbox columns/constraints in spec Ã‚Â§4.2 and `email_notifications` on teacher/parent. No delivery RPC is needed yet.
 
 - [x] Add `seed_due_email(family, activity, as_of)` in `email_support.py` using the real fixed-time sweep and existing module fixtures:
 
@@ -189,7 +189,7 @@ def test_parent_can_save_only_own_preference(family):
 ```
 
   Add real signed-in anon/parent/teacher denial tests for SELECT/INSERT/UPDATE/DELETE on `email_outbox`; teacher preference ownership; second linked parent fan-out; off-at-enqueue terminal skip; no enqueue for the other five event types; read state independence; deleted-notice cascade without receipt re-arming; retained historical notifications not backfilled. Add outbox fault injection to both the real Return transaction and deadline sweep; assert no originating state/notification/receipt survives its failed transaction. Use transaction-local service claims for raw owner calls that invoke JWT-aware lifecycle helpers, following `test_notification_events.py`.
-- [x] Run `uv run pytest tests/rls/test_email_outbox.py -q` on the ephemeral stack. Record missing-column/relation failures before implementation. Create the migration using `supabase migration new phase3_email_store`, then implement all spec Â§4.2 columns. SQL must include explicit queue isolation and partial indexes:
+- [x] Run `uv run pytest tests/rls/test_email_outbox.py -q` on the ephemeral stack. Record missing-column/relation failures before implementation. Create the migration using `supabase migration new phase3_email_store`, then implement all spec Ã‚Â§4.2 columns. SQL must include explicit queue isolation and partial indexes:
 
 ```sql
 alter table public.email_outbox enable row level security;
@@ -201,7 +201,7 @@ create index email_outbox_expired on public.email_outbox
   (lease_expires_at, id) where status = 'processing';
 ```
 
-  Use UUID PK, unique cascading notification FK, five allowed statuses, attempts 0â€“3, paired digest/first-attempt fields, processing-token/lease equivalence, sent/provider-ID/time equivalence, valid SHA-256 encoding, and bounded allowlisted error/provider-ID strings. Defaults are database timestamps and pending/zero attempts. Do not copy PII or rendered payloads into SQL.
+  Use UUID PK, unique cascading notification FK, five allowed statuses, attempts 0Ã¢â‚¬â€œ3, paired digest/first-attempt fields, processing-token/lease equivalence, sent/provider-ID/time equivalence, valid SHA-256 encoding, and bounded allowlisted error/provider-ID strings. Defaults are database timestamps and pending/zero attempts. Do not copy PII or rendered payloads into SQL.
 - [x] Replace the existing private insertion helper in this new migration. Resolve the typed effective due from activity/work inside the originating activity lock for `due_soon`; verify the existing complete dedupe key matches that same timestamp via `notification_epoch_us`. Preserve the six-argument signature and all seven event identities. After an actual notification insert, enqueue only the two eligible kinds:
 
 ```sql
@@ -248,7 +248,7 @@ def test_foreign_token_never_reveals_recipient(family, assigned_activity):
 ```
 
   Import `seed_due_email` from `tests.rls.email_support` and define the same UTC `NOW` constant locally. For the ready-path test, use the fixture token and compare against `admin.auth.admin.get_user_by_id(family['parent']).user.email`; restore any edited profile email after the case.
-- [ ] Cover the spec Â§5 matrix before implementing: opt-out/re-enable, revoked parent link/teacher roster, archive, missing/unconfirmed/banned Auth account, edited profile email, exact due/24-hour boundaries, changed effective due/override, equivalent offsets, current assignment removal, both activity modes, completed ungraded/draft/released/pinned work, processing/rejected retries, historical Return, later completed attempt, and later Return supersession. Seed ban/confirmation changes through ephemeral Auth admin operations and restore them. Do not change shared confirmed-user fixtures permanently.
+- [x] Cover the spec Ã‚Â§5 matrix before implementing: opt-out/re-enable, revoked parent link/teacher roster, archive, missing/unconfirmed/banned Auth account, edited profile email, exact due/24-hour boundaries, changed effective due/override, equivalent offsets, current assignment removal, both activity modes, completed ungraded/draft/released/pinned work, processing/rejected retries, historical Return, later completed attempt, and later Return supersession. Seed ban/confirmation changes through ephemeral Auth admin operations and restore them. Do not change shared confirmed-user fixtures permanently.
 - [x] Run `uv run pytest tests/rls/test_email_eligibility.py -q` and observe the absent helper failure. Create the context migration. Implement the private canonical Auth lookup with only required email/confirmation/deletion/ban fields; fixed search path; revoked browser execution; narrow returned result. Keep the rest of the eligibility code invoker-based. Due predicates include:
 
 ```sql
@@ -263,7 +263,7 @@ and not exists (
 
   `effective_due`, `queued_due`, `check_time`, `work_activity`, and `work_student` are typed helper locals. Current assignment comes from the private service-side helper, not JWT-scoped `public.is_assigned`. Return relevance requires the target still returned, latest by `(returned_at,id)`, no active attempt, and no later completed attempt by `(created_at,id)`; retain historical visibility when current assignment alone changed. Do not read measurements or rubric fields.
 - [x] Implement prepare: locate the activity ID without locking outbox first, acquire the activity lock, then lock/recheck the outbox token/status/lease, sample actual time after locks in production, and run a fresh eligibility statement. Invalid events update to skipped with a finite code and clear lease/token; valid events return only `ready`, canonical recipient, and event type. Wrong/missing/expired claims return `lost` without PII. Revoke public/anon/authenticated execution and grant the service entry point only to service_role.
-- [ ] Add lock-observed race tests with `wait_for_database_lock`: commit completion, due/override edit, preference change, or link removal before a waiting preparation eligibility query and assert suppression. Prove a preparation response carries no score/note/name/title. Replay, run focused and full ephemeral tests/advisors, regenerate types, and commit `feat: revalidate classroom email recipients and events`.
+- [x] Add lock-observed race tests with `wait_for_database_lock`: commit completion, due/override edit, preference change, or link removal before a waiting preparation eligibility query and assert suppression. Prove a preparation response carries no score/note/name/title. Replay, run focused and full ephemeral tests/advisors, regenerate types, and commit `feat: revalidate classroom email recipients and events`.
 
 ### Task 3: Leases, send reservations, and durable outcomes
 
@@ -271,7 +271,7 @@ and not exists (
 
 **Interfaces:** Produce the remaining three public RPCs and private `_at` functions with the shared signatures. Consume preparation/eligibility from Task 2. Successful authorize returns a fresh `claim_token`, attempts, first-attempt time, and authorization time; it does not extend the two-minute lease.
 
-- [ ] Add red fixed-time tests for disjoint concurrent claims, ordered ready selection, expired-lease recovery, wrong/stale tokens, three-attempt and one-hour boundaries, digest/recipient changes, and terminal-state immutability. A concrete reservation regression is:
+- [x] Add red fixed-time tests for disjoint concurrent claims, ordered ready selection, expired-lease recovery, wrong/stale tokens, three-attempt and one-hour boundaries, digest/recipient changes, and terminal-state immutability. A concrete reservation regression is:
 
 ```python
 def test_authorization_token_is_single_use(prepared_email):
@@ -320,7 +320,7 @@ returning claim_token, attempts, first_attempt_at;
 
   Validate a 64-character lowercase hex digest and exact address before this statement. Wrap all checks/update in one transaction. The new token prevents replay of the same reservation request; unknown RPC outcome must not cause the backend to guess it was authorized. All rejected paths either safely skip/fail the row or return `lost`, never return a recipient to a foreign token.
 - [x] Implement finish as a compare-and-set on ID, processing status, current token, and unexpired lease. `sent` requires a bounded provider ID; `retry` requires an allowed error and a future retry strictly within the first-attempt hour with attempts below 3; `failed` needs a known code; `released` clears only an unused current claim and does not consume an attempt or erase retry evidence. Clear lease/token on all acknowledged transitions. Return false for stale/deleted/expired owners. Enforce the same allowlisted categories in SQL and backend contracts.
-- [ ] Prove actual rollback/concurrency behavior: two sessions claim disjoint rows; a held claim does not block the second claim; obsolete token cannot authorize/finalize; database disconnect after reservation leaves bounded recoverable evidence; finalization loss can replay the identical key/payload later; attempts=3 and first-attempt+one-hour never authorize again. Use observed barriers and two real connections, not an in-memory queue simulation. Run replay/full suite/advisors, regenerate types, and commit `feat: add recoverable email delivery leases`.
+- [x] Prove actual rollback/concurrency behavior: two sessions claim disjoint rows; a held claim does not block the second claim; obsolete token cannot authorize/finalize; database disconnect after reservation leaves bounded recoverable evidence; finalization loss can replay the identical key/payload later; attempts=3 and first-attempt+one-hour never authorize again. Use observed barriers and two real connections, not an in-memory queue simulation. Run replay/full suite/advisors, regenerate types, and commit `feat: add recoverable email delivery leases`.
 
 ### Task 4: Fixed templates, typed contracts, and safe configuration
 
@@ -427,7 +427,7 @@ def payload_digest(body: dict[str, object]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 ```
 
-  Build `to` consistently as a one-element list. Text/HTML use the approved Â§9.1 wording and footer. Keep body generation stable across retries; do not include timestamps, random IDs, request-specific signatures, or unsaved account labels. Reject unsupported event types before rendering. Validate sender/origin before interpolating escaped links into HTML.
+  Build `to` consistently as a one-element list. Text/HTML use the approved Ã‚Â§9.1 wording and footer. Keep body generation stable across retries; do not include timestamps, random IDs, request-specific signatures, or unsaved account labels. Reject unsupported event types before rendering. Validate sender/origin before interpolating escaped links into HTML.
 - [x] Add settings with `EMAIL_DISPATCH_ENABLED=False`, blank `SecretStr` dispatch/Resend keys, and blank sender/origin. Extend existing `SettingsConfigDict` with `hide_input_in_errors=True` while preserving `.env` support. When enabled, require a dispatch secret at least 32 characters, nonblank API key/sender/origin, no header control characters, and a plain canonical origin: HTTPS, or HTTP only for literal localhost/127.0.0.1/::1 development; no credentials, query, fragment, or path beyond `/`. A cross-field validator raises only a fixed diagnostic naming missing/invalid setting names. Test `str(ValidationError)` and application log capture for secret absence. Add commented example env values without real keys/domain details. Disabled mode must keep existing application startup working.
 - [x] Rerun the new modules and the entire database-free suite; Ruff; API schema generation if model imports affect routes later. Commit `feat: define minimal classroom email templates and settings`. These tests prove rendering/configuration, not SQL/RLS or actual email delivery.
 
@@ -514,11 +514,11 @@ async with asyncio.timeout(5.0):
 
 ### Task 6: Async queue orchestration and authenticated internal endpoint
 
-**Files:** Create `backend/app/email/queue.py`, `dispatcher.py`, `backend/app/api/internal_emails.py`, `backend/tests/unit/test_email_dispatcher.py`, `test_email_routes.py`, `test_email_queue_transport.py`; modify `backend/app/main.py`, generated `frontend/types/api.ts`, `docs/API_SPEC.md` Â§2.4.
+**Files:** Create `backend/app/email/queue.py`, `dispatcher.py`, `backend/app/api/internal_emails.py`, `backend/tests/unit/test_email_dispatcher.py`, `test_email_routes.py`, `test_email_queue_transport.py`; modify `backend/app/main.py`, generated `frontend/types/api.ts`, `docs/API_SPEC.md` Ã‚Â§2.4.
 
-**Interfaces:** Consume Tasks 1â€“5; produce `dispatch_emails`, `require_dispatch_secret`, `get_email_delivery_resources`, and the typed aggregate route. `EmailQueue` is an async, non-retrying HTTP adapter over the four service-only RPCs, with a two-second total budget for each operation. Route/resource construction has no synchronous database call.
+**Interfaces:** Consume Tasks 1Ã¢â‚¬â€œ5; produce `dispatch_emails`, `require_dispatch_secret`, `get_email_delivery_resources`, and the typed aggregate route. `EmailQueue` is an async, non-retrying HTTP adapter over the four service-only RPCs, with a two-second total budget for each operation. Route/resource construction has no synchronous database call.
 
-- [x] Add red tests driving actual HTTPX requests and real FastAPI handlers. Mock only external HTTP: RPC transport returns the shared JSON shapes and provider transport returns acknowledgements/errors. Assert sequence `claim â†’ prepare â†’ authorize â†’ provider â†’ finish`, the rotated authorization token used in finish, no provider before acknowledged authorization, no provider after skip/lost/disabled, and no recipient/row/limit/URL forwarded from spoofed request JSON/query. The missing-header route test must exercise the final mounted path:
+- [x] Add red tests driving actual HTTPX requests and real FastAPI handlers. Mock only external HTTP: RPC transport returns the shared JSON shapes and provider transport returns acknowledgements/errors. Assert sequence `claim Ã¢â€ â€™ prepare Ã¢â€ â€™ authorize Ã¢â€ â€™ provider Ã¢â€ â€™ finish`, the rotated authorization token used in finish, no provider before acknowledged authorization, no provider after skip/lost/disabled, and no recipient/row/limit/URL forwarded from spoofed request JSON/query. The missing-header route test must exercise the final mounted path:
 
 ```python
 from fastapi.testclient import TestClient
@@ -576,7 +576,7 @@ database failure       -> abort; preserve already committed outcomes/lease evide
 
 **Interfaces:** Produce private job-owner-only `request_email_dispatch() -> bigint | null`; one named `writewise-email-dispatch` job at `*/5 * * * *`; preserve the existing deadline job. The callback is a synthetic test listener, not a deployed app service.
 
-- [ ] Add red tests for job registration, no-op absent Vault entries, duplicate/invalid configuration, denied browser/private/network access, and actual post-commit callback path/header/body. Extend the root autouse fixture to save/pause/restore both job names individually. Preserve a job's original active state; do not disable/drop the extension or silently ignore a required missing job after migration. Add a synthetic pre-Slice-4 upgrade manifest with actual work, released/unreleased scores, both email-eligible historical notifications, receipts, teacher/parent accounts, and read states. Assert these snapshots survive unchanged, preferences default true, and historical outbox count stays zero.
+- [x] Add red tests for job registration, no-op absent Vault entries, duplicate/invalid configuration, denied browser/private/network access, and actual post-commit callback path/header/body. Extend the root autouse fixture to save/pause/restore both job names individually. Preserve a job's original active state; do not disable/drop the extension or silently ignore a required missing job after migration. Add a synthetic pre-Slice-4 upgrade manifest with actual work, released/unreleased scores, both email-eligible historical notifications, receipts, teacher/parent accounts, and read states. Assert these snapshots survive unchanged, preferences default true, and historical outbox count stays zero.
 
 ```python
 from tests.rls.notification_support import db_value
@@ -656,7 +656,7 @@ docker run --detach --rm --name writewise-email-callback \
     cd ..
     supabase db reset --local
 ```
-- [ ] Replay migrations, run scheduler/upgrade/queue tests and the full suite, inspect advisors and generated DB drift, generate types from the migrated stack, and commit `feat: schedule private email dispatch and verify upgrades` with types. Record that tested callback delivery is synthetic, not a user inbox or hosted provisioning proof.
+- [x] Replay migrations, run scheduler/upgrade/queue tests and the full suite, inspect advisors and generated DB drift, generate types from the migrated stack, and commit `feat: schedule private email dispatch and verify upgrades` with types. Record that tested callback delivery is synthetic, not a user inbox or hosted provisioning proof.
 
 ### Task 8: Parent and teacher email preference controls
 
@@ -664,7 +664,7 @@ docker run --detach --rm --name writewise-email-callback \
 
 **Interfaces:** `readEmailPreference(client, accountId, role, signal?) -> Promise<boolean>` and `saveEmailPreference(client, accountId, role, enabled, signal?) -> Promise<boolean>`, where role is exactly `'parent' | 'teacher'`. Card props: `{accountId: string; role: 'parent' | 'teacher'; initialEnabled: boolean | null}`. Null means unavailable, not default true.
 
-- [ ] Before editing, record a manual/controlled reproduction checklist: current settings lack the control; an account with false must retain false after refresh; a profile read failure must not become true; saving with an account switch must never patch the new account. This is the frontend's required behavior check; do not install a test framework or add implementation-mirroring component tests.
+- [x] Before editing, record a manual/controlled reproduction checklist: current settings lack the control; an account with false must retain false after refresh; a profile read failure must not become true; saving with an account switch must never patch the new account. This is the frontend's required behavior check; do not install a test framework or add implementation-mirroring component tests.
 - [x] Extend each existing verified server profile query with `email_notifications`, preserve its error, and pass actual account ID/role plus boolean or null into the shared card. Keep profile/security components functioning. The card uses existing Card/Label/Switch/Button primitives and design tokens; parent copy is exactly the approved helper. Teacher copy explicitly says current classroom emails go to parents. Place it as a normal Notifications settings section, not an implementation/dispatcher status panel.
 - [x] Implement the preference transport using an exact verified access token for the direct RLS REST request. Reuse `getAuthToken` and `ApiError`; the SDK's mutable shared session must not substitute a different token between verification and write:
 
@@ -722,7 +722,7 @@ const response = await fetch(endpoint, {
 **Interfaces:** Promote only implemented and verified contracts. Preserve the distinction between implemented, verified, merged, hosted-configured, provider-accepted, and inbox-delivered. Slice 4 remains unverified while any required automated or manual gate is open.
 
 - [ ] Map each spec acceptance item to real test names and recorded results. Close the matrix below with actual evidence, including queue faults/locks, canonical recipient lookup, browser role denials, provider quota isolation, exact token/lease recovery, scheduler callback, and four upgrade proofs. Resolve material review findings; do not mark a row covered solely because a model/fixture reproduces implementation declarations.
-- [ ] Run required checks once the implementation stabilizes, from their correct directories. Supported installed-tool Windows fallbacks are shown; they do not bypass lint/type rules:
+- [x] Run required checks once the implementation stabilizes, from their correct directories. Supported installed-tool Windows fallbacks are shown; they do not bypass lint/type rules:
 
 ```powershell
 # backend/
@@ -736,7 +736,7 @@ npm.cmd run build -- --webpack
 ```
 
   Use Ruff's installed executable only when the uv wrapper is unavailable; do not needlessly run both equivalents. Use `npm.cmd` when PowerShell blocks `npm.ps1`. For build-only local verification use dummy localhost public settings rather than exposing local env files. A worktree's existing dependency junction may require webpack, as previous slices documented. Build and type checks do not replace manual portal QA.
-- [ ] On the ephemeral stack, replay migrations, run all four prepare/upgrade/verify proofs, full `uv run pytest`, generated OpenAPI/database comparison, and security advisors. Pause/restore wall-clock jobs during deterministic tests, keep the synthetic callback available, and teardown the stack/callback even after failure. Use discovered local-only CLI flags. Regenerate types with the pinned tools and inspect diffs; never suppress drift. For API output the existing CI generation is:
+- [x] On the ephemeral stack, replay migrations, run all four prepare/upgrade/verify proofs, full `uv run pytest`, generated OpenAPI/database comparison, and security advisors. Pause/restore wall-clock jobs during deterministic tests, keep the synthetic callback available, and teardown the stack/callback even after failure. Use discovered local-only CLI flags. Regenerate types with the pinned tools and inspect diffs; never suppress drift. For API output the existing CI generation is:
 
 ```python
 import json
@@ -756,24 +756,24 @@ git diff --check
   Run the first command from `frontend/`, database generation from the repository root, and use a real OS temporary path on Windows instead of assuming `/tmp`. The Python export runs from backend with explicit localhost test settings. At final verification rerunning both generators must leave no uncommitted generated drift.
 - [x] Promote API error/header/count semantics; DATABASE queue state/indexes/grants/RPCs; PRD's two optional email events; ARCHITECTURE/ADR's outbox/provider separation; SECURITY's canonical address and private Vault/network boundary; DESIGN's saved preference behavior; TESTING's race/upgrade/loopback/QA gates. DEPLOYMENT documents all five new settings, two Vault entry names, verified sender and tracking checks, secret rotation without echoing values, opt-out/no replay, bounded retries, and that paid Resend overages are provider billing behavior rather than an app spending cap. Source the provider facts from the design's primary references rather than inventing account settings.
 - [x] Keep deployment steps reviewable but unexecuted unless separately authorized: actual `EMAIL_FROM`, Resend key, canonical frontend/backend origins, matching dispatch secret/Vault entries, dispatch initially off, domain/tracking confirmation, and an explicitly designated synthetic recipient for any live smoke test. Use only `writewise-dev` under established authorization; no prod operation, DNS publication, secret capture in chat, or real email to an unspecified person. A user-confirmed verified domain alone is not evidence that these application settings are configured.
-- [ ] Apply requesting-code-review and verification-before-completion before integration. Review SQL authorization/locks, adapter/retry/orchestration failure handling, and settings account races; use inline review unless delegation is selected or otherwise explicitly required. Publish/PR/merge only under current authorization and the repository workflow. Commit documentation closeout with `docs: document classroom email delivery and verification`, report exact automated/manual results, and preserve useful worktree/env files.
+- [x] Apply requesting-code-review and verification-before-completion before integration. Review SQL authorization/locks, adapter/retry/orchestration failure handling, and settings account races; use inline review unless delegation is selected or otherwise explicitly required. Publish/PR/merge only under current authorization and the repository workflow. Commit documentation closeout with `docs: document classroom email delivery and verification`, report exact automated/manual results, and preserve useful worktree/env files.
 
 ## Coverage matrix for self-review and execution
 
 | Spec requirement | Implemented/proved by |
 |---|---|
-| Â§1 scope; no historical sends; two events; default-on preference | Tasks 1, 4, 7 upgrade, 8; Task 9 product/operations docs |
-| Â§4 queue constraints/indexes/RLS and transactional rollback | Task 1 real SQL/RLS/event/fault tests; Task 3 durable state invariants |
-| Â§5 canonical address/current relationships/deadline/Return relevance | Task 2 complete fixed-time matrix and lock-observed races; Task 3 authorize recheck |
-| Â§6 claims/attempts/digest/stable key/crash recovery/no lock across network | Tasks 3, 5, 6; real SQL versus controlled HTTP proofs remain distinct |
-| Â§6 three attempts/hour, 20 seconds/10 rows, 5-second send | Tasks 3 SQL boundaries, 5 retry/overall timeout, 6 monotonic invocation tests |
-| Â§6.2 permanent/transient/quota/unknown failures and safe logs | Task 5 provider matrix, Task 6 full orchestration; Task 9 privacy evidence |
-| Â§7 authentication/configuration/typed API/error catalog | Tasks 4 and 6; generated OpenAPI/API types and safe config tests |
-| Â§8 secrets/network permissions/named scheduler/post-commit invocation | Task 7 actual role queries, private helper/job assertions, loopback callback and rollback test |
-| Â§9 generic templates/no tracking/body leak | Task 4 exact copy and prohibited-field checks; Task 9 sender tracking activation checklist |
-| Â§9 owner preference, false/error/zero rows/account switches | Task 1 RLS; Task 8 actual pinned-token transport and manual portal evidence |
-| Â§10 generated contracts, existing events/upgrade proofs, no unrelated refactor | Types in schema/API task commits; Task 7 fourth upgrade; Task 9 drift/review |
-| Â§11 all required automated/manual/operational evidence | Task 9 closeout; tracker does not infer deployment from CI or user QA |
+| Ã‚Â§1 scope; no historical sends; two events; default-on preference | Tasks 1, 4, 7 upgrade, 8; Task 9 product/operations docs |
+| Ã‚Â§4 queue constraints/indexes/RLS and transactional rollback | Task 1 real SQL/RLS/event/fault tests; Task 3 durable state invariants |
+| Ã‚Â§5 canonical address/current relationships/deadline/Return relevance | Task 2 complete fixed-time matrix and lock-observed races; Task 3 authorize recheck |
+| Ã‚Â§6 claims/attempts/digest/stable key/crash recovery/no lock across network | Tasks 3, 5, 6; real SQL versus controlled HTTP proofs remain distinct |
+| Ã‚Â§6 three attempts/hour, 20 seconds/10 rows, 5-second send | Tasks 3 SQL boundaries, 5 retry/overall timeout, 6 monotonic invocation tests |
+| Ã‚Â§6.2 permanent/transient/quota/unknown failures and safe logs | Task 5 provider matrix, Task 6 full orchestration; Task 9 privacy evidence |
+| Ã‚Â§7 authentication/configuration/typed API/error catalog | Tasks 4 and 6; generated OpenAPI/API types and safe config tests |
+| Ã‚Â§8 secrets/network permissions/named scheduler/post-commit invocation | Task 7 actual role queries, private helper/job assertions, loopback callback and rollback test |
+| Ã‚Â§9 generic templates/no tracking/body leak | Task 4 exact copy and prohibited-field checks; Task 9 sender tracking activation checklist |
+| Ã‚Â§9 owner preference, false/error/zero rows/account switches | Task 1 RLS; Task 8 actual pinned-token transport and manual portal evidence |
+| Ã‚Â§10 generated contracts, existing events/upgrade proofs, no unrelated refactor | Types in schema/API task commits; Task 7 fourth upgrade; Task 9 drift/review |
+| Ã‚Â§11 all required automated/manual/operational evidence | Task 9 closeout; tracker does not infer deployment from CI or user QA |
 
 ## Plan review and execution record
 
@@ -823,3 +823,11 @@ The short [read-only permission diagnostic](https://github.com/ryanestoque/write
 CLI-generated `20261103132241_phase3_email_network_boundary.sql` adds a fail-closed check before the helper puts any secret into pg_net, and provides owner-executable hardening. CI first proves refusal using rollback-only synthetic Vault values, then replays this exact versioned migration as the disposable platform owner, retaining trusted postgres/worker access. Full tests still require denied ACLs and actual SET ROLE reads/network calls. This refines provisioning of the existing approved security boundary; no app role is elevated and no hosted action is performed. Hosted activation needs authorized owner/support execution, separately from user-reported domain verification and deferred sender details. The temporary diagnostic workflow is removed after inspection; the real CI guard/provisioning/denial gates remain.
 
 Additional review coverage exercises actual provider acceptance followed by a lost finalization acknowledgment; after lease recovery, the same real public RPCs must reserve a second send with identical body and stable key. The fourth upgrade proof now checks both named jobs are active with exact schedules/commands and the private helper stays denied to application roles. Final branch-head CI is required for these changes. The generated public database artifact from scheduler head e80765d matches the committed file exactly; the follow-up migrations change only private bodies/permissions and keep both public contracts unchanged.
+
+## Automated verification closeout — 2026-11-03
+
+[CI run 41644323667](https://github.com/ryanestoque/writewise/actions/runs/41644323667) on exact head `c7ccf765d0a3115793d462f158e1ec5e636341f3` completed successfully: **671 passed**, 47 upstream dependency warnings; all four prepare/upgrade/verify proofs; fail-closed-before-owner and provisioned-owner checks; synthetic loopback commit/rollback callback; actual anon/authenticated table/network denials; API/database regeneration with zero committed drift; security advisors and teardown. This includes 34 email eligibility cases, 32 queue cases and 20 scheduler cases. The null-outcome regression now passes, and real public RPC recovery after accepted HTTP/lost finalization reuses identical body/key. Prior successful owner-provisioned checkpoint eb2843c passed 663 tests. No material code-review finding remains unresolved.
+
+Whole-backend Ruff, whole-frontend ESLint/TypeScript and the webpack production build passed locally; the controlled preference transport harness passed all eight cases. Real timeout tests and the normal app health response while provider I/O is pending passed. Source checks were repeated for this documentation closeout. Existing Starlette/Supabase deprecations and Next middleware/cache notices were not changed.
+
+Two execution checkboxes deliberately remain open: the combined Task 8 signed-in manual QA item and Task 9 overall acceptance/manual matrix closure. The lack of a native computer-use pipe/browser surface prevented that walkthrough. This is not user QA sign-off. The existing branch/worktree and useful ignored test artifacts are preserved; no merge, hosted migration, owner/support provisioning, tracking inspection, credentials configuration or live email was performed. Email remains disabled by default and scheduled requests fail closed without safe owner-provisioned permissions. Phase 3 remains 3/6 verified.
