@@ -11,7 +11,6 @@ import { WorksheetViewDialog } from "./worksheet-view-dialog";
 import { cn } from "@/lib/utils";
 import {
   PARENT_CRITERIA_LIST,
-  DIAGNOSTIC_NOTES,
   getBandMeta,
   getBandFromScore,
   computeStrengthAndFocus,
@@ -41,19 +40,21 @@ interface ParentStatusHeroProps {
   section?: string;
   history?: StudentScoreHistoryItem[];
   showScoreDetails: boolean;
-  onToggleScoreDetails: () => void;
+  onToggleScoreDetails?: () => void;
 }
 
 export function ParentStatusHero({
   childId,
   childName,
-  section,
   history = [],
   showScoreDetails,
-  onToggleScoreDetails,
 }: ParentStatusHeroProps) {
   const { data: latest, isLoading } = useChildLatestScores(childId);
   const firstName = childName.trim().split(/\s+/)[0] || childName;
+
+  const { topStrength, practiceFocus, isBalanced } = useMemo(() => {
+    return computeStrengthAndFocus(latest?.scores, latest?.bands);
+  }, [latest]);
 
   const trendSummary = useMemo(() => {
     if (!history || history.length === 0) return null;
@@ -63,7 +64,7 @@ export function ParentStatusHero({
         day: "numeric",
       });
       return {
-        label: `First scored worksheet (${onlyDate})`,
+        label: `First worksheet (${onlyDate})`,
         deltaText: null,
         tone: "neutral" as const,
       };
@@ -108,7 +109,7 @@ export function ParentStatusHero({
         className="rounded-xl border border-border bg-card shadow-warm p-5 sm:p-6 flex items-center gap-3"
       >
         <Loader2 className="size-5 animate-spin motion-reduce:animate-none text-brand-600 dark:text-brand-400" aria-hidden="true" />
-        <span className="text-sm text-muted-foreground">Loading {firstName}&apos;s latest progress...</span>
+        <span className="text-sm text-muted-foreground">Loading {firstName}&apos;s overview...</span>
       </div>
     );
   }
@@ -130,36 +131,15 @@ export function ParentStatusHero({
   return (
     <section
       aria-labelledby="parent-status-hero-heading"
-      className="rounded-xl border border-border bg-card shadow-warm p-5 sm:p-6 space-y-4"
+      className="rounded-xl border border-border bg-card shadow-warm overflow-hidden"
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-0.5 min-w-0">
-          <h1
-            id="parent-status-hero-heading"
-            className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-foreground"
-          >
-            How {firstName} is doing
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {section ? `Section ${section} · ` : ""}Last checked {formattedDate}
-          </p>
-        </div>
-
-        {latest.scores.composite != null && (
-          <button
-            type="button"
-            onClick={onToggleScoreDetails}
-            aria-pressed={showScoreDetails}
-            className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-[40px] sm:min-h-[36px] inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation shrink-0"
-          >
-            {showScoreDetails ? "Hide details" : "Show details"}
-          </button>
-        )}
-      </div>
-
-      <div className="space-y-3 pt-1">
+      {/* Top: Overall Status & Band Bar */}
+      <div className="p-5 sm:p-6 space-y-3.5">
         <div className="flex flex-wrap items-center justify-between gap-2.5">
           <div className="flex items-center gap-2.5 flex-wrap">
+            <h2 id="parent-status-hero-heading" className="sr-only">
+              How {firstName} is doing
+            </h2>
             {latest.scores.composite != null && compositeBandMeta ? (
               <>
                 <span className="text-xl sm:text-2xl font-heading font-bold text-foreground inline-flex items-center gap-2">
@@ -170,7 +150,7 @@ export function ParentStatusHero({
                   <span>{compositeBandMeta.label}</span>
                 </span>
                 {showScoreDetails && (
-                  <span className="text-sm font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2.5 py-0.5 rounded-md border border-border/60">
+                  <span className="text-sm font-semibold font-sans tabular-nums text-foreground/80 bg-muted/60 px-2.5 py-0.5 rounded-md border border-border/60">
                     {Math.round(latest.scores.composite)}% overall
                   </span>
                 )}
@@ -182,25 +162,30 @@ export function ParentStatusHero({
             )}
           </div>
 
-          {trendSummary && (
-            <span
-              className={cn(
-                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border",
-                trendSummary.tone === "positive" &&
+          <div className="flex items-center gap-2 flex-wrap">
+            {trendSummary && (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border",
+                  trendSummary.tone === "positive" &&
                   "bg-band-4/15 dark:bg-band-4/25 text-band-4-text dark:text-emerald-300 border-band-4/30 dark:border-band-4/40",
-                trendSummary.tone === "warm" &&
+                  trendSummary.tone === "warm" &&
                   "bg-band-2/15 dark:bg-band-2/25 text-band-2-text dark:text-amber-200 border-band-2/30 dark:border-band-2/40",
-                trendSummary.tone === "neutral" &&
+                  trendSummary.tone === "neutral" &&
                   "bg-muted/60 text-foreground/90 border-border/70"
-              )}
-            >
-              <TrendingUp className="size-3.5 shrink-0" aria-hidden="true" />
-              <span>{trendSummary.label}</span>
-              {showScoreDetails && trendSummary.deltaText && (
-                <span className="font-sans tabular-nums">({trendSummary.deltaText})</span>
-              )}
+                )}
+              >
+                <TrendingUp className="size-3.5 shrink-0" aria-hidden="true" />
+                <span>{trendSummary.label}</span>
+                {showScoreDetails && trendSummary.deltaText && (
+                  <span className="font-sans tabular-nums">({trendSummary.deltaText})</span>
+                )}
+              </span>
+            )}
+            <span className="text-xs text-muted-foreground">
+              Checked {formattedDate}
             </span>
-          )}
+          </div>
         </div>
 
         <BandPositionBar
@@ -229,129 +214,56 @@ export function ParentStatusHero({
           </p>
         )}
       </div>
-    </section>
-  );
-}
 
-interface ParentPracticeAtHomeCardProps {
-  childId: string | null;
-  childName: string;
-  onPracticeAction?: () => void;
-}
-
-export function ParentPracticeAtHomeCard({
-  childId,
-  childName,
-  onPracticeAction,
-}: ParentPracticeAtHomeCardProps) {
-  const { data: latest } = useChildLatestScores(childId);
-  const firstName = childName.trim().split(/\s+/)[0] || childName;
-
-  const { topStrength, practiceFocus, isBalanced } = useMemo(() => {
-    return computeStrengthAndFocus(latest?.scores, latest?.bands);
-  }, [latest]);
-
-  const scrollToTasks = useCallback(() => {
-    if (onPracticeAction) {
-      onPracticeAction();
-      return;
-    }
-    const el = document.getElementById("assigned-take-home-section");
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [onPracticeAction]);
-
-  if (!latest || (!topStrength && !practiceFocus && !isBalanced)) {
-    return null;
-  }
-
-  return (
-    <section
-      aria-labelledby="practice-at-home-heading"
-      className="space-y-3"
-    >
-      <h2
-        id="practice-at-home-heading"
-        className="font-heading text-base sm:text-lg font-semibold text-foreground"
-      >
-        What to Practice at Home
-      </h2>
-
-      {isBalanced ? (
-        <div className="flex items-start gap-3 p-4 sm:p-5 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/70 dark:border-brand-800/60 shadow-warm">
-          <CheckCircle2 className="size-5 text-brand-600 dark:text-brand-400 mt-0.5 shrink-0" aria-hidden="true" />
-          <div className="min-w-0 space-y-1">
-            <h3 className="text-sm sm:text-base font-semibold text-brand-900 dark:text-brand-100">
-              Steady Across All 5 Skills
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {firstName} is showing balanced cursive habits across all 5 skills. Keep up brief, relaxed practice sessions to build smooth muscle memory.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {practiceFocus && (
-            <div className="flex flex-col justify-between gap-3 p-4 rounded-xl bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40 shadow-2xs">
-              <div className="space-y-2.5">
-                <div className="flex items-start gap-2.5">
-                  <span className="size-2.5 rounded-full bg-band-2 mt-1.5 shrink-0" aria-hidden="true" />
-                  <div className="min-w-0 space-y-0.5">
-                    <h3 className="text-sm font-semibold text-band-2-text dark:text-amber-200">
-                      Focus This Week: {practiceFocus.meta.label}
-                    </h3>
-                    <p className="text-sm text-muted-foreground leading-snug">
-                      {practiceFocus.meta.shortDescription}
-                    </p>
-                  </div>
-                </div>
-
-                {practiceFocus.meta.homeTip && (
-                  <div className="pt-2.5 border-t border-band-2/25 flex items-start gap-2 text-band-2-text dark:text-amber-200">
-                    <Lightbulb className="size-4 shrink-0 text-band-2-text dark:text-amber-200 mt-0.5" aria-hidden="true" />
-                    <p className="leading-relaxed text-sm">
-                      <span className="font-semibold text-band-2-text dark:text-amber-200">Home tip: </span>
-                      {practiceFocus.meta.homeTip}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="pt-2 border-t border-band-2/20 flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={scrollToTasks}
-                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-band-2-text dark:text-amber-200 hover:text-amber-900 dark:hover:text-amber-100 hover:underline cursor-pointer group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded px-1.5 py-1 min-h-[40px] sm:min-h-[36px] touch-manipulation"
-                >
-                  <span>Go to take-home practice</span>
-                  <ChevronRight className="size-4 text-band-2-text dark:text-amber-200 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
-                </button>
-              </div>
+      {/* Bottom: Unified Practice Focus & Top Strength Strip */}
+      {(topStrength || practiceFocus || isBalanced) && (
+        <div className="border-t border-border/70 bg-muted/20 px-5 py-4 sm:px-6">
+          {isBalanced ? (
+            <div className="flex items-start gap-2.5">
+              <CheckCircle2 className="size-4 text-brand-600 dark:text-brand-400 mt-0.5 shrink-0" aria-hidden="true" />
+              <p className="text-sm text-foreground/90 leading-relaxed">
+                <span className="font-semibold text-foreground">Steady across all 5 skills: </span>
+                {firstName} is showing balanced cursive habits. Keep up brief, relaxed practice sessions.
+              </p>
             </div>
-          )}
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:divide-x sm:divide-border/60">
+              {practiceFocus && (
+                <div className="space-y-1.5 sm:pr-4">
+                  <div className="flex items-center gap-2">
+                    <span className="size-2 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
+                    <span className="text-xs font-semibold uppercase tracking-wide text-band-2-text dark:text-amber-300">
+                      Focus This Week
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {practiceFocus.meta.label}
+                  </p>
+                  {practiceFocus.meta.homeTip && (
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed flex items-start gap-1.5">
+                      <Lightbulb className="size-3.5 shrink-0 text-band-2-text dark:text-amber-300 mt-0.5" aria-hidden="true" />
+                      <span>{practiceFocus.meta.homeTip}</span>
+                    </p>
+                  )}
+                </div>
+              )}
 
-          {topStrength && (
-            <div className="flex flex-col justify-between gap-3 p-4 rounded-xl bg-band-4/15 dark:bg-band-4/25 border border-band-4/30 dark:border-band-4/40 shadow-2xs">
-              <div className="flex items-start gap-2.5">
-                <span className="size-2.5 rounded-full bg-band-4 mt-1.5 shrink-0" aria-hidden="true" />
-                <div className="min-w-0 space-y-0.5">
-                  <h3 className="text-sm font-semibold text-band-4-text dark:text-emerald-300">
-                    Top Strength: {topStrength.meta.label}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-snug">
+              {topStrength && (
+                <div className={cn("space-y-1.5", practiceFocus && "pt-3 sm:pt-0 border-t sm:border-t-0 border-border/60 sm:pl-4")}>
+                  <div className="flex items-center gap-2">
+                    <span className="size-2 rounded-full bg-band-4 shrink-0" aria-hidden="true" />
+                    <span className="text-xs font-semibold uppercase tracking-wide text-band-4-text dark:text-emerald-300">
+                      Top Strength
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {topStrength.meta.label}
+                  </p>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                     {topStrength.meta.shortDescription}
                   </p>
                 </div>
-              </div>
-
-              <div className="pt-2.5 border-t border-band-4/25 flex items-start gap-2 text-band-4-text dark:text-emerald-300">
-                <CheckCircle2 className="size-4 shrink-0 text-band-4 mt-0.5" aria-hidden="true" />
-                <p className="leading-relaxed text-sm">
-                  <span className="font-semibold text-band-4-text dark:text-emerald-300">Praise: </span>
-                  Celebrate this steady skill with {firstName} to build confidence before practicing new letters.
-                </p>
-              </div>
+              )}
             </div>
           )}
         </div>
@@ -370,16 +282,10 @@ interface LatestSubmissionCardProps {
 export function LatestSubmissionCard({
   childId,
   childName = "Your child",
-  showScoreDetails: controlledShowDetails,
-  onToggleScoreDetails,
+  showScoreDetails = false,
 }: LatestSubmissionCardProps) {
   const [viewImageOpen, setViewImageOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [internalShowDetails, setInternalShowDetails] = useState(false);
-  const showScoreDetails =
-    controlledShowDetails !== undefined ? controlledShowDetails : internalShowDetails;
-  const toggleScoreDetails =
-    onToggleScoreDetails || (() => setInternalShowDetails((prev) => !prev));
 
   const [selectedCriterionForView, setSelectedCriterionForView] =
     useState<CriterionFilter>("all");
@@ -456,25 +362,27 @@ export function LatestSubmissionCard({
     <>
       <div className="rounded-xl border border-border bg-card shadow-warm overflow-hidden">
         {/* Worksheet Header & Thumbnail Preview */}
-        <div className="p-5 sm:p-6 space-y-4 bg-card">
-          <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="p-4 sm:p-5 space-y-3.5 bg-card">
+          <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <h3 className="text-base sm:text-lg font-heading font-semibold text-foreground truncate" title={latest.activityText}>
+              <h3 className="text-base font-heading font-semibold text-foreground truncate" title={latest.activityText}>
                 &ldquo;{latest.activityText}&rdquo;
               </h3>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                Checked on {formattedDate}
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Checked {formattedDate} · Tap any skill below to see guide lines
               </p>
             </div>
-            {latest.scores.composite != null && (
-              <button
-                type="button"
-                onClick={toggleScoreDetails}
-                aria-pressed={showScoreDetails}
-                className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-[40px] sm:min-h-[36px] inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation shrink-0"
+            {latest.imagePath && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => openWorksheetForCriterion("all")}
+                aria-haspopup="dialog"
+                className="h-9 min-h-[36px] text-xs font-medium gap-1.5 shrink-0 cursor-pointer"
               >
-                {showScoreDetails ? "Hide details" : "Show details"}
-              </button>
+                <Eye className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                <span>Inspect</span>
+              </Button>
             )}
           </div>
 
@@ -484,9 +392,9 @@ export function LatestSubmissionCard({
               onClick={() => openWorksheetForCriterion("all")}
               aria-label={`See ${childName}'s worksheet photo with guide lines`}
               aria-haspopup="dialog"
-              className="group relative w-full h-44 sm:h-52 rounded-xl overflow-hidden border border-border/80 bg-muted/20 dark:bg-muted/10 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 shadow-xs block text-left transition-colors hover:border-brand-500/50 hover:shadow-warm p-2.5 sm:p-3 touch-manipulation"
+              className="group relative w-full h-36 sm:h-40 rounded-lg overflow-hidden border border-border/80 bg-muted/20 dark:bg-muted/10 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 block text-left transition-colors hover:border-brand-500/50 p-2 touch-manipulation"
             >
-              <div className="relative w-full h-full rounded-lg overflow-hidden bg-background/50 shadow-inner">
+              <div className="relative w-full h-full rounded overflow-hidden bg-background/50">
                 <Image
                   src={imageUrl}
                   alt={`Handwriting worksheet sample for ${latest.activityText}`}
@@ -496,113 +404,59 @@ export function LatestSubmissionCard({
                   className="object-contain object-center transition-opacity"
                 />
               </div>
-              <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-1.5 z-10">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-950/85 hover:bg-brand-900 text-brand-50 border border-brand-400/30 text-xs font-medium shadow-xs transition-colors group-hover:bg-brand-900 group-hover:border-brand-400/60">
-                  <Eye className="size-3.5 text-brand-200" aria-hidden="true" />
-                  <span>See on worksheet</span>
-                </span>
-              </div>
             </button>
-          )}
-
-          {latest.imagePath && (!imageUrl || imageError) && (
-            <div className="pt-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => openWorksheetForCriterion("all")}
-                aria-haspopup="dialog"
-                className="w-full h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium gap-2 border-brand-200 dark:border-brand-900 bg-brand-50/50 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 hover:bg-brand-100/60 dark:hover:bg-brand-900/50 cursor-pointer shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 touch-manipulation"
-              >
-                <Eye className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                <span>See on worksheet</span>
-              </Button>
-            </div>
           )}
         </div>
 
-        {/* All 5 Handwriting Skills */}
-        <div className="border-t border-border/70 p-5 sm:p-6 space-y-3.5">
-          <div className="flex items-center justify-between pb-1 border-b border-border/60">
-            <div>
-              <h4 className="text-sm sm:text-base font-heading font-semibold text-foreground">
-                5 Handwriting Skills
-              </h4>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                Tap any skill to see its guide lines on the worksheet photo
-              </p>
-            </div>
-          </div>
+        {/* Concise 5-Skill Rows (No nested card, no paragraph wall) */}
+        <div className="border-t border-border/70 divide-y divide-border/60">
+          {PARENT_CRITERIA_LIST.map((criterion) => {
+            const isTop = topStrength?.key === criterion.key;
+            const isFocus = practiceFocus?.key === criterion.key;
+            const score = latest.scores[criterion.key];
+            const band = latest.bands[criterion.key];
+            const bandMeta = band ? getBandMeta(band) : null;
 
-          <div className="divide-y divide-border/60 rounded-xl border border-border/70 bg-card overflow-hidden">
-            {PARENT_CRITERIA_LIST.map((criterion) => {
-              const isTop = topStrength?.key === criterion.key;
-              const isFocus = practiceFocus?.key === criterion.key;
-              const highlightBadge = isTop ? "top_strength" : isFocus ? "practice_focus" : null;
-              const score = latest.scores[criterion.key];
-              const band = latest.bands[criterion.key];
-              const bandMeta = band ? getBandMeta(band) : null;
-              const diagnosticNote = band ? DIAGNOSTIC_NOTES[criterion.key][band] : null;
-
-              return (
-                <button
-                  type="button"
-                  key={criterion.key}
-                  onClick={() => openWorksheetForCriterion(criterion.key)}
-                  aria-label={`See ${criterion.label} on worksheet. Level: ${bandMeta?.label ?? "Pending"}`}
-                  aria-haspopup="dialog"
-                  className="w-full text-left p-4 space-y-2.5 hover:bg-muted/30 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 transition-colors group cursor-pointer block touch-manipulation"
-                >
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                      <span className="text-sm font-semibold text-foreground group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors">
-                        {criterion.label}
-                      </span>
-                      {highlightBadge === "top_strength" && (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 px-2 py-0.5 rounded-md border border-band-4/30 dark:border-band-4/40 shrink-0">
-                          <span className="size-1.5 rounded-full bg-band-4 shrink-0" aria-hidden="true" />
-                          Top Strength
-                        </span>
-                      )}
-                      {highlightBadge === "practice_focus" && (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 px-2 py-0.5 rounded-md border border-band-2/30 dark:border-band-2/40 shrink-0">
-                          <span className="size-1.5 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
-                          Practice Focus
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-end gap-2 shrink-0 text-right">
-                      {showScoreDetails && score != null && (
-                        <span className="font-sans text-xs sm:text-sm font-semibold tabular-nums text-muted-foreground">
-                          {Math.round(score)}%
-                        </span>
-                      )}
-                      <BandBadge band={band} score={score} size="sm" showDot />
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors ml-0.5 bg-muted/40 group-hover:bg-brand-50 dark:group-hover:bg-brand-950/40 px-2 py-0.5 rounded-md border border-border/50 group-hover:border-brand-200/60 dark:group-hover:border-brand-800/60 shrink-0">
-                        <Eye className="size-3 text-muted-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400" aria-hidden="true" />
-                        <span>See on worksheet</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  {score != null && (
-                    <BandPositionBar
-                      score={score}
-                      height="sm"
-                      showThresholds={showScoreDetails}
-                    />
+            return (
+              <button
+                type="button"
+                key={criterion.key}
+                onClick={() => openWorksheetForCriterion(criterion.key)}
+                aria-label={`See ${criterion.label} on worksheet. Level: ${bandMeta?.label ?? "Pending"}`}
+                aria-haspopup="dialog"
+                className="w-full text-left px-4 py-3 sm:px-5 flex items-center justify-between gap-3 hover:bg-muted/30 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500 transition-colors group cursor-pointer touch-manipulation"
+              >
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
+                  <span className="text-sm font-medium text-foreground group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors">
+                    {criterion.label}
+                  </span>
+                  {isTop && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 px-2 py-0.5 rounded-md border border-band-4/30 dark:border-band-4/40 shrink-0">
+                      Strength
+                    </span>
                   )}
-
-                  {diagnosticNote && (
-                    <p className="text-sm text-muted-foreground leading-relaxed pr-2">
-                      {diagnosticNote}
-                    </p>
+                  {isFocus && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 px-2 py-0.5 rounded-md border border-band-2/30 dark:border-band-2/40 shrink-0">
+                      Focus
+                    </span>
                   )}
-                </button>
-              );
-            })}
-          </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  {showScoreDetails && score != null && (
+                    <span className="font-sans text-xs sm:text-sm font-semibold tabular-nums text-muted-foreground">
+                      {Math.round(score)}%
+                    </span>
+                  )}
+                  <BandBadge band={band} score={score} size="sm" showDot />
+                  <ChevronRight
+                    className="size-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0"
+                    aria-hidden="true"
+                  />
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 

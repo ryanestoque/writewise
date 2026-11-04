@@ -156,7 +156,7 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
           onCursiveGuideClick={openCursiveGuide}
           hasActivities={hasActivities}
         />
-        <main className="mx-auto w-full max-w-7xl min-w-0 flex-1 space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+        <main className="w-full min-w-0 flex-1 space-y-6 px-4 py-6 sm:px-6">
           {pageChildren}
         </main>
       </div>

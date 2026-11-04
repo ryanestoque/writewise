@@ -95,7 +95,7 @@ export function ParentNav({
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80">
         <nav
           aria-label="Parent navigation"
-          className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 sm:gap-3 px-4 sm:px-6"
+          className="flex h-14 w-full items-center justify-between gap-2 sm:gap-3 px-4 sm:px-6"
         >
           {/* Left: Brand Logo (App icon on mobile, full logo on desktop) */}
           <Link

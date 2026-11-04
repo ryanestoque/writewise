@@ -10,11 +10,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { BandBadge } from "@/components/shared/band-badge";
-import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { WorksheetViewDialog } from "./worksheet-view-dialog";
 import { PendingWorksheetDialog } from "./pending-worksheet-dialog";
 import { Badge } from "@/components/ui/badge";
-import { PARENT_CRITERIA_LIST } from "@/lib/utils/scoring";
 import type { StudentScoreHistoryItem } from "@/lib/hooks/use-dashboard";
 import type { CriterionFilter } from "@/components/shared/diagnostic-overlay";
 import { cn } from "@/lib/utils";
@@ -31,11 +29,6 @@ interface ProcessedHistoryItem extends StudentScoreHistoryItem {
   isBaseline: boolean;
   delta: number | null;
 }
-
-const PARENT_CRITERIA = PARENT_CRITERIA_LIST.map((c) => ({
-  criterionKey: c.key,
-  label: c.label,
-}));
 
 function buildProcessedHistory(
   history: StudentScoreHistoryItem[],
@@ -72,16 +65,12 @@ function getDeltaChangeLabel(delta: number, showScoreDetails: boolean): string {
   return "Steady";
 }
 
-function HistoryItemCard({
+function HistoryItemRow({
   item,
-  isExpanded,
-  onToggleExpanded,
   onOpenWorksheetView,
   showScoreDetails,
 }: {
   item: ProcessedHistoryItem;
-  isExpanded: boolean;
-  onToggleExpanded: () => void;
   onOpenWorksheetView: (item: StudentScoreHistoryItem, criterion?: CriterionFilter) => void;
   showScoreDetails: boolean;
 }) {
@@ -93,7 +82,7 @@ function HistoryItemCard({
 
   const statusLabel =
     item.status === "returned"
-      ? "Teacher requested new photo"
+      ? "New photo requested"
       : item.status === "rejected"
         ? "Clearer photo needed"
         : item.status === "processing"
@@ -103,177 +92,86 @@ function HistoryItemCard({
             : "Turned in";
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-warm space-y-3.5 transition-shadow hover:shadow-md">
-      {/* Top Row: Activity Title, Date, Change Pill & Band */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 border-b border-border/60 pb-3">
-        <div className="space-y-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3
-              className="text-base font-semibold text-foreground truncate"
-              title={item.targetText}
+    <div className="px-4 py-3.5 sm:px-5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-muted/25 transition-colors">
+      <div className="space-y-1 min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3
+            className="text-sm sm:text-base font-semibold text-foreground truncate"
+            title={item.targetText}
+          >
+            &ldquo;{item.targetText}&rdquo;
+          </h3>
+
+          {item.delta != null && (
+            <span
+              className={cn(
+                "inline-flex items-center px-2 py-0.5 rounded-md tabular-nums shrink-0 text-xs font-medium",
+                item.delta >= 1.5
+                  ? "text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 border border-band-4/30 dark:border-band-4/40"
+                  : item.delta <= -1.5
+                    ? "text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40"
+                    : "text-muted-foreground bg-muted/40 border border-border/60"
+              )}
             >
-              &ldquo;{item.targetText}&rdquo;
-            </h3>
+              {getDeltaChangeLabel(item.delta, showScoreDetails)}
+            </span>
+          )}
 
-            {item.delta != null && (
-              <span
-                className={cn(
-                  "inline-flex items-center px-2 py-0.5 rounded-md tabular-nums shrink-0 text-xs font-semibold",
-                  item.delta >= 1.5
-                    ? "text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 border border-band-4/30 dark:border-band-4/40"
-                    : item.delta <= -1.5
-                      ? "text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40"
-                      : "text-muted-foreground bg-muted/40 border border-border/60"
-                )}
-              >
-                {getDeltaChangeLabel(item.delta, showScoreDetails)}
-              </span>
-            )}
+          {item.isBaseline && (
+            <span className="inline-flex items-center text-xs font-medium text-muted-foreground bg-muted/40 px-2 py-0.5 rounded-md border border-border/50 shrink-0">
+              First worksheet
+            </span>
+          )}
 
-            {item.isBaseline && (
-              <span className="inline-flex items-center text-xs font-medium text-muted-foreground bg-muted/40 px-2 py-0.5 rounded-md border border-border/50 shrink-0">
-                First worksheet
-              </span>
-            )}
-          </div>
-
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            {formattedDate}
-            {showScoreDetails ? ` · Worksheet #${item.attemptNumber}` : ""}
-          </p>
-        </div>
-
-        <div className="flex items-center sm:flex-col sm:items-end justify-between sm:justify-start gap-2 shrink-0 pt-1 sm:pt-0">
-          <div className="flex items-center gap-2">
-            {showScoreDetails && item.compositeScore != null && (
-              <span className="text-sm sm:text-base font-bold font-sans tabular-nums text-foreground">
-                {Math.round(item.compositeScore)}%
-              </span>
-            )}
-            {item.compositeScore != null ? (
-              <BandBadge score={item.compositeScore} size="sm" showDot />
-            ) : (
-              <Badge variant="secondary">{statusLabel}</Badge>
-            )}
-          </div>
-
-          {item.imagePath && (
-            <Button
-              id={`inspect-btn-${item.submissionId}`}
-              variant="outline"
-              size="sm"
-              onClick={() => onOpenWorksheetView(item)}
-              aria-haspopup="dialog"
-              aria-label={`See worksheet photo and guide lines for "${item.targetText}"`}
-              className="h-9 min-h-[36px] text-xs font-medium gap-1.5 border-brand-200 dark:border-brand-900 bg-brand-50/40 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 hover:bg-brand-100/60 dark:hover:bg-brand-900/50 cursor-pointer shadow-2xs"
-            >
-              <Eye className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-              <span>See on worksheet</span>
-            </Button>
+          {!item.isActiveAttempt && item.compositeScore != null && (
+            <Badge variant="outline" className="text-xs">
+              Earlier upload
+            </Badge>
           )}
         </div>
+
+        <p className="text-xs text-muted-foreground">
+          {formattedDate}
+          {showScoreDetails ? ` · Worksheet #${item.attemptNumber}` : ""}
+          {item.status === "completed" && item.compositeScore == null
+            ? " · Awaiting teacher review"
+            : ""}
+          {item.returnedAt
+            ? ` · Teacher requested another photo${item.returnReason ? ` (${item.returnReason.replaceAll("_", " ")})` : ""
+            }`
+            : ""}
+        </p>
       </div>
 
-      {!item.isActiveAttempt && item.compositeScore != null && (
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline" className="text-xs">Earlier upload</Badge>
+      <div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0">
+        <div className="flex items-center gap-2">
+          {showScoreDetails && item.compositeScore != null && (
+            <span className="text-sm font-semibold font-sans tabular-nums text-foreground">
+              {Math.round(item.compositeScore)}%
+            </span>
+          )}
+          {item.compositeScore != null ? (
+            <BandBadge score={item.compositeScore} size="sm" showDot />
+          ) : (
+            <Badge variant="secondary">{statusLabel}</Badge>
+          )}
         </div>
-      )}
 
-      {item.returnedAt && (
-        <div className="flex flex-col gap-1 text-sm rounded-lg bg-muted/30 p-3 border border-border/60">
-          <p className="font-medium text-foreground">
-            Teacher requested another photo
-            {item.returnReason ? `: ${item.returnReason.replaceAll("_", " ")}` : ""}
-          </p>
-          {item.returnNote && <p className="whitespace-pre-wrap text-muted-foreground">{item.returnNote}</p>}
-        </div>
-      )}
-
-      {item.status === "completed" && item.compositeScore == null && (
-        <p className="text-sm text-muted-foreground">
-          Turned in — your teacher will share feedback after checking this worksheet.
-        </p>
-      )}
-
-      {item.compositeScore != null && (
-        <div className="space-y-2 pt-1">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
-            <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-              {PARENT_CRITERIA.map((criterion) => {
-                const band = item.bands[criterion.criterionKey];
-                return (
-                  <span
-                    key={criterion.criterionKey}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground/85 bg-muted/30 dark:bg-muted/20 border border-border/60 rounded-md px-2 py-0.5"
-                  >
-                    <span
-                      className={cn(
-                        "size-1.5 rounded-full shrink-0",
-                        band === "excellent" && "bg-band-4",
-                        band === "satisfactory" && "bg-band-3",
-                        band === "developing" && "bg-band-2",
-                        band === "needs_improvement" && "bg-band-1",
-                        !band && "bg-muted-foreground/40"
-                      )}
-                      aria-hidden="true"
-                    />
-                    <span>{criterion.label}</span>
-                  </span>
-                );
-              })}
-            </div>
-
-            <button
-              type="button"
-              onClick={onToggleExpanded}
-              aria-expanded={isExpanded}
-              aria-controls={`details-${item.submissionId}`}
-              className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 hover:underline cursor-pointer py-1 px-1.5 rounded-md hover:bg-brand-50/60 dark:hover:bg-brand-950/40 transition-colors shrink-0 self-start sm:self-auto"
-            >
-              <span>{isExpanded ? "Hide skill notes" : "Show skill notes"}</span>
-              <ChevronDown
-                className={cn(
-                  "size-3.5 transition-transform duration-200 motion-reduce:transition-none text-brand-600 dark:text-brand-400",
-                  isExpanded && "rotate-180"
-                )}
-                aria-hidden="true"
-              />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {isExpanded && item.compositeScore != null && (
-        <div
-          id={`details-${item.submissionId}`}
-          className="pt-3 animate-in fade-in-50 duration-200 motion-reduce:animate-none space-y-2 border-t border-border/60"
-        >
-          <div className="divide-y divide-border/60">
-            {PARENT_CRITERIA.map((criterion) => (
-              <CriterionFeedbackRow
-                key={criterion.criterionKey}
-                criterionKey={criterion.criterionKey}
-                label={criterion.label}
-                score={item.scores[criterion.criterionKey]}
-                band={item.bands[criterion.criterionKey]}
-                showDiagnosticNote={true}
-                showPositionBar={true}
-                showScoreDetails={showScoreDetails}
-                onInspect={
-                  item.imagePath
-                    ? () =>
-                        onOpenWorksheetView(
-                          item,
-                          criterion.criterionKey as CriterionFilter
-                        )
-                    : undefined
-                }
-              />
-            ))}
-          </div>
-        </div>
-      )}
+        {item.imagePath && (
+          <Button
+            id={`inspect-btn-${item.submissionId}`}
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenWorksheetView(item)}
+            aria-haspopup="dialog"
+            aria-label={`See worksheet photo and guide lines for "${item.targetText}"`}
+            className="h-9 min-h-[36px] text-xs font-medium gap-1.5 cursor-pointer"
+          >
+            <Eye className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+            <span>View</span>
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
@@ -289,11 +187,9 @@ export function PastWorksheetsSection({
   history,
   childName,
   showScoreDetails,
-  onToggleScoreDetails,
 }: PastWorksheetsSectionProps) {
   const [showAllInline, setShowAllInline] = useState(false);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
-  const [expandedSubmissions, setExpandedSubmissions] = useState<Record<string, boolean>>({});
   const [selectedItemForView, setSelectedItemForView] =
     useState<StudentScoreHistoryItem | null>(null);
   const [initialCriterionForView, setInitialCriterionForView] =
@@ -310,14 +206,7 @@ export function PastWorksheetsSection({
 
   const visibleItems = showAllInline
     ? processedHistory
-    : processedHistory.slice(0, 3);
-
-  const toggleExpanded = (submissionId: string) => {
-    setExpandedSubmissions((prev) => ({
-      ...prev,
-      [submissionId]: !prev[submissionId],
-    }));
-  };
+    : processedHistory.slice(0, 5);
 
   const handleOpenWorksheetView = (
     item: StudentScoreHistoryItem,
@@ -328,58 +217,44 @@ export function PastWorksheetsSection({
   };
 
   return (
-    <section aria-labelledby="past-worksheets-heading" className="space-y-3.5">
+    <section aria-labelledby="past-worksheets-heading" className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="space-y-0.5">
+        <div className="flex items-baseline gap-2">
           <h2
             id="past-worksheets-heading"
             className="font-heading text-base sm:text-lg font-semibold text-foreground"
           >
-            Past Worksheets ({processedHistory.length})
+            Past Worksheets
           </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            Every classroom and take-home worksheet uploaded for {childName}
-          </p>
+          <span className="text-xs sm:text-sm text-muted-foreground font-sans tabular-nums">
+            ({processedHistory.length})
+          </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          {processedHistory.length > 1 && (
-            <button
-              type="button"
-              onClick={() => setSortOrder((prev) => (prev === "newest" ? "oldest" : "newest"))}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg bg-card border border-border/80 hover:bg-muted/50 text-xs font-medium text-foreground transition-colors cursor-pointer shadow-2xs touch-manipulation"
-            >
-              <ArrowUpDown className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-              <span>{sortOrder === "newest" ? "Newest first" : "Oldest first"}</span>
-            </button>
-          )}
-          {onToggleScoreDetails && (
-            <button
-              type="button"
-              onClick={onToggleScoreDetails}
-              aria-pressed={showScoreDetails}
-              className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-[36px] inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
-            >
-              {showScoreDetails ? "Hide details" : "Show details"}
-            </button>
-          )}
-        </div>
+        {processedHistory.length > 1 && (
+          <button
+            type="button"
+            onClick={() => setSortOrder((prev) => (prev === "newest" ? "oldest" : "newest"))}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg bg-card border border-border/80 hover:bg-muted/50 text-xs font-medium text-foreground transition-colors cursor-pointer touch-manipulation"
+          >
+            <ArrowUpDown className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+            <span>{sortOrder === "newest" ? "Newest first" : "Oldest first"}</span>
+          </button>
+        )}
       </div>
 
-      <div className="space-y-3">
+      <div className="rounded-xl border border-border bg-card divide-y divide-border/70 overflow-hidden">
         {visibleItems.map((item) => (
-          <HistoryItemCard
+          <HistoryItemRow
             key={item.submissionId}
             item={item}
-            isExpanded={!!expandedSubmissions[item.submissionId]}
-            onToggleExpanded={() => toggleExpanded(item.submissionId)}
             onOpenWorksheetView={handleOpenWorksheetView}
             showScoreDetails={showScoreDetails}
           />
         ))}
       </div>
 
-      {processedHistory.length > 3 && (
+      {processedHistory.length > 5 && (
         <div className="flex justify-center pt-1">
           <Button
             type="button"
@@ -391,7 +266,7 @@ export function PastWorksheetsSection({
             {showAllInline ? (
               <>
                 <ChevronUp className="size-4" aria-hidden="true" />
-                <span>Show latest 3 only</span>
+                <span>Show latest 5 only</span>
               </>
             ) : (
               <>
@@ -461,9 +336,6 @@ export function SubmissionHistoryDialog({
     useState<StudentScoreHistoryItem | null>(null);
   const [initialCriterionForView, setInitialCriterionForView] =
     useState<CriterionFilter | undefined>(undefined);
-  const [expandedSubmissions, setExpandedSubmissions] = useState<
-    Record<string, boolean>
-  >({});
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [showScoreDetails, setShowScoreDetails] = useState(initialShowScoreDetails);
 
@@ -519,13 +391,6 @@ export function SubmissionHistoryDialog({
     onOpenChange(false);
   };
 
-  const toggleExpanded = (submissionId: string) => {
-    setExpandedSubmissions((prev) => ({
-      ...prev,
-      [submissionId]: !prev[submissionId],
-    }));
-  };
-
   return (
     <>
       <Dialog open={open && !isViewingWorksheet} onOpenChange={onOpenChange}>
@@ -546,7 +411,7 @@ export function SubmissionHistoryDialog({
                   <button
                     type="button"
                     onClick={() => setSortOrder((prev) => (prev === "newest" ? "oldest" : "newest"))}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-[36px] rounded-lg bg-card border border-border/80 hover:bg-muted/50 text-xs font-medium text-foreground transition-colors cursor-pointer shadow-2xs"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-[36px] rounded-lg bg-card border border-border/80 hover:bg-muted/50 text-xs font-medium text-foreground transition-colors cursor-pointer"
                   >
                     <ArrowUpDown className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                     <span>{sortOrder === "newest" ? "Newest first" : "Oldest first"}</span>
@@ -567,7 +432,7 @@ export function SubmissionHistoryDialog({
 
           <div
             ref={scrollContainerRef}
-            className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"
+            className="flex-1 overflow-y-auto p-4 sm:p-6"
           >
             {processedHistory.length === 0 ? (
               <div className="p-8 text-center space-y-2 rounded-xl border border-dashed border-border bg-muted/20">
@@ -583,16 +448,16 @@ export function SubmissionHistoryDialog({
                 </p>
               </div>
             ) : (
-              processedHistory.map((item) => (
-                <HistoryItemCard
-                  key={item.submissionId}
-                  item={item}
-                  isExpanded={!!expandedSubmissions[item.submissionId]}
-                  onToggleExpanded={() => toggleExpanded(item.submissionId)}
-                  onOpenWorksheetView={handleOpenWorksheetView}
-                  showScoreDetails={showScoreDetails}
-                />
-              ))
+              <div className="rounded-xl border border-border bg-card divide-y divide-border/70 overflow-hidden">
+                {processedHistory.map((item) => (
+                  <HistoryItemRow
+                    key={item.submissionId}
+                    item={item}
+                    onOpenWorksheetView={handleOpenWorksheetView}
+                    showScoreDetails={showScoreDetails}
+                  />
+                ))}
+              </div>
             )}
           </div>
 

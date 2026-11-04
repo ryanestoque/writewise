@@ -4,7 +4,6 @@ import { useState, useCallback, useMemo } from "react";
 import { useParentPortal } from "@/components/parent-portal-provider";
 import {
   ParentStatusHero,
-  ParentPracticeAtHomeCard,
   LatestSubmissionCard,
 } from "@/components/parent/latest-submission-card";
 import { TakeHomeActivities } from "@/components/parent/take-home-activities";
@@ -35,17 +34,13 @@ import {
   UserX,
   BookOpen,
   PenTool,
-  Camera,
   CheckCircle2,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 
 export function ProgressPageContent() {
   const [rubricOpen, setRubricOpen] = useState(false);
   const [activitiesExpanded, setActivitiesExpanded] = useState(false);
   const [showScoreDetails, setShowScoreDetails] = useState(false);
-  const [photoTipsOpen, setPhotoTipsOpen] = useState(false);
 
   const {
     selectedChildId,
@@ -152,13 +147,13 @@ export function ProgressPageContent() {
   const isZeroState = !historyLoading && scoredCount === 0;
   const notificationTargetData =
     notificationTarget.kind === "valid" &&
-    selectedChild.id === notificationTarget.target.childId
+      selectedChild.id === notificationTarget.target.childId
       ? notificationTarget.target
       : null;
 
   return (
     <div className="w-full space-y-6 pb-12">
-      {/* Notification Deep-Link Modal (opens cleanly over the page without replacing it with a blank stub) */}
+      {/* Notification Deep-Link Modal */}
       {notificationTarget.kind !== "none" && (
         <NotificationWorkDestination
           key={`${notificationTargetData?.childId}:${notificationTargetData?.activityId}:${notificationTargetData?.submissionId}`}
@@ -169,51 +164,81 @@ export function ProgressPageContent() {
         />
       )}
 
-      {isZeroState ? (
-        /* Zero-Score State: Welcome -> Actionable To Do -> Collapsible Example -> Past Uploads -> Help */
-        <div className="space-y-6">
-          {/* 1. Compact Welcome Hero */}
-          <section
-            aria-labelledby="zero-state-welcome-heading"
-            className="rounded-xl border border-border bg-card shadow-warm p-5 sm:p-6 space-y-2"
-          >
-            <h1
-              id="zero-state-welcome-heading"
-              className="font-heading text-xl sm:text-2xl font-bold text-foreground"
-            >
-              Welcome to {firstName}&apos;s Handwriting Page
-            </h1>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
-              Section {selectedChild.section} · Classroom worksheets checked by your teacher and take-home practice sheets you send from your phone will show up here.
-            </p>
-          </section>
+      {/* Page Header Bar (Matches Teacher Portal Dashboard Header) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="space-y-0.5 min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
+            {firstName}&apos;s Progress
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Section {selectedChild.section}
+            {isZeroState
+              ? " · Classroom and take-home worksheets will appear here once checked"
+              : ""}
+          </p>
+        </div>
 
-          {/* 2. To Do (Take-Home Practice First) */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleOpenRubric}
+            aria-haspopup="dialog"
+            className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
+          >
+            <BookOpen className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+            <span>How Scores Work</span>
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={openCursiveGuide}
+            aria-haspopup="dialog"
+            className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
+          >
+            <PenTool className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+            <span>Cursive Guide</span>
+          </Button>
+
+          {!isZeroState && (
+            <button
+              type="button"
+              onClick={toggleScoreDetails}
+              aria-pressed={showScoreDetails}
+              className="text-xs sm:text-sm font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-[40px] sm:min-h-[36px] inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
+            >
+              {showScoreDetails ? "Hide details" : "Show details"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isZeroState ? (
+        /* Zero-Score State */
+        <div className="space-y-6">
           <section
             id="assigned-take-home-section"
             aria-labelledby="take-home-onboarding-heading"
             className="space-y-3"
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
                 <h2
                   id="take-home-onboarding-heading"
                   className="font-heading text-base sm:text-lg font-semibold text-foreground"
                 >
                   To Do at Home
                 </h2>
-                <p className="text-sm text-muted-foreground">
-                  {pendingActivitiesCount > 0
-                    ? "Have your child write on paper, take a flat photo in good light, and send it below."
-                    : "Take-home practice sheets assigned by your teacher appear here."}
-                </p>
+                {pendingActivitiesCount > 0 && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/80 px-2.5 py-0.5 rounded-full border border-brand-200/70 dark:border-brand-800/70 shrink-0">
+                    <span className="size-1.5 rounded-full bg-brand-600 dark:bg-brand-400" aria-hidden="true" />
+                    {pendingActivitiesCount} to send
+                  </span>
+                )}
               </div>
-              {pendingActivitiesCount > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/80 px-2.5 py-1 rounded-full border border-brand-200/70 dark:border-brand-800/70 shrink-0 shadow-2xs">
-                  <span className="size-1.5 rounded-full bg-brand-600 dark:bg-brand-400" aria-hidden="true" />
-                  {pendingActivitiesCount} to send
-                </span>
-              )}
             </div>
             <TakeHomeActivities
               childId={selectedChildId}
@@ -222,53 +247,41 @@ export function ProgressPageContent() {
             />
           </section>
 
-          {/* 3. Past Worksheets (if an upload is already turned in and awaiting teacher release) */}
           {allHistory && allHistory.length > 0 && (
             <PastWorksheetsSection
               history={allHistory}
               childName={selectedChild.fullName}
               showScoreDetails={showScoreDetails}
-              onToggleScoreDetails={toggleScoreDetails}
             />
           )}
 
-          {/* 4. Collapsible Example Report (Collapsed by default, no fake raw % by default) */}
           <SampleReportPreview
             onOpenRubric={handleOpenRubric}
             defaultCollapsed={true}
             showScoreDetails={showScoreDetails}
             onToggleScoreDetails={toggleScoreDetails}
           />
-
-          {/* 5. Consolidated Help Footer */}
-          <ParentHelpSection
-            onOpenRubric={handleOpenRubric}
-            onOpenCursiveGuide={openCursiveGuide}
-            photoTipsOpen={photoTipsOpen}
-            onTogglePhotoTips={() => setPhotoTipsOpen((prev) => !prev)}
-          />
         </div>
       ) : (
-        /* Scored State: Priority-Ordered Single Scroll on Mobile, 2-Column Sticky Rail on Desktop */
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* 1. Status Hero ("How {firstName} is doing") */}
-          <div className="w-full lg:col-start-1 lg:col-span-7">
-            <ParentStatusHero
-              childId={selectedChildId}
-              childName={selectedChild.fullName}
-              section={selectedChild.section}
-              history={history ?? []}
-              showScoreDetails={showScoreDetails}
-              onToggleScoreDetails={toggleScoreDetails}
-            />
-          </div>
+        /* Scored State: 3 Focused Zones */
+        <div className="space-y-6">
+          {/* Zone 1: Overview & Practice Focus + To Do at Home */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="w-full lg:col-span-7">
+              <ParentStatusHero
+                childId={selectedChildId}
+                childName={selectedChild.fullName}
+                section={selectedChild.section}
+                history={history ?? []}
+                showScoreDetails={showScoreDetails}
+              />
+            </div>
 
-          {/* 2. To Do (Second on mobile scroll, sticky right column on desktop) */}
-          <div
-            id="assigned-take-home-section"
-            className="w-full lg:col-start-8 lg:col-span-5 lg:row-start-1 lg:row-span-6 scroll-mt-20 lg:sticky lg:top-20 lg:self-start space-y-3"
-          >
-            <section aria-labelledby="take-home-heading" className="space-y-3">
+            <section
+              id="assigned-take-home-section"
+              aria-labelledby="take-home-heading"
+              className="w-full lg:col-span-5 scroll-mt-20 space-y-3"
+            >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2
@@ -298,17 +311,12 @@ export function ProgressPageContent() {
             </section>
           </div>
 
-          {/* 3. What to Practice at Home (Practice Focus + Tip + Top Strength Praise) */}
-          <div className="w-full lg:col-start-1 lg:col-span-7">
-            <ParentPracticeAtHomeCard
-              childId={selectedChildId}
-              childName={selectedChild.fullName}
-            />
-          </div>
-
-          {/* 4. Latest Worksheet (Thumbnail + All 5 Handwriting Skills) */}
-          <div className="w-full lg:col-start-1 lg:col-span-7">
-            <section aria-labelledby="latest-worksheet-heading" className="space-y-3">
+          {/* Zone 2: Latest Worksheet + Progress Over Time Side-by-Side */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <section
+              aria-labelledby="latest-worksheet-heading"
+              className="w-full lg:col-span-6 space-y-3"
+            >
               <h2
                 id="latest-worksheet-heading"
                 className="font-heading text-base sm:text-lg font-semibold text-foreground"
@@ -319,35 +327,26 @@ export function ProgressPageContent() {
                 childId={selectedChildId}
                 childName={selectedChild.fullName}
                 showScoreDetails={showScoreDetails}
-                onToggleScoreDetails={toggleScoreDetails}
               />
             </section>
-          </div>
 
-          {/* 5. Progress Over Time (Composite Line by Default + Expand All 5 Skills) */}
-          <div className="w-full lg:col-start-1 lg:col-span-7">
             <section
               id="progress-trends-section"
               aria-labelledby="progress-trends-heading"
-              className="space-y-3"
+              className="w-full lg:col-span-6 space-y-3"
             >
-              <div className="space-y-0.5">
-                <h2
-                  id="progress-trends-heading"
-                  className="font-heading text-base sm:text-lg font-semibold text-foreground"
-                >
-                  Progress Over Time
-                </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  How {firstName}&apos;s handwriting is developing from worksheet to worksheet
-                </p>
-              </div>
+              <h2
+                id="progress-trends-heading"
+                className="font-heading text-base sm:text-lg font-semibold text-foreground"
+              >
+                Progress Over Time
+              </h2>
 
               {historyLoading ? (
                 <div
                   role="status"
                   aria-live="polite"
-                  className="rounded-xl border border-border bg-card shadow-warm p-8 flex flex-col items-center justify-center min-h-[200px] gap-2.5"
+                  className="rounded-xl border border-border bg-card shadow-warm p-8 flex flex-col items-center justify-center min-h-[240px] gap-2.5"
                 >
                   <Loader2
                     className="size-6 animate-spin motion-reduce:animate-none text-muted-foreground"
@@ -361,15 +360,14 @@ export function ProgressPageContent() {
                     history={history}
                     variant="parent"
                     showScoreDetails={showScoreDetails}
-                    onToggleScoreDetails={toggleScoreDetails}
                   />
                 </div>
               ) : scoredCount === 1 && history?.[0] ? (
-                <div className="rounded-xl border border-brand-200 dark:border-brand-900 bg-brand-50/20 dark:bg-brand-950/20 shadow-warm p-5 sm:p-6 space-y-4">
+                <div className="rounded-xl border border-border bg-card shadow-warm p-5 sm:p-6 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div className="space-y-1">
                       <h3 className="font-heading text-base font-semibold text-foreground">
-                        First Worksheet Checked!
+                        First Worksheet Checked
                       </h3>
                       <p className="text-sm text-muted-foreground leading-relaxed max-w-lg">
                         {firstName}&apos;s first scored worksheet sets their starting point. After a second worksheet is checked, the progress chart will unlock here.
@@ -421,29 +419,16 @@ export function ProgressPageContent() {
             </section>
           </div>
 
-          {/* 6. Past Worksheets (Last 3 inline + See all) */}
-          <div className="w-full lg:col-start-1 lg:col-span-7">
-            <PastWorksheetsSection
-              history={allHistory ?? []}
-              childName={selectedChild.fullName}
-              showScoreDetails={showScoreDetails}
-              onToggleScoreDetails={toggleScoreDetails}
-            />
-          </div>
-
-          {/* 7. Help Footer */}
-          <div className="w-full lg:col-start-1 lg:col-span-7">
-            <ParentHelpSection
-              onOpenRubric={handleOpenRubric}
-              onOpenCursiveGuide={openCursiveGuide}
-              photoTipsOpen={photoTipsOpen}
-              onTogglePhotoTips={() => setPhotoTipsOpen((prev) => !prev)}
-            />
-          </div>
+          {/* Zone 3: Compact Past Worksheets List */}
+          <PastWorksheetsSection
+            history={allHistory ?? []}
+            childName={selectedChild.fullName}
+            showScoreDetails={showScoreDetails}
+          />
         </div>
       )}
 
-      {/* How Scores Work Dialog (Parent-friendly plain language) */}
+      {/* How Scores Work Dialog */}
       <RubricReferenceDialog
         open={rubricOpen}
         onOpenChange={setRubricOpen}
@@ -452,108 +437,5 @@ export function ProgressPageContent() {
         onToggleScoreDetails={toggleScoreDetails}
       />
     </div>
-  );
-}
-
-function ParentHelpSection({
-  onOpenRubric,
-  onOpenCursiveGuide,
-  photoTipsOpen,
-  onTogglePhotoTips,
-}: {
-  onOpenRubric: () => void;
-  onOpenCursiveGuide: () => void;
-  photoTipsOpen: boolean;
-  onTogglePhotoTips: () => void;
-}) {
-  return (
-    <section
-      aria-labelledby="parent-help-heading"
-      className="rounded-xl border border-border bg-card/70 shadow-warm p-5 space-y-4"
-    >
-      <div className="space-y-0.5">
-        <h2
-          id="parent-help-heading"
-          className="font-heading text-base font-semibold text-foreground"
-        >
-          Guides &amp; Help
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Quick reference for cursive letters, how feedback works, and taking a clear worksheet photo
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={onOpenRubric}
-          aria-haspopup="dialog"
-          className="h-10 min-h-[40px] justify-start gap-2 text-xs sm:text-sm font-medium border-border/80 hover:bg-muted/50 cursor-pointer px-3.5"
-        >
-          <BookOpen className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-          <span>How Scores Work</span>
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={onOpenCursiveGuide}
-          aria-haspopup="dialog"
-          className="h-10 min-h-[40px] justify-start gap-2 text-xs sm:text-sm font-medium border-border/80 hover:bg-muted/50 cursor-pointer px-3.5"
-        >
-          <PenTool className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-          <span>Cursive Letter Guide</span>
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={onTogglePhotoTips}
-          aria-expanded={photoTipsOpen}
-          aria-controls="parent-photo-tips-panel"
-          className="h-10 min-h-[40px] justify-between gap-2 text-xs sm:text-sm font-medium border-border/80 hover:bg-muted/50 cursor-pointer px-3.5"
-        >
-          <span className="inline-flex items-center gap-2">
-            <Camera className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-            <span>Photo Tips</span>
-          </span>
-          {photoTipsOpen ? (
-            <ChevronUp className="size-4 text-muted-foreground shrink-0" aria-hidden="true" />
-          ) : (
-            <ChevronDown className="size-4 text-muted-foreground shrink-0" aria-hidden="true" />
-          )}
-        </Button>
-      </div>
-
-      {photoTipsOpen && (
-        <div
-          id="parent-photo-tips-panel"
-          className="pt-3 border-t border-border/60 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm"
-        >
-          <div className="p-3 rounded-lg bg-muted/30 border border-border/60 space-y-1">
-            <p className="font-semibold text-foreground">1. Lay paper flat</p>
-            <p className="text-muted-foreground leading-relaxed">
-              Place the worksheet on a flat table and hold your phone directly above it.
-            </p>
-          </div>
-          <div className="p-3 rounded-lg bg-muted/30 border border-border/60 space-y-1">
-            <p className="font-semibold text-foreground">2. Good daylight</p>
-            <p className="text-muted-foreground leading-relaxed">
-              Avoid dark shadows across the writing lines so pencil strokes stay clear.
-            </p>
-          </div>
-          <div className="p-3 rounded-lg bg-muted/30 border border-border/60 space-y-1">
-            <p className="font-semibold text-foreground">3. Fit all 4 corners</p>
-            <p className="text-muted-foreground leading-relaxed">
-              Keep the whole page inside the camera frame without cutting off any words.
-            </p>
-          </div>
-        </div>
-      )}
-    </section>
   );
 }

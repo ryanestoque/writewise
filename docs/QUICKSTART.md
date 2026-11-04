@@ -77,6 +77,9 @@ Create a file named `.env.local` inside the `frontend/` folder:
 NEXT_PUBLIC_SUPABASE_URL=https://<your-dev-project>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-dev-anon-key>
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+# Optional: Cloudflare Turnstile site key for /signup bot protection.
+# Leave unset locally unless Supabase CAPTCHA is enabled on your dev project.
+NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY=
 ```
 
 ### 3.2 Backend Environment (`backend/.env`)
