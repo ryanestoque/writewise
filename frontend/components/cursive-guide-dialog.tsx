@@ -18,7 +18,6 @@ import {
   ArrowLeftIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  ListOrderedIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CursiveStrokeCanvas } from "@/components/cursive-stroke-canvas";
@@ -270,15 +269,14 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
 
         {/* Step-by-Step Formation Cues (Clarify Feature) */}
         <div className="p-3.5 rounded-xl border border-border/80 bg-muted/20 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-              <ListOrderedIcon className="size-3.5 text-primary" aria-hidden="true" />
-              <span>Step-by-Step Formation</span>
-            </div>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <span className="text-xs font-semibold text-foreground">
+              Step-by-Step Formation
+            </span>
             <div
               role="radiogroup"
               aria-label="Formation step case"
-              className="inline-flex items-center p-0.5 rounded-md border border-border/70 bg-background text-[11px]"
+              className="inline-flex items-center p-0.5 rounded-md border border-border/70 bg-background text-xs"
             >
               <button
                 type="button"
@@ -286,7 +284,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                 aria-checked={activeStepTab === "lower"}
                 onClick={() => setActiveStepTab("lower")}
                 className={cn(
-                  "px-2 py-0.5 rounded font-medium transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40",
+                  "min-h-[40px] sm:min-h-[28px] px-2.5 py-1 inline-flex items-center justify-center rounded font-medium transition-all cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40",
                   activeStepTab === "lower"
                     ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
                     : "text-muted-foreground hover:text-foreground"
@@ -300,7 +298,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                 aria-checked={activeStepTab === "upper"}
                 onClick={() => setActiveStepTab("upper")}
                 className={cn(
-                  "px-2 py-0.5 rounded font-medium transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40",
+                  "min-h-[40px] sm:min-h-[28px] px-2.5 py-1 inline-flex items-center justify-center rounded font-medium transition-all cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40",
                   activeStepTab === "upper"
                     ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
                     : "text-muted-foreground hover:text-foreground"
@@ -577,7 +575,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                     <button
                       type="button"
                       onClick={() => setZoneFilter("all")}
-                      className="inline-flex items-center justify-center size-7 rounded-full text-primary hover:text-foreground hover:bg-primary/20 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                      className="inline-flex items-center justify-center size-9 min-h-[36px] min-w-[36px] rounded-full text-primary hover:text-foreground hover:bg-primary/20 transition-colors cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                       aria-label="Clear active filter"
                     >
                       <span className="text-sm font-bold leading-none" aria-hidden="true">×</span>

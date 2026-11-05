@@ -23,16 +23,12 @@ import {
   type DiagnosticOverlayData,
   type ActiveAnnotationHover,
 } from "@/components/shared/diagnostic-overlay";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
+import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import { cn } from "@/lib/utils";
 import {
   PARENT_CRITERIA_LIST,
+  PARENT_BAND_EXPLANATIONS,
   PARENT_CRITERIA_METADATA,
   DIAGNOSTIC_NOTES,
   computeStrengthAndFocus,
@@ -45,7 +41,6 @@ import {
   ArrowLeft,
   Trash2,
   Loader2,
-  Eye,
   Lightbulb,
 } from "lucide-react";
 import {
@@ -60,13 +55,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useDeleteSubmission } from "@/lib/hooks/use-submissions";
 import { toast } from "sonner";
-
-const PARENT_BAND_EXPLANATIONS: Record<string, string> = {
-  excellent: "Fluent, consistent cursive handwriting that meets grade-level goals.",
-  satisfactory: "Solid cursive foundation with small areas to refine during practice.",
-  developing: "Actively learning and building muscle memory — a normal, healthy stage in cursive.",
-  needs_improvement: "Working on basic letter shapes and pencil control with guided practice.",
-};
 
 interface WorksheetViewDialogProps {
   open: boolean;
@@ -132,7 +120,6 @@ export function WorksheetViewDialog({
   const [selectedAttentionItem, setSelectedAttentionItem] =
     useState<ActiveAnnotationHover | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [mobileTab, setMobileTab] = useState<"photo" | "scores">("photo");
 
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
@@ -166,12 +153,11 @@ export function WorksheetViewDialog({
     if (!nextOpen) {
       setCriterionOverride(null);
       setSelectedAttentionItem(null);
-      setMobileTab("photo");
     }
     onOpenChange(nextOpen);
   };
 
-  const handleCriterionSelect = (criterionKey: CriterionKey, switchMobileTab = false) => {
+  const handleCriterionSelect = (criterionKey: CriterionKey) => {
     const key = criterionKey as CriterionFilter;
     setCriterionOverride(key);
     if (overlay) {
@@ -181,9 +167,6 @@ export function WorksheetViewDialog({
       } else {
         setSelectedAttentionItem(null);
       }
-    }
-    if (switchMobileTab) {
-      setMobileTab("photo");
     }
   };
 
@@ -239,7 +222,7 @@ export function WorksheetViewDialog({
                   {childName}
                 </span>
                 <span>&middot;</span>
-                <span>{formattedDate}</span>
+                <span className="font-sans tabular-nums">{formattedDate}</span>
                 {targetText && (
                   <>
                     <span>&middot;</span>
@@ -254,72 +237,18 @@ export function WorksheetViewDialog({
           {returnNote && <p className="text-sm whitespace-pre-wrap">{returnNote}</p>}
         </DialogHeader>
 
-        {/* Content Body: Split View */}
+        {/* Content Body: Unified Multimodal View */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-          {/* Mobile View Segmented Switcher */}
-          <div
-            role="tablist"
-            aria-label="Worksheet view options"
-            className="lg:hidden flex items-center p-1 bg-muted/50 rounded-xl border border-border/70 text-xs font-medium"
-          >
-            <button
-              type="button"
-              id="mobile-tab-photo"
-              role="tab"
-              aria-selected={mobileTab === "photo"}
-              aria-controls="mobile-panel-photo"
-              onClick={() => setMobileTab("photo")}
-              className={cn(
-                "flex-1 py-2 px-3 rounded-lg text-center transition-all cursor-pointer min-h-[40px] flex items-center justify-center font-medium touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
-                mobileTab === "photo"
-                  ? "bg-card text-foreground font-semibold shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Worksheet Photo
-            </button>
-            <button
-              type="button"
-              id="mobile-tab-scores"
-              role="tab"
-              aria-selected={mobileTab === "scores"}
-              aria-controls="mobile-panel-scores"
-              onClick={() => setMobileTab("scores")}
-              className={cn(
-                "flex-1 py-2 px-3 rounded-lg text-center transition-all cursor-pointer min-h-[40px] flex items-center justify-center gap-1.5 font-medium touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
-                mobileTab === "scores"
-                  ? "bg-card text-foreground font-semibold shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <span>5 Skills</span>
-              {compositeBandMeta && (
-                <span
-                  className={cn("size-2 rounded-full shrink-0", compositeBandMeta.dotColor)}
-                  aria-hidden="true"
-                />
-              )}
-              {showScoreDetails && compositeScore != null && (
-                <span className="text-xs font-sans tabular-nums px-1.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-800 dark:text-brand-300 font-semibold border border-brand-200/60 dark:border-brand-800/60">
-                  {Math.round(compositeScore)}%
-                </span>
-              )}
-            </button>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            {/* Left: High-Resolution Worksheet Photo Inspector */}
-            <div
-              id="mobile-panel-photo"
-              role="tabpanel"
-              aria-labelledby="mobile-tab-photo"
-              className={cn("lg:col-span-7 flex flex-col justify-center w-full gap-3", mobileTab !== "photo" && "hidden lg:flex")}
-            >
+            {/* Left (Desktop) / Top (Mobile): High-Resolution Worksheet Photo Inspector */}
+            <div className="lg:col-span-7 flex flex-col justify-center w-full gap-3">
               <WorksheetImageInspector
                 imageUrl={imageUrl}
                 altText={`Handwriting worksheet submitted for ${childName}`}
                 isLoading={isImageLoading}
                 headerLabel="Handwritten Worksheet"
+                imageToolsDisclosure={true}
+                aspectRatioClass="h-[230px] sm:h-[320px] lg:h-auto lg:min-h-[420px] lg:max-h-[min(640px,calc(100dvh-14rem))]"
                 diagnosticToolbar={
                   overlay ? (
                     <OverlayToolbar
@@ -394,66 +323,114 @@ export function WorksheetViewDialog({
                 </button>
               )}
 
-              {/* Mobile Context Bridge */}
-              <div className="lg:hidden p-4 rounded-xl border border-brand-200/60 dark:border-brand-800/60 bg-brand-50/60 dark:bg-brand-950/40 space-y-2 text-sm shadow-xs">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="size-2 rounded-full bg-brand-600 dark:bg-brand-400 shrink-0" aria-hidden="true" />
-                    <span className="font-semibold text-foreground truncate">
-                      {activeCriterion === "all"
-                        ? "All Writing Lines"
-                        : PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.label ?? activeCriterion}
-                    </span>
-                    {activeCriterion !== "all" && bands && bands[activeCriterion as CriterionKey] && (
-                      <BandBadge band={bands[activeCriterion as CriterionKey]} size="sm" showDot />
-                    )}
-                  </div>
+              {/* Mobile Active Feedback Bridge: Co-located directly under photo */}
+              <div className="lg:hidden space-y-3 pt-1">
+                {/* Horizontal Quick Skill Pills Selector */}
+                <div
+                  role="toolbar"
+                  aria-label="Filter writing lines and feedback by skill"
+                  className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1"
+                >
                   <button
                     type="button"
-                    onClick={() => setMobileTab("scores")}
-                    className="text-xs font-semibold text-brand-700 dark:text-brand-300 hover:underline shrink-0 min-h-[40px] flex items-center px-2 -my-2 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
+                    onClick={() => {
+                      setCriterionOverride("all");
+                      setSelectedAttentionItem(null);
+                    }}
+                    aria-pressed={activeCriterion === "all"}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer border min-h-[36px] flex items-center gap-1.5 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
+                      activeCriterion === "all"
+                        ? "bg-brand-600 text-white border-brand-600 shadow-2xs dark:bg-brand-500 dark:border-brand-500"
+                        : "bg-muted/50 text-muted-foreground border-border/80 hover:bg-muted hover:text-foreground"
+                    )}
                   >
-                    See 5 skills &rarr;
+                    <span>All Lines</span>
                   </button>
+
+                  {PARENT_CRITERIA_LIST.map((c) => {
+                    const band = bands?.[c.key];
+                    const bandMeta = band ? getBandMeta(band) : null;
+                    const isSelected = activeCriterion === c.key;
+
+                    return (
+                      <button
+                        type="button"
+                        key={c.key}
+                        onClick={() => handleCriterionSelect(c.key)}
+                        aria-pressed={isSelected}
+                        className={cn(
+                          "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer border min-h-[36px] flex items-center gap-1.5 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
+                          isSelected
+                            ? "bg-brand-100 text-brand-900 border-brand-400 dark:bg-brand-950 dark:text-brand-100 dark:border-brand-600 shadow-2xs"
+                            : "bg-card text-foreground border-border/80 hover:bg-muted/50"
+                        )}
+                      >
+                        {bandMeta && (
+                          <span
+                            className={cn("size-2 rounded-full shrink-0", bandMeta.dotColor)}
+                            aria-hidden="true"
+                          />
+                        )}
+                        <span>{c.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
 
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {activeCriterion === "all"
-                    ? "Showing writing line, slant, and spacing guides on the photo. Pinch to zoom in on letters."
-                    : (bands && bands[activeCriterion as CriterionKey] && DIAGNOSTIC_NOTES[activeCriterion as CriterionKey]?.[bands[activeCriterion as CriterionKey]!]) ||
-                      PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.shortDescription}
-                </p>
-
-                {(() => {
-                  const tip =
-                    activeCriterion === "all"
-                      ? practiceFocus?.meta.homeTip
-                      : activeCriterion === practiceFocus?.key
-                        ? practiceFocus?.meta.homeTip
-                        : PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.homeTip;
-                  if (!tip) return null;
-                  return (
-                    <div className="pt-2 border-t border-brand-200/50 dark:border-brand-800/50 flex items-start gap-2 text-band-2-text dark:text-amber-200">
-                      <Lightbulb className="size-4 shrink-0 mt-0.5 text-band-2-text dark:text-amber-200" aria-hidden="true" />
-                      <p className="leading-relaxed text-sm">
-                        <span className="font-semibold">Home tip: </span>
-                        {tip}
-                      </p>
+                {/* Active Skill Feedback Card */}
+                <div className="p-4 rounded-xl border border-border/80 bg-card space-y-2.5 text-sm shadow-2xs">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-heading font-semibold text-foreground text-sm truncate">
+                        {activeCriterion === "all"
+                          ? "All Writing Lines & Guides"
+                          : PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.label ?? activeCriterion}
+                      </span>
+                      {activeCriterion !== "all" && bands && bands[activeCriterion as CriterionKey] && (
+                        <BandBadge band={bands[activeCriterion as CriterionKey]} size="sm" showDot />
+                      )}
                     </div>
-                  );
-                })()}
+                    {showScoreDetails && activeCriterion !== "all" && scores && scores[activeCriterion as CriterionKey] != null && (
+                      <span className="font-sans text-xs font-semibold tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/60">
+                        {Math.round(scores[activeCriterion as CriterionKey]!)}%
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {activeCriterion === "all"
+                      ? "Showing ruled writing lines, slant guides, and letter spacing on your child's paper. Tap any skill pill above to inspect specific strokes."
+                      : (bands && bands[activeCriterion as CriterionKey] && DIAGNOSTIC_NOTES[activeCriterion as CriterionKey]?.[bands[activeCriterion as CriterionKey]!]) ||
+                        PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.shortDescription}
+                  </p>
+
+                  {(() => {
+                    const tip =
+                      activeCriterion === "all"
+                        ? practiceFocus?.meta.homeTip
+                        : activeCriterion === practiceFocus?.key
+                          ? practiceFocus?.meta.homeTip
+                          : PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.homeTip;
+                    if (!tip) return null;
+                    return (
+                      <div className="pt-2 border-t border-border/70 flex items-start gap-2 text-band-2-text dark:text-amber-200">
+                        <Lightbulb className="size-4 shrink-0 mt-0.5 text-band-2-text dark:text-amber-200" aria-hidden="true" />
+                        <p className="leading-relaxed text-xs sm:text-sm">
+                          <span className="font-semibold">Home tip: </span>
+                          {tip}
+                        </p>
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
             </div>
 
-            {/* Right: Overall Result & 5 Skills */}
-            <div
-              id="mobile-panel-scores"
-              role="tabpanel"
-              aria-labelledby="mobile-tab-scores"
-              className={cn("lg:col-span-5 space-y-4", mobileTab !== "scores" && "hidden lg:block")}
-            >
+            {/* Right (Desktop) / Supporting (Mobile): Overall Result & 5 Skills List */}
+            <div className="lg:col-span-5 space-y-4 w-full">
               {compositeScore != null && (
-                <div className="p-4 rounded-xl border border-border/80 bg-card space-y-3 shadow-xs">
+                <div className="p-4 rounded-xl border border-border/80 bg-card space-y-3 shadow-2xs">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       {compositeBandMeta && (
@@ -462,7 +439,7 @@ export function WorksheetViewDialog({
                             className={cn("size-2.5 rounded-full shrink-0", compositeBandMeta.dotColor)}
                             aria-hidden="true"
                           />
-                          <h3 className="text-lg font-heading font-semibold text-foreground">
+                          <h3 className="text-base sm:text-lg font-heading font-semibold text-foreground">
                             {compositeBandMeta.label}
                           </h3>
                         </div>
@@ -477,7 +454,7 @@ export function WorksheetViewDialog({
                       type="button"
                       onClick={() => setShowScoreDetails((prev) => !prev)}
                       aria-pressed={showScoreDetails}
-                      className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-md px-2.5 py-1 min-h-[40px] sm:min-h-[36px] flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
+                      className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-md px-2.5 py-1 min-h-[36px] flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
                     >
                       {showScoreDetails ? "Hide details" : "Show details"}
                     </button>
@@ -504,7 +481,7 @@ export function WorksheetViewDialog({
                   />
 
                   {compositeBand && PARENT_BAND_EXPLANATIONS[compositeBand] && (
-                    <p className="text-sm text-muted-foreground leading-relaxed pt-0.5">
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pt-0.5">
                       {PARENT_BAND_EXPLANATIONS[compositeBand]}
                     </p>
                   )}
@@ -514,28 +491,16 @@ export function WorksheetViewDialog({
               {/* 5 Handwriting Skills Breakdown */}
               {scores && bands && (
                 <div className="space-y-2">
-                  <h4 className="text-sm font-heading font-semibold text-foreground px-1">
-                    5 Handwriting Skills
-                  </h4>
+                  <div className="flex items-center justify-between gap-2 px-1">
+                    <h4 className="text-sm font-heading font-semibold text-foreground">
+                      5 Handwriting Skills
+                    </h4>
+                    <span className="text-xs text-muted-foreground">
+                      Tap to highlight on worksheet
+                    </span>
+                  </div>
 
-                  <Accordion
-                    value={activeCriterion === "all" ? [] : [activeCriterion]}
-                    onValueChange={(val) => {
-                      const next = Array.isArray(val)
-                        ? (val as string[])
-                        : val
-                          ? [val as string]
-                          : [];
-                      if (next.length > 0) {
-                        const selected = next[next.length - 1] as CriterionKey;
-                        handleCriterionSelect(selected, false);
-                      } else {
-                        setCriterionOverride("all");
-                        setSelectedAttentionItem(null);
-                      }
-                    }}
-                    className="rounded-xl border border-border/80 bg-card overflow-hidden divide-y divide-border/60 shadow-2xs"
-                  >
+                  <div className="rounded-xl border border-border/80 bg-card overflow-hidden divide-y divide-border/60 shadow-2xs">
                     {PARENT_CRITERIA_LIST.map((criterion) => {
                       const isTop = topStrength?.key === criterion.key;
                       const isFocus = practiceFocus?.key === criterion.key;
@@ -546,94 +511,35 @@ export function WorksheetViewDialog({
                           : null;
                       const score = scores[criterion.key];
                       const band = bands[criterion.key];
-                      const diagnosticNote = band ? DIAGNOSTIC_NOTES[criterion.key][band] : null;
+                      const isRowActive = activeCriterion === criterion.key;
                       const criterionMeta = PARENT_CRITERIA_METADATA[criterion.key];
                       const homeTip = isFocus ? practiceFocus?.meta.homeTip : criterionMeta?.homeTip;
 
                       return (
-                        <AccordionItem
-                          value={criterion.key}
+                        <CriterionFeedbackRow
                           key={criterion.key}
-                          className="border-0 hover:bg-muted/10 transition-colors"
-                        >
-                          <AccordionTrigger className="hover:no-underline px-3.5 py-3 items-center gap-3 cursor-pointer">
-                            <div className="flex items-center justify-between flex-1 min-w-0 pr-1 gap-2">
-                              <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                                <span className="text-sm font-semibold text-foreground truncate">
-                                  {criterion.label}
-                                </span>
-                                {highlightBadge === "top_strength" && (
-                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 px-1.5 py-0.5 rounded-md border border-band-4/30 dark:border-band-4/40 shrink-0">
-                                    <span className="size-1.5 rounded-full bg-band-4 shrink-0" aria-hidden="true" />
-                                    Top Strength
-                                  </span>
-                                )}
-                                {highlightBadge === "practice_focus" && (
-                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 px-1.5 py-0.5 rounded-md border border-band-2/30 dark:border-band-2/40 shrink-0">
-                                    <span className="size-1.5 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
-                                    Practice Focus
-                                  </span>
-                                )}
-                              </div>
-
-                              <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 text-right">
-                                {showScoreDetails && score != null && (
-                                  <span className="font-sans text-xs sm:text-sm font-semibold tabular-nums text-muted-foreground">
-                                    {Math.round(score)}%
-                                  </span>
-                                )}
-                                <BandBadge band={band} score={score} size="sm" showDot />
-                              </div>
-                            </div>
-                          </AccordionTrigger>
-
-                          <AccordionContent className="px-3.5 pb-3.5 pt-0 space-y-2.5 border-0">
-                            <div className="pt-0.5 pb-1">
-                              <BandPositionBar
-                                score={score}
-                                height="sm"
-                                showThresholds={showScoreDetails}
-                                ariaValueText={
-                                  showScoreDetails && score != null
-                                    ? `${Math.round(score)}%`
-                                    : band
-                                      ? band.replace("_", " ")
-                                      : undefined
-                                }
-                              />
-                            </div>
-
-                            {diagnosticNote && (
-                              <p className="text-sm text-muted-foreground leading-relaxed">
-                                {diagnosticNote}
-                              </p>
-                            )}
-
-                            {homeTip && (
-                              <div className="p-3 rounded-xl bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40 text-sm text-band-2-text dark:text-amber-200 shadow-2xs">
-                                <p className="leading-relaxed">
-                                  <strong className="font-semibold text-band-2-text dark:text-amber-200">Home tip:</strong> {homeTip}
-                                </p>
-                              </div>
-                            )}
-
-                            <div className="lg:hidden pt-1">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setMobileTab("photo")}
-                                className="w-full h-10 min-h-[40px] text-xs sm:text-sm font-medium gap-1.5 border-brand-200 dark:border-brand-900 bg-brand-50/50 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
-                              >
-                                <Eye className="size-3.5" aria-hidden="true" />
-                                <span>See on worksheet</span>
-                              </Button>
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
+                          criterionKey={criterion.key}
+                          label={criterion.label}
+                          score={score}
+                          band={band}
+                          highlightBadge={highlightBadge}
+                          isActive={isRowActive}
+                          showScoreDetails={showScoreDetails}
+                          showPositionBar={isRowActive}
+                          homePracticeTip={isRowActive || isFocus ? homeTip : null}
+                          inspectLabel={null}
+                          onInspect={() => {
+                            if (isRowActive) {
+                              setCriterionOverride("all");
+                              setSelectedAttentionItem(null);
+                            } else {
+                              handleCriterionSelect(criterion.key);
+                            }
+                          }}
+                        />
                       );
                     })}
-                  </Accordion>
+                  </div>
                 </div>
               )}
             </div>

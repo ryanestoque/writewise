@@ -204,7 +204,7 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Derived validation criteria calculated during render
-  const hasMinLength = newPassword.length >= 8;
+  const hasMinLength = newPassword.length >= 10;
   const hasUppercase = /[A-Z]/.test(newPassword);
   const hasLowercase = /[a-z]/.test(newPassword);
   const hasNumber = /[0-9]/.test(newPassword);
@@ -387,7 +387,7 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
                 </div>
 
                 <p id="new-password-hint" className="sr-only">
-                  Password must be at least 8 characters and include uppercase, lowercase, and a number.
+                  Password must be at least 10 characters and include uppercase, lowercase, and a number.
                 </p>
 
                 {/* Real-time criteria checklist */}
@@ -408,7 +408,7 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
                     ) : (
                       <div className="size-2 rounded-full border border-muted-foreground/70 dark:border-muted-foreground/60 mx-0.5 shrink-0" aria-hidden="true" />
                     )}
-                    <span>At least 8 characters</span>
+                    <span>At least 10 characters</span>
                     <span className="sr-only">
                       {hasMinLength ? "(requirement met)" : "(requirement not met)"}
                     </span>

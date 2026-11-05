@@ -189,6 +189,17 @@ Class-related management (which roster/section a teacher is linked to) lives on 
 14. Latest diagnostic feedback view
 15. Submission upload — same core flow as teacher's, scoped to an assigned activity
 
+**Parent progress hierarchy:** Desktop uses the full viewport width with normal page gutters; do not introduce a centered maximum-width container. The `/progress` view is organized into a segmented 3-tab layout (`Overview`, `To-Write`, and `Progress`) so parents focus on one task at a time:
+- **`Overview` (default once scored worksheets exist):** Pairs the coaching overview (`ParentStatusHero`) alongside the latest checked worksheet (`LatestSubmissionCard`) on desktop.
+- **`To-Write` (default on zero-result onboarding; shows a live badge count of open worksheets):** Displays assigned take-home practice worksheets (`TakeHomeActivities`) in a responsive 2-column desktop grid alongside the current practice-focus tip.
+- **`Progress`:** Stacks longitudinal skill trends (`CriterionTrendChart`) above the sortable archive of all past worksheets (`PastWorksheetsSection`).
+
+On all viewports, an urgent-task prompt precedes the tab bar when an open worksheet needs a replacement photo, is overdue but still accepts uploads, or is due within 48 hours. It names the worksheet and opens its existing upload dialog directly (and links to the `To-Write` tab when multiple worksheets need attention). Replacement photos take priority, then overdue work, then the nearest upcoming deadline. Processing uploads and closed assignments never receive this upload prompt.
+
+The overview leads with a practical home tip and an available strength, followed by the latest assessment band and optional numeric details. Lower scores use a downward trend icon and explicit comparison with the first worksheet; score differences are percentage points. Supporting worksheet and chart surfaces use quieter borders without competing shadows. Submitted work remains distinct from closed work that still needs a photo: the latter is called out even when the submitted/closed list is collapsed, and must never produce an “all turned in” message. The zero-result screen keeps take-home activities and the sample report; the one-result screen explains when the chart becomes available.
+
+Read failures must never appear as an unlinked child or an empty assessment history. Show a retry action, retain previously loaded records with a refresh warning, and reserve onboarding for successfully loaded empty history. Invalid or unavailable notification destinations offer a return to progress without clearing an accessible child profile. Each skill in the latest worksheet shows its diagnostic sentence directly; the photo dialog provides supporting visual evidence. Band explanations describe the worksheet and do not imply grade-level attainment. Overview and chart comparisons use the first counted worksheet; history changes use the previous counted worksheet. Changes of at least 1.5 percentage points in either direction receive a directional label, while smaller changes are described as steady, including when numeric details are shown.
+
 ---
 
 ## 7. Key Interaction Patterns

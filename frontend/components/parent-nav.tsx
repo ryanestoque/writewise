@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { BrandIcon, BrandLogo } from "@/components/brand-logo";
 import {
   DropdownMenu,
@@ -41,9 +41,7 @@ interface ParentNavProps {
   selectedChildId: string | null;
   linkedChildren: LinkedChild[];
   onChildChange: (childId: string) => void;
-  onUploadClick?: () => void;
   onCursiveGuideClick?: () => void;
-  hasActivities?: boolean;
 }
 
 export function ParentNav({
@@ -54,6 +52,7 @@ export function ParentNav({
   onCursiveGuideClick,
 }: ParentNavProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const supabase = createClient();
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -109,9 +108,9 @@ export function ParentNav({
             <BrandLogo size="sm" priority className="hidden sm:inline-flex" />
           </Link>
 
-          {/* Center: Child Switcher (Always-present child indicator) */}
+          {/* Center: Child Switcher (Shown on /progress) */}
           <div className="flex-1 flex justify-center min-w-0 px-1 sm:px-2">
-            {linkedChildren.length > 1 ? (
+            {pathname === "/progress" && linkedChildren.length > 1 ? (
               <Select
                 value={selectedChildId ?? undefined}
                 onValueChange={(val) => {
@@ -143,7 +142,7 @@ export function ParentNav({
                   ))}
                 </SelectContent>
               </Select>
-            ) : linkedChildren.length === 1 ? (
+            ) : pathname === "/progress" && linkedChildren.length === 1 ? (
               <div
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/70 bg-card text-xs sm:text-sm font-medium shadow-2xs max-w-[220px] sm:max-w-[340px] min-w-0 select-none"
                 title={`${linkedChildren[0].fullName} (Section ${linkedChildren[0].section})`}

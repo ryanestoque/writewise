@@ -26,6 +26,11 @@ import { getBandFromScore, getBandMeta } from "@/lib/utils/scoring";
 import { BandBadge } from "@/components/shared/band-badge";
 import { LineChart as LineChartIcon, Info, Table2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  formatScoreDifference,
+  getScoreProgressDirection,
+  getScoreProgressLabel,
+} from "@/lib/utils/score-progress";
 
 import { CRITERION_CONFIG, CHART_BAND_AREAS, CHART_DOT_STROKE } from "@/lib/utils/chart-theme";
 
@@ -118,6 +123,7 @@ interface CriterionTrendChartProps {
   variant?: "teacher" | "parent";
   showScoreDetails?: boolean;
   onToggleScoreDetails?: () => void;
+  practiceFocusKey?: string | null;
 }
 
 export function CriterionTrendChart({
@@ -126,6 +132,7 @@ export function CriterionTrendChart({
   variant = "teacher",
   showScoreDetails: controlledShowDetails,
   onToggleScoreDetails,
+  practiceFocusKey,
 }: CriterionTrendChartProps) {
   const isParent = variant === "parent";
   const showScoreDetails =
@@ -213,14 +220,15 @@ export function CriterionTrendChart({
         baseline_alignment: false,
       });
     } else {
+      const initialSkillKey = practiceFocusKey || "letter_formation";
       setShowEachSkill(true);
       setActiveCriteria({
         composite: true,
-        letter_formation: true,
-        size_consistency: true,
-        spacing: true,
-        slant: true,
-        baseline_alignment: true,
+        letter_formation: initialSkillKey === "letter_formation",
+        size_consistency: initialSkillKey === "size_consistency",
+        spacing: initialSkillKey === "spacing",
+        slant: initialSkillKey === "slant",
+        baseline_alignment: initialSkillKey === "baseline_alignment",
       });
     }
   };
@@ -314,22 +322,20 @@ export function CriterionTrendChart({
     if (!history || history.length === 0) return "";
     const first = history[0];
     const latest = history[history.length - 1];
-    const firstScore = first.compositeScore != null ? Math.round(first.compositeScore) : null;
-    const latestScore = latest.compositeScore != null ? Math.round(latest.compositeScore) : null;
+    const firstScore = first.compositeScore;
+    const latestScore = latest.compositeScore;
     const startDate = new Date(first.submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric" });
     const endDate = new Date(latest.submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-    let trendDesc = "remained consistent";
-    if (firstScore != null && latestScore != null) {
-      if (latestScore > firstScore) trendDesc = "improved";
-      else if (latestScore < firstScore) trendDesc = "shifted";
-      else trendDesc = "remained steady";
-    }
+    const difference = firstScore != null && latestScore != null ? latestScore - firstScore : null;
+    const trendDesc = difference == null
+      ? "Overall comparison is not available."
+      : `${getScoreProgressLabel(difference, "first")}${showScoreDetails ? ` (${formatScoreDifference(difference)})` : ""}.`;
 
     const activeList = CRITERION_CONFIG.filter((c) => activeCriteria[c.key]).map((c) => c.label).join(", ");
 
-    return `Across ${history.length} worksheets from ${startDate} to ${endDate}, overall progress ${trendDesc}. Currently showing lines for: ${activeList || "none"}.`;
-  }, [history, activeCriteria]);
+    return `Across ${history.length} worksheets from ${startDate} to ${endDate}. ${trendDesc} Currently showing lines for: ${activeList || "none"}.`;
+  }, [history, activeCriteria, showScoreDetails]);
 
   const trajectoryStats = useMemo(() => {
     if (!history || history.length < 2) return null;
@@ -343,6 +349,8 @@ export function CriterionTrendChart({
       baselineScore: first.compositeScore,
       latestScore: latest.compositeScore,
       diff,
+      direction: getScoreProgressDirection(diff),
+      label: getScoreProgressLabel(diff, "first"),
       firstDate,
       latestDate,
       totalCount: history.length,
@@ -404,7 +412,7 @@ export function CriterionTrendChart({
                 type="button"
                 onClick={handleToggleParentSkills}
                 aria-pressed={showEachSkill}
-                className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-[36px] inline-flex items-center justify-center border border-border/80 bg-card hover:bg-muted/50 transition-colors"
+                className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-10 sm:min-h-9 inline-flex items-center justify-center border border-border/80 bg-card hover:bg-muted/50 transition-colors"
               >
                 {showEachSkill ? "Overall only" : "Show each skill"}
               </button>
@@ -413,7 +421,7 @@ export function CriterionTrendChart({
                   type="button"
                   onClick={onToggleScoreDetails}
                   aria-pressed={showScoreDetails}
-                  className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-[36px] inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors"
+                  className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-10 sm:min-h-9 inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors"
                 >
                   {showScoreDetails ? "Hide details" : "Show details"}
                 </button>
@@ -433,7 +441,7 @@ export function CriterionTrendChart({
                     onClick={() => toggleCriterion(c.key)}
                     aria-pressed={isSelected}
                     className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium transition-all cursor-pointer border select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-[36px] touch-manipulation",
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium transition-all cursor-pointer border select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-10 sm:min-h-9 touch-manipulation",
                       isSelected
                         ? "bg-card text-foreground border-border/90 shadow-2xs font-semibold ring-1 ring-border/50"
                         : "bg-muted/20 text-muted-foreground border-dashed border-border/60 hover:bg-muted/40 hover:text-foreground"
@@ -575,7 +583,7 @@ export function CriterionTrendChart({
           {trajectoryStats && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-3 rounded-xl bg-muted/20 border border-border/60 text-xs">
               <div className="space-y-1">
-                <span className="text-xs text-muted-foreground font-medium block">
+                <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums block">
                   First Worksheet ({trajectoryStats.firstDate})
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -588,7 +596,7 @@ export function CriterionTrendChart({
                 </div>
               </div>
               <div className="space-y-1">
-                <span className="text-xs text-muted-foreground font-medium block">
+                <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums block">
                   Latest Worksheet ({trajectoryStats.latestDate})
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -608,26 +616,17 @@ export function CriterionTrendChart({
                   <span
                     className={cn(
                       "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-semibold text-xs tabular-nums",
-                      trajectoryStats.diff >= 1.5
-                        ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-800/60"
-                        : trajectoryStats.diff <= -1.5
-                          ? "bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 border border-amber-300/60 dark:border-amber-800/60"
+                      trajectoryStats.direction === "improving"
+                        ? "bg-band-4/15 dark:bg-band-4/25 text-band-4-text dark:text-emerald-300 border border-band-4/30 dark:border-band-4/40"
+                        : trajectoryStats.direction === "lower"
+                          ? "bg-band-2/15 dark:bg-band-2/25 text-band-2-text dark:text-amber-200 border border-band-2/30 dark:border-band-2/40"
                           : "bg-muted text-muted-foreground border border-border/60"
                     )}
                   >
-                    {showScoreDetails
-                      ? trajectoryStats.diff > 0
-                        ? `Improving (+${trajectoryStats.diff.toFixed(1)}%)`
-                        : trajectoryStats.diff < 0
-                          ? `Practice needed (${trajectoryStats.diff.toFixed(1)}%)`
-                          : "Steady (±0%)"
-                      : trajectoryStats.diff >= 1.5
-                        ? "Improving"
-                        : trajectoryStats.diff <= -1.5
-                          ? "Building consistency"
-                          : "Steady"}
+                    {trajectoryStats.label}
+                    {showScoreDetails ? ` (${formatScoreDifference(trajectoryStats.diff)})` : ""}
                   </span>
-                  <span className="text-xs text-muted-foreground">({trajectoryStats.totalCount} worksheets)</span>
+                  <span className="text-xs text-muted-foreground font-sans tabular-nums">({trajectoryStats.totalCount} worksheets)</span>
                 </div>
               </div>
             </div>
@@ -649,7 +648,7 @@ export function CriterionTrendChart({
               <button
                 type="button"
                 onClick={resetCriteria}
-                className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors cursor-pointer"
+                className={cn("px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors cursor-pointer", isParent && "min-h-10 sm:min-h-9")}
               >
                 Show overall progress
               </button>

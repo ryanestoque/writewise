@@ -16,8 +16,6 @@ import {
   Layers,
   MoveVertical,
   Maximize2,
-  CheckCircle2,
-  Eye,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -125,7 +123,7 @@ export function SampleReportPreview({
                 type="button"
                 onClick={toggleScoreDetails}
                 aria-pressed={showScoreDetails}
-                className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-[36px] inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors"
+                className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
               >
                 {showScoreDetails ? "Hide details" : "Show details"}
               </button>
@@ -136,7 +134,7 @@ export function SampleReportPreview({
               size="sm"
               onClick={() => setIsCollapsed((prev) => !prev)}
               aria-expanded={!isCollapsed}
-              className="h-9 min-h-[36px] text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
+              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
             >
               {isCollapsed ? (
                 <>
@@ -216,8 +214,7 @@ export function SampleReportPreview({
                 <span className="font-semibold text-foreground">
                   Example Worksheet: &ldquo;The quick brown fox&rdquo;
                 </span>
-                <span className="text-muted-foreground flex items-center gap-1 text-xs">
-                  <Eye className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                <span className="text-muted-foreground text-xs font-medium">
                   Showing {currentMeta.label}
                 </span>
               </div>
@@ -261,14 +258,14 @@ export function SampleReportPreview({
 
                 {activeCriterion === "baseline_alignment" && (
                   <g className="animate-in fade-in duration-300">
-                    <line x1="45" y1="135" x2="495" y2="135" stroke="#22c55e" strokeWidth="3" opacity="0.4" />
-                    <circle cx="85" cy="135" r="3.5" fill="#22c55e" stroke="#ffffff" strokeWidth="1.5" />
-                    <circle cx="155" cy="135" r="3.5" fill="#22c55e" stroke="#ffffff" strokeWidth="1.5" />
-                    <circle cx="230" cy="135" r="3.5" fill="#22c55e" stroke="#ffffff" strokeWidth="1.5" />
-                    <circle cx="340" cy="135" r="3.5" fill="#22c55e" stroke="#ffffff" strokeWidth="1.5" />
-                    <circle cx="445" cy="135" r="3.5" fill="#22c55e" stroke="#ffffff" strokeWidth="1.5" />
+                    <line x1="45" y1="135" x2="495" y2="135" stroke="#4a8b5c" strokeWidth="3" opacity="0.4" />
+                    <circle cx="85" cy="135" r="3.5" fill="#4a8b5c" stroke="#ffffff" strokeWidth="1.5" />
+                    <circle cx="155" cy="135" r="3.5" fill="#4a8b5c" stroke="#ffffff" strokeWidth="1.5" />
+                    <circle cx="230" cy="135" r="3.5" fill="#4a8b5c" stroke="#ffffff" strokeWidth="1.5" />
+                    <circle cx="340" cy="135" r="3.5" fill="#4a8b5c" stroke="#ffffff" strokeWidth="1.5" />
+                    <circle cx="445" cy="135" r="3.5" fill="#4a8b5c" stroke="#ffffff" strokeWidth="1.5" />
 
-                    <rect x="355" y="145" width="135" height="18" rx="4" fill="#15803d" opacity="0.9" />
+                    <rect x="355" y="145" width="135" height="18" rx="4" fill="#4a8b5c" opacity="0.9" />
                     <text x="422" y="157" fill="#ffffff" fontSize="9" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
                       Rests on Bottom Line
                     </text>
@@ -289,20 +286,20 @@ export function SampleReportPreview({
 
                 {activeCriterion === "spacing" && (
                   <g className="animate-in fade-in duration-300">
-                    <rect x="135" y="80" width="30" height="55" fill="#3b82f6" opacity="0.12" rx="3" stroke="#3b82f6" strokeDasharray="2 2" strokeWidth="1" />
-                    <rect x="270" y="80" width="32" height="55" fill="#3b82f6" opacity="0.12" rx="3" stroke="#3b82f6" strokeDasharray="2 2" strokeWidth="1" />
-                    <rect x="390" y="80" width="28" height="55" fill="#3b82f6" opacity="0.12" rx="3" stroke="#3b82f6" strokeDasharray="2 2" strokeWidth="1" />
-                    <text x="150" y="148" fill="#2563eb" fontSize="8" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">1 finger</text>
-                    <text x="286" y="148" fill="#2563eb" fontSize="8" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">1 finger</text>
+                    <rect x="135" y="80" width="30" height="55" fill="#1b6b63" opacity="0.12" rx="3" stroke="#1b6b63" strokeDasharray="2 2" strokeWidth="1" />
+                    <rect x="270" y="80" width="32" height="55" fill="#1b6b63" opacity="0.12" rx="3" stroke="#1b6b63" strokeDasharray="2 2" strokeWidth="1" />
+                    <rect x="390" y="80" width="28" height="55" fill="#1b6b63" opacity="0.12" rx="3" stroke="#1b6b63" strokeDasharray="2 2" strokeWidth="1" />
+                    <text x="150" y="148" fill="#145049" fontSize="8" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">1 finger</text>
+                    <text x="286" y="148" fill="#145049" fontSize="8" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">1 finger</text>
                   </g>
                 )}
 
                 {activeCriterion === "letter_formation" && (
                   <g className="animate-in fade-in duration-300">
-                    <circle cx="95" cy="55" r="9" fill="none" stroke="#eab308" strokeWidth="2" strokeDasharray="3 2" />
-                    <circle cx="215" cy="110" r="10" fill="none" stroke="#eab308" strokeWidth="2" strokeDasharray="3 2" />
-                    <circle cx="345" cy="110" r="10" fill="none" stroke="#eab308" strokeWidth="2" strokeDasharray="3 2" />
-                    <rect x="235" y="15" width="105" height="18" rx="4" fill="#ca8a04" opacity="0.9" />
+                    <circle cx="95" cy="55" r="9" fill="none" stroke="#c9a227" strokeWidth="2" strokeDasharray="3 2" />
+                    <circle cx="215" cy="110" r="10" fill="none" stroke="#c9a227" strokeWidth="2" strokeDasharray="3 2" />
+                    <circle cx="345" cy="110" r="10" fill="none" stroke="#c9a227" strokeWidth="2" strokeDasharray="3 2" />
+                    <rect x="235" y="15" width="105" height="18" rx="4" fill="#b6754a" opacity="0.9" />
                     <text x="287" y="27" fill="#ffffff" fontSize="9" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
                       Clean Loops &amp; Joins
                     </text>
@@ -367,18 +364,13 @@ export function SampleReportPreview({
             {/* Active Skill Feedback Card */}
             <div className="rounded-xl border border-brand-200/80 dark:border-brand-900 bg-brand-50/20 dark:bg-brand-950/20 p-4 sm:p-5 space-y-3.5 shadow-2xs">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="flex size-8 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0">
-                    <CheckCircle2 className="size-4" aria-hidden="true" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm sm:text-base font-heading font-semibold text-foreground truncate">
-                      {currentMeta.label}
-                    </h3>
-                    <span className="text-xs text-muted-foreground">
-                      {currentMeta.shortDescription}
-                    </span>
-                  </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-heading font-semibold text-foreground truncate">
+                    {currentMeta.label}
+                  </h3>
+                  <span className="text-xs text-muted-foreground">
+                    {currentMeta.shortDescription}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {showScoreDetails && (

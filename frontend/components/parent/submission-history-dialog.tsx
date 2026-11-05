@@ -17,6 +17,11 @@ import type { StudentScoreHistoryItem } from "@/lib/hooks/use-dashboard";
 import type { CriterionFilter } from "@/components/shared/diagnostic-overlay";
 import { cn } from "@/lib/utils";
 import {
+  formatScoreDifference,
+  getScoreProgressDirection,
+  getScoreProgressLabel,
+} from "@/lib/utils/score-progress";
+import {
   FileText,
   Eye,
   ChevronDown,
@@ -57,12 +62,8 @@ function buildProcessedHistory(
 }
 
 function getDeltaChangeLabel(delta: number, showScoreDetails: boolean): string {
-  if (showScoreDetails) {
-    return delta > 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`;
-  }
-  if (delta >= 1.5) return "Improved";
-  if (delta <= -1.5) return "Needs practice";
-  return "Steady";
+  const label = getScoreProgressLabel(delta, "previous");
+  return showScoreDetails ? `${label} (${formatScoreDifference(delta)})` : label;
 }
 
 function HistoryItemRow({
@@ -105,10 +106,10 @@ function HistoryItemRow({
           {item.delta != null && (
             <span
               className={cn(
-                "inline-flex items-center px-2 py-0.5 rounded-md tabular-nums shrink-0 text-xs font-medium",
-                item.delta >= 1.5
+                "inline-flex max-w-full items-center px-2 py-0.5 rounded-md tabular-nums text-xs font-medium",
+                getScoreProgressDirection(item.delta) === "improving"
                   ? "text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 border border-band-4/30 dark:border-band-4/40"
-                  : item.delta <= -1.5
+                  : getScoreProgressDirection(item.delta) === "lower"
                     ? "text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40"
                     : "text-muted-foreground bg-muted/40 border border-border/60"
               )}
@@ -130,7 +131,7 @@ function HistoryItemRow({
           )}
         </div>
 
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground font-sans tabular-nums">
           {formattedDate}
           {showScoreDetails ? ` · Worksheet #${item.attemptNumber}` : ""}
           {item.status === "completed" && item.compositeScore == null
@@ -165,7 +166,7 @@ function HistoryItemRow({
             onClick={() => onOpenWorksheetView(item)}
             aria-haspopup="dialog"
             aria-label={`See worksheet photo and guide lines for "${item.targetText}"`}
-            className="h-9 min-h-[36px] text-xs font-medium gap-1.5 cursor-pointer"
+            className="h-10 min-h-10 sm:h-9 sm:min-h-9 text-xs font-medium gap-1.5 cursor-pointer"
           >
             <Eye className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
             <span>View</span>
@@ -181,12 +182,14 @@ interface PastWorksheetsSectionProps {
   childName: string;
   showScoreDetails: boolean;
   onToggleScoreDetails?: () => void;
+  onUploadActivity?: (activityId: string) => void;
 }
 
 export function PastWorksheetsSection({
   history,
   childName,
   showScoreDetails,
+  onUploadActivity,
 }: PastWorksheetsSectionProps) {
   const [showAllInline, setShowAllInline] = useState(false);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
@@ -235,7 +238,7 @@ export function PastWorksheetsSection({
           <button
             type="button"
             onClick={() => setSortOrder((prev) => (prev === "newest" ? "oldest" : "newest"))}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg bg-card border border-border/80 hover:bg-muted/50 text-xs font-medium text-foreground transition-colors cursor-pointer touch-manipulation"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-10 sm:min-h-9 rounded-lg bg-card border border-border/80 hover:bg-muted/50 text-xs font-medium text-foreground transition-colors cursor-pointer touch-manipulation"
           >
             <ArrowUpDown className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
             <span>{sortOrder === "newest" ? "Newest first" : "Oldest first"}</span>
@@ -284,6 +287,7 @@ export function PastWorksheetsSection({
           childName={childName}
           onBack={() => setSelectedItemForView(null)}
           backLabel="Back to worksheets"
+          onUploadActivity={onUploadActivity}
         />
       )}
 
@@ -323,6 +327,7 @@ interface SubmissionHistoryDialogProps {
   childName: string;
   onOpenRubric?: () => void;
   initialShowScoreDetails?: boolean;
+  onUploadActivity?: (activityId: string) => void;
 }
 
 export function SubmissionHistoryDialog({
@@ -331,6 +336,7 @@ export function SubmissionHistoryDialog({
   history,
   childName,
   initialShowScoreDetails = false,
+  onUploadActivity,
 }: SubmissionHistoryDialogProps) {
   const [selectedItemForView, setSelectedItemForView] =
     useState<StudentScoreHistoryItem | null>(null);
@@ -411,7 +417,7 @@ export function SubmissionHistoryDialog({
                   <button
                     type="button"
                     onClick={() => setSortOrder((prev) => (prev === "newest" ? "oldest" : "newest"))}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-[36px] rounded-lg bg-card border border-border/80 hover:bg-muted/50 text-xs font-medium text-foreground transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-10 sm:min-h-9 rounded-lg bg-card border border-border/80 hover:bg-muted/50 text-xs font-medium text-foreground transition-colors cursor-pointer"
                   >
                     <ArrowUpDown className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                     <span>{sortOrder === "newest" ? "Newest first" : "Oldest first"}</span>
@@ -422,7 +428,7 @@ export function SubmissionHistoryDialog({
                   type="button"
                   onClick={() => setShowScoreDetails((prev) => !prev)}
                   aria-pressed={showScoreDetails}
-                  className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-[36px] inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors"
+                  className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-10 sm:min-h-9 inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors"
                 >
                   {showScoreDetails ? "Hide details" : "Show details"}
                 </button>
@@ -465,7 +471,7 @@ export function SubmissionHistoryDialog({
             <Button
               variant="outline"
               size="sm"
-              className="h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
+              className="h-10 min-h-10 sm:h-9 sm:min-h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
               onClick={() => onOpenChange(false)}
             >
               Close
@@ -479,6 +485,7 @@ export function SubmissionHistoryDialog({
           item={selectedItemForView}
           childName={childName}
           onBack={handleBackFromWorksheetView}
+          onUploadActivity={onUploadActivity}
         />
       )}
       {selectedItemForView && selectedItemForView.compositeScore != null && (

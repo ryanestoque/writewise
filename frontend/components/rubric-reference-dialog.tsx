@@ -9,7 +9,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  GraduationCapIcon,
   SearchIcon,
   XCircleIcon,
   ChevronDownIcon,
@@ -152,7 +151,7 @@ const scoringBands: ScoringBandItem[] = [
     dotColor: "bg-band-4",
     containerClass: "border-band-4/30 bg-band-4/5 dark:bg-band-4/10",
     desc: "Exemplary cursive discipline with fluid loop closures, uniform 60°–75° forward slant, and consistent baseline adherence.",
-    parentDesc: "Smooth, steady cursive handwriting that meets grade-level expectations across the page.",
+    parentDesc: "Smooth, steady cursive handwriting with consistent letter shapes, spacing, and alignment across the worksheet.",
   },
   {
     band: "Satisfactory",
@@ -196,8 +195,7 @@ const CriterionVisualGuide = React.memo(function CriterionVisualGuide({
       aria-hidden="true"
     >
       <div className="flex items-center justify-between gap-2 mb-1.5">
-        <span className="text-xs font-sans font-semibold text-primary flex items-center gap-1">
-          <GraduationCapIcon className="size-3.5 text-primary" />
+        <span className="text-xs font-sans font-semibold text-primary">
           {isParent ? "On 3-Line Paper" : "Penmanship Geometry"}
         </span>
         <span className="text-xs font-sans text-muted-foreground tabular-nums">
@@ -510,7 +508,7 @@ export function RubricReferenceDialog({
                 type="button"
                 onClick={toggleScoreDetails}
                 aria-pressed={showScoreDetails}
-                className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-2.5 py-1 min-h-[36px] inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors shrink-0"
+                className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-2.5 py-1 min-h-[40px] sm:min-h-[36px] inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors shrink-0 touch-manipulation"
               >
                 {showScoreDetails ? "Hide details" : "Show details"}
               </button>
