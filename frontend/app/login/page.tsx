@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, useMemo, useRef, Suspense } from "react";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
+import { ResponsiveTurnstile } from "@/components/auth/responsive-turnstile";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -45,9 +47,14 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
   const [isSending, setIsSending] = useState(false);
   const [isSent, setIsSent] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<TurnstileInstance>(undefined);
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
 
   function handleOpenChange(isOpen: boolean) {
     setOpen(isOpen);
+    setCaptchaToken(null);
+    captchaRef.current?.reset();
     if (isOpen) {
       setResetEmail(initialEmail || "");
       setSendError(null);
@@ -58,6 +65,11 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
   async function handleSendReset(e: React.FormEvent) {
     e.preventDefault();
     if (!resetEmail.trim()) return;
+    if (isSending) return;
+    if (turnstileSiteKey && !captchaToken) {
+      setSendError("Please complete the security verification.");
+      return;
+    }
 
     setIsSending(true);
     setSendError(null);
@@ -68,6 +80,7 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
         resetEmail.trim(),
         {
           redirectTo: redirectUrl,
+          captchaToken: captchaToken ?? undefined,
         }
       );
 
@@ -79,8 +92,10 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
           setSendError(
             "Too many requests. Please wait a few moments before trying again."
           );
+        } else if (code === "captcha_failed") {
+          setSendError("Security verification failed. Please try again.");
         } else {
-          setSendError(error.message || "Failed to send reset email.");
+          setSendError("Failed to send reset email. Please try again.");
         }
         setIsSending(false);
         return;
@@ -94,6 +109,10 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
       setIsSending(false);
     } catch {
       setSendError("An unexpected error occurred. Please try again.");
+    } finally {
+      // Tokens are single-use, including when the auth request fails.
+      setCaptchaToken(null);
+      captchaRef.current?.reset();
       setIsSending(false);
     }
   }
@@ -211,6 +230,23 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
               </div>
             </div>
 
+            {turnstileSiteKey && (
+              <ResponsiveTurnstile
+                id="reset-email-captcha"
+                className="mx-auto"
+                ref={captchaRef}
+                siteKey={turnstileSiteKey}
+                onSuccess={setCaptchaToken}
+                onExpire={() => setCaptchaToken(null)}
+                onTimeout={() => setCaptchaToken(null)}
+                onError={() => {
+                  setCaptchaToken(null);
+                  setSendError("Security verification could not load. Please try again.");
+                }}
+                options={{ theme: "auto" }}
+              />
+            )}
+
             <DialogFooter showCloseButton={false}>
               <DialogClose
                 render={
@@ -257,6 +293,9 @@ function LoginForm() {
   const [isUnconfirmed, setIsUnconfirmed] = useState(false);
   const [isResendingConfirm, setIsResendingConfirm] = useState(false);
   const [resendConfirmSuccess, setResendConfirmSuccess] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<TurnstileInstance>(undefined);
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -345,7 +384,13 @@ function LoginForm() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (isLoading) return;
     setFormError(null);
+
+    if (turnstileSiteKey && !captchaToken) {
+      setFormError("Please complete the security verification.");
+      return;
+    }
 
     setIsLoading(true);
 
@@ -353,6 +398,7 @@ function LoginForm() {
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
+        options: { captchaToken: captchaToken ?? undefined },
       });
 
       if (authError) {
@@ -361,6 +407,10 @@ function LoginForm() {
         } else if (authError.code === "email_not_confirmed") {
           setIsUnconfirmed(true);
           setFormError("Please confirm your email address before signing in. Check your inbox for the link.");
+        } else if (authError.code === "captcha_failed") {
+          setFormError("Security verification failed. Please try again.");
+        } else if (authError.status === 429 || authError.code === "over_request_rate_limit") {
+          setFormError("Too many sign-in attempts. Please wait a moment and try again.");
         } else {
           setFormError("Something went wrong. Please try again.");
         }
@@ -374,6 +424,9 @@ function LoginForm() {
     } catch {
       setFormError("Something went wrong. Please try again.");
       setIsLoading(false);
+    } finally {
+      setCaptchaToken(null);
+      captchaRef.current?.reset();
     }
   }
 
@@ -480,6 +533,23 @@ function LoginForm() {
               </button>
             </div>
           </div>
+
+          {turnstileSiteKey && (
+            <ResponsiveTurnstile
+              id="login-captcha"
+              className="mx-auto"
+              ref={captchaRef}
+              siteKey={turnstileSiteKey}
+              onSuccess={setCaptchaToken}
+              onExpire={() => setCaptchaToken(null)}
+              onTimeout={() => setCaptchaToken(null)}
+              onError={() => {
+                setCaptchaToken(null);
+                setFormError("Security verification could not load. Please try again.");
+              }}
+              options={{ theme: "auto" }}
+            />
+          )}
 
           <Button
             id="login-submit"

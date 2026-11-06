@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
+import { ResponsiveTurnstile } from "@/components/auth/responsive-turnstile";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -65,6 +67,9 @@ function ResetPasswordForm() {
   const [resendError, setResendError] = useState<string | null>(null);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [isDirectVisit, setIsDirectVisit] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<TurnstileInstance>(undefined);
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
 
   const successRef = useRef<HTMLDivElement>(null);
 
@@ -197,6 +202,7 @@ function ResetPasswordForm() {
 
   async function handleResendSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (isResending) return;
     setResendError(null);
 
     if (cooldownSeconds > 0) {
@@ -209,6 +215,11 @@ function ResetPasswordForm() {
       return;
     }
 
+    if (turnstileSiteKey && !captchaToken) {
+      setResendError("Please complete the security verification.");
+      return;
+    }
+
     setIsResending(true);
 
     try {
@@ -217,6 +228,7 @@ function ResetPasswordForm() {
         resendEmail.trim(),
         {
           redirectTo: redirectUrl,
+          captchaToken: captchaToken ?? undefined,
         }
       );
 
@@ -232,6 +244,8 @@ function ResetPasswordForm() {
           setResendError(
             "Too many requests. Please wait a few moments before trying again."
           );
+        } else if (code === "captcha_failed") {
+          setResendError("Security verification failed. Please try again.");
         } else {
           setResendError("Failed to send reset link. Please verify your email and try again.");
         }
@@ -248,6 +262,9 @@ function ResetPasswordForm() {
       setIsResending(false);
     } catch {
       setResendError("An unexpected error occurred. Please try again.");
+    } finally {
+      setCaptchaToken(null);
+      captchaRef.current?.reset();
       setIsResending(false);
     }
   }
@@ -402,6 +419,22 @@ function ResetPasswordForm() {
                     Enter the email address associated with your WriteWise account.
                   </p>
                 </div>
+                {turnstileSiteKey && (
+                  <ResponsiveTurnstile
+                    id="recovery-captcha"
+                    className="mx-auto"
+                    ref={captchaRef}
+                    siteKey={turnstileSiteKey}
+                    onSuccess={setCaptchaToken}
+                    onExpire={() => setCaptchaToken(null)}
+                    onTimeout={() => setCaptchaToken(null)}
+                    onError={() => {
+                      setCaptchaToken(null);
+                      setResendError("Security verification could not load. Please try again.");
+                    }}
+                    options={{ theme: "auto" }}
+                  />
+                )}
                 <Button
                   type="submit"
                   disabled={isResending || cooldownSeconds > 0}
