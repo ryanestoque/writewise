@@ -42,6 +42,7 @@ import {
   Trash2,
   Loader2,
   Lightbulb,
+  PenLine,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -90,6 +91,7 @@ interface WorksheetViewDialogProps {
   onBack?: () => void;
   backLabel?: string;
   returnNote?: string | null;
+  onPracticeNow?: () => void;
 }
 
 export function WorksheetViewDialog({
@@ -112,6 +114,7 @@ export function WorksheetViewDialog({
   submissionId,
   canDelete = false,
   returnNote,
+  onPracticeNow,
 }: WorksheetViewDialogProps) {
   const [showGuideLines, setShowGuideLines] = useState(false);
   const [criterionOverride, setCriterionOverride] = useState<CriterionFilter | null>(null);
@@ -196,6 +199,73 @@ export function WorksheetViewDialog({
       ? bands?.composite ?? getBandFromScore(compositeScore)
       : null;
   const compositeBandMeta = compositeBand ? getBandMeta(compositeBand) : null;
+
+  const renderOverallSummaryCard = (isMobile = false) => {
+    if (compositeScore == null) return null;
+    return (
+      <div
+        className={cn(
+          "rounded-xl border border-border/80 bg-card shadow-2xs",
+          isMobile ? "p-3.5 space-y-2.5" : "hidden lg:block p-4 space-y-3"
+        )}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {compositeBandMeta && (
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn("size-2.5 rounded-full shrink-0", compositeBandMeta.dotColor)}
+                  aria-hidden="true"
+                />
+                <h3 className="text-base sm:text-lg font-heading font-semibold text-foreground">
+                  {compositeBandMeta.label}
+                </h3>
+              </div>
+            )}
+            {showScoreDetails && (
+              <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/60">
+                {Math.round(compositeScore)}% overall
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowScoreDetails((prev) => !prev)}
+            aria-pressed={showScoreDetails}
+            className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-md px-2.5 py-1 min-h-[36px] flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
+          >
+            {showScoreDetails ? "Hide details" : "Show details"}
+          </button>
+        </div>
+
+        <BandPositionBar
+          score={compositeScore}
+          height="sm"
+          showThresholds={showScoreDetails}
+          ariaLabel={
+            showScoreDetails
+              ? `Overall score: ${Math.round(compositeScore)}%`
+              : compositeBandMeta
+                ? `Overall level: ${compositeBandMeta.label}`
+                : "Overall level not yet available"
+          }
+          ariaValueText={
+            showScoreDetails
+              ? `${Math.round(compositeScore)}% overall`
+              : compositeBandMeta
+                ? compositeBandMeta.label
+                : undefined
+          }
+        />
+
+        {compositeBand && PARENT_BAND_EXPLANATIONS[compositeBand] && (
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pt-0.5">
+            {PARENT_BAND_EXPLANATIONS[compositeBand]}
+          </p>
+        )}
+      </div>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -325,7 +395,10 @@ export function WorksheetViewDialog({
 
               {/* Mobile Active Feedback Bridge: Co-located directly under photo */}
               <div className="lg:hidden space-y-3 pt-1">
-                {/* Horizontal Quick Skill Pills Selector */}
+                {/* 1. Mobile Overall Result Summary Card: Promoted above fold directly under photo */}
+                {renderOverallSummaryCard(true)}
+
+                {/* 2. Horizontal Quick Skill Pills Selector */}
                 <div
                   role="toolbar"
                   aria-label="Filter writing lines and feedback by skill"
@@ -402,7 +475,7 @@ export function WorksheetViewDialog({
                     {activeCriterion === "all"
                       ? "Showing ruled writing lines, slant guides, and letter spacing on your child's paper. Tap any skill pill above to inspect specific strokes."
                       : (bands && bands[activeCriterion as CriterionKey] && DIAGNOSTIC_NOTES[activeCriterion as CriterionKey]?.[bands[activeCriterion as CriterionKey]!]) ||
-                        PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.shortDescription}
+                      PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.shortDescription}
                   </p>
 
                   {(() => {
@@ -414,12 +487,28 @@ export function WorksheetViewDialog({
                           : PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.homeTip;
                     if (!tip) return null;
                     return (
-                      <div className="pt-2 border-t border-border/70 flex items-start gap-2 text-band-2-text dark:text-amber-200">
-                        <Lightbulb className="size-4 shrink-0 mt-0.5 text-band-2-text dark:text-amber-200" aria-hidden="true" />
-                        <p className="leading-relaxed text-xs sm:text-sm">
-                          <span className="font-semibold">Home tip: </span>
-                          {tip}
-                        </p>
+                      <div className="pt-2 border-t border-border/70 flex flex-col gap-2.5">
+                        <div className="flex items-start gap-2 text-band-2-text">
+                          <Lightbulb className="size-4 shrink-0 mt-0.5 text-band-2-text" aria-hidden="true" />
+                          <p className="leading-relaxed text-xs sm:text-sm">
+                            <span className="font-semibold">Home tip: </span>
+                            {tip}
+                          </p>
+                        </div>
+                        {onPracticeNow && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => {
+                              onOpenChange(false);
+                              onPracticeNow();
+                            }}
+                            className="self-start h-9 min-h-[36px] px-3 text-xs font-semibold gap-1.5 cursor-pointer touch-manipulation bg-brand-700 hover:bg-brand-800 text-white dark:bg-brand-600 dark:hover:bg-brand-500 shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+                          >
+                            <PenLine className="size-3.5" aria-hidden="true" />
+                            <span>Practice this skill now</span>
+                          </Button>
+                        )}
                       </div>
                     );
                   })()}
@@ -429,68 +518,11 @@ export function WorksheetViewDialog({
 
             {/* Right (Desktop) / Supporting (Mobile): Overall Result & 5 Skills List */}
             <div className="lg:col-span-5 space-y-4 w-full">
-              {compositeScore != null && (
-                <div className="p-4 rounded-xl border border-border/80 bg-card space-y-3 shadow-2xs">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {compositeBandMeta && (
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={cn("size-2.5 rounded-full shrink-0", compositeBandMeta.dotColor)}
-                            aria-hidden="true"
-                          />
-                          <h3 className="text-base sm:text-lg font-heading font-semibold text-foreground">
-                            {compositeBandMeta.label}
-                          </h3>
-                        </div>
-                      )}
-                      {showScoreDetails && (
-                        <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/60">
-                          {Math.round(compositeScore)}% overall
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowScoreDetails((prev) => !prev)}
-                      aria-pressed={showScoreDetails}
-                      className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-md px-2.5 py-1 min-h-[36px] flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
-                    >
-                      {showScoreDetails ? "Hide details" : "Show details"}
-                    </button>
-                  </div>
+              {renderOverallSummaryCard(false)}
 
-                  <BandPositionBar
-                    score={compositeScore}
-                    height="sm"
-                    showThresholds={showScoreDetails}
-                    ariaLabel={
-                      showScoreDetails
-                        ? `Overall score: ${Math.round(compositeScore)}%`
-                        : compositeBandMeta
-                          ? `Overall level: ${compositeBandMeta.label}`
-                          : "Overall level not yet available"
-                    }
-                    ariaValueText={
-                      showScoreDetails
-                        ? `${Math.round(compositeScore)}% overall`
-                        : compositeBandMeta
-                          ? compositeBandMeta.label
-                          : undefined
-                    }
-                  />
-
-                  {compositeBand && PARENT_BAND_EXPLANATIONS[compositeBand] && (
-                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pt-0.5">
-                      {PARENT_BAND_EXPLANATIONS[compositeBand]}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* 5 Handwriting Skills Breakdown */}
+              {/* 5 Handwriting Skills Breakdown (Desktop Right Column; Mobile uses active card under photo above) */}
               {scores && bands && (
-                <div className="space-y-2">
+                <div className="hidden lg:block space-y-2">
                   <div className="flex items-center justify-between gap-2 px-1">
                     <h4 className="text-sm font-heading font-semibold text-foreground">
                       5 Handwriting Skills
@@ -547,7 +579,7 @@ export function WorksheetViewDialog({
         </div>
 
         {/* Footer */}
-        <div className="p-3.5 sm:p-4 border-t border-border bg-card/80 flex items-center justify-between">
+        <div className="p-3.5 sm:p-4 border-t border-border bg-card/80 flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2">
             {onBack && (
               <Button
@@ -575,14 +607,30 @@ export function WorksheetViewDialog({
               </Button>
             )}
           </div>
-          <Button
-            variant="default"
-            size="sm"
-            className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-5 font-medium cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
-            onClick={() => onOpenChange(false)}
-          >
-            Close
-          </Button>
+          <div className="flex items-center gap-2">
+            {onPracticeNow && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  onOpenChange(false);
+                  onPracticeNow();
+                }}
+                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-3.5 text-xs sm:text-sm font-semibold gap-1.5 cursor-pointer touch-manipulation bg-brand-700 hover:bg-brand-800 text-white dark:bg-brand-600 dark:hover:bg-brand-500 shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+              >
+                <PenLine className="size-3.5" aria-hidden="true" />
+                <span>Practice together</span>
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-4 font-medium cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+              onClick={() => onOpenChange(false)}
+            >
+              Close
+            </Button>
+          </div>
         </div>
       </DialogContent>
 

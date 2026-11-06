@@ -2,10 +2,7 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useParentPortal } from "@/components/parent-portal-provider";
-import {
-  ParentStatusHero,
-  LatestSubmissionCard,
-} from "@/components/parent/latest-submission-card";
+import { LatestSubmissionCard } from "@/components/parent/latest-submission-card";
 import { TakeHomeActivities } from "@/components/parent/take-home-activities";
 import { CriterionTrendChart } from "@/components/dashboard/criterion-trend-chart";
 import { RubricReferenceDialog } from "@/components/rubric-reference-dialog";
@@ -18,12 +15,19 @@ import {
   useTakeHomeActivities,
   useChildLatestScores,
 } from "@/lib/hooks/use-parent-data";
-import { computeStrengthAndFocus } from "@/lib/utils/scoring";
+import { computeStrengthAndFocus, PARENT_CRITERIA_LIST } from "@/lib/utils/scoring";
 import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
 import { compareParentActivityUrgency, getParentActivityStatus } from "@/lib/utils/parent-activity-status";
 import { useActivityNow } from "@/components/activities/activity-work-status";
 import { Button } from "@/components/ui/button";
 import { BandBadge } from "@/components/shared/band-badge";
+import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Empty,
   EmptyDescription,
@@ -48,6 +52,7 @@ import {
   LayoutDashboard,
   ClipboardList,
   TrendingUp,
+  ChevronDown,
 } from "lucide-react";
 
 type ParentProgressTab = "overview" | "to-write" | "progress";
@@ -60,7 +65,9 @@ export function ProgressPageContent() {
 
   const {
     selectedChildId,
+    setSelectedChildId,
     selectedChild,
+    children: linkedChildren,
     isLoading: childrenLoading,
     isError: childrenError,
     isRetrying: childrenRetrying,
@@ -75,7 +82,7 @@ export function ProgressPageContent() {
   const [prevChildId, setPrevChildId] = useState<string | null>(selectedChildId);
   if (selectedChildId !== prevChildId) {
     setPrevChildId(selectedChildId);
-    setSelectedTab(null);
+    // Retain selectedTab when switching children so parents stay on Practice or Progress
   }
 
   const toggleScoreDetails = useCallback(() => {
@@ -214,6 +221,39 @@ export function ProgressPageContent() {
       {/* Notification Deep-Link Modal */}
       {notificationDestination}
 
+      {/* Mobile-Friendly Child Switcher (Within comfortable one-handed thumb reach) */}
+      {linkedChildren && linkedChildren.length > 1 && (
+        <div
+          role="radiogroup"
+          aria-label="Select student profile"
+          className="flex sm:hidden items-center gap-2 overflow-x-auto pb-1 scrollbar-none -mt-1 touch-manipulation"
+        >
+          {linkedChildren.map((child) => {
+            const isSelected = child.id === selectedChildId;
+            return (
+              <button
+                key={child.id}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                onClick={() => setSelectedChildId(child.id)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 cursor-pointer transition-all min-h-[36px] touch-manipulation",
+                  isSelected
+                    ? "bg-brand-700 text-white dark:bg-brand-600 shadow-2xs"
+                    : "bg-muted/70 text-muted-foreground hover:text-foreground hover:bg-muted border border-border/70"
+                )}
+              >
+                <span className="truncate max-w-[130px]">{child.fullName}</span>
+                <span className={cn("text-[10px]", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                  ({child.section})
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Page Header Bar (Matches Teacher Portal Dashboard Header) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="space-y-0.5 min-w-0">
@@ -228,30 +268,33 @@ export function ProgressPageContent() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleOpenRubric}
-            aria-haspopup="dialog"
-            className="h-9 min-h-[36px] px-2.5 sm:px-3 text-xs sm:text-sm font-medium gap-1.5 justify-center cursor-pointer shadow-2xs"
-          >
-            <BookOpen className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-            <span className="truncate">How Scores Work</span>
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={openCursiveGuide}
-            aria-haspopup="dialog"
-            className="h-9 min-h-[36px] px-2.5 sm:px-3 text-xs sm:text-sm font-medium gap-1.5 justify-center cursor-pointer shadow-2xs"
-          >
-            <PenTool className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-            <span className="truncate">Cursive Guide</span>
-          </Button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-label="Open penmanship and scoring guides"
+              className="inline-flex items-center justify-center gap-2 h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] w-full sm:w-auto px-3 text-xs sm:text-sm font-medium rounded-lg border border-border bg-background hover:bg-muted/60 text-foreground transition-colors cursor-pointer shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation"
+            >
+              <BookOpen className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+              <span>Penmanship Guides</span>
+              <ChevronDown className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuItem onClick={handleOpenRubric} className="gap-2.5 cursor-pointer py-2">
+                <BookOpen className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+                <div className="flex flex-col">
+                  <span className="font-medium text-xs sm:text-sm">How Scores Work</span>
+                  <span className="text-xs text-muted-foreground">Rubric standards &amp; 5 skill criteria</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={openCursiveGuide} className="gap-2.5 cursor-pointer py-2">
+                <PenTool className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+                <div className="flex flex-col">
+                  <span className="font-medium text-xs sm:text-sm">Interactive Cursive Guide</span>
+                  <span className="text-xs text-muted-foreground">Letter mechanics, guidelines &amp; practice</span>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -279,11 +322,23 @@ export function ProgressPageContent() {
         <div
           role="region"
           aria-label="Practice worksheet needing attention"
-          className="rounded-xl border border-band-2/40 bg-band-2/10 dark:bg-band-2/15 p-3 sm:p-3.5 text-foreground shadow-2xs"
+          className={cn(
+            "rounded-xl p-3.5 sm:p-4 text-foreground shadow-2xs border transition-colors",
+            urgentStatus.urgency === "new_photo"
+              ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
+              : "border-band-2/40 bg-band-2/10 dark:bg-band-2/15"
+          )}
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-2.5 min-w-0">
-              <div className="size-8 rounded-lg bg-band-2/20 text-band-2-text dark:text-amber-300 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
+              <div
+                className={cn(
+                  "size-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 sm:mt-0",
+                  urgentStatus.urgency === "new_photo"
+                    ? "bg-primary/15 text-primary"
+                    : "bg-band-2/20 text-band-2-text"
+                )}
+              >
                 {urgentStatus.urgency === "new_photo" ? (
                   <Camera className="size-4" aria-hidden="true" />
                 ) : (
@@ -292,7 +347,14 @@ export function ProgressPageContent() {
               </div>
               <div className="min-w-0 flex-1 space-y-0.5">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-semibold text-band-2-text dark:text-amber-300 uppercase tracking-wider">
+                  <span
+                    className={cn(
+                      "text-xs font-semibold uppercase tracking-wider",
+                      urgentStatus.urgency === "new_photo"
+                        ? "text-primary"
+                        : "text-band-2-text"
+                    )}
+                  >
                     {urgentStatus.urgency === "new_photo"
                       ? "New photo needed"
                       : urgentStatus.urgency === "overdue"
@@ -326,7 +388,7 @@ export function ProgressPageContent() {
               onClick={() => handleUploadActivity(urgentActivity.id)}
               aria-haspopup="dialog"
               aria-label={`Send ${urgentStatus.urgency === "new_photo" ? "new " : ""}photo for ${urgentActivity.title}`}
-              className="h-9 min-h-[36px] w-full sm:w-auto shrink-0 font-medium text-xs sm:text-sm gap-1.5 cursor-pointer shadow-2xs"
+              className="h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] w-full sm:w-auto shrink-0 font-medium text-xs sm:text-sm gap-1.5 cursor-pointer shadow-2xs touch-manipulation"
             >
               <Camera className="size-4" aria-hidden="true" />
               <span>{urgentStatus.urgency === "new_photo" ? "Send new photo" : "Send photo"}</span>
@@ -352,7 +414,7 @@ export function ProgressPageContent() {
               className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] translate-y-[1px] data-active:text-primary data-active:after:bg-primary"
             >
               <LayoutDashboard className="size-4 shrink-0" aria-hidden="true" />
-              <span>Overview</span>
+              <span>Latest Feedback</span>
             </TabsTrigger>
 
             <TabsTrigger
@@ -374,11 +436,6 @@ export function ProgressPageContent() {
             >
               <TrendingUp className="size-4 shrink-0" aria-hidden="true" />
               <span>Progress</span>
-              {allHistory && allHistory.length > 0 && (
-                <span className="inline-flex items-center justify-center px-1.5 py-0 rounded-full text-xs font-bold tabular-nums bg-muted text-muted-foreground">
-                  {allHistory.length}
-                </span>
-              )}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -401,34 +458,15 @@ export function ProgressPageContent() {
               />
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              <div className="w-full lg:col-span-5">
-                <ParentStatusHero
-                  childId={selectedChildId}
-                  childName={selectedChild.fullName}
-                  section={selectedChild.section}
-                  history={history ?? []}
-                  showScoreDetails={showScoreDetails}
-                />
-              </div>
-
-              <section
-                aria-labelledby="latest-worksheet-heading"
-                className="w-full lg:col-span-7 space-y-3"
-              >
-                <h2
-                  id="latest-worksheet-heading"
-                  className="font-heading text-base sm:text-lg font-semibold text-foreground"
-                >
-                  Latest Worksheet
-                </h2>
-                <LatestSubmissionCard
-                  childId={selectedChildId}
-                  childName={selectedChild.fullName}
-                  showScoreDetails={showScoreDetails}
-                  onNavigateToWrite={handleNavigateToWrite}
-                />
-              </section>
+            <div className="space-y-6">
+              <LatestSubmissionCard
+                childId={selectedChildId}
+                childName={selectedChild.fullName}
+                section={selectedChild.section}
+                history={history ?? []}
+                showScoreDetails={showScoreDetails}
+                onNavigateToWrite={handleNavigateToWrite}
+              />
             </div>
           )}
         </TabsContent>
@@ -507,56 +545,62 @@ export function ProgressPageContent() {
                 />
               </div>
             ) : scoredCount === 1 && history?.[0] ? (
-              <div className="rounded-xl border border-border bg-card p-5 sm:p-6 space-y-4">
+              <div className="rounded-xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-warm">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="space-y-1">
-                    <h3 className="font-heading text-base font-semibold text-foreground">
-                      First Worksheet Checked
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-100 dark:bg-brand-900/60 text-brand-800 dark:text-brand-200 border border-brand-200 dark:border-brand-800">
+                        <CheckCircle2 className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                        Baseline Established
+                      </span>
+                      {showScoreDetails && history[0].compositeScore != null && (
+                        <span className="font-sans text-xs font-semibold tabular-nums text-foreground/80 bg-muted/60 px-2.5 py-0.5 rounded-md border border-border/60">
+                          {Math.round(history[0].compositeScore)}% overall
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-heading text-lg font-semibold text-foreground pt-0.5">
+                      Baseline Handwriting Profile
                     </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed max-w-lg">
-                      {firstName}&apos;s first scored worksheet sets their starting point. After a second worksheet is checked, the progress chart will unlock here.
+                    <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
+                      {firstName}&apos;s first scored worksheet (&ldquo;{history[0].targetText}&rdquo;) sets their foundational benchmark across all 5 handwriting skills. When their next worksheet is checked, comparative growth trends and progress milestones will chart here.
                     </p>
                   </div>
-                  <span className="text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-100 dark:bg-brand-900/60 px-2.5 py-1 rounded-full self-start sm:self-auto shrink-0">
-                    1 of 2 Worksheets
-                  </span>
-                </div>
-
-                <div className="space-y-2 pt-1">
-                  <div className="flex items-center justify-between text-xs sm:text-sm">
-                    <span className="font-medium text-foreground flex items-center gap-1.5">
-                      <CheckCircle2
-                        className="size-4 text-brand-600 dark:text-brand-400"
-                        aria-hidden="true"
-                      />
-                      Worksheet #1
-                    </span>
-                    <span className="text-muted-foreground">Worksheet #2 unlocks chart</span>
-                  </div>
-                  <div
-                    role="progressbar"
-                    aria-valuenow={1}
-                    aria-valuemin={0}
-                    aria-valuemax={2}
-                    aria-label="Worksheets completed to unlock progress chart: 1 of 2"
-                    className="h-2 w-full rounded-full bg-muted overflow-hidden"
-                  >
-                    <div className="h-full w-1/2 rounded-full bg-brand-600 dark:bg-brand-500 transition-all duration-500 motion-reduce:transition-none" />
+                  <div className="shrink-0 self-start sm:self-auto">
+                    <BandBadge score={history[0].compositeScore} band={history[0].compositeBand} size="sm" showDot />
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-border/60 flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground truncate pr-2">
-                    First worksheet (&ldquo;{history[0].targetText}&rdquo;):
-                  </span>
-                  <div className="flex items-center gap-2 font-medium shrink-0">
-                    {showScoreDetails && history[0].compositeScore != null && (
-                      <span className="font-sans tabular-nums font-semibold text-foreground">
-                        {Math.round(history[0].compositeScore)}%
-                      </span>
-                    )}
-                    <BandBadge score={history[0].compositeScore} size="sm" />
-                  </div>
+                {/* 5-Criteria Baseline Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 pt-1">
+                  {PARENT_CRITERIA_LIST.map((criterion) => {
+                    const criterionScore = history[0].scores[criterion.key];
+                    const criterionBand = history[0].bands[criterion.key];
+
+                    return (
+                      <div
+                        key={criterion.key}
+                        className="rounded-lg border border-border/70 bg-muted/20 p-3 space-y-2 flex flex-col justify-between"
+                      >
+                        <span className="text-xs font-semibold text-foreground truncate">
+                          {criterion.label}
+                        </span>
+                        <div className="flex items-center justify-between gap-1.5">
+                          <BandBadge band={criterionBand} score={criterionScore} size="sm" showDot />
+                          {showScoreDetails && criterionScore != null && (
+                            <span className="font-sans text-xs font-medium tabular-nums text-muted-foreground">
+                              {Math.round(criterionScore)}%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-3 border-t border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs sm:text-sm text-muted-foreground">
+                  <span>First worksheet recorded on {new Date(history[0].submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                  <span className="font-medium text-brand-700 dark:text-brand-300">Next milestone: Worksheet #2 adds trend lines</span>
                 </div>
               </div>
             ) : (

@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { createClient } from "@/lib/supabase/client";
 import type { LinkedChild } from "@/lib/hooks/use-parent-data";
-import { Loader2, LogOut, PenTool, Settings, Users } from "lucide-react";
+import { Loader2, LogOut, Settings, Users } from "lucide-react";
 import { toast } from "sonner";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 
@@ -41,7 +41,6 @@ interface ParentNavProps {
   selectedChildId: string | null;
   linkedChildren: LinkedChild[];
   onChildChange: (childId: string) => void;
-  onCursiveGuideClick?: () => void;
 }
 
 export function ParentNav({
@@ -49,7 +48,6 @@ export function ParentNav({
   selectedChildId,
   linkedChildren,
   onChildChange,
-  onCursiveGuideClick,
 }: ParentNavProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -108,8 +106,8 @@ export function ParentNav({
             <BrandLogo size="sm" priority className="hidden sm:inline-flex" />
           </Link>
 
-          {/* Center: Child Switcher (Shown on /progress) */}
-          <div className="flex-1 flex justify-center min-w-0 px-1 sm:px-2">
+          {/* Center: Child Switcher (Desktop/Tablet header, mobile rendered in page content) */}
+          <div className="hidden sm:flex flex-1 justify-center min-w-0 px-2">
             {pathname === "/progress" && linkedChildren.length > 1 ? (
               <Select
                 value={selectedChildId ?? undefined}
@@ -118,7 +116,7 @@ export function ParentNav({
                 }}
               >
                 <SelectTrigger
-                  className="w-auto min-w-0 max-w-[220px] sm:max-w-[340px] h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 border-border/70 bg-card hover:bg-muted/40 transition-colors shadow-xs"
+                  className="w-auto min-w-0 max-w-[340px] h-9 text-xs sm:text-sm font-medium gap-1.5 border-border/70 bg-card hover:bg-muted/40 transition-colors shadow-xs"
                   aria-label="Switch child profile"
                 >
                   <Users className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
@@ -131,7 +129,7 @@ export function ParentNav({
                     ) : undefined}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent align="center" className="w-[240px] sm:w-[280px]">
+                <SelectContent align="center" className="w-[280px]">
                   {linkedChildren.map((child) => (
                     <SelectItem key={child.id} value={child.id} className="cursor-pointer text-sm">
                       <div className="flex flex-col text-left">
@@ -144,7 +142,7 @@ export function ParentNav({
               </Select>
             ) : pathname === "/progress" && linkedChildren.length === 1 ? (
               <div
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/70 bg-card text-xs sm:text-sm font-medium shadow-2xs max-w-[220px] sm:max-w-[340px] min-w-0 select-none"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/50 bg-muted/40 text-xs sm:text-sm font-medium max-w-[340px] min-w-0 select-none"
                 title={`${linkedChildren[0].fullName} (Section ${linkedChildren[0].section})`}
               >
                 <span className="font-semibold text-foreground truncate min-w-0">{linkedChildren[0].fullName}</span>
@@ -185,15 +183,6 @@ export function ParentNav({
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  {onCursiveGuideClick && (
-                    <DropdownMenuItem
-                      onClick={onCursiveGuideClick}
-                      className="cursor-pointer gap-2 py-2 text-sm"
-                    >
-                      <PenTool className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                      <span>Cursive Letter Guide</span>
-                    </DropdownMenuItem>
-                  )}
                   <DropdownMenuItem
                     render={<Link href="/parent-settings" />}
                     className="cursor-pointer gap-2 py-2 text-sm"

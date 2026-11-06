@@ -160,7 +160,7 @@ export function TakeHomeActivities({
         <div className="rounded-xl border border-band-2/30 dark:border-band-2/40 bg-band-2/10 dark:bg-band-2/20 px-3.5 py-2.5 text-xs sm:text-sm leading-relaxed">
           <span className="inline-flex items-center gap-1.5 font-semibold text-band-2-text dark:text-amber-200 mr-1.5">
             <span className="size-1.5 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
-            Practice focus while writing: {focusMeta.label}.
+            Active practice focus: {focusMeta.label}.
           </span>
           <span className="text-foreground/90">{focusMeta.homeTip}</span>
         </div>

@@ -231,13 +231,13 @@ export function SampleReportPreview({
                 role="img"
               >
                 <line x1="20" y1="35" x2="520" y2="35" stroke="#64748b" strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />
-                <text x="22" y="30" fill="#64748b" fontSize="8" fontFamily="sans-serif" opacity="0.7">Top Line</text>
+                <text x="22" y="30" fill="#475569" fontSize="8.5" fontFamily="sans-serif" fontWeight="500">Top Line</text>
 
                 <line x1="20" y1="85" x2="520" y2="85" stroke="#1b6b63" strokeWidth="1.25" strokeDasharray="4 4" opacity="0.8" />
-                <text x="22" y="80" fill="#1b6b63" fontSize="8" fontFamily="sans-serif" opacity="0.8">Middle Line</text>
+                <text x="22" y="80" fill="#145049" fontSize="8.5" fontFamily="sans-serif" fontWeight="500">Middle Line</text>
 
                 <line x1="20" y1="135" x2="520" y2="135" stroke="#9c4a2f" strokeWidth="1.5" opacity="0.85" />
-                <text x="22" y="147" fill="#9c4a2f" fontSize="8" fontFamily="sans-serif" opacity="0.85">Bottom Line</text>
+                <text x="22" y="147" fill="#80351e" fontSize="8.5" fontFamily="sans-serif" fontWeight="500">Bottom Line</text>
 
                 <line x1="20" y1="165" x2="520" y2="165" stroke="#64748b" strokeWidth="0.75" strokeDasharray="2 3" opacity="0.4" />
 

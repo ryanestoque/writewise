@@ -162,7 +162,6 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
           selectedChildId={selectedChildId}
           linkedChildren={linkedChildren ?? []}
           onChildChange={setSelectedChildId}
-          onCursiveGuideClick={openCursiveGuide}
         />
         <main className="w-full min-w-0 flex-1 space-y-6 px-4 py-6 sm:px-6">
           {pageChildren}

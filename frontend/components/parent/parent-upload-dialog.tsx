@@ -460,8 +460,8 @@ function ParentUploadFlow({
                     >
                       <div
                         className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-all ${isCompleted
-                            ? "bg-primary text-primary-foreground group-hover:bg-primary/90 group-hover:scale-105"
-                            : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"
+                          ? "bg-primary text-primary-foreground group-hover:bg-primary/90 group-hover:scale-105"
+                          : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"
                           }`}
                       >
                         {isCompleted ? (
@@ -478,10 +478,10 @@ function ParentUploadFlow({
                     <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                       <div
                         className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors ${isCompleted
-                            ? "bg-primary text-primary-foreground"
-                            : isCurrent
-                              ? "bg-primary/15 text-primary ring-2 ring-primary ring-offset-2 ring-offset-background"
-                              : "bg-muted text-muted-foreground"
+                          ? "bg-primary text-primary-foreground"
+                          : isCurrent
+                            ? "bg-primary/15 text-primary ring-2 ring-primary ring-offset-2 ring-offset-background"
+                            : "bg-muted text-muted-foreground"
                           }`}
                       >
                         {isCompleted ? (
@@ -492,10 +492,10 @@ function ParentUploadFlow({
                       </div>
                       <span
                         className={`text-xs sm:text-sm truncate font-medium ${isCurrent
-                            ? "text-foreground font-semibold"
-                            : isCompleted
-                              ? "text-foreground"
-                              : "text-muted-foreground"
+                          ? "text-foreground font-semibold"
+                          : isCompleted
+                            ? "text-foreground"
+                            : "text-muted-foreground"
                           }`}
                       >
                         {s.label}
@@ -556,10 +556,10 @@ function ParentUploadFlow({
                 <span
                   key={idx}
                   className={`size-1.5 rounded-full transition-all duration-300 ${idx === processingStageIndex
-                      ? "bg-primary w-4"
-                      : idx < processingStageIndex
-                        ? "bg-primary/50"
-                        : "bg-muted-foreground/30"
+                    ? "bg-primary w-4"
+                    : idx < processingStageIndex
+                      ? "bg-primary/50"
+                      : "bg-muted-foreground/30"
                     }`}
                 />
               ))}
@@ -609,8 +609,8 @@ function ParentUploadFlow({
                             setStep(2);
                           }}
                           className={`flex flex-col text-left p-3.5 rounded-xl border transition-all text-xs sm:text-sm cursor-pointer shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${isSelected
-                              ? "border-primary bg-primary/5 ring-1 ring-primary"
-                              : "border-border/80 bg-card hover:border-primary/60 hover:bg-muted/30"
+                            ? "border-primary bg-primary/5 ring-1 ring-primary"
+                            : "border-border/80 bg-card hover:border-primary/60 hover:bg-muted/30"
                             }`}
                         >
                           <div className="flex items-center justify-between gap-2">
@@ -654,15 +654,13 @@ function ParentUploadFlow({
                       {selectedActivity?.targetText ?? "Take-Home Activity"}
                     </span>
                   </div>
-                  {!prefilledActivityId && (
-                    <button
-                      type="button"
-                      onClick={() => setStep(1)}
-                      className="inline-flex min-h-10 items-center px-2 text-xs text-primary font-medium hover:underline shrink-0 cursor-pointer rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                      Change
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="inline-flex min-h-10 items-center px-2 text-xs text-primary font-medium hover:underline shrink-0 cursor-pointer rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    Change activity
+                  </button>
                 </div>
 
                 {/* Reassurance banner for re-attempts */}
@@ -734,8 +732,8 @@ function ParentUploadFlow({
                     handleFileChange(e.dataTransfer.files?.[0]);
                   }}
                   className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-all text-center shadow-warm ${isDragging
-                      ? "border-primary bg-primary/5 scale-[0.99]"
-                      : "border-border bg-card hover:border-primary/60 hover:bg-muted/10"
+                    ? "border-primary bg-primary/5 scale-[0.99]"
+                    : "border-border bg-card hover:border-primary/60 hover:bg-muted/10"
                     }`}
                 >
                   <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-2.5">
@@ -991,8 +989,8 @@ function ParentUploadFlow({
                   {previewUrl && (
                     <div
                       className={`relative w-full rounded-xl overflow-hidden bg-muted/40 border border-border flex items-center justify-center touch-pan-y ${isPortrait
-                          ? "aspect-3/4 max-h-[380px] sm:max-h-[440px]"
-                          : "aspect-4/3 max-h-[300px] sm:max-h-[360px]"
+                        ? "aspect-3/4 max-h-[240px] sm:max-h-[400px]"
+                        : "aspect-4/3 max-h-[220px] sm:max-h-[340px]"
                         }`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1075,7 +1073,6 @@ function ParentUploadFlow({
             <Button
               variant="outline"
               onClick={() => setStep(1)}
-              disabled={Boolean(prefilledActivityId) && !!selectedActivity}
               className="gap-1.5 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
             >
               <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
