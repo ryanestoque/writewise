@@ -431,7 +431,7 @@ export function ReleaseActivityButton({ activityId }: { activityId: string }) {
     try {
       const result = await mutation.mutateAsync(activityId);
       toast.success(
-        `Released ${result.released_count} ${result.released_count === 1 ? "result" : "results"}.`
+        `Released ${result.released_count} worksheet ${result.released_count === 1 ? "result" : "results"} and ${result.released_grade_count} point ${result.released_grade_count === 1 ? "grade" : "grades"}.`
       );
       setOpen(false);
     } catch (error) {
@@ -448,7 +448,7 @@ export function ReleaseActivityButton({ activityId }: { activityId: string }) {
           setOpen(true);
         }}
       >
-        Release results ({count})
+        Release activity
       </Button>
       <Dialog
         open={open}
@@ -458,12 +458,18 @@ export function ReleaseActivityButton({ activityId }: { activityId: string }) {
       >
         <DialogContent finalFocus={focusTarget}>
           <DialogHeader>
-            <DialogTitle>Release results to parents?</DialogTitle>
+            <DialogTitle>Release activity results and grades?</DialogTitle>
             <DialogDescription>
-              Share {count} active graded {count === 1 ? "result" : "results"}, including scores and
-              diagnostic feedback. Returned and ungraded attempts are skipped.
+              Share all eligible worksheet results and point grades for this activity across its
+              assigned sections. This includes draft overrides and zeros, even without uploads.
+              Excused work is skipped. A worksheet&apos;s assessment and diagnostic feedback are shared
+              only when that attempt is scored.
             </DialogDescription>
           </DialogHeader>
+          <p className="text-muted-foreground text-sm">
+            {count} draft worksheet {count === 1 ? "result is" : "results are"} currently ready.
+            Additional point grades may be released. Review point grades in the gradebook before confirming.
+          </p>
           {error && (
             <p role="alert" className="text-destructive text-sm">
               {error}
@@ -474,7 +480,7 @@ export function ReleaseActivityButton({ activityId }: { activityId: string }) {
               Cancel
             </Button>
             <Button onClick={release} disabled={mutation.isPending}>
-              {mutation.isPending ? "Releasing…" : "Release results"}
+              {mutation.isPending ? "Releasing…" : "Release all eligible results and grades"}
             </Button>
           </DialogFooter>
         </DialogContent>

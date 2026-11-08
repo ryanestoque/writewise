@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-08 (Slice 5 storage/mutations verified in disposable CI; publication/UI closeout in progress)
+**Last updated:** 2026-11-08 (Slice 5 implemented and 870-test CI verified; final UI closeout and real portal manual QA open)
 
 ## Summary
 
@@ -255,16 +255,18 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 ### Slice ⑤ — Points and gradebook
 
-**Dependency:** Slices ①–② for coursework and Slice ④ for the email eligibility extension. **Status: Partial — storage/read/mutation foundation verified; lifecycle review regressions and final UI/manual gates open.**
+**Dependency:** Slices ①–② for coursework and Slice ④ for the email eligibility extension. **Status: Implemented — automated stack verified; real portal manual acceptance remains open.**
+
+**Latest verification:** [CI 42472687939](https://github.com/ryanestoque/writewise/actions/runs/42472687939), code head `8d7e5c9`, passed **870 tests**, all five upgrade proofs, actual API/database generation comparisons and security advisors. Local **274 unit cases**, Ruff, ESLint, TypeScript and production webpack build pass. Controlled localhost browser checks cover sibling preservation, inactive-account book/dialog suppression, phone overflow, cell keyboard/focus, draft zero and nested work settings. Final UI follow-ups clarify the existing activity release dialog's point-grade scope and preserve the reviewed bulk selection through an error/refresh; those were built, linted and checked in the browser before their final branch checkpoint. Real signed-in hosted/stack portal acceptance remains open, as does Slice 4 email manual QA. Phase 3 remains **3/6 verified**.
 
 **Execution start (2026-11-08):** The user approved the [design](docs/superpowers/specs/2026-11-07-phase3-points-gradebook-design.md), requested the [plan](docs/superpowers/plans/2026-11-07-phase3-points-gradebook.md), and selected inline execution. The isolated feature branch locally combines newer main with the unmerged email foundation. The first 61 new pure scoring/contract cases passed after their missing-feature red run. Initial storage/read RLS tests and the CI trigger are prepared, but no schema is implemented or verified. Local Docker/Podman is unavailable; publishing this branch for disposable CI requires separate authorization. Slice 4 manual QA remains pending and Phase 3 remains **3/6 verified**.
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|
-| Optional activity points, overrides, excused/Assign 0 | Partial | Atomic maximum/override/removal guards, draft zero, excuse precedence and service-only bulk mutations passed disposable-stack tests. Publication review fixes and final-head CI remain open. No hosted migration applied. |
-| Provider-owned points and overall percentage | Implemented, final verification open | Existing recorded scores, manual midpoints and shared 25/50/75 cutoffs are retained. Decimal arithmetic stays behind ScoreProvider; shared assembly excludes hidden parent drafts and excused work. |
-| Teacher section grid and parent child row | Partial | Grid, work grade controls, archived filtering, released-only parent Grades and no-upload destinations implemented. Browser QA/review fixes are in progress; no manual sign-off claimed. |
-| FastAPI CSV export and verification | Partial | Caller-JWT/RLS JSON and CSV share one assembler; real-JWT family denial and a 1,092-cell request passed CI. Final UI/CSV comparison and final-head gates remain open. |
+| Optional activity points, overrides, excused/Assign 0 | Implemented; manual acceptance open | Atomic guards, draft zero, publication/recovery, lifecycle races, deletion and reminder eligibility passed the disposable stack. No hosted migration applied. |
+| Provider-owned points and overall percentage | Implemented | Recorded values/manual midpoints and shared cutoffs are retained. ScoreProvider owns Decimal arithmetic; shared assembly excludes hidden parent drafts and excused work. |
+| Teacher section grid and parent child row | Implemented; manual acceptance open | Grid, existing work controls, archived filtering, released-only Grades and points-only destinations implemented; controlled browser QA passes. No user manual sign-off claimed. |
+| FastAPI CSV export and verification | Implemented; manual acceptance open | Caller-JWT/RLS JSON/CSV share one assembler; real-JWT family denial and a 1,092-cell request passed CI. Real portal/CSV acceptance remains open. |
 
 **Execution evidence:** The user authorized feature-branch CI pushes and subsequent checkpoints. [Mutation checkpoint 42451508183](https://github.com/ryanestoque/writewise/actions/runs/42451508183) passed **828 tests**, existing upgrade proofs and advisors; its exact generated database artifact was paired into schema commit `d6b26c5`. [Lifecycle red checkpoint 42452183751](https://github.com/ryanestoque/writewise/actions/runs/42452183751) passed **838 tests** and reproduced missing publication/reminder work. A provisional implementation run stopped before tests on registry/port infrastructure errors; a fresh runner is checking implementation and reviewed regressions. See the [execution record](docs/superpowers/plans/2026-11-07-phase3-points-gradebook.md) for exact heads and remaining gates. Slice 4 manual QA remains pending; Phase 3 stays **3/6 verified**. No main merge, hosted migration/reset, deployment or live email is claimed.
 

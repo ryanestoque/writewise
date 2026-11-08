@@ -89,12 +89,12 @@ export function GradebookBulkDialog({
           </DialogTitle>
           <DialogDescription>
             {operation === "release"
-              ? "Release all eligible grades and worksheet results for this activity across its assigned sections. This includes no-upload overrides. Excused and ungraded work is skipped."
-              : `${studentIds.length} students selected. ${operation === "zero" ? "Only currently Missing work without an existing override receives a draft zero. Release it separately to share it with parents." : "Their work will leave both sides of the points total, and reminders will stop."}`}
+              ? "Release all eligible grades and worksheet results for this activity across its assigned sections. This includes no-upload overrides. Excused work is skipped. A worksheet’s assessment is shared only when it is scored."
+              : `${studentIds.length} ${studentIds.length === 1 ? "student" : "students"} selected. ${operation === "zero" ? "Only currently Missing work without an existing override receives a draft zero. Release it separately to share it with parents." : "Their work will leave both sides of the points total, and reminders will stop."}`}
           </DialogDescription>
         </DialogHeader>
         <p className="text-sm">
-          {eligibleCount} currently eligible
+          {eligibleCount} eligible when reviewed
           {operation === "release" ? " in this section" : ` of ${studentIds.length} selected`}.
           Eligibility is checked again when you confirm.
         </p>

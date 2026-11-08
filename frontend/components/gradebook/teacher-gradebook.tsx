@@ -106,6 +106,8 @@ function SectionGrid({ userId, sectionId }: { userId: string; sectionId: string 
   const [bulk, setBulk] = useState<{
     activityId: string;
     operation: "zero" | "excuse" | "release";
+    studentIds: string[];
+    eligibleCount: number;
   } | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState("");
@@ -139,6 +141,30 @@ function SectionGrid({ userId, sectionId }: { userId: string; sectionId: string 
     (activity) => filter === "all" || activity.is_archived === (filter === "archived")
   );
   const targets = selected.size ? book.rows.filter((row) => selected.has(row.student_id)) : rows;
+  function beginBulk(activityId: string, operation: "zero" | "excuse" | "release") {
+    const eligibleCount = (operation === "release" ? book.rows : targets).filter((row) => {
+      const work = row.cells.find((entry) => entry.activity_id === activityId);
+      if (!work?.applicable || work.coursework_status === "Excused") return false;
+      if (operation === "zero")
+        return (
+          work.coursework_status === "Missing" &&
+          work.points_override === null &&
+          work.active_submission_id === null
+        );
+      if (operation === "release")
+        return (
+          (work.final_points !== null && work.publication !== "released") ||
+          (work.points_possible === null && work.coursework_status === "Draft")
+        );
+      return true;
+    }).length;
+    setBulk({
+      activityId,
+      operation,
+      studentIds: targets.map((row) => row.student_id),
+      eligibleCount,
+    });
+  }
   const toggle = (id: string, checked: boolean) =>
     setSelected((old) => {
       const next = new Set(old);
@@ -288,7 +314,7 @@ function SectionGrid({ userId, sectionId }: { userId: string; sectionId: string 
                             (operation === "zero" && activity.points_possible === null)
                           }
                           aria-label={`${operation === "zero" ? "Assign draft zeros" : operation === "excuse" ? "Excuse selected work" : "Release all activity grades"}: ${activity.title}`}
-                          onClick={() => setBulk({ activityId: activity.id, operation })}
+                          onClick={() => beginBulk(activity.id, operation)}
                         >
                           {operation === "zero"
                             ? "Assign 0"
@@ -375,25 +401,8 @@ function SectionGrid({ userId, sectionId }: { userId: string; sectionId: string 
           key={`${bulk.activityId}:${bulk.operation}`}
           userId={userId}
           activityId={bulk.activityId}
-          studentIds={targets.map((row) => row.student_id)}
-          eligibleCount={
-            (bulk.operation === "release" ? book.rows : targets).filter((row) => {
-              const work = row.cells.find((entry) => entry.activity_id === bulk.activityId);
-              if (!work?.applicable || work.coursework_status === "Excused") return false;
-              if (bulk.operation === "zero")
-                return (
-                  work.coursework_status === "Missing" &&
-                  work.points_override === null &&
-                  work.active_submission_id === null
-                );
-              if (bulk.operation === "release")
-                return (
-                  (work.final_points !== null && work.publication !== "released") ||
-                  (work.points_possible === null && work.coursework_status === "Draft")
-                );
-              return true;
-            }).length
-          }
+          studentIds={bulk.studentIds}
+          eligibleCount={bulk.eligibleCount}
           operation={bulk.operation}
           open
           onOpenChange={(open) => {
