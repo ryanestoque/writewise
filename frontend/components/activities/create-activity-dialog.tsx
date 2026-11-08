@@ -84,6 +84,7 @@ export function CreateActivityDialog({
       due_input: "", close_after_due: false,
       target_text: initialValues?.target_text ?? "",
       is_take_home: initialValues?.is_take_home ?? false,
+      points_input: initialValues?.points_possible?.toString() ?? "", confirm_remove_points: false,
     },
   });
 
@@ -100,6 +101,7 @@ export function CreateActivityDialog({
       due_input: "", close_after_due: false,
       target_text: initialValues?.target_text ?? "",
         is_take_home: initialValues?.is_take_home ?? false,
+        points_input: initialValues?.points_possible?.toString() ?? "", confirm_remove_points: false,
       });
     }
   }, [open, initialValues, form]);
@@ -116,6 +118,7 @@ export function CreateActivityDialog({
         due_at: toActivityDueAt(data.due_input), close_after_due: data.close_after_due,
         target_text: data.target_text,
         is_take_home: data.is_take_home,
+        points_possible: data.points_input || null,
       },
       {
         onSuccess: () => {

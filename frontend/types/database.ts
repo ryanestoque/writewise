@@ -931,6 +931,7 @@ export type Database = {
           activity_id: string | null
           due_at_override: string | null
           effective_due_at: string | null
+          excused: boolean | null
           late: boolean | null
           latest_rejection_code: string | null
           latest_status: Database["public"]["Enums"]["submission_status"] | null
@@ -976,6 +977,14 @@ export type Database = {
       }
     }
     Functions: {
+      assign_zero_missing: {
+        Args: {
+          actor_id: string
+          target_activity_id: string
+          target_student_ids?: string[]
+        }
+        Returns: Json
+      }
       authorize_email_delivery: {
         Args: {
           expected_claim_token: string
@@ -992,6 +1001,15 @@ export type Database = {
       }
       create_assigned_activity: {
         Args: { actor_id: string; payload: Json }
+        Returns: Json
+      }
+      excuse_activity_students: {
+        Args: {
+          actor_id: string
+          excused: boolean
+          target_activity_id: string
+          target_student_ids: string[]
+        }
         Returns: Json
       }
       finish_email_delivery: {

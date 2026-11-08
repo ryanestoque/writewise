@@ -41,6 +41,8 @@ A read-only boundary review found no confirmed Critical/Important code defect in
 
 ## Global Constraints
 
+**Task 3 red observed:** [CI 42450566159](https://github.com/ryanestoque/writewise/actions/runs/42450566159), exact head `c736733`, passed 793 tests and all preceding upgrade/contract gates. Nineteen fixture errors and two failures establish missing activity/work points mutations; one additional failure reproduces value-equivalent numeric text invalidating publication. New CLI migration `20261108053044_phase3_gradebook_mutations.sql` adds on-demand grade synchronization, decimal-canonical signatures, atomic maximum/override/removal guards, excuse precedence and service-only bulk mutations. A provisional checkpoint obtains exact regenerated database types before schema delivery. Exposed activity/work contracts passed red/green; all 263 database-free regression cases pass (one upstream warning). The old pre-Slice-5 assertion that rejects `points_override` now rejects the still-forbidden `earned_points` field instead.
+
 **Independent Task 7 transport progress:** Account-scoped gradebook reads and CSV download now verify the exact session/token before and after transport; account changes abort stale results. The persistent notification controller also cancels/removes gradebook caches on auth changes. Eleven controlled scenarios passed, including logout/account-switch races, token rotation, HTTP errors and object-URL cleanup. ESLint and TypeScript passed. No gradebook screen or mutation UI is delivered by this checkpoint.
 
 The following sentences are copied from the approved spec and apply to every task:

@@ -41,7 +41,7 @@ def test_invalid_return_input_cannot_enter_lifecycle(payload):
     "payload",
     [
         {},
-        {"points_override": 0},
+        {"earned_points": 0},
         {"pinned_submission_id": "bad-uuid"},
         {"due_at_override": "2026-11-04T12:00:00"},
     ],

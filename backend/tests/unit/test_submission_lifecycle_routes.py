@@ -144,6 +144,33 @@ def test_unauthorized_return_never_starts_mutation(case, owner, roster):
     assert case.writes == []
 
 
+@pytest.mark.parametrize(
+    "db_code,status,code",
+    [
+        ("WW432", 409, "POINTS_OVERRIDE_CONFLICT"),
+        ("WW433", 409, "POINTS_REMOVAL_CONFIRMATION_REQUIRED"),
+        ("WW434", 422, "VALIDATION_ERROR"),
+    ],
+)
+def test_point_mutation_conflicts_use_codes_without_sql_details(case, db_code, status, code):
+    case.error = db_code
+    result = case.client.put(
+        f"/api/activities/{ACTIVITY}/students/{STUDENT}/work", json={"points_override": "0"}
+    )
+    assert result.status_code == status
+    assert result.json()["error"]["code"] == code
+    assert "private" not in result.text
+
+
+def test_work_point_and_excuse_inputs_preserve_omission_in_authorized_rpc(case):
+    result = case.client.put(
+        f"/api/activities/{ACTIVITY}/students/{STUDENT}/work",
+        json={"points_override": "0", "excused": False},
+    )
+    assert result.status_code == 200, result.text
+    assert case.writes[0]["payload"] == {"points_override": "0", "excused": False}
+
+
 def test_parent_cannot_release_even_a_known_submission(case):
     case.role = "parent"
     result = case.client.post(f"/api/submissions/{SUBMISSION}/release")

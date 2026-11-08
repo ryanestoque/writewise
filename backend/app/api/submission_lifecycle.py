@@ -15,10 +15,12 @@ from app.api.submission_contracts import (
     StudentWorkUpdate,
 )
 from app.core.supabase import supabase_client
+from app.gradebook.errors import GRADE_ERRORS
 
 router = APIRouter()
 
 _ERRORS = {
+    **GRADE_ERRORS,
     "WW411": (409, "SUBMISSIONS_CLOSED", "Submissions are closed for this activity."),
     "WW412": (404, "ACTIVITY_NOT_ASSIGNED", "Activity is not assigned to this student."),
     "WW413": (
@@ -94,7 +96,17 @@ def _owned_work(actor_id: str, activity_id: str, student_id: str, historical=Fal
                 .data
             )
             if not history:
-                raise _not_found()
+                grade_history = (
+                    supabase_client.table("student_work_grade")
+                    .select("id")
+                    .eq("activity_id", activity_id)
+                    .eq("student_id", student_id)
+                    .limit(1)
+                    .execute()
+                    .data
+                )
+                if not grade_history:
+                    raise _not_found()
 
 
 def _owned_submission(actor_id: str, submission_id: str) -> dict:

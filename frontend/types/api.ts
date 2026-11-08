@@ -472,6 +472,8 @@ export interface components {
              * @default false
              */
             close_after_due: boolean;
+            /** Points Possible */
+            points_possible?: (number | string) | null;
         };
         /** ActivityResponse */
         ActivityResponse: {
@@ -506,9 +508,18 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Points Possible */
+            points_possible?: string | null;
         };
         /** ActivityUpdate */
         ActivityUpdate: {
+            /** Points Possible */
+            points_possible?: (number | string) | null;
+            /**
+             * Confirm Remove Points
+             * @default false
+             */
+            confirm_remove_points: boolean;
             /** Title */
             title?: string | null;
             /** Target Text */
@@ -878,9 +889,19 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+            /**
+             * Excused
+             * @default false
+             */
+            excused: boolean;
+            grade?: components["schemas"]["WorkGradeRecord"] | null;
         };
         /** StudentWorkUpdate */
         StudentWorkUpdate: {
+            /** Points Override */
+            points_override?: (number | string) | null;
+            /** Excused */
+            excused?: boolean | null;
             /** Due At Override */
             due_at_override?: string | null;
             /** Pinned Submission Id */
@@ -917,6 +938,34 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** WorkGradeRecord */
+        WorkGradeRecord: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Activity Id
+             * Format: uuid
+             */
+            activity_id: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Points Override */
+            points_override: string | null;
+            /** Source Submission Id */
+            source_submission_id: string | null;
+            /** Revision */
+            revision: number;
+            /** Released Revision */
+            released_revision: number | null;
+            /** Released At */
+            released_at: string | null;
         };
     };
     responses: never;

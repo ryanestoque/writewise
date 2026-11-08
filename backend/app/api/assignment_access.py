@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from postgrest.exceptions import APIError
 
 from app.core.supabase import supabase_client
+from app.gradebook.errors import GRADE_ERRORS
 
 
 def invalid_targets() -> HTTPException:
@@ -66,6 +67,11 @@ def mutate_assigned_activity(name: str, params: dict) -> dict:
     try:
         result = supabase_client.rpc(name, params).execute()
     except APIError as exc:
+        if exc.code in GRADE_ERRORS:
+            status, code, message = GRADE_ERRORS[exc.code]
+            raise HTTPException(
+                status, detail={"code": code, "message": message, "details": {}}
+            ) from exc
         if exc.code == "22023":
             raise invalid_targets() from exc
         if exc.code == "P0002":
