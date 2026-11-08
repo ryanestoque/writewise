@@ -128,6 +128,24 @@ jobs:
         cd ..
         supabase db reset --local
 
+    - name: Verify legacy gradebook upgrade
+      # The gradebook proof starts from the complete pre-gradebook email schema.
+      # Run before the unchanged email network guard is replayed below.
+      if: success()
+      run: |
+        supabase db reset --local --version 20261103132241
+        cd backend
+        ENVIRONMENT=test uv run python tests/migrations/gradebook_upgrade_check.py prepare --manifest /tmp/gradebook-upgrade.json
+        if ENVIRONMENT=test uv run python tests/migrations/gradebook_upgrade_check.py schema --manifest /tmp/gradebook-upgrade.json; then
+          exit 1
+        fi
+        cd ..
+        supabase migration up --local
+        cd backend
+        ENVIRONMENT=test uv run python tests/migrations/gradebook_upgrade_check.py verify --manifest /tmp/gradebook-upgrade.json
+        cd ..
+        supabase db reset --local
+
     - name: Verify fail-closed network guard and owner provisioning
       run: |
         docker exec -i supabase_db_writewise-test psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < backend/tests/migrations/email_network_guard_check.sql

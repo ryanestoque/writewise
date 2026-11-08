@@ -1,5 +1,13 @@
 # WriteWise — DESIGN.md
 
+## Phase 3 Slice 5 — gradebook surfaces
+
+Teacher navigation includes Gradebook. Choose a section, search students and filter current/archived activities; those display filters never recalculate totals or narrow the CSV. The grid alone scrolls horizontally on a phone, with student labels retained. Cells expose student/activity context to assistive technology and support arrow-key movement. Show coursework status, automatic/final points, override state and publication separately from the handwriting assessment band. Totals explicitly include drafts for teachers.
+
+Opening a cell shows its reviewed revision, override/clear/Assign 0, excuse/unexcuse and release controls, plus existing deadline, counted-attempt and Return controls. Work details load only while open. Saved grade changes require another review/release; a revision conflict refreshes data and asks the teacher to reopen and review, without automatically releasing a newer revision. Bulk confirmation names selected/currently eligible counts and authoritative changed/skipped results. Activity-wide release explicitly names its cross-section scope. Removing points uses a confirmation explaining cleared overrides and withdrawn point grades.
+
+Parent Progress includes Grades, grouped by teacher with released-only totals. Pending point grades say “Not yet released” and retain their public maximum; no hidden value, synthetic zero or Draft badge appears. Bands-only work keeps its released handwriting assessment. Excused work is labelled and excluded. No-upload/points-only result notices open Grades; an unavailable target offers a return to Grades. Clearing a notification destination preserves the selected sibling. Inactive accounts suppress rendered grades/dialogs as well as clearing caches. Existing Latest Feedback, Practice, progress trends and upload permissions are retained.
+
 **A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and Progress Monitoring System**
 
 - **Document type:** Internal design guide (companion to PRD.md, ARCHITECTURE.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, SECURITY.md, TESTING.md, DEPLOYMENT.md)

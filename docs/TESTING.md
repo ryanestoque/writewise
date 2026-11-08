@@ -1,5 +1,13 @@
 # WriteWise — TESTING.md
 
+## Phase 3 Slice 5 verification
+
+Gradebook tests cover recorded manual midpoints/calibrated precedence, Decimal half-up conversion, strict request/decimal response models, shared JSON/CSV assembly, hidden parent drafts, formula-safe CSV text, safe column grants and real-JWT isolation. A 1,092-cell integration case uses the actual caller timeout. SQL tests cover no-upload zero, publication revisions/idempotency, excused exclusion, maximum/removal rollback, lifecycle synchronization and coordinated deletion. Observed PostgreSQL lock waits establish race ordering; failed event insertion must roll back rubric and grade publication together.
+
+The upgrade proof starts at complete Slice 4 schema `20261103132241`, preparing two synthetic families, released/draft scores, notices/receipts, preferences and pending/skipped email. A schema assertion is deliberately red before migration application. Afterward, hashes and RLS reads check historical state, bands-only defaults, new zero/release, cross-family denial and retained metadata. The temporary manifest holds synthetic identifiers and an expected hash, never names, images, passwords or tokens.
+
+Docker/Podman is unavailable on the implementation machine; the user authorized this feature branch's disposable GitHub Actions runner. Delivered migrations are paired with actual generated artifacts from their exact tested SHAs. Local unit tests, Ruff, ESLint, TypeScript and production webpack build complement CI. Controlled browser fixtures verify rendering/interactions without establishing a hosted migration, live email or user manual QA sign-off. Exact evidence and open gates remain in `IMPLEMENTATION_STATUS.md` and the Slice 5 execution record.
+
 **Software Testing Strategy — Build Guide**
 
 - **Document type:** Internal engineering build guide (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, SECURITY.md, DEPLOYMENT.md)

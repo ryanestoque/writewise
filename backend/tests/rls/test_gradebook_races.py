@@ -1,6 +1,7 @@
 """Observed activity-lock waits prove stale publications cannot win lifecycle races."""
 
 import asyncio
+import json
 import os
 from uuid import uuid4
 
@@ -17,6 +18,57 @@ from tests.rls.gradebook_support import (
 )
 from tests.rls.notification_support import wait_for_database_lock
 from tests.rls.test_gradebook_lifecycle import complete
+
+
+def test_bulk_zero_waits_for_completion_and_skips_new_counted_attempt(family, assigned_activity):
+    activity, student = assigned_activity["id"], family["students"][0]
+    configure_points(family, activity, "20")
+    admin.table("activity").update({"due_at": "2020-01-01T00:00:00Z"}).eq("id", activity).execute()
+    source = stored_attempt(family, activity)
+    admin.table("submission").update({"status": "processing"}).eq("id", source["id"]).execute()
+
+    async def race():
+        owner = await asyncpg.connect(os.environ["SUPABASE_DB_URL"])
+        waiter = await asyncpg.connect(os.environ["SUPABASE_DB_URL"])
+        task = None
+        try:
+            await waiter.execute(
+                "select set_config('request.jwt.claims','{\"role\":\"service_role\"}',false)"
+            )
+            async with owner.transaction():
+                await owner.execute(
+                    "select set_config('request.jwt.claims','{\"role\":\"service_role\"}',true)"
+                )
+                await owner.fetchval(
+                    "select id from public.activity where id=$1 for update", activity
+                )
+                task = asyncio.create_task(
+                    waiter.fetchval(
+                        "select public.assign_zero_missing($1,$2,$3::uuid[])",
+                        family["teacher"],
+                        activity,
+                        [student],
+                    )
+                )
+                await wait_for_database_lock(owner, waiter.get_server_pid())
+                await owner.fetchval(
+                    "select public.complete_student_submission($1,$2)",
+                    family["teacher"],
+                    source["id"],
+                )
+            return json.loads(await task)
+        finally:
+            if task and not task.done():
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+            await owner.close()
+            await waiter.close()
+
+    try:
+        assert asyncio.run(race()) == {"changed_student_ids": [], "skipped_student_ids": [student]}
+        assert read_grade(family["teacher_client"], activity, student)[0]["points_override"] is None
+    finally:
+        admin.table("submission").delete().eq("activity_id", activity).execute()
 
 
 @pytest.mark.parametrize("change", ["override", "points", "pin", "return", "complete", "delete"])
@@ -141,7 +193,7 @@ def test_failed_grade_event_rolls_back_both_rubric_and_points_publication(
                     async with connection.transaction():
                         await connection.execute(
                             "select set_config('request.jwt.claims',"
-                            "'{\"role\":\"service_role\"}',true)"
+                            '\'{"role":"service_role"}\',true)'
                         )
                         await connection.execute(
                             "create function pg_temp.reject_grade_notice() returns trigger "

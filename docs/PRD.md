@@ -1,5 +1,11 @@
 # WriteWise — Product Requirements Document
 
+## Phase 3 Slice 5 — approved coursework behavior
+
+Activities may have optional points. Coursework uses the recorded assessment composite directly: calibrated scores keep their actual values and manual bands keep their 12.5/37.5/62.5/87.5 midpoint values. Both portals use assessment cutoffs at 25, 50 and 75. Point conversion and overall percentages remain separate from the handwriting assessment and research dataset.
+
+Teachers can override points, assign a draft zero without an upload, excuse work, review a section gradebook and export a class record. Parents see released current grades and released-only totals grouped by teacher. Overrides persist across attempts until cleared, but changes redraft the grade. Excused work removes both earned and possible points and suppresses reminders; archived work retains its academic contribution. Missing work contributes only after an explicit grade is assigned and shared. Slice 5 can proceed while Slice 4 manual QA remains pending. Implementation, verification and deployment are separately tracked in `IMPLEMENTATION_STATUS.md`.
+
 **A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and Progress Monitoring System**
 
 - **Document type:** Internal engineering PRD (build guide for the dev team, companion to ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, SECURITY.md, TESTING.md, DEPLOYMENT.md)

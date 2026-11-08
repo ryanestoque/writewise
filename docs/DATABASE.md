@@ -1,5 +1,21 @@
 # WriteWise — Database Schema
 
+## Phase 3 Slice 5 — points and work grades
+
+Follow-up migration `20261108062937` durably reconciles unsynchronized source changes before FastAPI reports a revision conflict, uses Grades destinations for points-only notices, and extends the existing email-outbox skip-reason check. It preserves the original function signatures, grants and historical migrations.
+
+Migrations `20261108045526`, `20261108053044`, `20261108060218` and `20261108060220` introduce optional coursework points. `activity.points_possible` is nullable numeric, greater than zero through 9999.99 with at most two places; `points_revision` changes only with its numeric value. `student_work.excused` defaults false. Derived points/totals and a replacement rubric scale are not stored.
+
+`student_work_grade` has a composite activity/student key, stable UUID identity, optional override, selected source submission, private source fingerprint, monotonic revision and matching released revision/timestamp. Overrides allow zero through the activity maximum. Confirmed points removal clears overrides/publication but retains identity. Rows are created on demand, including an explicit zero without an upload; enabling points alone does not preallocate empty work rows.
+
+Authenticated column grants exclude the fingerprint. Owning roster teachers read drafts; a linked parent reads only a current publication. The narrowly authorized private guard compares live active selection, recorded source fields, points revision, override and excused state. Equivalent decimal formatting is canonicalized. Hidden parent grades have no fallback to older or derived values. Pair-specific metadata helpers retain history without exposing another sibling's coursework or teacher contact fields.
+
+`read_section_gradebook(uuid)` and `read_child_gradebook(uuid)` derive identity from the caller JWT and return one caller-rights, RLS-filtered statement snapshot, beyond REST page limits. Decimal facts are text. ScoreProvider and the backend assembler calculate points/totals, shared by JSON and CSV. A narrow name-only helper supplies the relevant teacher label.
+
+Service-only writes serialize on activity before work. Maximum/override/excuse changes, completion, Return, pins, rubric writes and coordinated attempt deletion synchronize retained grades. Overrides persist until cleared and redraft after a changed source. First points enablement can preserve an already released complete source without replaying a notice; later edits/restoration require release. Explicit release checks the reviewed revision and may publish points without a worksheet or rubric. Combined publication emits one existing `score_released` notice per grade identity/revision. Excuse excludes both totals and suppresses deadline/unsent-email eligibility without changing upload permission.
+
+Verification and hosted status are recorded in `IMPLEMENTATION_STATUS.md`. Actual generated database types accompany delivered migrations. Research export/score-maintenance scripts retain their existing authorization boundary and exclude gradebook state.
+
 **A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and Progress Monitoring System**
 
 - **Document type:** Internal engineering build guide (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, API_SPEC.md, TECH_STACK.md, SECURITY.md, TESTING.md, DEPLOYMENT.md)

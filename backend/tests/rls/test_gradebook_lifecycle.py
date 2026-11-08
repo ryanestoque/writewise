@@ -294,3 +294,107 @@ def test_other_teacher_cannot_publish_or_delete_foreign_work(family, graded_work
         with pytest.raises(APIError) as failure:
             admin.rpc(function, {"actor_id": family["other_teacher"], **params}).execute()
         assert failure.value.code == "WW404"
+
+
+def test_identical_manual_rubric_preserves_points_but_changed_rubric_redrafts(family, graded_work):
+    activity, student = graded_work
+    source = complete(family, activity, measured=False)
+    payload = {
+        f"{name}_band": "excellent"
+        for name in (
+            "letter_formation",
+            "size_consistency",
+            "spacing",
+            "slant",
+            "baseline_alignment",
+        )
+    }
+    params = {
+        "actor_id": family["teacher"],
+        "target_submission_id": source["id"],
+        "payload": payload,
+    }
+    admin.rpc("save_manual_submission_score", params).execute()
+    current = grade(family, graded_work)
+    release_work(family, activity, student, current["revision"])
+    published = grade(family, graded_work)
+    admin.rpc("save_manual_submission_score", params).execute()
+    assert grade(family, graded_work) == published
+    admin.rpc(
+        "save_manual_submission_score",
+        {**params, "payload": {**payload, "spacing_band": "developing"}},
+    ).execute()
+    revised = grade(family, graded_work)
+    assert revised["revision"] > published["revision"] and revised["released_at"] is None
+    assert read_grade(family["parent_client"], activity, student) == []
+
+
+def test_co_teacher_can_delete_but_revoked_roster_cannot(family, graded_work):
+    activity, student = graded_work
+    source = complete(family, activity)
+    admin.table("teacher_student").insert(
+        {"teacher_id": family["other_teacher"], "student_id": student}
+    ).execute()
+    try:
+        result = (
+            admin.rpc(
+                "delete_student_submissions",
+                {"actor_id": family["other_teacher"], "target_submission_ids": [source["id"]]},
+            )
+            .execute()
+            .data
+        )
+        assert result == {"deleted_ids": [source["id"]]}
+        source = complete(family, activity)
+    finally:
+        admin.table("teacher_student").delete().eq("teacher_id", family["other_teacher"]).eq(
+            "student_id", student
+        ).execute()
+    with pytest.raises(APIError) as failure:
+        admin.rpc(
+            "delete_student_submissions",
+            {"actor_id": family["other_teacher"], "target_submission_ids": [source["id"]]},
+        ).execute()
+    assert failure.value.code == "WW404"
+
+
+def test_parent_delete_rechecks_upload_owner_and_manual_rubric(family, graded_work):
+    activity, student = graded_work
+    teacher_source = complete(family, activity)
+    params = {"actor_id": family["parent"], "target_submission_ids": [teacher_source["id"]]}
+    with pytest.raises(APIError) as failure:
+        admin.rpc("delete_student_submissions", params).execute()
+    assert failure.value.code == "WW404"
+    own_source = stored_attempt(family, activity, measured=False, created_at="2099-01-01T00:00:00Z")
+    admin.table("submission").update(
+        {"uploader_id": family["parent"], "uploader_role": "parent"}
+    ).eq("id", own_source["id"]).execute()
+    params["target_submission_ids"] = [own_source["id"]]
+    rubric = (
+        admin.table("manual_score")
+        .insert(
+            {
+                "submission_id": own_source["id"],
+                "graded_by": family["teacher"],
+                **{
+                    f"{name}_band": "excellent"
+                    for name in (
+                        "letter_formation",
+                        "size_consistency",
+                        "spacing",
+                        "slant",
+                        "baseline_alignment",
+                    )
+                },
+            }
+        )
+        .execute()
+        .data[0]
+    )
+    with pytest.raises(APIError) as failure:
+        admin.rpc("delete_student_submissions", params).execute()
+    assert failure.value.code == "WW435"
+    admin.table("manual_score").delete().eq("id", rubric["id"]).execute()
+    assert admin.rpc("delete_student_submissions", params).execute().data == {
+        "deleted_ids": [own_source["id"]]
+    }

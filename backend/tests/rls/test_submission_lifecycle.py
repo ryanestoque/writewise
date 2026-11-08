@@ -373,10 +373,17 @@ def test_resubmission_completion_replaces_return_without_old_fallback(
 def test_bulk_release_skips_inactive_and_repeated_results(family, assigned_activity, attempts):
     parameters = {"actor_id": family["teacher"], "target_activity_id": assigned_activity["id"]}
     result = admin.rpc("release_activity_results", parameters).execute().data
-    assert result == {"released_count": 1, "submission_ids": [attempts[-1]["id"]]}
+    assert result == {
+        "released_count": 1,
+        "submission_ids": [attempts[-1]["id"]],
+        "released_grade_count": 0,
+        "grade_student_ids": [],
+    }
     assert admin.rpc("release_activity_results", parameters).execute().data == {
         "released_count": 0,
         "submission_ids": [],
+        "released_grade_count": 0,
+        "grade_student_ids": [],
     }
 
 

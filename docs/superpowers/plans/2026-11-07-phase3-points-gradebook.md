@@ -22,10 +22,14 @@ Pinned Supabase CLI 2.115.0 was inspected. Local startup reports `LegacyDockerLi
 
 | Task | Execution state |
 |---|---|
-| 0 — isolation/baseline/SQL runner | Isolation and local baseline complete; disposable SQL runner pending new-branch publication authorization |
+| 0 — isolation/baseline/SQL runner | Complete: isolation and authorized disposable CI established; Docker/Podman unavailable locally |
 | 1 — math/contracts | Complete: 61-case red/green and 214-test database-free regression passed |
-| 2 — storage/read facts | Initial RLS tests written; red run pending; no migration implemented |
-| 3–10 | Pending |
+| 2 — storage/read facts | Complete: real-JWT/RLS, 1,092-cell transport and advisors; actual generated types paired |
+| 3 — activity/work mutations | Complete: 828-test checkpoint; maximum/override/removal/excuse/bulk proofs and generated types paired |
+| 4–5 — lifecycle/publication/reminders | Implemented; review regressions reproduced in 859-pass CI; follow-up fixes awaiting CI |
+| 6 — shared API/CSV | Implemented, with pure/controlled/real-JWT coverage; final-head gates pending |
+| 7–9 — transport/teacher/parent UI | Implemented; review fixes, build and controlled browser checks pass; full stack/manual acceptance open |
+| 10 — upgrade/docs/closeout | Upgrade proof and documentation in progress; final-head CI/review/manual gates open |
 
 **Disposable SQL runner authorized (2026-11-08):** The user explicitly authorized pushing this branch and subsequent checkpoints to `https://github.com/ryanestoque/writewise` for feature-branch CI. [Initial CI run 42448061916](https://github.com/ryanestoque/writewise/actions/runs/42448061916), head `743acc3`, passed **732 tests**; the 14 new storage/read cases failed on missing columns/table/read functions (8 failures and 6 fixture errors), establishing the intended missing-schema red boundary. Existing migration/upgrade checks passed before those tests.
 
@@ -40,6 +44,10 @@ A read-only boundary review found no confirmed Critical/Important code defect in
 **Next red boundary:** Added those reviewer-recommended cases and a value-equivalent decimal-format publication case, plus activity/work mutation cases for Task 3. The mutation APIs are intentionally absent at this checkpoint; their red run precedes production mutation code. Storage migration/type delivery is now paired in amended local commit `fed9d92`. Publish this amended checkpoint and its new test child only with a lease against our own provisional remote `96d5e86`; source branches/main and unrelated work remain untouched.
 
 ## Global Constraints
+
+**Reviewed release red / fixes:** [CI 42454155751](https://github.com/ryanestoque/writewise/actions/runs/42454155751), exact head `e513b228062af046ca7c8c622efeb70521424a3b`, passed **859 tests**, including six observed-lock lifecycle/release races and coordinated deletion. Seven failures comprised three reviewed publication-recovery/destination cases, three email-outbox skip-code constraint cases and one legacy exact bulk-response assertion. Actual artifact `13607411325` was copied byte-for-byte after confirming migrations unchanged and paired into amended `754c9d8`. New CLI migration `20261108062937_phase3_gradebook_release_recovery.sql` preserves historical migrations, commits source reconciliation before returning a fixed conflict marker (HTTP 409 after RPC commit), sends points-only notices to Grades, and adds `work_excused` to the existing outbox guard. The legacy assertion now includes additive grade counts. Additional manual-rubric, co-teacher/parent-delete and observed completion-versus-zero coverage joins verification. The follow-up changes no type signature; fresh CI generation must still match the paired types.
+
+**Controlled browser evidence:** The rebuilt UI fixes sibling-tab exit: Jordan remains selected after leaving Jordan's grade notification (the earlier build restored Avery). At 360px both portal documents measured 345px wide; only the teacher grid scrolls (311px client / 976px content). Screenshots were inspected. ArrowRight moved between labelled cells; Assign 0 saved a visible draft. Cross-tab sign-out with an open grade sheet removed both book and dialog and displayed sign-in status. These use synthetic localhost Auth/data fixtures, not a hosted migration or user manual sign-off. Real SQL/JWT privacy is separately tested in CI. The approval-review usage failure was retried successfully through the same normal path when the user requested continuation.
 
 **Reviewed regressions / infrastructure retry:** Provisional lifecycle run [42453547017](https://github.com/ryanestoque/writewise/actions/runs/42453547017) stopped before migrations/tests: registry rate errors followed by Inbucket host port 54324 already in use. No feature test outcome or type artifact exists for that run. The next fresh-run checkpoint adds review regressions for grade-only notification destinations and durable offline-source reconciliation. SQL publisher fixes intentionally follow their red observation. A controlled mounted API case first failed on the structured conflict marker, then passed after translating that marker to HTTP 409 after commit. This allows reconciliation to persist without changing the caller-RLS read path. Existing ordinary revision mismatches still raise WW431. The provisional schema/types pairing remains pending.
 
