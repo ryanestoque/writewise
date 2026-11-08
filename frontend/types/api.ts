@@ -89,6 +89,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sections/{section_id}/gradebook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Section Gradebook */
+        get: operations["section_gradebook_api_sections__section_id__gradebook_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sections/{section_id}/gradebook.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Section Gradebook Csv */
+        get: operations["section_gradebook_csv_api_sections__section_id__gradebook_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/students/{student_id}/gradebook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Child Gradebook */
+        get: operations["child_gradebook_api_students__student_id__gradebook_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/internal/dispatch-emails": {
         parameters: {
             query?: never;
@@ -499,6 +550,16 @@ export interface components {
              */
             bypass_text_check: boolean;
         };
+        /** ChildGradebook */
+        ChildGradebook: {
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Groups */
+            groups: components["schemas"]["GradebookTeacherGroup"][];
+        };
         /** DispatchCounts */
         DispatchCounts: {
             /**
@@ -526,6 +587,105 @@ export interface components {
              * @default 0
              */
             skipped: number;
+        };
+        /** GradebookActivity */
+        GradebookActivity: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Is Archived */
+            is_archived: boolean;
+            /** Points Possible */
+            points_possible: string | null;
+        };
+        /** GradebookCell */
+        GradebookCell: {
+            /**
+             * Activity Id
+             * Format: uuid
+             */
+            activity_id: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Applicable */
+            applicable: boolean;
+            /**
+             * Coursework Status
+             * @enum {string}
+             */
+            coursework_status: "Assigned" | "Returned" | "Missing" | "Draft" | "Released" | "Turned in" | "Excused" | "Not assigned";
+            /** Late */
+            late: boolean;
+            /** Points Possible */
+            points_possible: string | null;
+            /** Automatic Points */
+            automatic_points: string | null;
+            /** Points Override */
+            points_override: string | null;
+            /** Final Points */
+            final_points: string | null;
+            /** Assessment Composite */
+            assessment_composite: string | null;
+            /** Assessment Source */
+            assessment_source: ("manual" | "calibrated") | null;
+            /**
+             * Publication
+             * @enum {string}
+             */
+            publication: "draft" | "released" | "unavailable";
+            /** Grade Revision */
+            grade_revision: number | null;
+            /** Active Submission Id */
+            active_submission_id: string | null;
+            /** Included */
+            included: boolean;
+        };
+        /** GradebookRow */
+        GradebookRow: {
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Cells */
+            cells: components["schemas"]["GradebookCell"][];
+            totals: components["schemas"]["GradebookTotals"];
+        };
+        /** GradebookTeacherGroup */
+        GradebookTeacherGroup: {
+            /**
+             * Teacher Id
+             * Format: uuid
+             */
+            teacher_id: string;
+            /** Teacher Name */
+            teacher_name: string;
+            /** Activities */
+            activities: components["schemas"]["GradebookActivity"][];
+            row: components["schemas"]["GradebookRow"];
+        };
+        /** GradebookTotals */
+        GradebookTotals: {
+            /** Earned */
+            earned: string;
+            /** Possible */
+            possible: string;
+            /** Percentage */
+            percentage: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -635,6 +795,25 @@ export interface components {
         SectionCreate: {
             /** Name */
             name: string;
+        };
+        /** SectionGradebook */
+        SectionGradebook: {
+            /**
+             * Section Id
+             * Format: uuid
+             */
+            section_id: string;
+            /** Section Name */
+            section_name: string;
+            /**
+             * Teacher Id
+             * Format: uuid
+             */
+            teacher_id: string;
+            /** Activities */
+            activities: components["schemas"]["GradebookActivity"][];
+            /** Rows */
+            rows: components["schemas"]["GradebookRow"][];
         };
         /** SectionResponse */
         SectionResponse: {
@@ -885,6 +1064,99 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    section_gradebook_api_sections__section_id__gradebook_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionGradebook"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    section_gradebook_csv_api_sections__section_id__gradebook_csv_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    child_gradebook_api_students__student_id__gradebook_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChildGradebook"];
                 };
             };
             /** @description Validation Error */

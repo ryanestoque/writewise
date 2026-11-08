@@ -648,6 +648,20 @@ Each send follows committed claim, current eligibility, and single-use authoriza
 
 ---
 
+### 3.8 Gradebook reads and class-record CSV
+
+`GET /api/sections/{section_id}/gradebook` and `GET /api/sections/{section_id}/gradebook.csv` require the owning teacher. `GET /api/students/{student_id}/gradebook` requires a linked parent and groups only the selected child's work by activity owner. All three use the exact verified Bearer token with the public `SUPABASE_ANON_KEY` to read one coherent snapshot from security-invoker database RPCs. No service-role client participates in this read path. Missing/inaccessible scopes return `404 NOT_FOUND`; wrong portal role is `403 FORBIDDEN`; missing/invalid identity is `401 UNAUTHORIZED`. Transport, missing-key and malformed-snapshot failures return sanitized `500 INTERNAL_ERROR`, never an empty successful book.
+
+Teacher JSON contains section metadata, ordered relevant activities, ordered student rows, cells and totals. Parent JSON contains the selected student ID and teacher groups with one child row each. Decimal points/percentages serialize as two-place strings. Parent grades require a current released publication record; hidden/draft/stale points remain null and excluded, with no fallback to an older or automatically derived grade. Parent coursework Draft is presented as Turned in. A separately released assessment can still supply its original composite/band without publishing draft coursework points.
+
+Teacher totals include eligible draft grades, while parent totals include only released grades. Bands-only, excused and ungraded work do not contribute. Missing work contributes only after an explicit override; zero possible included points yields percentage null. Archived activities retain their academic contribution. Source selection and point/percentage arithmetic live behind ScoreProvider, using existing recorded composites without manual-band normalization.
+
+CSV uses the same teacher snapshot and assembler as JSON, returns UTF-8 with BOM directly in memory, and is never written to Storage. Its columns are `student_name,student_id,activity_title,activity_id,points_possible,final_points,coursework_status,publication,included,overall_percentage`. User-controlled text with spreadsheet formula prefixes is neutralized; original names/titles otherwise use CSV quoting. The attachment filename contains the section UUID only. All gradebook responses use `Cache-Control: no-store`. Request bodies/query fields cannot supply a role, teacher or alternate source score. This class-record export remains separate from the offline research exporter.
+
+The Slice 5 execution record tracks schema/API verification and remaining write/UI work; this contract does not establish hosted deployment.
+
+---
+
 ## 4. Cross-Reference: Endpoints ↔ PRD §7 Modules
 
 | Endpoint | PRD module |

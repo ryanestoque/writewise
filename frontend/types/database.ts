@@ -44,6 +44,8 @@ export type Database = {
           instructions: string | null
           is_archived: boolean
           is_take_home: boolean
+          points_possible: number | null
+          points_revision: number
           target_text: string
           title: string
         }
@@ -56,6 +58,8 @@ export type Database = {
           instructions?: string | null
           is_archived?: boolean
           is_take_home?: boolean
+          points_possible?: number | null
+          points_revision?: number
           target_text: string
           title: string
         }
@@ -68,6 +72,8 @@ export type Database = {
           instructions?: string | null
           is_archived?: boolean
           is_take_home?: boolean
+          points_possible?: number | null
+          points_revision?: number
           target_text?: string
           title?: string
         }
@@ -596,6 +602,7 @@ export type Database = {
         Row: {
           activity_id: string
           due_at_override: string | null
+          excused: boolean
           pinned_submission_id: string | null
           student_id: string
           updated_at: string
@@ -603,6 +610,7 @@ export type Database = {
         Insert: {
           activity_id: string
           due_at_override?: string | null
+          excused?: boolean
           pinned_submission_id?: string | null
           student_id: string
           updated_at?: string
@@ -610,6 +618,7 @@ export type Database = {
         Update: {
           activity_id?: string
           due_at_override?: string | null
+          excused?: boolean
           pinned_submission_id?: string | null
           student_id?: string
           updated_at?: string
@@ -655,6 +664,78 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "student"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_work_grade: {
+        Row: {
+          activity_id: string
+          id: string
+          points_override: number | null
+          released_at: string | null
+          released_revision: number | null
+          revision: number
+          source_signature: string
+          source_submission_id: string | null
+          student_id: string
+        }
+        Insert: {
+          activity_id: string
+          id?: string
+          points_override?: number | null
+          released_at?: string | null
+          released_revision?: number | null
+          revision?: number
+          source_signature: string
+          source_submission_id?: string | null
+          student_id: string
+        }
+        Update: {
+          activity_id?: string
+          id?: string
+          points_override?: number | null
+          released_at?: string | null
+          released_revision?: number | null
+          revision?: number
+          source_signature?: string
+          source_submission_id?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_work_grade_activity_id_student_id_fkey"
+            columns: ["activity_id", "student_id"]
+            isOneToOne: true
+            referencedRelation: "student_work"
+            referencedColumns: ["activity_id", "student_id"]
+          },
+          {
+            foreignKeyName: "student_work_grade_source_submission_id_fkey"
+            columns: ["source_submission_id"]
+            isOneToOne: false
+            referencedRelation: "active_submission"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_work_grade_source_submission_id_fkey"
+            columns: ["source_submission_id"]
+            isOneToOne: false
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["active_submission_id"]
+          },
+          {
+            foreignKeyName: "student_work_grade_source_submission_id_fkey"
+            columns: ["source_submission_id"]
+            isOneToOne: false
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["latest_submission_id"]
+          },
+          {
+            foreignKeyName: "student_work_grade_source_submission_id_fkey"
+            columns: ["source_submission_id"]
+            isOneToOne: false
+            referencedRelation: "submission"
             referencedColumns: ["id"]
           },
         ]
@@ -953,6 +1034,14 @@ export type Database = {
       }
       prepare_email_delivery: {
         Args: { expected_claim_token: string; target_outbox_id: string }
+        Returns: Json
+      }
+      read_child_gradebook: {
+        Args: { target_student_id: string }
+        Returns: Json
+      }
+      read_section_gradebook: {
+        Args: { target_section_id: string }
         Returns: Json
       }
       record_student_submission: {
