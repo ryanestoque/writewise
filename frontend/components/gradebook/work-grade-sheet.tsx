@@ -14,6 +14,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { PointsField, validPointsInput } from "./points-field";
+import { WorkGradeDetails } from "./work-grade-details";
 
 export function WorkGradeSheet({
   userId,
@@ -173,6 +174,7 @@ export function WorkGradeSheet({
               Excused work is removed from both earned and possible points, and reminders stop.
             </p>
           </div>
+          {open && <WorkGradeDetails userId={userId} cell={cell} studentName={studentName} />}
           <Button
             className="w-full"
             disabled={

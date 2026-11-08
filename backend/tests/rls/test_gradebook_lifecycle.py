@@ -101,6 +101,7 @@ def test_combined_release_emits_once_and_revised_points_emit_a_new_grade_event(f
     result = release_work(family, activity, student, grade(family, graded_work)["revision"])
     assert result["grade_released"] and not result["rubric_released"]
     assert len(notices(activity)) == 2
+    assert len([notice for notice in notices(activity) if notice["submission_id"] is None]) == 1
 
 
 def test_override_on_ungraded_attempt_does_not_publish_an_absent_assessment(family, graded_work):
@@ -109,6 +110,8 @@ def test_override_on_ungraded_attempt_does_not_publish_an_absent_assessment(fami
     set_work(family, activity, {"points_override": "10"})
     result = release_work(family, activity, student, grade(family, graded_work)["revision"])
     assert result["grade_released"] and not result["rubric_released"]
+    assert result["submission_id"] == source["id"]
+    assert notices(activity)[0]["submission_id"] is None
     assert (
         admin.table("submission")
         .select("released_at")
@@ -141,6 +144,24 @@ def test_unreleasable_work_never_emits_or_publishes(family, graded_work, reason)
         release_work(family, activity, student, grade(family, graded_work)["revision"])
     assert failure.value.code == "WW430"
     assert notices(activity) == []
+
+
+def test_offline_source_change_can_be_reviewed_and_released_after_one_conflict(family, graded_work):
+    activity, student = graded_work
+    source = complete(family, activity)
+    before = grade(family, graded_work)
+    release_work(family, activity, student, before["revision"])
+    admin.table("measurement").update({"spacing_score": "10"}).eq(
+        "submission_id", source["id"]
+    ).execute()
+    assert read_grade(family["parent_client"], activity, student) == []
+    conflict = release_work(family, activity, student, before["revision"])
+    assert conflict == {"error_code": "WW431"}
+    reviewed = grade(family, graded_work)
+    assert reviewed["revision"] > before["revision"] and reviewed["released_at"] is None
+    result = release_work(family, activity, student, reviewed["revision"])
+    assert result["grade_released"] is True
+    assert len(read_grade(family["parent_client"], activity, student)) == 1
 
 
 def test_new_active_attempt_keeps_override_and_redrafts_but_processing_does_not(

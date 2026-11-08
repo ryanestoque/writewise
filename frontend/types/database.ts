@@ -1003,6 +1003,10 @@ export type Database = {
         Args: { actor_id: string; payload: Json }
         Returns: Json
       }
+      delete_student_submissions: {
+        Args: { actor_id: string; target_submission_ids: string[] }
+        Returns: Json
+      }
       excuse_activity_students: {
         Args: {
           actor_id: string
@@ -1073,6 +1077,15 @@ export type Database = {
       }
       release_activity_results: {
         Args: { actor_id: string; target_activity_id: string }
+        Returns: Json
+      }
+      release_student_work_grade: {
+        Args: {
+          actor_id: string
+          expected_revision: number
+          target_activity_id: string
+          target_student_id: string
+        }
         Returns: Json
       }
       save_manual_submission_score: {

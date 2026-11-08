@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useParentPortal } from "@/components/parent-portal-provider";
 import { LatestSubmissionCard } from "@/components/parent/latest-submission-card";
 import { TakeHomeActivities } from "@/components/parent/take-home-activities";
@@ -61,8 +61,6 @@ type ParentProgressTab = "overview" | "to-write" | "progress" | "grades";
 
 export function ProgressPageContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
   const [rubricOpen, setRubricOpen] = useState(false);
   const [activitiesExpanded, setActivitiesExpanded] = useState(false);
   const [showScoreDetails, setShowScoreDetails] = useState(false);
@@ -141,7 +139,10 @@ export function ProgressPageContent() {
   }, [activities]);
 
   const pendingActivitiesCount = useMemo(() => {
-    return takeHomeActivities.filter((a) => getParentActivityStatus(a, now).canSend).length;
+    return takeHomeActivities.filter((a) => {
+      const status = getParentActivityStatus(a, now);
+      return status.canSend && !status.excused;
+    }).length;
   }, [takeHomeActivities, now]);
 
   const urgentActivities = useMemo(
@@ -409,10 +410,7 @@ export function ProgressPageContent() {
         value={activeTab}
         onValueChange={(val) => {
           if (gradeDestination || requestedGrades) {
-            const next = new URLSearchParams(searchParams.toString());
-            if (gradeDestination) for (const name of ["child", "activity", "submission"]) next.delete(name);
-            if (val === "grades") next.set("tab", "grades"); else next.delete("tab");
-            router.replace(`${pathname}${next.size ? `?${next}` : ""}`, { scroll: false });
+            dismissNotificationTarget(val === "grades" ? "grades" : null);
           }
           setSelectedTab(val as ParentProgressTab);
         }}

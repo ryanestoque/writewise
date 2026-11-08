@@ -26,6 +26,12 @@ export function ParentGrades({
         ?.scrollIntoView({ block: "center" });
     }
   }, [highlightActivityId, query.data, query.isError]);
+  if (!query.isAccountActive)
+    return (
+      <p role="status" className="text-muted-foreground text-sm">
+        Sign in again to view grades.
+      </p>
+    );
   if (query.isError)
     return (
       <QueryRecovery
@@ -133,6 +139,13 @@ export function ParentGrades({
                               ? "Not yet released"
                               : `${cell.final_points} / ${cell.points_possible} points`}
                       </p>
+                      {cell.final_points === null &&
+                        cell.points_possible !== null &&
+                        cell.coursework_status !== "Excused" && (
+                          <p className="text-muted-foreground text-xs tabular-nums">
+                            {cell.points_possible} points possible
+                          </p>
+                        )}
                       {cell.assessment_composite !== null && (
                         <div className="flex items-center justify-end gap-2">
                           <span className="text-muted-foreground text-xs">Assessment</span>

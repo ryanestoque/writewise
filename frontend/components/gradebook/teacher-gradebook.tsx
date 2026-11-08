@@ -5,7 +5,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Download, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { gradebookRequest, downloadGradebookCsv } from "@/lib/gradebook/transport";
-import { useSectionGradebook, type GradebookCell } from "@/lib/hooks/use-gradebook";
+import {
+  useSectionGradebook,
+  useActiveGradebookAccount,
+  type GradebookCell,
+} from "@/lib/hooks/use-gradebook";
 import type { components } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,16 +23,24 @@ const selectClass =
   "min-h-10 rounded-lg border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export function TeacherGradebook({ userId }: { userId: string }) {
+  const active = useActiveGradebookAccount(userId);
   const sections = useQuery({
     queryKey: ["gradebook", userId, "sections"],
     queryFn: ({ signal }) =>
       gradebookRequest<components["schemas"]["SectionResponse"][]>(userId, "/api/sections", signal),
     staleTime: 30_000,
+    enabled: active,
   });
   const [chosenSection, setSection] = useState<string | null>(null);
   const sectionId = sections.data?.some((section) => section.id === chosenSection)
     ? chosenSection
     : sections.data?.[0]?.id;
+  if (!active)
+    return (
+      <p role="status" className="text-muted-foreground text-sm">
+        Sign in again to view grades.
+      </p>
+    );
   return (
     <div className="min-w-0 space-y-6">
       <div className="space-y-2">
@@ -97,6 +109,12 @@ function SectionGrid({ userId, sectionId }: { userId: string; sectionId: string 
   } | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState("");
+  if (!query.isAccountActive)
+    return (
+      <p role="status" className="text-muted-foreground text-sm">
+        Sign in again to view grades.
+      </p>
+    );
   if (query.isError)
     return (
       <QueryRecovery
@@ -311,6 +329,7 @@ function SectionGrid({ userId, sectionId }: { userId: string; sectionId: string 
                         <div data-row={rowIndex} data-column={column}>
                           <GradebookCellButton
                             cell={work}
+                            label={`${row.student_name}, ${activity.title}`}
                             onOpen={() => setCell(work)}
                             row={rowIndex}
                             column={column}
@@ -357,6 +376,24 @@ function SectionGrid({ userId, sectionId }: { userId: string; sectionId: string 
           userId={userId}
           activityId={bulk.activityId}
           studentIds={targets.map((row) => row.student_id)}
+          eligibleCount={
+            (bulk.operation === "release" ? book.rows : targets).filter((row) => {
+              const work = row.cells.find((entry) => entry.activity_id === bulk.activityId);
+              if (!work?.applicable || work.coursework_status === "Excused") return false;
+              if (bulk.operation === "zero")
+                return (
+                  work.coursework_status === "Missing" &&
+                  work.points_override === null &&
+                  work.active_submission_id === null
+                );
+              if (bulk.operation === "release")
+                return (
+                  (work.final_points !== null && work.publication !== "released") ||
+                  (work.points_possible === null && work.coursework_status === "Draft")
+                );
+              return true;
+            }).length
+          }
           operation={bulk.operation}
           open
           onOpenChange={(open) => {

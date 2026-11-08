@@ -86,6 +86,9 @@ def test_send_authorization_waiting_on_excuse_rechecks_after_activity_lock(
         task = None
         try:
             async with owner.transaction():
+                await owner.execute(
+                    "select set_config('request.jwt.claims','{\"role\":\"service_role\"}',true)"
+                )
                 await owner.fetchval(
                     "select id from public.activity where id=$1 for update", activity
                 )

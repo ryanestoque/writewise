@@ -140,6 +140,10 @@ def lifecycle_rpc(name: str, parameters: dict, *, client=None) -> dict:
         raise _error(status, code, message) from exc
     if not isinstance(data, dict):
         raise _error(500, "INTERNAL_ERROR", "Could not save the work. Please try again.")
+    # A stale offline source is reconciled durably inside the RPC. Report the
+    # conflict only after that transaction commits, so refresh can review it.
+    if data == {"error_code": "WW431"}:
+        raise _error(*_ERRORS["WW431"])
     return data
 
 

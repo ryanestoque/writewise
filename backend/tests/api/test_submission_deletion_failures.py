@@ -49,6 +49,7 @@ def deletion_case(monkeypatch):
         database_failure=False,
         concurrent_delete=None,
         lose_database_response=False,
+        rpc_requests=[],
     )
 
     def matching_ids(request):
@@ -77,6 +78,28 @@ def deletion_case(monkeypatch):
             return httpx.Response(200, json=removed)
 
         table = path.removeprefix("/rest/v1/")
+        if table == "rpc/delete_student_submissions":
+            assert request.method == "POST"
+            body = json.loads(request.content)
+            state.rpc_requests.append(body)
+            assert body["actor_id"] == TEACHER_ID
+            ids = body["target_submission_ids"]
+            if state.database_failure:
+                return httpx.Response(
+                    500, json={"code": "XX000", "message": PRIVATE_ERROR, "details": "", "hint": ""}
+                )
+            if state.concurrent_delete:
+                sid = state.concurrent_delete
+                state.rows.pop(sid, None)
+                state.measurements.discard(sid)
+                state.manual_scores.discard(sid)
+            deleted = [state.rows.pop(sid)["id"] for sid in ids if sid in state.rows]
+            state.measurements.difference_update(ids)
+            state.manual_scores.difference_update(ids)
+            if state.lose_database_response:
+                state.lose_database_response = False
+                raise httpx.ReadTimeout(PRIVATE_ERROR, request=request)
+            return httpx.Response(200, json={"deleted_ids": deleted})
         if request.method == "GET":
             if table == "teacher_student":
                 return httpx.Response(200, json=[{"student_id": STUDENT_ID}])
@@ -139,6 +162,13 @@ def delete(client, batch):
     if batch:
         return client.post("/api/submissions/batch-delete", json={"submission_ids": SUBMISSION_IDS})
     return client.delete(f"/api/submissions/{SUBMISSION_IDS[0]}")
+
+
+def test_database_delete_uses_actor_authorized_grade_lifecycle_transaction(deletion_case):
+    state, client = deletion_case
+    response = delete(client, True)
+    assert response.status_code == 200
+    assert state.rpc_requests == [{"actor_id": TEACHER_ID, "target_submission_ids": SUBMISSION_IDS}]
 
 
 @pytest.mark.parametrize("batch", [False, True], ids=["single", "batch"])

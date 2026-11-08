@@ -85,7 +85,7 @@ export function useGradebookActions(userId: string) {
   return { updateWork, releaseGrade, assignZeroMissing, excuseStudents };
 }
 
-function useActiveGradebookAccount(userId: string) {
+export function useActiveGradebookAccount(userId: string) {
   const [account, setAccount] = useState<string | null>(userId);
   useEffect(() => {
     const { data } = createClient().auth.onAuthStateChange((_event, session) => {
@@ -109,7 +109,7 @@ function retryGradebook(count: number, error: Error) {
 
 export function useSectionGradebook(userId: string, sectionId: string | null) {
   const active = useActiveGradebookAccount(userId);
-  return useQuery<SectionGradebook>({
+  const query = useQuery<SectionGradebook>({
     queryKey: ["gradebook", userId, "section", sectionId],
     enabled: active && !!userId && !!sectionId,
     queryFn: ({ signal }) =>
@@ -124,11 +124,12 @@ export function useSectionGradebook(userId: string, sectionId: string | null) {
     refetchOnWindowFocus: true,
     retry: retryGradebook,
   });
+  return { ...query, isAccountActive: active, data: active ? query.data : undefined };
 }
 
 export function useChildGradebook(userId: string, childId: string | null, enabled: boolean) {
   const active = useActiveGradebookAccount(userId);
-  return useQuery<ChildGradebook>({
+  const query = useQuery<ChildGradebook>({
     queryKey: ["gradebook", userId, "child", childId],
     enabled: active && enabled && !!userId && !!childId,
     queryFn: ({ signal }) =>
@@ -143,4 +144,5 @@ export function useChildGradebook(userId: string, childId: string | null, enable
     refetchOnWindowFocus: true,
     retry: retryGradebook,
   });
+  return { ...query, isAccountActive: active, data: active ? query.data : undefined };
 }

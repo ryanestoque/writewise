@@ -22,6 +22,7 @@ export function GradebookBulkDialog({
   operation,
   open,
   onOpenChange,
+  eligibleCount,
 }: {
   userId: string;
   activityId: string;
@@ -29,6 +30,7 @@ export function GradebookBulkDialog({
   operation: "zero" | "excuse" | "release";
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  eligibleCount: number;
 }) {
   const actions = useGradebookActions(userId);
   const client = useQueryClient();
@@ -91,6 +93,11 @@ export function GradebookBulkDialog({
               : `${studentIds.length} students selected. ${operation === "zero" ? "Only currently Missing work without an existing override receives a draft zero. Release it separately to share it with parents." : "Their work will leave both sides of the points total, and reminders will stop."}`}
           </DialogDescription>
         </DialogHeader>
+        <p className="text-sm">
+          {eligibleCount} currently eligible
+          {operation === "release" ? " in this section" : ` of ${studentIds.length} selected`}.
+          Eligibility is checked again when you confirm.
+        </p>
         {message ? (
           <p role="status" className="text-sm">
             {message}

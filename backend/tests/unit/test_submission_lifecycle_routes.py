@@ -22,7 +22,9 @@ STAMP = "2026-11-02T04:00:00Z"
 def case(monkeypatch):
     from app.api import submission_lifecycle
 
-    state = SimpleNamespace(role="teacher", owner=True, roster=True, error=None, writes=[])
+    state = SimpleNamespace(
+        role="teacher", owner=True, roster=True, error=None, marker=False, writes=[]
+    )
 
     def respond(request):
         path = request.url.path.removeprefix("/rest/v1/")
@@ -59,6 +61,8 @@ def case(monkeypatch):
             assert body["actor_id"] == TEACHER
             assert body["target_activity_id"] == ACTIVITY
             if state.error:
+                if state.marker:
+                    return httpx.Response(200, json={"error_code": state.error})
                 return httpx.Response(
                     400,
                     json={
@@ -219,6 +223,17 @@ def test_grade_release_conflict_is_sanitized_and_does_not_retry_new_revision(cas
     assert result.status_code == 409
     assert result.json()["error"]["code"] == "GRADE_REVISION_CONFLICT"
     assert len(case.writes) == 1 and "private" not in result.text
+
+
+def test_durably_reconciled_grade_conflict_is_an_http_conflict_after_rpc_commit(case):
+    case.error, case.marker = "WW431", True
+    result = case.client.post(
+        f"/api/activities/{ACTIVITY}/students/{STUDENT}/release-grade",
+        json={"expected_revision": 2},
+    )
+    assert result.status_code == 409
+    assert result.json()["error"]["code"] == "GRADE_REVISION_CONFLICT"
+    assert len(case.writes) == 1
 
 
 @pytest.mark.parametrize("owner,role,status", [(False, "teacher", 404), (True, "parent", 403)])

@@ -142,7 +142,7 @@ function ReturnForm({ submission, onDone }: { submission: Submission; onDone: ()
   );
 }
 
-export function SubmissionLifecycleControls({ submission }: { submission: Submission }) {
+export function SubmissionLifecycleControls({ submission, showRelease = true }: { submission: Submission; showRelease?: boolean }) {
   const focusTarget = useRef<HTMLElement>(null);
   const { data: states, isError } = useActivityWork(submission.activity_id);
   const work = states?.find((row) => row.student_id === submission.student_id);
@@ -199,7 +199,7 @@ export function SubmissionLifecycleControls({ submission }: { submission: Submis
             Return
           </Button>
         )}
-        {completed &&
+        {showRelease && completed &&
           active &&
           !submission.released_at &&
           resolveSubmissionScore(submission).isScored && (
