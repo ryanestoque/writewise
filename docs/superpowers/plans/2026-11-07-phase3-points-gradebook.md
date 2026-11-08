@@ -41,6 +41,8 @@ A read-only boundary review found no confirmed Critical/Important code defect in
 
 ## Global Constraints
 
+**Independent Task 7 transport progress:** Account-scoped gradebook reads and CSV download now verify the exact session/token before and after transport; account changes abort stale results. The persistent notification controller also cancels/removes gradebook caches on auth changes. Eleven controlled scenarios passed, including logout/account-switch races, token rotation, HTTP errors and object-URL cleanup. ESLint and TypeScript passed. No gradebook screen or mutation UI is delivered by this checkpoint.
+
 The following sentences are copied from the approved spec and apply to every task:
 
 - “Slice 5 may proceed while Slice 4 email manual QA remains pending.”
