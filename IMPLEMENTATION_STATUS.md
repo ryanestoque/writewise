@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-03 (Phase 3 Slice 3 verified following user-reported portal QA sign-off)
+**Last updated:** 2026-11-03 (Slice 4 email automated verification passed; signed-in portal QA pending)
 
 ## Summary
 
@@ -238,16 +238,20 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 **Verification closeout (2026-11-03):** The user's subsequent overall QA sign-off supersedes the pending manual-gate records above. [Final documentation-head CI on `d578116`](https://github.com/ryanestoque/writewise/actions/runs/41502563699) completed successfully, including the full suite and existing upgrade/contract/advisor gates. Phase 3 is now **3/6 verified**. [PR #6](https://github.com/ryanestoque/writewise/pull/6) is still open/draft and unmerged at this closeout; no merge or deployment is claimed. Preserve the implementation worktree and local env files for further testing.
 
+**Integration follow-up (2026-11-03):** The local checkout's `main` now contains merge commit `c3369cd` for PR #6. This supersedes the earlier unmerged integration note; it does not establish hosted migration or deployment status.
+
 ### Slice ④ — Email notifications
 
-**Dependency:** Slice ③. **Status: Not started.**
+**Dependency:** Slice ③. **Status: Partial — implemented and automated checks passed; manual portal gate open.**
+
+**Implementation (2026-11-03):** The approved [email design](docs/superpowers/specs/2026-11-03-phase3-email-notifications-design.md) and [execution record](docs/superpowers/plans/2026-11-03-phase3-email-notifications.md) were implemented inline in `.worktrees/phase3-email-notifications`, branch `feat/phase3-email-notifications`. The user authorized branch pushes for disposable CI because Docker/Podman are absent locally. [CI on c7ccf76](https://github.com/ryanestoque/writewise/actions/runs/41644323667) passed **671 tests**, all four upgrade proofs, synthetic post-commit/rollback callback, fail-closed/owner-provisioned network checks, actual browser-role denials, generated API/database comparisons and security advisors. Local Ruff, ESLint, TypeScript and production webpack build passed; eight controlled preference transport checks passed. Signed-in portal QA remains open because computer-use reported no native pipe or browser surfaces. Phase 3 remains **3/6 verified**. Hosted migrations, owner/support provisioning, sender credentials/tracking review and live email are not established; the verified domain is user-reported. The branch is unmerged and email activation remains off.
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|
-| Service-only email outbox and preferences | Not started | No `email_outbox` or `email_notifications` columns found. Existing profile/password settings do not implement this preference. |
-| Dispatcher and Resend integration | Not started | No dispatcher endpoint or Resend configuration in backend source. Add authenticated internal dispatch, retry/claim behavior, and stubbed-provider tests. |
-| Cron/pg_net/Vault configuration | Not started | No Phase 3 scheduled dispatch configuration found. Keep secrets outside migrations; document dev provisioning separately from production authorization. |
-| Privacy-safe templates and verification | Not started | Add Returned/Due-soon email templates, preference checks, and tests proving no scores, images, teacher notes, comment text, or recipient PII in logs. |
+| Service-only email outbox and preferences | Partial | Transactional two-event enqueue, default-on owner preferences, canonical recipient/event checks and bounded recoverable queue implemented; database tests pass. Settings controls built; signed-in portal QA pending. |
+| Dispatcher and Resend integration | Partial | Async secret-authenticated route, fixed templates, stable key/digest, retries/timeouts/quota isolation and lost-finalization replay passed full CI. Actual provider activation is deferred. |
+| Cron/pg_net/Vault configuration | Partial | Four upgrade proofs, fail-closed guard, owner-provisioned ACLs, actual role denials and synthetic callback passed CI. Hosted owner/support setup and secrets remain unconfigured. |
+| Privacy-safe templates and verification | Partial | Generic templates omit names, educational content and tokens. Full automated/contract/advisor gates pass; signed-in portal QA remains open. |
 
 ### Slice ⑤ — Points and gradebook
 

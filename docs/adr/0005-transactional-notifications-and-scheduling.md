@@ -21,3 +21,11 @@ TanStack Query polls the bell every 60 seconds in foreground. Cursor pagination 
 An insertion failure rolls back its coursework state change. Database-only deadline checks need no new service/worker, and the CV/CNN pipeline keeps its in-process execution contract. Private receipt storage grows with delivered events until recipient/activity/student cleanup; pilot-scale usage does not require an additional retention subsystem. Email/outbox/preferences, points/excused work, and comments remain their later slices. Slice 5 must add excused suppression when its schema arrives.
 
 Rejected alternatives: independent Python inserts after RPC commit would permit partial delivery; generic triggers on assignment rows would confuse target replacement and overlapping targets; Realtime is unnecessary for the initial bell latency requirement. See the [Slice 3 design](../superpowers/specs/2026-11-02-phase3-in-app-notifications-design.md).
+
+## Slice 4 amendment — Optional email
+
+The same notification transaction now inserts a service-only email outbox for Return and due-soon only. Fixed generic messages avoid child/activity names and all educational content. Owner-scoped account preferences default on; skipped events never replay.
+
+The existing FastAPI service performs bounded async dispatch through committed claim/prepare/reserve/finalize RPCs. Activity-first eligibility locks end before provider I/O. A rotated reservation token, payload fingerprint, stable Resend key, two-minute lease and three-attempt/one-hour window support bounded uncertain-send recovery without an exactly-once guarantee. Provider/quota failures stay isolated to email. No extra service, Uvicorn worker, CV/CNN architecture change, rate limiter or spending cap is introduced. Implementation, CI, manual QA and hosted activation remain separate evidence.
+
+The platform owns pg_net/Vault ACLs. An ordinary migration role's attempted revokes did not remove inherited network access in CI. Activation therefore requires owner replay of the versioned hardening migration; the private scheduled helper checks the resulting permissions and refuses HTTP until safe. The disposable runner tests both states without weakening browser denial tests. Hosted owner/support provisioning remains separate from code verification.

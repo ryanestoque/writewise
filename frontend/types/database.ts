@@ -127,6 +127,68 @@ export type Database = {
           },
         ]
       }
+      email_outbox: {
+        Row: {
+          attempts: number
+          claim_attempts: number | null
+          claim_token: string | null
+          created_at: string
+          due_at: string | null
+          first_attempt_at: string | null
+          id: string
+          last_error: string | null
+          lease_expires_at: string | null
+          next_attempt_at: string
+          notification_id: string
+          payload_sha256: string | null
+          provider_message_id: string | null
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          claim_attempts?: number | null
+          claim_token?: string | null
+          created_at?: string
+          due_at?: string | null
+          first_attempt_at?: string | null
+          id?: string
+          last_error?: string | null
+          lease_expires_at?: string | null
+          next_attempt_at?: string
+          notification_id: string
+          payload_sha256?: string | null
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          claim_attempts?: number | null
+          claim_token?: string | null
+          created_at?: string
+          due_at?: string | null
+          first_attempt_at?: string | null
+          id?: string
+          last_error?: string | null
+          lease_expires_at?: string | null
+          next_attempt_at?: string
+          notification_id?: string
+          payload_sha256?: string | null
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_outbox_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: true
+            referencedRelation: "notification"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manual_score: {
         Row: {
           baseline_alignment_band: Database["public"]["Enums"]["score_band"]
@@ -404,18 +466,21 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          email_notifications: boolean
           full_name: string
           id: string
         }
         Insert: {
           created_at?: string
           email: string
+          email_notifications?: boolean
           full_name: string
           id: string
         }
         Update: {
           created_at?: string
           email?: string
+          email_notifications?: boolean
           full_name?: string
           id?: string
         }
@@ -677,6 +742,7 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          email_notifications: boolean
           full_name: string
           id: string
           school_name: string | null
@@ -684,6 +750,7 @@ export type Database = {
         Insert: {
           created_at?: string
           email: string
+          email_notifications?: boolean
           full_name: string
           id: string
           school_name?: string | null
@@ -691,6 +758,7 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string
+          email_notifications?: boolean
           full_name?: string
           id?: string
           school_name?: string | null
@@ -827,6 +895,16 @@ export type Database = {
       }
     }
     Functions: {
+      authorize_email_delivery: {
+        Args: {
+          expected_claim_token: string
+          payload_recipient: string
+          payload_sha256: string
+          target_outbox_id: string
+        }
+        Returns: Json
+      }
+      claim_email_delivery: { Args: never; Returns: Json }
       complete_student_submission: {
         Args: { actor_id: string; target_submission_id: string }
         Returns: Json
@@ -834,6 +912,17 @@ export type Database = {
       create_assigned_activity: {
         Args: { actor_id: string; payload: Json }
         Returns: Json
+      }
+      finish_email_delivery: {
+        Args: {
+          delivery_outcome: string
+          error_code: string
+          expected_claim_token: string
+          provider_id: string
+          retry_at: string
+          target_outbox_id: string
+        }
+        Returns: boolean
       }
       is_assigned: {
         Args: { target_activity_id: string; target_student_id: string }
@@ -860,6 +949,10 @@ export type Database = {
           target_activity_id: string
           target_student_id: string
         }
+        Returns: Json
+      }
+      prepare_email_delivery: {
+        Args: { expected_claim_token: string; target_outbox_id: string }
         Returns: Json
       }
       record_student_submission: {

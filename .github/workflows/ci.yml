@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ "main", "feat/phase3-assignment-deadlines", "feat/phase3-return-release", "feat/phase3-notifications-implementation" ]
+    branches: [ "main", "feat/phase3-assignment-deadlines", "feat/phase3-return-release", "feat/phase3-notifications-implementation", "feat/phase3-email-notifications" ]
   pull_request:
     branches: [ "main" ]
 
@@ -114,6 +114,25 @@ jobs:
         cd ..
         supabase db reset --local
 
+    - name: Verify legacy email upgrade
+      env:
+        ENVIRONMENT: test
+      run: |
+        supabase db reset --local --version 20261103010004
+        cd backend
+        uv run python tests/migrations/email_upgrade_check.py prepare --manifest /tmp/email-upgrade.json
+        cd ..
+        supabase migration up --local
+        cd backend
+        uv run python tests/migrations/email_upgrade_check.py verify --manifest /tmp/email-upgrade.json
+        cd ..
+        supabase db reset --local
+
+    - name: Verify fail-closed network guard and owner provisioning
+      run: |
+        docker exec -i supabase_db_writewise-test psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < backend/tests/migrations/email_network_guard_check.sql
+        docker exec -i supabase_db_writewise-test psql -X -v ON_ERROR_STOP=1 -U supabase_admin -d postgres < supabase/migrations/20261103132241_phase3_email_network_boundary.sql
+
     - name: Check generated API contract
       env:
         ENVIRONMENT: test
@@ -138,6 +157,14 @@ jobs:
         name: database-types
         path: frontend/types/database.ts
 
+    - name: Start synthetic email callback
+      run: |
+        docker inspect supabase_db_writewise-test >/dev/null
+        docker run --detach --rm --name writewise-email-callback \
+          --network container:supabase_db_writewise-test \
+          --mount type=bind,src="$PWD/backend/tests/support/email_callback.py",dst=/callback.py,readonly \
+          python:3.13-slim python /callback.py
+
     - name: Run Backend Pytest
       working-directory: ./backend
       env:
@@ -150,6 +177,13 @@ jobs:
     - name: Check committed database contract
       run: git diff --exit-code -- frontend/types/database.ts
       
+    - name: Stop synthetic email callback
+      if: always()
+      run: |
+        if docker container inspect writewise-email-callback >/dev/null 2>&1; then
+          docker container rm --force writewise-email-callback
+        fi
+
     - name: Teardown Supabase
       if: always()
       run: |

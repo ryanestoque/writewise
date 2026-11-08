@@ -286,3 +286,9 @@ Coursework writes insert their notifications within the existing authorized serv
 Deadline checks run inside Postgres through one named pg_cron job every 15 minutes. They use a private JWT-independent assignment lookup, current roster membership, effective due dates, shared active-attempt selection, and activity-first locks. This introduces scheduled work for notifications; CV/CNN processing retains its synchronous, in-process, single-worker contract. No service process, HTTP dispatcher, or email worker is added.
 
 The client polls notifications every 60 seconds in foreground. Account-scoped cache keys/cancellation, serialized cursor pagination, and token-bound read mutations keep concurrent refreshes and account switches coherent. Design decisions and alternatives are in [ADR 0005](adr/0005-transactional-notifications-and-scheduling.md).
+
+### Phase 3 Slice 4 — Transactional email outbox
+
+Eligible notification writes enqueue email in the same Postgres transaction. The existing FastAPI service runs committed async PostgREST operations: claim, prepare current recipient/eligibility, reserve a fixed fingerprint, send through Resend, finalize. No database lock spans the provider request. Each invocation has a 20-second total budget, at most ten claims, two-second RPC deadlines and a five-second total provider deadline. The CV/CNN pipeline stays in process with one Uvicorn worker.
+
+Stable `writewise-email/<outbox UUID>` keys and payload digests support recovery after uncertain provider acceptance. Two-minute leases recover abandoned claims; token rotation makes reservation single-use. The three-attempt/one-hour bound limits retries, not billing. Email provider/quota failures do not prevent coursework or in-app notification operations. See DATABASE §17 and the [approved email design](superpowers/specs/2026-11-03-phase3-email-notifications-design.md).
