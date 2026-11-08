@@ -37,6 +37,8 @@ CLI allocated `supabase/migrations/20261108045526_phase3_gradebook_store.sql`. I
 
 A read-only boundary review found no confirmed Critical/Important code defect in the implemented storage/read scope. Its verification recommendations add genuine current-publication source/maximum/pin/release invalidation, historical/archive/section moves and unrelated teacher-label denial cases. Those additional cases are not covered by the 786-test run and remain pending their next CI run. The feature's lifecycle writes, UI and final manual gates remain outstanding.
 
+**Next red boundary:** Added those reviewer-recommended cases and a value-equivalent decimal-format publication case, plus activity/work mutation cases for Task 3. The mutation APIs are intentionally absent at this checkpoint; their red run precedes production mutation code. Storage migration/type delivery is now paired in amended local commit `fed9d92`. Publish this amended checkpoint and its new test child only with a lease against our own provisional remote `96d5e86`; source branches/main and unrelated work remain untouched.
+
 ## Global Constraints
 
 The following sentences are copied from the approved spec and apply to every task:
