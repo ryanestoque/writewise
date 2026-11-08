@@ -390,7 +390,7 @@ Each slice can ship on its own and unblocks the next.
 
 | # | Question | Recommended default |
 |---|---|---|
-| **Q-A** ⚠️ | Under manual scoring, each band maps to a midpoint (12.5 / 37.5 / 62.5 / **87.5**), so a perfect worksheet only reaches **87.5 %** of the points. Should points scale from the raw composite, or from a normalized band ladder? | Scale from the **band ladder** (Excellent = 100 %, Satisfactory = 75 %, Developing = 50 %, NI = 25 %) while manual; switch to the raw calibrated composite once `SCORING_ENGINE=calibrated`, behind the ScoreProvider |
+| **Q-A — resolved 2026-11-07** | Should gradebook points use the existing composite or a normalized manual band ladder? | **User-approved:** existing recorded composites for both sources; no 25/50/75/100 normalization. Preserve shared portal cutoffs and manual midpoint values (all-Excellent manual work earns 87.5% of activity points). See the [approved Slice 5 design](../superpowers/specs/2026-11-07-phase3-points-gradebook-design.md) and [execution plan](../superpowers/plans/2026-11-07-phase3-points-gradebook.md). |
 | Q-B | Student joins a section after an activity was assigned: send `activity_assigned`? | No. It still appears in their list; avoids a burst of notifications when a roster is imported |
 | Q-C | Student moves sections: do old assignments follow? | Section-based assignments follow the *current* section; existing submissions are kept regardless |
 | Q-D | Should a returned submission's teacher note be visible in the parent's submission history? | Yes, in-app only |
