@@ -6,6 +6,7 @@ const TWO_DAYS_MS = 48 * 60 * 60 * 1000;
 /** Keep the task count, priority prompt, and activity cards on the same state. */
 export function getParentActivityStatus(work: TakeHomeActivity, now: number) {
   const submission = work.submission ?? work.latestSubmission;
+  const excused = work.workState?.work_status === "Excused";
   const closed = activitySubmissionsClosed(
     { due_at: work.dueAt, close_after_due: work.closeAfterDue },
     now
@@ -19,7 +20,7 @@ export function getParentActivityStatus(work: TakeHomeActivity, now: number) {
   const needsPhoto = !processing && (!submission || returned || rejected);
   const canSend = needsPhoto && !closed;
   const dueTime = work.dueAt ? Date.parse(work.dueAt) : Number.POSITIVE_INFINITY;
-  const urgency = !canSend
+  const urgency = !canSend || excused
     ? null
     : returned || rejected
       ? "new_photo"
@@ -34,9 +35,10 @@ export function getParentActivityStatus(work: TakeHomeActivity, now: number) {
     processing,
     returned,
     rejected,
+    excused,
     canSend,
     // A completed counted attempt remains submitted even after its deadline.
-    category: processing ? "processing" : needsPhoto ? (closed ? "closed" : "todo") : "submitted",
+    category: excused ? "submitted" : processing ? "processing" : needsPhoto ? (closed ? "closed" : "todo") : "submitted",
     urgency,
     dueTime,
   } as const;

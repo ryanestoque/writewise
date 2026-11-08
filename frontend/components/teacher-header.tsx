@@ -23,6 +23,7 @@ const routeTitles: Record<string, string> = {
   dashboard: "Dashboard",
   roster: "Class Roster",
   activities: "Handwriting Activities",
+  gradebook: "Gradebook",
   settings: "Account Settings",
 };
 

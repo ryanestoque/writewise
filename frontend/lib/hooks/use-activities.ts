@@ -85,6 +85,7 @@ export function useCreateActivity() {
     onSuccess: () => {
       void invalidateNotifications(queryClient);
       queryClient.invalidateQueries({ queryKey: ["activities"] });
+      void queryClient.invalidateQueries({ queryKey: ["gradebook"] });
     },
   });
 }
@@ -117,6 +118,7 @@ export function useUpdateActivity() {
     onSuccess: (_, variables) => {
       void invalidateNotifications(queryClient);
       queryClient.invalidateQueries({ queryKey: ["activities"] });
+      void queryClient.invalidateQueries({ queryKey: ["gradebook"] });
       queryClient.invalidateQueries({ queryKey: ["activities", variables.id] });
     },
   });
@@ -141,6 +143,7 @@ export function useDeleteActivity() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["activities"] });
+      void queryClient.invalidateQueries({ queryKey: ["gradebook"] });
     },
   });
 }
@@ -162,6 +165,7 @@ export function useToggleArchive() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["activities"] });
+      void queryClient.invalidateQueries({ queryKey: ["gradebook"] });
     },
   });
 }
@@ -187,6 +191,7 @@ export function useBulkArchive() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["activities"] });
+      void queryClient.invalidateQueries({ queryKey: ["gradebook"] });
     },
   });
 }

@@ -56,6 +56,7 @@ const classroomNavItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboardIcon },
   { title: "Class Roster", href: "/roster", icon: UsersIcon },
   { title: "Activities", href: "/activities", icon: ClipboardListIcon },
+  { title: "Gradebook", href: "/gradebook", icon: BookOpenIcon },
 ];
 
 interface TeacherSidebarProps {

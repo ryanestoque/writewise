@@ -23,7 +23,7 @@ export function ActivityWorkStatus({
   return (
     <span className="inline-flex flex-wrap gap-1.5">
       <Badge variant={work.status === "Missing" ? "destructive" : "secondary"}>{work.status}</Badge>
-      {work.late && <Badge variant="outline">Late</Badge>}
+      {work.late && work.status !== "Excused" && <Badge variant="outline">Late</Badge>}
     </span>
   );
 }

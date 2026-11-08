@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useParentPortal } from "@/components/parent-portal-provider";
 import { LatestSubmissionCard } from "@/components/parent/latest-submission-card";
 import { TakeHomeActivities } from "@/components/parent/take-home-activities";
@@ -10,6 +11,7 @@ import { PastWorksheetsSection } from "@/components/parent/submission-history-di
 import { SampleReportPreview } from "@/components/parent/sample-report-preview";
 import { NotificationWorkDestination } from "@/components/parent/notification-work-destination";
 import { QueryRecovery } from "@/components/shared/query-recovery";
+import { ParentGrades } from "@/components/gradebook/parent-grades";
 import {
   useChildScoreHistory,
   useTakeHomeActivities,
@@ -55,9 +57,12 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-type ParentProgressTab = "overview" | "to-write" | "progress";
+type ParentProgressTab = "overview" | "to-write" | "progress" | "grades";
 
 export function ProgressPageContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [rubricOpen, setRubricOpen] = useState(false);
   const [activitiesExpanded, setActivitiesExpanded] = useState(false);
   const [showScoreDetails, setShowScoreDetails] = useState(false);
@@ -152,7 +157,8 @@ export function ProgressPageContent() {
       selectedChildId === notificationTarget.target.childId
       ? notificationTarget.target
       : null;
-  const notificationDestination = notificationTarget.kind !== "none" ? (
+  const gradeDestination = notificationTargetData?.view === "grades";
+  const notificationDestination = notificationTarget.kind !== "none" && !gradeDestination ? (
     <NotificationWorkDestination
       key={`${notificationTargetData?.childId}:${notificationTargetData?.activityId}:${notificationTargetData?.submissionId}`}
       userId={userId}
@@ -214,7 +220,8 @@ export function ProgressPageContent() {
   const firstName = selectedChild.fullName.trim().split(/\s+/)[0] || selectedChild.fullName;
   const scoredCount = history?.length ?? 0;
   const isZeroState = !historyLoading && allHistory !== undefined && scoredCount === 0;
-  const activeTab: ParentProgressTab = selectedTab ?? (isZeroState ? "to-write" : "overview");
+  const requestedGrades = searchParams.getAll("tab").length === 1 && searchParams.get("tab") === "grades";
+  const activeTab: ParentProgressTab = gradeDestination ? "grades" : selectedTab ?? (requestedGrades ? "grades" : isZeroState ? "to-write" : "overview");
 
   return (
     <div className="w-full space-y-6 pb-12">
@@ -400,14 +407,22 @@ export function ProgressPageContent() {
       {/* Segmented 3-Tab View: Overview, To-Write, Progress */}
       <Tabs
         value={activeTab}
-        onValueChange={(val) => setSelectedTab(val as ParentProgressTab)}
+        onValueChange={(val) => {
+          if (gradeDestination || requestedGrades) {
+            const next = new URLSearchParams(searchParams.toString());
+            if (gradeDestination) for (const name of ["child", "activity", "submission"]) next.delete(name);
+            if (val === "grades") next.set("tab", "grades"); else next.delete("tab");
+            router.replace(`${pathname}${next.size ? `?${next}` : ""}`, { scroll: false });
+          }
+          setSelectedTab(val as ParentProgressTab);
+        }}
         className="w-full gap-6"
       >
         <div className="border-b border-border/80">
           <TabsList
             variant="line"
             aria-label={`${firstName}'s portal sections`}
-            className="w-full sm:w-auto grid grid-cols-3 sm:inline-flex h-auto gap-1 sm:gap-2 rounded-none bg-transparent p-0"
+            className="w-full sm:w-auto flex overflow-x-auto h-auto gap-1 sm:gap-2 rounded-none bg-transparent p-0"
           >
             <TabsTrigger
               value="overview"
@@ -437,8 +452,19 @@ export function ProgressPageContent() {
               <TrendingUp className="size-4 shrink-0" aria-hidden="true" />
               <span>Progress</span>
             </TabsTrigger>
+            <TabsTrigger value="grades" className="min-h-11 px-3 sm:px-4 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap">
+              Grades
+            </TabsTrigger>
           </TabsList>
         </div>
+
+        <TabsContent value="grades">
+          {activeTab === "grades" && selectedChildId && (
+            <ParentGrades key={`${userId}:${selectedChildId}`} userId={userId} childId={selectedChildId}
+              highlightActivityId={gradeDestination ? notificationTargetData?.activityId : undefined}
+              onDismissTarget={() => { setSelectedTab("grades"); dismissNotificationTarget(); }} />
+          )}
+        </TabsContent>
 
         {/* Tab 1: Overview (Coaching Hero + Latest Worksheet) */}
         <TabsContent value="overview" className="space-y-6">

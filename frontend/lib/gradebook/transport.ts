@@ -20,7 +20,11 @@ async function authorizedFetch(userId: string, path: string, init: RequestInit) 
   const assertCurrent = async () => {
     if (init.signal?.aborted) aborted();
     const { data: current, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || current.session?.user.id !== userId || current.session.access_token !== token) {
+    if (
+      sessionError ||
+      current.session?.user.id !== userId ||
+      current.session.access_token !== token
+    ) {
       aborted();
     }
   };
@@ -32,31 +36,41 @@ async function authorizedFetch(userId: string, path: string, init: RequestInit) 
   return { response, assertCurrent };
 }
 
+async function currentResponse<T>(
+  response: Response,
+  assertCurrent: () => Promise<void>
+): Promise<T> {
+  try {
+    return await handleApiResponse<T>(response);
+  } finally {
+    await assertCurrent();
+  }
+}
+
 export async function gradebookRequest<T>(
   userId: string,
   path: string,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<T> {
-  const { response, assertCurrent } = await authorizedFetch(userId, path, { method: "GET", signal });
-  const result = await handleApiResponse<T>(response);
-  await assertCurrent();
-  return result;
+  const { response, assertCurrent } = await authorizedFetch(userId, path, {
+    method: "GET",
+    signal,
+  });
+  return currentResponse<T>(response, assertCurrent);
 }
 
 export async function gradebookMutation<T>(
   userId: string,
   path: string,
   method: "POST" | "PUT",
-  body: object,
+  body: object
 ): Promise<T> {
   const { response, assertCurrent } = await authorizedFetch(userId, path, {
     method,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const result = await handleApiResponse<T>(response);
-  await assertCurrent();
-  return result;
+  return currentResponse<T>(response, assertCurrent);
 }
 
 export async function downloadGradebookCsv(userId: string, sectionId: string): Promise<void> {
@@ -64,10 +78,12 @@ export async function downloadGradebookCsv(userId: string, sectionId: string): P
     throw new ApiError({ code: "VALIDATION_ERROR", message: "Choose a valid section." });
   }
   const { response, assertCurrent } = await authorizedFetch(
-    userId, `/api/sections/${encodeURIComponent(sectionId)}/gradebook.csv`, { method: "GET" },
+    userId,
+    `/api/sections/${encodeURIComponent(sectionId)}/gradebook.csv`,
+    { method: "GET" }
   );
   if (!response.ok) {
-    await handleApiResponse(response);
+    await currentResponse(response, assertCurrent);
     return;
   }
   const blob = await response.blob();
