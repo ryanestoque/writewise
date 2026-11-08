@@ -68,6 +68,23 @@ def case(monkeypatch):
                         "hint": None,
                     },
                 )
+            if path in ("rpc/assign_zero_missing", "rpc/excuse_activity_students"):
+                return httpx.Response(
+                    200, json={"changed_student_ids": [STUDENT], "skipped_student_ids": []}
+                )
+            if path == "rpc/release_student_work_grade":
+                return httpx.Response(
+                    200,
+                    json={
+                        "activity_id": ACTIVITY,
+                        "student_id": STUDENT,
+                        "revision": 2,
+                        "released_at": STAMP,
+                        "submission_id": None,
+                        "rubric_released": False,
+                        "grade_released": True,
+                    },
+                )
             if path == "rpc/release_activity_results":
                 return httpx.Response(
                     200, json={"released_count": 1, "submission_ids": [SUBMISSION]}
@@ -169,6 +186,47 @@ def test_work_point_and_excuse_inputs_preserve_omission_in_authorized_rpc(case):
     )
     assert result.status_code == 200, result.text
     assert case.writes[0]["payload"] == {"points_override": "0", "excused": False}
+
+
+@pytest.mark.parametrize(
+    "suffix,payload,rpc_field,value",
+    [
+        (f"students/{STUDENT}/release-grade", {"expected_revision": 2}, "expected_revision", 2),
+        ("assign-zero-missing", {}, "target_student_ids", None),
+        (
+            "excuse-students",
+            {"student_ids": [STUDENT], "excused": True},
+            "target_student_ids",
+            [STUDENT],
+        ),
+    ],
+)
+def test_gradebook_write_routes_use_authorized_service_lifecycle(
+    case, suffix, payload, rpc_field, value
+):
+    result = case.client.post(f"/api/activities/{ACTIVITY}/{suffix}", json=payload)
+    assert result.status_code == 200, result.text
+    assert result.headers["Cache-Control"] == "no-store"
+    assert case.writes[0][rpc_field] == value
+
+
+def test_grade_release_conflict_is_sanitized_and_does_not_retry_new_revision(case):
+    case.error = "WW431"
+    result = case.client.post(
+        f"/api/activities/{ACTIVITY}/students/{STUDENT}/release-grade",
+        json={"expected_revision": 2},
+    )
+    assert result.status_code == 409
+    assert result.json()["error"]["code"] == "GRADE_REVISION_CONFLICT"
+    assert len(case.writes) == 1 and "private" not in result.text
+
+
+@pytest.mark.parametrize("owner,role,status", [(False, "teacher", 404), (True, "parent", 403)])
+def test_gradebook_bulk_write_requires_the_activity_owner(case, owner, role, status):
+    case.owner, case.role = owner, role
+    result = case.client.post(f"/api/activities/{ACTIVITY}/assign-zero-missing", json={})
+    assert result.status_code == status
+    assert case.writes == []
 
 
 def test_parent_cannot_release_even_a_known_submission(case):

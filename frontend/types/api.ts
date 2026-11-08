@@ -89,6 +89,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/activities/{activity_id}/students/{student_id}/release-grade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Release Grade */
+        post: operations["release_grade_api_activities__activity_id__students__student_id__release_grade_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activity_id}/assign-zero-missing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Assign Zero Missing */
+        post: operations["assign_zero_missing_api_activities__activity_id__assign_zero_missing_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activity_id}/excuse-students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Excuse Students */
+        post: operations["excuse_students_api_activities__activity_id__excuse_students_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sections/{section_id}/gradebook": {
         parameters: {
             query?: never;
@@ -535,6 +586,11 @@ export interface components {
             /** Close After Due */
             close_after_due?: boolean | null;
         };
+        /** AssignZeroMissingRequest */
+        AssignZeroMissingRequest: {
+            /** Student Ids */
+            student_ids?: string[] | null;
+        };
         /** AssignmentTarget */
         AssignmentTarget: {
             /** Section Id */
@@ -560,6 +616,13 @@ export interface components {
              * @default false
              */
             bypass_text_check: boolean;
+        };
+        /** BulkGradeResponse */
+        BulkGradeResponse: {
+            /** Changed Student Ids */
+            changed_student_ids: string[];
+            /** Skipped Student Ids */
+            skipped_student_ids: string[];
         };
         /** ChildGradebook */
         ChildGradebook: {
@@ -598,6 +661,44 @@ export interface components {
              * @default 0
              */
             skipped: number;
+        };
+        /** ExcuseStudentsRequest */
+        ExcuseStudentsRequest: {
+            /** Student Ids */
+            student_ids: string[];
+            /** Excused */
+            excused: boolean;
+        };
+        /** GradeReleaseRequest */
+        GradeReleaseRequest: {
+            /** Expected Revision */
+            expected_revision: number;
+        };
+        /** GradeReleaseResponse */
+        GradeReleaseResponse: {
+            /**
+             * Activity Id
+             * Format: uuid
+             */
+            activity_id: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Revision */
+            revision: number;
+            /**
+             * Released At
+             * Format: date-time
+             */
+            released_at: string;
+            /** Submission Id */
+            submission_id: string | null;
+            /** Rubric Released */
+            rubric_released: boolean;
+            /** Grade Released */
+            grade_released: boolean;
         };
         /** GradebookActivity */
         GradebookActivity: {
@@ -740,6 +841,13 @@ export interface components {
             released_count: number;
             /** Submission Ids */
             submission_ids: string[];
+            /**
+             * Released Grade Count
+             * @default 0
+             */
+            released_grade_count: number;
+            /** Grade Student Ids */
+            grade_student_ids?: string[];
         };
         /** ReleaseSubmissionResponse */
         ReleaseSubmissionResponse: {
@@ -1113,6 +1221,112 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    release_grade_api_activities__activity_id__students__student_id__release_grade_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: string;
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GradeReleaseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GradeReleaseResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assign_zero_missing_api_activities__activity_id__assign_zero_missing_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignZeroMissingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkGradeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    excuse_students_api_activities__activity_id__excuse_students_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExcuseStudentsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkGradeResponse"];
                 };
             };
             /** @description Validation Error */

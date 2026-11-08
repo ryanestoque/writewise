@@ -81,6 +81,10 @@ The frontend branches on `error.code`, never on parsing `message` text (ARCHITEC
 | `SUBMISSION_NOT_RETURNABLE` | 409 | Return requested for a processing, rejected, or already returned attempt |
 | `SUBMISSION_NOT_RELEASABLE` | 409 | Release requested for an inactive, ungraded, rejected, or returned attempt |
 | `INVALID_WORK_SELECTION` | 422 | Pin does not reference a completed attempt for this student and activity |
+| `GRADE_NOT_RELEASABLE` | 409 | Work is excused, points are disabled, or no numeric grade is available |
+| `GRADE_REVISION_CONFLICT` | 409 | Work changed since the teacher reviewed its grade revision |
+| `POINTS_OVERRIDE_CONFLICT` | 409 | A new activity maximum would be lower than an existing override |
+| `POINTS_REMOVAL_CONFIRMATION_REQUIRED` | 409 | Removing points with retained grades needs explicit confirmation |
 | `QUALITY_GATE_BLUR` | 422 | CV_PIPELINE §2 |
 | `QUALITY_GATE_BRIGHTNESS` | 422 | CV_PIPELINE §2 |
 | `QUALITY_GATE_CONTRAST` | 422 | CV_PIPELINE §2 |
@@ -649,6 +653,20 @@ Each send follows committed claim, current eligibility, and single-use authoriza
 ---
 
 ### 3.8 Gradebook reads and class-record CSV
+
+Activity POST/PATCH accepts optional `points_possible` (decimal string or number, greater than zero through 9999.99, at most two decimal places). PATCH preserves omitted points; explicit null removes them. If grades exist, removal requires `confirm_remove_points: true` and clears overrides/publication. A maximum below an override rolls the entire edit back. Unchanged numeric values preserve publication.
+
+Work PUT additionally accepts `points_override` (zero through the activity maximum; omitted preserves, null clears) and `excused` (boolean). Responses add `excused` and a safe `grade` record without its private source signature. These edits preserve rubric values and attempt/deadline selection unless those existing fields are explicitly supplied.
+
+Teacher-owned writes, all with `Cache-Control: no-store`:
+
+| Route | Body | Success |
+|---|---|---|
+| `POST /api/activities/{id}/students/{student_id}/release-grade` | `{expected_revision: positive integer}` | Grade revision, release timestamp, optional source submission, and separate `grade_released`/`rubric_released` flags |
+| `POST /api/activities/{id}/assign-zero-missing` | `{student_ids?: nonempty UUID[]}`; omit for all assigned candidates | `changed_student_ids` / `skipped_student_ids`; zeros remain draft |
+| `POST /api/activities/{id}/excuse-students` | `{student_ids: nonempty UUID[], excused: boolean}` | `changed_student_ids` / `skipped_student_ids` |
+
+The release route checks the reviewed revision after synchronizing live work. A conflict requires refreshing and reviewing; clients must not silently retry with a newer revision. Points-only release may have no submission, and never creates a worksheet or rubric. Bulk activity release retains submission-only `released_count`/`submission_ids` and adds `released_grade_count`/`grade_student_ids`.
 
 `GET /api/sections/{section_id}/gradebook` and `GET /api/sections/{section_id}/gradebook.csv` require the owning teacher. `GET /api/students/{student_id}/gradebook` requires a linked parent and groups only the selected child's work by activity owner. All three use the exact verified Bearer token with the public `SUPABASE_ANON_KEY` to read one coherent snapshot from security-invoker database RPCs. No service-role client participates in this read path. Missing/inaccessible scopes return `404 NOT_FOUND`; wrong portal role is `403 FORBIDDEN`; missing/invalid identity is `401 UNAUTHORIZED`. Transport, missing-key and malformed-snapshot failures return sanitized `500 INTERNAL_ERROR`, never an empty successful book.
 

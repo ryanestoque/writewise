@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.gradebook.contracts import WorkGradeRecord, WorkGradeUpdate
 
@@ -86,6 +86,8 @@ class ReleaseSubmissionResponse(BaseModel):
 class ReleaseActivityResponse(BaseModel):
     released_count: int
     submission_ids: list[UUID]
+    released_grade_count: int = 0
+    grade_student_ids: list[UUID] = Field(default_factory=list)
 
 
 class StudentWorkResponse(BaseModel):
