@@ -12,6 +12,10 @@
 
 ## Execution record
 
+**Verification closeout (2026-11-09, Asia/Singapore):** The user reported Slice 5 was all good after receiving the manual acceptance checklist and discussing Unexcuse and decimal scoring, then explicitly requested closeout. This is overall user-reported manual acceptance, not an independently observed or itemized real-portal pass. [Final implementation-head CI 42474197080](https://github.com/ryanestoque/writewise/actions/runs/42474197080) on `404474682de1f67dd997915ffb7cd01b219908e4` completed successfully; its full pytest, all five upgrade proofs, lint/type checks, generated-contract comparisons, network guard and security advisors were confirmed through the GitHub Actions API. Slice 5 is **Verified**, bringing Phase 3 to **4/6 verified**. This supersedes earlier pending Slice 5 manual/final-CI records and the planning checkboxes below, without claiming each manual matrix row was separately observed. Slice 4 email QA and operational activation remain pending. Preserve `feat/phase3-points-gradebook` and its worktree/env files; closeout does not merge main, apply hosted migrations, deploy or enable email.
+
+**Closeout documentation checks (2026-11-09):** Ruff, ESLint, TypeScript (`--noEmit --incremental false`) and `git diff --check` passed on the documentation closeout. No application, API, scoring or migration file changed; the successful final implementation-head CI above supplies full ephemeral-stack verification.
+
 **2026-11-08 — inline execution selected.** Work is isolated in `.worktrees/phase3-points-gradebook` on `feat/phase3-points-gradebook`. Local merge `98e083f` integrates email branch `0208549` with main `6c77b06` only on this feature branch. The one conflict was parent-settings container width: main's max-width was retained alongside the email preference control. Neither source branch nor the email worktree was changed.
 
 Frozen dependencies were installed into this worktree's own backend `.venv`; its frontend dependencies use a junction to the existing main node_modules. Fresh baseline: **153 database-free tests passed**, one upstream Starlette/TestClient warning; Ruff, ESLint and TypeScript passed. The initial console-script pytest invocation lacked the backend import path with `--confcutdir`; `uv run --frozen python -m pytest` includes the current backend directory and passes without an application/config change. Use that module invocation for subsequent checks.
@@ -28,8 +32,8 @@ Pinned Supabase CLI 2.115.0 was inspected. Local startup reports `LegacyDockerLi
 | 3 — activity/work mutations | Complete: 828-test checkpoint; maximum/override/removal/excuse/bulk proofs and generated types paired |
 | 4–5 — lifecycle/publication/reminders | Complete automated verification: 870-test CI, recovery/destination/skip guards and lock races pass |
 | 6 — shared API/CSV | Complete automated verification: pure/controlled/real-JWT coverage and actual type generation pass |
-| 7–9 — transport/teacher/parent UI | Implemented; review fixes, build and controlled browser checks pass; full stack/manual acceptance open |
-| 10 — upgrade/docs/closeout | Five upgrade proofs and companion docs complete; final UI checkpoint CI/review and real manual gate open |
+| 7–9 — transport/teacher/parent UI | Complete: review fixes, build and controlled browser checks recorded; final implementation-head CI passed; user-reported manual acceptance signed off 2026-11-09 |
+| 10 — upgrade/docs/closeout | Complete: five upgrade proofs, final implementation-head CI and companion docs; user-reported manual acceptance signed off 2026-11-09 |
 
 **Disposable SQL runner authorized (2026-11-08):** The user explicitly authorized pushing this branch and subsequent checkpoints to `https://github.com/ryanestoque/writewise` for feature-branch CI. [Initial CI run 42448061916](https://github.com/ryanestoque/writewise/actions/runs/42448061916), head `743acc3`, passed **732 tests**; the 14 new storage/read cases failed on missing columns/table/read functions (8 failures and 6 fixture errors), establishing the intended missing-schema red boundary. Existing migration/upgrade checks passed before those tests.
 

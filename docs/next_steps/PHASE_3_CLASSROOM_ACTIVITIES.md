@@ -373,6 +373,8 @@ The existing parent-delete rule (`SUBMISSION_ALREADY_GRADED`) is unchanged.
 
 ## 8. Build Order
 
+**Slice ⑤ closeout (2026-11-09):** Points and gradebook is **Verified** following [final implementation-head CI](https://github.com/ryanestoque/writewise/actions/runs/42474197080) on `4044746` and the user's overall manual QA sign-off and explicit closeout request. Phase 3 is **4/6 verified**. Slice ④ email manual/operational gates remain pending; Slice ⑥ private comments is not started. See `IMPLEMENTATION_STATUS.md` and the [Slice 5 execution record](../superpowers/plans/2026-11-07-phase3-points-gradebook.md) for the evidence and distinction from merge/hosted deployment.
+
 Each slice can ship on its own and unblocks the next.
 
 | Slice | Scope | Key risk | Tests |
