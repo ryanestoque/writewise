@@ -1,5 +1,11 @@
 # WriteWise — ARCHITECTURE.md
 
+## Phase 3 Slice 6 — private conversations
+
+The browser reads conversations directly through two caller-RLS SECURITY INVOKER RPCs using a request-scoped client bound to the verified submitted JWT. Its token callback is fixed for that operation; it has no persistent/refreshing auth state. Account/token/abort checks surround transport and response parsing. React Query separates accounts and work pairs, refreshes retained history from the head, and clears private bodies on denied reads or account changes. The same notification rows drive bell counts and batched gradebook unread indicators.
+
+Writes pass through FastAPI's actual owner/current-parent/author prechecks into service-only SQL transactions that recheck after activity/work lock waits. No comment read is elevated through the backend. Comment text stays only in authorized thread responses/storage; write responses, notification receipts and alerts contain metadata. Posting/fanout is atomic and in-app only. The feature adds no email path, worker, queue, Realtime subscription, dependency or scoring branch. Gradebook cells/totals/CSV and research exports remain academic data only. Both portals reuse one thread component; contextual history supplies comment-only pairs without manufacturing academic rows.
+
 ## Phase 3 Slice 5 — coursework calculations
 
 Gradebook reads pass through FastAPI for shared business calculations. A request-scoped HTTPX client forwards the verified caller's exact JWT and public Supabase key to one caller-rights fact RPC; it never mutates or reads through the global service session. One coherent RLS snapshot feeds ScoreProvider recorded-source resolution and Decimal conversion, then one assembler supplies teacher JSON, released-only parent JSON and class-record CSV. Assessment history and coursework publication remain independent.

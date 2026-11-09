@@ -19,7 +19,7 @@ export type ParentNotificationTarget = {
   childId: string;
   activityId: string;
   submissionId: string | null;
-  view?: "grades";
+  view?: "grades" | "comments";
 };
 export type ParsedNotificationTarget =
   { kind: "none" } | { kind: "invalid" } | { kind: "valid"; target: ParentNotificationTarget };
@@ -30,13 +30,17 @@ export function parseParentNotificationTarget(
   const child = params.getAll("child"),
     activity = params.getAll("activity"),
     submission = params.getAll("submission"),
-    tab = params.getAll("tab");
-  if (!child.length && !activity.length && !submission.length) return { kind: "none" };
+    tab = params.getAll("tab"),
+    view = params.getAll("view");
+  if (!child.length && !activity.length && !submission.length && !view.length)
+    return { kind: "none" };
   if (
     child.length !== 1 ||
     activity.length !== 1 ||
     submission.length > 1 ||
     tab.length > 1 ||
+    view.length > 1 ||
+    (view.length === 1 && (view[0] !== "comments" || submission.length > 0 || tab.length > 0)) ||
     (tab.length === 1 && tab[0] !== "grades") ||
     !isNotificationUuid(child[0]) ||
     !isNotificationUuid(activity[0]) ||
@@ -50,6 +54,7 @@ export function parseParentNotificationTarget(
       activityId: activity[0].toLowerCase(),
       submissionId: submission[0]?.toLowerCase() ?? null,
       ...(tab[0] === "grades" ? { view: "grades" as const } : {}),
+      ...(view[0] === "comments" ? { view: "comments" as const } : {}),
     },
   };
 }

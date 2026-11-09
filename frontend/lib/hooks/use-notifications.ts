@@ -138,12 +138,15 @@ export function useNotificationLabels(userId: string, rows: NotificationRow[], e
 export function useNotificationRead(userId: string, sessionSignal?: AbortSignal) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
+    retry: false,
+    mutationFn: ({ id, expectedCommentVersion }: { id: string; expectedCommentVersion?: number }) =>
       readNotificationState<components["schemas"]["NotificationReadResponse"]>(
-        createClient(),
         userId,
         `/api/notifications/${id}/read`,
-        sessionSignal
+        sessionSignal,
+        expectedCommentVersion === undefined
+          ? undefined
+          : { expected_comment_version: expectedCommentVersion }
       ),
     onSettled: () => invalidateNotifications(client),
   });
@@ -152,9 +155,9 @@ export function useNotificationRead(userId: string, sessionSignal?: AbortSignal)
 export function useNotificationReadAll(userId: string, sessionSignal?: AbortSignal) {
   const client = useQueryClient();
   return useMutation({
+    retry: false,
     mutationFn: () =>
       readNotificationState<components["schemas"]["NotificationsReadAllResponse"]>(
-        createClient(),
         userId,
         "/api/notifications/read-all",
         sessionSignal

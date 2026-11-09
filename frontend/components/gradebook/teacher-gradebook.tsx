@@ -18,6 +18,7 @@ import { QueryRecovery } from "@/components/shared/query-recovery";
 import { GradebookCellButton } from "./gradebook-cell";
 import { WorkGradeSheet } from "./work-grade-sheet";
 import { GradebookBulkDialog } from "./gradebook-bulk-dialog";
+import { useUnreadCommentThreads } from "@/lib/hooks/use-comments";
 
 const selectClass =
   "min-h-10 rounded-lg border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -99,6 +100,7 @@ export function TeacherGradebook({ userId }: { userId: string }) {
 
 function SectionGrid({ userId, sectionId }: { userId: string; sectionId: string }) {
   const query = useSectionGradebook(userId, sectionId);
+  const unread = useUnreadCommentThreads(userId);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -355,6 +357,9 @@ function SectionGrid({ userId, sectionId }: { userId: string; sectionId: string 
                         <div data-row={rowIndex} data-column={column}>
                           <GradebookCellButton
                             cell={work}
+                            hasUnreadComments={
+                              unread.data?.has(`${work.activity_id}:${work.student_id}`) ?? false
+                            }
                             label={`${row.student_name}, ${activity.title}`}
                             onOpen={() => setCell(work)}
                             row={rowIndex}

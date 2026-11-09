@@ -179,3 +179,80 @@ def test_parent_cannot_use_teacher_summary_scope(family, assigned_activity):
             },
         ).execute()
     assert failure.value.code == "WW404"
+
+
+def test_more_than_one_page_keeps_every_comment_once_and_hides_unloaded_alert(
+    family, assigned_activity
+):
+    from tests.rls.comment_support import post_comment
+
+    activity, student = assigned_activity["id"], family["students"][0]
+    first = post_comment(family["teacher"], activity, student)
+    for _ in range(51):
+        post_comment(family["parent"], activity, student)
+    head = thread(family["parent_client"], activity, student)
+    assert len(head["entries"]) == 50 and head["seen_comment_version"] == 52
+    assert head["unread_notice"]["comment_version"] == 1
+    assert first["id"] not in {entry["id"] for entry in head["entries"]}
+    older = thread(family["parent_client"], activity, student, before_cursor=head["next_cursor"])
+    assert len(older["entries"]) == 2 and older["next_cursor"] is None
+    ids = [entry["id"] for entry in head["entries"] + older["entries"]]
+    assert len(set(ids)) == 52 and first["id"] in ids
+
+
+def test_former_roster_owner_discovers_history_with_generic_student_label(
+    family, assigned_activity
+):
+    activity, student = assigned_activity["id"], family["students"][0]
+    seed_comment(family, activity)
+    admin.table("teacher_student").delete().eq("teacher_id", family["teacher"]).eq(
+        "student_id", student
+    ).execute()
+    try:
+        result = (
+            family["teacher_client"]
+            .rpc(
+                "list_private_comment_threads",
+                {
+                    "target_activity_id": activity,
+                },
+            )
+            .execute()
+            .data
+        )
+        assert result["rows"][0]["student_label"] == "Student"
+        assert result["rows"][0]["assigned"] is False
+        history = thread(family["teacher_client"], activity, student)
+        assert history["can_lock"] is True and history["can_post"] is False
+    finally:
+        admin.table("teacher_student").insert(
+            {
+                "teacher_id": family["teacher"],
+                "student_id": student,
+            }
+        ).execute()
+
+
+def test_teacher_summary_cursor_pages_exact_pairs(family, assigned_activity):
+    activity = assigned_activity["id"]
+    seed_comment(family, activity)
+    seed_comment(family, activity, student_id=family["students"][2])
+    params = {"target_activity_id": activity, "page_size": 1}
+    first = family["teacher_client"].rpc("list_private_comment_threads", params).execute().data
+    second = (
+        family["teacher_client"]
+        .rpc(
+            "list_private_comment_threads",
+            {
+                **params,
+                "before_cursor": first["next_cursor"],
+            },
+        )
+        .execute()
+        .data
+    )
+    assert first["next_cursor"] is not None and second["next_cursor"] is None
+    assert {row["student_id"] for row in first["rows"] + second["rows"]} == {
+        family["students"][0],
+        family["students"][2],
+    }

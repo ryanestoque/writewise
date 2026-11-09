@@ -685,7 +685,7 @@ The Slice 5 execution record tracks schema/API verification and remaining write/
 
 ### 3.9 Private student-work comments
 
-**Implementation checkpoint:** FastAPI request/authorization/error boundaries and generated API contracts are implemented on `feat/phase3-private-comments`; backing database transactions and portal flows remain pending their execution gates. This section does not establish feature verification or hosted deployment.
+**Implementation:** FastAPI writes, caller-RLS reads and both portal integrations are implemented on `feat/phase3-private-comments`. Automated/browser evidence and remaining acceptance gates are recorded in IMPLEMENTATION_STATUS.md; this contract does not establish hosted deployment.
 
 | Method/path | Request | Success |
 |---|---|---|
@@ -699,7 +699,13 @@ Text is trimmed Unicode plain text, 1–1000 code points, with internal line bre
 
 For `POST /api/notifications/{notification_id}/read`, a `comment_posted` row requires `{ "expected_comment_version": 2 }` with a positive strict 32-bit integer. The verified recipient and expected version are rechecked transactionally. A newer coalesced version returns `409 COMMENT_READ_CONFLICT` without clearing unread state. Ordinary notices retain their no-body request and `{id,read_at}` response. Missing/invalid comment versions return `422 VALIDATION_ERROR`. Notification request fields cannot select a different recipient.
 
-Thread reads stay under caller RLS; no service-role conversation GET route is added. The [Slice 6 design](superpowers/specs/2026-11-09-phase3-private-comments-design.md) and [execution plan](superpowers/plans/2026-11-09-phase3-private-comments.md) define the remaining database/read-state and portal gates.
+Thread reads stay under caller RLS; no service-role conversation GET route is added. `read_private_comment_thread(target_activity_id,target_student_id,before_cursor?,page_size=50)` returns activity/pair IDs, title, actual actor role, assigned/archive/lock flags, `can_post`, `can_lock`, ordered `read_only_reasons`, entries, `next_cursor`, `seen_comment_version` and recipient-only `unread_notice:{id,comment_version}|null`. Reasons are ordered unassigned, archived, locked. An assigned empty read creates no work, grade or submission.
+
+Comment entries contain `kind,id,event_at,author_role,is_mine,body,deleted_at,comment_version`; deleted text is null. Return entries contain only `kind,id,event_at,return_reason,return_note`. SQL pages are newest-first by `(event_at,kind,id)` (`comment < return`), with Return time taken from `returned_at`. The complete cursor uses those three fields; timestamps retain microseconds. Pages accept 1–100 entries. The watermark covers only returned comments, and automatic acknowledgment additionally requires the exact alerted version to be present in the loaded window.
+
+`list_private_comment_threads(target_activity_id?,target_student_id?,before_cursor?,page_size=50)` requires exactly one scope: the owning teacher's activity or a currently linked parent's child. It returns `rows` with pair IDs, activity title, caller-visible student label (fallback `Student`), last comment time and assignment/archive/lock flags. Its complete cursor is `(last_comment_at,student_id,activity_id)`. Retained tombstones count as history; another child's history never follows from visible activity metadata alone.
+
+Posting checks readable participant/work first, then assignment, archive and lock. Unassignment/archive retain readable history; unarchive/reassignment preserve an explicit teacher lock. Both roles are blocked by a lock; upload closure, due dates, in-class mode, draft results and excused work do not block comments. Authorized authors can delete while posting is disabled. All-read materializes notice IDs/versions before updating; a coalesced successor stays unread. Comment notices contain no text and never enqueue email. See the [approved design](superpowers/specs/2026-11-09-phase3-private-comments-design.md) and [execution record](superpowers/plans/2026-11-09-phase3-private-comments.md).
 
 ---
 

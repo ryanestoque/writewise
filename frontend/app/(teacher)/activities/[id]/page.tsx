@@ -2,7 +2,10 @@
 
 import { use, useState, useMemo, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ActivityThreads } from "@/components/comments/activity-threads";
+import { StudentWorkThreadSheet } from "@/components/comments/student-work-thread-sheet";
+import { commentThreadHref, parseTeacherCommentTarget } from "@/lib/comments/targets";
 import {
   type Activity,
   useActivity,
@@ -109,6 +112,13 @@ export default function ActivityDetailPage({
   const activeIds = useMemo(() => new Set((workQuery.data ?? [])
     .map((row) => row.active_submission_id).filter((id): id is string => !!id)), [workQuery.data]);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const commentTarget = parseTeacherCommentTarget(searchParams, id);
+  const closeComments = () => {
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete("student"); next.delete("view");
+    router.replace(`/activities/${id}${next.size ? `?${next}` : ""}`, { scroll: false });
+  };
 
   const { data: activity, isLoading, error, refetch } = useActivity(id);
   const { data: students } = useStudents();
@@ -875,6 +885,7 @@ export default function ActivityDetailPage({
             <span className="text-sm font-medium">{student.full_name}</span>
             <div className="flex flex-wrap items-center gap-2">
               <ActivityWorkStatus state={workQuery.data?.find((row) => row.student_id === student.id)} />
+              <Button variant="outline" size="sm" onClick={() => router.push(commentThreadHref({ activityId: id, studentId: student.id }, "teacher"), { scroll: false })}>Comments</Button>
               <StudentWorkControls activityId={id} studentId={student.id} studentName={student.full_name}
                 state={workQuery.data?.find((row) => row.student_id === student.id) ?? null}
                 attempts={(submissions ?? []).filter((row) => row.student_id === student.id)} />
@@ -883,6 +894,11 @@ export default function ActivityDetailPage({
         </ul>
       </section>
       {/* Submissions Section */}
+      <ActivityThreads userId={activity.created_by} activityId={id} onOpen={(target) => router.push(commentThreadHref(target, "teacher"), { scroll: false })} />
+      {commentTarget.kind === "invalid" && <div role="status" className="rounded-xl border p-4"><p>This conversation link is invalid.</p><Button variant="outline" onClick={closeComments}>Dismiss</Button></div>}
+      <StudentWorkThreadSheet userId={activity.created_by} target={commentTarget.kind === "valid" ? commentTarget.target : null}
+        open={commentTarget.kind === "valid"} onOpenChange={open => { if (!open) closeComments(); }}
+        studentName={commentTarget.kind === "valid" ? students?.find(student => student.id === commentTarget.target.studentId)?.full_name : undefined} />
       <section aria-labelledby="submissions-heading" className="space-y-4">
         {/* Section Header with Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

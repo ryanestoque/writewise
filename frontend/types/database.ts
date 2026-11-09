@@ -1106,6 +1106,14 @@ export type Database = {
         Returns: Json
       }
       mark_all_notifications_read: { Args: { actor_id: string }; Returns: Json }
+      mark_comment_notification_read: {
+        Args: {
+          actor_id: string
+          expected_comment_version: number
+          target_notification_id: string
+        }
+        Returns: Json
+      }
       mark_notification_read: {
         Args: { actor_id: string; target_notification_id: string }
         Returns: Json

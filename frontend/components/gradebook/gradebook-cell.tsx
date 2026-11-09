@@ -9,12 +9,14 @@ export function GradebookCellButton({
   row,
   column,
   label,
+  hasUnreadComments = false,
 }: {
   cell: GradebookCell;
   onOpen: () => void;
   row?: number;
   column?: number;
   label?: string;
+  hasUnreadComments?: boolean;
 }) {
   if (!cell.applicable) return <span className="text-muted-foreground text-xs">Not assigned</span>;
   return (
@@ -23,7 +25,7 @@ export function GradebookCellButton({
       data-gradecell
       data-row={row}
       data-column={column}
-      aria-label={`${label ?? "Work grade"}: ${cell.coursework_status}, ${cell.final_points === null ? "no point grade" : `${cell.final_points} of ${cell.points_possible} points`}, ${cell.points_possible === null ? "assessment only" : cell.publication === "released" ? "shared" : "draft"}`}
+      aria-label={`${label ?? "Work grade"}: ${cell.coursework_status}, ${cell.final_points === null ? "no point grade" : `${cell.final_points} of ${cell.points_possible} points`}, ${cell.points_possible === null ? "assessment only" : cell.publication === "released" ? "shared" : "draft"}${hasUnreadComments ? ", unread comments" : ""}`}
       onClick={onOpen}
       className="hover:bg-muted focus-visible:ring-ring min-h-20 w-full rounded-md p-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
     >
@@ -50,6 +52,9 @@ export function GradebookCellButton({
         <span className="mt-2 block">
           <BandBadge score={Number(cell.assessment_composite)} size="sm" />
         </span>
+      )}
+      {hasUnreadComments && (
+        <span className="text-primary mt-2 block text-xs">● Unread comments</span>
       )}
     </button>
   );

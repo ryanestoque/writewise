@@ -148,6 +148,21 @@ jobs:
         cd ..
         supabase db reset --local
 
+    - name: Verify legacy private comment upgrade
+      run: |
+        supabase db reset --local --version 20261108062937
+        cd backend
+        ENVIRONMENT=test uv run python tests/migrations/comment_upgrade_check.py prepare --manifest /tmp/comment-upgrade.json
+        if ENVIRONMENT=test uv run python tests/migrations/comment_upgrade_check.py schema --manifest /tmp/comment-upgrade.json; then
+          exit 1
+        fi
+        cd ..
+        supabase migration up --local
+        cd backend
+        ENVIRONMENT=test uv run python tests/migrations/comment_upgrade_check.py verify --manifest /tmp/comment-upgrade.json
+        cd ..
+        supabase db reset --local
+
     - name: Verify fail-closed network guard and owner provisioning
       run: |
         docker exec -i supabase_db_writewise-test psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < backend/tests/migrations/email_network_guard_check.sql

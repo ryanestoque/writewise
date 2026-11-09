@@ -1,7 +1,7 @@
 # Phase 3 — Classroom-Style Activities (Deadlines, Returns, Notifications, Gradebook)
 
 **As of:** November 9, 2026
-**Status:** Slices ①–③ and ⑤ are Verified: Phase 3 is 4/6 verified. Slice ④ email retains its pending signed-in portal QA and operational gates. Slice ⑥'s written design is approved and its implementation plan is prepared; application work is not started. See IMPLEMENTATION_STATUS.md and the slice execution records. Verification, PR integration and hosted activation remain separate; superseded sketches below are historical proposals.
+**Status:** Slices ①–③ and ⑤ are Verified: Phase 3 is 4/6 verified. Slice ④ email retains its pending signed-in portal QA and operational gates. Slice ⑥'s SQL/API/portal candidate is implemented with automated and controlled browser evidence; final paired-head verification and user portal QA remain open. See IMPLEMENTATION_STATUS.md and the slice execution records. Verification, PR integration and hosted activation remain separate; superseded sketches below are historical proposals.
 **Origin:** Design-tree grill session, 2026-10-19 (19 decisions, all accepted). **Amended 2026-10-22:** private comments (Q20–Q28, Slice ⑥); Q16 revised.
 **Supersedes (when promoted):** PRD §13 "Notifications" deferred item, PRODUCT.md "Push notifications" deferred item.
 

@@ -6,6 +6,8 @@ import { useChildGradebook } from "@/lib/hooks/use-gradebook";
 import { BandBadge } from "@/components/shared/band-badge";
 import { QueryRecovery } from "@/components/shared/query-recovery";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { commentThreadHref } from "@/lib/comments/targets";
 
 export function ParentGrades({
   userId,
@@ -130,6 +132,16 @@ export function ParentGrades({
                       </p>
                     </div>
                     <div className="space-y-1.5 text-right">
+                      <Link
+                        href={commentThreadHref(
+                          { activityId: activity.id, studentId: childId },
+                          "parent"
+                        )}
+                        scroll={false}
+                        className="inline-flex min-h-10 items-center text-sm underline"
+                      >
+                        Comments
+                      </Link>
                       <p className="text-sm font-medium tabular-nums">
                         {cell.coursework_status === "Excused"
                           ? "Excused"

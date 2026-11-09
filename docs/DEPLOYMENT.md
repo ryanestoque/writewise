@@ -1,5 +1,13 @@
 # WriteWise — DEPLOYMENT.md
 
+## Phase 3 Slice 6 rollout
+
+Apply the five private-comment migrations in version order, with `20261109122558` (enum) committed before any later migration uses `comment_posted`. Do not combine the enum addition and its use into one transaction. Storage/read/write/receipt migrations follow; regenerate and compare actual database and API contracts in the same delivery. Validate all six upgrade proofs, full tests and security/network gates on the exact paired head first.
+
+The schema is additive for existing activity/work/notice rows: unlocked threads, zero counters, null old-notice versions and no message backfill. Roll out compatible backend read/write semantics before exposing the new frontend entry points; deploy the new frontend promptly because old clients cannot supply the required version for a comment alert. Ordinary notices retain their old HTTP/SQL interface. A frontend rollback should hide conversation entry points; retain the schema/history and version guards rather than dropping private data or reverting to unsafe unversioned reads. The feature requires no new environment variable, service, worker or email configuration.
+
+Implementation CI authorization covers only the feature branch and disposable runner. A green run is not approval to merge, migrate hosted dev/prod, deploy or enable email. Existing key-holder and platform rollout rules still apply. Slice 4's sender/provisioning/manual gates remain independent.
+
 **A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and Progress Monitoring System**
 
 - **Document type:** Internal engineering operational runbook (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, SECURITY.md, TESTING.md)

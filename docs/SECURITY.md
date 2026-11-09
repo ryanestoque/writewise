@@ -1,5 +1,13 @@
 # WriteWise — SECURITY.md
 
+## Phase 3 Slice 6 — comment boundary
+
+Only an activity's owning teacher and the child's currently linked parents can read its conversation. Teaching the same child does not confer another activity owner's access. New parent links can read retained history; removing the link revokes future reads and author mutations. The browser has SELECT-only RLS access and cannot supply an actor to a write RPC. FastAPI derives identity from the verified JWT, checks actual database relationships and delegates to a second post-lock SQL gate; user-editable role metadata is never its authority.
+
+Body text is escaped plain text, with no linkification/Markdown, attachments or edits. Author deletion scrubs the body to null even while the thread is read-only. All linked parents see posts immediately, independently of result release; the composer explains this accepted behavior. Private bodies and user-controlled JSON keys are excluded from safe validation/SDK errors and exception chains. No text enters notice/receipt/email payloads, logs, CSV or research exports. Do not add comment-body logging for debugging.
+
+Browser reads/writes verify the exact submitted token and active account before and after awaits, including response parsing. Account changes cancel requests and remove account-scoped query/mutation caches. A denied read replaces the active query with a body-free unavailable state; removing a still-fetching query alone is unsafe because its observer may retain old data. Drafts are component-local and unmount across child/pair/account changes. Auto-read requires the actual alerted entry, with a database version guard; all-read compares a materialized version snapshot. The only new privileged predicates are private, empty-search-path, current-caller boolean history checks; all other new functions use invoker rights.
+
 **A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and Progress Monitoring System**
 
 - **Document type:** Internal engineering security reference (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, TESTING.md, DEPLOYMENT.md)

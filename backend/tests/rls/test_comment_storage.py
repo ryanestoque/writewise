@@ -102,6 +102,7 @@ def test_revoked_parent_link_removes_existing_comment_access(
         assert read_comment(second_parent["client"], row) == []
     finally:
         admin.table("student_parent").insert({"parent_id": parent, "student_id": student}).execute()
+    assert read_comment(second_parent["client"], row)[0]["id"] == row["id"]
 
 
 def test_archiving_keeps_comment_history_readable(family, assigned_activity):

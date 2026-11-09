@@ -183,3 +183,24 @@ def test_comment_changes_preserve_a_released_no_upload_grade(family, assigned_ac
     delete_comment(family["teacher"], comment["id"])
     assert read_grade(family["parent_client"], activity, student) == before
     assert admin.table("submission").select("id").eq("activity_id", activity).execute().data == []
+
+
+def test_sql_text_counts_unicode_code_points_and_preserves_internal_newlines(
+    family, assigned_activity
+):
+    text = "\U0001f642" * 998 + "\nX"
+    posted = post_comment(
+        family["parent"],
+        assigned_activity["id"],
+        family["students"][0],
+        "\u001c\u2003" + text + "\u3000\u0085",
+    )
+    assert (
+        admin.table("private_comment")
+        .select("body")
+        .eq("id", posted["id"])
+        .single()
+        .execute()
+        .data["body"]
+        == text
+    )

@@ -100,3 +100,23 @@ def test_missing_authentication_cannot_reach_comment_writes(
         json={"body": "Synthetic text"},
     )
     assert response.status_code == 401 and response.json()["error"]["code"] == "UNAUTHORIZED"
+
+
+def test_private_comment_text_is_absent_from_real_gradebook_csv_and_logs(
+    real_comment_api, family, assigned_activity, caplog
+):
+    sentinel = "SYNTHETIC_PRIVATE_COMMENT_EXPORT_SENTINEL"
+    headers = authorization(family["teacher_client"])
+    posted = real_comment_api.post(
+        comment_path(assigned_activity["id"], family["students"][0]),
+        headers=headers,
+        json={"body": sentinel},
+    )
+    assert posted.status_code == 201
+    exported = real_comment_api.get(
+        f"/api/sections/{family['sections'][0]}/gradebook.csv",
+        headers=headers,
+    )
+    assert exported.status_code == 200, exported.text
+    assert "text/csv" in exported.headers["content-type"]
+    assert sentinel not in exported.text and sentinel not in caplog.text

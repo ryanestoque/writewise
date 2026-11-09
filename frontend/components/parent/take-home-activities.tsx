@@ -5,6 +5,8 @@ import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
 import { compareParentActivityUrgency, getParentActivityStatus } from "@/lib/utils/parent-activity-status";
 import type { TakeHomeActivity, TakeHomeActivitySubmission } from "@/lib/hooks/use-parent-data";
 import { useState, useMemo } from "react";
+import Link from "next/link";
+import { commentThreadHref } from "@/lib/comments/targets";
 import {
   useTakeHomeActivities,
   useChildSubmissionForActivity,
@@ -393,6 +395,7 @@ function ActivityCard({
 
       {/* Action Footer */}
       <div className="pt-2.5 border-t border-border/50 flex flex-wrap items-center justify-between gap-2">
+        {childId && <Link href={commentThreadHref({ activityId, studentId: childId }, "parent")} scroll={false} className="inline-flex min-h-10 items-center text-sm underline">Comments</Link>}
         {isLoading ? (
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />

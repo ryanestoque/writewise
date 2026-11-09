@@ -9,10 +9,7 @@ import {
 import { ParentNav } from "@/components/parent-nav";
 import { ParentUploadDialog } from "@/components/parent/parent-upload-dialog";
 import { CursiveGuideDialog } from "@/components/cursive-guide-dialog";
-import {
-  useLinkedChildren,
-  type LinkedChild,
-} from "@/lib/hooks/use-parent-data";
+import { useLinkedChildren, type LinkedChild } from "@/lib/hooks/use-parent-data";
 
 interface ParentPortalContextValue {
   userId: string;
@@ -86,14 +83,17 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
 
   const selectedChild = linkedChildren?.find((c) => c.id === selectedChildId) ?? null;
 
-  const clearTargetUrl = useCallback((tab?: "grades" | null) => {
-    if (notificationTarget.kind === "none" && tab === undefined) return;
-    const next = new URLSearchParams(searchParams.toString());
-    for (const name of ["child", "activity", "submission"]) next.delete(name);
-    if (tab === "grades") next.set("tab", "grades");
-    if (tab === null) next.delete("tab");
-    router.replace(`${pathname}${next.size ? `?${next}` : ""}`, { scroll: false });
-  }, [notificationTarget.kind, pathname, router, searchParams]);
+  const clearTargetUrl = useCallback(
+    (tab?: "grades" | null) => {
+      if (notificationTarget.kind === "none" && tab === undefined) return;
+      const next = new URLSearchParams(searchParams.toString());
+      for (const name of ["child", "activity", "submission", "view"]) next.delete(name);
+      if (tab === "grades") next.set("tab", "grades");
+      if (tab === null) next.delete("tab");
+      router.replace(`${pathname}${next.size ? `?${next}` : ""}`, { scroll: false });
+    },
+    [notificationTarget.kind, pathname, router, searchParams]
+  );
   const setSelectedChildId = useCallback(
     (id: string) => {
       setSelectedChildIdState(id);
@@ -101,10 +101,13 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
     },
     [clearTargetUrl]
   );
-  const dismissNotificationTarget = useCallback((tab?: "grades" | null) => {
-    if (selectedChildId) setSelectedChildIdState(selectedChildId);
-    clearTargetUrl(tab);
-  }, [clearTargetUrl, selectedChildId]);
+  const dismissNotificationTarget = useCallback(
+    (tab?: "grades" | null) => {
+      if (selectedChildId) setSelectedChildIdState(selectedChildId);
+      clearTargetUrl(tab);
+    },
+    [clearTargetUrl, selectedChildId]
+  );
 
   const openUploadDialog = useCallback((activityId?: string) => {
     setPrefilledActivityId(activityId);
@@ -165,9 +168,7 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
           linkedChildren={linkedChildren ?? []}
           onChildChange={setSelectedChildId}
         />
-        <main className="w-full min-w-0 flex-1 space-y-6 px-4 py-6 sm:px-6">
-          {pageChildren}
-        </main>
+        <main className="w-full min-w-0 flex-1 space-y-6 px-4 py-6 sm:px-6">{pageChildren}</main>
       </div>
 
       {/* Global Parent Modals: Upload & Cursive Guide */}

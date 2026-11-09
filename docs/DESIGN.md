@@ -1,5 +1,15 @@
 # WriteWise — DESIGN.md
 
+## Phase 3 Slice 6 — private conversation surfaces
+
+Teachers open Comments beside any assigned student, including no-upload work, from retained activity conversation history, or from the Work/Comments tabs in the gradebook sheet. One batched recipient-specific unread map supplies the cell indicator and accessible “Unread comments” context. Work alone does not acknowledge messages. Parents open Comments from practice activities or grade activity rows (including in-class/no-upload work); retained history lives in the selected child's Practice context. It is not a separate inbox or a synthetic grade row.
+
+The shared sheet uses existing Message, Bubble, Marker and Message Scroller parts. Display entries chronologically, preserve prepended history and offer Load older comments/Jump to latest. Render text as escaped children with line breaks. Return markers show the fixed reason label and optional note; tombstones say “This comment was deleted.” Only the author sees deletion, confirmed inline without stacking another modal. Teacher lock/unlock is separate from posting. Show every active unassigned/archived/locked reason, while history and author deletion remain available.
+
+The composer says “Visible to the teacher and all linked parents immediately, even before results are released.” Its trimmed code-point counter accepts 1000 emoji consistently with Python/SQL; no UTF-16 maxlength is used. Bound the growing textarea so Send stays reachable on a phone. Pending writes disable submission and are never automatically retried. Closing/changing account or pair unmounts the draft. Use labelled Sheet/Field controls, safe retry/unavailable states, keyboard dismissal and restored opener focus.
+
+Teacher links are `/activities/{activity}?student={student}&view=comments`; parent links are `/progress?child={student}&activity={activity}&view=comments`. Reject duplicate/invalid parameters and conflicting parent grade/submission targets. Preserve existing `tab=grades` behavior and the selected sibling when clearing a destination. Comment bell activation navigates without marking read; only a committed loaded entry with the exact alerted version can be acknowledged. Manual read passes its version; all-read and single-read invalidate the same count/dot state.
+
 ## Phase 3 Slice 5 — gradebook surfaces
 
 Teacher navigation includes Gradebook. Choose a section, search students and filter current/archived activities; those display filters never recalculate totals or narrow the CSV. The grid alone scrolls horizontally on a phone, with student labels retained. Cells expose student/activity context to assistive technology and support arrow-key movement. Show coursework status, automatic/final points, override state and publication separately from the handwriting assessment band. Totals explicitly include drafts for teachers.
