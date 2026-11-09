@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-09 (Slice 5 verified following final implementation-head CI and user-reported manual QA sign-off; Slice 4 email QA remains pending)
+**Last updated:** 2026-11-09 (Slice 6 conversational design approved and written spec prepared for review; Slice 5 remains Verified and Slice 4 email QA remains pending)
 
 ## Summary
 
@@ -274,7 +274,9 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 ### Slice ⑥ — Private comments
 
-**Dependency:** Slices ②–③; gradebook unread dot also needs Slice ⑤. **Status: Not started.**
+**Dependency:** Slices ②–③; gradebook unread dot also needs Slice ⑤. **Status: Not started (application); conversational design approved and written spec awaiting review.**
+
+**Design checkpoint (2026-11-09):** The user approved [the private-comments design](docs/superpowers/specs/2026-11-09-phase3-private-comments-design.md) in conversation, including readable history after unassignment, read-only archived activities, and author deletion while posting is disabled. The written spec is prepared for review before implementation planning. It also defines comment-only historical discovery, Return ordering, version-checked unread acknowledgment and a lock mutation that preserves grade publication. Planning is isolated on `docs/phase3-private-comments`, based on gradebook closeout `cb23d5c`; no Slice 6 application code or migration has changed. Phase 3 remains **4/6 verified** and Slice 4 retains its pending manual/operational gates.
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|
@@ -296,7 +298,7 @@ These are audit findings and planning recommendations, not silent amendments to 
 | A5 | ① | Activity/target mutations use separate REST operations unless explicitly made transactional. | Add service-only database RPCs for create/update plus target replacement, with application authorization before every write and DB ownership validation in the transaction. Failure must preserve the previous activity and assignments. |
 | A6 | ① | `supabase/config.toml` is absent although CI invokes `supabase start`; tests query a DB during collection. | Establish checked-in local configuration and seed prerequisites as part of Slice ① verification setup. Never point test resets at hosted dev/prod or interpret service-role API tests as RLS proof. |
 | A7 | ⑤ | Q-A originally left manual-score-to-points scaling open. | Resolved 2026-11-07: existing recorded composites for both sources, unchanged manual midpoint values and shared portal cutoffs. Conversion stays behind ScoreProvider. |
-| A8 | ⑥ | §4.8 says merged thread entries use `created_at`, but a Return occurs after upload. | Sort Return entries by `returned_at`, comments by `created_at`, with deterministic ID tie-breaking. Confirm this when specifying the thread contract. |
+| A8 | ⑥ | §4.8 originally ordered merged thread entries by `created_at`, but a Return occurs after upload. | Resolved in the conversational design approved 2026-11-09: Return entries use `returned_at`, comments use `created_at`, with deterministic kind/ID tie-breaking. Written spec awaits review; application work remains unstarted. |
 
 The proposal's Q-B–Q-F remain slice-specific decisions; carry them into the relevant plan rather than treating their recommended defaults as implemented behavior. Its post-defense scheduling statement remains a product constraint until explicitly revisited.
 

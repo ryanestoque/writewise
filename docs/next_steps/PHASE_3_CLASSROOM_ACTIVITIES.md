@@ -1,13 +1,13 @@
 # Phase 3 — Classroom-Style Activities (Deadlines, Returns, Notifications, Gradebook)
 
-**As of:** October 22, 2026
-**Status:** Slices ①–③ are verified. Slice ④ email passed its automated gates and remains Partial pending signed-in portal QA. Slice ⑤ is being implemented inline on `feat/phase3-points-gradebook`: storage/read/mutation verification is established, with lifecycle review fixes and final CI/manual gates open. Slice ⑥ remains future design. See IMPLEMENTATION_STATUS.md and the slice execution records. Verification, PR integration and hosted activation remain separate; superseded sketches below are historical proposals.
+**As of:** November 9, 2026
+**Status:** Slices ①–③ and ⑤ are Verified: Phase 3 is 4/6 verified. Slice ④ email retains its pending signed-in portal QA and operational gates. Slice ⑥'s conversational design is approved and its written spec awaits review before implementation planning; application work is not started. See IMPLEMENTATION_STATUS.md and the slice execution records. Verification, PR integration and hosted activation remain separate; superseded sketches below are historical proposals.
 **Origin:** Design-tree grill session, 2026-10-19 (19 decisions, all accepted). **Amended 2026-10-22:** private comments (Q20–Q28, Slice ⑥); Q16 revised.
 **Supersedes (when promoted):** PRD §13 "Notifications" deferred item, PRODUCT.md "Push notifications" deferred item.
 
 **Repository audit (2026-11-01):** Implementation progress is tracked in [IMPLEMENTATION_STATUS.md](../../IMPLEMENTATION_STATUS.md#phase-3--classroom-style-activities). See the [Slice ① implementation plan](../superpowers/plans/2026-11-01-phase3-assignment-deadlines.md) for the proposed assignment/deadline contract and audit findings requiring review. This design document is not evidence that a feature is implemented.
 
-**Slice ④ implementation (2026-11-03):** The approved [email design](../superpowers/specs/2026-11-03-phase3-email-notifications-design.md) is implemented and automated checks pass on the email feature branch; signed-in portal QA remains open. See its [execution record](../superpowers/plans/2026-11-03-phase3-email-notifications.md), API_SPEC §3.7 and DATABASE §17. Those contracts supersede email sketches below; Slices ①–③ remain the only verified slices until the manual gate closes. Hosted activation additionally requires sender details and Supabase-owner permission provisioning; no hosted change or live delivery is claimed.
+**Slice ④ implementation (2026-11-03):** The approved [email design](../superpowers/specs/2026-11-03-phase3-email-notifications-design.md) is implemented and automated checks pass on the email feature branch; signed-in portal QA remains open. See its [execution record](../superpowers/plans/2026-11-03-phase3-email-notifications.md), API_SPEC §3.7 and DATABASE §17. Those contracts supersede email sketches below. Slice ④ remains unverified; the later Slice ⑤ closeout independently brings Phase 3 to 4/6 verified. Hosted activation additionally requires sender details and Supabase-owner permission provisioning; no hosted change or live delivery is claimed.
 
 ---
 
@@ -58,8 +58,8 @@ Phase 3 adds that loop without touching the CV/CNN pipeline or the calibration s
 | Q24 | Edit / delete | No editing. Author may delete own comment → **body scrubbed to NULL**, `deleted_at` stamped, "Comment deleted" placeholder keeps thread order |
 | Q25 | Return note | `submission.return_note` stays as-is. The thread renders return events **inline as read-only entries** derived from submission rows (not stored as comments) so parents can reply in context |
 | Q26 | Notifications | New in-app type `comment_posted` → all participants except the author, **coalesced** to one unread notification per thread per recipient. **No email** (Q6 unchanged) |
-| Q27 | Write path & gating | Writes via FastAPI (participation check + insert + notifications in one transaction); reads via RLS. Postable whenever `is_assigned` holds — incl. in-class and past due / `close_after_due`. Teacher can **lock** a thread |
-| Q28 | Privacy & UI | Bodies never logged, never exported, cascade-deleted with the student. Score-leak-before-release accepted (composer hint only). UI: student-work side panel (teacher) + unread dot on gradebook cell; child's activity page (parent); bell deep-links |
+| Q27 | Write path & gating | Writes via FastAPI (participation check + insert + notifications in one transaction); reads via RLS. Approved clarification 2026-11-09: posting requires current assignment, an active activity and an unlocked thread, including in-class and past due / `close_after_due`. Teacher locking stops posts from everyone. Unassignment/archive retain readable history; authors with access can still delete their own comments. Unarchive/reassignment preserve explicit locks |
+| Q28 | Privacy & UI | Bodies never logged, never exported, cascade-deleted with the student. Score-leak-before-release accepted (composer hint only). UI: student-work side panel (teacher) + unread dot on gradebook cell; child's activity details (parent); exact child/activity bell deep-links. Opening a thread acknowledges loaded comment versions without swallowing concurrently newer posts |
 
 ---
 
@@ -227,9 +227,11 @@ Notifications store **IDs only**. The bell UI resolves the child name and activi
 | `measurement`, score-bearing reads, diagnostics | Parent policies gain `and s.released_at is not null` |
 | `notification` | Select own (`recipient_id = auth.uid()`). No client writes; marking read goes through FastAPI |
 | `email_outbox` | RLS enabled, no policies |
-| `private_comment` | Select: teacher who owns the activity, or a parent linked via `student_parent` where `is_assigned(activity_id, student_id)`. **No client writes** (FastAPI only, Q27) |
+| `private_comment` | Approved 2026-11-09: owning teacher or currently linked parent may read existing thread history after unassignment/archive. Posting has separate current-assignment/archive/lock gates. Preserve current child-link revocation and deny unrelated teachers/parents. **No client writes** (FastAPI only, Q27); see the Slice 6 spec for comment-only historical discovery |
 
 ### 4.8 `private_comment` (Slice ⑥)
+
+**Approved conversational design (2026-11-09):** [Private-comments spec](../superpowers/specs/2026-11-09-phase3-private-comments-design.md), awaiting written-spec review before implementation planning. It supersedes the historical sketch below for read-only history after unassignment/archive, author deletion while read-only, Return ordering, dedicated comment-lock writes and version-aware notification acknowledgment. The implementation must add the required thread/comment/notification versions and caller-scoped history discovery; the sketch is not final DDL.
 
 ```sql
 create table public.private_comment (
@@ -260,8 +262,8 @@ create unique index notification_comment_unread_uniq
 ```
 
 - Posting upserts the `student_work` row first (rows are on-demand, §3.1).
-- The thread view merges `private_comment` rows with **return events** read from `submission` (`returned_at`, `return_reason`, `return_note`) in `created_at` order (Q25). Return events are never copied into this table.
-- The unread `comment_posted` notification **is** the per-thread unread state: it drives the gradebook-cell dot, and opening the thread marks it read. No separate read-receipt table.
+- The thread view merges comments with caller-visible **Return events** derived from `submission`. Sort comments by `created_at` and Return events by `returned_at`, with fixed kind/ID tie-breaking. Return events are never copied into comment rows.
+- The unread `comment_posted` notification **is** the per-thread unread state and drives the gradebook-cell dot. Opening the thread acknowledges only the loaded comment version; explicit single/all-read operations also preserve concurrently newer versions. No separate read-receipt table.
 
 ---
 
@@ -351,7 +353,7 @@ Parent: their own child's row only, released scores only.
 | `GET /api/sections/{id}/gradebook.csv` | CSV export | ⑤ |
 | `POST /api/activities/{id}/students/{student_id}/comments` | `{ body }` — participant check, upsert `student_work`, insert, emit `comment_posted` | ⑥ |
 | `DELETE /api/comments/{id}` | Author only; scrubs body. Non-author → `NOT_FOUND`; already deleted → 204 (idempotent) | ⑥ |
-| `PUT /api/activities/{id}/students/{student_id}/work` | + `comments_locked` (teacher only) | ⑥ |
+| `PUT /api/activities/{id}/students/{student_id}/comments/lock` | Teacher-only comment lock transaction; preserve grade revision/publication (2026-11-09 spec supersedes the mixed-work patch sketch) | ⑥ |
 
 **New error codes** (add to API_SPEC §2.4 catalog, Rule 2):
 
