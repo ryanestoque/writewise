@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-09 (Slice 6 SQL/API and portal candidate implemented; final receipt/upgrade/portal verification pending; Slice 4 email QA remains pending)
+**Last updated:** 2026-11-09 (Slice 6 implemented: 1011 tests and final application-head CI green; user portal QA remains open; Slice 4 email QA remains pending)
 
 ## Summary
 
@@ -274,7 +274,7 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 ### Slice ⑥ — Private comments
 
-**Dependency:** Slices ②–③; gradebook unread dot also needs Slice ⑤. **Status: Partial — implementation candidate delivered; final verification pending.**
+**Dependency:** Slices ②–③; gradebook unread dot also needs Slice ⑤. **Status: Implemented — automated and controlled browser verification passed; user portal QA pending.**
 
 **Approved planning (2026-11-09):** After approving [the private-comments design](docs/superpowers/specs/2026-11-09-phase3-private-comments-design.md), the user explicitly requested the [implementation plan](docs/superpowers/plans/2026-11-09-phase3-private-comments.md). It covers readable history after unassignment, read-only archived activities, author deletion while posting is disabled, comment-only historical discovery, Return ordering, version-checked unread acknowledgment and a lock mutation that preserves grade publication. The ten-task plan defines exact shared interfaces and verification gates; all execution boxes remain unchecked. Planning is isolated on `docs/phase3-private-comments`, based on gradebook closeout `cb23d5c`; no Slice 6 application code or migration has changed. Phase 3 remains **4/6 verified** and Slice 4 retains its pending manual/operational gates.
 
@@ -282,14 +282,16 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|
-| Student-work thread, participants, text-only comments | Implemented, verification pending | Storage/RLS, current links, retained history, strict text and caller-scoped feed passed CI. Additional pagination/history cases and final upgrade gate pending. |
-| Transactional posting, author deletion, thread locking | Implemented, verification pending | Real SQL transactions, scrubbing, both-role locking, atomic fanout failures, grade preservation, real-JWT API and observed revocation/post locks passed CI. Final combined-head verification pending. |
-| Coalesced unread notifications and return timeline | Partial | Coalescing, own-post exclusion and Return projections pass. Version-guarded single/all-read candidate follows three observed red failures; final receipt/race proof pending. |
-| Teacher/parent panels and privacy verification | Partial | Shared panel, contextual history, teacher work tab/dots, parent activity actions and deep links implemented. Controlled data/render probes, lint, TypeScript and production build pass; real browser acceptance and user QA remain open. |
+| Student-work thread, participants, text-only comments | Implemented | Storage/RLS, current links, retained history, strict text, caller-scoped feed, pagination/generic labels and upgrade preservation passed final application-head CI. |
+| Transactional posting, author deletion, thread locking | Implemented | Real SQL transactions, scrubbing, both-role locks, atomic fanout failures, grade preservation, real-JWT API and observed revocation/recipient/post locks pass. |
+| Coalesced unread notifications and return timeline | Implemented | Coalescing, own-post exclusion, Return chronology, guarded single-read in both observed lock orders and all-read snapshot races pass. |
+| Teacher/parent panels and privacy verification | Implemented; user QA pending | Shared panel/history, work tab/dots, parent activity actions and deep links are delivered. Controlled browser/data/render checks, CSV/log sentinel, lint/types and production build pass. User acceptance in the real portals remains open. |
 
-**Current implementation evidence:** [CI 42621732528](https://github.com/ryanestoque/writewise/actions/runs/42621732528) finished **1000 passed, 3 expected receipt failures**, after all five existing upgrade proofs. Exact-source actual database artifacts are paired in schema commits; OpenAPI types are generated from the real app. A sixth pre-comments upgrade proof and the receipt migration are now candidates for the next CI checkpoint. This is not a green final-head claim. Phase 3 remains **4/6 verified**; Slice 4's manual/operational gates stay separate. No main merge, hosted migration, deployment or email activation is claimed.
+**Earlier read/write checkpoint:** [CI 42621732528](https://github.com/ryanestoque/writewise/actions/runs/42621732528) finished **1000 passed, 3 expected receipt failures**, after all five existing upgrade proofs. Later receipt and full-head evidence below supersedes its pending gates. Exact-source actual database artifacts are paired in schema commits; OpenAPI types are generated from the real app.
 
-**Latest candidate evidence:** [CI 42624126430](https://github.com/ryanestoque/writewise/actions/runs/42624126430) passed **1007 tests, all six upgrade proofs and advisor/network/API gates**. Its only expected provisional failure was the database contract, now paired from exact-source artifact `13677294098`. Independent localhost browser checks cover the real thread/bell components, phone/desktop layout, code-point limits, plain text/deletion, read-only states, draft isolation, unread acknowledgment, keyboard focus, sign-out and denied-read suppression. Those checks caught and verified fixes for Strict Mode cancellation, long-text composer overflow and stale bodies after a denied read. Final paired-head CI and focused user portal QA remain open. Phase 3 stays **4/6 verified**.
+**Earlier combined candidate:** [CI 42624126430](https://github.com/ryanestoque/writewise/actions/runs/42624126430) passed **1007 tests, all six upgrade proofs and advisor/network/API gates**. Its expected provisional database drift was paired from exact-source artifact `13677294098`. Independent localhost browser checks caught and verified fixes for Strict Mode cancellation, long-text composer overflow and stale bodies after a denied read.
+
+**Final application-head verification:** [CI 42627290823](https://github.com/ryanestoque/writewise/actions/runs/42627290823), exact paired head `ec580782fb454884e58e55bf2776c27feef8b301`, completed **successfully: 1011 tests**, all six legacy upgrade proofs, Ruff/ESLint/TypeScript, API/database drift checks, network guard and security advisors. The real CSV/log sentinel, both observed single-read/post orders and recipient unlink race pass. Production webpack build and controlled browser checks pass; temporary fixtures/processes are removed and dependencies are unchanged. This documentation closeout changes no application/schema/test source. Focused user portal QA remains open, so Slice 6 is **not Verified** and Phase 3 remains **4/6 verified**. Slice 4's gates, main integration, hosted migrations/deployment and email activation remain separate. The feature branch/worktree are retained.
 
 ### Findings to resolve before the affected slice
 
