@@ -1056,6 +1056,10 @@ export type Database = {
         Args: { actor_id: string; payload: Json }
         Returns: Json
       }
+      delete_private_comment: {
+        Args: { actor_id: string; target_comment_id: string }
+        Returns: Json
+      }
       delete_student_submissions: {
         Args: { actor_id: string; target_submission_ids: string[] }
         Returns: Json
@@ -1092,6 +1096,15 @@ export type Database = {
         Args: { target_student_id: string }
         Returns: boolean
       }
+      list_private_comment_threads: {
+        Args: {
+          before_cursor?: Json
+          page_size?: number
+          target_activity_id?: string
+          target_student_id?: string
+        }
+        Returns: Json
+      }
       mark_all_notifications_read: { Args: { actor_id: string }; Returns: Json }
       mark_notification_read: {
         Args: { actor_id: string; target_notification_id: string }
@@ -1107,12 +1120,30 @@ export type Database = {
         }
         Returns: Json
       }
+      post_private_comment: {
+        Args: {
+          actor_id: string
+          comment_body: string
+          target_activity_id: string
+          target_student_id: string
+        }
+        Returns: Json
+      }
       prepare_email_delivery: {
         Args: { expected_claim_token: string; target_outbox_id: string }
         Returns: Json
       }
       read_child_gradebook: {
         Args: { target_student_id: string }
+        Returns: Json
+      }
+      read_private_comment_thread: {
+        Args: {
+          before_cursor?: Json
+          page_size?: number
+          target_activity_id: string
+          target_student_id: string
+        }
         Returns: Json
       }
       read_section_gradebook: {
@@ -1143,6 +1174,15 @@ export type Database = {
       }
       save_manual_submission_score: {
         Args: { actor_id: string; payload: Json; target_submission_id: string }
+        Returns: Json
+      }
+      set_comment_thread_lock: {
+        Args: {
+          actor_id: string
+          locked: boolean
+          target_activity_id: string
+          target_student_id: string
+        }
         Returns: Json
       }
       update_assigned_activity: {
