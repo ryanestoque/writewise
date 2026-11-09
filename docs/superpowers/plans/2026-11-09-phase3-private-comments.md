@@ -10,6 +10,12 @@
 
 **Spec:** [Approved private-comments design](../specs/2026-11-09-phase3-private-comments-design.md). On 2026-11-09 the user accepted the conversational design, reviewed the written-spec handoff, and explicitly requested this writing-plans pass.
 
+## Execution record
+
+**Execution start (2026-11-09):** The user selected inline execution. The existing isolated worktree now uses `feat/phase3-private-comments`, based on plan commit `90a2fa3`; the documentation branch and other worktrees remain intact. Task 1 is in progress: real signed-in storage/RLS/history cases and the new branch's CI trigger are prepared. Tasks 2–10 are not started, and no execution checkbox is complete.
+
+**Baseline and runner:** The existing locked Python environment was reused without copying a hosted `.env`. The first database-free baseline exposed three required settings missing from this plan's dummy setup (`SUPABASE_JWT_SECRET`, `SUPABASE_DB_URL`, `CORS_ALLOWED_ORIGINS`); the setup below is corrected. With explicit dummy localhost settings, **274 unit cases passed**, with one upstream Starlette/TestClient deprecation warning. Backend Ruff and whole-frontend ESLint/TypeScript passed. Supabase CLI 2.115.0 is cached and available; local startup failed with `LegacyDockerLifecycleInspectError` because Docker and Podman are absent. No hosted database was contacted. The new database tests have not run; their absent-schema red proof requires the disposable CI runner and authorization to publish this new branch. No migration or application implementation has been written at this checkpoint.
+
 ## Global Constraints
 
 The following requirements are copied verbatim from the spec; every task includes them:
@@ -65,6 +71,9 @@ $env:ENVIRONMENT = 'test'
 $env:SUPABASE_URL = 'http://127.0.0.1:54321'
 $env:SUPABASE_SERVICE_ROLE_KEY = 'unit-test-service-key'
 $env:SUPABASE_ANON_KEY = 'unit-test-public-key'
+$env:SUPABASE_JWT_SECRET = 'unit-test-jwt-secret'
+$env:SUPABASE_DB_URL = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
+$env:CORS_ALLOWED_ORIGINS = 'http://localhost:3000'
 $env:MODEL_ARTIFACT_PATH = ''
 $env:HTR_MODEL_ARTIFACT_PATH = ''
 uv run --frozen python -m pytest tests/unit --confcutdir=tests/unit -q
