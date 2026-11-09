@@ -65,7 +65,9 @@ def capture(admin, parent, manifest):
     return {
         "work": snapshot(admin, parent, activity, manifest["submissions"]),
         "notifications": admin.table("notification")
-        .select("*")
+        .select(
+            "id,recipient_id,type,activity_id,student_id,submission_id,dedupe_key,read_at,created_at"
+        )
         .eq("activity_id", activity)
         .order("id")
         .execute()

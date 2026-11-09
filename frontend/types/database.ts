@@ -392,6 +392,7 @@ export type Database = {
       notification: {
         Row: {
           activity_id: string
+          comment_version: number | null
           created_at: string
           dedupe_key: string
           id: string
@@ -403,6 +404,7 @@ export type Database = {
         }
         Insert: {
           activity_id: string
+          comment_version?: number | null
           created_at?: string
           dedupe_key: string
           id?: string
@@ -414,6 +416,7 @@ export type Database = {
         }
         Update: {
           activity_id?: string
+          comment_version?: number | null
           created_at?: string
           dedupe_key?: string
           id?: string
@@ -491,6 +494,50 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      private_comment: {
+        Row: {
+          activity_id: string
+          author_id: string | null
+          author_role: string
+          body: string | null
+          comment_version: number
+          created_at: string
+          deleted_at: string | null
+          id: string
+          student_id: string
+        }
+        Insert: {
+          activity_id: string
+          author_id?: string | null
+          author_role: string
+          body?: string | null
+          comment_version: number
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          student_id: string
+        }
+        Update: {
+          activity_id?: string
+          author_id?: string | null
+          author_role?: string
+          body?: string | null
+          comment_version?: number
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "private_comment_activity_id_student_id_fkey"
+            columns: ["activity_id", "student_id"]
+            isOneToOne: false
+            referencedRelation: "student_work"
+            referencedColumns: ["activity_id", "student_id"]
+          },
+        ]
       }
       section: {
         Row: {
@@ -601,6 +648,8 @@ export type Database = {
       student_work: {
         Row: {
           activity_id: string
+          comment_version: number
+          comments_locked: boolean
           due_at_override: string | null
           excused: boolean
           pinned_submission_id: string | null
@@ -609,6 +658,8 @@ export type Database = {
         }
         Insert: {
           activity_id: string
+          comment_version?: number
+          comments_locked?: boolean
           due_at_override?: string | null
           excused?: boolean
           pinned_submission_id?: string | null
@@ -617,6 +668,8 @@ export type Database = {
         }
         Update: {
           activity_id?: string
+          comment_version?: number
+          comments_locked?: boolean
           due_at_override?: string | null
           excused?: boolean
           pinned_submission_id?: string | null
@@ -1106,6 +1159,7 @@ export type Database = {
         | "score_released"
         | "activity_missing"
         | "resubmitted_after_return"
+        | "comment_posted"
       return_reason:
         | "wrong_worksheet"
         | "blurry_or_cropped"
@@ -1257,6 +1311,7 @@ export const Constants = {
         "score_released",
         "activity_missing",
         "resubmitted_after_return",
+        "comment_posted",
       ],
       return_reason: [
         "wrong_worksheet",

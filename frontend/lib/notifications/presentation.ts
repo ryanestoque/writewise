@@ -8,6 +8,7 @@ const COPY: Record<NotificationRow["type"], string> = {
   score_released: "Result shared",
   activity_missing: "Activity is missing",
   resubmitted_after_return: "New attempt after Return",
+  comment_posted: "New private comment",
 };
 
 export function notificationCopy(type: NotificationRow["type"]): string {

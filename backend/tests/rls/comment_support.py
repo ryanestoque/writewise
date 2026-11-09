@@ -3,6 +3,22 @@
 from app.core.supabase import supabase_client as admin
 
 
+def post_comment(actor_id, activity_id, student_id, body="Synthetic reply"):
+    return (
+        admin.rpc(
+            "post_private_comment",
+            {
+                "actor_id": actor_id,
+                "target_activity_id": activity_id,
+                "target_student_id": student_id,
+                "comment_body": body,
+            },
+        )
+        .execute()
+        .data
+    )
+
+
 def seed_comment(
     family,
     activity_id,

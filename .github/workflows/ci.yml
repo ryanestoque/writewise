@@ -58,6 +58,8 @@ jobs:
 
     - name: Start Ephemeral Supabase Stack
       run: |
+        docker ps --format '{{.Names}} {{.Ports}}'
+        ss -ltn '( sport = :54322 )'
         supabase start
         echo "SUPABASE_URL=$(supabase status -o json | jq -r '.API_URL')" >> $GITHUB_ENV
         echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o json | jq -r '.SERVICE_ROLE_KEY')" >> $GITHUB_ENV
