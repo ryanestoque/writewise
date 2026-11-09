@@ -63,7 +63,7 @@ The frontend branches on `error.code`, never on parsing `message` text (ARCHITEC
 | `INVITE_FAILED` | 400 | Parent email invitation delivery failed via Supabase Auth admin API |
 | `UNSUPPORTED_FILE_TYPE` | 400 | Submission upload — file isn't `image/jpeg` or `image/png` (§3.3) |
 | `FILE_TOO_LARGE` | 400 | Submission upload — file exceeds 15 MB (§3.3) |
-| `ACTIVITY_NOT_ASSIGNED` | 404 | Authorized upload relationship exists, but the activity does not target this student |
+| `ACTIVITY_NOT_ASSIGNED` | 404 | Authorized work relationship exists, but the activity does not target this student for an upload or new comment |
 | `SUBMISSIONS_CLOSED` | 409 | Assigned parent take-home upload after a closed due date |
 | `INVALID_ASSIGNMENT_TARGET` | 422 | Empty assignment replacement or section/student outside the teacher's ownership |
 | `ACTIVITY_HAS_SUBMISSIONS` | 400 | `DELETE /api/activities/{id}` — refused because student submissions already exist |
@@ -85,6 +85,9 @@ The frontend branches on `error.code`, never on parsing `message` text (ARCHITEC
 | `GRADE_REVISION_CONFLICT` | 409 | Work changed since the teacher reviewed its grade revision |
 | `POINTS_OVERRIDE_CONFLICT` | 409 | A new activity maximum would be lower than an existing override |
 | `POINTS_REMOVAL_CONFIRMATION_REQUIRED` | 409 | Removing points with retained grades needs explicit confirmation |
+| `COMMENTS_LOCKED` | 409 | New comment requested while the teacher has locked the thread |
+| `ACTIVITY_ARCHIVED` | 409 | New comment requested for an archived activity |
+| `COMMENT_READ_CONFLICT` | 409 | A newer comment version exists than the recipient acknowledged; refresh without clearing it |
 | `QUALITY_GATE_BLUR` | 422 | CV_PIPELINE §2 |
 | `QUALITY_GATE_BRIGHTNESS` | 422 | CV_PIPELINE §2 |
 | `QUALITY_GATE_CONTRAST` | 422 | CV_PIPELINE §2 |
@@ -677,6 +680,26 @@ Teacher totals include eligible draft grades, while parent totals include only r
 CSV uses the same teacher snapshot and assembler as JSON, returns UTF-8 with BOM directly in memory, and is never written to Storage. Its columns are `student_name,student_id,activity_title,activity_id,points_possible,final_points,coursework_status,publication,included,overall_percentage`. User-controlled text with spreadsheet formula prefixes is neutralized; original names/titles otherwise use CSV quoting. The attachment filename contains the section UUID only. All gradebook responses use `Cache-Control: no-store`. Request bodies/query fields cannot supply a role, teacher or alternate source score. This class-record export remains separate from the offline research exporter.
 
 The Slice 5 execution record tracks schema/API verification and remaining write/UI work; this contract does not establish hosted deployment.
+
+---
+
+### 3.9 Private student-work comments
+
+**Implementation checkpoint:** FastAPI request/authorization/error boundaries and generated API contracts are implemented on `feat/phase3-private-comments`; backing database transactions and portal flows remain pending their execution gates. This section does not establish feature verification or hosted deployment.
+
+| Method/path | Request | Success |
+|---|---|---|
+| `POST /api/activities/{activity_id}/students/{student_id}/comments` | `{ "body": "plain text" }` | 201 `{id,activity_id,student_id,author_role,created_at,comment_version}`; no echoed body |
+| `DELETE /api/comments/{comment_id}` | No body | 204, including repeated authorized deletion |
+| `PUT /api/activities/{activity_id}/students/{student_id}/comments/lock` | `{ "locked": true }`, strict boolean | 200 `{activity_id,student_id,comments_locked}` |
+
+Identity and author role derive from verified Auth identity plus current activity ownership/parent links, never user-editable role metadata or request fields. FastAPI checks the relationship and legitimate work/history pair before a service-only transaction repeats authorization. Only the activity owner may lock; only a currently authorized author may delete their comment. A different teacher teaching the child does not inherit access. Foreign/unavailable work or comment IDs use `404 NOT_FOUND`.
+
+Text is trimmed Unicode plain text, 1–1000 code points, with internal line breaks preserved. Blank, NUL, invalid Unicode, non-text input, and extra posting/locking fields are rejected. Deletion scrubs the body rather than editing it. Comment-only lock changes must preserve grade publication. Comment input and SDK failures use fixed safe envelopes; private values and even user-supplied extra-field names are absent from validation responses/logs.
+
+For `POST /api/notifications/{notification_id}/read`, a `comment_posted` row requires `{ "expected_comment_version": 2 }` with a positive strict 32-bit integer. The verified recipient and expected version are rechecked transactionally. A newer coalesced version returns `409 COMMENT_READ_CONFLICT` without clearing unread state. Ordinary notices retain their no-body request and `{id,read_at}` response. Missing/invalid comment versions return `422 VALIDATION_ERROR`. Notification request fields cannot select a different recipient.
+
+Thread reads stay under caller RLS; no service-role conversation GET route is added. The [Slice 6 design](superpowers/specs/2026-11-09-phase3-private-comments-design.md) and [execution plan](superpowers/plans/2026-11-09-phase3-private-comments.md) define the remaining database/read-state and portal gates.
 
 ---
 

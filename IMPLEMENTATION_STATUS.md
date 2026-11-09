@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-09 (Slice 6 written design approved and implementation plan prepared; no Slice 6 application implementation claimed; Slice 4 email QA remains pending)
+**Last updated:** 2026-11-09 (Slice 6 inline execution started: HTTP boundary implemented with database-free tests; database/portal verification pending; Slice 4 email QA remains pending)
 
 ## Summary
 
@@ -274,14 +274,16 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 ### Slice ⑥ — Private comments
 
-**Dependency:** Slices ②–③; gradebook unread dot also needs Slice ⑤. **Status: Not started (application); design approved and implementation plan written.**
+**Dependency:** Slices ②–③; gradebook unread dot also needs Slice ⑤. **Status: Partial — HTTP boundary implemented; backing SQL and portal work pending.**
 
 **Approved planning (2026-11-09):** After approving [the private-comments design](docs/superpowers/specs/2026-11-09-phase3-private-comments-design.md), the user explicitly requested the [implementation plan](docs/superpowers/plans/2026-11-09-phase3-private-comments.md). It covers readable history after unassignment, read-only archived activities, author deletion while posting is disabled, comment-only historical discovery, Return ordering, version-checked unread acknowledgment and a lock mutation that preserves grade publication. The ten-task plan defines exact shared interfaces and verification gates; all execution boxes remain unchecked. Planning is isolated on `docs/phase3-private-comments`, based on gradebook closeout `cb23d5c`; no Slice 6 application code or migration has changed. Phase 3 remains **4/6 verified** and Slice 4 retains its pending manual/operational gates.
+
+**Execution checkpoint (2026-11-09):** The user selected inline execution and authorized feature-branch CI checkpoints. Work proceeds in the retained private-comments worktree on `feat/phase3-private-comments`. Initial storage/RLS tests and the CI trigger are published at `ca8e158`; no database red/green result is claimed yet. Independently, strict models, actual relationship prechecks, fixed privacy-safe failures, write routes and version-aware notification reads passed **338 database-free unit cases**, including 40 new contract and 24 mounted-route cases, after their missing-feature red runs. Actual OpenAPI types were regenerated. No comment migration, SQL transaction, real-JWT API proof or portal UI is delivered at this checkpoint; no execution task is complete. Phase 3 remains **4/6 verified**, with Slice 4's gates separate.
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|
 | Student-work thread, participants, text-only comments | Not started | No `private_comment` or comment routes found. Thread belongs to student × activity and includes owning teacher plus all linked parents. |
-| Transactional posting, author deletion, thread locking | Not started | Add participant checks, assignment checks, 1–1000 character validation, body scrubbing on delete, and teacher lock control. |
+| Transactional posting, author deletion, thread locking | Partial | HTTP request models, relationship/author/owner prechecks, write routes and safe SDK-error boundaries pass controlled-transport unit cases. Backing transactions, database body scrubbing, locking and real-JWT API verification are pending. |
 | Coalesced unread notifications and return timeline | Not started | Add `comment_posted`, one unread notification per recipient/thread, and read-only Return events ordered by return time. Never copy return events into comment rows. |
 | Teacher/parent panels and privacy verification | Not started | Add side panel, parent thread, gradebook unread dot, deep links, RLS/coalescing/deletion tests, and checks that bodies are never logged or exported. |
 
