@@ -1,7 +1,7 @@
 # Phase 3 — Classroom-Style Activities (Deadlines, Returns, Notifications, Gradebook)
 
 **As of:** November 9, 2026
-**Status:** Slices ①–③ and ⑤ are Verified: Phase 3 is 4/6 verified. Slice ④ email retains its pending signed-in portal QA and operational gates. Slice ⑥'s conversational design is approved and its written spec awaits review before implementation planning; application work is not started. See IMPLEMENTATION_STATUS.md and the slice execution records. Verification, PR integration and hosted activation remain separate; superseded sketches below are historical proposals.
+**Status:** Slices ①–③ and ⑤ are Verified: Phase 3 is 4/6 verified. Slice ④ email retains its pending signed-in portal QA and operational gates. Slice ⑥'s written design is approved and its implementation plan is prepared; application work is not started. See IMPLEMENTATION_STATUS.md and the slice execution records. Verification, PR integration and hosted activation remain separate; superseded sketches below are historical proposals.
 **Origin:** Design-tree grill session, 2026-10-19 (19 decisions, all accepted). **Amended 2026-10-22:** private comments (Q20–Q28, Slice ⑥); Q16 revised.
 **Supersedes (when promoted):** PRD §13 "Notifications" deferred item, PRODUCT.md "Push notifications" deferred item.
 
@@ -231,7 +231,7 @@ Notifications store **IDs only**. The bell UI resolves the child name and activi
 
 ### 4.8 `private_comment` (Slice ⑥)
 
-**Approved conversational design (2026-11-09):** [Private-comments spec](../superpowers/specs/2026-11-09-phase3-private-comments-design.md), awaiting written-spec review before implementation planning. It supersedes the historical sketch below for read-only history after unassignment/archive, author deletion while read-only, Return ordering, dedicated comment-lock writes and version-aware notification acknowledgment. The implementation must add the required thread/comment/notification versions and caller-scoped history discovery; the sketch is not final DDL.
+**Approved design and plan (2026-11-09):** The user approved the [private-comments spec](../superpowers/specs/2026-11-09-phase3-private-comments-design.md) and explicitly requested the [implementation plan](../superpowers/plans/2026-11-09-phase3-private-comments.md). These supersede the historical sketch below for read-only history after unassignment/archive, author deletion while read-only, Return ordering, dedicated comment-lock writes and version-aware notification acknowledgment. The implementation must add the required thread/comment/notification versions and caller-scoped history discovery; the sketch is not final DDL. No Slice 6 application code or migration is delivered by planning.
 
 ```sql
 create table public.private_comment (
