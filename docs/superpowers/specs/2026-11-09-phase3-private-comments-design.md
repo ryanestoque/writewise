@@ -1,5 +1,7 @@
 # Phase 3 Slice 6 — Private comments design
 
+**Redesign note (2026-11-10):** This is the historical student × activity design. The user has selected separate threads per submission and approved deleting the associated thread when an authorized submission deletion occurs. See the [replacement submission-thread spec](2026-11-10-submission-private-comments-design.md), whose written review is pending. The existing implementation/evidence below does not implement or verify that redesign.
+
 **Date:** 2026-11-09 (Asia/Singapore)
 **Status:** Approved for implementation planning on 2026-11-09. After the conversational design and written-spec review handoff, the user explicitly invoked writing-plans and requested the [implementation plan](../plans/2026-11-09-phase3-private-comments.md). This includes read-only history after unassignment, read-only archived activities, and author deletion in read-only threads. No Slice 6 application implementation, verification, integration, hosted migration, deployment or email activation is claimed.
 
