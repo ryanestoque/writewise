@@ -8,6 +8,8 @@ Cutover requires zero legacy private comments and zero comment_posted notices, i
 
 Coordinate schema/backend/frontend: prevent old comment writers during cutover, migrate, deploy compatible exact-source backend/frontend, then validate independent source A/B privacy, unread/lock, Return and source deletion. Pair-only RPCs are retired; old HTTP writes safely return NOT_FOUND and old destinations require an upload choice. Ordinary notices, grades and email behavior remain. Rollback hides conversation entry points while retaining new schema/history/version guards; never restore pair writers or drop private data. No new env variable, worker, service or email configuration is required.
 
+Slice 4 email closeout may be deferred while core features and Slice 6 are accepted. Keep `EMAIL_DISPATCH_ENABLED=false` until sender, credentials, Vault/network permissions and manual/live-delivery QA are complete. Retain the email schema/outbox/preferences/helpers because later gradebook migrations reference that foundation. In-app notices continue independently; outbound due-soon/Return email remains unavailable or unverified. Pending outbox rows may accumulate, so review their eligibility before later activation. This closeout changes no delivery configuration.
+
 Feature-branch CI authorization covers disposable runners only. Hosted migrations/reset, main merge/deployment and email activation remain separate under existing platform/key-holder rules. Slice 4 manual/operational gates remain independent.
 
 

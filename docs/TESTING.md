@@ -2,6 +2,10 @@
 
 ## Phase 3 Slice 6 verification
 
+**Verification closeout (2026-11-10):** After receiving the rollout and teacher/parent QA instructions, the user reported that everything was good and explicitly requested closeout on 2026-11-10 (Asia/Singapore). This closes the manual portal acceptance gate as **overall user-reported sign-off**; no independently observed or itemized teacher/two-parent/two-sibling walkthrough is claimed. [Current-head CI 42830142069](https://github.com/ryanestoque/writewise/actions/runs/42830142069), exact head `786210308420facd18fbacbb519bf6c05ca3bb60`, completed successfully: **1,038 tests**, all seven upgrade proofs, Ruff/ESLint/TypeScript, generated API/database comparisons, network guard and security advisors. This was rechecked through the GitHub Actions API at closeout; application/schema/test/workflow sources are unchanged from the previously verified application head `2eb8b7d`. Slice 6 is **Verified** and Phase 3 is **5/6 verified**. This documentation-only closeout changes no runtime/schema/test source. Slice 4 email remains pending; no hosted migration, production deployment, integration or live email activation is established by this acceptance.
+
+**Earlier automated checkpoints (manual gate pending at the time):**
+
 **Submission redesign final application-head result:** [CI 42827341087](https://github.com/ryanestoque/writewise/actions/runs/42827341087) on exact application source `2eb8b7dee85c02912162eacb0c1ecce1449b4486` passed **1,038 tests**, all seven upgrade proofs, Ruff/ESLint/TypeScript, actual API/database drift checks, network guard and security advisors. The final production webpack build and controlled actual-source browser/SDK/cache checks also passed. Temporary preview routes, build outputs, fixture processes and the focused checkpoint workflow are removed; existing dev server, environment files and dependencies are preserved. This documentation closeout changes no application/schema/test source. Real signed-in portal acceptance remains open; no hosted rollout or Slice 6 Verified claim follows.
 
 

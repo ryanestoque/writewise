@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-10 (submission-thread redesign: 1,038 tests and seven proofs green; user portal QA pending)
+**Last updated:** 2026-11-10 (Slice 6 Verified after user QA sign-off; Phase 3 is 5/6 verified; Slice 4 email remains pending)
 
 ## Summary
 
@@ -12,7 +12,7 @@ Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §
 | Phase 1 — Teacher Tooling & Raw CV Pipeline | 26 / 26 |
 | Between Phases — Calibration | 9 / 9 |
 | Phase 2 — Calibrated Scoring & Full System | 13 / 14 |
-| Phase 3 — Classroom-Style Activities | 4 / 6 slices verified |
+| Phase 3 — Classroom-Style Activities | 5 / 6 slices verified |
 
 *Update this table whenever an item's status changes. Phase 0–2 counts reflect the existing detailed records, not a fresh verification of cloud provisioning, model artifacts, deployments, or research results. Some Done rows still have explicit verification caveats. Phase 3 uses the evidence and verification gates defined below.*
 
@@ -242,6 +242,8 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 ### Slice ④ — Email notifications
 
+**Closeout boundary (2026-11-10):** The user asked whether Slice 4 closeout can be deferred while closing Slice 6. Its remaining QA/provisioning/activation can be deferred independently; it remains **Partial**, not Verified. Core uploads, scoring/gradebook, comments and in-app notices do not require active outbound delivery. Keep `EMAIL_DISPATCH_ENABLED=false` until email gates pass, and retain the email migrations/outbox/preferences/helpers because later gradebook SQL references them. Due-soon/Return email delivery remains unavailable or unverified; no live delivery configuration was inspected or changed at this closeout. Review pending outbox eligibility before later activation.
+
 **Dependency:** Slice ③. **Status: Partial — implemented and automated checks passed; manual portal gate open.**
 
 **Implementation (2026-11-03):** The approved [email design](docs/superpowers/specs/2026-11-03-phase3-email-notifications-design.md) and [execution record](docs/superpowers/plans/2026-11-03-phase3-email-notifications.md) were implemented inline in `.worktrees/phase3-email-notifications`, branch `feat/phase3-email-notifications`. The user authorized branch pushes for disposable CI because Docker/Podman are absent locally. [CI on c7ccf76](https://github.com/ryanestoque/writewise/actions/runs/41644323667) passed **671 tests**, all four upgrade proofs, synthetic post-commit/rollback callback, fail-closed/owner-provisioned network checks, actual browser-role denials, generated API/database comparisons and security advisors. Local Ruff, ESLint, TypeScript and production webpack build passed; eight controlled preference transport checks passed. Signed-in portal QA remains open because computer-use reported no native pipe or browser surfaces. Phase 3 remains **3/6 verified**. Hosted migrations, owner/support provisioning, sender credentials/tracking review and live email are not established; the verified domain is user-reported. The branch is unmerged and email activation remains off.
@@ -274,11 +276,22 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 ### Slice ⑥ — Private comments
 
-**Submission redesign execution (2026-11-10):** Inline implementation now provides separate threads per actual upload, independent lock/version/unread/Return, explicit upload picker, exact-source portal/bell destinations and authorized source deletion with thread/cache cleanup. Three forward migrations fail closed on any old comment/comment notice. Existing deletion permissions are preserved. The user confirmed only test/no conversations; hosted cleanup/reset remains unauthorized. Actual generated API/DB contracts are paired. Focused CI passed 90 then 95 cases; actual-source SDK/cache/browser checks and production build passed. A delayed-history deletion race was reproduced in the real hook and fixed. Final regression is green: [CI 42827341087](https://github.com/ryanestoque/writewise/actions/runs/42827341087) on exact application source `2eb8b7dee85c02912162eacb0c1ecce1449b4486` passed **1,038 tests**, all seven upgrade proofs, Ruff/ESLint/TypeScript, actual API/database drift checks, network guard and security advisors. Signed-in user portal acceptance remains open. See [approved design](docs/superpowers/specs/2026-11-10-submission-private-comments-design.md) and [execution record](docs/superpowers/plans/2026-11-10-submission-private-comments.md). Phase 3 remains **4/6 verified** and email gates remain separate.
+**Dependency:** Slices ②–③; gradebook unread dot also needs Slice ⑤. **Status: Verified.**
+
+**Verification closeout (2026-11-10):** After receiving the rollout and teacher/parent QA instructions, the user reported that everything was good and explicitly requested closeout on 2026-11-10 (Asia/Singapore). This closes the manual portal acceptance gate as **overall user-reported sign-off**; no independently observed or itemized teacher/two-parent/two-sibling walkthrough is claimed. [Current-head CI 42830142069](https://github.com/ryanestoque/writewise/actions/runs/42830142069), exact head `786210308420facd18fbacbb519bf6c05ca3bb60`, completed successfully: **1,038 tests**, all seven upgrade proofs, Ruff/ESLint/TypeScript, generated API/database comparisons, network guard and security advisors. This was rechecked through the GitHub Actions API at closeout; application/schema/test/workflow sources are unchanged from the previously verified application head `2eb8b7d`. Phase 3 is now **5/6 verified**. Slice 4 email remains Partial with its manual/operational gates open. The feature branch/worktree and local environment files are retained. The user supplied the zero/zero legacy-data result during rollout preparation; hosted migration history, production deployment and live email activation were not independently inspected or performed by the agent. Closeout does not authorize a main merge or deployment.
+
+| Current deliverable | Status | Evidence |
+|---|---|---|
+| Separate submission threads and participant privacy | Verified | Exact-source storage/RLS/API, no-before-upload behavior, independent lifecycle/Return context and privacy regressions passed CI; overall user QA accepted. |
+| Posting, author deletion and per-source locking | Verified | Atomic fanout, actual membership checks, observed first-post/lock and deletion races, rollback and grade isolation passed CI. |
+| Source unread alerts, history, destinations and deletion cleanup | Verified | Version-aware single/all-read, peer-source isolation, both-portal targets, cache cancellation and late-history red/green checks passed; overall user QA accepted. |
+| Teacher/parent UI and generated contracts | Verified | Production build, controlled browser/SDK/cache checks, exact generated API/database comparisons and overall user portal sign-off. |
+
+**Submission redesign execution checkpoint (2026-11-10, before user sign-off; superseded above):** Inline implementation now provides separate threads per actual upload, independent lock/version/unread/Return, explicit upload picker, exact-source portal/bell destinations and authorized source deletion with thread/cache cleanup. Three forward migrations fail closed on any old comment/comment notice. Existing deletion permissions are preserved. The user confirmed only test/no conversations; hosted cleanup/reset remains unauthorized. Actual generated API/DB contracts are paired. Focused CI passed 90 then 95 cases; actual-source SDK/cache/browser checks and production build passed. A delayed-history deletion race was reproduced in the real hook and fixed. Final regression is green: [CI 42827341087](https://github.com/ryanestoque/writewise/actions/runs/42827341087) on exact application source `2eb8b7dee85c02912162eacb0c1ecce1449b4486` passed **1,038 tests**, all seven upgrade proofs, Ruff/ESLint/TypeScript, actual API/database drift checks, network guard and security advisors. Signed-in user portal acceptance remains open. See [approved design](docs/superpowers/specs/2026-11-10-submission-private-comments-design.md) and [execution record](docs/superpowers/plans/2026-11-10-submission-private-comments.md). Phase 3 remains **4/6 verified** and email gates remain separate.
 
 **Historical activity-thread implementation/evidence below is superseded for the redesign.**
 
-**Dependency:** Slices ②–③; gradebook unread dot also needs Slice ⑤. **Status: Implemented — automated and controlled browser verification passed; user portal QA pending.**
+
 
 **Approved planning (2026-11-09):** After approving [the private-comments design](docs/superpowers/specs/2026-11-09-phase3-private-comments-design.md), the user explicitly requested the [implementation plan](docs/superpowers/plans/2026-11-09-phase3-private-comments.md). It covers readable history after unassignment, read-only archived activities, author deletion while posting is disabled, comment-only historical discovery, Return ordering, version-checked unread acknowledgment and a lock mutation that preserves grade publication. The ten-task plan defines exact shared interfaces and verification gates; all execution boxes remain unchecked. Planning is isolated on `docs/phase3-private-comments`, based on gradebook closeout `cb23d5c`; no Slice 6 application code or migration has changed. Phase 3 remains **4/6 verified** and Slice 4 retains its pending manual/operational gates.
 
