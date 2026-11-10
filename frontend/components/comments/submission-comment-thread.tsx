@@ -174,7 +174,7 @@ export function SubmissionCommentThread({
             <MessageScrollerContent className="gap-4 p-4">
               {thread.entries.length === 0 && (
                 <p className="text-muted-foreground py-6 text-center text-sm">
-                  No comments yet. You can start a conversation before a worksheet is uploaded.
+                  No comments yet. Start a conversation about this worksheet upload.
                 </p>
               )}
               {[...thread.entries].reverse().map((entry) => (

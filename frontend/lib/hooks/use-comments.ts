@@ -30,7 +30,7 @@ import { invalidateNotifications } from "@/lib/hooks/use-notifications";
 import type { components } from "@/types/api";
 
 function useActiveCommentAccount(userId: string) {
-  const [account, setAccount] = useState<string | null>(userId);
+  const [account, setAccount] = useState<string | null>(null);
   useEffect(() => {
     const { data } = createClient().auth.onAuthStateChange((_event, session) =>
       setAccount(session?.user.id ?? null)
@@ -108,6 +108,8 @@ export function useCommentThread(userId: string, target: ThreadTarget, open: boo
   });
   const more = useMutation({
     retry: false,
+    gcTime: 0,
+    mutationKey: [...commentKeys.thread(userId, target), "more"],
     mutationFn: async () => {
       const current = client.getQueryData<CommentThread>(key);
       if (!current?.next_cursor) return null;
@@ -128,6 +130,11 @@ export function useCommentThread(userId: string, target: ThreadTarget, open: boo
     },
     onSuccess: (result) => {
       if (!result || result.requestSignal.aborted) return;
+      // Source deletion/denied reads leave sentinels while imperative history
+      // requests may still finish. Never restore private data from that request.
+      if (client.getQueriesData<CommentThread | null>({
+        queryKey: commentKeys.thread(result.userId, result.target),
+      }).some(([, cached]) => cached === null)) return;
       const oldest = result.thread.entries.at(-1);
       const nextThrough = oldest
         ? { event_at: oldest.event_at, kind: oldest.kind, id: oldest.id }
