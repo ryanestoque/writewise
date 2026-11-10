@@ -16,7 +16,7 @@ import {
 import { PointsField, validPointsInput } from "./points-field";
 import { WorkGradeDetails } from "./work-grade-details";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { StudentWorkThread } from "@/components/comments/student-work-thread";
+import { SubmissionCommentPicker } from "@/components/comments/submission-comment-picker";
 
 export function WorkGradeSheet({
   userId,
@@ -98,10 +98,11 @@ export function WorkGradeSheet({
           </TabsList>
           <TabsContent value="comments" className="flex min-h-0 flex-1 flex-col">
             {open && view === "comments" && (
-              <StudentWorkThread
+              <SubmissionCommentPicker
                 key={`${userId}:${cell.activity_id}:${cell.student_id}`}
                 userId={userId}
-                target={target}
+                scope={target}
+                activeSubmissionId={cell.active_submission_id}
                 open
               />
             )}

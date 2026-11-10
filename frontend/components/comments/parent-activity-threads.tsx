@@ -19,7 +19,7 @@ export function ParentActivityThreads({
       className="bg-card space-y-3 rounded-xl border p-4"
       aria-label="Activity conversation history"
     >
-      <h2 className="font-heading text-lg font-semibold">Activity conversations</h2>
+      <h2 className="font-heading text-lg font-semibold">Worksheet conversations</h2>
       <p className="text-muted-foreground text-sm">
         Your child’s conversation history stays available when assignments change.
       </p>
@@ -36,17 +36,18 @@ export function ParentActivityThreads({
         </p>
       ) : !query.data.rows.length ? (
         <p className="text-muted-foreground text-sm">
-          No conversations yet. Open Comments on an activity to talk with the teacher.
+          No conversations yet. Open a worksheet upload to talk with the teacher.
         </p>
       ) : (
         <ul className="divide-y">
           {query.data.rows.map((row) => (
             <li
-              key={row.activity_id}
+              key={row.submission_id}
               className="flex flex-wrap items-center justify-between gap-3 py-3"
             >
               <div>
                 <p className="text-sm font-medium">{row.activity_title}</p>
+                <p className="text-muted-foreground text-xs">Uploaded {new Date(row.submitted_at).toLocaleString()}</p>
                 <p className="text-muted-foreground text-xs">
                   {!row.assigned
                     ? "No longer assigned"
@@ -58,12 +59,12 @@ export function ParentActivityThreads({
                 </p>
               </div>
               <Link
-                href={commentThreadHref({ activityId: row.activity_id, studentId }, "parent")}
+                href={commentThreadHref({ activityId: row.activity_id, studentId, submissionId: row.submission_id }, "parent")}
                 scroll={false}
                 className="inline-flex min-h-10 items-center gap-2 text-sm underline"
               >
                 Comments
-                {unread.data?.has(`${row.activity_id}:${studentId}`) && (
+                {unread.data?.has(row.submission_id) && (
                   <span className="text-primary text-xs">Unread</span>
                 )}
               </Link>

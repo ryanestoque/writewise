@@ -163,6 +163,36 @@ jobs:
         cd ..
         supabase db reset --local
 
+    - name: Verify submission comment cutover and legacy-data rejection
+      run: |
+        supabase db reset --local --version 20261109131320
+        cd backend
+        ENVIRONMENT=test uv run python tests/migrations/submission_comment_upgrade_check.py prepare --manifest /tmp/submission-comment-upgrade.json
+        if ENVIRONMENT=test uv run python tests/migrations/submission_comment_upgrade_check.py schema --manifest /tmp/submission-comment-upgrade.json; then
+          exit 1
+        fi
+        cd ..
+        supabase migration up --local
+        cd backend
+        ENVIRONMENT=test uv run python tests/migrations/submission_comment_upgrade_check.py verify --manifest /tmp/submission-comment-upgrade.json
+        cd ..
+        for legacy_kind in legacy-comment legacy-notice; do
+          supabase db reset --local --version 20261109131320
+          cd backend
+          ENVIRONMENT=test uv run python tests/migrations/submission_comment_upgrade_check.py prepare --manifest /tmp/submission-comment-${legacy_kind}.json
+          ENVIRONMENT=test uv run python tests/migrations/submission_comment_upgrade_check.py ${legacy_kind} --manifest /tmp/submission-comment-${legacy_kind}.json
+          cd ..
+          if supabase migration up --local > /tmp/submission-comment-blocked.log 2>&1; then
+            echo 'Legacy conversation cutover unexpectedly succeeded'
+            exit 1
+          fi
+          grep -F 'Submission comment cutover requires empty legacy conversations' /tmp/submission-comment-blocked.log
+          cd backend
+          ENVIRONMENT=test uv run python tests/migrations/submission_comment_upgrade_check.py blocked --manifest /tmp/submission-comment-${legacy_kind}.json
+          cd ..
+        done
+        supabase db reset --local
+
     - name: Verify fail-closed network guard and owner provisioning
       run: |
         docker exec -i supabase_db_writewise-test psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < backend/tests/migrations/email_network_guard_check.sql

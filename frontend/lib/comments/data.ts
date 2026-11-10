@@ -1,9 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { ApiError } from "@/lib/utils/api-error";
-import { parseSummaries, parseThread } from "@/lib/comments/validation";
+import { parseCommentAttempts, parseSummaries, parseThread } from "@/lib/comments/validation";
 import {
-  threadPair,
+  type CommentAttempts,
+  type AttemptCursor,
+  type UnreadCommentThreads,
+  type WorkCommentScope,
   type CommentThread,
   type ThreadCursor,
   type ThreadScope,
@@ -40,6 +43,10 @@ function timestampKey(value: string) {
   return `${date.toISOString().slice(0, 19)}.${(match[1] ?? "").padEnd(6, "0")}Z`;
 }
 
+export function compareCommentTimestamps(a: string, b: string): number {
+  return timestampKey(a).localeCompare(timestampKey(b));
+}
+
 export function compareThreadCursor(a: ThreadCursor, b: ThreadCursor): number {
   return (
     timestampKey(b.event_at).localeCompare(timestampKey(a.event_at)) ||
@@ -67,9 +74,8 @@ export async function readThreadPage(
   signal?: AbortSignal
 ): Promise<CommentThread> {
   signal?.throwIfAborted();
-  const query = client.rpc("read_private_comment_thread", {
-    target_activity_id: target.activityId,
-    target_student_id: target.studentId,
+  const query = client.rpc("read_submission_comment_thread", {
+    target_submission_id: target.submissionId,
     ...(before ? { before_cursor: before } : {}),
     page_size: 50,
   });
@@ -125,7 +131,7 @@ export async function readThreadSummaries(
   signal?: AbortSignal
 ): Promise<ThreadSummaries> {
   signal?.throwIfAborted();
-  const query = client.rpc("list_private_comment_threads", {
+  const query = client.rpc("list_submission_comment_threads", {
     ...(scope.activityId
       ? { target_activity_id: scope.activityId }
       : { target_student_id: scope.studentId }),
@@ -149,14 +155,14 @@ export async function readUnreadCommentThreads(
   client: Caller,
   userId: string,
   signal?: AbortSignal
-): Promise<Map<string, { id: string; comment_version: number }>> {
-  const result = new Map<string, { id: string; comment_version: number }>();
+): Promise<UnreadCommentThreads> {
+  const result: UnreadCommentThreads = new Map();
   let after: string | null = null;
   for (;;) {
     signal?.throwIfAborted();
     let query = client
       .from("notification")
-      .select("id,activity_id,student_id,comment_version")
+      .select("id,activity_id,student_id,submission_id,comment_version")
       .eq("recipient_id", userId)
       .eq("type", "comment_posted")
       .is("read_at", null)
@@ -167,10 +173,13 @@ export async function readUnreadCommentThreads(
     signal?.throwIfAborted();
     if (page.error) readError(page.error);
     for (const row of page.data ?? []) {
-      if (!row.comment_version || !Number.isInteger(row.comment_version)) readError({});
-      result.set(threadPair({ activityId: row.activity_id, studentId: row.student_id }), {
+      if (!row.submission_id || !row.comment_version || !Number.isInteger(row.comment_version)) readError({});
+      result.set(row.submission_id, {
         id: row.id,
         comment_version: row.comment_version,
+        submission_id: row.submission_id,
+        activity_id: row.activity_id,
+        student_id: row.student_id,
       });
     }
     if (!page.data || page.data.length < 1000) return result;
@@ -178,4 +187,18 @@ export async function readUnreadCommentThreads(
     if (next === after) readError({});
     after = next;
   }
+}
+
+export async function readCommentAttempts(
+  client: Caller, scope: WorkCommentScope, before: AttemptCursor | null, signal?: AbortSignal
+): Promise<CommentAttempts> {
+  signal?.throwIfAborted();
+  const query = client.rpc("list_submission_comment_attempts", {
+    target_activity_id: scope.activityId, target_student_id: scope.studentId,
+    ...(before ? { before_cursor: before } : {}), page_size: 50,
+  });
+  const result = await (signal ? query.abortSignal(signal) : query);
+  signal?.throwIfAborted();
+  if (result.error) readError(result.error);
+  return parseCommentAttempts(result.data, scope);
 }

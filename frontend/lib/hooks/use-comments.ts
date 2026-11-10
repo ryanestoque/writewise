@@ -10,17 +10,21 @@ import {
   readThreadPage,
   readThreadSummaries,
   readThreadWindow,
+  readCommentAttempts,
   readUnreadCommentThreads,
 } from "@/lib/comments/data";
 import { commentMutation } from "@/lib/comments/transport";
 import {
-  threadPair,
+  threadIdentity,
   type CommentThread,
   type ThreadCursor,
   type ThreadScope,
   type ThreadSummary,
   type ThreadSummaryCursor,
   type ThreadTarget,
+  type AttemptCursor,
+  type CommentAttempt,
+  type WorkCommentScope,
 } from "@/lib/comments/types";
 import { invalidateNotifications } from "@/lib/hooks/use-notifications";
 import type { components } from "@/types/api";
@@ -36,6 +40,17 @@ function useActiveCommentAccount(userId: string) {
   return account === userId;
 }
 
+export function useCommentAccountId() {
+  const [userId, setUserId] = useState<string | null>(null);
+  useEffect(() => {
+    const { data } = createClient().auth.onAuthStateChange((_event, session) =>
+      setUserId(session?.user.id ?? null)
+    );
+    return () => data.subscription.unsubscribe();
+  }, []);
+  return userId;
+}
+
 function retryRead(count: number, error: Error) {
   if (
     error.name === "AbortError" ||
@@ -49,7 +64,7 @@ function retryRead(count: number, error: Error) {
 export function useCommentThread(userId: string, target: ThreadTarget, open: boolean) {
   const client = useQueryClient();
   const active = useActiveCommentAccount(userId);
-  const identity = `${userId}:${threadPair(target)}`;
+  const identity = `${userId}:${threadIdentity(target)}`;
   const moreController = useRef<AbortController | null>(null);
   useEffect(() => {
     const controller = new AbortController();
@@ -76,7 +91,7 @@ export function useCommentThread(userId: string, target: ThreadTarget, open: boo
           // and can leave its observer displaying old bodies. Replace it with
           // a body-free successful sentinel; remove only other retained windows.
           client.removeQueries({
-            queryKey: commentKeys.pair(userId, target),
+            queryKey: commentKeys.thread(userId, target),
             predicate: (cached) => JSON.stringify(cached.queryKey) !== JSON.stringify(key),
           });
           return null;
@@ -126,7 +141,7 @@ export function useCommentThread(userId: string, target: ThreadTarget, open: boo
     onError: (error) => {
       if (error instanceof ApiError && ["NOT_FOUND", "UNAUTHORIZED"].includes(error.code)) {
         client.setQueriesData<CommentThread | null>(
-          { queryKey: commentKeys.pair(userId, target) },
+          { queryKey: commentKeys.thread(userId, target) },
           null
         );
       }
@@ -159,11 +174,11 @@ export function useCommentActions(userId: string, target: ThreadTarget) {
     void client.invalidateQueries({ queryKey: commentKeys.account(userId) });
     void invalidateNotifications(client);
   };
-  const path = `/api/activities/${encodeURIComponent(target.activityId)}/students/${encodeURIComponent(target.studentId)}/comments`;
+  const path = `/api/submissions/${encodeURIComponent(target.submissionId)}/comments`;
   const post = useMutation({
     retry: false,
     gcTime: 0,
-    mutationKey: [...commentKeys.pair(userId, target), "post"],
+    mutationKey: [...commentKeys.thread(userId, target), "post"],
     mutationFn: (body: components["schemas"]["CommentPostRequest"]) =>
       commentMutation<components["schemas"]["CommentPosted"]>(userId, path, "POST", body),
     onSettled: refresh,
@@ -171,12 +186,12 @@ export function useCommentActions(userId: string, target: ThreadTarget) {
   const deleteComment = useMutation({
     retry: false,
     gcTime: 0,
-    mutationKey: [...commentKeys.pair(userId, target), "delete"],
+    mutationKey: [...commentKeys.thread(userId, target), "delete"],
     mutationFn: (id: string) =>
       commentMutation<void>(userId, `/api/comments/${encodeURIComponent(id)}`, "DELETE"),
     onSuccess: (_data, id) => {
       client.setQueriesData<CommentThread>(
-        { queryKey: commentKeys.pair(userId, target) },
+        { queryKey: commentKeys.thread(userId, target) },
         (current) =>
           current
             ? {
@@ -195,7 +210,7 @@ export function useCommentActions(userId: string, target: ThreadTarget) {
   const setLocked = useMutation({
     retry: false,
     gcTime: 0,
-    mutationKey: [...commentKeys.pair(userId, target), "lock"],
+    mutationKey: [...commentKeys.thread(userId, target), "lock"],
     mutationFn: (body: components["schemas"]["CommentLockRequest"]) =>
       commentMutation<components["schemas"]["CommentLockState"]>(
         userId,
@@ -253,4 +268,32 @@ export function useUnreadCommentThreads(userId: string, enabled = true) {
     refetchInterval: 60_000,
     refetchOnWindowFocus: "always",
   });
+}
+
+export function useCommentAttempts(userId: string, scope: WorkCommentScope, open: boolean) {
+  const active = useActiveCommentAccount(userId);
+  const query = useQuery({
+    queryKey: commentKeys.attempts(userId, scope),
+    queryFn: ({ signal }) => {
+      const requestSignal = accountRequestSignal(userId, signal);
+      return withAccountScope(userId, requestSignal, async caller => {
+        const rows: CommentAttempt[] = [];
+        let before: AttemptCursor | null = null;
+        for (;;) {
+          const page = await readCommentAttempts(caller, scope, before, requestSignal);
+          rows.push(...page.rows);
+          if (!page.next_cursor) return rows;
+          if (JSON.stringify(before) === JSON.stringify(page.next_cursor))
+            throw new ApiError({ code: "INTERNAL_ERROR", message: "Could not load uploads. Try again." });
+          before = page.next_cursor;
+        }
+      });
+    },
+    enabled: active && open && !!userId,
+    retry: retryRead,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: "always",
+  });
+  return { ...query, data: active && !query.isError ? query.data : undefined, isAccountActive: active };
 }

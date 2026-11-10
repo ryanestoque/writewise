@@ -1,13 +1,15 @@
 "use client";
 
 import { use, useMemo, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useActivity } from "@/lib/hooks/use-activities";
 import { useSubmissions, type Submission } from "@/lib/hooks/use-submissions";
 import { SubmissionDetailContent } from "@/components/submissions/submission-detail-content";
 import { ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { parseTeacherCommentTarget } from "@/lib/comments/targets";
+import { SubmissionCommentDestination } from "@/components/comments/submission-comment-destination";
 
 export default function SubmissionDetailPage({
   params,
@@ -16,6 +18,7 @@ export default function SubmissionDetailPage({
 }) {
   const { id: activityId, submissionId } = use(params);
   const router = useRouter();
+  const commentTarget = parseTeacherCommentTarget(useSearchParams(), activityId, submissionId);
 
   const { data: activity, isLoading: activityLoading } = useActivity(activityId);
   const { data: submissions, isLoading: submissionsLoading } = useSubmissions(activityId);
@@ -78,6 +81,10 @@ export default function SubmissionDetailPage({
   }, [submission?.student?.full_name, activity?.target_text]);
 
   const isLoading = activityLoading || submissionsLoading;
+
+  if (commentTarget.kind === "valid") return <SubmissionCommentDestination
+    activityId={commentTarget.target.activityId} submissionId={commentTarget.target.submissionId} />;
+  if (commentTarget.kind === "invalid") return <p role="status" className="p-4">This conversation link is invalid. Choose a worksheet upload to view its comments.</p>;
 
   if (isLoading) {
     return (

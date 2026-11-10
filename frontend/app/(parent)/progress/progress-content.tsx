@@ -13,7 +13,7 @@ import { NotificationWorkDestination } from "@/components/parent/notification-wo
 import { QueryRecovery } from "@/components/shared/query-recovery";
 import { ParentGrades } from "@/components/gradebook/parent-grades";
 import { ParentActivityThreads } from "@/components/comments/parent-activity-threads";
-import { StudentWorkThreadSheet } from "@/components/comments/student-work-thread-sheet";
+import { SubmissionCommentThreadSheet } from "@/components/comments/submission-comment-thread-sheet";
 import {
   useChildScoreHistory,
   useTakeHomeActivities,
@@ -161,9 +161,9 @@ export function ProgressPageContent() {
       ? notificationTarget.target
       : null;
   const gradeDestination = notificationTargetData?.view === "grades";
-  const notificationDestination = notificationTargetData?.view === "comments" ? (
-    <StudentWorkThreadSheet key={`${userId}:${notificationTargetData.childId}:${notificationTargetData.activityId}`}
-      userId={userId} target={{ activityId: notificationTargetData.activityId, studentId: notificationTargetData.childId }} open
+  const notificationDestination = notificationTargetData?.view === "comments" && notificationTargetData.submissionId ? (
+    <SubmissionCommentThreadSheet key={`${userId}:${notificationTargetData.childId}:${notificationTargetData.submissionId}`}
+      userId={userId} target={{ activityId: notificationTargetData.activityId, studentId: notificationTargetData.childId, submissionId: notificationTargetData.submissionId }} open
       studentName={selectedChild?.fullName} onOpenChange={open => { if (!open) dismissNotificationTarget(); }} />
   ) : notificationTarget.kind !== "none" && !gradeDestination ? (
     <NotificationWorkDestination

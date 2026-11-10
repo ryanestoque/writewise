@@ -149,14 +149,15 @@ def prepare(admin, manifest):
 
 def schema():
     assert db_value("select to_regclass('public.private_comment')") is not None
+    assert db_value("select to_regclass('public.submission_comment_thread')") is not None
     assert db_value(
         "select exists(select 1 from pg_enum e join pg_type t on t.oid=e.enumtypid "
         "where t.typname='notification_type' and e.enumlabel='comment_posted')"
     )
-    assert db_value(
+    assert not db_value(
         "select exists(select 1 from information_schema.columns "
         "where table_schema='public' and table_name='student_work' "
-        "and column_name='comments_locked')"
+        "and column_name in ('comments_locked','comment_version'))"
     )
 
 
@@ -164,14 +165,7 @@ def verify(admin, manifest):
     schema()
     assert fingerprint(admin, manifest) == manifest["before_hash"], "Historical facts changed"
     assert admin.table("private_comment").select("id").execute().data == []
-    assert all(
-        not row["comments_locked"] and row["comment_version"] == 0
-        for row in admin.table("student_work")
-        .select("comments_locked,comment_version")
-        .in_("activity_id", manifest["activities"])
-        .execute()
-        .data
-    )
+    assert admin.table("submission_comment_thread").select("submission_id").execute().data == []
     assert all(
         row["comment_version"] is None
         for row in admin.table("notification")
@@ -182,16 +176,26 @@ def verify(admin, manifest):
     )
     first, other = manifest["families"]
     activity, student = first["current"], first["students"][0]
+    source = (
+        admin.table("submission")
+        .select("id")
+        .eq("activity_id", activity)
+        .eq("student_id", student)
+        .order("created_at")
+        .limit(1)
+        .single()
+        .execute()
+        .data["id"]
+    )
     grades_before = (
         admin.table("student_work_grade").select("*").eq("activity_id", activity).execute().data
     )
     posted = (
         admin.rpc(
-            "post_private_comment",
+            "post_submission_comment",
             {
                 "actor_id": first["teacher"],
-                "target_activity_id": activity,
-                "target_student_id": student,
+                "target_submission_id": source,
                 "comment_body": "Synthetic upgrade comment",
             },
         )
@@ -199,8 +203,8 @@ def verify(admin, manifest):
         .data
     )
     parent = parent_client(admin, first["parent"])
-    args = {"target_activity_id": activity, "target_student_id": student}
-    thread = parent.rpc("read_private_comment_thread", args).execute().data
+    args = {"target_submission_id": source}
+    thread = parent.rpc("read_submission_comment_thread", args).execute().data
     assert any(row["id"] == posted["id"] for row in thread["entries"])
     notice = thread["unread_notice"]
     admin.rpc(
@@ -212,7 +216,7 @@ def verify(admin, manifest):
         },
     ).execute()
     admin.rpc(
-        "post_private_comment",
+        "post_submission_comment",
         {
             "actor_id": first["teacher"],
             **args,
@@ -220,7 +224,7 @@ def verify(admin, manifest):
         },
     ).execute()
     assert (
-        parent.rpc("read_private_comment_thread", args).execute().data["unread_notice"]["id"]
+        parent.rpc("read_submission_comment_thread", args).execute().data["unread_notice"]["id"]
         != notice["id"]
     )
     admin.rpc(
@@ -231,17 +235,17 @@ def verify(admin, manifest):
             "payload": {"assignments": [{"student_id": first["students"][1]}]},
         },
     ).execute()
-    thread = parent.rpc("read_private_comment_thread", args).execute().data
+    thread = parent.rpc("read_submission_comment_thread", args).execute().data
     assert thread["can_post"] is False and thread["read_only_reasons"] == ["unassigned"]
     assert any(
         row["activity_id"] == activity
-        for row in parent.rpc("list_private_comment_threads", {"target_student_id": student})
+        for row in parent.rpc("list_submission_comment_threads", {"target_student_id": student})
         .execute()
         .data["rows"]
     )
     foreign = parent_client(admin, other["parent"])
     try:
-        foreign.rpc("read_private_comment_thread", args).execute()
+        foreign.rpc("read_submission_comment_thread", args).execute()
     except APIError as failure:
         assert failure.code == "WW404"
     else:

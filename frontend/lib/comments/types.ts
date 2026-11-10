@@ -1,4 +1,9 @@
-export type ThreadTarget = { activityId: string; studentId: string };
+import type { Database } from "@/types/database";
+
+export type ThreadTarget = { submissionId: string };
+export type CommentLocation = ThreadTarget & { activityId: string; studentId: string };
+export type WorkCommentScope = { activityId: string; studentId: string };
+export type SubmissionStatus = Database["public"]["Enums"]["submission_status"];
 export type ThreadCursor = { event_at: string; kind: "comment" | "return"; id: string };
 export type CommentEntry = {
   kind: "comment";
@@ -20,8 +25,11 @@ export type ReturnEntry = {
 };
 export type ThreadEntry = CommentEntry | ReturnEntry;
 export type CommentThread = {
+  submission_id: string;
   activity_id: string;
   student_id: string;
+  submitted_at: string;
+  submission_status: SubmissionStatus;
   activity_title: string;
   actor_role: "teacher" | "parent";
   assigned: boolean;
@@ -37,10 +45,12 @@ export type CommentThread = {
 };
 export type ThreadSummaryCursor = {
   last_comment_at: string;
-  student_id: string;
-  activity_id: string;
+  submission_id: string;
 };
 export type ThreadSummary = {
+  submission_id: string;
+  submitted_at: string;
+  submission_status: SubmissionStatus;
   activity_id: string;
   student_id: string;
   activity_title: string;
@@ -54,4 +64,13 @@ export type ThreadSummaries = { rows: ThreadSummary[]; next_cursor: ThreadSummar
 export type ThreadScope =
   { activityId: string; studentId?: never } | { studentId: string; activityId?: never };
 
-export const threadPair = ({ activityId, studentId }: ThreadTarget) => `${activityId}:${studentId}`;
+export type CommentAttempt = Pick<CommentThread,
+  "submission_id" | "activity_id" | "student_id" | "submitted_at" | "submission_status" | "comments_locked"
+>;
+export type AttemptCursor = { submitted_at: string; submission_id: string };
+export type CommentAttempts = { rows: CommentAttempt[]; next_cursor: AttemptCursor | null };
+export type UnreadCommentNotice = {
+  id: string; submission_id: string; activity_id: string; student_id: string; comment_version: number;
+};
+export type UnreadCommentThreads = Map<string, UnreadCommentNotice>;
+export const threadIdentity = ({ submissionId }: ThreadTarget) => submissionId;

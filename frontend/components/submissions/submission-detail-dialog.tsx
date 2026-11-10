@@ -54,6 +54,7 @@ export function SubmissionDetailDialog({
           activityTargetText={activityTargetText}
           onClose={() => onOpenChange(false)}
           variant="modal"
+          open={open}
         />
       </DialogContent>
     </Dialog>

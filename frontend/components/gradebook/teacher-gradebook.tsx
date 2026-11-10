@@ -1,5 +1,7 @@
 "use client";
 
+import { hasUnreadWorkComments } from "@/lib/comments/selection";
+
 import { useState, type KeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Loader2 } from "lucide-react";
@@ -358,7 +360,7 @@ function SectionGrid({ userId, sectionId }: { userId: string; sectionId: string 
                           <GradebookCellButton
                             cell={work}
                             hasUnreadComments={
-                              unread.data?.has(`${work.activity_id}:${work.student_id}`) ?? false
+                              hasUnreadWorkComments(unread.data, { activityId: work.activity_id, studentId: work.student_id })
                             }
                             label={`${row.student_name}, ${activity.title}`}
                             onOpen={() => setCell(work)}

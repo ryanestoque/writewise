@@ -7,10 +7,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { StudentWorkThread } from "./student-work-thread";
-import { threadPair, type ThreadTarget } from "@/lib/comments/types";
+import { SubmissionCommentThread } from "./submission-comment-thread";
+import type { CommentLocation } from "@/lib/comments/types";
 
-export function StudentWorkThreadSheet({
+export function SubmissionCommentThreadSheet({
   userId,
   target,
   open,
@@ -18,7 +18,7 @@ export function StudentWorkThreadSheet({
   studentName,
 }: {
   userId: string;
-  target: ThreadTarget | null;
+  target: CommentLocation | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   studentName?: string;
@@ -28,13 +28,14 @@ export function StudentWorkThreadSheet({
       <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader className="shrink-0 border-b pr-14">
           <SheetTitle>Comments{studentName ? ` · ${studentName}` : ""}</SheetTitle>
-          <SheetDescription>A private conversation about this child’s activity.</SheetDescription>
+          <SheetDescription>A private conversation about this worksheet upload.</SheetDescription>
         </SheetHeader>
         {open && target && (
-          <StudentWorkThread
-            key={`${userId}:${threadPair(target)}`}
+          <SubmissionCommentThread
+            key={`${userId}:${target.submissionId}`}
             userId={userId}
             target={target}
+            location={target}
             open={open}
           />
         )}

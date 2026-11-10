@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useCommentSummaries, useUnreadCommentThreads } from "@/lib/hooks/use-comments";
-import type { ThreadTarget } from "@/lib/comments/types";
+import type { CommentLocation } from "@/lib/comments/types";
 
 export function ActivityThreads({
   userId,
@@ -11,7 +11,7 @@ export function ActivityThreads({
 }: {
   userId: string;
   activityId: string;
-  onOpen: (target: ThreadTarget, studentName?: string) => void;
+  onOpen: (target: CommentLocation, studentName?: string) => void;
 }) {
   const query = useCommentSummaries(userId, { activityId }, true);
   const unread = useUnreadCommentThreads(userId);
@@ -19,7 +19,7 @@ export function ActivityThreads({
     <section className="bg-card space-y-3 rounded-xl border p-4" aria-label="Conversation history">
       <h2 className="font-heading text-lg font-semibold">Conversation history</h2>
       <p className="text-muted-foreground text-sm">
-        Activity conversations stay here when assignments change.
+        Each worksheet upload has its own conversation, including earlier attempts.
       </p>
       {query.isError ? (
         <div role="status">
@@ -34,17 +34,18 @@ export function ActivityThreads({
         </p>
       ) : !query.data.rows.length ? (
         <p className="text-muted-foreground text-sm">
-          No conversations yet. Use Comments beside an assigned student to start one.
+          No conversations yet. Open a worksheet upload to start one.
         </p>
       ) : (
         <ul className="divide-y">
           {query.data.rows.map((row) => (
             <li
-              key={row.student_id}
+              key={row.submission_id}
               className="flex flex-wrap items-center justify-between gap-3 py-3"
             >
               <div>
                 <p className="text-sm font-medium">{row.student_label}</p>
+                <p className="text-muted-foreground text-xs">Uploaded {new Date(row.submitted_at).toLocaleString()}</p>
                 <p className="text-muted-foreground text-xs">
                   {!row.assigned
                     ? "No longer assigned"
@@ -60,13 +61,13 @@ export function ActivityThreads({
                 size="sm"
                 onClick={() =>
                   onOpen(
-                    { activityId: row.activity_id, studentId: row.student_id },
+                    { activityId: row.activity_id, studentId: row.student_id, submissionId: row.submission_id },
                     row.student_label
                   )
                 }
               >
                 Comments
-                {unread.data?.has(`${row.activity_id}:${row.student_id}`) && (
+                {unread.data?.has(row.submission_id) && (
                   <span className="text-primary text-xs"> · Unread</span>
                 )}
               </Button>

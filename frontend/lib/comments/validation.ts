@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { ApiError } from "@/lib/utils/api-error";
-import type { CommentThread, ThreadSummaries, ThreadTarget } from "./types";
+import type { CommentAttempts, CommentThread, ThreadSummaries, ThreadTarget, WorkCommentScope } from "./types";
 
 const uuid = z.string().uuid();
 const timestamp = z.string().datetime({ offset: true });
 const version = z.number().int().positive().max(2147483647);
+const submissionStatus = z.enum(["processing", "completed", "rejected", "returned"]);
 const cursor = z
   .object({ event_at: timestamp, kind: z.enum(["comment", "return"]), id: uuid })
   .strict();
@@ -40,8 +41,11 @@ const returned = z
   .strict();
 const thread = z
   .object({
+    submission_id: uuid,
     activity_id: uuid,
     student_id: uuid,
+    submitted_at: timestamp,
+    submission_status: submissionStatus,
     activity_title: z.string(),
     actor_role: z.enum(["teacher", "parent"]),
     assigned: z.boolean(),
@@ -57,13 +61,16 @@ const thread = z
   })
   .strict();
 const summaryCursor = z
-  .object({ last_comment_at: timestamp, student_id: uuid, activity_id: uuid })
+  .object({ last_comment_at: timestamp, submission_id: uuid })
   .strict();
 const summaries = z
   .object({
     rows: z.array(
       z
         .object({
+          submission_id: uuid,
+          submitted_at: timestamp,
+          submission_status: submissionStatus,
           activity_id: uuid,
           student_id: uuid,
           activity_title: z.string(),
@@ -90,7 +97,8 @@ export function parseThread(value: unknown, target: ThreadTarget): CommentThread
   const parsed = thread.safeParse(value);
   if (!parsed.success) invalid();
   const result = parsed.data;
-  if (result.activity_id !== target.activityId || result.student_id !== target.studentId) invalid();
+  if (result.submission_id !== target.submissionId) invalid();
+  if (result.entries.some(entry => entry.kind === "return" && entry.id !== target.submissionId)) invalid();
   const comments = result.entries.filter((entry) => entry.kind === "comment");
   const seen = comments.length ? Math.max(...comments.map((entry) => entry.comment_version)) : null;
   if (
@@ -115,5 +123,21 @@ export function parseThread(value: unknown, target: ThreadTarget): CommentThread
 export function parseSummaries(value: unknown): ThreadSummaries {
   const parsed = summaries.safeParse(value);
   if (!parsed.success) invalid();
+  return parsed.data;
+}
+
+const attempts = z.object({
+  rows: z.array(z.object({
+    submission_id: uuid, activity_id: uuid, student_id: uuid, submitted_at: timestamp,
+    submission_status: submissionStatus, comments_locked: z.boolean(),
+  }).strict()),
+  next_cursor: z.object({ submitted_at: timestamp, submission_id: uuid }).strict().nullable(),
+}).strict();
+
+export function parseCommentAttempts(value: unknown, scope: WorkCommentScope): CommentAttempts {
+  const parsed = attempts.safeParse(value);
+  if (!parsed.success) invalid();
+  if (parsed.data.rows.some(row => row.activity_id !== scope.activityId || row.student_id !== scope.studentId) ||
+    new Set(parsed.data.rows.map(row => row.submission_id)).size !== parsed.data.rows.length) invalid();
   return parsed.data;
 }

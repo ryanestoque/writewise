@@ -56,6 +56,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useDeleteSubmission } from "@/lib/hooks/use-submissions";
 import { toast } from "sonner";
+import { SubmissionCommentTabs } from "@/components/comments/submission-comment-tabs";
 
 interface WorksheetViewDialogProps {
   open: boolean;
@@ -308,6 +309,7 @@ export function WorksheetViewDialog({
         </DialogHeader>
 
         {/* Content Body: Unified Multimodal View */}
+        <SubmissionCommentTabs key={submissionId} submissionId={submissionId} open={open}>
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             {/* Left (Desktop) / Top (Mobile): High-Resolution Worksheet Photo Inspector */}
@@ -578,6 +580,7 @@ export function WorksheetViewDialog({
           </div>
         </div>
 
+        </SubmissionCommentTabs>
         {/* Footer */}
         <div className="p-3.5 sm:p-4 border-t border-border bg-card/80 flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2">
@@ -640,7 +643,7 @@ export function WorksheetViewDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this photo?</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes your uploaded worksheet photo. You can take and send a new photo anytime.
+              This permanently deletes your uploaded worksheet photo and its comments. You can take and send a new photo anytime.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

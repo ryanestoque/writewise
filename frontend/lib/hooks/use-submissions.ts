@@ -3,6 +3,7 @@ import { createClient } from "../supabase/client";
 import { getAuthToken } from "../supabase/auth-helper";
 import { handleApiResponse, ApiError } from "../utils/api-error";
 import { invalidateWorkQueries } from "./use-activity-work";
+import { clearDeletedSubmissionComments } from "@/lib/comments/invalidation";
 
 export type ScoreBand =
   | "needs_improvement"
@@ -276,7 +277,10 @@ export function useDeleteSubmission() {
     onError: (error) => {
       if (error instanceof ApiError && error.code === "SUBMISSION_ALREADY_GRADED") invalidateWorkQueries(queryClient);
     },
-    onSuccess: () => invalidateWorkQueries(queryClient),
+    onSuccess: async result => {
+      await clearDeletedSubmissionComments(queryClient, [result.id]);
+      invalidateWorkQueries(queryClient);
+    },
   });
 }
 
@@ -302,6 +306,9 @@ export function useBatchDeleteSubmissions() {
         response
       );
     },
-    onSuccess: () => invalidateWorkQueries(queryClient),
+    onSuccess: async result => {
+      await clearDeletedSubmissionComments(queryClient, result.deleted_ids);
+      invalidateWorkQueries(queryClient);
+    },
   });
 }

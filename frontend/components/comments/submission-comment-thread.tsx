@@ -15,7 +15,8 @@ import { useNotificationRead } from "@/lib/hooks/use-notifications";
 import { canAcknowledge } from "@/lib/comments/data";
 import { commentFeedback } from "@/lib/comments/presentation";
 import { ApiError } from "@/lib/utils/api-error";
-import type { ThreadTarget } from "@/lib/comments/types";
+import type { CommentLocation, ThreadTarget } from "@/lib/comments/types";
+import { matchesCommentLocation } from "@/lib/comments/selection";
 import { CommentComposer } from "./comment-composer";
 import { ThreadEntryView } from "./thread-entry";
 
@@ -25,14 +26,16 @@ const READ_ONLY = {
   locked: "The teacher has locked this conversation. New comments are paused for everyone.",
 };
 
-export function StudentWorkThread({
+export function SubmissionCommentThread({
   userId,
   target,
   open,
+  location,
 }: {
   userId: string;
   target: ThreadTarget;
   open: boolean;
+  location?: CommentLocation;
 }) {
   const query = useCommentThread(userId, target, open);
   const actions = useCommentActions(userId, target);
@@ -40,10 +43,22 @@ export function StudentWorkThread({
   const attempted = useRef(new Set<string>());
   const [feedback, setFeedback] = useState<string | null>(null);
   const thread = query.data;
+  const matchesLocation = !thread || !location || matchesCommentLocation(thread, location);
   const refetch = query.refetch;
   const markRead = read.mutateAsync;
+  const resetPost = actions.post.reset;
+  const resetDelete = actions.deleteComment.reset;
+  const resetLock = actions.setLocked.reset;
   useEffect(() => {
-    if (!open || !query.isAccountActive || !thread || !canAcknowledge(thread)) return;
+    if (query.isError || !query.isAccountActive || !matchesLocation) {
+      resetPost();
+      resetDelete();
+      resetLock();
+      attempted.current.clear();
+    }
+  }, [query.isError, query.isAccountActive, matchesLocation, resetPost, resetDelete, resetLock]);
+  useEffect(() => {
+    if (!open || !query.isAccountActive || !thread || !matchesLocation || !canAcknowledge(thread)) return;
     const notice = thread.unread_notice!;
     const key = `${notice.id}:${notice.comment_version}`;
     if (attempted.current.has(key)) return;
@@ -58,9 +73,10 @@ export function StudentWorkThread({
           setFeedback("Could not update unread status. Refresh to try again.");
       }
     );
-  }, [open, query.isAccountActive, thread, markRead, refetch]);
+  }, [open, query.isAccountActive, thread, matchesLocation, markRead, refetch]);
 
   if (!open) return null;
+  if (!matchesLocation) return <p role="status" className="p-4">This conversation is unavailable.</p>;
   if (!query.isAccountActive)
     return (
       <p className="p-4" role="status">
@@ -90,6 +106,10 @@ export function StudentWorkThread({
     <section aria-label="Private conversation" className="flex min-h-0 flex-1 flex-col">
       <div className="space-y-2 border-b px-4 py-3">
         <p className="font-medium">{thread.activity_title}</p>
+        <p className="text-muted-foreground text-xs">
+          Uploaded <time dateTime={thread.submitted_at}>{new Date(thread.submitted_at).toLocaleString()}</time>
+          {" · "}{{ processing: "Analyzing", rejected: "Needs a new photo", completed: "Uploaded", returned: "Returned" }[thread.submission_status]}
+        </p>
         <p className="text-muted-foreground text-xs">
           Visible to the teacher and all linked parents immediately, even before results are
           released.

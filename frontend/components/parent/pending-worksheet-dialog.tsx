@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import type { StudentScoreHistoryItem } from "@/lib/hooks/use-dashboard";
+import { SubmissionCommentTabs } from "@/components/comments/submission-comment-tabs";
 
 interface PendingWorksheetDialogProps {
   item: StudentScoreHistoryItem;
@@ -86,6 +87,7 @@ export function PendingWorksheetDialog({
         </DialogHeader>
 
         {/* Content Body: Unified Multimodal Split View */}
+        <SubmissionCommentTabs key={item.submissionId} submissionId={item.submissionId} open>
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             {/* Left Column: Photo Inspector */}
@@ -196,6 +198,7 @@ export function PendingWorksheetDialog({
             </div>
           </div>
         </div>
+        </SubmissionCommentTabs>
       </DialogContent>
     </Dialog>
   );

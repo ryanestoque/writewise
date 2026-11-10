@@ -40,8 +40,8 @@ export function parseParentNotificationTarget(
     submission.length > 1 ||
     tab.length > 1 ||
     view.length > 1 ||
-    (view.length === 1 && (view[0] !== "comments" || submission.length > 0 || tab.length > 0)) ||
-    (tab.length === 1 && tab[0] !== "grades") ||
+    (view.length === 1 && (view[0] !== "comments" || submission.length !== 1 || tab.length > 0)) ||
+    (tab.length === 1 && (tab[0] !== "grades" || submission.length > 0)) ||
     !isNotificationUuid(child[0]) ||
     !isNotificationUuid(activity[0]) ||
     (submission.length === 1 && !isNotificationUuid(submission[0]))
