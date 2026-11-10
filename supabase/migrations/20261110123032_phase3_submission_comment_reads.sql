@@ -1,4 +1,5 @@
 -- Shared cursor validation returns only fixed messages, never provider input.
+begin;
 create function writewise_internal.submission_comment_cursor(value jsonb,window_kind text)
 returns jsonb language plpgsql immutable security invoker set search_path='' as $$
 declare fields text[]; time_field text; stamp timestamptz; identity uuid;
@@ -198,3 +199,4 @@ grant execute on function writewise_internal.submission_comment_candidates(uuid,
 grant execute on function public.read_submission_comment_thread(uuid,jsonb,integer) to authenticated,service_role;
 grant execute on function public.list_submission_comment_attempts(uuid,uuid,jsonb,integer) to authenticated,service_role;
 grant execute on function public.list_submission_comment_threads(uuid,uuid,jsonb,integer) to authenticated,service_role;
+commit;

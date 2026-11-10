@@ -1,4 +1,5 @@
 -- Empty-legacy cutover: never guess which worksheet an activity-level message meant.
+begin;
 lock table public.private_comment, public.notification in access exclusive mode;
 do $$
 begin
@@ -84,3 +85,4 @@ create policy comment_participant_select on public.private_comment
   for select to authenticated using (
     writewise_internal.submission_comment_context(submission_id) is not null
   );
+commit;

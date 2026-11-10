@@ -1,4 +1,5 @@
 -- Activity/work/source order matches the existing authorized deletion transaction.
+begin;
 create function writewise_internal.lock_submission_comment_source(target_submission_id uuid)
 returns public.submission language plpgsql volatile security invoker set search_path='' as $$
 declare original public.submission; locked public.submission;
@@ -162,3 +163,4 @@ grant execute on function writewise_internal.put_submission_comment_notification
 grant execute on function public.post_submission_comment(uuid,uuid,text) to service_role;
 grant execute on function public.set_submission_comment_lock(uuid,uuid,boolean) to service_role;
 grant execute on function public.delete_private_comment(uuid,uuid) to service_role;
+commit;
