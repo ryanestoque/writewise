@@ -45,6 +45,7 @@ function LoadedPicker({ userId, rows, activeSubmissionId, explicitSubmissionId }
         <NativeSelectOptGroup label="Worksheet uploads">
           {rows.map((row, index) => <NativeSelectOption key={row.submission_id} value={row.submission_id}>
             Upload {rows.length - index} · {new Date(row.submitted_at).toLocaleString()}
+            {" · "}{{ processing: "Analyzing", rejected: "Needs a new photo", completed: "Uploaded", returned: "Returned" }[row.submission_status]}
             {unread.data?.has(row.submission_id) ? " · Unread comments" : ""}
           </NativeSelectOption>)}
         </NativeSelectOptGroup>

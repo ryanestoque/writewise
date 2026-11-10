@@ -73,7 +73,7 @@ Classroom's key idea is a per-student record for each assignment, which exists e
 - pinned attempt (Q14)
 - points override / Assign 0 (Q11, Q15)
 - excused flag (Q15)
-- private comment thread + lock flag (Q21, Q27; Slice ⑥)
+Private comment threads and locks belong to each submission (Q21/Q27), outside this work record.
 
 Rows are created on demand (on the first teacher action or upload), not up front for every assigned student.
 
@@ -226,7 +226,7 @@ Notifications store **IDs only**. The bell UI resolves the child name and activi
 | `measurement`, score-bearing reads, diagnostics | Parent policies gain `and s.released_at is not null` |
 | `notification` | Select own (`recipient_id = auth.uid()`). No client writes; marking read goes through FastAPI |
 | `email_outbox` | RLS enabled, no policies |
-| `private_comment` | Approved 2026-11-09: owning teacher or currently linked parent may read existing thread history after unassignment/archive. Posting has separate current-assignment/archive/lock gates. Preserve current child-link revocation and deny unrelated teachers/parents. **No client writes** (FastAPI only, Q27); see the Slice 6 spec for comment-only historical discovery |
+| `private_comment` | Approved 2026-11-10: separate submission thread; owning teacher or currently linked parent may read existing thread history after unassignment/archive. Posting has separate current-assignment/archive/lock gates. Preserve current child-link revocation and deny unrelated teachers/parents. **No client writes** (FastAPI only, Q27); see the Slice 6 spec for comment-only historical discovery |
 
 ### 4.8 Private submission comments (Slice 6)
 
@@ -345,7 +345,7 @@ The existing parent-delete rule (`SUBMISSION_ALREADY_GRADED`) is unchanged.
 
 ## 8. Build Order
 
-**Slice ⑤ closeout (2026-11-09):** Points and gradebook is **Verified** following [final implementation-head CI](https://github.com/ryanestoque/writewise/actions/runs/42474197080) on `4044746` and the user's overall manual QA sign-off and explicit closeout request. Phase 3 is **4/6 verified**. Slice ④ email manual/operational gates remain pending; Slice ⑥ private comments is not started. See `IMPLEMENTATION_STATUS.md` and the [Slice 5 execution record](../superpowers/plans/2026-11-07-phase3-points-gradebook.md) for the evidence and distinction from merge/hosted deployment.
+**Slice ⑤ closeout (2026-11-09):** Points and gradebook is **Verified** following [final implementation-head CI](https://github.com/ryanestoque/writewise/actions/runs/42474197080) on `4044746` and the user's overall manual QA sign-off and explicit closeout request. Phase 3 is **4/6 verified**. Slice ④ email manual/operational gates remain pending; Slice ⑥ per-submission comments is implemented with final verification/user acceptance tracked separately. See `IMPLEMENTATION_STATUS.md` and the [Slice 5 execution record](../superpowers/plans/2026-11-07-phase3-points-gradebook.md) for the evidence and distinction from merge/hosted deployment.
 
 Each slice can ship on its own and unblocks the next.
 

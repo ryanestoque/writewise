@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-09 (Slice 6 implemented: 1011 tests and final application-head CI green; user portal QA remains open; Slice 4 email QA remains pending)
+**Last updated:** 2026-11-10 (submission-thread redesign implemented; final regression and user portal acceptance tracked below)
 
 ## Summary
 
@@ -274,7 +274,9 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 ### Slice ⑥ — Private comments
 
-**Redesign planning (2026-11-10):** The user selected a separate thread per submission and approved preserving existing submission-deletion permissions, with the thread deleted alongside its submission. Current activity-level conversations contain only test data or none, per the user. After the written-spec handoff, the user explicitly requested the [replacement implementation plan](docs/superpowers/plans/2026-11-10-submission-private-comments.md) based on the [approved design](docs/superpowers/specs/2026-11-10-submission-private-comments-design.md). The plan defines nine unchecked execution tasks; no redesigned application/API/schema implementation is claimed. The implementation status and verification evidence below describe the prior student × activity behavior and do not verify submission-specific threads. Phase 3 remains **4/6 verified**; Slice 4's pending gates are unchanged.
+**Submission redesign execution (2026-11-10):** Inline implementation now provides separate threads per actual upload, independent lock/version/unread/Return, explicit upload picker, exact-source portal/bell destinations and authorized source deletion with thread/cache cleanup. Three forward migrations fail closed on any old comment/comment notice. Existing deletion permissions are preserved. The user confirmed only test/no conversations; hosted cleanup/reset remains unauthorized. Actual generated API/DB contracts are paired. Focused CI passed 90 then 95 cases; actual-source SDK/cache/browser checks and production build passed. A delayed-history deletion race was reproduced in the real hook and fixed. Full seven-proof regression is in progress; signed-in user portal acceptance remains open. See [approved design](docs/superpowers/specs/2026-11-10-submission-private-comments-design.md) and [execution record](docs/superpowers/plans/2026-11-10-submission-private-comments.md). Phase 3 remains **4/6 verified** and email gates remain separate.
+
+**Historical activity-thread implementation/evidence below is superseded for the redesign.**
 
 **Dependency:** Slices ②–③; gradebook unread dot also needs Slice ⑤. **Status: Implemented — automated and controlled browser verification passed; user portal QA pending.**
 

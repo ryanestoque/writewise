@@ -235,12 +235,17 @@ def test_storage_failure_does_not_remove_submission_comments(
     ).execute().data == [{"id": posted.json()["id"]}]
 
 
+@pytest.mark.parametrize("actor", ["teacher", "parent"])
 def test_bulk_delete_removes_only_returned_source_threads(
-    real_comment_api, family, comment_submission, peer_comment_submission
+    real_comment_api, family, comment_submission, peer_comment_submission, actor
 ):
     source = comment_submission["id"]
     peer = peer_comment_submission["id"]
-    headers = authorization(family["teacher_client"])
+    if actor == "parent":
+        admin.table("submission").update(
+            {"uploader_id": family["parent"], "uploader_role": "parent"}
+        ).eq("id", source).execute()
+    headers = authorization(family[f"{actor}_client"])
     for target in (source, peer):
         assert (
             real_comment_api.post(

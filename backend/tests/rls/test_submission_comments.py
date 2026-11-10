@@ -88,6 +88,33 @@ def test_read_empty_submission_creates_no_thread_or_grade(family, comment_submis
     )
 
 
+@pytest.mark.parametrize("status", ["processing", "rejected", "completed", "returned"])
+def test_source_lifecycle_status_does_not_gate_comments(family, comment_submission, status):
+    source = comment_submission["id"]
+    fields = {"status": status}
+    if status == "returned":
+        fields.update(
+            returned_at="2026-11-10T00:00:00Z",
+            returned_by=family["teacher"],
+            return_reason="incomplete",
+            return_note="Synthetic source Return",
+        )
+    admin.table("submission").update(fields).eq("id", source).execute()
+    result = post(family["parent"], source)
+    thread = read_thread(family["parent_client"], source)
+    assert thread["submission_status"] == status
+    assert thread["can_post"]
+    assert result["id"] in {entry["id"] for entry in thread["entries"]}
+    assert (
+        admin.table("manual_score")
+        .select("submission_id")
+        .eq("submission_id", source)
+        .execute()
+        .data
+        == []
+    )
+
+
 def test_two_submission_feeds_never_merge(family, comment_submission, peer_comment_submission):
     first = post(family["teacher"], comment_submission["id"], "First upload only")
     second = post(family["parent"], peer_comment_submission["id"], "Second upload only")
