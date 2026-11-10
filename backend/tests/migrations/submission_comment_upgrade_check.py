@@ -122,9 +122,53 @@ def verify_cutover(admin, manifest):
     for signature in (
         "public.post_private_comment(uuid,uuid,uuid,text)",
         "public.read_private_comment_thread(uuid,uuid,jsonb,integer)",
+        "public.list_private_comment_threads(uuid,uuid,jsonb,integer)",
         "public.set_comment_thread_lock(uuid,uuid,uuid,boolean)",
+        "writewise_internal.can_read_comment_work(uuid,uuid)",
+        "writewise_internal.has_comment_work_history(uuid,uuid)",
+        "writewise_internal.has_comment_activity_history(uuid)",
+        "writewise_internal.comment_write_context(uuid,uuid,uuid)",
     ):
         assert db_value("select to_regprocedure($1) is null", signature)
+    for signature, caller, definer in (
+        ("public.read_submission_comment_thread(uuid,jsonb,integer)", True, False),
+        ("public.list_submission_comment_attempts(uuid,uuid,jsonb,integer)", True, False),
+        ("public.list_submission_comment_threads(uuid,uuid,jsonb,integer)", True, False),
+        ("writewise_internal.submission_comment_context(uuid)", True, True),
+        ("writewise_internal.submission_comment_candidates(uuid,uuid)", True, True),
+        ("public.post_submission_comment(uuid,uuid,text)", False, False),
+        ("public.set_submission_comment_lock(uuid,uuid,boolean)", False, False),
+        ("public.delete_private_comment(uuid,uuid)", False, False),
+    ):
+        assert (
+            db_value("select has_function_privilege('authenticated',$1,'execute')", signature)
+            == caller
+        )
+        assert not db_value("select has_function_privilege('anon',$1,'execute')", signature)
+        assert db_value("select has_function_privilege('service_role',$1,'execute')", signature)
+        assert db_value(
+            "select prosecdef=$2 and proconfig=array['search_path=\"\"']::text[] "
+            "and not exists(select 1 from aclexplode(proacl) x "
+            "where x.grantee=0 and x.privilege_type='EXECUTE') "
+            "from pg_proc where oid=$1::regprocedure",
+            signature,
+            definer,
+        )
+    for table in ("private_comment", "submission_comment_thread"):
+        assert db_value(
+            "select relrowsecurity from pg_class where oid=$1::regclass", f"public.{table}"
+        )
+        for operation in ("insert", "update", "delete"):
+            assert not db_value(
+                "select has_table_privilege('authenticated',$1,$2)", f"public.{table}", operation
+            )
+        assert db_value(
+            "select exists(select 1 from pg_constraint where conrelid=$1::regclass "
+            "and contype='f' and confdeltype='c')",
+            f"public.{table}",
+        )
+    assert db_value("select to_regclass('public.private_comment_feed') is not null")
+    assert db_value("select to_regclass('public.notification_comment_unread_uniq') is not null")
     first, other = manifest["families"]
     source_a, source_b = manifest["source_ids"]
     parent = parent_client(admin, first["parent"])
