@@ -497,7 +497,6 @@ export type Database = {
       }
       private_comment: {
         Row: {
-          activity_id: string
           author_id: string | null
           author_role: string
           body: string | null
@@ -505,10 +504,9 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           id: string
-          student_id: string
+          submission_id: string
         }
         Insert: {
-          activity_id: string
           author_id?: string | null
           author_role: string
           body?: string | null
@@ -516,10 +514,9 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: string
-          student_id: string
+          submission_id: string
         }
         Update: {
-          activity_id?: string
           author_id?: string | null
           author_role?: string
           body?: string | null
@@ -527,15 +524,15 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: string
-          student_id?: string
+          submission_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "private_comment_activity_id_student_id_fkey"
-            columns: ["activity_id", "student_id"]
+            foreignKeyName: "private_comment_submission_id_fkey"
+            columns: ["submission_id"]
             isOneToOne: false
-            referencedRelation: "student_work"
-            referencedColumns: ["activity_id", "student_id"]
+            referencedRelation: "submission_comment_thread"
+            referencedColumns: ["submission_id"]
           },
         ]
       }
@@ -648,8 +645,6 @@ export type Database = {
       student_work: {
         Row: {
           activity_id: string
-          comment_version: number
-          comments_locked: boolean
           due_at_override: string | null
           excused: boolean
           pinned_submission_id: string | null
@@ -658,8 +653,6 @@ export type Database = {
         }
         Insert: {
           activity_id: string
-          comment_version?: number
-          comments_locked?: boolean
           due_at_override?: string | null
           excused?: boolean
           pinned_submission_id?: string | null
@@ -668,8 +661,6 @@ export type Database = {
         }
         Update: {
           activity_id?: string
-          comment_version?: number
-          comments_locked?: boolean
           due_at_override?: string | null
           excused?: boolean
           pinned_submission_id?: string | null
@@ -868,6 +859,53 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "student"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      submission_comment_thread: {
+        Row: {
+          comment_version: number
+          comments_locked: boolean
+          submission_id: string
+        }
+        Insert: {
+          comment_version?: number
+          comments_locked?: boolean
+          submission_id: string
+        }
+        Update: {
+          comment_version?: number
+          comments_locked?: boolean
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submission_comment_thread_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "active_submission"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submission_comment_thread_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["active_submission_id"]
+          },
+          {
+            foreignKeyName: "submission_comment_thread_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["latest_submission_id"]
+          },
+          {
+            foreignKeyName: "submission_comment_thread_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "submission"
             referencedColumns: ["id"]
           },
         ]
@@ -1096,7 +1134,16 @@ export type Database = {
         Args: { target_student_id: string }
         Returns: boolean
       }
-      list_private_comment_threads: {
+      list_submission_comment_attempts: {
+        Args: {
+          before_cursor?: Json
+          page_size?: number
+          target_activity_id: string
+          target_student_id: string
+        }
+        Returns: Json
+      }
+      list_submission_comment_threads: {
         Args: {
           before_cursor?: Json
           page_size?: number
@@ -1128,12 +1175,11 @@ export type Database = {
         }
         Returns: Json
       }
-      post_private_comment: {
+      post_submission_comment: {
         Args: {
           actor_id: string
           comment_body: string
-          target_activity_id: string
-          target_student_id: string
+          target_submission_id: string
         }
         Returns: Json
       }
@@ -1145,17 +1191,16 @@ export type Database = {
         Args: { target_student_id: string }
         Returns: Json
       }
-      read_private_comment_thread: {
+      read_section_gradebook: {
+        Args: { target_section_id: string }
+        Returns: Json
+      }
+      read_submission_comment_thread: {
         Args: {
           before_cursor?: Json
           page_size?: number
-          target_activity_id: string
-          target_student_id: string
+          target_submission_id: string
         }
-        Returns: Json
-      }
-      read_section_gradebook: {
-        Args: { target_section_id: string }
         Returns: Json
       }
       record_student_submission: {
@@ -1184,12 +1229,11 @@ export type Database = {
         Args: { actor_id: string; payload: Json; target_submission_id: string }
         Returns: Json
       }
-      set_comment_thread_lock: {
+      set_submission_comment_lock: {
         Args: {
           actor_id: string
           locked: boolean
-          target_activity_id: string
-          target_student_id: string
+          target_submission_id: string
         }
         Returns: Json
       }

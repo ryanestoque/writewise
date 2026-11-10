@@ -59,8 +59,10 @@ def read_comment(client, row):
     return client.table("private_comment").select("id,body").eq("id", row["id"]).execute().data
 
 
-def test_only_owner_and_linked_parents_read_comment(family, assigned_activity, second_parent):
-    row = seed_comment(family, assigned_activity["id"])
+def test_only_owner_and_linked_parents_read_comment(
+    family, assigned_activity, second_parent, comment_submission
+):
+    row = seed_comment(family, comment_submission["id"])
     expected = [{"id": row["id"], "body": "Synthetic private message"}]
     assert read_comment(family["teacher_client"], row) == expected
     assert read_comment(family["parent_client"], row) == expected
@@ -69,8 +71,10 @@ def test_only_owner_and_linked_parents_read_comment(family, assigned_activity, s
     assert read_comment(family["other_teacher_client"], row) == []
 
 
-def test_another_roster_teacher_does_not_inherit_thread(family, assigned_activity):
-    row = seed_comment(family, assigned_activity["id"])
+def test_another_roster_teacher_does_not_inherit_thread(
+    family, assigned_activity, comment_submission
+):
+    row = seed_comment(family, comment_submission["id"])
     link = {"teacher_id": family["other_teacher"], "student_id": family["students"][0]}
     admin.table("teacher_student").insert(link).execute()
     try:
@@ -83,15 +87,14 @@ def test_another_roster_teacher_does_not_inherit_thread(family, assigned_activit
 
 @pytest.mark.parametrize("identity", ["teacher_client", "parent_client"])
 @pytest.mark.parametrize("operation", ["insert", "update", "delete"])
-def test_browser_cannot_write_comments(family, assigned_activity, identity, operation):
-    row = seed_comment(family, assigned_activity["id"])
+def test_browser_cannot_write_comments(family, comment_submission, identity, operation):
+    row = seed_comment(family, comment_submission["id"])
     table = family[identity].table("private_comment")
     with pytest.raises(APIError) as failure:
         if operation == "insert":
             table.insert(
                 {
-                    "activity_id": row["activity_id"],
-                    "student_id": row["student_id"],
+                    "submission_id": row["submission_id"],
                     "author_id": family["parent"],
                     "author_role": "parent",
                     "body": "Unauthorized browser write",
@@ -108,8 +111,10 @@ def test_browser_cannot_write_comments(family, assigned_activity, identity, oper
     ]
 
 
-def test_comment_only_history_keeps_activity_visible_after_unassignment(family, assigned_activity):
-    row = seed_comment(family, assigned_activity["id"])
+def test_source_history_keeps_activity_visible_after_unassignment(
+    family, assigned_activity, comment_submission
+):
+    row = seed_comment(family, comment_submission["id"])
     admin.rpc(
         "update_assigned_activity",
         {
@@ -122,23 +127,13 @@ def test_comment_only_history_keeps_activity_visible_after_unassignment(family, 
         "id", assigned_activity["id"]
     ).execute().data == [{"id": assigned_activity["id"]}]
     assert read_comment(family["parent_client"], row)[0]["id"] == row["id"]
-    assert (
-        family["parent_client"]
-        .table("private_comment")
-        .select("id")
-        .eq("activity_id", assigned_activity["id"])
-        .eq("student_id", family["students"][1])
-        .execute()
-        .data
-        == []
-    )
 
 
 def test_revoked_parent_link_removes_existing_comment_access(
-    family, assigned_activity, second_parent
+    family, assigned_activity, second_parent, comment_submission
 ):
-    row = seed_comment(family, assigned_activity["id"])
-    parent, student = second_parent["id"], family["students"][0]
+    row = seed_comment(family, comment_submission["id"])
+    parent, student = (second_parent["id"], family["students"][0])
     admin.table("student_parent").delete().eq("parent_id", parent).eq(
         "student_id", student
     ).execute()
@@ -149,16 +144,18 @@ def test_revoked_parent_link_removes_existing_comment_access(
     assert read_comment(second_parent["client"], row)[0]["id"] == row["id"]
 
 
-def test_archiving_keeps_comment_history_readable(family, assigned_activity):
-    row = seed_comment(family, assigned_activity["id"])
+def test_archiving_keeps_comment_history_readable(family, assigned_activity, comment_submission):
+    row = seed_comment(family, comment_submission["id"])
     admin.table("activity").update({"is_archived": True}).eq(
         "id", assigned_activity["id"]
     ).execute()
     assert read_comment(family["parent_client"], row)[0]["id"] == row["id"]
 
 
-def test_parent_can_read_deleted_placeholder_without_old_body(family, assigned_activity):
-    row = seed_comment(family, assigned_activity["id"])
+def test_parent_can_read_deleted_placeholder_without_old_body(
+    family, assigned_activity, comment_submission
+):
+    row = seed_comment(family, comment_submission["id"])
     admin.table("private_comment").update(
         {"body": None, "deleted_at": datetime.now(timezone.utc).isoformat()}
     ).eq("id", row["id"]).execute()
@@ -177,48 +174,39 @@ def test_parent_can_read_deleted_placeholder_without_old_body(family, assigned_a
         {"author_role": "student"},
     ],
 )
-def test_storage_rejects_invalid_live_or_deleted_shape(family, assigned_activity, changes):
-    row = seed_comment(family, assigned_activity["id"])
+def test_storage_rejects_invalid_live_or_deleted_shape(
+    family, assigned_activity, changes, comment_submission
+):
+    row = seed_comment(family, comment_submission["id"])
     with pytest.raises(APIError) as failure:
         admin.table("private_comment").update(changes).eq("id", row["id"]).execute()
     assert failure.value.code == "23514"
     assert read_comment(family["parent_client"], row)[0]["body"] == "Synthetic private message"
 
 
-def test_versions_do_not_reuse_numbers_or_reset_existing_work(family, assigned_activity):
-    first = seed_comment(family, assigned_activity["id"])
-    admin.table("student_work").update({"comments_locked": True}).eq(
-        "activity_id", assigned_activity["id"]
-    ).eq("student_id", family["students"][0]).execute()
-    second = seed_comment(family, assigned_activity["id"], body="Second synthetic message")
-    assert first["comment_version"] == 1 and second["comment_version"] == 2
-    state = (
-        admin.table("student_work")
-        .select("comments_locked,comment_version")
-        .eq("activity_id", assigned_activity["id"])
-        .eq("student_id", family["students"][0])
-        .single()
-        .execute()
-        .data
-    )
-    assert state == {"comments_locked": True, "comment_version": 2}
+def test_versions_do_not_reuse_numbers_or_reset_thread_lock(family, comment_submission):
+    source = comment_submission["id"]
+    first = seed_comment(family, source)
+    admin.table("submission_comment_thread").update({"comments_locked": True}).eq(
+        "submission_id", source
+    ).execute()
+    second = seed_comment(family, source, body="Second synthetic message")
+    assert [first["comment_version"], second["comment_version"]] == [1, 2]
+    assert admin.table("submission_comment_thread").select("comments_locked,comment_version").eq(
+        "submission_id", source
+    ).single().execute().data == {"comments_locked": True, "comment_version": 2}
     duplicate = {
         key: second[key]
-        for key in (
-            "activity_id",
-            "student_id",
-            "author_id",
-            "author_role",
-            "body",
-            "comment_version",
-        )
+        for key in ("submission_id", "author_id", "author_role", "body", "comment_version")
     }
     with pytest.raises(APIError) as failure:
         admin.table("private_comment").insert(duplicate).execute()
     assert failure.value.code == "23505"
 
 
-def test_removing_author_account_keeps_comment_but_not_author_reference(family, assigned_activity):
+def test_removing_author_account_keeps_comment_but_not_author_reference(
+    family, assigned_activity, comment_submission
+):
     tag = uuid4().hex
     user = admin.auth.admin.create_user(
         {
@@ -233,7 +221,7 @@ def test_removing_author_account_keeps_comment_but_not_author_reference(family, 
         admin.table("student_parent").insert(
             {"parent_id": user.id, "student_id": family["students"][0]}
         ).execute()
-        row = seed_comment(family, assigned_activity["id"], actor_id=user.id)
+        row = seed_comment(family, comment_submission["id"], actor_id=user.id)
         admin.auth.admin.delete_user(user.id)
         deleted = True
         retained = (
@@ -255,65 +243,46 @@ def test_removing_author_account_keeps_comment_but_not_author_reference(family, 
             admin.auth.admin.delete_user(user.id)
 
 
-def test_deleting_activity_cascades_comment_rows(family, assigned_activity):
-    row = seed_comment(family, assigned_activity["id"])
-    admin.table("activity").delete().eq("id", assigned_activity["id"]).execute()
+def test_deleting_submission_cascades_comment_rows(family, comment_submission):
+    row = seed_comment(family, comment_submission["id"])
+    admin.table("submission").delete().eq("id", comment_submission["id"]).execute()
     assert admin.table("private_comment").select("id").eq("id", row["id"]).execute().data == []
-
-
-def test_deleting_a_comment_only_student_cascades_work_and_comments(family, assigned_activity):
-    student = (
-        admin.table("student")
-        .insert(
-            {
-                "full_name": "Synthetic Comment Child",
-                "section": "Synthetic",
-                "section_id": family["sections"][0],
-            }
-        )
+    assert (
+        admin.table("submission_comment_thread")
+        .select("submission_id")
+        .eq("submission_id", comment_submission["id"])
         .execute()
-        .data[0]["id"]
+        .data
+        == []
     )
-    try:
-        admin.table("teacher_student").insert(
-            {"teacher_id": family["teacher"], "student_id": student}
-        ).execute()
-        row = seed_comment(family, assigned_activity["id"], student_id=student)
-        admin.table("student").delete().eq("id", student).execute()
-        assert admin.table("private_comment").select("id").eq("id", row["id"]).execute().data == []
+
+
+def test_missing_submission_cannot_anchor_a_thread():
+    with pytest.raises(APIError) as failure:
+        admin.table("submission_comment_thread").insert({"submission_id": str(uuid4())}).execute()
+    assert failure.value.code == "23503"
+
+
+def test_comment_tables_and_context_have_scoped_grants():
+    for table in ("private_comment", "submission_comment_thread"):
         assert (
-            admin.table("student_work")
-            .select("activity_id")
-            .eq("student_id", student)
-            .execute()
-            .data
-            == []
+            db_value(
+                "select relrowsecurity from pg_class where oid=$1::regclass", f"public.{table}"
+            )
+            is True
         )
-    finally:
-        admin.table("student").delete().eq("id", student).execute()
-
-
-def test_comment_table_and_history_helpers_have_scoped_grants():
-    assert (
-        db_value("select relrowsecurity from pg_class where oid='public.private_comment'::regclass")
-        is True
-    )
-    assert db_value("select has_table_privilege('anon','public.private_comment','select')") is False
-    assert (
-        db_value("select has_table_privilege('authenticated','public.private_comment','insert')")
-        is False
-    )
-    assert (
-        db_value(
-            "select has_function_privilege('authenticated',"
-            "'writewise_internal.has_comment_work_history(uuid,uuid)','execute')"
+        assert (
+            db_value("select has_table_privilege('anon',$1,'select')", f"public.{table}") is False
         )
-        is True
-    )
-    assert (
-        db_value(
-            "select has_function_privilege('anon',"
-            "'writewise_internal.has_comment_work_history(uuid,uuid)','execute')"
-        )
-        is False
-    )
+        for operation in ("insert", "update", "delete"):
+            assert (
+                db_value(
+                    "select has_table_privilege('authenticated',$1,$2)",
+                    f"public.{table}",
+                    operation,
+                )
+                is False
+            )
+    helper = "writewise_internal.submission_comment_context(uuid)"
+    assert db_value("select has_function_privilege('authenticated',$1,'execute')", helper) is True
+    assert db_value("select has_function_privilege('anon',$1,'execute')", helper) is False

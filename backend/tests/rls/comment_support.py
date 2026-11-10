@@ -3,14 +3,13 @@
 from app.core.supabase import supabase_client as admin
 
 
-def post_comment(actor_id, activity_id, student_id, body="Synthetic reply"):
+def post_comment(actor_id, submission_id, body="Synthetic reply"):
     return (
         admin.rpc(
-            "post_private_comment",
+            "post_submission_comment",
             {
                 "actor_id": actor_id,
-                "target_activity_id": activity_id,
-                "target_student_id": student_id,
+                "target_submission_id": submission_id,
                 "comment_body": body,
             },
         )
@@ -21,31 +20,28 @@ def post_comment(actor_id, activity_id, student_id, body="Synthetic reply"):
 
 def seed_comment(
     family,
-    activity_id,
+    submission_id,
     *,
     actor_id=None,
     body="Synthetic private message",
-    student_id=None,
 ):
-    student_id = student_id or family["students"][0]
     actor_id = actor_id or family["teacher"]
-    pair = {"activity_id": activity_id, "student_id": student_id}
+    source = {"submission_id": submission_id}
     work = (
-        admin.table("student_work")
+        admin.table("submission_comment_thread")
         .select("comment_version")
-        .eq("activity_id", activity_id)
-        .eq("student_id", student_id)
+        .eq("submission_id", submission_id)
         .execute()
         .data
     )
     if not work:
-        admin.table("student_work").insert(pair).execute()
+        admin.table("submission_comment_thread").insert(source).execute()
     version = (work[0]["comment_version"] if work else 0) + 1
     row = (
         admin.table("private_comment")
         .insert(
             {
-                **pair,
+                **source,
                 "author_id": actor_id,
                 "author_role": "teacher" if actor_id == family["teacher"] else "parent",
                 "body": body,
@@ -55,7 +51,7 @@ def seed_comment(
         .execute()
         .data[0]
     )
-    admin.table("student_work").update({"comment_version": version}).eq(
-        "activity_id", activity_id
-    ).eq("student_id", student_id).execute()
+    admin.table("submission_comment_thread").update({"comment_version": version}).eq(
+        "submission_id", submission_id
+    ).execute()
     return row

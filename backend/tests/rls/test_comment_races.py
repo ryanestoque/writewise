@@ -13,11 +13,11 @@ from tests.rls.comment_support import post_comment, seed_comment
 from tests.rls.notification_support import wait_for_database_lock
 
 
-def notice_for(family, activity):
+def notice_for(family, submission_id):
     return (
         admin.table("notification")
         .select("id,comment_version,read_at")
-        .eq("activity_id", activity)
+        .eq("submission_id", submission_id)
         .eq("recipient_id", family["parent"])
         .eq("type", "comment_posted")
         .is_("read_at", "null")
@@ -42,9 +42,11 @@ def mark(family, notice, version):
     )
 
 
-def test_version_guard_is_required_even_for_seeded_comment_notice(family, assigned_activity):
+def test_version_guard_is_required_even_for_seeded_comment_notice(
+    family, assigned_activity, comment_submission
+):
     activity = assigned_activity["id"]
-    comment = seed_comment(family, activity)
+    comment = seed_comment(family, comment_submission["id"])
     notice = (
         admin.table("notification")
         .insert(
@@ -55,6 +57,7 @@ def test_version_guard_is_required_even_for_seeded_comment_notice(family, assign
                 "student_id": family["students"][0],
                 "dedupe_key": "comment:seed:" + comment["id"],
                 "comment_version": 1,
+                "submission_id": comment_submission["id"],
             }
         )
         .execute()
@@ -63,30 +66,29 @@ def test_version_guard_is_required_even_for_seeded_comment_notice(family, assign
     with pytest.raises(APIError) as failure:
         admin.rpc(
             "mark_notification_read",
-            {
-                "actor_id": family["parent"],
-                "target_notification_id": notice["id"],
-            },
+            {"actor_id": family["parent"], "target_notification_id": notice["id"]},
         ).execute()
     assert failure.value.code == "WW422"
     first = mark(family, notice["id"], 1)
     assert mark(family, notice["id"], 1) == first
 
 
-def test_stale_read_cannot_clear_coalesced_newer_comment(family, assigned_activity):
-    activity, student = assigned_activity["id"], family["students"][0]
-    post_comment(family["teacher"], activity, student)
-    old = notice_for(family, activity)
-    post_comment(family["teacher"], activity, student)
+def test_stale_read_cannot_clear_coalesced_newer_comment(
+    family, assigned_activity, comment_submission
+):
+    _activity, _student = (assigned_activity["id"], family["students"][0])
+    post_comment(family["teacher"], comment_submission["id"])
+    old = notice_for(family, comment_submission["id"])
+    post_comment(family["teacher"], comment_submission["id"])
     with pytest.raises(APIError) as failure:
         mark(family, old["id"], old["comment_version"])
     assert failure.value.code == "WW442"
-    current = notice_for(family, activity)
+    current = notice_for(family, comment_submission["id"])
     assert current["id"] == old["id"] and current["comment_version"] == 2
     first = mark(family, old["id"], 2)
     assert mark(family, old["id"], 2) == first
-    post_comment(family["teacher"], activity, student)
-    assert notice_for(family, activity)["id"] != old["id"]
+    post_comment(family["teacher"], comment_submission["id"])
+    assert notice_for(family, comment_submission["id"])["id"] != old["id"]
 
 
 async def connections():
@@ -102,23 +104,23 @@ async def connections():
     await owner.execute(
         "select set_config('request.jwt.claims',$1,false)", json.dumps({"role": "service_role"})
     )
-    return owner, waiter
+    return (owner, waiter)
 
 
 async def finish(owner, waiter, task):
-    if task and not task.done():
+    if task and (not task.done()):
         task.cancel()
         await asyncio.gather(task, return_exceptions=True)
     await owner.close()
     await waiter.close()
 
 
-def test_all_read_snapshot_does_not_swallow_a_waiting_coalesced_version(family, assigned_activity):
-    activity, student = assigned_activity["id"], family["students"][0]
-    # Assignment creation legitimately has an ordinary unread notice. Isolate the
-    # coalesced-comment count without weakening the unread-version assertion.
+def test_all_read_snapshot_does_not_swallow_a_waiting_coalesced_version(
+    family, assigned_activity, comment_submission
+):
+    activity, _student = (assigned_activity["id"], family["students"][0])
     admin.rpc("mark_all_notifications_read", {"actor_id": family["parent"]}).execute()
-    post_comment(family["teacher"], activity, student)
+    post_comment(family["teacher"], comment_submission["id"])
 
     async def race():
         owner, waiter = await connections()
@@ -129,10 +131,9 @@ def test_all_read_snapshot_does_not_swallow_a_waiting_coalesced_version(family, 
                     "select id from public.activity where id=$1::uuid for update", activity
                 )
                 await owner.fetchval(
-                    "select public.post_private_comment($1::uuid,$2::uuid,$3::uuid,$4)",
+                    "select public.post_submission_comment($1::uuid,$2::uuid,$3)",
                     family["teacher"],
-                    activity,
-                    student,
+                    comment_submission["id"],
                     "Synthetic concurrent reply",
                 )
                 task = asyncio.create_task(
@@ -147,7 +148,7 @@ def test_all_read_snapshot_does_not_swallow_a_waiting_coalesced_version(family, 
 
     result = asyncio.run(race())
     assert result["updated_count"] == 0
-    assert notice_for(family, activity)["comment_version"] == 2
+    assert notice_for(family, comment_submission["id"])["comment_version"] == 2
 
 
 @pytest.mark.parametrize(
@@ -162,11 +163,10 @@ def test_all_read_snapshot_does_not_swallow_a_waiting_coalesced_version(family, 
     ],
 )
 def test_post_observes_changes_committed_while_waiting_for_activity(
-    family, assigned_activity, change, code
+    family, assigned_activity, change, code, comment_submission
 ):
-    activity, student = assigned_activity["id"], family["students"][0]
-    # Existing history makes assignment removal readable, but never writable.
-    seed_comment(family, activity)
+    activity, student = (assigned_activity["id"], family["students"][0])
+    seed_comment(family, comment_submission["id"])
 
     async def race():
         owner, waiter = await connections()
@@ -178,20 +178,18 @@ def test_post_observes_changes_committed_while_waiting_for_activity(
                 )
                 task = asyncio.create_task(
                     waiter.fetchval(
-                        "select public.post_private_comment($1::uuid,$2::uuid,$3::uuid,$4)",
+                        "select public.post_submission_comment($1::uuid,$2::uuid,$3)",
                         family["parent"],
-                        activity,
-                        student,
+                        comment_submission["id"],
                         "Synthetic blocked reply",
                     )
                 )
                 await wait_for_database_lock(owner, waiter.get_server_pid())
                 if change == "lock":
                     await owner.execute(
-                        "update public.student_work set comments_locked=true "
-                        "where activity_id=$1::uuid and student_id=$2::uuid",
-                        activity,
-                        student,
+                        "update public.submission_comment_thread set comments_locked=true "
+                        "where submission_id=$1::uuid",
+                        comment_submission["id"],
                     )
                 elif change == "archive":
                     await owner.execute(
@@ -245,8 +243,10 @@ def test_post_observes_changes_committed_while_waiting_for_activity(
             ).execute()
 
 
-def test_simultaneous_posts_get_distinct_monotonic_versions(family, assigned_activity):
-    activity, student = assigned_activity["id"], family["students"][0]
+def test_simultaneous_posts_get_distinct_monotonic_versions(
+    family, assigned_activity, comment_submission
+):
+    _activity, _student = (assigned_activity["id"], family["students"][0])
 
     async def race():
         owner, waiter = await connections()
@@ -254,10 +254,9 @@ def test_simultaneous_posts_get_distinct_monotonic_versions(family, assigned_act
             results = await asyncio.gather(
                 *[
                     connection.fetchval(
-                        "select public.post_private_comment($1::uuid,$2::uuid,$3::uuid,$4)",
+                        "select public.post_submission_comment($1::uuid,$2::uuid,$3)",
                         family["teacher"],
-                        activity,
-                        student,
+                        comment_submission["id"],
                         "Synthetic parallel reply",
                     )
                     for connection in (owner, waiter)
@@ -268,13 +267,13 @@ def test_simultaneous_posts_get_distinct_monotonic_versions(family, assigned_act
             await finish(owner, waiter, None)
 
     assert sorted(asyncio.run(race())) == [1, 2]
-    assert notice_for(family, activity)["comment_version"] == 2
+    assert notice_for(family, comment_submission["id"])["comment_version"] == 2
 
 
 def test_teacher_post_excludes_parent_unlinked_before_its_gate(
-    family, assigned_activity, second_parent
+    family, assigned_activity, second_parent, comment_submission
 ):
-    activity, student = assigned_activity["id"], family["students"][0]
+    activity, student = (assigned_activity["id"], family["students"][0])
 
     async def race():
         owner, waiter = await connections()
@@ -286,10 +285,9 @@ def test_teacher_post_excludes_parent_unlinked_before_its_gate(
                 )
                 task = asyncio.create_task(
                     waiter.fetchval(
-                        "select public.post_private_comment($1::uuid,$2::uuid,$3::uuid,$4)",
+                        "select public.post_submission_comment($1::uuid,$2::uuid,$3)",
                         family["teacher"],
-                        activity,
-                        student,
+                        comment_submission["id"],
                         "Synthetic recipient snapshot",
                     )
                 )
@@ -317,20 +315,17 @@ def test_teacher_post_excludes_parent_unlinked_before_its_gate(
         assert rows == [{"recipient_id": second_parent["id"]}]
     finally:
         admin.table("student_parent").upsert(
-            {
-                "parent_id": family["parent"],
-                "student_id": student,
-            }
+            {"parent_id": family["parent"], "student_id": student}
         ).execute()
 
 
 @pytest.mark.parametrize("first", ["post", "read"])
 def test_single_read_and_coalescing_preserve_unread_in_both_observed_lock_orders(
-    family, assigned_activity, first
+    family, assigned_activity, first, comment_submission
 ):
-    activity, student = assigned_activity["id"], family["students"][0]
-    post_comment(family["teacher"], activity, student)
-    old = notice_for(family, activity)
+    _activity, _student = (assigned_activity["id"], family["students"][0])
+    post_comment(family["teacher"], comment_submission["id"])
+    old = notice_for(family, comment_submission["id"])
 
     async def race():
         owner, waiter = await connections()
@@ -339,10 +334,9 @@ def test_single_read_and_coalescing_preserve_unread_in_both_observed_lock_orders
             async with owner.transaction():
                 if first == "post":
                     await owner.fetchval(
-                        "select public.post_private_comment($1::uuid,$2::uuid,$3::uuid,$4)",
+                        "select public.post_submission_comment($1::uuid,$2::uuid,$3)",
                         family["teacher"],
-                        activity,
-                        student,
+                        comment_submission["id"],
                         "Synthetic held post",
                     )
                     task = asyncio.create_task(
@@ -360,10 +354,9 @@ def test_single_read_and_coalescing_preserve_unread_in_both_observed_lock_orders
                     )
                     task = asyncio.create_task(
                         waiter.fetchval(
-                            "select public.post_private_comment($1::uuid,$2::uuid,$3::uuid,$4)",
+                            "select public.post_submission_comment($1::uuid,$2::uuid,$3)",
                             family["teacher"],
-                            activity,
-                            student,
+                            comment_submission["id"],
                             "Synthetic waiting post",
                         )
                     )
@@ -378,6 +371,67 @@ def test_single_read_and_coalescing_preserve_unread_in_both_observed_lock_orders
             await finish(owner, waiter, task)
 
     asyncio.run(race())
-    current = notice_for(family, activity)
+    current = notice_for(family, comment_submission["id"])
     assert current["comment_version"] == 2 and current["read_at"] is None
     assert (current["id"] == old["id"]) is (first == "post")
+
+
+@pytest.mark.parametrize("first", ["post", "delete"])
+def test_source_deletion_and_post_serialize_without_orphan_conversations(
+    family, comment_submission, peer_comment_submission, first
+):
+    source = comment_submission["id"]
+    peer = post_comment(family["teacher"], peer_comment_submission["id"])
+
+    async def race():
+        owner, waiter = await connections()
+        task = None
+        try:
+            async with owner.transaction():
+                if first == "post":
+                    await owner.fetchval(
+                        "select public.post_submission_comment($1::uuid,$2::uuid,$3)",
+                        family["teacher"],
+                        source,
+                        "Synthetic post before deletion",
+                    )
+                    task = asyncio.create_task(
+                        waiter.fetchval(
+                            "select public.delete_student_submissions($1::uuid,$2::uuid[])",
+                            family["teacher"],
+                            [source],
+                        )
+                    )
+                else:
+                    await owner.fetchval(
+                        "select public.delete_student_submissions($1::uuid,$2::uuid[])",
+                        family["teacher"],
+                        [source],
+                    )
+                    task = asyncio.create_task(
+                        waiter.fetchval(
+                            "select public.post_submission_comment($1::uuid,$2::uuid,$3)",
+                            family["teacher"],
+                            source,
+                            "Synthetic post after deletion",
+                        )
+                    )
+                await wait_for_database_lock(owner, waiter.get_server_pid())
+            if first == "post":
+                assert json.loads(await task)["deleted_ids"] == [source]
+            else:
+                with pytest.raises(asyncpg.PostgresError) as failure:
+                    await task
+                assert failure.value.sqlstate == "WW404"
+        finally:
+            await finish(owner, waiter, task)
+
+    asyncio.run(race())
+    for table in ("private_comment", "submission_comment_thread", "notification"):
+        assert (
+            admin.table(table).select("submission_id").eq("submission_id", source).execute().data
+            == []
+        )
+    assert admin.table("private_comment").select("id").eq("id", peer["id"]).execute().data == [
+        {"id": peer["id"]}
+    ]

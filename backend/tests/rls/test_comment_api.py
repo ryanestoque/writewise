@@ -18,14 +18,14 @@ def authorization(client):
     return {"Authorization": "Bearer " + client.auth.get_session().access_token}
 
 
-def comment_path(activity, student):
-    return f"/api/activities/{activity}/students/{student}/comments"
+def comment_path(submission_id):
+    return f"/api/submissions/{submission_id}/comments"
 
 
 def test_parent_post_is_shared_with_owner_and_other_linked_parent(
-    real_comment_api, family, assigned_activity, second_parent
+    real_comment_api, family, assigned_activity, second_parent, comment_submission
 ):
-    path = comment_path(assigned_activity["id"], family["students"][0])
+    path = comment_path(comment_submission["id"])
     response = real_comment_api.post(
         path,
         headers=authorization(family["parent_client"]),
@@ -51,9 +51,9 @@ def test_parent_post_is_shared_with_owner_and_other_linked_parent(
 
 @pytest.mark.parametrize("identity", ["other_teacher_client", "other_parent_client"])
 def test_foreign_jwt_cannot_post_to_a_child_work_pair(
-    real_comment_api, family, assigned_activity, identity
+    real_comment_api, family, assigned_activity, identity, comment_submission
 ):
-    path = comment_path(assigned_activity["id"], family["students"][0])
+    path = comment_path(comment_submission["id"])
     response = real_comment_api.post(
         path, headers=authorization(family[identity]), json={"body": "Synthetic unauthorized text"}
     )
@@ -62,10 +62,13 @@ def test_foreign_jwt_cannot_post_to_a_child_work_pair(
 
 
 def test_owner_lock_is_enforced_for_parent_and_author_can_delete_while_locked(
-    real_comment_api, family, assigned_activity
+    real_comment_api, family, assigned_activity, comment_submission
 ):
-    path = comment_path(assigned_activity["id"], family["students"][0])
-    parent, owner = authorization(family["parent_client"]), authorization(family["teacher_client"])
+    path = comment_path(comment_submission["id"])
+    parent, owner = (
+        authorization(family["parent_client"]),
+        authorization(family["teacher_client"]),
+    )
     posted = real_comment_api.post(path, headers=parent, json={"body": "Synthetic author text"})
     assert posted.status_code == 201, posted.text
     denied_lock = real_comment_api.put(path + "/lock", headers=parent, json={"locked": True})
@@ -93,29 +96,25 @@ def test_owner_lock_is_enforced_for_parent_and_author_can_delete_while_locked(
 
 
 def test_missing_authentication_cannot_reach_comment_writes(
-    real_comment_api, family, assigned_activity
+    real_comment_api, family, assigned_activity, comment_submission
 ):
     response = real_comment_api.post(
-        comment_path(assigned_activity["id"], family["students"][0]),
-        json={"body": "Synthetic text"},
+        comment_path(comment_submission["id"]), json={"body": "Synthetic text"}
     )
     assert response.status_code == 401 and response.json()["error"]["code"] == "UNAUTHORIZED"
 
 
 def test_private_comment_text_is_absent_from_real_gradebook_csv_and_logs(
-    real_comment_api, family, assigned_activity, caplog
+    real_comment_api, family, assigned_activity, caplog, comment_submission
 ):
     sentinel = "SYNTHETIC_PRIVATE_COMMENT_EXPORT_SENTINEL"
     headers = authorization(family["teacher_client"])
     posted = real_comment_api.post(
-        comment_path(assigned_activity["id"], family["students"][0]),
-        headers=headers,
-        json={"body": sentinel},
+        comment_path(comment_submission["id"]), headers=headers, json={"body": sentinel}
     )
     assert posted.status_code == 201
     exported = real_comment_api.get(
-        f"/api/sections/{family['sections'][0]}/gradebook.csv",
-        headers=headers,
+        f"/api/sections/{family['sections'][0]}/gradebook.csv", headers=headers
     )
     assert exported.status_code == 200, exported.text
     assert "text/csv" in exported.headers["content-type"]

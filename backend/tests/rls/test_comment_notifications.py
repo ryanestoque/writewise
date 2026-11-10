@@ -22,9 +22,9 @@ def notices(activity):
 
 
 def test_posts_notify_all_other_participants_without_bodies_or_email(
-    family, assigned_activity, second_parent
+    family, assigned_activity, second_parent, comment_submission
 ):
-    activity, student = assigned_activity["id"], family["students"][0]
+    activity, _student = (assigned_activity["id"], family["students"][0])
     sentinel = "SYNTHETIC_PRIVATE_NOTICE_TEXT"
     before_outbox = db_value(
         "select count(*) from public.email_outbox o join public.notification n "
@@ -32,12 +32,12 @@ def test_posts_notify_all_other_participants_without_bodies_or_email(
         activity,
     )
     for _ in range(3):
-        post_comment(family["teacher"], activity, student, sentinel)
+        post_comment(family["teacher"], comment_submission["id"], sentinel)
     rows = notices(activity)
     assert {row["recipient_id"] for row in rows} == {family["parent"], second_parent["id"]}
     assert len(rows) == 2
-    assert all(row["comment_version"] == 3 and row["read_at"] is None for row in rows)
-    assert all(row["submission_id"] is None for row in rows)
+    assert all((row["comment_version"] == 3 and row["read_at"] is None for row in rows))
+    assert all((row["submission_id"] == comment_submission["id"] for row in rows))
     assert sentinel not in str(rows)
     assert (
         db_value(
@@ -57,10 +57,12 @@ def test_posts_notify_all_other_participants_without_bodies_or_email(
     )
 
 
-def test_parent_reply_does_not_acknowledge_or_advance_own_unread_notice(family, assigned_activity):
-    activity, student = assigned_activity["id"], family["students"][0]
-    post_comment(family["teacher"], activity, student)
-    post_comment(family["parent"], activity, student)
+def test_parent_reply_does_not_acknowledge_or_advance_own_unread_notice(
+    family, assigned_activity, comment_submission
+):
+    activity, _student = (assigned_activity["id"], family["students"][0])
+    post_comment(family["teacher"], comment_submission["id"])
+    post_comment(family["parent"], comment_submission["id"])
     rows = {row["recipient_id"]: row for row in notices(activity)}
     assert rows[family["parent"]]["comment_version"] == 1
     assert rows[family["parent"]]["read_at"] is None
@@ -71,9 +73,9 @@ def test_parent_reply_does_not_acknowledge_or_advance_own_unread_notice(family, 
     "target", ["public.notification", "writewise_internal.notification_delivery"]
 )
 def test_notice_or_receipt_failure_rolls_back_comment_counter_and_work(
-    family, assigned_activity, target
+    family, assigned_activity, target, comment_submission
 ):
-    activity, student = assigned_activity["id"], family["students"][0]
+    activity, _student = (assigned_activity["id"], family["students"][0])
     name = "comment_fault_" + uuid4().hex
     function = "writewise_internal." + name
     db_value(
@@ -89,12 +91,12 @@ def test_notice_or_receipt_failure_rolls_back_comment_counter_and_work(
         )
         try:
             with pytest.raises(APIError) as failure:
-                post_comment(family["teacher"], activity, student)
+                post_comment(family["teacher"], comment_submission["id"])
             assert failure.value.code == "P0001"
             assert (
                 admin.table("private_comment")
                 .select("id")
-                .eq("activity_id", activity)
+                .eq("submission_id", comment_submission["id"])
                 .execute()
                 .data
                 == []
