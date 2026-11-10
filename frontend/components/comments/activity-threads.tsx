@@ -28,7 +28,7 @@ export function ActivityThreads({
             Try again
           </Button>
         </div>
-      ) : query.isPending ? (
+      ) : !query.data ? (
         <p role="status" className="text-muted-foreground text-sm">
           Loading conversations…
         </p>

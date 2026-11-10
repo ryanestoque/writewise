@@ -151,6 +151,11 @@ def schema():
     assert db_value("select to_regclass('public.private_comment')") is not None
     assert db_value("select to_regclass('public.submission_comment_thread')") is not None
     assert db_value(
+        "select exists(select 1 from information_schema.columns "
+        "where table_schema='public' and table_name='private_comment' "
+        "and column_name='submission_id' and is_nullable='NO')"
+    )
+    assert db_value(
         "select exists(select 1 from pg_enum e join pg_type t on t.oid=e.enumtypid "
         "where t.typname='notification_type' and e.enumlabel='comment_posted')"
     )

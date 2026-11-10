@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { invalidateNotifications } from "@/lib/hooks/use-notifications";
+import { notificationKeys } from "@/lib/notifications/query-keys";
 import type { CommentThread } from "./types";
 
 export async function clearDeletedSubmissionComments(client: QueryClient, submissionIds: readonly string[]): Promise<void> {
@@ -15,6 +15,6 @@ export async function clearDeletedSubmissionComments(client: QueryClient, submis
   })) client.getMutationCache().remove(mutation);
   await Promise.all([
     client.invalidateQueries({ predicate: query => query.queryKey[0] === "comments" && query.queryKey[2] !== "thread" }),
-    invalidateNotifications(client),
+    client.invalidateQueries({ queryKey: notificationKeys.root }),
   ]);
 }

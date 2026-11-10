@@ -235,6 +235,37 @@ def test_storage_failure_does_not_remove_submission_comments(
     ).execute().data == [{"id": posted.json()["id"]}]
 
 
+def test_bulk_delete_removes_only_returned_source_threads(
+    real_comment_api, family, comment_submission, peer_comment_submission
+):
+    source = comment_submission["id"]
+    peer = peer_comment_submission["id"]
+    headers = authorization(family["teacher_client"])
+    for target in (source, peer):
+        assert (
+            real_comment_api.post(
+                comment_path(target), headers=headers, json={"body": "Synthetic bulk source reply"}
+            ).status_code
+            == 201
+        )
+    result = real_comment_api.post(
+        "/api/submissions/batch-delete",
+        headers=headers,
+        json={"submission_ids": [source, str(uuid4())]},
+    )
+    assert result.status_code == 200
+    assert result.json() == {"deleted_count": 1, "deleted_ids": [source]}
+    for table in ("submission_comment_thread", "private_comment", "notification"):
+        assert (
+            admin.table(table).select("submission_id").eq("submission_id", source).execute().data
+            == []
+        )
+    assert (
+        len(admin.table("private_comment").select("id").eq("submission_id", peer).execute().data)
+        == 1
+    )
+
+
 def test_database_delete_failure_keeps_submission_comments(
     real_comment_api, family, comment_submission
 ):

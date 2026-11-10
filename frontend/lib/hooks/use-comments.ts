@@ -225,7 +225,7 @@ export function useCommentActions(userId: string, target: ThreadTarget) {
 
 export function useCommentSummaries(userId: string, scope: ThreadScope, open: boolean) {
   const active = useActiveCommentAccount(userId);
-  return useQuery({
+  const query = useQuery({
     queryKey: commentKeys.summaries(userId, scope),
     queryFn: ({ signal }) => {
       const requestSignal = accountRequestSignal(userId, signal);
@@ -250,11 +250,12 @@ export function useCommentSummaries(userId: string, scope: ThreadScope, open: bo
     refetchInterval: 60_000,
     refetchOnWindowFocus: "always",
   });
+  return { ...query, data: active && !query.isError ? query.data : undefined };
 }
 
 export function useUnreadCommentThreads(userId: string, enabled = true) {
   const active = useActiveCommentAccount(userId);
-  return useQuery({
+  const query = useQuery({
     queryKey: commentKeys.unread(userId),
     queryFn: ({ signal }) => {
       const requestSignal = accountRequestSignal(userId, signal);
@@ -268,6 +269,7 @@ export function useUnreadCommentThreads(userId: string, enabled = true) {
     refetchInterval: 60_000,
     refetchOnWindowFocus: "always",
   });
+  return { ...query, data: active && !query.isError ? query.data : undefined };
 }
 
 export function useCommentAttempts(userId: string, scope: WorkCommentScope, open: boolean) {

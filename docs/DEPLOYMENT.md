@@ -2,11 +2,14 @@
 
 ## Phase 3 Slice 6 rollout
 
-Apply the five private-comment migrations in version order, with `20261109122558` (enum) committed before any later migration uses `comment_posted`. Do not combine the enum addition and its use into one transaction. Storage/read/write/receipt migrations follow; regenerate and compare actual database and API contracts in the same delivery. Validate all six upgrade proofs, full tests and security/network gates on the exact paired head first.
+Preserve the five historical comment migrations, including the separate enum addition, then apply 20261110122835, 20261110123032 and 20261110123214 in order. Never combine an enum addition and first use in one transaction. Each cutover file uses its own explicit transaction. Regenerate/compare actual API/database types and pass all seven upgrade proofs, full tests, network guard and security advisors on the paired source first.
 
-The schema is additive for existing activity/work/notice rows: unlocked threads, zero counters, null old-notice versions and no message backfill. Roll out compatible backend read/write semantics before exposing the new frontend entry points; deploy the new frontend promptly because old clients cannot supply the required version for a comment alert. Ordinary notices retain their old HTTP/SQL interface. A frontend rollback should hide conversation entry points; retain the schema/history and version guards rather than dropping private data or reverting to unsafe unversioned reads. The feature requires no new environment variable, service, worker or email configuration.
+Cutover requires zero legacy private comments and zero comment_posted notices, including tombstones/read notices. Preflight locks old tables and fails closed with "Submission comment cutover requires empty legacy conversations"; failure leaves data/schema/migration history unchanged. Never guess an upload for old messages or silently delete test conversations/reset hosted data. The user's confirmation of test/no conversations is not hosted-cleanup authorization. Observed old rows need separately authorized resolution.
 
-Implementation CI authorization covers only the feature branch and disposable runner. A green run is not approval to merge, migrate hosted dev/prod, deploy or enable email. Existing key-holder and platform rollout rules still apply. Slice 4's sender/provisioning/manual gates remain independent.
+Coordinate schema/backend/frontend: prevent old comment writers during cutover, migrate, deploy compatible exact-source backend/frontend, then validate independent source A/B privacy, unread/lock, Return and source deletion. Pair-only RPCs are retired; old HTTP writes safely return NOT_FOUND and old destinations require an upload choice. Ordinary notices, grades and email behavior remain. Rollback hides conversation entry points while retaining new schema/history/version guards; never restore pair writers or drop private data. No new env variable, worker, service or email configuration is required.
+
+Feature-branch CI authorization covers disposable runners only. Hosted migrations/reset, main merge/deployment and email activation remain separate under existing platform/key-holder rules. Slice 4 manual/operational gates remain independent.
+
 
 **A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and Progress Monitoring System**
 

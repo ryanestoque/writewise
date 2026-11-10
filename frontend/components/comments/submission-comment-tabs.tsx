@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCommentAccountId } from "@/lib/hooks/use-comments";
+import { useCommentAccountId, useUnreadCommentThreads } from "@/lib/hooks/use-comments";
 import { SubmissionCommentThread } from "./submission-comment-thread";
 import type { CommentLocation } from "@/lib/comments/types";
 
@@ -10,13 +10,15 @@ export function SubmissionCommentTabs({ submissionId, open = true, initialView =
   submissionId?: string; open?: boolean; initialView?: "details" | "comments"; children: ReactNode; location?: CommentLocation;
 }) {
   const userId = useCommentAccountId();
+  const unread = useUnreadCommentThreads(userId ?? "", open && !!submissionId && !!userId);
   const [view, setView] = useState<"details" | "comments">(initialView);
   if (!submissionId) return <>{children}</>;
   return <Tabs value={view} onValueChange={value => setView(value as "details" | "comments")}
     className="flex min-h-0 flex-1 flex-col">
     <TabsList className="mx-4 mt-3 shrink-0" aria-label="Submission view">
       <TabsTrigger value="details">Details</TabsTrigger>
-      <TabsTrigger value="comments">Comments</TabsTrigger>
+      <TabsTrigger value="comments">Comments{unread.data?.has(submissionId) &&
+        <span className="ml-1 size-2 rounded-full bg-primary" role="img" aria-label="Unread comments" />}</TabsTrigger>
     </TabsList>
     <TabsContent value="details" className="flex min-h-0 flex-1 flex-col">{children}</TabsContent>
     <TabsContent value="comments" className="flex min-h-0 flex-1 flex-col">
