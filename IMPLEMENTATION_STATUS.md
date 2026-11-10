@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-10 (submission-thread redesign implemented; final regression and user portal acceptance tracked below)
+**Last updated:** 2026-11-10 (submission-thread redesign: 1,038 tests and seven proofs green; user portal QA pending)
 
 ## Summary
 
@@ -274,7 +274,7 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 ### Slice ⑥ — Private comments
 
-**Submission redesign execution (2026-11-10):** Inline implementation now provides separate threads per actual upload, independent lock/version/unread/Return, explicit upload picker, exact-source portal/bell destinations and authorized source deletion with thread/cache cleanup. Three forward migrations fail closed on any old comment/comment notice. Existing deletion permissions are preserved. The user confirmed only test/no conversations; hosted cleanup/reset remains unauthorized. Actual generated API/DB contracts are paired. Focused CI passed 90 then 95 cases; actual-source SDK/cache/browser checks and production build passed. A delayed-history deletion race was reproduced in the real hook and fixed. Full seven-proof regression is in progress; signed-in user portal acceptance remains open. See [approved design](docs/superpowers/specs/2026-11-10-submission-private-comments-design.md) and [execution record](docs/superpowers/plans/2026-11-10-submission-private-comments.md). Phase 3 remains **4/6 verified** and email gates remain separate.
+**Submission redesign execution (2026-11-10):** Inline implementation now provides separate threads per actual upload, independent lock/version/unread/Return, explicit upload picker, exact-source portal/bell destinations and authorized source deletion with thread/cache cleanup. Three forward migrations fail closed on any old comment/comment notice. Existing deletion permissions are preserved. The user confirmed only test/no conversations; hosted cleanup/reset remains unauthorized. Actual generated API/DB contracts are paired. Focused CI passed 90 then 95 cases; actual-source SDK/cache/browser checks and production build passed. A delayed-history deletion race was reproduced in the real hook and fixed. Final regression is green: [CI 42827341087](https://github.com/ryanestoque/writewise/actions/runs/42827341087) on exact application source `2eb8b7dee85c02912162eacb0c1ecce1449b4486` passed **1,038 tests**, all seven upgrade proofs, Ruff/ESLint/TypeScript, actual API/database drift checks, network guard and security advisors. Signed-in user portal acceptance remains open. See [approved design](docs/superpowers/specs/2026-11-10-submission-private-comments-design.md) and [execution record](docs/superpowers/plans/2026-11-10-submission-private-comments.md). Phase 3 remains **4/6 verified** and email gates remain separate.
 
 **Historical activity-thread implementation/evidence below is superseded for the redesign.**
 

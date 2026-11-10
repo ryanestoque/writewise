@@ -73,6 +73,7 @@ Classroom's key idea is a per-student record for each assignment, which exists e
 - pinned attempt (Q14)
 - points override / Assign 0 (Q11, Q15)
 - excused flag (Q15)
+
 Private comment threads and locks belong to each submission (Q21/Q27), outside this work record.
 
 Rows are created on demand (on the first teacher action or upload), not up front for every assigned student.
