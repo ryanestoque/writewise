@@ -8,7 +8,44 @@ from postgrest.exceptions import APIError
 
 from app.core.supabase import supabase_client as admin
 from tests.rls.comment_support import seed_comment
+from tests.rls.gradebook_support import stored_attempt
 from tests.rls.notification_support import db_value
+
+
+def test_two_uploads_have_distinct_comment_anchors(family, assigned_activity):
+    first = stored_attempt(family, assigned_activity["id"], measured=False)
+    second = stored_attempt(family, assigned_activity["id"], measured=False)
+    assert (
+        admin.table("submission_comment_thread")
+        .select("submission_id")
+        .eq("submission_id", first["id"])
+        .execute()
+        .data
+        == []
+    )
+    comment = seed_comment(family, first["id"])
+    assert family["parent_client"].table("private_comment").select("id,submission_id,body").eq(
+        "submission_id", first["id"]
+    ).execute().data == [
+        {"id": comment["id"], "submission_id": first["id"], "body": "Synthetic private message"}
+    ]
+    assert (
+        family["parent_client"]
+        .table("private_comment")
+        .select("id")
+        .eq("submission_id", second["id"])
+        .execute()
+        .data
+        == []
+    )
+    assert (
+        admin.table("submission_comment_thread")
+        .select("submission_id")
+        .eq("submission_id", second["id"])
+        .execute()
+        .data
+        == []
+    )
 
 
 def read_comment(client, row):

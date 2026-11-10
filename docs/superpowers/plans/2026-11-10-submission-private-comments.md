@@ -35,6 +35,8 @@ These exact requirements from the spec apply to every task:
 
 ## Baseline, isolation, and execution checks
 
+**Execution start (2026-11-10):** The user selected inline execution. The existing feature worktree is clean at plan commit `4060c4b` before execution. Task 1 is in progress: the exact-upload storage regression and a branch-only disposable database checkpoint are written before implementation. Docker/Podman remain unavailable locally; the existing recorded authorization for this same feature branch and `https://github.com/ryanestoque/writewise.git` CI destination is retained. Database red/green results, regenerated schema types, and task completion are not yet claimed. No hosted Supabase project is used.
+
 Planning is in `C:/Users/Admin/Documents/CODING PROJECTS/writewise/.worktrees/phase3-private-comments`, branch `feat/phase3-private-comments`, starting at design commit `9b1723a`. Git confirms a linked worktree: its Git directory is `.git/worktrees/phase3-private-comments` and common directory is the main checkout's `.git`; it is not a submodule. Reuse it and preserve all env files and email/gradebook branches. The current code still implements activity-level comments. Prior CI's 1011 tests and controlled browser checks are historical evidence for that code, not for this redesign.
 
 This document changes no application/schema/test files. All execution boxes start unchecked. Do not push, merge, migrate hosted projects, delete hosted test comments, deploy, or activate email as a planning step. Before execution, inspect status and preserve any changes since this plan. No agents are dispatched unless the user selects delegated execution; inline execution and self-review are supported.
