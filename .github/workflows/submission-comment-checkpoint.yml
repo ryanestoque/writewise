@@ -55,7 +55,7 @@ jobs:
           supabase db reset --local
       - name: Verify exact upload storage behavior
         working-directory: backend
-        run: uv run pytest tests/rls/test_comment_storage.py -k distinct_comment_anchors -v
+        run: uv run pytest tests/rls/test_submission_comments.py -v
       - name: Generate actual database types
         if: always() && env.SUPABASE_URL != ''
         run: supabase gen types typescript --local > /tmp/submission-comment-database.ts

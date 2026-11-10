@@ -154,3 +154,14 @@ def comment_submission(family, assigned_activity):
         yield row
     finally:
         admin.table("submission").delete().eq("id", row["id"]).execute()
+
+
+@pytest.fixture
+def peer_comment_submission(family, assigned_activity):
+    from tests.rls.gradebook_support import stored_attempt
+
+    row = stored_attempt(family, assigned_activity["id"], measured=False)
+    try:
+        yield row
+    finally:
+        admin.table("submission").delete().eq("id", row["id"]).execute()
