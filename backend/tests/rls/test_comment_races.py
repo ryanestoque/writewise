@@ -270,6 +270,68 @@ def test_simultaneous_posts_get_distinct_monotonic_versions(
     assert notice_for(family, comment_submission["id"])["comment_version"] == 2
 
 
+@pytest.mark.parametrize("lock_first", [True, False])
+def test_first_post_and_first_lock_share_one_source_state(family, comment_submission, lock_first):
+    source = comment_submission["id"]
+
+    async def race():
+        owner, waiter = await connections()
+        task = None
+        try:
+            async with owner.transaction():
+                if lock_first:
+                    await owner.fetchval(
+                        "select public.set_submission_comment_lock($1::uuid,$2::uuid,true)",
+                        family["teacher"],
+                        source,
+                    )
+                    task = asyncio.create_task(
+                        waiter.fetchval(
+                            "select public.post_submission_comment($1::uuid,$2::uuid,$3)",
+                            family["parent"],
+                            source,
+                            "Synthetic first post",
+                        )
+                    )
+                else:
+                    await owner.fetchval(
+                        "select public.post_submission_comment($1::uuid,$2::uuid,$3)",
+                        family["parent"],
+                        source,
+                        "Synthetic first post",
+                    )
+                    task = asyncio.create_task(
+                        waiter.fetchval(
+                            "select public.set_submission_comment_lock($1::uuid,$2::uuid,true)",
+                            family["teacher"],
+                            source,
+                        )
+                    )
+                await wait_for_database_lock(owner, waiter.get_server_pid())
+            if lock_first:
+                with pytest.raises(asyncpg.PostgresError) as failure:
+                    await task
+                assert failure.value.sqlstate == "WW440"
+            else:
+                assert json.loads(await task)["comments_locked"] is True
+        finally:
+            await finish(owner, waiter, task)
+
+    asyncio.run(race())
+    state = (
+        admin.table("submission_comment_thread")
+        .select("comments_locked,comment_version")
+        .eq("submission_id", source)
+        .single()
+        .execute()
+        .data
+    )
+    assert state == {"comments_locked": True, "comment_version": 0 if lock_first else 1}
+    assert len(
+        admin.table("private_comment").select("id").eq("submission_id", source).execute().data
+    ) == (0 if lock_first else 1)
+
+
 def test_teacher_post_excludes_parent_unlinked_before_its_gate(
     family, assigned_activity, second_parent, comment_submission
 ):

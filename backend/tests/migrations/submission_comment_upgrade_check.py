@@ -232,6 +232,35 @@ def verify_cutover(admin, manifest):
         .data["unread_notice"]
         is not None
     )
+    admin.rpc(
+        "set_submission_comment_lock",
+        {"actor_id": first["teacher"], "target_submission_id": source_a, "locked": False},
+    ).execute()
+    successor = (
+        admin.rpc(
+            "post_submission_comment",
+            {
+                "actor_id": first["teacher"],
+                "target_submission_id": source_a,
+                "comment_body": "Synthetic new unread cycle",
+            },
+        )
+        .execute()
+        .data
+    )
+    assert successor["comment_version"] == 2
+    next_notice = (
+        parent.rpc("read_submission_comment_thread", {"target_submission_id": source_a})
+        .execute()
+        .data["unread_notice"]
+    )
+    assert next_notice["id"] != notice["id"] and next_notice["comment_version"] == 2
+    assert (
+        parent.rpc("read_submission_comment_thread", {"target_submission_id": source_b})
+        .execute()
+        .data["unread_notice"]["comment_version"]
+        == 1
+    )
     assert (
         admin.table("student_work_grade")
         .select("*")

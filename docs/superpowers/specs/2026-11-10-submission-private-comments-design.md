@@ -1,5 +1,8 @@
 # Phase 3 Slice 6 — Private comments per submission
 
+**Delivery tracking (2026-11-10):** Inline implementation and exact verification evidence are tracked in the [execution record](../plans/2026-11-10-submission-private-comments.md). Schema/backend/frontend changes implement this approved scope on the retained feature branch. Automated final gates and signed-in portal acceptance are distinct; this spec does not authorize hosted cleanup, migration, merge/deployment or email activation.
+
+
 **Date:** 2026-11-10 (Asia/Singapore)
 
 **Status:** Approved for implementation planning on 2026-11-10. After the written-spec handoff and clarification of current code versus the redesign, the user explicitly invoked writing-plans and requested the [replacement implementation plan](../plans/2026-11-10-submission-private-comments.md). The user selected a separate thread for every submission and approved preserving existing submission-deletion permissions, with its conversation deleted alongside the attempt. Current activity-level comments contain only test data or no data, per the user. This document specifies the redesign; it does not claim implementation, verification, integration, or hosted migration.
