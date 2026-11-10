@@ -9,6 +9,7 @@ from pydantic import ValidationError
 ACTIVITY = UUID("33333333-3333-3333-3333-333333333333")
 STUDENT = UUID("22222222-2222-2222-2222-222222222222")
 COMMENT = UUID("44444444-4444-4444-4444-444444444444")
+SUBMISSION = UUID("77777777-7777-4777-8777-777777777777")
 
 
 @pytest.mark.parametrize(
@@ -103,6 +104,7 @@ def test_posted_metadata_requires_aware_time_and_cannot_echo_the_body():
 
     payload = {
         "id": COMMENT,
+        "submission_id": SUBMISSION,
         "activity_id": ACTIVITY,
         "student_id": STUDENT,
         "author_role": "parent",
@@ -112,6 +114,7 @@ def test_posted_metadata_requires_aware_time_and_cannot_echo_the_body():
     }
     response = CommentPosted.model_validate(payload)
     assert "body" not in response.model_dump()
+    assert response.model_dump()["submission_id"] == SUBMISSION
     assert response.created_at.utcoffset() == timedelta(hours=8)
     with pytest.raises(ValidationError):
         CommentPosted.model_validate({**payload, "created_at": "2030-01-01T10:00:00"})

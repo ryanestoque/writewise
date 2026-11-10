@@ -18,9 +18,10 @@ STUDENT = "33333333-3333-3333-3333-333333333333"
 ACTIVITY = "44444444-4444-4444-4444-444444444444"
 COMMENT = "55555555-5555-5555-5555-555555555555"
 NOTICE = "66666666-6666-6666-6666-666666666666"
+SUBMISSION = "77777777-7777-4777-8777-777777777777"
 STAMP = "2030-01-01T02:00:00Z"
 SENTINEL = "SYNTHETIC_PRIVATE_COMMENT_BOUNDARY"
-POST_PATH = f"/api/activities/{ACTIVITY}/students/{STUDENT}/comments"
+POST_PATH = f"/api/submissions/{SUBMISSION}/comments"
 
 
 @pytest.fixture
@@ -29,6 +30,7 @@ def comment_case(monkeypatch):
         actor=TEACHER,
         claimed_role="parent",
         activity_exists=True,
+        submission_exists=True,
         owner=TEACHER,
         linked=False,
         assigned=True,
@@ -67,6 +69,20 @@ def comment_case(monkeypatch):
                 200,
                 json=[{"id": ACTIVITY, "created_by": state.owner}] if state.activity_exists else [],
             )
+        if path == "submission":
+            assert request.url.params["id"] == f"eq.{SUBMISSION}"
+            return httpx.Response(
+                200,
+                json=[
+                    {
+                        "id": SUBMISSION,
+                        "activity_id": ACTIVITY,
+                        "student_id": STUDENT,
+                    }
+                ]
+                if state.submission_exists
+                else [],
+            )
         if path == "student_parent":
             assert request.url.params["parent_id"] == f"eq.{state.actor}"
             assert request.url.params["student_id"] == f"eq.{STUDENT}"
@@ -85,6 +101,7 @@ def comment_case(monkeypatch):
                     json=[
                         {
                             "id": COMMENT,
+                            "submission_id": SUBMISSION,
                             "activity_id": ACTIVITY,
                             "student_id": STUDENT,
                             "author_id": state.author,
@@ -96,7 +113,7 @@ def comment_case(monkeypatch):
             assert request.url.params["activity_id"] == f"eq.{ACTIVITY}"
             assert request.url.params["student_id"] == f"eq.{STUDENT}"
             return httpx.Response(200, json=[{"id": COMMENT}] if state.history else [])
-        if path in {"submission", "student_work_grade"}:
+        if path == "student_work_grade":
             assert request.url.params["activity_id"] == f"eq.{ACTIVITY}"
             assert request.url.params["student_id"] == f"eq.{STUDENT}"
             return httpx.Response(200, json=[])
@@ -109,20 +126,19 @@ def comment_case(monkeypatch):
         payload = json.loads(request.content)
         state.calls.append((path, payload))
         assert payload["actor_id"] == state.actor
-        if path == "rpc/post_private_comment":
+        if path == "rpc/post_submission_comment":
             assert set(payload) == {
                 "actor_id",
-                "target_activity_id",
-                "target_student_id",
+                "target_submission_id",
                 "comment_body",
             }
-            assert payload["target_activity_id"] == ACTIVITY
-            assert payload["target_student_id"] == STUDENT
+            assert payload["target_submission_id"] == SUBMISSION
             assert payload["comment_body"] == "Synthetic reply"
             return httpx.Response(
                 200,
                 json={
                     "id": COMMENT,
+                    "submission_id": SUBMISSION,
                     "activity_id": ACTIVITY,
                     "student_id": STUDENT,
                     "author_role": SENTINEL
@@ -138,18 +154,16 @@ def comment_case(monkeypatch):
         if path == "rpc/delete_private_comment":
             assert payload == {"actor_id": state.actor, "target_comment_id": COMMENT}
             return httpx.Response(200, json={"deleted": True})
-        if path == "rpc/set_comment_thread_lock":
+        if path == "rpc/set_submission_comment_lock":
             assert payload == {
                 "actor_id": state.actor,
-                "target_activity_id": ACTIVITY,
-                "target_student_id": STUDENT,
+                "target_submission_id": SUBMISSION,
                 "locked": True,
             }
             return httpx.Response(
                 200,
                 json={
-                    "activity_id": ACTIVITY,
-                    "student_id": STUDENT,
+                    "submission_id": SUBMISSION,
                     "comments_locked": True,
                 },
             )
@@ -188,6 +202,7 @@ def test_owner_post_uses_relationship_not_claimed_parent_role(comment_case):
     assert response.status_code == 201, response.text
     assert response.json()["author_role"] == "teacher"
     assert response.json()["comment_version"] == 1
+    assert response.json()["submission_id"] == SUBMISSION
     assert "body" not in response.json() and SENTINEL not in response.text
 
 
@@ -206,8 +221,8 @@ def test_unlinked_parent_cannot_post_with_forged_teacher_claim(comment_case):
     assert comment_case.calls == []
 
 
-def test_never_assigned_pair_is_not_created_by_posting(comment_case):
-    comment_case.assigned = False
+def test_missing_submission_is_not_created_by_posting(comment_case):
+    comment_case.submission_exists = False
     response = comment_case.client.post(POST_PATH, json={"body": "Synthetic reply"})
     assert response.status_code == 404 and comment_case.calls == []
 
@@ -222,11 +237,10 @@ def test_owner_lock_only_writes_comment_lock_state(comment_case):
     response = comment_case.client.put(POST_PATH + "/lock", json={"locked": True})
     assert response.status_code == 200
     assert response.json() == {
-        "activity_id": ACTIVITY,
-        "student_id": STUDENT,
+        "submission_id": SUBMISSION,
         "comments_locked": True,
     }
-    assert [name for name, _payload in comment_case.calls] == ["rpc/set_comment_thread_lock"]
+    assert [name for name, _payload in comment_case.calls] == ["rpc/set_submission_comment_lock"]
 
 
 def test_author_delete_has_empty_204_response(comment_case):
@@ -240,7 +254,7 @@ def test_owner_cannot_delete_another_author_comment(comment_case):
     assert response.status_code == 404 and comment_case.calls == []
 
 
-@pytest.mark.parametrize("stage", ["activity", "rpc/is_assigned", "mutation"])
+@pytest.mark.parametrize("stage", ["submission", "activity", "mutation"])
 @pytest.mark.parametrize("transport_failure", [False, True])
 def test_private_database_and_transport_failures_do_not_escape(
     comment_case, caplog, stage, transport_failure
@@ -312,3 +326,11 @@ def test_missing_authentication_fails_before_comment_operations(comment_case):
     response = comment_case.client.post(POST_PATH, json={"body": "Synthetic reply"})
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "UNAUTHORIZED" and comment_case.calls == []
+
+
+def test_activity_only_route_cannot_guess_a_submission(comment_case):
+    response = comment_case.client.post(
+        f"/api/activities/{ACTIVITY}/students/{STUDENT}/comments", json={"body": "Synthetic reply"}
+    )
+    assert response.status_code == 404
+    assert comment_case.calls == []

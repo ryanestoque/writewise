@@ -14,13 +14,13 @@ from app.core.supabase import supabase_client
 
 T = TypeVar("T")
 _RESULTS = {
-    "post_private_comment": CommentPosted,
-    "set_comment_thread_lock": CommentLockState,
+    "post_submission_comment": CommentPosted,
+    "set_submission_comment_lock": CommentLockState,
     "mark_comment_notification_read": NotificationReadResponse,
 }
 _PARAMETERS = {
-    "post_private_comment": {"actor_id", "target_activity_id", "target_student_id", "comment_body"},
-    "set_comment_thread_lock": {"actor_id", "target_activity_id", "target_student_id", "locked"},
+    "post_submission_comment": {"actor_id", "target_submission_id", "comment_body"},
+    "set_submission_comment_lock": {"actor_id", "target_submission_id", "locked"},
     "mark_comment_notification_read": {
         "actor_id",
         "target_notification_id",

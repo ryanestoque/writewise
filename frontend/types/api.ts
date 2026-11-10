@@ -191,7 +191,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/activities/{activity_id}/students/{student_id}/comments": {
+    "/api/submissions/{submission_id}/comments": {
         parameters: {
             query?: never;
             header?: never;
@@ -201,7 +201,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Post Comment Route */
-        post: operations["post_comment_route_api_activities__activity_id__students__student_id__comments_post"];
+        post: operations["post_comment_route_api_submissions__submission_id__comments_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -225,7 +225,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/activities/{activity_id}/students/{student_id}/comments/lock": {
+    "/api/submissions/{submission_id}/comments/lock": {
         parameters: {
             query?: never;
             header?: never;
@@ -234,7 +234,7 @@ export interface paths {
         };
         get?: never;
         /** Set Comment Lock Route */
-        put: operations["set_comment_lock_route_api_activities__activity_id__students__student_id__comments_lock_put"];
+        put: operations["set_comment_lock_route_api_submissions__submission_id__comments_lock_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -693,15 +693,10 @@ export interface components {
         /** CommentLockState */
         CommentLockState: {
             /**
-             * Activity Id
+             * Submission Id
              * Format: uuid
              */
-            activity_id: string;
-            /**
-             * Student Id
-             * Format: uuid
-             */
-            student_id: string;
+            submission_id: string;
             /** Comments Locked */
             comments_locked: boolean;
         };
@@ -717,6 +712,11 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
             /**
              * Activity Id
              * Format: uuid
@@ -1544,13 +1544,12 @@ export interface operations {
             };
         };
     };
-    post_comment_route_api_activities__activity_id__students__student_id__comments_post: {
+    post_comment_route_api_submissions__submission_id__comments_post: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                activity_id: string;
-                student_id: string;
+                submission_id: string;
             };
             cookie?: never;
         };
@@ -1609,13 +1608,12 @@ export interface operations {
             };
         };
     };
-    set_comment_lock_route_api_activities__activity_id__students__student_id__comments_lock_put: {
+    set_comment_lock_route_api_submissions__submission_id__comments_lock_put: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                activity_id: string;
-                student_id: string;
+                submission_id: string;
             };
             cookie?: never;
         };

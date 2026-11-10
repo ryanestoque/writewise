@@ -4,9 +4,21 @@ from app.comments.errors import comment_error
 from app.core.supabase import supabase_client
 
 
-def require_comment_work(
-    actor_id: str, activity_id: str, student_id: str, *, owner_only: bool = False
-) -> None:
+def require_comment_submission(
+    actor_id: str, submission_id: str, *, owner_only: bool = False
+) -> dict:
+    submissions = (
+        supabase_client.table("submission")
+        .select("id,activity_id,student_id")
+        .eq("id", submission_id)
+        .limit(1)
+        .execute()
+        .data
+    )
+    if not submissions:
+        raise comment_error("WW404")
+    source = submissions[0]
+    activity_id, student_id = source["activity_id"], source["student_id"]
     activities = (
         supabase_client.table("activity")
         .select("id,created_by")
@@ -32,35 +44,13 @@ def require_comment_work(
         )
         if not links:
             raise comment_error("WW404")
-    assigned = (
-        supabase_client.rpc(
-            "is_assigned", {"target_activity_id": activity_id, "target_student_id": student_id}
-        )
-        .execute()
-        .data
-        is True
-    )
-    if not assigned:
-        for table in ("private_comment", "submission", "student_work_grade"):
-            rows = (
-                supabase_client.table(table)
-                .select("id")
-                .eq("activity_id", activity_id)
-                .eq("student_id", student_id)
-                .limit(1)
-                .execute()
-                .data
-            )
-            if rows:
-                break
-        else:
-            raise comment_error("WW404")
+    return source
 
 
 def require_authored_comment(actor_id: str, comment_id: str) -> None:
     rows = (
         supabase_client.table("private_comment")
-        .select("id,activity_id,student_id,author_id")
+        .select("id,submission_id,author_id")
         .eq("id", comment_id)
         .limit(1)
         .execute()
@@ -69,4 +59,4 @@ def require_authored_comment(actor_id: str, comment_id: str) -> None:
     if not rows or rows[0]["author_id"] != actor_id:
         raise comment_error("WW404")
     row = rows[0]
-    require_comment_work(actor_id, row["activity_id"], row["student_id"])
+    require_comment_submission(actor_id, row["submission_id"])

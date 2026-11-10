@@ -43,6 +43,7 @@ class CommentPosted(BaseModel):
     model_config = ConfigDict(hide_input_in_errors=True)
 
     id: UUID
+    submission_id: UUID
     activity_id: UUID
     student_id: UUID
     author_role: Literal["teacher", "parent"]
@@ -53,6 +54,5 @@ class CommentPosted(BaseModel):
 class CommentLockState(BaseModel):
     model_config = ConfigDict(hide_input_in_errors=True)
 
-    activity_id: UUID
-    student_id: UUID
+    submission_id: UUID
     comments_locked: bool
