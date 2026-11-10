@@ -12,9 +12,16 @@ from tests.rls.gradebook_support import stored_attempt
 from tests.rls.notification_support import db_value
 
 
-def test_two_uploads_have_distinct_comment_anchors(family, assigned_activity):
-    first = stored_attempt(family, assigned_activity["id"], measured=False)
+def test_two_uploads_have_distinct_comment_anchors(family, assigned_activity, comment_submission):
+    first = comment_submission
     second = stored_attempt(family, assigned_activity["id"], measured=False)
+    try:
+        assert_distinct_comment_anchors(family, first, second)
+    finally:
+        admin.table("submission").delete().eq("id", second["id"]).execute()
+
+
+def assert_distinct_comment_anchors(family, first, second):
     assert (
         admin.table("submission_comment_thread")
         .select("submission_id")
