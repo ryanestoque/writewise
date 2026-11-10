@@ -1,5 +1,7 @@
 # Phase 3 Slice 6 — Private Comments Implementation Plan
 
+**Historical plan (2026-11-10):** This document and its execution record describe the delivered student × activity implementation. The user has approved separate submission threads for planning. Use the [replacement submission-thread plan](2026-11-10-submission-private-comments.md) and its linked spec for forthcoming work; do not re-execute this plan to implement that redesign. Existing evidence remains historical.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (when explicitly selected by the user) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Read the approved spec and this entire plan first. Default to inline execution; this planning pass dispatches no agents.
 
 **Goal:** Add private student-work conversations shared by the owning teacher and linked parents, with retained read-only history, author deletion, teacher locking and race-safe in-app unread alerts.
