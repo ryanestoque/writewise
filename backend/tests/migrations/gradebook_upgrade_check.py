@@ -52,7 +52,10 @@ def fingerprint(admin, manifest):
         if table == "notification":
             snapshot[table] = (
                 admin.table(table)
-                .select("*")
+                .select(
+                    "id,recipient_id,type,activity_id,student_id,submission_id,"
+                    "dedupe_key,read_at,created_at"
+                )
                 .in_("activity_id", manifest["activities"])
                 .order("id")
                 .execute()

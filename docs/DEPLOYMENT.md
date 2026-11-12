@@ -1,5 +1,18 @@
 # WriteWise — DEPLOYMENT.md
 
+## Phase 3 Slice 6 rollout
+
+Preserve the five historical comment migrations, including the separate enum addition, then apply 20261110122835, 20261110123032 and 20261110123214 in order. Never combine an enum addition and first use in one transaction. Each cutover file uses its own explicit transaction. Regenerate/compare actual API/database types and pass all seven upgrade proofs, full tests, network guard and security advisors on the paired source first.
+
+Cutover requires zero legacy private comments and zero comment_posted notices, including tombstones/read notices. Preflight locks old tables and fails closed with "Submission comment cutover requires empty legacy conversations"; failure leaves data/schema/migration history unchanged. Never guess an upload for old messages or silently delete test conversations/reset hosted data. The user's confirmation of test/no conversations is not hosted-cleanup authorization. Observed old rows need separately authorized resolution.
+
+Coordinate schema/backend/frontend: prevent old comment writers during cutover, migrate, deploy compatible exact-source backend/frontend, then validate independent source A/B privacy, unread/lock, Return and source deletion. Pair-only RPCs are retired; old HTTP writes safely return NOT_FOUND and old destinations require an upload choice. Ordinary notices, grades and email behavior remain. Rollback hides conversation entry points while retaining new schema/history/version guards; never restore pair writers or drop private data. No new env variable, worker, service or email configuration is required.
+
+Slice 4 email closeout may be deferred while core features and Slice 6 are accepted. Keep `EMAIL_DISPATCH_ENABLED=false` until sender, credentials, Vault/network permissions and manual/live-delivery QA are complete. Retain the email schema/outbox/preferences/helpers because later gradebook migrations reference that foundation. In-app notices continue independently; outbound due-soon/Return email remains unavailable or unverified. Pending outbox rows may accumulate, so review their eligibility before later activation. This closeout changes no delivery configuration.
+
+Feature-branch CI authorization covers disposable runners only. Hosted migrations/reset, main merge/deployment and email activation remain separate under existing platform/key-holder rules. Slice 4 manual/operational gates remain independent.
+
+
 **A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and Progress Monitoring System**
 
 - **Document type:** Internal engineering operational runbook (companion to PRD.md, ARCHITECTURE.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, SECURITY.md, TESTING.md)

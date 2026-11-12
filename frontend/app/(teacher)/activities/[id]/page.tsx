@@ -2,7 +2,10 @@
 
 import { use, useState, useMemo, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ActivityThreads } from "@/components/comments/activity-threads";
+import { WorkCommentsButton } from "@/components/comments/submission-comment-picker-sheet";
+import { commentThreadHref, parseTeacherCommentTarget } from "@/lib/comments/targets";
 import {
   type Activity,
   useActivity,
@@ -109,6 +112,13 @@ export default function ActivityDetailPage({
   const activeIds = useMemo(() => new Set((workQuery.data ?? [])
     .map((row) => row.active_submission_id).filter((id): id is string => !!id)), [workQuery.data]);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const commentTarget = parseTeacherCommentTarget(searchParams, id);
+  const closeComments = () => {
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete("student"); next.delete("view");
+    router.replace(`/activities/${id}${next.size ? `?${next}` : ""}`, { scroll: false });
+  };
 
   const { data: activity, isLoading, error, refetch } = useActivity(id);
   const { data: students } = useStudents();
@@ -875,6 +885,9 @@ export default function ActivityDetailPage({
             <span className="text-sm font-medium">{student.full_name}</span>
             <div className="flex flex-wrap items-center gap-2">
               <ActivityWorkStatus state={workQuery.data?.find((row) => row.student_id === student.id)} />
+              {submissions?.some(row => row.student_id === student.id) && <WorkCommentsButton
+                scope={{ activityId: id, studentId: student.id }}
+                activeSubmissionId={workQuery.data?.find(row => row.student_id === student.id)?.active_submission_id ?? null} />}
               <StudentWorkControls activityId={id} studentId={student.id} studentName={student.full_name}
                 state={workQuery.data?.find((row) => row.student_id === student.id) ?? null}
                 attempts={(submissions ?? []).filter((row) => row.student_id === student.id)} />
@@ -883,6 +896,8 @@ export default function ActivityDetailPage({
         </ul>
       </section>
       {/* Submissions Section */}
+      <ActivityThreads userId={activity.created_by} activityId={id} onOpen={(target) => router.push(commentThreadHref(target, "teacher"), { scroll: false })} />
+      {commentTarget.kind !== "none" && <div role="status" className="rounded-xl border p-4"><p>Choose a worksheet upload to view its comments.</p><Button variant="outline" onClick={closeComments}>Dismiss</Button></div>}
       <section aria-labelledby="submissions-heading" className="space-y-4">
         {/* Section Header with Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1342,7 +1357,7 @@ export default function ActivityDetailPage({
             <AlertDialogDescription>
               This will permanently delete the uploaded worksheet{" "}
               {selectedSubmissionIds.size === 1 ? "photo" : "photos"}, computer
-              vision analysis, and recorded rubric scores for the selected{" "}
+              vision analysis, comments, and recorded rubric scores for the selected{" "}
               {selectedSubmissionIds.size === 1 ? "attempt" : "attempts"}. This
               action cannot be undone.
             </AlertDialogDescription>
@@ -1384,7 +1399,7 @@ export default function ActivityDetailPage({
             <AlertDialogTitle>Delete this attempt?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete this uploaded worksheet photo,
-              computer vision analysis, and recorded rubric scores. This action
+              computer vision analysis, comments, and recorded rubric scores. This action
               cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -1427,7 +1442,7 @@ export default function ActivityDetailPage({
             <AlertDialogDescription>
               This will permanently delete all{" "}
               {studentBatchToDelete?.submissions.length} uploaded worksheet
-              photos, computer vision analysis, and recorded rubric scores for{" "}
+              photos, computer vision analysis, comments, and recorded rubric scores for{" "}
               {studentBatchToDelete?.studentName} on this activity. This action
               cannot be undone.
             </AlertDialogDescription>

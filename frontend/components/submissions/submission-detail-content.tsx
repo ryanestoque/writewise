@@ -68,6 +68,7 @@ import { RawMeasurementsTable } from "./raw-measurements-table";
 import { getScoreBandLabel } from "@/lib/utils/submission-status";
 import { useScoringEngine } from "@/lib/hooks/use-scoring-engine";
 import { SubmissionLifecycleControls } from "./submission-lifecycle-controls";
+import { SubmissionCommentTabs } from "@/components/comments/submission-comment-tabs";
 
 
 
@@ -110,6 +111,8 @@ export interface SubmissionDetailContentProps {
   onClose?: () => void;
   /** Render mode affects layout: 'page' enables sticky image, 'modal' keeps dialog scroll container */
   variant: "page" | "modal";
+  open?: boolean;
+  initialView?: "details" | "comments";
 }
 
 export function SubmissionDetailContent({
@@ -120,6 +123,8 @@ export function SubmissionDetailContent({
   activityTargetText,
   onClose,
   variant,
+  open = true,
+  initialView = "details",
 }: SubmissionDetailContentProps) {
   const { data: currentSubmissions } = useSubmissions(initialSubmission.activity_id);
   const submission = currentSubmissions?.find((row) => row.id === initialSubmission.id) ?? initialSubmission;
@@ -679,6 +684,8 @@ export function SubmissionDetailContent({
         </header>
       )}
 
+      <SubmissionCommentTabs key={submission.id} submissionId={submission.id} open={open} initialView={initialView}
+        location={{ submissionId: submission.id, activityId: submission.activity_id, studentId: submission.student_id }}>
       <SubmissionLifecycleControls submission={submission} />
       {/* Body: Split view (Image + Diagnostic details) */}
       <div
@@ -1351,6 +1358,7 @@ export function SubmissionDetailContent({
         </div>
       </div>
 
+      </SubmissionCommentTabs>
       {/* Footer */}
       {variant === "modal" ? (
         <DialogFooter className="pt-3 sm:pt-3.5 border-t border-border/70 shrink-0 flex flex-row items-center justify-between">
@@ -1451,7 +1459,7 @@ export function SubmissionDetailContent({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this attempt?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the uploaded worksheet photo, computer vision analysis,
+              This will permanently delete the uploaded worksheet photo, its comments, computer vision analysis,
               and rubric scores for{" "}
               <strong className="font-semibold text-foreground">
                 {submission.student?.full_name ?? "this student"}

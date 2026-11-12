@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ "main", "feat/phase3-assignment-deadlines", "feat/phase3-return-release", "feat/phase3-notifications-implementation", "feat/phase3-email-notifications", "feat/phase3-points-gradebook" ]
+    branches: [ "main", "feat/phase3-assignment-deadlines", "feat/phase3-return-release", "feat/phase3-notifications-implementation", "feat/phase3-email-notifications", "feat/phase3-points-gradebook", "feat/phase3-private-comments" ]
   pull_request:
     branches: [ "main" ]
 
@@ -66,6 +66,8 @@ jobs:
 
     - name: Start Ephemeral Supabase Stack
       run: |
+        docker ps --format '{{.Names}} {{.Ports}}'
+        ss -ltn '( sport = :54322 )'
         supabase start
         echo "SUPABASE_URL=$(supabase status -o json | jq -r '.API_URL')" >> $GITHUB_ENV
         echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o json | jq -r '.SERVICE_ROLE_KEY')" >> $GITHUB_ENV
@@ -153,11 +155,56 @@ jobs:
         cd ..
         supabase db reset --local
 
+    - name: Verify legacy private comment upgrade
+      run: |
+        supabase db reset --local --version 20261108062937
+        cd backend
+        ENVIRONMENT=test uv run python tests/migrations/comment_upgrade_check.py prepare --manifest /tmp/comment-upgrade.json
+        if ENVIRONMENT=test uv run python tests/migrations/comment_upgrade_check.py schema --manifest /tmp/comment-upgrade.json; then
+          exit 1
+        fi
+        cd ..
+        supabase migration up --local
+        cd backend
+        ENVIRONMENT=test uv run python tests/migrations/comment_upgrade_check.py verify --manifest /tmp/comment-upgrade.json
+        cd ..
+        supabase db reset --local
+
+    - name: Verify submission comment cutover and legacy-data rejection
+      run: |
+        supabase db reset --local --version 20261109131320
+        cd backend
+        ENVIRONMENT=test uv run python tests/migrations/submission_comment_upgrade_check.py prepare --manifest /tmp/submission-comment-upgrade.json
+        if ENVIRONMENT=test uv run python tests/migrations/submission_comment_upgrade_check.py schema --manifest /tmp/submission-comment-upgrade.json; then
+          exit 1
+        fi
+        cd ..
+        supabase migration up --local
+        cd backend
+        ENVIRONMENT=test uv run python tests/migrations/submission_comment_upgrade_check.py verify --manifest /tmp/submission-comment-upgrade.json
+        cd ..
+        for legacy_kind in legacy-comment legacy-notice; do
+          supabase db reset --local --version 20261109131320
+          cd backend
+          ENVIRONMENT=test uv run python tests/migrations/submission_comment_upgrade_check.py prepare --manifest /tmp/submission-comment-${legacy_kind}.json
+          ENVIRONMENT=test uv run python tests/migrations/submission_comment_upgrade_check.py ${legacy_kind} --manifest /tmp/submission-comment-${legacy_kind}.json
+          cd ..
+          if supabase migration up --local > /tmp/submission-comment-blocked.log 2>&1; then
+            echo 'Legacy conversation cutover unexpectedly succeeded'
+            exit 1
+          fi
+          grep -F 'Submission comment cutover requires empty legacy conversations' /tmp/submission-comment-blocked.log
+          cd backend
+          ENVIRONMENT=test uv run python tests/migrations/submission_comment_upgrade_check.py blocked --manifest /tmp/submission-comment-${legacy_kind}.json
+          cd ..
+        done
+        supabase db reset --local
+
     - name: Verify database email scheduler retirement upgrade
       env:
         ENVIRONMENT: test
       run: |
-        supabase db reset --local --version 20261108062937
+        supabase db reset --local --version 20261110123214
         cd backend
         uv run python tests/migrations/email_scheduler_upgrade_check.py prepare --manifest /tmp/email-scheduler-upgrade.json
         cd ..

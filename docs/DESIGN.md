@@ -1,5 +1,15 @@
 # WriteWise — DESIGN.md
 
+## Phase 3 Slice 6 - private submission conversations
+
+Each actual upload has its own thread. Teacher submission viewers and parent worksheet/pending viewers share Details/Comments tabs. Processing, rejected, draft, released and returned attempts retain separate conversations. Activity/gradebook shortcuts use an explicit upload picker, initially the counted upload or newest upload; an open selection stays fixed across uploads/pin changes. Older attempts remain selectable. No-upload work says "Comments are available after a worksheet is uploaded." Point grades alone never create threads.
+
+Retained activity/selected-child history lists sources separately with upload timestamps. Per-source unread indicators appear in picker/history/view tabs; gradebook cells aggregate across all attempts for the student/activity. Details alone never acknowledges messages. The shared Message/Bubble/Marker/Scroller view renders escaped text, chronological entries, Load older/Jump to latest, exact-source Return markers and author tombstones. Author deletion is confirmed inline. Teacher lock/unlock affects only this source. Show all assignment/archive/lock reasons while retaining readable history and authorized author deletion.
+
+The composer says "Visible to the teacher and all linked parents immediately, even before results are released." It counts 1-1000 trimmed Unicode code points, preserves line breaks, bounds textarea height and disables pending writes without retry. Closing/changing account, child or upload clears drafts. Label controls, support keyboard dismissal/opener focus, and show safe errors. Successful source deletion cancels reads and clears private bodies only for returned deleted IDs; denied/failed deletes retain comments. Every source-deletion confirmation names permanent comment removal.
+
+Teacher destinations: /activities/{activity}/submissions/{submission}?view=comments. Parent destinations: /progress?child={student}&activity={activity}&submission={submission}&view=comments. Duplicate/invalid/conflicting parameters and old pair-only links never guess an upload. Derived child/activity must match before body rendering/acknowledgment. Historical-owner comment access does not broaden worksheet access. Existing tab=grades behavior and sibling selection remain. Bell navigation alone never marks read: exact alerted source/version must be loaded, with single/all-read guards. [Approved design and acceptance matrix](superpowers/specs/2026-11-10-submission-private-comments-design.md).
+
 ## Phase 3 Slice 5 — gradebook surfaces
 
 Teacher navigation includes Gradebook. Choose a section, search students and filter current/archived activities; those display filters never recalculate totals or narrow the CSV. The grid alone scrolls horizontally on a phone, with student labels retained. Cells expose student/activity context to assistive technology and support arrow-key movement. Show coursework status, automatic/final points, override state and publication separately from the handwriting assessment band. Totals explicitly include drafts for teachers.

@@ -191,6 +191,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/submissions/{submission_id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Comment Route */
+        post: operations["post_comment_route_api_submissions__submission_id__comments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/comments/{comment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Comment Route */
+        delete: operations["delete_comment_route_api_comments__comment_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/submissions/{submission_id}/comments/lock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Comment Lock Route */
+        put: operations["set_comment_lock_route_api_submissions__submission_id__comments_lock_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/internal/dispatch-emails": {
         parameters: {
             query?: never;
@@ -634,6 +685,61 @@ export interface components {
             /** Groups */
             groups: components["schemas"]["GradebookTeacherGroup"][];
         };
+        /** CommentLockRequest */
+        CommentLockRequest: {
+            /** Locked */
+            locked: boolean;
+        };
+        /** CommentLockState */
+        CommentLockState: {
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+            /** Comments Locked */
+            comments_locked: boolean;
+        };
+        /** CommentPostRequest */
+        CommentPostRequest: {
+            /** Body */
+            body: string;
+        };
+        /** CommentPosted */
+        CommentPosted: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+            /**
+             * Activity Id
+             * Format: uuid
+             */
+            activity_id: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /**
+             * Author Role
+             * @enum {string}
+             */
+            author_role: "teacher" | "parent";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Comment Version */
+            comment_version: number;
+        };
         /** DispatchCounts */
         DispatchCounts: {
             /**
@@ -811,6 +917,11 @@ export interface components {
             spacing_band: components["schemas"]["ScoreBandEnum"];
             slant_band: components["schemas"]["ScoreBandEnum"];
             baseline_alignment_band: components["schemas"]["ScoreBandEnum"];
+        };
+        /** NotificationReadRequest */
+        NotificationReadRequest: {
+            /** Expected Comment Version */
+            expected_comment_version?: number | null;
         };
         /** NotificationReadResponse */
         NotificationReadResponse: {
@@ -1433,6 +1544,105 @@ export interface operations {
             };
         };
     };
+    post_comment_route_api_submissions__submission_id__comments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentPostRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentPosted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_comment_route_api_comments__comment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                comment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_comment_lock_route_api_submissions__submission_id__comments_lock_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentLockRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentLockState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     dispatch_email_route_api_internal_dispatch_emails_post: {
         parameters: {
             query?: never;
@@ -1482,7 +1692,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["NotificationReadRequest"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

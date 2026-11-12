@@ -6,7 +6,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from postgrest.exceptions import APIError
 
 from app.api.deps import get_current_user
-from app.api.notification_contracts import NotificationReadResponse, NotificationsReadAllResponse
+from app.api.notification_contracts import (
+    NotificationReadRequest,
+    NotificationReadResponse,
+    NotificationsReadAllResponse,
+)
+from app.comments.errors import comment_error
+from app.comments.repository import comment_rpc, safe_comment_operation
 from app.core.supabase import supabase_client
 
 router = APIRouter()
@@ -43,22 +49,37 @@ def mark_all_read(user: dict = Depends(get_current_user)):
 
 
 @router.post("/{notification_id}/read", response_model=NotificationReadResponse)
-def mark_read(notification_id: UUID, user: dict = Depends(get_current_user)):
-    actor = user["sub"]
-    try:
+def mark_read(
+    notification_id: UUID,
+    body: NotificationReadRequest | None = None,
+    user: dict = Depends(get_current_user),
+):
+    def mutate():
+        actor = user["sub"]
         rows = (
             supabase_client.table("notification")
-            .select("id")
+            .select("id,type")
             .eq("id", str(notification_id))
             .eq("recipient_id", actor)
             .execute()
             .data
         )
-    except APIError as exc:
-        raise _error() from exc
-    if not rows:
-        raise _error("NOT_FOUND")
-    return _read_rpc(
-        "mark_notification_read",
-        {"actor_id": actor, "target_notification_id": str(notification_id)},
-    )
+        if not rows:
+            raise _error("NOT_FOUND")
+        if rows[0].get("type") == "comment_posted":
+            if body is None or body.expected_comment_version is None:
+                raise comment_error("WW422")
+            return comment_rpc(
+                "mark_comment_notification_read",
+                {
+                    "actor_id": actor,
+                    "target_notification_id": str(notification_id),
+                    "expected_comment_version": body.expected_comment_version,
+                },
+            )
+        return _read_rpc(
+            "mark_notification_read",
+            {"actor_id": actor, "target_notification_id": str(notification_id)},
+        )
+
+    return safe_comment_operation(mutate)

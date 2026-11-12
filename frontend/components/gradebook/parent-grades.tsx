@@ -6,6 +6,7 @@ import { useChildGradebook } from "@/lib/hooks/use-gradebook";
 import { BandBadge } from "@/components/shared/band-badge";
 import { QueryRecovery } from "@/components/shared/query-recovery";
 import { Button } from "@/components/ui/button";
+import { WorkCommentsButton } from "@/components/comments/submission-comment-picker-sheet";
 
 export function ParentGrades({
   userId,
@@ -130,6 +131,7 @@ export function ParentGrades({
                       </p>
                     </div>
                     <div className="space-y-1.5 text-right">
+                      <WorkCommentsButton scope={{ activityId: activity.id, studentId: childId }} activeSubmissionId={cell.active_submission_id} />
                       <p className="text-sm font-medium tabular-nums">
                         {cell.coursework_status === "Excused"
                           ? "Excused"

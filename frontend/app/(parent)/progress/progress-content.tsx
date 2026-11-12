@@ -12,6 +12,8 @@ import { SampleReportPreview } from "@/components/parent/sample-report-preview";
 import { NotificationWorkDestination } from "@/components/parent/notification-work-destination";
 import { QueryRecovery } from "@/components/shared/query-recovery";
 import { ParentGrades } from "@/components/gradebook/parent-grades";
+import { ParentActivityThreads } from "@/components/comments/parent-activity-threads";
+import { SubmissionCommentThreadSheet } from "@/components/comments/submission-comment-thread-sheet";
 import {
   useChildScoreHistory,
   useTakeHomeActivities,
@@ -159,7 +161,11 @@ export function ProgressPageContent() {
       ? notificationTarget.target
       : null;
   const gradeDestination = notificationTargetData?.view === "grades";
-  const notificationDestination = notificationTarget.kind !== "none" && !gradeDestination ? (
+  const notificationDestination = notificationTargetData?.view === "comments" && notificationTargetData.submissionId ? (
+    <SubmissionCommentThreadSheet key={`${userId}:${notificationTargetData.childId}:${notificationTargetData.submissionId}`}
+      userId={userId} target={{ activityId: notificationTargetData.activityId, studentId: notificationTargetData.childId, submissionId: notificationTargetData.submissionId }} open
+      studentName={selectedChild?.fullName} onOpenChange={open => { if (!open) dismissNotificationTarget(); }} />
+  ) : notificationTarget.kind !== "none" && !gradeDestination ? (
     <NotificationWorkDestination
       key={`${notificationTargetData?.childId}:${notificationTargetData?.activityId}:${notificationTargetData?.submissionId}`}
       userId={userId}
@@ -523,6 +529,7 @@ export function ProgressPageContent() {
             />
           </section>
 
+          {selectedChildId && <ParentActivityThreads key={`${userId}:${selectedChildId}`} userId={userId} studentId={selectedChildId} />}
           {isZeroState && (
             <SampleReportPreview
               onOpenRubric={handleOpenRubric}

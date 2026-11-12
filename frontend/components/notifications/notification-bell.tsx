@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/popover";
 import { NotificationList } from "./notification-list";
 import { createClient } from "@/lib/supabase/client";
+import { abortAccountRequests } from "@/lib/supabase/account-scope";
 import { ApiError } from "@/lib/utils/api-error";
 import { notificationKeys } from "@/lib/notifications/query-keys";
 import type { NotificationLabels, NotificationRow } from "@/lib/notifications/data";
@@ -43,6 +44,13 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
 
   useEffect(() => {
     const clear = (id: string) => {
+      abortAccountRequests(id);
+      for (const mutation of client.getMutationCache().findAll({ mutationKey: ["comments", id] })) {
+        client.getMutationCache().remove(mutation);
+      }
+      void client.cancelQueries({ queryKey: ["comments", id] }).then(() => {
+        client.removeQueries({ queryKey: ["comments", id] });
+      });
       void client.cancelQueries({ queryKey: ["gradebook", id] }).then(() => {
         client.removeQueries({ queryKey: ["gradebook", id] });
       });
@@ -54,6 +62,9 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
       if (typeof key[1] === "string" && key[1] !== userId) clear(key[1]);
     }
     for (const [key] of client.getQueriesData({ queryKey: ["gradebook"] })) {
+      if (typeof key[1] === "string" && key[1] !== userId) clear(key[1]);
+    }
+    for (const [key] of client.getQueriesData({ queryKey: ["comments"] })) {
       if (typeof key[1] === "string" && key[1] !== userId) clear(key[1]);
     }
     const { data } = createClient().auth.onAuthStateChange((event, session) => {
@@ -86,10 +97,18 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
     );
   }
   function markRead(id: string) {
-    read.mutate(id, { onError: feedback });
+    const row = rows.find((row) => row.id === id);
+    if (row?.type === "comment_posted" && !row.comment_version) return;
+    read.mutate(
+      {
+        id,
+        ...(row?.type === "comment_posted" ? { expectedCommentVersion: row.comment_version! } : {}),
+      },
+      { onError: feedback }
+    );
   }
   function activate(row: NotificationRow) {
-    if (!row.read_at) markRead(row.id);
+    if (!row.read_at && row.type !== "comment_posted") markRead(row.id);
     setOpen(false);
   }
   const label =
@@ -114,7 +133,7 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
             variant="ghost"
             size="icon"
             aria-label={label}
-            className="relative shrink-0 size-10 sm:size-9 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0"
+            className="relative size-10 min-h-[40px] min-w-[40px] shrink-0 sm:size-9 sm:min-h-0 sm:min-w-0"
             disabled={!active}
           />
         }
@@ -136,7 +155,7 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
           <Button
             variant="ghost"
             size="xs"
-            className="min-h-10 sm:min-h-7 px-2.5"
+            className="min-h-10 px-2.5 sm:min-h-7"
             disabled={readAll.isPending || count.data === 0}
             onClick={() => readAll.mutate(undefined, { onError: feedback })}
           >
@@ -162,7 +181,7 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
           hasMore={feed.data?.hasMore ?? false}
           loadingMore={feed.isLoadingMore}
           loadMore={() => feed.loadMore()}
-          pendingId={read.isPending ? read.variables : null}
+          pendingId={read.isPending ? read.variables.id : null}
           onRead={markRead}
           onActivate={activate}
         />

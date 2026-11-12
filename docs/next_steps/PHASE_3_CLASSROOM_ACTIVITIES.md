@@ -1,7 +1,7 @@
 # Phase 3 — Classroom-Style Activities (Deadlines, Returns, Notifications, Gradebook)
 
 **As of:** November 12, 2026
-**Status:** Slices 1-3 and Slice 5 (points/gradebook) are verified by their recorded CI and user QA sign-off. Slice 4 email has user-confirmed guided portal checks and API-verified disabled tracking, and is merged with dispatch off; fresh due-soon remains user-skipped and hosted timer activation is pending. Slice 5 is being reconciled with current main for PR #7; its new combined-head CI must pass before integration. Slice 6 private comments is implemented and verified on its separate PR #8 branch. Verification, integration and hosted activation remain separate; see IMPLEMENTATION_STATUS.md and the slice execution records.
+**Status:** Slices 1-3, 5 and 6 are verified by their recorded CI and user QA sign-off: Phase 3 is 5/6 verified. Slice 4 email is merged with user-confirmed guided portal checks and API-verified disabled tracking; it remains Partial because fresh due-soon was user-skipped and hosted timer activation is pending. PRs #7 and #8 are being reconciled with current main and require fresh combined-head CI before integration. Preserve per-submission comment privacy/locking, gradebook publication behavior and disabled outbound email. Verification, integration and hosted rollout remain separate; see IMPLEMENTATION_STATUS.md and execution records.
 **Origin:** Design-tree grill session, 2026-10-19 (19 decisions, all accepted). **Amended 2026-10-22:** private comments (Q20–Q28, Slice ⑥); Q16 revised.
 **Supersedes (when promoted):** PRD §13 "Notifications" deferred item, PRODUCT.md "Push notifications" deferred item.
 
@@ -52,14 +52,14 @@ Phase 3 adds that loop without touching the CV/CNN pipeline or the calibration s
 | Q18 | Migration | Backfill: existing activities assigned to **all** of the teacher's sections, no due date, no points; existing submissions marked **Released**. Legacy take-home visibility is preserved, including null/foreign-section fallback; assigned in-class metadata is additionally visible. Parent uploads stay take-home only |
 | Q19 | Build order | Six slices, §8 *(Slice ⑥ added 2026-10-22)* |
 | Q20 | Private comments: scope | Added as **Slice ⑥**, built after Slice ③ (needs the bell). Post-defense like the rest of Phase 3 |
-| Q21 | Thread anchor | One thread per **student × activity** (keyed on `student_work`). Exists before any upload; survives returns and resubmissions |
+| Q21 | Thread anchor | One separate thread per actual submission. No before-upload conversation; older uploads retain independent threads. [Approved replacement design](../superpowers/specs/2026-11-10-submission-private-comments-design.md). |
 | Q22 | Participants | The activity's owning teacher + **all** parents linked to the student (`student_parent`). One shared thread; everyone sees every message |
 | Q23 | Content | Plain text only, 1–1000 chars. No attachments, no markdown, no auto-linking |
 | Q24 | Edit / delete | No editing. Author may delete own comment → **body scrubbed to NULL**, `deleted_at` stamped, "Comment deleted" placeholder keeps thread order |
-| Q25 | Return note | `submission.return_note` stays as-is. The thread renders return events **inline as read-only entries** derived from submission rows (not stored as comments) so parents can reply in context |
-| Q26 | Notifications | New in-app type `comment_posted` → all participants except the author, **coalesced** to one unread notification per thread per recipient. **No email** (Q6 unchanged) |
-| Q27 | Write path & gating | Writes via FastAPI (participation check + insert + notifications in one transaction); reads via RLS. Postable whenever `is_assigned` holds — incl. in-class and past due / `close_after_due`. Teacher can **lock** a thread |
-| Q28 | Privacy & UI | Bodies never logged, never exported, cascade-deleted with the student. Score-leak-before-release accepted (composer hint only). UI: student-work side panel (teacher) + unread dot on gradebook cell; child's activity page (parent); bell deep-links |
+| Q25 | Return note | Only the selected source's caller-visible Return appears inline at returned_at, never copied into a comment row. |
+| Q26 | Notifications | Body-free in-app comment_posted, coalesced per recipient/submission with exact-version acknowledgment. No email; opening A leaves B unread. |
+| Q27 | Write path & gating | FastAPI service-only transactions; caller-RLS reads. Current participants post under assignment/archive/source-lock gates. Due closure, in-class, excused and draft status do not block. Lock never changes grades/release. |
+| Q28 | Privacy & UI | Bodies never logged, emailed or exported. Authorized source deletion removes its thread/notices; author deletion leaves a scrubbed tombstone. Shared source Details/Comments tabs, explicit upload picker, separate history/deep links and aggregate gradebook unread. [Approved design](../superpowers/specs/2026-11-10-submission-private-comments-design.md). |
 
 ---
 
@@ -73,7 +73,8 @@ Classroom's key idea is a per-student record for each assignment, which exists e
 - pinned attempt (Q14)
 - points override / Assign 0 (Q11, Q15)
 - excused flag (Q15)
-- private comment thread + lock flag (Q21, Q27; Slice ⑥)
+
+Private comment threads and locks belong to each submission (Q21/Q27), outside this work record.
 
 Rows are created on demand (on the first teacher action or upload), not up front for every assigned student.
 
@@ -168,7 +169,6 @@ create table public.student_work (
   pinned_submission_id   uuid references public.submission(id) on delete set null,
   points_override        numeric(6,2) check (points_override >= 0),  -- Slice ⑤; 0 = "Assign 0"
   excused                boolean not null default false,       -- Slice ⑤
-  comments_locked        boolean not null default false,       -- Slice ⑥
   updated_at timestamptz not null default now(),
   primary key (activity_id, student_id)
 );
@@ -227,41 +227,14 @@ Notifications store **IDs only**. The bell UI resolves the child name and activi
 | `measurement`, score-bearing reads, diagnostics | Parent policies gain `and s.released_at is not null` |
 | `notification` | Select own (`recipient_id = auth.uid()`). No client writes; marking read goes through FastAPI |
 | `email_outbox` | RLS enabled, no policies |
-| `private_comment` | Select: teacher who owns the activity, or a parent linked via `student_parent` where `is_assigned(activity_id, student_id)`. **No client writes** (FastAPI only, Q27) |
+| `private_comment` | Approved 2026-11-10: separate submission thread; owning teacher or currently linked parent may read existing thread history after unassignment/archive. Posting has separate current-assignment/archive/lock gates. Preserve current child-link revocation and deny unrelated teachers/parents. **No client writes** (FastAPI only, Q27); see the Slice 6 spec for comment-only historical discovery |
 
-### 4.8 `private_comment` (Slice ⑥)
+### 4.8 Private submission comments (Slice 6)
 
-```sql
-create table public.private_comment (
-  id uuid primary key default gen_random_uuid(),
-  activity_id uuid not null,
-  student_id  uuid not null,
-  author_id   uuid references auth.users(id) on delete set null,   -- null if account removed
-  author_role text not null check (author_role in ('teacher', 'parent')),
-  body        text check (char_length(body) between 1 and 1000),   -- NULL once deleted (Q24)
-  deleted_at  timestamptz,
-  created_at  timestamptz not null default now(),
-  constraint comment_body_xor_deleted check ((body is null) = (deleted_at is not null)),
-  foreign key (activity_id, student_id)
-    references public.student_work(activity_id, student_id) on delete cascade
-);
-create index on public.private_comment (activity_id, student_id, created_at);
+The [2026-11-10 approved design](../superpowers/specs/2026-11-10-submission-private-comments-design.md) replaces the historical student/activity sketch. Execution is tracked in the [replacement plan](../superpowers/plans/2026-11-10-submission-private-comments.md). Final DDL lives in migrations; current contracts live in [DATABASE.md](../DATABASE.md) and [API_SPEC.md section 3.9](../API_SPEC.md#39-private-submission-comments).
 
--- Coalescing for comment_posted (Q26): at most one UNREAD comment notification
--- per (recipient, activity, student). FastAPI inserts with
---   on conflict (recipient_id, activity_id, student_id)
---   where type = 'comment_posted' and read_at is null
---   do update set created_at = now()
--- dedupe_key = 'comment:{activity}:{student}:{recipient}:{first_comment_id}' keeps the
--- global unique constraint satisfied once the previous one has been read.
-create unique index notification_comment_unread_uniq
-  on public.notification (recipient_id, activity_id, student_id)
-  where type = 'comment_posted' and read_at is null;
-```
+Each source has independent lock/version and history. Authorized source deletion cascades its conversation under unchanged permissions; author deletion scrubs text. Old pair-only RPCs are retired. Cutover requires zero legacy comments/comment notices and aborts atomically otherwise. Hosted cleanup/reset is not authorized. No upload is inferred for old data.
 
-- Posting upserts the `student_work` row first (rows are on-demand, §3.1).
-- The thread view merges `private_comment` rows with **return events** read from `submission` (`returned_at`, `return_reason`, `return_note`) in `created_at` order (Q25). Return events are never copied into this table.
-- The unread `comment_posted` notification **is** the per-thread unread state: it drives the gradebook-cell dot, and opening the thread marks it read. No separate read-receipt table.
 
 ---
 
@@ -356,9 +329,9 @@ Parent: their own child's row only, released scores only.
 | Owner-RLS teacher/parent preference PATCH | Exact verified account token; explicit saved value | ④ |
 | `POST /api/internal/dispatch-emails` | Shared-secret internal API; typed OpenAPI security contract | ④ |
 | `GET /api/sections/{id}/gradebook.csv` | CSV export | ⑤ |
-| `POST /api/activities/{id}/students/{student_id}/comments` | `{ body }` — participant check, upsert `student_work`, insert, emit `comment_posted` | ⑥ |
+| `POST /api/submissions/{submission_id}/comments` | `{ body }` — exact-source participant check, insert, emit `comment_posted` | ⑥ |
 | `DELETE /api/comments/{id}` | Author only; scrubs body. Non-author → `NOT_FOUND`; already deleted → 204 (idempotent) | ⑥ |
-| `PUT /api/activities/{id}/students/{student_id}/work` | + `comments_locked` (teacher only) | ⑥ |
+| `PUT /api/submissions/{submission_id}/comments/lock` | Teacher-only comment lock transaction; preserve grade revision/publication (2026-11-09 spec supersedes the mixed-work patch sketch) | ⑥ |
 
 **New error codes** (add to API_SPEC §2.4 catalog, Rule 2):
 
@@ -370,7 +343,7 @@ Parent: their own child's row only, released scores only.
 | `SUBMISSION_NOT_RETURNABLE` | 409 | Status is `processing`, `rejected`, or already `returned` |
 | `SUBMISSION_NOT_RELEASABLE` | 409 | Not graded, or not the active attempt |
 | `INVALID_DISPATCH_SECRET` | 401 | Missing or incorrect `X-Dispatch-Secret` header |
-| `COMMENTS_LOCKED` | 409 | Posting to a thread whose `student_work.comments_locked` is true |
+| `COMMENTS_LOCKED` | 409 | Posting to a thread whose `submission_comment_thread.comments_locked` is true |
 
 Comment body length violations reuse `VALIDATION_ERROR`; non-participants get `NOT_FOUND` (§2.2 ownership rule).
 
@@ -380,7 +353,7 @@ The existing parent-delete rule (`SUBMISSION_ALREADY_GRADED`) is unchanged.
 
 ## 8. Build Order
 
-**Slice ⑤ closeout (2026-11-09):** Points and gradebook is **Verified** following [final implementation-head CI](https://github.com/ryanestoque/writewise/actions/runs/42474197080) on `4044746` and the user's overall manual QA sign-off and explicit closeout request. Phase 3 is **4/6 verified**. Slice ④ email manual/operational gates remain pending; Slice ⑥ private comments is not started. See `IMPLEMENTATION_STATUS.md` and the [Slice 5 execution record](../superpowers/plans/2026-11-07-phase3-points-gradebook.md) for the evidence and distinction from merge/hosted deployment.
+**Slice ⑤ closeout (2026-11-09):** Points and gradebook is **Verified** following [final implementation-head CI](https://github.com/ryanestoque/writewise/actions/runs/42474197080) on `4044746` and the user's overall manual QA sign-off and explicit closeout request. Phase 3 is **4/6 verified**. Slice ④ email manual/operational gates remain pending; Slice ⑥ per-submission comments is implemented with final verification/user acceptance tracked separately. See `IMPLEMENTATION_STATUS.md` and the [Slice 5 execution record](../superpowers/plans/2026-11-07-phase3-points-gradebook.md) for the evidence and distinction from merge/hosted deployment.
 
 Each slice can ship on its own and unblocks the next.
 
@@ -391,7 +364,7 @@ Each slice can ship on its own and unblocks the next.
 | **③ In-app notifications** | `notification` table, FastAPI emitters, `pg_cron` time-based function, header bell | Duplicate notifications | SQL-function tests for idempotency and due-date re-arming |
 | **④ Email** | `email_outbox`, dispatcher endpoint, Resend, external HTTP timer, email toggle | PII in email or in logs | Dispatcher unit tests with stubbed Resend; template snapshot test asserting no score/note fields |
 | **⑤ Points & gradebook** | `points_possible`, overrides, excused, gradebook grid, CSV | Composite-to-points scaling (§9 Q-A) | Pure-function tests for overall % edge cases |
-| **⑥ Private comments** | `private_comment`, `comment_posted` enum value, coalescing index, `comments_locked`, thread panel (teacher + parent), gradebook unread dot | Cross-family leakage; comment bodies in logs | Full suite; RLS: parent of another child / unassigned student cannot read; coalescing test (N comments → 1 unread); delete scrubs body; log-capture test asserting no body text |
+| **⑥ Private comments** | Separate submission threads, upload picker and source unread/history | Cross-family/source leakage; bodies in logs | Full suite and seven upgrade proofs; real-JWT RLS/race/deletion/privacy checks. [Current acceptance record](../../IMPLEMENTATION_STATUS.md). |
 
 ---
 

@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.activities import router as activities_router
+from app.api.comments import router as comments_router
 from app.api.gradebook import router as gradebook_router
 from app.api.internal_emails import router as internal_emails_router
 from app.api.notifications import router as notifications_router
@@ -58,6 +59,21 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    if getattr(request.scope.get("route"), "name", None) in {
+        "post_comment_route",
+        "set_comment_lock_route",
+        "mark_read",
+    }:
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Check the comment request.",
+                    "details": {},
+                }
+            },
+        )
     error_messages = []
     sanitized_errors = []
     for err in exc.errors():
@@ -114,6 +130,7 @@ def health_check():
 
 app.include_router(students_router, prefix="/api/students", tags=["students"])
 app.include_router(gradebook_router, prefix="/api", tags=["gradebook"])
+app.include_router(comments_router, prefix="/api", tags=["comments"])
 app.include_router(internal_emails_router, prefix="/api/internal", tags=["internal-email"])
 app.include_router(notifications_router, prefix="/api/notifications", tags=["notifications"])
 app.include_router(submission_lifecycle_router, prefix="/api", tags=["student-work"])

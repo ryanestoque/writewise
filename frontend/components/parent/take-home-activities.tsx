@@ -5,6 +5,7 @@ import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
 import { compareParentActivityUrgency, getParentActivityStatus } from "@/lib/utils/parent-activity-status";
 import type { TakeHomeActivity, TakeHomeActivitySubmission } from "@/lib/hooks/use-parent-data";
 import { useState, useMemo } from "react";
+import { WorkCommentsButton } from "@/components/comments/submission-comment-picker-sheet";
 import {
   useTakeHomeActivities,
   useChildSubmissionForActivity,
@@ -393,6 +394,9 @@ function ActivityCard({
 
       {/* Action Footer */}
       <div className="pt-2.5 border-t border-border/50 flex flex-wrap items-center justify-between gap-2">
+        {childId && (work.attempts.length || submission?.submissionId) ? <WorkCommentsButton
+          scope={{ activityId, studentId: childId }} activeSubmissionId={work.workState?.active_submission_id ?? null} />
+          : <p className="text-xs text-muted-foreground">Comments are available after a worksheet is uploaded.</p>}
         {isLoading ? (
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -515,7 +519,7 @@ function ActivityCard({
             <AlertDialogHeader>
               <AlertDialogTitle>Delete this photo?</AlertDialogTitle>
               <AlertDialogDescription>
-                This removes your uploaded photo for &ldquo;{targetText}&rdquo;. You can take and send a new photo anytime.
+                This permanently deletes your uploaded photo and its comments for &ldquo;{targetText}&rdquo;. You can take and send a new photo anytime.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

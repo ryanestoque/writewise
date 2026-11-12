@@ -392,6 +392,7 @@ export type Database = {
       notification: {
         Row: {
           activity_id: string
+          comment_version: number | null
           created_at: string
           dedupe_key: string
           id: string
@@ -403,6 +404,7 @@ export type Database = {
         }
         Insert: {
           activity_id: string
+          comment_version?: number | null
           created_at?: string
           dedupe_key: string
           id?: string
@@ -414,6 +416,7 @@ export type Database = {
         }
         Update: {
           activity_id?: string
+          comment_version?: number | null
           created_at?: string
           dedupe_key?: string
           id?: string
@@ -491,6 +494,47 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      private_comment: {
+        Row: {
+          author_id: string | null
+          author_role: string
+          body: string | null
+          comment_version: number
+          created_at: string
+          deleted_at: string | null
+          id: string
+          submission_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          author_role: string
+          body?: string | null
+          comment_version: number
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          submission_id: string
+        }
+        Update: {
+          author_id?: string | null
+          author_role?: string
+          body?: string | null
+          comment_version?: number
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "private_comment_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "submission_comment_thread"
+            referencedColumns: ["submission_id"]
+          },
+        ]
       }
       section: {
         Row: {
@@ -819,6 +863,53 @@ export type Database = {
           },
         ]
       }
+      submission_comment_thread: {
+        Row: {
+          comment_version: number
+          comments_locked: boolean
+          submission_id: string
+        }
+        Insert: {
+          comment_version?: number
+          comments_locked?: boolean
+          submission_id: string
+        }
+        Update: {
+          comment_version?: number
+          comments_locked?: boolean
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submission_comment_thread_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "active_submission"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submission_comment_thread_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["active_submission_id"]
+          },
+          {
+            foreignKeyName: "submission_comment_thread_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["latest_submission_id"]
+          },
+          {
+            foreignKeyName: "submission_comment_thread_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "submission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teacher: {
         Row: {
           created_at: string
@@ -1003,6 +1094,10 @@ export type Database = {
         Args: { actor_id: string; payload: Json }
         Returns: Json
       }
+      delete_private_comment: {
+        Args: { actor_id: string; target_comment_id: string }
+        Returns: Json
+      }
       delete_student_submissions: {
         Args: { actor_id: string; target_submission_ids: string[] }
         Returns: Json
@@ -1039,7 +1134,33 @@ export type Database = {
         Args: { target_student_id: string }
         Returns: boolean
       }
+      list_submission_comment_attempts: {
+        Args: {
+          before_cursor?: Json
+          page_size?: number
+          target_activity_id: string
+          target_student_id: string
+        }
+        Returns: Json
+      }
+      list_submission_comment_threads: {
+        Args: {
+          before_cursor?: Json
+          page_size?: number
+          target_activity_id?: string
+          target_student_id?: string
+        }
+        Returns: Json
+      }
       mark_all_notifications_read: { Args: { actor_id: string }; Returns: Json }
+      mark_comment_notification_read: {
+        Args: {
+          actor_id: string
+          expected_comment_version: number
+          target_notification_id: string
+        }
+        Returns: Json
+      }
       mark_notification_read: {
         Args: { actor_id: string; target_notification_id: string }
         Returns: Json
@@ -1054,6 +1175,14 @@ export type Database = {
         }
         Returns: Json
       }
+      post_submission_comment: {
+        Args: {
+          actor_id: string
+          comment_body: string
+          target_submission_id: string
+        }
+        Returns: Json
+      }
       prepare_email_delivery: {
         Args: { expected_claim_token: string; target_outbox_id: string }
         Returns: Json
@@ -1064,6 +1193,14 @@ export type Database = {
       }
       read_section_gradebook: {
         Args: { target_section_id: string }
+        Returns: Json
+      }
+      read_submission_comment_thread: {
+        Args: {
+          before_cursor?: Json
+          page_size?: number
+          target_submission_id: string
+        }
         Returns: Json
       }
       record_student_submission: {
@@ -1092,6 +1229,14 @@ export type Database = {
         Args: { actor_id: string; payload: Json; target_submission_id: string }
         Returns: Json
       }
+      set_submission_comment_lock: {
+        Args: {
+          actor_id: string
+          locked: boolean
+          target_submission_id: string
+        }
+        Returns: Json
+      }
       update_assigned_activity: {
         Args: { actor_id: string; payload: Json; target_activity_id: string }
         Returns: Json
@@ -1106,6 +1251,7 @@ export type Database = {
         | "score_released"
         | "activity_missing"
         | "resubmitted_after_return"
+        | "comment_posted"
       return_reason:
         | "wrong_worksheet"
         | "blurry_or_cropped"
@@ -1257,6 +1403,7 @@ export const Constants = {
         "score_released",
         "activity_missing",
         "resubmitted_after_return",
+        "comment_posted",
       ],
       return_reason: [
         "wrong_worksheet",
