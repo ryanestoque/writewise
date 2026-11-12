@@ -429,7 +429,7 @@ I/O is mocked, output is checked for sentinel leaks, and server/socket/thread
 cleanup is required. These synthetic checks do not establish hosted timer or
 inbox delivery. The existing local-only root test guard remains in force.
 
-Portal QA still requires both roles, false/true refresh persistence, independent linked-parent preferences, failed reads/saves, duplicate clicks, account changes during verification/PATCH, mobile layout, keyboard/focus/feedback and an unchanged bell. Production activation/tracking/live delivery need separate authorized evidence.
+Portal QA covers both roles, false/true refresh persistence, independent linked-parent preferences, failed reads/saves, duplicate clicks, account changes during verification/PATCH, mobile layout, keyboard/focus/feedback and an unchanged bell. The guided follow-up below records the user's confirmations and their limits; automated transport checks remain distinct from an independently observed walkthrough. Hosted activation and automatic live delivery need separate authorized evidence.
 
 ### Manual session closeout — 2026-11-12
 
@@ -450,3 +450,23 @@ incompatible with the current guard; Supabase's unsupported managed-grant change
 require a scheduler design correction, not removal of the guard or weakening of
 tests. Automatic dispatch, tracking review and full slice verification remain
 open. See the dated execution record for exact evidence and boundaries.
+
+
+### Guided follow-up and code merge scope - 2026-11-12
+
+The user subsequently confirmed teacher off/on refresh persistence, teacher
+offline-read recovery, both-role keyboard/mobile checks at 375px, both-role
+failed-save recovery and repeated saves, the described teacher-to-parent account
+switch while Saving is visible, and symmetric preference independence for two
+parents linked to the same student in separate sessions. These are user-reported
+results; they do not establish separate verification/PATCH timing, screen-reader
+behavior or an independent unchanged-bell walkthrough. Parent persistence and
+event-time opt-out/no replay already had dev evidence.
+
+Read-only Resend domain API calls independently confirmed open_tracking=false
+and click_tracking=false; no domain/setting was created or changed. Fresh
+queued due-soon remains user-skipped, not passed. Hosted retirement/backend/timer
+rollout and automatic delivery remain open. The user authorized code merge with
+dispatch OFF without closing those activation gates. See the [execution
+record](superpowers/plans/2026-11-03-phase3-email-notifications.md) for the exact
+follow-up matrix. Prior pending-only statements above are historical checkpoints.

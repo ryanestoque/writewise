@@ -871,3 +871,34 @@ tests and sanitized operational results. Credentials and the selected inbox
 address are not included in tracked closeout documents. No schema modification,
 database reset, queue deletion, bulk preference overwrite or production action
 was performed. Preserve the worktree and local env files for follow-up.
+
+## Guided portal QA follow-up and merge scope - 2026-11-12
+
+This follow-up supersedes the earlier statements that all remaining portal
+checks and tracking review lack sign-off. The user confirmed each guided check
+in conversation. These are user-reported results, not an independent agent
+browser walkthrough; the companion-page payload contained no page/document.
+
+| Check | Follow-up evidence |
+|---|---|
+| Teacher preference persistence | User confirmed off/save/refresh, then on/save/refresh; parent persistence was already verified. |
+| Read failure recovery | User confirmed the teacher card shows an error on offline Reload settings and restores the saved preference on online reload. |
+| Keyboard and mobile | Both roles: visible Tab focus, Space toggle, keyboard save/saved feedback, restored preference and 375px layout without horizontal scrolling. |
+| Failed saves | Both roles: offline save reports failure without success, then online reload restores the previously saved value. |
+| Repeated saves | Both roles: rapid double Save, disabled processing state, success without errors, refresh persistence and restored preference. |
+| Account switching | User confirmed teacher opt-out saving followed by parent sign-in while Saving is visible, with the parent remaining opted in after refresh. This does not independently establish separate token-verification/PATCH timings. |
+| Linked-parent independence | User confirmed two parents linked to the same student, using normal/incognito sessions: A off/B on, then A on/B off, both stable after refresh, followed by restoration. |
+| Provider tracking | Agent read-only GET /domains and GET /domains/:id confirmed the existing sending domain has open_tracking=false and click_tracking=false. Only booleans were printed; no domain/settings change or send occurred. |
+
+The guided portal checklist is user-reported passed. Separate screen-reader,
+unchanged-bell walkthrough, parent-only read-failure and exact in-flight timing
+evidence are not inferred. Controlled transport/RLS evidence remains applicable.
+Fresh queued due-soon delivery stays explicitly skipped, not passed.
+
+After these checks, the user explicitly approved code merge closeout with normal
+dispatch OFF and hosted migration/backend/timer rollout kept separate. This
+supersedes the earlier draft-only integration scope; it does not waive or claim
+the remaining activation evidence. Slice 4 remains Partial and Phase 3 remains
+3/6 verified. Before merging, require green CI on the updated PR head and record
+the actual merge result in PR #9. Preserve local worktree, env and QA artifacts;
+do not apply hosted migrations, enable dispatch or provision a timer here.

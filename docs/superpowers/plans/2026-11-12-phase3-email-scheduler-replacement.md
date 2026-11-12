@@ -241,8 +241,8 @@ node --test ops/email-dispatch/dispatch.test.mjs
 git diff --check
 ```
 
-- [ ] Apply requesting-code-review and verification-before-completion. Resolve material findings; rerun affected checks only. Publish checkpoints only to the already authorized origin/feature branch; no force push, merge, hosted migration or deployment. Require fresh final-head CI with all five upgrade proofs/full pytest/contracts/advisors and capture its exact URL/SHA.
-- [ ] Update draft PR #9 around the final implementation and actual validation, including unperformed operations/manual gates. Preserve the worktree/env files. Whether to mark ready/merge must reflect current acceptance evidence and the user's integration decision; code success does not activate email.
+- [x] Apply requesting-code-review and verification-before-completion. Resolve material findings; rerun affected checks only. Publish checkpoints only to the already authorized origin/feature branch; no force push, merge, hosted migration or deployment. Require fresh final-head CI with all five upgrade proofs/full pytest/contracts/advisors and capture its exact URL/SHA.
+- [x] Update draft PR #9 around the final implementation and actual validation, including unperformed operations/manual gates. Preserve the worktree/env files. Whether to mark ready/merge must reflect current acceptance evidence and the user's integration decision; code success does not activate email.
 
 ## Coverage and execution record
 
@@ -265,3 +265,6 @@ Task 2 red proof: https://github.com/ryanestoque/writewise/actions/runs/43192576
 
 
 **Migrated green checkpoint:** [CI run 43195421062](https://github.com/ryanestoque/writewise/actions/runs/43195421062) completed successfully on `3f10a02caf00e2e869568078cffa4ea563d466ae`: 668 backend tests (47 warnings), nine Node caller cases, all five upgrade proofs, disabled Docker image execution, Ruff/ESLint/TypeScript, regenerated API/database contracts without drift, security advisors and teardown. Local final Ruff/ESLint/TypeScript and diff whitespace checks also passed. Independent implementation/documentation review resolved the canonical fixture keys and one stale owner-provisioning sentence; no material finding remains. Tasks 2-4 are complete. Final documentation-head CI and PR body refresh follow; hosted migration/service/activation and broader manual gates remain unperformed.
+
+
+**Final implementation-head evidence and subsequent merge authorization:** Both [push CI](https://github.com/ryanestoque/writewise/actions/runs/43197657164) and [PR CI](https://github.com/ryanestoque/writewise/actions/runs/43197667294) passed on `1ac9a0082f37f2dff5ecf68cbec203d99febbeab`: 668 backend tests, nine caller tests, all five upgrade proofs, contracts, advisors, disabled container and teardown. Task 5 implementation/PR verification is complete. Later guided user confirmations and a read-only provider tracking check are recorded in the original email execution record. The user then explicitly authorized updating the QA record, marking PR #9 ready and merging after green updated-head CI with dispatch OFF. This later instruction supersedes the earlier no-merge/draft-only execution boundary for code integration only. It does not authorize hosted database changes, timer provisioning or email activation. Preserve the worktree/env files; record the actual updated-head CI and merge result in PR #9.
