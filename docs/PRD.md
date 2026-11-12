@@ -237,9 +237,15 @@ The program has not issued specific required thresholds, so the following are pr
 - Dedicated Admin role (needed only if expanding beyond a single school)
 - Curriculum-aligned template library for activity creation (DepEd word/sentence sets)
 - Background/async processing (revisit if per-submission processing time becomes a bottleneck)
-- Email notifications (Phase 3 Slice 4; in-app notifications are Slice 3)
+- Hosted activation of optional classroom email (Slice 4 implementation/verification tracked separately)
 - Permanent manual-score override for teachers post-calibration
 
 ### Phase 3 — Classroom activities, Slice 3
 
 Teachers and parents receive private in-app coursework notifications through a header bell. Events cover new assignments, due-soon/missing work, returned/rejected attempts, released results, and successful parent resubmissions after Return. Parents see updates for every linked child; teachers receive the successful-resubmission event. Opening a notice leads to the exact permitted activity/attempt. Read actions, deadline deduplication/re-arming, and current result-release privacy are included. Email, points/gradebook, excused work, and comments remain later slices. Implementation verification and deployment are tracked separately in `IMPLEMENTATION_STATUS.md`.
+
+### Phase 3 Slice 4 — Optional classroom email
+
+Parents may receive generic email when work needs another attempt or an activity is due soon. No other coursework event sends email. Fixed messages contain login/settings links without child names, activity titles, scores, images, notes or account tokens. Each parent/teacher has a default-on email preference; current classroom emails target parents only. In-app notifications always stay on. Opt-out suppresses queued eligible messages; re-enabling never replays skipped/historical email.
+
+Email is an optional channel. Provider outages, quota/billing failures and bounded retries do not prevent coursework or the bell from working. The app promises neither delivery nor exactly-once sending and implements no spending cap. Configuration and an authorized synthetic live smoke test are operational prerequisites, separate from repository implementation/verification.

@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ "main", "feat/phase3-assignment-deadlines", "feat/phase3-return-release", "feat/phase3-notifications-implementation" ]
+    branches: [ "main", "feat/phase3-assignment-deadlines", "feat/phase3-return-release", "feat/phase3-notifications-implementation", "feat/phase3-email-notifications" ]
   pull_request:
     branches: [ "main" ]
 
@@ -18,6 +18,14 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: 24
+
+    - name: Test external email caller
+      run: node --test ops/email-dispatch/dispatch.test.mjs
+
+    - name: Build and check disabled email timer container
+      run: |
+        docker build -t writewise-email-caller:ci ops/email-dispatch
+        docker run --rm writewise-email-caller:ci
 
     - name: Install uv
       uses: astral-sh/setup-uv@v5
@@ -111,6 +119,34 @@ jobs:
         supabase migration up --local
         cd backend
         uv run python tests/migrations/notification_upgrade_check.py verify --manifest /tmp/notification-upgrade.json
+        cd ..
+        supabase db reset --local
+
+    - name: Verify legacy email upgrade
+      env:
+        ENVIRONMENT: test
+      run: |
+        supabase db reset --local --version 20261103010004
+        cd backend
+        uv run python tests/migrations/email_upgrade_check.py prepare --manifest /tmp/email-upgrade.json
+        cd ..
+        supabase migration up --local
+        cd backend
+        uv run python tests/migrations/email_upgrade_check.py verify --manifest /tmp/email-upgrade.json
+        cd ..
+        supabase db reset --local
+
+    - name: Verify database email scheduler retirement upgrade
+      env:
+        ENVIRONMENT: test
+      run: |
+        supabase db reset --local --version 20261103132241
+        cd backend
+        uv run python tests/migrations/email_scheduler_upgrade_check.py prepare --manifest /tmp/email-scheduler-upgrade.json
+        cd ..
+        supabase migration up --local
+        cd backend
+        uv run python tests/migrations/email_scheduler_upgrade_check.py verify --manifest /tmp/email-scheduler-upgrade.json
         cd ..
         supabase db reset --local
 
