@@ -44,6 +44,8 @@ export type Database = {
           instructions: string | null
           is_archived: boolean
           is_take_home: boolean
+          points_possible: number | null
+          points_revision: number
           target_text: string
           title: string
         }
@@ -56,6 +58,8 @@ export type Database = {
           instructions?: string | null
           is_archived?: boolean
           is_take_home?: boolean
+          points_possible?: number | null
+          points_revision?: number
           target_text: string
           title: string
         }
@@ -68,6 +72,8 @@ export type Database = {
           instructions?: string | null
           is_archived?: boolean
           is_take_home?: boolean
+          points_possible?: number | null
+          points_revision?: number
           target_text?: string
           title?: string
         }
@@ -596,6 +602,7 @@ export type Database = {
         Row: {
           activity_id: string
           due_at_override: string | null
+          excused: boolean
           pinned_submission_id: string | null
           student_id: string
           updated_at: string
@@ -603,6 +610,7 @@ export type Database = {
         Insert: {
           activity_id: string
           due_at_override?: string | null
+          excused?: boolean
           pinned_submission_id?: string | null
           student_id: string
           updated_at?: string
@@ -610,6 +618,7 @@ export type Database = {
         Update: {
           activity_id?: string
           due_at_override?: string | null
+          excused?: boolean
           pinned_submission_id?: string | null
           student_id?: string
           updated_at?: string
@@ -655,6 +664,78 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "student"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_work_grade: {
+        Row: {
+          activity_id: string
+          id: string
+          points_override: number | null
+          released_at: string | null
+          released_revision: number | null
+          revision: number
+          source_signature: string
+          source_submission_id: string | null
+          student_id: string
+        }
+        Insert: {
+          activity_id: string
+          id?: string
+          points_override?: number | null
+          released_at?: string | null
+          released_revision?: number | null
+          revision?: number
+          source_signature: string
+          source_submission_id?: string | null
+          student_id: string
+        }
+        Update: {
+          activity_id?: string
+          id?: string
+          points_override?: number | null
+          released_at?: string | null
+          released_revision?: number | null
+          revision?: number
+          source_signature?: string
+          source_submission_id?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_work_grade_activity_id_student_id_fkey"
+            columns: ["activity_id", "student_id"]
+            isOneToOne: true
+            referencedRelation: "student_work"
+            referencedColumns: ["activity_id", "student_id"]
+          },
+          {
+            foreignKeyName: "student_work_grade_source_submission_id_fkey"
+            columns: ["source_submission_id"]
+            isOneToOne: false
+            referencedRelation: "active_submission"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_work_grade_source_submission_id_fkey"
+            columns: ["source_submission_id"]
+            isOneToOne: false
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["active_submission_id"]
+          },
+          {
+            foreignKeyName: "student_work_grade_source_submission_id_fkey"
+            columns: ["source_submission_id"]
+            isOneToOne: false
+            referencedRelation: "activity_work_state"
+            referencedColumns: ["latest_submission_id"]
+          },
+          {
+            foreignKeyName: "student_work_grade_source_submission_id_fkey"
+            columns: ["source_submission_id"]
+            isOneToOne: false
+            referencedRelation: "submission"
             referencedColumns: ["id"]
           },
         ]
@@ -850,6 +931,7 @@ export type Database = {
           activity_id: string | null
           due_at_override: string | null
           effective_due_at: string | null
+          excused: boolean | null
           late: boolean | null
           latest_rejection_code: string | null
           latest_status: Database["public"]["Enums"]["submission_status"] | null
@@ -895,6 +977,14 @@ export type Database = {
       }
     }
     Functions: {
+      assign_zero_missing: {
+        Args: {
+          actor_id: string
+          target_activity_id: string
+          target_student_ids?: string[]
+        }
+        Returns: Json
+      }
       authorize_email_delivery: {
         Args: {
           expected_claim_token: string
@@ -911,6 +1001,19 @@ export type Database = {
       }
       create_assigned_activity: {
         Args: { actor_id: string; payload: Json }
+        Returns: Json
+      }
+      delete_student_submissions: {
+        Args: { actor_id: string; target_submission_ids: string[] }
+        Returns: Json
+      }
+      excuse_activity_students: {
+        Args: {
+          actor_id: string
+          excused: boolean
+          target_activity_id: string
+          target_student_ids: string[]
+        }
         Returns: Json
       }
       finish_email_delivery: {
@@ -955,6 +1058,14 @@ export type Database = {
         Args: { expected_claim_token: string; target_outbox_id: string }
         Returns: Json
       }
+      read_child_gradebook: {
+        Args: { target_student_id: string }
+        Returns: Json
+      }
+      read_section_gradebook: {
+        Args: { target_section_id: string }
+        Returns: Json
+      }
       record_student_submission: {
         Args: {
           actor_id: string
@@ -966,6 +1077,15 @@ export type Database = {
       }
       release_activity_results: {
         Args: { actor_id: string; target_activity_id: string }
+        Returns: Json
+      }
+      release_student_work_grade: {
+        Args: {
+          actor_id: string
+          expected_revision: number
+          target_activity_id: string
+          target_student_id: string
+        }
         Returns: Json
       }
       save_manual_submission_score: {

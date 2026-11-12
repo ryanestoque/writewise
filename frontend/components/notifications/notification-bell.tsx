@@ -43,11 +43,17 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
 
   useEffect(() => {
     const clear = (id: string) => {
+      void client.cancelQueries({ queryKey: ["gradebook", id] }).then(() => {
+        client.removeQueries({ queryKey: ["gradebook", id] });
+      });
       void client.cancelQueries({ queryKey: notificationKeys.account(id) }).then(() => {
         client.removeQueries({ queryKey: notificationKeys.account(id) });
       });
     };
     for (const [key] of client.getQueriesData({ queryKey: notificationKeys.root })) {
+      if (typeof key[1] === "string" && key[1] !== userId) clear(key[1]);
+    }
+    for (const [key] of client.getQueriesData({ queryKey: ["gradebook"] })) {
       if (typeof key[1] === "string" && key[1] !== userId) clear(key[1]);
     }
     const { data } = createClient().auth.onAuthStateChange((event, session) => {

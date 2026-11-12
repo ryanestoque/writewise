@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ActivityAssignmentFields, activitySchema, type ActivityFormValues } from "./activity-assignment-fields";
@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import {
   Field,
   FieldLabel,
@@ -48,6 +49,7 @@ export function EditActivityDialog({
   onOpenChange,
 }: EditActivityDialogProps) {
   const { mutate: updateActivity, isPending } = useUpdateActivity();
+  const [removeConfirmation, setRemoveConfirmation] = useState(false);
 
   const form = useForm<ActivityFormValues>({
     resolver: zodResolver(activitySchema),
@@ -57,11 +59,13 @@ export function EditActivityDialog({
       due_input: toActivityDueInput(activity?.due_at ?? null), close_after_due: activity?.close_after_due ?? false,
       target_text: activity?.target_text ?? "",
       is_take_home: activity?.is_take_home ?? false,
+      points_input: activity?.points_possible?.toString() ?? "", confirm_remove_points: false,
     },
   });
 
   const targetText = useWatch({ control: form.control, name: "target_text" });
   const isTakeHome = useWatch({ control: form.control, name: "is_take_home" });
+  const points = useWatch({ control: form.control, name: "points_input" });
   const wordCount = getWordCount(targetText || "");
 
   useEffect(() => {
@@ -71,12 +75,17 @@ export function EditActivityDialog({
         due_input: toActivityDueInput(activity.due_at), close_after_due: activity.close_after_due,
         target_text: activity.target_text,
         is_take_home: activity.is_take_home,
+        points_input: activity.points_possible?.toString() ?? "", confirm_remove_points: false,
       });
     }
   }, [activity, open, form]);
 
   const onSubmit = (data: ActivityFormValues) => {
     if (!activity) return;
+    if (activity.points_possible !== null && !data.points_input && !data.confirm_remove_points) {
+      setRemoveConfirmation(true);
+      return;
+    }
     if (!data.assignments.length && activity.assignments.length) {
       form.setError("assignments", { message: "Choose at least one section or student." });
       return;
@@ -91,6 +100,8 @@ export function EditActivityDialog({
           due_at: toActivityDueAt(data.due_input), close_after_due: data.close_after_due,
           target_text: data.target_text,
           is_take_home: data.is_take_home,
+          ...(form.formState.dirtyFields.points_input || data.confirm_remove_points ? { points_possible: data.points_input || null } : {}),
+          confirm_remove_points: data.confirm_remove_points,
         },
       },
       {
@@ -99,6 +110,12 @@ export function EditActivityDialog({
           onOpenChange(false);
         },
         onError: (error: Error) => {
+          if (error instanceof ApiError && error.code === "POINTS_OVERRIDE_CONFLICT") {
+            form.setError("points_input", { message: "An existing override exceeds this maximum. Adjust the override first." });
+          }
+          if (error instanceof ApiError && error.code === "POINTS_REMOVAL_CONFIRMATION_REQUIRED") {
+            form.setError("points_input", { message: "Confirm removal of points and existing grade publication." });
+          }
           if (error instanceof ApiError && error.code === "INVALID_ASSIGNMENT_TARGET") {
             form.setError("assignments", { message: "Choose sections or students from your current roster." });
           }
@@ -127,6 +144,12 @@ export function EditActivityDialog({
           <div className="overflow-y-auto overflow-x-hidden overscroll-contain px-1 py-1 flex-1 min-h-0">
             <FieldGroup>
               <ActivityAssignmentFields form={form} />
+              {activity?.points_possible != null && !points && (
+                <p className="rounded-lg border p-3 text-sm">Saving will ask you to confirm removal of existing point grades.</p>
+              )}
+              {activity?.points_possible != null && points && Number(points) !== activity.points_possible && (
+                <p className="text-sm text-muted-foreground">Changing the maximum returns point grades to draft. Release them again after review.</p>
+              )}
               {/* Target Text */}
               <Field data-invalid={!!form.formState.errors.target_text}>
                 <FieldLabel
@@ -273,6 +296,21 @@ export function EditActivityDialog({
             </Button>
           </div>
         </form>
+        <AlertDialog open={removeConfirmation} onOpenChange={setRemoveConfirmation}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove points from this activity?</AlertDialogTitle>
+              <AlertDialogDescription>All teacher point overrides will be cleared, and published point grades withdrawn. Handwriting assessments remain available. Restoring points later requires releasing grades again.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep editing</AlertDialogCancel>
+              <AlertDialogAction variant="destructive" onClick={() => {
+                setRemoveConfirmation(false);
+                onSubmit({ ...form.getValues(), confirm_remove_points: true });
+              }}>Remove points and save</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

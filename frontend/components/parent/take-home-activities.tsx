@@ -315,7 +315,7 @@ function ActivityCard({
   });
 
   const now = useActivityNow();
-  const { closed, processing: isProcessing, rejected: isRejected, returned: isReturned, category } =
+  const { closed, processing: isProcessing, rejected: isRejected, returned: isReturned, category, excused } =
     getParentActivityStatus({ ...work, submission }, now);
   const isCompleted = submission?.status === "completed";
 
@@ -335,7 +335,7 @@ function ActivityCard({
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums">
-            {category === "closed" ? "Closed · Photo still needed" : work.dueAt ? `Due ${formatActivityDueAt(work.dueAt)}` : `Assigned ${formattedDate}`}
+            {excused ? "Excused · Optional practice" : category === "closed" ? "Closed · Photo still needed" : work.dueAt ? `Due ${formatActivityDueAt(work.dueAt)}` : `Assigned ${formattedDate}`}
           </span>
         </div>
 
@@ -369,7 +369,8 @@ function ActivityCard({
             </p>
           )}
 
-        {isReturned && (
+        {excused && <p className="text-sm text-muted-foreground">This worksheet is excused from coursework totals. Your child can still practise.</p>}
+        {isReturned && !excused && (
           <div className="flex flex-col gap-1 rounded-lg border border-border p-3 text-sm bg-muted/30">
             <p className="font-semibold text-foreground">Teacher asked for a new photo</p>
             {work.workState?.return_reason && (
@@ -383,7 +384,7 @@ function ActivityCard({
           </div>
         )}
 
-        {closed && (
+        {closed && !excused && (
           <p role="status" className="text-sm text-muted-foreground">
             The deadline has passed. Ask your teacher if you need to send a late photo.
           </p>

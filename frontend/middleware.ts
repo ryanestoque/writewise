@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/middleware";
 const publicRoutes = ["/login", "/signup", "/accept-invite", "/auth/callback", "/reset-password"];
 
 // Route-to-role mapping (Next.js strips the route group prefix from URLs)
-const teacherRoutes = ["/dashboard", "/roster", "/activities", "/settings"];
+const teacherRoutes = ["/dashboard", "/roster", "/activities", "/gradebook", "/settings"];
 const parentRoutes = ["/progress", "/parent-settings"];
 
 // Default landing pages per role

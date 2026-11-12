@@ -13,6 +13,7 @@ import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { useSections } from "@/lib/hooks/use-sections";
 import { useStudents } from "@/lib/hooks/use-students";
 import { toActivityDueAt } from "@/lib/utils/activity-deadlines";
+import { PointsField, validPointsInput } from "@/components/gradebook/points-field";
 
 export const activitySchema = z.object({
   title: z.string().trim().min(1, "Title is required"),
@@ -34,6 +35,8 @@ export const activitySchema = z.object({
   }, "Enter a valid due date and time"),
   close_after_due: z.boolean(),
   is_take_home: z.boolean(),
+  points_input: z.string().refine((value) => value === "" || validPointsInput(value), "Use points from 0.01 to 9,999.99 with up to two decimal places."),
+  confirm_remove_points: z.boolean(),
 });
 export type ActivityFormValues = z.infer<typeof activitySchema>;
 
@@ -44,6 +47,7 @@ export function ActivityAssignmentFields({ form }: { form: UseFormReturn<Activit
   const targets = useWatch({ control: form.control, name: "assignments" }) ?? [];
   const due = useWatch({ control: form.control, name: "due_input" });
   const closed = useWatch({ control: form.control, name: "close_after_due" });
+  const points = useWatch({ control: form.control, name: "points_input" });
   const toggle = (key: "section_id" | "student_id", value: string, checked: boolean) => {
     form.setValue(
       "assignments",
@@ -165,6 +169,10 @@ export function ActivityAssignmentFields({ form }: { form: UseFormReturn<Activit
             ))}
         <FieldError id={`${id}-targets-error`} errors={[form.formState.errors.assignments]} />
       </fieldset>
+      <PointsField value={points ?? ""} onChange={(value) => {
+        form.setValue("points_input", value, { shouldDirty: true, shouldValidate: true });
+        form.setValue("confirm_remove_points", false);
+      }} error={form.formState.errors.points_input?.message} />
       <Field data-invalid={!!form.formState.errors.due_input}>
         <FieldLabel htmlFor={`${id}-due`}>Due date and time (optional)</FieldLabel>
         <Input

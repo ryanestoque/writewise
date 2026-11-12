@@ -1,7 +1,7 @@
 # Phase 3 — Classroom-Style Activities (Deadlines, Returns, Notifications, Gradebook)
 
 **As of:** November 12, 2026
-**Status:** Slices ①–③ are verified. Slice ④ email implementation passed all automated gates (668 backend tests, nine caller tests, five upgrades, contracts and advisors) and has user-confirmed guided portal checks and API-verified disabled tracking. It remains Partial pending fresh due-soon delivery (user-skipped) and hosted timer activation; code merge with dispatch off is authorized separately. Slices ⑤–⑥ remain future design. See IMPLEMENTATION_STATUS.md and the Slice 4 execution record. Verification, PR integration and hosted activation remain separate; superseded email sketches below are historical proposals.
+**Status:** Slices 1-3 and Slice 5 (points/gradebook) are verified by their recorded CI and user QA sign-off. Slice 4 email has user-confirmed guided portal checks and API-verified disabled tracking, and is merged with dispatch off; fresh due-soon remains user-skipped and hosted timer activation is pending. Slice 5 is being reconciled with current main for PR #7; its new combined-head CI must pass before integration. Slice 6 private comments is implemented and verified on its separate PR #8 branch. Verification, integration and hosted activation remain separate; see IMPLEMENTATION_STATUS.md and the slice execution records.
 **Origin:** Design-tree grill session, 2026-10-19 (19 decisions, all accepted). **Amended 2026-10-22:** private comments (Q20–Q28, Slice ⑥); Q16 revised.
 **Supersedes (when promoted):** PRD §13 "Notifications" deferred item, PRODUCT.md "Push notifications" deferred item.
 
@@ -380,6 +380,8 @@ The existing parent-delete rule (`SUBMISSION_ALREADY_GRADED`) is unchanged.
 
 ## 8. Build Order
 
+**Slice ⑤ closeout (2026-11-09):** Points and gradebook is **Verified** following [final implementation-head CI](https://github.com/ryanestoque/writewise/actions/runs/42474197080) on `4044746` and the user's overall manual QA sign-off and explicit closeout request. Phase 3 is **4/6 verified**. Slice ④ email manual/operational gates remain pending; Slice ⑥ private comments is not started. See `IMPLEMENTATION_STATUS.md` and the [Slice 5 execution record](../superpowers/plans/2026-11-07-phase3-points-gradebook.md) for the evidence and distinction from merge/hosted deployment.
+
 Each slice can ship on its own and unblocks the next.
 
 | Slice | Scope | Key risk | Tests |
@@ -397,7 +399,7 @@ Each slice can ship on its own and unblocks the next.
 
 | # | Question | Recommended default |
 |---|---|---|
-| **Q-A** ⚠️ | Under manual scoring, each band maps to a midpoint (12.5 / 37.5 / 62.5 / **87.5**), so a perfect worksheet only reaches **87.5 %** of the points. Should points scale from the raw composite, or from a normalized band ladder? | Scale from the **band ladder** (Excellent = 100 %, Satisfactory = 75 %, Developing = 50 %, NI = 25 %) while manual; switch to the raw calibrated composite once `SCORING_ENGINE=calibrated`, behind the ScoreProvider |
+| **Q-A — resolved 2026-11-07** | Should gradebook points use the existing composite or a normalized manual band ladder? | **User-approved:** existing recorded composites for both sources; no 25/50/75/100 normalization. Preserve shared portal cutoffs and manual midpoint values (all-Excellent manual work earns 87.5% of activity points). See the [approved Slice 5 design](../superpowers/specs/2026-11-07-phase3-points-gradebook-design.md) and [execution plan](../superpowers/plans/2026-11-07-phase3-points-gradebook.md). |
 | Q-B | Student joins a section after an activity was assigned: send `activity_assigned`? | No. It still appears in their list; avoids a burst of notifications when a roster is imported |
 | Q-C | Student moves sections: do old assignments follow? | Section-based assignments follow the *current* section; existing submissions are kept regardless |
 | Q-D | Should a returned submission's teacher note be visible in the parent's submission history? | Yes, in-app only |

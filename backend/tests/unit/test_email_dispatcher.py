@@ -25,6 +25,7 @@ def delivery_case(**options):
         many=options.get("many", False),
         malformed=options.get("malformed", False),
         elapsed_after_prepare=options.get("elapsed_after_prepare", 0),
+        skip_code=options.get("skip_code"),
         elapsed=0,
         calls=[],
         claims=0,
@@ -72,7 +73,9 @@ async def run_case(state, started=None, resume=None):
                 )
             if state.preparation == "lost":
                 return httpx.Response(200, json={"state": "lost"})
-            return httpx.Response(200, json={"state": "skipped", "code": "preference_off"})
+            return httpx.Response(
+                200, json={"state": "skipped", "code": state.skip_code or "preference_off"}
+            )
         if name == "authorize_email_delivery":
             assert payload["expected_claim_token"] == CLAIM
             assert payload["payload_recipient"] == "parent@example.com"
@@ -80,7 +83,9 @@ async def run_case(state, started=None, resume=None):
             if state.malformed:
                 return httpx.Response(200, json={"state": "authorized"})
             if state.authorization == "skipped":
-                return httpx.Response(200, json={"state": "skipped", "code": "payload_changed"})
+                return httpx.Response(
+                    200, json={"state": "skipped", "code": state.skip_code or "payload_changed"}
+                )
             return httpx.Response(
                 200,
                 json={
@@ -144,10 +149,12 @@ def test_dispatch_commits_outcome_using_authorized_token():
 
 
 @pytest.mark.parametrize("stage", ["prepare", "authorize"])
-def test_skip_never_sends_to_provider(stage):
+@pytest.mark.parametrize("skip_code", [None, "work_excused"])
+def test_skip_never_sends_to_provider(stage, skip_code):
     state = delivery_case(
         preparation="skipped" if stage == "prepare" else "ready",
         authorization="skipped" if stage == "authorize" else "authorized",
+        skip_code=skip_code,
     )
     result = asyncio.run(run_case(state))
     assert result.skipped == 1

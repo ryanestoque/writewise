@@ -81,6 +81,10 @@ The frontend branches on `error.code`, never on parsing `message` text (ARCHITEC
 | `SUBMISSION_NOT_RETURNABLE` | 409 | Return requested for a processing, rejected, or already returned attempt |
 | `SUBMISSION_NOT_RELEASABLE` | 409 | Release requested for an inactive, ungraded, rejected, or returned attempt |
 | `INVALID_WORK_SELECTION` | 422 | Pin does not reference a completed attempt for this student and activity |
+| `GRADE_NOT_RELEASABLE` | 409 | Work is excused, points are disabled, or no numeric grade is available |
+| `GRADE_REVISION_CONFLICT` | 409 | Work changed since the teacher reviewed its grade revision |
+| `POINTS_OVERRIDE_CONFLICT` | 409 | A new activity maximum would be lower than an existing override |
+| `POINTS_REMOVAL_CONFIRMATION_REQUIRED` | 409 | Removing points with retained grades needs explicit confirmation |
 | `QUALITY_GATE_BLUR` | 422 | CV_PIPELINE §2 |
 | `QUALITY_GATE_BRIGHTNESS` | 422 | CV_PIPELINE §2 |
 | `QUALITY_GATE_CONTRAST` | 422 | CV_PIPELINE §2 |
@@ -645,6 +649,34 @@ Event types: `activity_assigned`, `due_soon`, `submission_returned`, `submission
 The server selects at most ten rows and runs at most twenty seconds. Request bodies/query parameters cannot choose a recipient, outbox ID, provider URL, or limit. Success is `200 { claimed, sent, retried, failed, skipped }`, with nonnegative integer counts for this invocation's acknowledged outcomes. An empty queue returns all zeros. A released unused or lost claim can make claimed exceed the four outcome counters. Sent means provider acceptance, not inbox delivery.
 
 Each send follows committed claim, current eligibility, and single-use authorization RPCs. Provider HTTP occurs outside database transactions. Transient failures use the same payload/idempotency key and bounded retries; quota/credential-wide failures stop this invocation after persisting the outcome. Unexpected infrastructure failure yields sanitized `500 INTERNAL_ERROR`; earlier committed outcomes remain durable, and uncertain reservations recover through their leases. No portal calls this endpoint. Operational activation/scheduling remains separate from the API contract.
+
+---
+
+### 3.8 Gradebook reads and class-record CSV
+
+Activity POST/PATCH accepts optional `points_possible` (decimal string or number, greater than zero through 9999.99, at most two decimal places). PATCH preserves omitted points; explicit null removes them. If grades exist, removal requires `confirm_remove_points: true` and clears overrides/publication. A maximum below an override rolls the entire edit back. Unchanged numeric values preserve publication.
+
+Work PUT additionally accepts `points_override` (zero through the activity maximum; omitted preserves, null clears) and `excused` (boolean). Responses add `excused` and a safe `grade` record without its private source signature. These edits preserve rubric values and attempt/deadline selection unless those existing fields are explicitly supplied.
+
+Teacher-owned writes, all with `Cache-Control: no-store`:
+
+| Route | Body | Success |
+|---|---|---|
+| `POST /api/activities/{id}/students/{student_id}/release-grade` | `{expected_revision: positive integer}` | Grade revision, release timestamp, optional source submission, and separate `grade_released`/`rubric_released` flags |
+| `POST /api/activities/{id}/assign-zero-missing` | `{student_ids?: nonempty UUID[]}`; omit for all assigned candidates | `changed_student_ids` / `skipped_student_ids`; zeros remain draft |
+| `POST /api/activities/{id}/excuse-students` | `{student_ids: nonempty UUID[], excused: boolean}` | `changed_student_ids` / `skipped_student_ids` |
+
+The release route checks the reviewed revision after synchronizing live work. A conflict requires refreshing and reviewing; clients must not silently retry with a newer revision. Points-only release may have no submission, and never creates a worksheet or rubric. Bulk activity release retains submission-only `released_count`/`submission_ids` and adds `released_grade_count`/`grade_student_ids`.
+
+`GET /api/sections/{section_id}/gradebook` and `GET /api/sections/{section_id}/gradebook.csv` require the owning teacher. `GET /api/students/{student_id}/gradebook` requires a linked parent and groups only the selected child's work by activity owner. All three use the exact verified Bearer token with the public `SUPABASE_ANON_KEY` to read one coherent snapshot from security-invoker database RPCs. No service-role client participates in this read path. Missing/inaccessible scopes return `404 NOT_FOUND`; wrong portal role is `403 FORBIDDEN`; missing/invalid identity is `401 UNAUTHORIZED`. Transport, missing-key and malformed-snapshot failures return sanitized `500 INTERNAL_ERROR`, never an empty successful book.
+
+Teacher JSON contains section metadata, ordered relevant activities, ordered student rows, cells and totals. Parent JSON contains the selected student ID and teacher groups with one child row each. Decimal points/percentages serialize as two-place strings. Parent grades require a current released publication record; hidden/draft/stale points remain null and excluded, with no fallback to an older or automatically derived grade. Parent coursework Draft is presented as Turned in. A separately released assessment can still supply its original composite/band without publishing draft coursework points.
+
+Teacher totals include eligible draft grades, while parent totals include only released grades. Bands-only, excused and ungraded work do not contribute. Missing work contributes only after an explicit override; zero possible included points yields percentage null. Archived activities retain their academic contribution. Source selection and point/percentage arithmetic live behind ScoreProvider, using existing recorded composites without manual-band normalization.
+
+CSV uses the same teacher snapshot and assembler as JSON, returns UTF-8 with BOM directly in memory, and is never written to Storage. Its columns are `student_name,student_id,activity_title,activity_id,points_possible,final_points,coursework_status,publication,included,overall_percentage`. User-controlled text with spreadsheet formula prefixes is neutralized; original names/titles otherwise use CSV quoting. The attachment filename contains the section UUID only. All gradebook responses use `Cache-Control: no-store`. Request bodies/query fields cannot supply a role, teacher or alternate source score. This class-record export remains separate from the offline research exporter.
+
+The Slice 5 execution record tracks schema/API verification and remaining write/UI work; this contract does not establish hosted deployment.
 
 ---
 

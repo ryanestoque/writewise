@@ -5,7 +5,9 @@ from enum import Enum
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from app.gradebook.contracts import WorkGradeRecord, WorkGradeUpdate
 
 
 class ReturnReason(str, Enum):
@@ -34,7 +36,7 @@ class ReturnSubmissionRequest(BaseModel):
         return value or None
 
 
-class StudentWorkUpdate(BaseModel):
+class StudentWorkUpdate(WorkGradeUpdate):
     model_config = ConfigDict(extra="forbid")
 
     due_at_override: AwareDatetime | None = None
@@ -43,7 +45,7 @@ class StudentWorkUpdate(BaseModel):
     @model_validator(mode="after")
     def require_change(self):
         if not self.model_fields_set:
-            raise ValueError("Provide a deadline or pinned attempt change")
+            raise ValueError("Provide a work change")
         return self
 
 
@@ -84,6 +86,8 @@ class ReleaseSubmissionResponse(BaseModel):
 class ReleaseActivityResponse(BaseModel):
     released_count: int
     submission_ids: list[UUID]
+    released_grade_count: int = 0
+    grade_student_ids: list[UUID] = Field(default_factory=list)
 
 
 class StudentWorkResponse(BaseModel):
@@ -93,3 +97,5 @@ class StudentWorkResponse(BaseModel):
     pinned_submission_id: UUID | None
     effective_due_at: datetime | None
     updated_at: datetime
+    excused: bool = False
+    grade: WorkGradeRecord | None = None

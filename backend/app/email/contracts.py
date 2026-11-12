@@ -16,6 +16,7 @@ SkipCode = Literal[
     "event_obsolete",
     "deadline_changed",
     "payload_changed",
+    "work_excused",
 ]
 
 

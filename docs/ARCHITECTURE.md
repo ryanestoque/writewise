@@ -1,5 +1,11 @@
 # WriteWise — ARCHITECTURE.md
 
+## Phase 3 Slice 5 — coursework calculations
+
+Gradebook reads pass through FastAPI for shared business calculations. A request-scoped HTTPX client forwards the verified caller's exact JWT and public Supabase key to one caller-rights fact RPC; it never mutates or reads through the global service session. One coherent RLS snapshot feeds ScoreProvider recorded-source resolution and Decimal conversion, then one assembler supplies teacher JSON, released-only parent JSON and class-record CSV. Assessment history and coursework publication remain independent.
+
+Authorized writes use service-only transaction functions with activity-first serialization. Revision/fingerprint checks prevent publication of unseen work and hide stale grades even after an offline source change missed synchronization. Account/child-scoped browser transports verify identity around response parsing; inactive accounts explicitly suppress rendered books/dialogs as well as clearing caches. No worker, queue, microservice or phase-specific scoring branch is introduced.
+
 **A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and Progress Monitoring System**
 
 - **Document type:** Internal engineering architecture guide (companion to PRD.md, DESIGN.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, SECURITY.md, TESTING.md, DEPLOYMENT.md)

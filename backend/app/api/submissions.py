@@ -50,7 +50,7 @@ class BatchDeleteSubmissionsRequest(BaseModel):
     submission_ids: list[str]
 
 
-def _delete_submission_artifacts(submissions: list[dict[str, Any]]) -> list[str]:
+def _delete_submission_artifacts(submissions: list[dict[str, Any]], actor_id: str) -> list[str]:
     """Remove photos before one cascading DB delete; failures remain retryable.
 
     Storage and Postgres cannot share a transaction. A failed DB delete can
@@ -81,8 +81,22 @@ def _delete_submission_artifacts(submissions: list[dict[str, Any]]) -> list[str]
         ) from exc
 
     try:
-        # Migration 0019 cascades measurement/manual_score in this same DB statement.
-        deleted = supabase_client.table("submission").delete().in_("id", submission_ids).execute()
+        # One authorized transaction coordinates attempt deletion and retained work grades.
+        deleted = lifecycle_rpc(
+            "delete_student_submissions",
+            {
+                "actor_id": actor_id,
+                "target_submission_ids": submission_ids,
+            },
+            client=supabase_client,
+        )
+        deleted_ids = deleted.get("deleted_ids")
+        if not isinstance(deleted_ids, list) or not all(
+            isinstance(sid, str) for sid in deleted_ids
+        ):
+            raise ValueError("Invalid deletion result")
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.error(
             "Submission deletion failed: stage=database submission_ids=%s error_type=%s",
@@ -98,7 +112,7 @@ def _delete_submission_artifacts(submissions: list[dict[str, Any]]) -> list[str]
             },
         ) from exc
 
-    return [row["id"] for row in (deleted.data or [])]
+    return deleted_ids
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=SubmissionCreateResponse)
@@ -865,7 +879,7 @@ async def delete_submission(
         )
 
     # 4. Remove photos, then delete the row and its dependent records atomically in Postgres.
-    _delete_submission_artifacts([submission])
+    _delete_submission_artifacts([submission], caller_id)
 
     return {"id": submission_id, "deleted": True}
 
@@ -1009,6 +1023,6 @@ async def batch_delete_submissions(
         )
 
     # 5. Remove photos, then delete the batch and its dependent records in one DB statement.
-    deleted_ids = _delete_submission_artifacts(submissions)
+    deleted_ids = _delete_submission_artifacts(submissions, caller_id)
 
     return {"deleted_count": len(deleted_ids), "deleted_ids": deleted_ids}

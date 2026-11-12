@@ -11,12 +11,15 @@ Provides interchangeable scoring engine implementations:
 import logging
 import math
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any
 
 from app.core.config import settings
 from app.cv.models import AggregateMetrics
 from app.ml.models import LetterFormationResult
+from app.scoring.gradebook import RecordedGradeScore, derive_points, resolve_recorded_score
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +108,18 @@ class CriterionScores:
 
 class ScoreProvider(ABC):
     """Abstract interface for scoring engine implementations (ARCHITECTURE §10)."""
+
+    def recorded_grade_score(
+        self,
+        measurement: Mapping[str, object] | None,
+        manual_score: Mapping[str, object] | None,
+    ) -> RecordedGradeScore | None:
+        """Resolve historical recorded scores without changing their calibration scale."""
+        return resolve_recorded_score(measurement, manual_score)
+
+    def activity_points(self, possible: Decimal, score: RecordedGradeScore) -> Decimal:
+        """Convert the recorded percentage to coursework points for either engine."""
+        return derive_points(possible, score.composite)
 
     @abstractmethod
     def compute_scores(

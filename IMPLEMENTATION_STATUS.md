@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-03 (Slice 4 email automated verification passed; signed-in portal QA pending)
+**Last updated:** 2026-11-12 (Slice 5 verification retained; main/email integration reconciliation in progress; email dispatch remains off)
 
 ## Summary
 
@@ -12,7 +12,7 @@ Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §
 | Phase 1 — Teacher Tooling & Raw CV Pipeline | 26 / 26 |
 | Between Phases — Calibration | 9 / 9 |
 | Phase 2 — Calibrated Scoring & Full System | 13 / 14 |
-| Phase 3 — Classroom-Style Activities | 3 / 6 slices verified |
+| Phase 3 — Classroom-Style Activities | 4 / 6 slices verified |
 
 *Update this table whenever an item's status changes. Phase 0–2 counts reflect the existing detailed records, not a fresh verification of cloud provisioning, model artifacts, deployments, or research results. Some Done rows still have explicit verification caveats. Phase 3 uses the evidence and verification gates defined below.*
 
@@ -263,14 +263,24 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 ### Slice ⑤ — Points and gradebook
 
-**Dependency:** Slices ①–②; follows Slice ④ in the proposed delivery sequence. Resolve Q-A before implementation. **Status: Not started.**
+**Dependency:** Slices ①–② for coursework and Slice ④ for the email eligibility extension. **Status: Verified.**
+
+**Verification closeout (2026-11-09, Asia/Singapore):** Following the teacher/parent QA checklist and discussion of Unexcuse and decimal scoring, the user reported Slice 5 was all good and explicitly requested closeout. This closes the manual acceptance gate as overall user-reported sign-off; no independently observed or itemized real-portal walkthrough is claimed. [Final implementation-head CI 42474197080](https://github.com/ryanestoque/writewise/actions/runs/42474197080), exact head `404474682de1f67dd997915ffb7cd01b219908e4`, completed successfully. Its full backend pytest, five upgrade proofs, frontend/backend lint, TypeScript, actual API/database contract comparisons, network guard and security-advisor gates were confirmed through the GitHub Actions API at closeout. Phase 3 is **4/6 verified**. Slice 4 email manual/operational gates remain pending. The feature branch and worktree are retained; this closeout does not claim a main merge, hosted migration/reset, deployment or live email activation.
+
+**Prior verification:** [CI 42472687939](https://github.com/ryanestoque/writewise/actions/runs/42472687939), code head `8d7e5c9`, passed **870 tests**, all five upgrade proofs, actual API/database generation comparisons and security advisors. The implementation record reports **274 local unit cases**, Ruff, ESLint, TypeScript and a production webpack build passing. Controlled localhost browser checks covered sibling preservation, inactive-account book/dialog suppression, phone overflow, cell keyboard/focus, draft zero and nested work settings. The final UI follow-ups clarified activity release scope and preserved reviewed bulk selections through error/refresh; their previously pending final-head CI and real-portal acceptance gates are superseded by the closeout above.
+
+**Execution start (2026-11-08):** The user approved the [design](docs/superpowers/specs/2026-11-07-phase3-points-gradebook-design.md), requested the [plan](docs/superpowers/plans/2026-11-07-phase3-points-gradebook.md), and selected inline execution. The isolated feature branch locally combines newer main with the unmerged email foundation. The first 61 new pure scoring/contract cases passed after their missing-feature red run. Initial storage/read RLS tests and the CI trigger are prepared, but no schema is implemented or verified. Local Docker/Podman is unavailable; publishing this branch for disposable CI requires separate authorization. Slice 4 manual QA remains pending and Phase 3 remains **3/6 verified**.
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|
-| Optional activity points, overrides, excused/Assign 0 | Not started | No points/excused fields or routes found. Keep these values separate from `manual_score` and research exports. |
-| Provider-owned points and overall percentage | Not started | `backend/app/scoring/provider.py` provides rubric scores, not activity points. Resolve manual band-ladder vs raw-composite scaling behind ScoreProvider; test denominator/release edge cases. |
-| Teacher section grid and parent child row | Not started | Existing dashboard/trend hooks are not a gradebook. Add active-attempt-aware cells and released-only parent totals. |
-| FastAPI CSV export and verification | Not started | Existing CSV helpers are browser-side exports. Add teacher-owned-section gradebook CSV generated by FastAPI, contracts, authorization tests, and manual QA. |
+| Optional activity points, overrides, excused/Assign 0 | Verified | Atomic guards, draft zero, publication/recovery, lifecycle races, deletion and reminder eligibility passed the disposable stack. Overall user-reported manual acceptance signed off on 2026-11-09. |
+| Provider-owned points and overall percentage | Verified | Recorded values/manual midpoints and shared cutoffs are retained. ScoreProvider owns Decimal arithmetic; shared assembly excludes hidden parent drafts and excused work. |
+| Teacher section grid and parent child row | Verified | Grid, existing work controls, archived filtering, released-only Grades and points-only destinations passed controlled browser checks and overall user-reported manual acceptance on 2026-11-09. |
+| FastAPI CSV export and verification | Verified | Caller-JWT/RLS JSON/CSV share one assembler; real-JWT family denial and a 1,092-cell request passed CI. Overall user-reported manual acceptance signed off on 2026-11-09; no itemized CSV walkthrough is claimed. |
+
+**Historical execution evidence:** The user authorized feature-branch CI pushes and subsequent checkpoints. [Mutation checkpoint 42451508183](https://github.com/ryanestoque/writewise/actions/runs/42451508183) passed **828 tests**, existing upgrade proofs and advisors; its exact generated database artifact was paired into schema commit `d6b26c5`. [Lifecycle red checkpoint 42452183751](https://github.com/ryanestoque/writewise/actions/runs/42452183751) passed **838 tests** and reproduced missing publication/reminder work. Later green runs and the closeout above supersede these intermediate pending-gate records. See the [execution record](docs/superpowers/plans/2026-11-07-phase3-points-gradebook.md) for exact heads. Slice 4 manual QA remains pending; Phase 3 is **4/6 verified**. No main merge, hosted migration/reset, deployment or live email is claimed.
+
+**Main reconciliation (2026-11-12):** PR #9 email code is now merged to main. This branch is incorporating that main head while preserving verified gradebook behavior. The combined workflow retains all six upgrade proofs, the new caller/container checks and service-only boundaries, and removes obsolete database HTTP callback/owner replay. The scheduler-retirement proof now starts at the final pre-retirement gradebook migration (`20261108062937`) so it isolates retirement from earlier gradebook schema upgrades. Historical migration bodies and public contracts are unchanged by the resolution. Prior Slice 5 QA sign-off remains evidence for its tested version; combined-head CI is required before integration. Email stays Partial with dispatch off. Slice 6 is independently implemented/verified in PR #8, but not included in this branch; its older Not started section below is historical.
 
 ### Slice ⑥ — Private comments
 
@@ -295,7 +305,7 @@ These are audit findings and planning recommendations, not silent amendments to 
 | A4 | ①–② | Slice ① promises status chips, but effective due overrides and the active-attempt view arrive in ②. | In ① derive only Assigned/Missing and a Late badge from the latest completed attempt and activity due date; retain processing/rejection feedback separately. In ② switch consumers to the shared view and full precedence table. |
 | A5 | ① | Activity/target mutations use separate REST operations unless explicitly made transactional. | Add service-only database RPCs for create/update plus target replacement, with application authorization before every write and DB ownership validation in the transaction. Failure must preserve the previous activity and assignments. |
 | A6 | ① | `supabase/config.toml` is absent although CI invokes `supabase start`; tests query a DB during collection. | Establish checked-in local configuration and seed prerequisites as part of Slice ① verification setup. Never point test resets at hosted dev/prod or interpret service-role API tests as RLS proof. |
-| A7 | ⑤ | Q-A leaves manual-score-to-points scaling open. | Decide before points implementation; keep source selection/normalization inside ScoreProvider. This does not block Slice ①. |
+| A7 | ⑤ | Q-A originally left manual-score-to-points scaling open. | Resolved 2026-11-07: existing recorded composites for both sources, unchanged manual midpoint values and shared portal cutoffs. Conversion stays behind ScoreProvider. |
 | A8 | ⑥ | §4.8 says merged thread entries use `created_at`, but a Return occurs after upload. | Sort Return entries by `returned_at`, comments by `created_at`, with deterministic ID tie-breaking. Confirm this when specifying the thread contract. |
 
 The proposal's Q-B–Q-F remain slice-specific decisions; carry them into the relevant plan rather than treating their recommended defaults as implemented behavior. Its post-defense scheduling statement remains a product constraint until explicitly revisited.

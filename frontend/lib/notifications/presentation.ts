@@ -21,5 +21,6 @@ export function notificationHref(row: NotificationRow, role: "teacher" | "parent
       : `/activities/${row.activity_id}`;
   const params = new URLSearchParams({ child: row.student_id, activity: row.activity_id });
   if (row.submission_id) params.set("submission", row.submission_id);
+  if (row.type === "score_released" && !row.submission_id) params.set("tab", "grades");
   return `/progress?${params}`;
 }

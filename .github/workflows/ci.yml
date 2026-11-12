@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ "main", "feat/phase3-assignment-deadlines", "feat/phase3-return-release", "feat/phase3-notifications-implementation", "feat/phase3-email-notifications" ]
+    branches: [ "main", "feat/phase3-assignment-deadlines", "feat/phase3-return-release", "feat/phase3-notifications-implementation", "feat/phase3-email-notifications", "feat/phase3-points-gradebook" ]
   pull_request:
     branches: [ "main" ]
 
@@ -136,11 +136,28 @@ jobs:
         cd ..
         supabase db reset --local
 
+    - name: Verify legacy gradebook upgrade
+      # The gradebook proof starts from the complete pre-gradebook email schema.
+      if: success()
+      run: |
+        supabase db reset --local --version 20261103132241
+        cd backend
+        ENVIRONMENT=test uv run python tests/migrations/gradebook_upgrade_check.py prepare --manifest /tmp/gradebook-upgrade.json
+        if ENVIRONMENT=test uv run python tests/migrations/gradebook_upgrade_check.py schema --manifest /tmp/gradebook-upgrade.json; then
+          exit 1
+        fi
+        cd ..
+        supabase migration up --local
+        cd backend
+        ENVIRONMENT=test uv run python tests/migrations/gradebook_upgrade_check.py verify --manifest /tmp/gradebook-upgrade.json
+        cd ..
+        supabase db reset --local
+
     - name: Verify database email scheduler retirement upgrade
       env:
         ENVIRONMENT: test
       run: |
-        supabase db reset --local --version 20261103132241
+        supabase db reset --local --version 20261108062937
         cd backend
         uv run python tests/migrations/email_scheduler_upgrade_check.py prepare --manifest /tmp/email-scheduler-upgrade.json
         cd ..

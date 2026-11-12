@@ -14,7 +14,7 @@ export interface ActivityWorkState extends Omit<
 > {
   activity_id: string;
   student_id: string;
-  work_status: "Assigned" | "Returned" | "Missing" | "Draft" | "Released" | "Turned in";
+  work_status: "Assigned" | "Returned" | "Missing" | "Draft" | "Released" | "Turned in" | "Excused";
   late: boolean;
 }
 
@@ -32,6 +32,7 @@ export function invalidateWorkQueries(client: QueryClient) {
     "parent-child-submission",
     "parent-all-submissions",
     "activities",
+    "gradebook",
   ])
     void client.invalidateQueries({ queryKey: [key] });
 }

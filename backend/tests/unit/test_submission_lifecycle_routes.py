@@ -22,7 +22,9 @@ STAMP = "2026-11-02T04:00:00Z"
 def case(monkeypatch):
     from app.api import submission_lifecycle
 
-    state = SimpleNamespace(role="teacher", owner=True, roster=True, error=None, writes=[])
+    state = SimpleNamespace(
+        role="teacher", owner=True, roster=True, error=None, marker=False, writes=[]
+    )
 
     def respond(request):
         path = request.url.path.removeprefix("/rest/v1/")
@@ -59,6 +61,8 @@ def case(monkeypatch):
             assert body["actor_id"] == TEACHER
             assert body["target_activity_id"] == ACTIVITY
             if state.error:
+                if state.marker:
+                    return httpx.Response(200, json={"error_code": state.error})
                 return httpx.Response(
                     400,
                     json={
@@ -66,6 +70,23 @@ def case(monkeypatch):
                         "message": "private database detail",
                         "details": "private",
                         "hint": None,
+                    },
+                )
+            if path in ("rpc/assign_zero_missing", "rpc/excuse_activity_students"):
+                return httpx.Response(
+                    200, json={"changed_student_ids": [STUDENT], "skipped_student_ids": []}
+                )
+            if path == "rpc/release_student_work_grade":
+                return httpx.Response(
+                    200,
+                    json={
+                        "activity_id": ACTIVITY,
+                        "student_id": STUDENT,
+                        "revision": 2,
+                        "released_at": STAMP,
+                        "submission_id": None,
+                        "rubric_released": False,
+                        "grade_released": True,
                     },
                 )
             if path == "rpc/release_activity_results":
@@ -141,6 +162,85 @@ def test_unauthorized_return_never_starts_mutation(case, owner, roster):
     )
     assert result.status_code == 404
     assert result.json()["error"]["code"] == "NOT_FOUND"
+    assert case.writes == []
+
+
+@pytest.mark.parametrize(
+    "db_code,status,code",
+    [
+        ("WW432", 409, "POINTS_OVERRIDE_CONFLICT"),
+        ("WW433", 409, "POINTS_REMOVAL_CONFIRMATION_REQUIRED"),
+        ("WW434", 422, "VALIDATION_ERROR"),
+    ],
+)
+def test_point_mutation_conflicts_use_codes_without_sql_details(case, db_code, status, code):
+    case.error = db_code
+    result = case.client.put(
+        f"/api/activities/{ACTIVITY}/students/{STUDENT}/work", json={"points_override": "0"}
+    )
+    assert result.status_code == status
+    assert result.json()["error"]["code"] == code
+    assert "private" not in result.text
+
+
+def test_work_point_and_excuse_inputs_preserve_omission_in_authorized_rpc(case):
+    result = case.client.put(
+        f"/api/activities/{ACTIVITY}/students/{STUDENT}/work",
+        json={"points_override": "0", "excused": False},
+    )
+    assert result.status_code == 200, result.text
+    assert case.writes[0]["payload"] == {"points_override": "0", "excused": False}
+
+
+@pytest.mark.parametrize(
+    "suffix,payload,rpc_field,value",
+    [
+        (f"students/{STUDENT}/release-grade", {"expected_revision": 2}, "expected_revision", 2),
+        ("assign-zero-missing", {}, "target_student_ids", None),
+        (
+            "excuse-students",
+            {"student_ids": [STUDENT], "excused": True},
+            "target_student_ids",
+            [STUDENT],
+        ),
+    ],
+)
+def test_gradebook_write_routes_use_authorized_service_lifecycle(
+    case, suffix, payload, rpc_field, value
+):
+    result = case.client.post(f"/api/activities/{ACTIVITY}/{suffix}", json=payload)
+    assert result.status_code == 200, result.text
+    assert result.headers["Cache-Control"] == "no-store"
+    assert case.writes[0][rpc_field] == value
+
+
+def test_grade_release_conflict_is_sanitized_and_does_not_retry_new_revision(case):
+    case.error = "WW431"
+    result = case.client.post(
+        f"/api/activities/{ACTIVITY}/students/{STUDENT}/release-grade",
+        json={"expected_revision": 2},
+    )
+    assert result.status_code == 409
+    assert result.json()["error"]["code"] == "GRADE_REVISION_CONFLICT"
+    assert len(case.writes) == 1 and "private" not in result.text
+
+
+def test_durably_reconciled_grade_conflict_is_an_http_conflict_after_rpc_commit(case):
+    case.error, case.marker = "WW431", True
+    result = case.client.post(
+        f"/api/activities/{ACTIVITY}/students/{STUDENT}/release-grade",
+        json={"expected_revision": 2},
+    )
+    assert result.status_code == 409
+    assert result.json()["error"]["code"] == "GRADE_REVISION_CONFLICT"
+    assert len(case.writes) == 1
+
+
+@pytest.mark.parametrize("owner,role,status", [(False, "teacher", 404), (True, "parent", 403)])
+def test_gradebook_bulk_write_requires_the_activity_owner(case, owner, role, status):
+    case.owner, case.role = owner, role
+    result = case.client.post(f"/api/activities/{ACTIVITY}/assign-zero-missing", json={})
+    assert result.status_code == status
     assert case.writes == []
 
 
