@@ -58,8 +58,8 @@ dispatchOnce(config, fetchImpl = globalThis.fetch)
 main(env = process.env) // => Promise<0 | 1 | 2>, writes one sanitized JSON line
 ```
 
-- [ ] Detect existing worktree isolation and clean tracked state. Do not create another worktree. Use per-command safe.directory if needed, not global config changes.
-- [ ] Write a node:test module with a real loopback HTTP server, request capture and deterministic server cleanup. Start with disabled/no-network and one-success cases. A minimal success expectation is:
+- [x] Detect existing worktree isolation and clean tracked state. Do not create another worktree. Use per-command safe.directory if needed, not global config changes.
+- [x] Write a node:test module with a real loopback HTTP server, request capture and deterministic server cleanup. Start with disabled/no-network and one-success cases. A minimal success expectation is:
 
 ```js
 import assert from 'node:assert/strict';
@@ -92,10 +92,10 @@ test('accepted retry outcomes belong to the backend', async () => {
 });
 ```
 
-- [ ] From repo root run `node --test ops/email-dispatch/dispatch.test.mjs`. Observe absent caller exports/module failure before implementation; after exports exist, require behavior failures for each new validation boundary.
-- [ ] Implement strict booleans for both flags, disabled mode before enabled-config requirements, origin validation with URL plus raw whitespace/control checks, and secret length/ASCII validation. Reject userinfo, non-root paths, queries/fragments, remote HTTP and nonliteral localhost names. HTTP loopback requires explicit `WRITEWISE_ALLOW_LOCALHOST=true`. Normalize one trailing slash away.
-- [ ] Add and run literal table-driven negative cases: invalid booleans; missing/short/whitespace/control secret; credentials/path/query/fragment in origin; HTTP remote; HTTP loopback without opt-in; malformed URL. Verify no request for every configuration failure.
-- [ ] Implement one POST with `{}`, Content-Type JSON, X-Dispatch-Secret and `redirect:'manual'`. Use one AbortSignal.timeout(30000) for the request and response stream. Accumulate Uint8Array chunks only while total <=16384; cancel the reader on overflow/abort and release its lock in finally. Do not read `response.text()` unbounded. Validate the parsed response with this predicate:
+- [x] From repo root run `node --test ops/email-dispatch/dispatch.test.mjs`. Observe absent caller exports/module failure before implementation; after exports exist, require behavior failures for each new validation boundary.
+- [x] Implement strict booleans for both flags, disabled mode before enabled-config requirements, origin validation with URL plus raw whitespace/control checks, and secret length/ASCII validation. Reject userinfo, non-root paths, queries/fragments, remote HTTP and nonliteral localhost names. HTTP loopback requires explicit `WRITEWISE_ALLOW_LOCALHOST=true`. Normalize one trailing slash away.
+- [x] Add and run literal table-driven negative cases: invalid booleans; missing/short/whitespace/control secret; credentials/path/query/fragment in origin; HTTP remote; HTTP loopback without opt-in; malformed URL. Verify no request for every configuration failure.
+- [x] Implement one POST with `{}`, Content-Type JSON, X-Dispatch-Secret and `redirect:'manual'`. Use one AbortSignal.timeout(30000) for the request and response stream. Accumulate Uint8Array chunks only while total <=16384; cancel the reader on overflow/abort and release its lock in finally. Do not read `response.text()` unbounded. Validate the parsed response with this predicate:
 
 ```js
 const keys = ['claimed', 'sent', 'retried', 'failed', 'skipped'];
@@ -106,11 +106,11 @@ const valid = value !== null && typeof value === 'object' && !Array.isArray(valu
   && value.sent + value.retried + value.failed + value.skipped <= value.claimed;
 ```
 
-- [ ] Add real-server cases for correct path/header/body, 302 redirect to a second listener (second listener must receive zero requests), 401/503/500, malformed JSON, 16384/16385-byte boundaries, too-large streamed chunks and a stalled response. Keep the real production 30-second deadline; one actual timeout test is appropriate. Close accepted sockets and server handles in finally so node:test exits.
-- [ ] Add invalid count fixtures: null/array, extra/missing key, booleans, strings, negative/fractional/unsafe integers, claimed 11 and outcomes exceeding claimed. Accept zero counts and acknowledged sums below claimed.
-- [ ] Map exceptions only to fixed caller codes (`dispatch_configuration`, `dispatch_timeout`, `dispatch_network`, `dispatch_http`, `dispatch_response`). main returns 2 for config, 1 for other failure, 0 for valid backend counts/disabled. Print only code plus validated counts. Never include caught exception text or status bodies. Capture CLI stdout/stderr using child_process.spawn with synthetic sentinel secrets/URLs/address payloads; assert no sentinel leak for success or failure.
-- [ ] Use `pathToFileURL(process.argv[1]).href === import.meta.url` guarded for absent argv[1] to distinguish CLI execution from imports; set process.exitCode from awaited main. Verify importing alone produces no output or requests.
-- [ ] Run the complete Node suite, review results and commit `feat: add bounded external email dispatch caller`.
+- [x] Add real-server cases for correct path/header/body, 302 redirect to a second listener (second listener must receive zero requests), 401/503/500, malformed JSON, 16384/16385-byte boundaries, too-large streamed chunks and a stalled response. Keep the real production 30-second deadline; one actual timeout test is appropriate. Close accepted sockets and server handles in finally so node:test exits.
+- [x] Add invalid count fixtures: null/array, extra/missing key, booleans, strings, negative/fractional/unsafe integers, claimed 11 and outcomes exceeding claimed. Accept zero counts and acknowledged sums below claimed.
+- [x] Map exceptions only to fixed caller codes (`dispatch_configuration`, `dispatch_timeout`, `dispatch_network`, `dispatch_http`, `dispatch_response`). main returns 2 for config, 1 for other failure, 0 for valid backend counts/disabled. Print only code plus validated counts. Never include caught exception text or status bodies. Capture CLI stdout/stderr using child_process.spawn with synthetic sentinel secrets/URLs/address payloads; assert no sentinel leak for success or failure.
+- [x] Use `pathToFileURL(process.argv[1]).href === import.meta.url` guarded for absent argv[1] to distinguish CLI execution from imports; set process.exitCode from awaited main. Verify importing alone produces no output or requests.
+- [x] Run the complete Node suite, review results and commit `feat: add bounded external email dispatch caller`.
 
 ### Task 2: Retire only the database email trigger and update the SQL boundary
 
@@ -258,3 +258,5 @@ No SDK/framework/dependency or frontend test suite is added. All checkboxes star
 unchecked. Record actual red/green commands, generated migration filename,
 CI SHAs/results and remaining operational gates here during execution. Planning
 does not change schema/application behavior or enable delivery.
+
+Execution checkpoint: Task 1 implemented with no dependencies. The initial Node run failed on the missing caller module; the implemented caller passes all nine node:test cases, including the actual 30-second stalled-body timeout. Focused independent review found no material defect. No migration, hosted configuration or email send was performed by this task. Task 2 retirement tests are next.
