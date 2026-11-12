@@ -120,7 +120,7 @@ const valid = value !== null && typeof value === 'object' && !Array.isArray(valu
 `*/15 * * * *` / `select writewise_internal.enqueue_time_based_notifications();`.
 Public queue RPC signatures and data remain unchanged.
 
-- [ ] Write real SQL red assertions before creating the migration:
+- [x] Write real SQL red assertions before creating the migration:
 
 ```python
 def test_database_email_timer_is_retired():
@@ -133,9 +133,9 @@ def test_deadline_timer_is_preserved():
                     "and command='select writewise_internal.enqueue_time_based_notifications();'") == 1
 ```
 
-- [ ] Keep Vault actual-role denial checks. Replace direct net SELECT/EXECUTE-denial expectations and synthetic callback tests with actual Data API exposure tests. Use both anon-key anonymous and `family['parent_client'].auth.get_session().access_token` requests; GET `http_request_queue` with Accept-Profile `net`, and `decrypted_secrets` with Accept-Profile `vault`, must be rejected with PostgREST's unexposed-schema response. Run against the real stack; never use the service role to prove browser access denial. Check anon/authenticated remain NOLOGIN and all existing queue/RLS tests stay.
-- [ ] Run new retirement assertions on the old migrated stack and record their expected failure. If Docker remains absent, push the red-test checkpoint on the already authorized feature branch for disposable CI; never substitute hosted dev or hand-generated contracts.
-- [ ] Discover CLI commands before invoking them. Use the repo-pinned CLI 2.115.0 through its installed path or `npm.cmd exec --yes --package=supabase@2.115.0 -- supabase --help`, then `migration --help` and `migration new --help`. Run `migration new retire_database_email_dispatch` from the feature worktree; record the actual returned path. Write this SQL to that file:
+- [x] Keep Vault actual-role denial checks. Replace direct net SELECT/EXECUTE-denial expectations and synthetic callback tests with actual Data API exposure tests. Use both anon-key anonymous and `family['parent_client'].auth.get_session().access_token` requests; GET `http_request_queue` with Accept-Profile `net`, and `decrypted_secrets` with Accept-Profile `vault`, must be rejected with PostgREST's unexposed-schema response. Run against the real stack; never use the service role to prove browser access denial. Check anon/authenticated remain NOLOGIN and all existing queue/RLS tests stay.
+- [x] Run new retirement assertions on the old migrated stack and record their expected failure. If Docker remains absent, push the red-test checkpoint on the already authorized feature branch for disposable CI; never substitute hosted dev or hand-generated contracts.
+- [x] Discover CLI commands before invoking them. Use the repo-pinned CLI 2.115.0 through its installed path or `npm.cmd exec --yes --package=supabase@2.115.0 -- supabase --help`, then `migration --help` and `migration new --help`. Run `migration new retire_database_email_dispatch` from the feature worktree; record the actual returned path. Write this SQL to that file:
 
 ```sql
 do $$
@@ -152,9 +152,9 @@ $$;
 drop function if exists writewise_internal.request_email_dispatch();
 ```
 
-- [ ] In the same implementation checkpoint remove the CI owner-replay step and synthetic callback start/stop steps: the helper no longer exists after replay. Remove fixture pausing of the retired email job, retaining only deadline pause/restore. Update `email_upgrade_check.verify_scheduler` to expect only the unchanged deadline job and assert `to_regprocedure` is null; remove privilege checks on a nonexistent function.
-- [ ] Audit references with `rg -n 'email_callback|email_network_guard_check|request_email_dispatch|writewise-email-dispatch' backend .github docs supabase`. Delete obsolete callback/guard test support only when no active code references remain. Preserve historical SQL migration bodies and historical documentation. Do not add net/Vault exposure or remove provider-lock/idempotency tests.
-- [ ] On disposable CI/localhost replay the full migration chain, run retirement/API-boundary/RLS modules, regenerate actual public database/API types and inspect zero drift or commit actual generated output. Commit migration and actual contract evidence together as `fix: retire unsupported database email dispatch timer`.
+- [x] In the same implementation checkpoint remove the CI owner-replay step and synthetic callback start/stop steps: the helper no longer exists after replay. Remove fixture pausing of the retired email job, retaining only deadline pause/restore. Update `email_upgrade_check.verify_scheduler` to expect only the unchanged deadline job and assert `to_regprocedure` is null; remove privilege checks on a nonexistent function.
+- [x] Audit references with `rg -n 'email_callback|email_network_guard_check|request_email_dispatch|writewise-email-dispatch' backend .github docs supabase`. Delete obsolete callback/guard test support only when no active code references remain. Preserve historical SQL migration bodies and historical documentation. Do not add net/Vault exposure or remove provider-lock/idempotency tests.
+- [x] On disposable CI/localhost replay the full migration chain, run retirement/API-boundary/RLS modules, regenerate actual public database/API types and inspect zero drift or commit actual generated output. Commit migration and actual contract evidence together as `fix: retire unsupported database email dispatch timer`.
 
 ### Task 3: Prove existing email data survives retirement
 
@@ -164,10 +164,10 @@ drop function if exists writewise_internal.request_email_dispatch();
 ENVIRONMENT=test and localhost API/DB URLs before imports or I/O. Manifest holds
 synthetic fixture identities only and is never printed/uploaded as an artifact.
 
-- [ ] Build on `email_upgrade_check.py` and its cleanup/snapshot helpers without refactoring unrelated proofs. Prepare at actual migration version `20261103132241`. Seed synthetic teacher/parent/linked student/activity and notification records using existing fixture patterns. Seed valid pending, sent, skipped and attempted-retry outbox rows; teacher/parent preference true/false; read/unread notices; and one unrelated cron job (`writewise-email-retirement-proof`, command `select 1`, inactive). Use only synthetic Vault values if needed to establish inert prior configuration; do not select decrypted values into the manifest.
-- [ ] Snapshot business/outbox/preference/notice/receipt rows as canonical JSON, plus the original deadline/unrelated job schedule/command/active state. Record generated object IDs for deterministic cleanup. Pause only relevant wall-clock jobs while capturing; do not change expected persisted active state silently.
-- [ ] Verify red behavior before the new migration: assert no old job/helper, snapshot equivalence and preserved deadline/unrelated job metadata. The retirement assertions must fail on the old schema.
-- [ ] Add the fifth CI prepare/upgrade/verify sequence after the existing four:
+- [x] Build on `email_upgrade_check.py` and its cleanup/snapshot helpers without refactoring unrelated proofs. Prepare at actual migration version `20261103132241`. Seed synthetic teacher/parent/linked student/activity and notification records using existing fixture patterns. Seed valid pending, sent, skipped and attempted-retry outbox rows; teacher/parent preference true/false; read/unread notices; and one unrelated cron job (`writewise-email-retirement-proof`, command `select 1`, inactive). Use only synthetic Vault values if needed to establish inert prior configuration; do not select decrypted values into the manifest.
+- [x] Snapshot business/outbox/preference/notice/receipt rows as canonical JSON, plus the original deadline/unrelated job schedule/command/active state. Record generated object IDs for deterministic cleanup. Pause only relevant wall-clock jobs while capturing; do not change expected persisted active state silently.
+- [x] Establish old-schema retirement failure with Task 2's real SQL red assertions, then run the fifth preservation proof after the new migration. The standalone fifth proof was not separately executed red; CI verified its complete prepare/upgrade/snapshot-equivalence flow green.
+- [x] Add the fifth CI prepare/upgrade/verify sequence after the existing four:
 
 ```bash
 supabase db reset --local --version 20261103132241
@@ -181,8 +181,8 @@ cd ..
 supabase db reset --local
 ```
 
-- [ ] Verify SQL metadata equivalence except the explicitly retired job/helper. Prove unrelated job and extensions survive. Verify browser profile denial and actual queue grants without platform-owner replay. Clean up synthetic users/rows/job/Vault entries in finally; never print credentials or addresses.
-- [ ] Execute all five upgrade proofs and full pytest on the ephemeral stack. Generate database types from that actual schema again; retain advisor/type-drift/teardown gates. Commit `test: preserve email state across scheduler retirement`.
+- [x] Verify SQL metadata equivalence except the explicitly retired job/helper. Prove unrelated job and extensions survive. Verify browser profile denial and actual queue grants without platform-owner replay. Clean up synthetic users/rows/job/Vault entries in finally; never print credentials or addresses.
+- [x] Execute all five upgrade proofs and full pytest on the ephemeral stack. Generate database types from that actual schema again; retain advisor/type-drift/teardown gates. Commit `test: preserve email state across scheduler retirement`.
 
 ### Task 4: Exercise the real endpoint and package the one-shot timer
 
@@ -191,10 +191,10 @@ supabase db reset --local
 **Interfaces:** Container entrypoint `node dispatch.mjs`; root `ops/email-dispatch`;
 caller-to-backend HTTP contract unchanged. No dependency/API-type changes.
 
-- [ ] Write a backend test that runs the actual mounted router from `app.main.app` on a bound ephemeral loopback socket using Uvicorn in a background thread, with `lifespan='off'` only in this test. Use pytest monkeypatch/dependency overrides, restored in finally, to set synthetic dispatch enable/secret and controlled queue/provider resources. Reuse route-test patterns; do not contact Resend or import model artifacts for this test.
-- [ ] Spawn the actual Node CLI with a minimal explicit environment containing synthetic caller origin/secret and localhost opt-in. Verify valid counts and exit 0, wrong secret 401/exit 1, backend disabled 503/exit 1, and no queue/provider access for unauthorized/disabled calls. Assert sentinel secret/address/body values are absent in captured stdout/stderr. Stop server/thread/socket in finally. This test depends on ephemeral backend test setup and should run in CI, not against hosted env defaults.
-- [ ] Add complete Node tests to CI after Node setup: `node --test ops/email-dispatch/dispatch.test.mjs`. Keep frontend lint/type checks, backend full pytest, all five upgrade proofs, generated contracts and advisors.
-- [ ] Add a minimal isolated image and configuration:
+- [x] Write a backend test that runs the actual mounted router from `app.main.app` on a bound ephemeral loopback socket using Uvicorn in a background thread, with `lifespan='off'` only in this test. Use pytest monkeypatch/dependency overrides, restored in finally, to set synthetic dispatch enable/secret and controlled queue/provider resources. Reuse route-test patterns; do not contact Resend or import model artifacts for this test.
+- [x] Spawn the actual Node CLI with a minimal explicit environment containing synthetic caller origin/secret and localhost opt-in. Verify valid counts and exit 0, wrong secret 401/exit 1, backend disabled 503/exit 1, and no queue/provider access for unauthorized/disabled calls. Assert sentinel secret/address/body values are absent in captured stdout/stderr. Stop server/thread/socket in finally. This test depends on ephemeral backend test setup and should run in CI, not against hosted env defaults.
+- [x] Add complete Node tests to CI after Node setup: `node --test ops/email-dispatch/dispatch.test.mjs`. Keep frontend lint/type checks, backend full pytest, all five upgrade proofs, generated contracts and advisors.
+- [x] Add a minimal isolated image and configuration:
 
 ```dockerfile
 FROM node:24-slim
@@ -216,19 +216,19 @@ cronSchedule = "*/5 * * * *"
 restartPolicyType = "NEVER"
 ```
 
-- [ ] Include only four caller settings in `.env.example`; empty origin/secret, both flags false. The repo ignores `.env*`, so stage this specific example using `git add -f -- ops/email-dispatch/.env.example`, never broadly force-add env files.
-- [ ] README states service root, no backend model/key dependencies, private env configuration, expected exits/counts, no retries, no inbound port/healthcheck, and a local disabled invocation `node ops/email-dispatch/dispatch.mjs`. Explain the script does not automatically read `.env.example` or backend `.env`.
-- [ ] On CI's Docker runner build `docker build -t writewise-email-caller:ci ops/email-dispatch` and run `docker run --rm writewise-email-caller:ci`. Require fixed disabled output/exit 0. Do not publish an image or start a paid service. Railway restart NEVER is intentional: backend owns retries, not the hosting restart policy.
-- [ ] Run Node suite, real-route integration and full ephemeral pytest; review transport/privacy behavior. Commit `feat: package Railway email timer with endpoint checks`.
+- [x] Include only four caller settings in `.env.example`; empty origin/secret, both flags false. The repo ignores `.env*`, so stage this specific example using `git add -f -- ops/email-dispatch/.env.example`, never broadly force-add env files.
+- [x] README states service root, no backend model/key dependencies, private env configuration, expected exits/counts, no retries, no inbound port/healthcheck, and a local disabled invocation `node ops/email-dispatch/dispatch.mjs`. Explain the script does not automatically read `.env.example` or backend `.env`.
+- [x] On CI's Docker runner build `docker build -t writewise-email-caller:ci ops/email-dispatch` and run `docker run --rm writewise-email-caller:ci`. Require fixed disabled output/exit 0. Do not publish an image or start a paid service. Railway restart NEVER is intentional: backend owns retries, not the hosting restart policy.
+- [x] Run Node suite, real-route integration and full ephemeral pytest; review transport/privacy behavior. Commit `feat: package Railway email timer with endpoint checks`.
 
 ### Task 5: Promote final contracts and finish PR verification
 
 **Files:** `docs/ARCHITECTURE.md`, `DATABASE.md`, `SECURITY.md`, `DEPLOYMENT.md`, `TESTING.md`, `TECH_STACK.md`, `docs/adr/0005-transactional-notifications-and-scheduling.md`, original/replacement email specs/plans and `IMPLEMENTATION_STATUS.md`.
 
-- [ ] Document exact four caller settings; distinguish them from existing backend settings. Describe external secret storage, strict origin validation, one-request bounds and current exit codes. Remove unsupported owner-provisioning from current operational instructions while retaining dated historical evidence.
-- [ ] Document new migration retirement/rollout, dormant Vault-entry cleanup without value inspection, queue-scope review, secret rotation if any live value was exposed, preservation of deadline jobs/extensions and pause/rollback without restoring pg_net HTTP.
-- [ ] Record caller CI, container execution and real-route synthetic tests as code evidence only. Keep existing Return/opt-out/no-replay inbox evidence and user-skipped due-soon accurate. No new test failure/race/accessibility sign-off is inferred. No claim of hosted timer/inbox/production activation is allowed.
-- [ ] Verify required scoped checks using the installed Windows fallbacks if uv cache/npx.ps1 is blocked:
+- [x] Document exact four caller settings; distinguish them from existing backend settings. Describe external secret storage, strict origin validation, one-request bounds and current exit codes. Remove unsupported owner-provisioning from current operational instructions while retaining dated historical evidence.
+- [x] Document new migration retirement/rollout, dormant Vault-entry cleanup without value inspection, queue-scope review, secret rotation if any live value was exposed, preservation of deadline jobs/extensions and pause/rollback without restoring pg_net HTTP.
+- [x] Record caller CI, container execution and real-route synthetic tests as code evidence only. Keep existing Return/opt-out/no-replay inbox evidence and user-skipped due-soon accurate. No new test failure/race/accessibility sign-off is inferred. No claim of hosted timer/inbox/production activation is allowed.
+- [x] Verify required scoped checks using the installed Windows fallbacks if uv cache/npx.ps1 is blocked:
 
 ```powershell
 # feature worktree/backend
@@ -261,4 +261,7 @@ does not change schema/application behavior or enable delivery.
 
 Execution checkpoint: Task 1 implemented with no dependencies. The initial Node run failed on the missing caller module; the implemented caller passes all nine node:test cases, including the actual 30-second stalled-body timeout. Focused independent review found no material defect. No migration, hosted configuration or email send was performed by this task. Task 2 retirement tests are next.
 
-Task 2 red proof: https://github.com/ryanestoque/writewise/actions/runs/43192576100 on 0bc877c completed with 677 passing tests and only the two new retirement assertions failing (old job/helper present). The CLI allocated supabase/migrations/20261112094548_retire_database_email_dispatch.sql. Tasks 2?4 implementation/upgrade/endpoint/container checks are prepared for the first migrated CI checkpoint; they are not yet claimed green. Review caught post-email fixture keys, now corrected to use canonical notify_work_parents identities. The private-only retirement is expected to leave public generated contracts unchanged; CI must regenerate and compare them on the actual migrated stack. No hosted migration or send has occurred.
+Task 2 red proof: https://github.com/ryanestoque/writewise/actions/runs/43192576100 on 0bc877c completed with 677 passing tests and only the two new retirement assertions failing (old job/helper present). The CLI allocated supabase/migrations/20261112094548_retire_database_email_dispatch.sql. Tasks 2-4 implementation/upgrade/endpoint/container checks are prepared for the first migrated CI checkpoint; they are not yet claimed green. Review caught post-email fixture keys, now corrected to use canonical notify_work_parents identities. The private-only retirement is expected to leave public generated contracts unchanged; CI must regenerate and compare them on the actual migrated stack. No hosted migration or send has occurred.
+
+
+**Migrated green checkpoint:** [CI run 43195421062](https://github.com/ryanestoque/writewise/actions/runs/43195421062) completed successfully on `3f10a02caf00e2e869568078cffa4ea563d466ae`: 668 backend tests (47 warnings), nine Node caller cases, all five upgrade proofs, disabled Docker image execution, Ruff/ESLint/TypeScript, regenerated API/database contracts without drift, security advisors and teardown. Local final Ruff/ESLint/TypeScript and diff whitespace checks also passed. Independent implementation/documentation review resolved the canonical fixture keys and one stale owner-provisioning sentence; no material finding remains. Tasks 2-4 are complete. Final documentation-head CI and PR body refresh follow; hosted migration/service/activation and broader manual gates remain unperformed.

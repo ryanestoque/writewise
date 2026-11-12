@@ -1,13 +1,13 @@
 # Phase 3 — Classroom-Style Activities (Deadlines, Returns, Notifications, Gradebook)
 
-**As of:** October 22, 2026
-**Status:** Slices ①–③ are verified. Slice ④ email implementation passed all automated gates (671 tests, four upgrades, contracts and advisors) and remains Partial pending signed-in portal QA. Slices ⑤–⑥ remain future design. See IMPLEMENTATION_STATUS.md and the Slice 4 execution record. Verification, PR integration and hosted activation remain separate; superseded email sketches below are historical proposals.
+**As of:** November 12, 2026
+**Status:** Slices ①–③ are verified. Slice ④ email implementation passed all automated gates (668 backend tests, nine caller tests, five upgrades, contracts and advisors) and remains Partial pending remaining portal QA, fresh due-soon delivery (user-skipped) and hosted timer activation. Slices ⑤–⑥ remain future design. See IMPLEMENTATION_STATUS.md and the Slice 4 execution record. Verification, PR integration and hosted activation remain separate; superseded email sketches below are historical proposals.
 **Origin:** Design-tree grill session, 2026-10-19 (19 decisions, all accepted). **Amended 2026-10-22:** private comments (Q20–Q28, Slice ⑥); Q16 revised.
 **Supersedes (when promoted):** PRD §13 "Notifications" deferred item, PRODUCT.md "Push notifications" deferred item.
 
 **Repository audit (2026-11-01):** Implementation progress is tracked in [IMPLEMENTATION_STATUS.md](../../IMPLEMENTATION_STATUS.md#phase-3--classroom-style-activities). See the [Slice ① implementation plan](../superpowers/plans/2026-11-01-phase3-assignment-deadlines.md) for the proposed assignment/deadline contract and audit findings requiring review. This design document is not evidence that a feature is implemented.
 
-**Slice ④ implementation (2026-11-03):** The approved [email design](../superpowers/specs/2026-11-03-phase3-email-notifications-design.md) is implemented and automated checks pass on the email feature branch; signed-in portal QA remains open. See its [execution record](../superpowers/plans/2026-11-03-phase3-email-notifications.md), API_SPEC §3.7 and DATABASE §17. Those contracts supersede email sketches below; Slices ①–③ remain the only verified slices until the manual gate closes. Hosted activation additionally requires sender details and Supabase-owner permission provisioning; no hosted change or live delivery is claimed.
+**Slice ④ implementation (2026-11-03):** The approved [email design](../superpowers/specs/2026-11-03-phase3-email-notifications-design.md) is implemented and automated checks pass on the email feature branch; signed-in portal QA remains open. See its [execution record](../superpowers/plans/2026-11-03-phase3-email-notifications.md), API_SPEC §3.7 and DATABASE §17. Those contracts supersede email sketches below; Slices ①–③ remain the only verified slices until the manual gate closes. This is a historical checkpoint: the 2026-11-12 QA and approved scheduler replacement supersede its activation assumptions. See the current replacement procedure in DEPLOYMENT.md; Supabase-owner permission provisioning is unsupported. The later recipient-restricted Return inbox test does not establish normal HTTP or hosted timer activation.
 
 ---
 
@@ -40,7 +40,7 @@ Phase 3 adds that loop without touching the CV/CNN pipeline or the calibration s
 | Q6 | Channels | In-app `notification` table + header bell (source of truth). **Email** only for *Returned* and *Due in 24h* |
 | Q7 | Events | See §5.1 |
 | Q8 | Scheduler | `pg_cron` every 15 min → SQL function inserts *due-soon* / *missing* notifications (idempotent through a dedupe key). Emails queued in an outbox |
-| Q9 | Email sender | FastAPI `POST /api/internal/dispatch-emails` (shared-secret header), called by private `pg_cron`/`pg_net`, sending via **Resend**. Fixed generic wording and login/settings links; no child/activity names, scores, images or notes |
+| Q9 | Email sender | FastAPI `POST /api/internal/dispatch-emails` (shared-secret header), called by a separate dependency-free Node 24 Railway timer every five minutes, sending via **Resend**. Secret stays outside the database network queue; fixed generic wording and login/settings links only. Approved replacement: 2026-11-12 |
 | Q10 | Preferences | One global **Email me** toggle (default on) + **Mark all read**. In-app notifications always on |
 | Q11 | Activity score | Optional **points** per activity (no points = shows bands only). Score = composite scaled to points. Teacher can override the final points |
 | Q12 | Release | **Draft → Released** (`released_at`), enforced in RLS. Release per submission or in bulk per activity. Fires *score released* |
@@ -282,18 +282,25 @@ create unique index notification_comment_unread_uniq
 
 Dedupe keys include the effective due epoch, so **moving a due date re-arms** `due_soon`/`activity_missing` instead of silently suppressing them.
 
-### 5.2 Scheduled job
+### 5.2 Scheduled jobs
 
-```
-pg_cron  */15 * * * *  → select public.enqueue_time_based_notifications();
-                        → inserts due_soon / activity_missing rows (on conflict (dedupe_key) do nothing)
-                        → inserts email_outbox rows for email-eligible types
-pg_cron  */5  * * * *  → pg_net POST {BACKEND_URL}/api/internal/dispatch-emails
-                          header X-Dispatch-Secret: <from Supabase Vault>
+```text
+pg_cron */15 * * * * -> writewise_internal.enqueue_time_based_notifications()
+                      -> due_soon / activity_missing notifications and eligible outbox rows
+Railway */5 * * * *  -> Node 24 HTTP-only caller -> POST /api/internal/dispatch-emails
+                      header X-Dispatch-Secret from private service variables
 ```
 
-- The dispatch secret and backend URL live in **Supabase Vault**, never in a migration file.
-- FastAPI-emitted email types (`submission_returned`) also just insert an outbox row; **only the dispatcher sends**. One code path, retries for free.
+The approved 2026-11-12 external-caller design supersedes the original pg_net/Vault
+trigger. Migration `20261112094548` retires only the old email job/helper; the
+deadline job, unrelated jobs/extensions and durable email state remain. Platform
+owner replay is not a hosted deployment procedure. The caller has no backend
+model, Supabase or Resend credentials, makes one bounded request, refuses
+redirects/retries and exits. Hosted rollout/activation is verified separately.
+
+Return transactions also only enqueue; FastAPI remains the single email delivery
+path with its existing authorization, eligibility, lease and retry controls.
+See [the replacement design](../superpowers/specs/2026-11-12-phase3-email-scheduler-replacement-design.md).
 
 ### 5.3 Email dispatcher (FastAPI)
 
@@ -380,7 +387,7 @@ Each slice can ship on its own and unblocks the next.
 | **① Assignment & deadlines** | `activity` columns, `activity_assignment`, `is_assigned`, parent RLS swap, backfill, due/Late/Missing chips, create/edit dialog | Backfill must leave parent visibility exactly as before | Full pytest on ephemeral stack (migration + `app/api/`); RLS tests for cross-section leakage |
 | **② Return & release** | `returned` status, return columns, `student_work`, `active_submission`, release gate in RLS, Return dialog | Release RLS hiding existing results if backfill is wrong | Full suite; RLS: parent cannot read unreleased measurement |
 | **③ In-app notifications** | `notification` table, FastAPI emitters, `pg_cron` time-based function, header bell | Duplicate notifications | SQL-function tests for idempotency and due-date re-arming |
-| **④ Email** | `email_outbox`, dispatcher endpoint, Resend, Vault secret, email toggle | PII in email or in logs | Dispatcher unit tests with stubbed Resend; template snapshot test asserting no score/note fields |
+| **④ Email** | `email_outbox`, dispatcher endpoint, Resend, external HTTP timer, email toggle | PII in email or in logs | Dispatcher unit tests with stubbed Resend; template snapshot test asserting no score/note fields |
 | **⑤ Points & gradebook** | `points_possible`, overrides, excused, gradebook grid, CSV | Composite-to-points scaling (§9 Q-A) | Pure-function tests for overall % edge cases |
 | **⑥ Private comments** | `private_comment`, `comment_posted` enum value, coalescing index, `comments_locked`, thread panel (teacher + parent), gradebook unread dot | Cross-family leakage; comment bodies in logs | Full suite; RLS: parent of another child / unassigned student cannot read; coalescing test (N comments → 1 unread); delete scrubs body; log-capture test asserting no body text |
 
@@ -418,4 +425,4 @@ Each slice can ship on its own and unblocks the next.
 
 ## 11. Docs to Update When Promoted
 
-PRD §7 + §13 · PRODUCT.md (deferred list) · DATABASE.md (tables, view, RLS, `pg_cron`) · API_SPEC.md (endpoints + §2.4 codes) · ARCHITECTURE.md (scheduled jobs, outbox, Resend; amends the "synchronous only" stance for *notifications*, not for the CV pipeline) · SECURITY.md (email channel, Vault secret) · DESIGN.md (bell, gradebook, Return dialog, status chips, private-comment panel) · DEPLOYMENT.md (`RESEND_API_KEY`, `EMAIL_DISPATCH_SECRET`, Vault setup) · TESTING.md (RLS release tests) · IMPLEMENTATION_STATUS.md (new Phase 3 section). Consider an **ADR 0005** for the scheduler + outbox decision.
+PRD §7 + §13 · PRODUCT.md (deferred list) · DATABASE.md (tables, view, RLS, `pg_cron`) · API_SPEC.md (endpoints + §2.4 codes) · ARCHITECTURE.md (scheduled jobs, outbox, Resend; amends the "synchronous only" stance for *notifications*, not for the CV pipeline) · SECURITY.md (email channel, external caller secret) · DESIGN.md (bell, gradebook, Return dialog, status chips, private-comment panel) · DEPLOYMENT.md (`RESEND_API_KEY`, `EMAIL_DISPATCH_SECRET`, external caller setup) · TESTING.md (RLS release tests) · IMPLEMENTATION_STATUS.md (new Phase 3 section). Consider an **ADR 0005** for the scheduler + outbox decision.

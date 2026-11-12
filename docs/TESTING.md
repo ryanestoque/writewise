@@ -410,9 +410,24 @@ Use synthetic localhost identities only. Email store tests exercise actual cours
 
 Unit tests exercise fixed privacy-safe templates, strict enabled configuration, Resend acceptance/errors/malformed/oversized responses, quota/auth stop behavior, Retry-After postponement, total timeouts, invocation budgets and safe error envelopes. HTTP transport doubles never establish actual inbox delivery. Frontend controlled transport checks cover exact verified token, account switching, aborts, false values, zero/malformed rows and sanitized errors; these are distinct from a signed-in walkthrough.
 
-CI replays migrations, retains prior upgrade checks and adds an email upgrade manifest preserving historical work, released/unreleased scores, notices, receipts and read state with default-on preferences and zero historical outbox rows. Synthetic pg_net callback tests must verify post-commit invocation and rollback suppression inside the database container network, using no Resend service. Pause/restore each app cron job individually. Generated API/database drift and security advisors remain gates.
+CI replays migrations and retains the four legacy assignment/release/notification/email upgrade checks. A fifth scheduler-retirement proof starts at `20261103132241` and verifies the new migration removes only the old email job/helper while preserving pending/sent/skipped/retry data, attempt fingerprints, work/scores/read state, preferences, deadline/unrelated jobs, extensions, Vault entry IDs/names and queue grants. Fixtures use canonical notification identities and synthetic localhost users only; manifests are not uploaded. Pause/restore only the remaining deadline job. Generated API/database drift, advisors and teardown remain gates.
 
-The historical CI setup uses `email_network_guard_check.sql` with synthetic Vault values inside a rollback-only transaction to prove the helper refuses unsafe network grants. It then replays the versioned network-boundary migration as the disposable platform owner, preserving postgres/worker access, and proves actual browser-role ACL denials. This remains implementation evidence for the original design, not a supported hosted provisioning procedure. The 2026-11-12 hosted checks below require a scheduler design correction; preserve the fail-closed guard and existing tests until that replacement is explicitly reviewed and verified.
+The former pg_net callback and platform-owner replay fixtures are retired with the obsolete HTTP helper. Supabase-managed net privileges are not asserted denied when the platform grants them. Real anon/authenticated Data API requests must reject net/Vault schema profiles; browser roles remain NOLOGIN, Vault SQL read denial and all business RLS/service-only queue tests remain. The old owner-provisioned CI result is historical evidence only, not the new deployment procedure. Real-RPC/provider lock and idempotency tests remain unchanged.
+
+The external caller has a separate built-in Node suite:
+`node --test ops/email-dispatch/dispatch.test.mjs`. It exercises disabled/import
+no-network behavior, strict configuration, real loopback request shape,
+redirect/retry refusal, byte caps, count validation, sanitized exits and a real
+30-second stalled-body timeout. This is operational Node testing, not a frontend
+test framework. CI builds its isolated Docker image and executes disabled mode.
+
+`backend/tests/unit/test_email_caller.py` runs the actual Node CLI against the
+mounted FastAPI app on an ephemeral loopback socket. Controlled real queue and
+provider adapters prove an acknowledged send, 401 authentication refusal and
+503 disabled refusal; denied calls do not resolve delivery resources. Provider
+I/O is mocked, output is checked for sentinel leaks, and server/socket/thread
+cleanup is required. These synthetic checks do not establish hosted timer or
+inbox delivery. The existing local-only root test guard remains in force.
 
 Portal QA still requires both roles, false/true refresh persistence, independent linked-parent preferences, failed reads/saves, duplicate clicks, account changes during verification/PATCH, mobile layout, keyboard/focus/feedback and an unchanged bell. Production activation/tracking/live delivery need separate authorized evidence.
 

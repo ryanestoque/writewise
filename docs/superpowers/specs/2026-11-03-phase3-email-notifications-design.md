@@ -8,6 +8,12 @@
 
 ## 1. Goal and scope
 
+**Scheduler supersession (2026-11-12):** The approved [external-caller replacement](2026-11-12-phase3-email-scheduler-replacement-design.md)
+supersedes this document's Vault/pg_net scheduling and owner-provisioning clauses.
+Those original clauses are historical, not the current deployment procedure.
+Outbox/event/preference/API/provider/retry contracts remain authoritative unless
+explicitly changed by that replacement. Hosted activation remains separate.
+
 Send an optional, minimal email to each linked parent when work is returned or its effective deadline is within 24 hours. The in-app notification remains the durable event and the place to read details. One global account preference defaults on; in-app notifications remain enabled.
 
 This slice adds a service-only outbox, recoverable claims, bounded FastAPI dispatch through Resend, a Vault-backed five-minute HTTP invocation, and teacher/parent settings. It does not change the deadline sweep's 15-minute cadence or accepted event identities. Scores, worksheet processing, research exports, points, comments, and worker count retain their current contracts.

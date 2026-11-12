@@ -1,8 +1,10 @@
 # Slice 4 email scheduler replacement
 
 **Date:** 2026-11-12. **Status:** Written specification approved by the user on
-2026-11-12. Implementation planning follows; application/database implementation
-remains pending. Work continues on `feat/phase3-email-notifications`, PR #9.
+2026-11-12. Caller/retirement implementation is on the feature branch; migrated CI passed
+on `3f10a02` (668 backend tests, nine caller tests and five upgrade proofs).
+Hosted rollout/activation remain separate.
+Work continues on `feat/phase3-email-notifications`, PR #9.
 
 ## Problem and evidence
 

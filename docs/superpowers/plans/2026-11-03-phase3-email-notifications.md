@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Read the approved spec and this entire plan before execution. Execute inline unless the user selects delegation; this planning pass does not dispatch agents.
 
+**Scheduler supersession (2026-11-12):** Follow [the approved external-caller plan](2026-11-12-phase3-email-scheduler-replacement.md) for current scheduling/CI/activation work. Original Vault/pg_net/owner-provisioning steps below are historical execution evidence, not instructions to repeat. Other email business contracts remain.
+
 **Goal:** Deliver optional, privacy-minimal Return and due-soon emails without making coursework requests depend on the email provider.
 
 **Architecture:** Extend the existing transactional notification helper to enqueue a service-only SQL outbox. Short PostgREST RPCs claim, revalidate, authorize, and finalize deliveries; a bounded asynchronous FastAPI endpoint sends through Resend between those transactions. A private Vault-backed pg_net helper invokes the endpoint every five minutes; existing profile RLS protects the global preference in both portals.
