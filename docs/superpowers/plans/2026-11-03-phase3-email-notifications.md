@@ -831,3 +831,41 @@ Additional review coverage exercises actual provider acceptance followed by a lo
 Whole-backend Ruff, whole-frontend ESLint/TypeScript and the webpack production build passed locally; the controlled preference transport harness passed all eight cases. Real timeout tests and the normal app health response while provider I/O is pending passed. Source checks were repeated for this documentation closeout. Existing Starlette/Supabase deprecations and Next middleware/cache notices were not changed.
 
 Two execution checkboxes deliberately remain open: the combined Task 8 signed-in manual QA item and Task 9 overall acceptance/manual matrix closure. The lack of a native computer-use pipe/browser surface prevented that walkthrough. This is not user QA sign-off. The existing branch/worktree and useful ignored test artifacts are preserved; no merge, hosted migration, owner/support provisioning, tracking inspection, credentials configuration or live email was performed. Email remains disabled by default and scheduled requests fail closed without safe owner-provisioned permissions. Phase 3 remains 3/6 verified.
+
+## Manual QA session closeout 2026-11-12
+
+The user requested closing this session and explicitly skipped fresh queued
+due-soon delivery. This is a partial QA closeout, not overall slice sign-off.
+Slice 4 stays Partial, Phase 3 stays 3/6 verified, and normal dispatch remains off.
+This dated evidence supersedes older statements above where applicable:
+
+| Check | Actual evidence |
+|---|---|
+| Hosted migration history | User-provided SQL result records all six email migrations applied to dev. History alone does not prove object grants changed. |
+| Direct template/provider smoke | User ran the actual renderer/Resend adapter for an explicitly selected test inbox; provider accepted, dashboard reported Delivered, and user confirmed inbox and both localhost links. No queue or HTTP dispatch route was involved. |
+| Queued Return delivery | User returned test work through the teacher portal. Outbox `fc27019c-df70-4329-b198-74b832ca80ca` was processed through real RPCs, dispatcher and provider by a single-recipient local adapter. Durable status sent, attempts 1, null error; user confirmed inbox receipt. |
+| Expired-event suppression | Outbox `53c775a2-ec7a-47a4-acb5-79af562694fd` became skipped / event_obsolete with attempts 0. |
+| Opt-out and no replay | User saved off, refreshed and returned another worksheet. Outbox `c6dc2290-090a-43e4-b51d-e7aa1fbec5ef` became skipped / preference_off with attempts 0 and retained its in-app notification. After user re-enabled, read-only checks found preference true, the same terminal skip, no new Return rows and no pending Return rows for the selected account. |
+| Recipient isolation | Adapter pins one account/address/outbox, refuses changed recipients, processes at most one selected message and releases unrelated claims. Other observed statuses/attempts stayed unchanged and leases cleared. Release moves next_attempt_at to now under the existing RPC contract. |
+| Adapter verification | Five original cases failed before restriction; eight offline cases then passed against controlled HTTP. Separate review found no material safety issue. These tests sent no real email. |
+| Current local branch | Committed main `6c77b06` was merged into the QA feature branch as `e7912aa`, restoring existing Turnstile auth code and preserving the email preference card. Ruff, ESLint, TypeScript and conflict/whitespace checks passed. Browser checks show widget/script mounting and no overflow at 375px; challenge completion was not independently verified. No push or merge of email into main occurred in this session. |
+| Fresh queued due-soon | Not verified; explicitly skipped by user. The new test deadline had already passed when checked, so no fresh eligible due-soon email was sent. Direct rendering/provider smoke is not a substitute. |
+
+Remaining gates: scheduler architecture correction and live automatic/HTTP-route
+verification; fresh due-soon delivery unless its requirement is explicitly revised;
+unreported teacher/parent failure, race, accessibility and independence flows;
+independent tracking/configuration review; and final integration/CI as applicable.
+The historical 671-test CI run and prior production build were not rerun here.
+
+Dev retains the Supabase-managed net grants that the existing scheduler guard
+refuses. Current provider guidance says per-project pg_net grant changes are
+unsupported; the owner/support provisioning assumption in the original plan
+must be replaced. An external timer calling the existing endpoint was proposed,
+not implemented. Keep the guard and dispatch-off state while that design is
+resolved. Do not interpret this closeout as production activation permission.
+
+Ignored local artifacts under `backend/scratch/` preserve the adapter, offline
+tests and sanitized operational results. Credentials and the selected inbox
+address are not included in tracked closeout documents. No schema modification,
+database reset, queue deletion, bulk preference overwrite or production action
+was performed. Preserve the worktree and local env files for follow-up.

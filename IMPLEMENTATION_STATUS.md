@@ -248,10 +248,12 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 | Deliverable | Status | Evidence / remaining work |
 |---|---|---|
-| Service-only email outbox and preferences | Partial | Transactional two-event enqueue, default-on owner preferences, canonical recipient/event checks and bounded recoverable queue implemented; database tests pass. Settings controls built; signed-in portal QA pending. |
-| Dispatcher and Resend integration | Partial | Async secret-authenticated route, fixed templates, stable key/digest, retries/timeouts/quota isolation and lost-finalization replay passed full CI. Actual provider activation is deferred. |
-| Cron/pg_net/Vault configuration | Partial | Four upgrade proofs, fail-closed guard, owner-provisioned ACLs, actual role denials and synthetic callback passed CI. Hosted owner/support setup and secrets remain unconfigured. |
-| Privacy-safe templates and verification | Partial | Generic templates omit names, educational content and tokens. Full automated/contract/advisor gates pass; signed-in portal QA remains open. |
+| Service-only email outbox and preferences | Partial | Parent off/on refresh persistence, event-time opt-out and no replay verified on dev on 2026-11-12. Remaining two-role/error/account-switch/accessibility portal checks lack sign-off. |
+| Dispatcher and Resend integration | Partial | Live Return event reached the selected test inbox through real queue RPCs, dispatcher and Resend using a recipient-restricted local QA adapter. Mounted HTTP endpoint and automatic scheduling were not exercised live. |
+| Cron/pg_net/Vault configuration | Partial; activation blocked | Hosted migration history records all six email migrations, but net privileges remain granted. Current Supabase documentation says per-project managed pg_net grant changes are unsupported; the existing guard remains fail-closed. Scheduler replacement is proposed, not implemented. |
+| Privacy-safe templates and verification | Partial | Direct template/provider smoke reached the selected inbox and user confirmed localhost links. Return inbox receipt confirmed; expired notice skipped with zero attempts. Fresh queued due-soon delivery was explicitly skipped by the user. Tracking settings remain independently unverified. |
+
+**QA session closeout (2026-11-12):** The user requested closeout after explicitly skipping fresh due-soon delivery. This closes this manual session only; Slice 4 remains **Partial**, Phase 3 remains **3/6 verified**, and normal dispatch stays disabled. The dated [execution record](docs/superpowers/plans/2026-11-03-phase3-email-notifications.md#manual-qa-session-closeout-2026-11-12) supersedes earlier statements that no hosted migration evidence, provider request or inbox delivery existed. Current main was merged into the local QA branch as `e7912aa` to restore its existing Turnstile auth support; email has not been merged into main or deployed by this session. No production operation is claimed.
 
 ### Slice ⑤ — Points and gradebook
 

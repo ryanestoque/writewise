@@ -412,6 +412,26 @@ Unit tests exercise fixed privacy-safe templates, strict enabled configuration, 
 
 CI replays migrations, retains prior upgrade checks and adds an email upgrade manifest preserving historical work, released/unreleased scores, notices, receipts and read state with default-on preferences and zero historical outbox rows. Synthetic pg_net callback tests must verify post-commit invocation and rollback suppression inside the database container network, using no Resend service. Pause/restore each app cron job individually. Generated API/database drift and security advisors remain gates.
 
-Before owner provisioning, `email_network_guard_check.sql` installs synthetic Vault values inside a rollback-only transaction and proves the helper refuses unsafe network grants. CI then replays the versioned network-boundary migration as the disposable platform owner, preserving postgres/worker access. The full suite must still prove actual browser ACL denials afterward; owner replay must never be replaced by skipping or weakening those tests. Hosted owner provisioning is a separate prerequisite.
+The historical CI setup uses `email_network_guard_check.sql` with synthetic Vault values inside a rollback-only transaction to prove the helper refuses unsafe network grants. It then replays the versioned network-boundary migration as the disposable platform owner, preserving postgres/worker access, and proves actual browser-role ACL denials. This remains implementation evidence for the original design, not a supported hosted provisioning procedure. The 2026-11-12 hosted checks below require a scheduler design correction; preserve the fail-closed guard and existing tests until that replacement is explicitly reviewed and verified.
 
 Portal QA still requires both roles, false/true refresh persistence, independent linked-parent preferences, failed reads/saves, duplicate clicks, account changes during verification/PATCH, mobile layout, keyboard/focus/feedback and an unchanged bell. Production activation/tracking/live delivery need separate authorized evidence.
+
+### Manual session closeout — 2026-11-12
+
+User-assisted dev QA proved direct template/provider delivery and localhost links,
+a real Return/outbox/Resend send with user-confirmed inbox receipt, event-time
+opt-out (`skipped / preference_off`, zero attempts), no replay after re-enabling,
+and expired-event suppression (`skipped / event_obsolete`, zero attempts). The
+in-app opt-out notification remained stored; no independent signed-in bell
+walkthrough is claimed. A local adapter restricted processing to one explicitly
+selected account/outbox and released unrelated claims without send reservations.
+It used the real queue RPCs and delivery code, not the mounted HTTP endpoint or
+hosted scheduler. Eight offline adapter cases, Ruff, ESLint and TypeScript passed.
+The 671-test CI result above is historical and was not rerun during this session.
+
+Fresh queued due-soon delivery was explicitly skipped by the user, not passed.
+Remaining portal cases above have no overall sign-off. Hosted net grants remain
+incompatible with the current guard; Supabase's unsupported managed-grant changes
+require a scheduler design correction, not removal of the guard or weakening of
+tests. Automatic dispatch, tracking review and full slice verification remain
+open. See the dated execution record for exact evidence and boundaries.
