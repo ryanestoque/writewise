@@ -255,6 +255,8 @@ Local database-free route/contract/deadline/research checks passed (**88 tests**
 
 **QA session closeout (2026-11-12):** The user requested closeout after explicitly skipping fresh due-soon delivery. This closes this manual session only; Slice 4 remains **Partial**, Phase 3 remains **3/6 verified**, and normal dispatch stays disabled. The dated [execution record](docs/superpowers/plans/2026-11-03-phase3-email-notifications.md#manual-qa-session-closeout-2026-11-12) supersedes earlier statements that no hosted migration evidence, provider request or inbox delivery existed. Current main was merged into the local QA branch as `e7912aa` to restore its existing Turnstile auth support; email has not been merged into main or deployed by this session. No production operation is claimed.
 
+**Scheduler replacement planning (2026-11-12):** The user approved the [written external-caller design](docs/superpowers/specs/2026-11-12-phase3-email-scheduler-replacement-design.md); its [implementation plan](docs/superpowers/plans/2026-11-12-phase3-email-scheduler-replacement.md) is written. It specifies a dependency-free Node 24 caller, retirement of the old database email job/helper, revised boundary tests and a fifth upgrade proof. This is planning evidence only: no replacement caller, retirement migration, hosted service or activation is implemented by these documents. Slice 4 stays Partial and Phase 3 stays 3/6 verified.
+
 ### Slice ⑤ — Points and gradebook
 
 **Dependency:** Slices ①–②; follows Slice ④ in the proposed delivery sequence. Resolve Q-A before implementation. **Status: Not started.**

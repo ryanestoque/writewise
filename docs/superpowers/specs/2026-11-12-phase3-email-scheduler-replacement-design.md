@@ -1,8 +1,8 @@
 # Slice 4 email scheduler replacement
 
-**Date:** 2026-11-12. **Status:** Proposed written specification; the user approved
-the external-caller direction in chat. Written-spec review and implementation
-remain pending. Work continues on `feat/phase3-email-notifications`, PR #9.
+**Date:** 2026-11-12. **Status:** Written specification approved by the user on
+2026-11-12. Implementation planning follows; application/database implementation
+remains pending. Work continues on `feat/phase3-email-notifications`, PR #9.
 
 ## Problem and evidence
 
