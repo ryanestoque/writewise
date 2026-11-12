@@ -298,3 +298,19 @@ The client polls notifications every 60 seconds in foreground. Account-scoped ca
 Eligible notification writes enqueue email in the same Postgres transaction. The existing FastAPI service runs committed async PostgREST operations: claim, prepare current recipient/eligibility, reserve a fixed fingerprint, send through Resend, finalize. No database lock spans the provider request. Each invocation has a 20-second total budget, at most ten claims, two-second RPC deadlines and a five-second total provider deadline. The CV/CNN pipeline stays in process with one Uvicorn worker.
 
 Stable `writewise-email/<outbox UUID>` keys and payload digests support recovery after uncertain provider acceptance. Two-minute leases recover abandoned claims; token rotation makes reservation single-use. The three-attempt/one-hour bound limits retries, not billing. Email provider/quota failures do not prevent coursework or in-app notification operations. See DATABASE §17 and the [approved email design](superpowers/specs/2026-11-03-phase3-email-notifications-design.md).
+
+The external timer replacement lives in `ops/email-dispatch`: a dependency-free
+Node 24 process starts every five minutes, sends one authenticated `{}` POST to
+the existing FastAPI endpoint and exits. Railway uses this separate directory
+and minimal image, not the backend Procfile or model dependencies. Only backend
+origin and dispatch secret are supplied; Supabase/Resend keys remain in FastAPI.
+Caller timeout is 30 seconds, maximum response 16 KiB, redirects/retries are
+disabled, and only fixed codes/validated counts reach output. Backend semantics,
+20-second/10-row bounds, model ownership and the single Uvicorn worker remain.
+
+Migration `20261112094548_retire_database_email_dispatch.sql` removes only the old
+email job/helper. Deadline pg_cron and unrelated jobs/extensions/data remain.
+Supabase-managed net grants are no longer an activation prerequisite: no email
+dispatch credential enters that queue. Browser Data API exposure and business
+RLS/service-only RPCs remain tested. Runtime activation and hosted timer/inbox
+verification are separate from code CI. See the [replacement design](superpowers/specs/2026-11-12-phase3-email-scheduler-replacement-design.md).

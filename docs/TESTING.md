@@ -420,8 +420,63 @@ Use synthetic localhost identities only. Email store tests exercise actual cours
 
 Unit tests exercise fixed privacy-safe templates, strict enabled configuration, Resend acceptance/errors/malformed/oversized responses, quota/auth stop behavior, Retry-After postponement, total timeouts, invocation budgets and safe error envelopes. HTTP transport doubles never establish actual inbox delivery. Frontend controlled transport checks cover exact verified token, account switching, aborts, false values, zero/malformed rows and sanitized errors; these are distinct from a signed-in walkthrough.
 
-CI replays migrations, retains prior upgrade checks and adds an email upgrade manifest preserving historical work, released/unreleased scores, notices, receipts and read state with default-on preferences and zero historical outbox rows. Synthetic pg_net callback tests must verify post-commit invocation and rollback suppression inside the database container network, using no Resend service. Pause/restore each app cron job individually. Generated API/database drift and security advisors remain gates.
+CI replays migrations and retains the four legacy assignment/release/notification/email upgrade checks plus the gradebook upgrade proof. The sixth, scheduler-retirement proof starts at the complete pre-retirement gradebook schema `20261108062937` and verifies the new migration removes only the old email job/helper while preserving pending/sent/skipped/retry data, attempt fingerprints, work/scores/read state, preferences, deadline/unrelated jobs, extensions, Vault entry IDs/names and queue grants. Fixtures use canonical notification identities and synthetic localhost users only; manifests are not uploaded. Pause/restore only the remaining deadline job. Generated API/database drift, advisors and teardown remain gates.
 
-Before owner provisioning, `email_network_guard_check.sql` installs synthetic Vault values inside a rollback-only transaction and proves the helper refuses unsafe network grants. CI then replays the versioned network-boundary migration as the disposable platform owner, preserving postgres/worker access. The full suite must still prove actual browser ACL denials afterward; owner replay must never be replaced by skipping or weakening those tests. Hosted owner provisioning is a separate prerequisite.
+The former pg_net callback and platform-owner replay fixtures are retired with the obsolete HTTP helper. Supabase-managed net privileges are not asserted denied when the platform grants them. Real anon/authenticated Data API requests must reject net/Vault schema profiles; browser roles remain NOLOGIN, Vault SQL read denial and all business RLS/service-only queue tests remain. The old owner-provisioned CI result is historical evidence only, not the new deployment procedure. Real-RPC/provider lock and idempotency tests remain unchanged.
 
-Portal QA still requires both roles, false/true refresh persistence, independent linked-parent preferences, failed reads/saves, duplicate clicks, account changes during verification/PATCH, mobile layout, keyboard/focus/feedback and an unchanged bell. Production activation/tracking/live delivery need separate authorized evidence.
+The external caller has a separate built-in Node suite:
+`node --test ops/email-dispatch/dispatch.test.mjs`. It exercises disabled/import
+no-network behavior, strict configuration, real loopback request shape,
+redirect/retry refusal, byte caps, count validation, sanitized exits and a real
+30-second stalled-body timeout. This is operational Node testing, not a frontend
+test framework. CI builds its isolated Docker image and executes disabled mode.
+
+`backend/tests/unit/test_email_caller.py` runs the actual Node CLI against the
+mounted FastAPI app on an ephemeral loopback socket. Controlled real queue and
+provider adapters prove an acknowledged send, 401 authentication refusal and
+503 disabled refusal; denied calls do not resolve delivery resources. Provider
+I/O is mocked, output is checked for sentinel leaks, and server/socket/thread
+cleanup is required. These synthetic checks do not establish hosted timer or
+inbox delivery. The existing local-only root test guard remains in force.
+
+Portal QA covers both roles, false/true refresh persistence, independent linked-parent preferences, failed reads/saves, duplicate clicks, account changes during verification/PATCH, mobile layout, keyboard/focus/feedback and an unchanged bell. The guided follow-up below records the user's confirmations and their limits; automated transport checks remain distinct from an independently observed walkthrough. Hosted activation and automatic live delivery need separate authorized evidence.
+
+### Manual session closeout — 2026-11-12
+
+User-assisted dev QA proved direct template/provider delivery and localhost links,
+a real Return/outbox/Resend send with user-confirmed inbox receipt, event-time
+opt-out (`skipped / preference_off`, zero attempts), no replay after re-enabling,
+and expired-event suppression (`skipped / event_obsolete`, zero attempts). The
+in-app opt-out notification remained stored; no independent signed-in bell
+walkthrough is claimed. A local adapter restricted processing to one explicitly
+selected account/outbox and released unrelated claims without send reservations.
+It used the real queue RPCs and delivery code, not the mounted HTTP endpoint or
+hosted scheduler. Eight offline adapter cases, Ruff, ESLint and TypeScript passed.
+The 671-test CI result above is historical and was not rerun during this session.
+
+Fresh queued due-soon delivery was explicitly skipped by the user, not passed.
+Remaining portal cases above have no overall sign-off. Hosted net grants remain
+incompatible with the current guard; Supabase's unsupported managed-grant changes
+require a scheduler design correction, not removal of the guard or weakening of
+tests. Automatic dispatch, tracking review and full slice verification remain
+open. See the dated execution record for exact evidence and boundaries.
+
+
+### Guided follow-up and code merge scope - 2026-11-12
+
+The user subsequently confirmed teacher off/on refresh persistence, teacher
+offline-read recovery, both-role keyboard/mobile checks at 375px, both-role
+failed-save recovery and repeated saves, the described teacher-to-parent account
+switch while Saving is visible, and symmetric preference independence for two
+parents linked to the same student in separate sessions. These are user-reported
+results; they do not establish separate verification/PATCH timing, screen-reader
+behavior or an independent unchanged-bell walkthrough. Parent persistence and
+event-time opt-out/no replay already had dev evidence.
+
+Read-only Resend domain API calls independently confirmed open_tracking=false
+and click_tracking=false; no domain/setting was created or changed. Fresh
+queued due-soon remains user-skipped, not passed. Hosted retirement/backend/timer
+rollout and automatic delivery remain open. The user authorized code merge with
+dispatch OFF without closing those activation gates. See the [execution
+record](superpowers/plans/2026-11-03-phase3-email-notifications.md) for the exact
+follow-up matrix. Prior pending-only statements above are historical checkpoints.

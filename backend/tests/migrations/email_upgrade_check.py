@@ -38,24 +38,19 @@ async def verify_scheduler():
         assert {
             row["jobname"]: (row["schedule"], row["command"], row["active"]) for row in jobs
         } == {
-            "writewise-email-dispatch": (
-                "*/5 * * * *",
-                "select writewise_internal.request_email_dispatch();",
-                True,
-            ),
             "writewise-deadline-notifications": (
                 "*/15 * * * *",
                 "select writewise_internal.enqueue_time_based_notifications();",
                 True,
             ),
         }
-        assert len(jobs) == 2
-        for role in ("anon", "authenticated", "service_role"):
-            assert not await connection.fetchval(
-                "select has_function_privilege($1,"
-                "'writewise_internal.request_email_dispatch()','EXECUTE')",
-                role,
+        assert len(jobs) == 1
+        assert (
+            await connection.fetchval(
+                "select to_regprocedure('writewise_internal.request_email_dispatch()')"
             )
+            is None
+        )
     finally:
         await connection.close()
 
@@ -189,15 +184,23 @@ def main():
                         ("due_soon", None),
                         ("submission_returned", submissions[0]),
                     ):
+                        identity = (
+                            await connection.fetchval(
+                                "select writewise_internal.notification_epoch_us(due_at) "
+                                "from public.activity where id=$1",
+                                activity,
+                            )
+                            if kind == "due_soon"
+                            else str(submission)
+                        )
                         await connection.fetchval(
-                            "select writewise_internal.put_notification("
-                            "$1,$2::public.notification_type,$3,$4,$5,$6)",
-                            parent_identity["id"],
+                            "select writewise_internal.notify_work_parents("
+                            "$1::public.notification_type,$2,$3,$4,$5)",
                             kind,
                             activity,
                             student,
                             submission,
-                            f"synthetic-upgrade:{kind}:{activity}",
+                            identity,
                         )
                     await connection.execute(
                         "update public.notification set read_at=$2 "

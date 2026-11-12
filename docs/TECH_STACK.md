@@ -321,6 +321,22 @@ Frontend runs at `http://localhost:3000`, backend at `http://localhost:8000` (Sw
 
 ---
 
+## Optional email timer runtime
+
+`ops/email-dispatch` uses the existing Node 24 major with built-in fetch and
+node:test. It has no npm packages, package install, workspace configuration or
+Python/model dependencies. Its separate minimal Docker image runs
+`node dispatch.mjs` once; Railway schedules `*/5 * * * *` with restart policy
+NEVER and no inbound port/healthcheck. The main FastAPI deployment is unchanged.
+
+Caller-only process variables are `WRITEWISE_EMAIL_SCHEDULER_ENABLED=false`,
+`WRITEWISE_BACKEND_ORIGIN`, `EMAIL_DISPATCH_SECRET`, and
+`WRITEWISE_ALLOW_LOCALHOST=false`. Both flags accept only true/false. Origin must
+be plain HTTPS; explicit local opt-in permits literal HTTP loopback for tests.
+The script does not autoload any env file. The caller must not receive backend
+Supabase/Resend keys. Backend EMAIL_DISPATCH_ENABLED remains a separate off-by-
+default switch. Setup and activation order are in DEPLOYMENT's Slice 4 section.
+
 ## 10. Open Items / Revisit List
 
 - **TensorFlow ↔ Python 3.14:** once TensorFlow ships official Python 3.14 wheels, revisit whether upgrading is worth it — no rush, 3.13 is fully supported through the pilot and defense.

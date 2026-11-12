@@ -975,3 +975,20 @@ This inline review found and resolved these implementation dependencies before h
 - Coherent fact reads use a single root-authorization/aggregation SELECT, and deletion joins the activity-first mutation lock order while retaining Storage-first cleanup.
 - Parent grouping accounts for the existing teacher-profile/roster RLS restrictions with a narrow label helper, without granting access to teacher email/profile rows.
 - The coverage table assigns every approved spec section to concrete tasks. Execution steps remain unchecked; application verification is not claimed.
+
+
+## Main integration conflict resolution - 2026-11-12
+
+Current main (`0bc0d6b`, including PR #9) is merged into the retained gradebook
+worktree. Three text conflicts were reconciled: CI keeps all six upgrade proofs
+and the caller/container/security checks; the roadmap retains Slice 5
+verification alongside the newer email status; parent settings retain the same
+4xl layout and owner-scoped email card. Historical migrations and generated
+public contracts were not hand-edited. The retirement proof starts at final
+pre-retirement gradebook migration `20261108062937`, so its snapshots isolate
+the retired trigger from earlier schema upgrades. Obsolete owner replay and
+callback support stay retired. Independent review found no material issue.
+Local Ruff/ESLint/TypeScript, all nine caller cases and the production webpack
+build passed. Combined disposable CI remains required before claiming the
+updated branch verified. This is branch reconciliation, not permission to merge PR #7
+into main or to activate hosted email. Preserve the existing local worktree/env.
