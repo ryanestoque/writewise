@@ -1,0 +1,8 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "node dispatch.mjs"
+cronSchedule = "*/5 * * * *"
+restartPolicyType = "NEVER"
