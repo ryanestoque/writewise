@@ -741,3 +741,25 @@ Self-review is inline, not a subagent dispatch. Check every spec row above again
 This is one coordinated subsystem, not independent projects: storage, reads, writes, notifications and portal entry points must agree on the source identity before rollout. No additional product design or separate inbox is introduced. All nine execution tasks remain unchecked at planning handoff. After the plan is saved, offer inline execution with checkpoints or explicitly selected delegated execution; no agent work or application changes start during planning.
 
 **Planning verification (2026-11-10):** Backend Ruff, whole-frontend ESLint and TypeScript (`--noEmit --incremental false`) passed using the worktree's installed tools. Nine Python examples parsed with AST and seven TypeScript/TSX examples passed syntax parsing; none was executed as application code. Twenty-six local Markdown links resolved, all nine tasks were ordered, all 69 execution steps remained unchecked, and the required header/missing-content-marker checks passed. Inline spec review corrected fixture-state access, exact timestamp ordering, historical-owner navigation, service-versus-caller context, per-migration generated types and source-deletion cache behavior. `git diff --check` passed. These are planning/baseline checks, not migration, database, API, notification-race, or portal verification of the redesign.
+
+
+## Current-main conflict reconciliation - 2026-11-12
+
+The verified comments branch incorporates resolved gradebook `ce64ac8`, which
+already includes current main `0bc0d6b` and the external email timer. CI, tracker
+and roadmap conflicts were reconciled while retaining prior Slice 5/6 QA
+provenance and per-submission comment behavior. Parent settings preserve their
+4xl layout/email card; scoring changes are whitespace only.
+
+All seven existing upgrade proofs, including the empty-history cutover and both
+legacy-conversation rejection scenarios, remain. Scheduler retirement is the
+eighth proof, prepared at final pre-retirement migration `20261110123214` so
+only retirement changes after snapshot capture. Caller/container, generated
+contracts, advisors and teardown remain gates. No historical migration or
+public generated type was hand-edited. Obsolete owner replay/callback are not
+restored. Independent integration review found no material issue.
+
+Local Ruff/ESLint/TypeScript and the production webpack build passed.
+Combined-head disposable CI remains required. Previous portal QA is not a new agent
+walkthrough. This updates PR #8 for review; it does not merge PR #7/#8 into main,
+modify hosted databases or activate email. Preserve all worktrees and env files.

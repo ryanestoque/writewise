@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Read the approved spec and this entire plan before execution. Execute inline unless the user selects delegation; this planning pass does not dispatch agents.
 
+**Scheduler supersession (2026-11-12):** Follow [the approved external-caller plan](2026-11-12-phase3-email-scheduler-replacement.md) for current scheduling/CI/activation work. Original Vault/pg_net/owner-provisioning steps below are historical execution evidence, not instructions to repeat. Other email business contracts remain.
+
 **Goal:** Deliver optional, privacy-minimal Return and due-soon emails without making coursework requests depend on the email provider.
 
 **Architecture:** Extend the existing transactional notification helper to enqueue a service-only SQL outbox. Short PostgREST RPCs claim, revalidate, authorize, and finalize deliveries; a bounded asynchronous FastAPI endpoint sends through Resend between those transactions. A private Vault-backed pg_net helper invokes the endpoint every five minutes; existing profile RLS protects the global preference in both portals.
@@ -831,3 +833,72 @@ Additional review coverage exercises actual provider acceptance followed by a lo
 Whole-backend Ruff, whole-frontend ESLint/TypeScript and the webpack production build passed locally; the controlled preference transport harness passed all eight cases. Real timeout tests and the normal app health response while provider I/O is pending passed. Source checks were repeated for this documentation closeout. Existing Starlette/Supabase deprecations and Next middleware/cache notices were not changed.
 
 Two execution checkboxes deliberately remain open: the combined Task 8 signed-in manual QA item and Task 9 overall acceptance/manual matrix closure. The lack of a native computer-use pipe/browser surface prevented that walkthrough. This is not user QA sign-off. The existing branch/worktree and useful ignored test artifacts are preserved; no merge, hosted migration, owner/support provisioning, tracking inspection, credentials configuration or live email was performed. Email remains disabled by default and scheduled requests fail closed without safe owner-provisioned permissions. Phase 3 remains 3/6 verified.
+
+## Manual QA session closeout 2026-11-12
+
+The user requested closing this session and explicitly skipped fresh queued
+due-soon delivery. This is a partial QA closeout, not overall slice sign-off.
+Slice 4 stays Partial, Phase 3 stays 3/6 verified, and normal dispatch remains off.
+This dated evidence supersedes older statements above where applicable:
+
+| Check | Actual evidence |
+|---|---|
+| Hosted migration history | User-provided SQL result records all six email migrations applied to dev. History alone does not prove object grants changed. |
+| Direct template/provider smoke | User ran the actual renderer/Resend adapter for an explicitly selected test inbox; provider accepted, dashboard reported Delivered, and user confirmed inbox and both localhost links. No queue or HTTP dispatch route was involved. |
+| Queued Return delivery | User returned test work through the teacher portal. Outbox `fc27019c-df70-4329-b198-74b832ca80ca` was processed through real RPCs, dispatcher and provider by a single-recipient local adapter. Durable status sent, attempts 1, null error; user confirmed inbox receipt. |
+| Expired-event suppression | Outbox `53c775a2-ec7a-47a4-acb5-79af562694fd` became skipped / event_obsolete with attempts 0. |
+| Opt-out and no replay | User saved off, refreshed and returned another worksheet. Outbox `c6dc2290-090a-43e4-b51d-e7aa1fbec5ef` became skipped / preference_off with attempts 0 and retained its in-app notification. After user re-enabled, read-only checks found preference true, the same terminal skip, no new Return rows and no pending Return rows for the selected account. |
+| Recipient isolation | Adapter pins one account/address/outbox, refuses changed recipients, processes at most one selected message and releases unrelated claims. Other observed statuses/attempts stayed unchanged and leases cleared. Release moves next_attempt_at to now under the existing RPC contract. |
+| Adapter verification | Five original cases failed before restriction; eight offline cases then passed against controlled HTTP. Separate review found no material safety issue. These tests sent no real email. |
+| Current local branch | Committed main `6c77b06` was merged into the QA feature branch as `e7912aa`, restoring existing Turnstile auth code and preserving the email preference card. Ruff, ESLint, TypeScript and conflict/whitespace checks passed. Browser checks show widget/script mounting and no overflow at 375px; challenge completion was not independently verified. No push or merge of email into main occurred in this session. |
+| Fresh queued due-soon | Not verified; explicitly skipped by user. The new test deadline had already passed when checked, so no fresh eligible due-soon email was sent. Direct rendering/provider smoke is not a substitute. |
+
+Remaining gates: scheduler architecture correction and live automatic/HTTP-route
+verification; fresh due-soon delivery unless its requirement is explicitly revised;
+unreported teacher/parent failure, race, accessibility and independence flows;
+independent tracking/configuration review; and final integration/CI as applicable.
+The historical 671-test CI run and prior production build were not rerun here.
+
+Dev retains the Supabase-managed net grants that the existing scheduler guard
+refuses. Current provider guidance says per-project pg_net grant changes are
+unsupported; the owner/support provisioning assumption in the original plan
+must be replaced. An external timer calling the existing endpoint was proposed,
+not implemented. Keep the guard and dispatch-off state while that design is
+resolved. Do not interpret this closeout as production activation permission.
+
+Ignored local artifacts under `backend/scratch/` preserve the adapter, offline
+tests and sanitized operational results. Credentials and the selected inbox
+address are not included in tracked closeout documents. No schema modification,
+database reset, queue deletion, bulk preference overwrite or production action
+was performed. Preserve the worktree and local env files for follow-up.
+
+## Guided portal QA follow-up and merge scope - 2026-11-12
+
+This follow-up supersedes the earlier statements that all remaining portal
+checks and tracking review lack sign-off. The user confirmed each guided check
+in conversation. These are user-reported results, not an independent agent
+browser walkthrough; the companion-page payload contained no page/document.
+
+| Check | Follow-up evidence |
+|---|---|
+| Teacher preference persistence | User confirmed off/save/refresh, then on/save/refresh; parent persistence was already verified. |
+| Read failure recovery | User confirmed the teacher card shows an error on offline Reload settings and restores the saved preference on online reload. |
+| Keyboard and mobile | Both roles: visible Tab focus, Space toggle, keyboard save/saved feedback, restored preference and 375px layout without horizontal scrolling. |
+| Failed saves | Both roles: offline save reports failure without success, then online reload restores the previously saved value. |
+| Repeated saves | Both roles: rapid double Save, disabled processing state, success without errors, refresh persistence and restored preference. |
+| Account switching | User confirmed teacher opt-out saving followed by parent sign-in while Saving is visible, with the parent remaining opted in after refresh. This does not independently establish separate token-verification/PATCH timings. |
+| Linked-parent independence | User confirmed two parents linked to the same student, using normal/incognito sessions: A off/B on, then A on/B off, both stable after refresh, followed by restoration. |
+| Provider tracking | Agent read-only GET /domains and GET /domains/:id confirmed the existing sending domain has open_tracking=false and click_tracking=false. Only booleans were printed; no domain/settings change or send occurred. |
+
+The guided portal checklist is user-reported passed. Separate screen-reader,
+unchanged-bell walkthrough, parent-only read-failure and exact in-flight timing
+evidence are not inferred. Controlled transport/RLS evidence remains applicable.
+Fresh queued due-soon delivery stays explicitly skipped, not passed.
+
+After these checks, the user explicitly approved code merge closeout with normal
+dispatch OFF and hosted migration/backend/timer rollout kept separate. This
+supersedes the earlier draft-only integration scope; it does not waive or claim
+the remaining activation evidence. Slice 4 remains Partial and Phase 3 remains
+3/6 verified. Before merging, require green CI on the updated PR head and record
+the actual merge result in PR #9. Preserve local worktree, env and QA artifacts;
+do not apply hosted migrations, enable dispatch or provision a timer here.

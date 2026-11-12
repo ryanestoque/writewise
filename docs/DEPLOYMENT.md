@@ -280,30 +280,95 @@ Expected schedule is `*/15 * * * *` and command is `select writewise_internal.en
 
 If an authorized operator must pause this app's sweep, use `cron.alter_job(job_id, active := false)` and restore the original state afterward. Do not disable pg_cron, which removes unrelated jobs. No Resend, email-dispatch, Vault, or pg_net configuration is needed for Slice 3. New deadlines/microsecond overrides re-arm events; restoring an already-delivered instant does not resend.
 
-## Phase 3 Slice 4 — Optional email activation
+## Phase 3 Slice 4 - External email timer activation
 
-Repository verification does not configure a hosted environment. Apply the versioned email migrations through the approved dev workflow only after checking the intended project. Do not reset hosted databases. Production remains restricted to the two key-holders. The user reports a verified Resend domain; sender identity, keys, deployment origins, tracking settings and any live recipient still require configuration/authorization.
+The external caller and retirement migration are implemented on the feature
+branch; implementation/CI, hosted rollout, timer execution and inbox receipt
+are distinct gates. No service or hosted migration is created by repository
+files. Keep both caller and backend dispatch disabled until activation review.
 
-Backend settings (see `backend/.env.example`):
+Apply all versioned migrations, including
+`20261112094548_retire_database_email_dispatch.sql`, through the approved
+workflow for the verified target project. Do not reset hosted databases. Confirm
+only the old `writewise-email-dispatch` job/helper are retired; the deadline job,
+unrelated jobs, extensions, queue/notice/read state and preferences must remain.
+Production and Railway access retain the two-key-holder restriction.
 
-| Setting | Default / activation requirement |
+Backend settings stay backend-only:
+
+| Setting | Requirement |
 |---|---|
-| `EMAIL_DISPATCH_ENABLED` | `false`; enable only after the other prerequisites are ready |
-| `EMAIL_DISPATCH_SECRET` | SecretStr; at least 32 printable ASCII characters; match the Vault entry |
-| `RESEND_API_KEY` | Backend-only secret; required when enabled |
-| `EMAIL_FROM` | Valid sender address/display name on the verified domain; supplied later |
-| `APP_BASE_URL` | Canonical frontend HTTPS origin, no path/query/fragment/credentials; literal loopback HTTP is test-only |
+| `EMAIL_DISPATCH_ENABLED` | Defaults false; enable only after queue/configuration review |
+| `EMAIL_DISPATCH_SECRET` | At least 32 non-whitespace printable ASCII characters; match the caller |
+| `RESEND_API_KEY` | Backend-only Resend sending key |
+| `EMAIL_FROM` | Sender at the verified sending domain |
+| `APP_BASE_URL` | Canonical frontend HTTPS origin; literal HTTP loopback is for local testing |
 
-Enabled configuration fails startup with fixed field-name errors when invalid. Do not paste secret values into chat, commits, logs or screenshots. Resend keys never belong in frontend variables or Vault's scheduler entries. Keep dispatch disabled while preparing/reviewing configuration.
+Create the external timer only after separate deployment authorization. Its
+Railway service root is `ops/email-dispatch`; use that directory's Dockerfile and
+`railway.toml`, with `node dispatch.mjs`, `*/5 * * * *`, restart policy NEVER,
+and no inbound port, healthcheck, volume or model/backend start command. This is
+a short HTTP process, not another FastAPI/CNN worker. [Railway's timer](https://docs.railway.com/cron-jobs)
+can vary by a few minutes and skips a tick if the previous execution remains.
 
-Scheduled invocation uses exactly two unique Vault names: `writewise_backend_url` (plain canonical backend origin) and `writewise_email_dispatch_secret` (matching backend dispatch secret). An absent/blank value makes the helper a no-op. Populate/update these with an authorized secret-entry workflow; inspect names/IDs only, never select decrypted values for a screenshot. The named `writewise-email-dispatch` job runs every five minutes and contains only `select writewise_internal.request_email_dispatch();`. Preserve the existing deadline job and unrelated jobs. Inspect job metadata/recent status without request headers. pg_net acceptance of a request is not evidence of provider acceptance.
+Configure only these private caller variables:
 
-**Owner provisioning is mandatory before adding live scheduler secrets.** The normal hosted postgres role cannot remove Supabase-owned net/Vault grants. Arrange authorized object-owner execution (through Supabase support if needed) of the exact versioned `supabase/migrations/20261103132241_phase3_email_network_boundary.sql`; do not copy owner credentials into backend/front-end settings, escalate app roles, or replace this with dashboard-only unversioned edits. The helper fails closed with `Email dispatch network permissions require owner provisioning` if browser schema/table/function access remains. Confirm actual anonymous/authenticated network denial and preserved trusted cron access before configuring live Vault values. CI's ephemeral owner replay establishes the implementation, not hosted provisioning. If owner execution is unavailable, leave dispatch off and this activation gate open; coursework/bells remain usable.
+| Variable | Requirement |
+|---|---|
+| `WRITEWISE_EMAIL_SCHEDULER_ENABLED` | Defaults false; literal true/false only |
+| `WRITEWISE_BACKEND_ORIGIN` | Intended backend's plain HTTPS origin, no userinfo/path/query/fragment |
+| `EMAIL_DISPATCH_SECRET` | Match the backend value through private settings |
+| `WRITEWISE_ALLOW_LOCALHOST` | Defaults false; literal true enables HTTP only for localhost/127.0.0.1/::1 in controlled local checks |
 
-Before activation, confirm the sender domain and sender identity in Resend and explicitly check click/open tracking is disabled for these privacy-safe messages. Review the account's current quota/billing settings with its owner. Paid-plan overages are provider billing behavior; WriteWise implements no application spending cap. The app's maximum three reservations within one hour and stop-on-quota behavior bound retries, not total account expenditure. See the [approved design and primary provider references](superpowers/specs/2026-11-03-phase3-email-notifications-design.md#12-sources-checked-during-design).
+Use the canonical reachable HTTPS backend domain. A hosted timer's localhost is
+not the developer PC, and an HTTP Railway private address is not an approved
+HTTPS origin. The caller reads process environment only; it does not load any
+env file and must not receive Supabase, Resend or model credentials. Its default
+container invocation is disabled and exits without a request.
 
-For an authorized live smoke test, designate a synthetic account and exact recipient first, verify canonical confirmed Auth email and linked coursework, then enable dispatch and trigger one eligible new event. Check safe dispatch counts/outbox state and the designated recipient inbox without exporting message/address payloads. `sent` means Resend accepted the request, not successful inbox placement. Verify opt-out leaves the bell working and re-enable creates no historical replay. This task's CI only uses a synthetic loopback callback and mocked Resend; no hosted migration, provider send or inbox delivery is claimed.
+The caller sends one fixed empty-object POST to the existing internal endpoint,
+refuses redirects/retries and bounds the whole request/body to 30 seconds and
+16 KiB. Output is fixed codes plus validated aggregate counts; no URL, secret,
+header, response body, address, provider ID or raw exception is logged. Exit 0
+means disabled or valid acknowledged backend counts (including retried/failed
+rows); 1 means timeout/network/HTTP/response failure; 2 means invalid caller
+configuration. The backend separately owns durable retries and its 20-second,
+ten-row bound. No application spending cap or rate limiter is introduced.
 
-Operational failures: 429 records a bounded retry and stops that invocation; 401/403 records terminal provider configuration failure and stops the batch. Timeouts/5xx use the retry policy; three reserved attempts or one-hour expiry end recovery. Skipped/failed rows are not automatically reset. Coursework and the in-app bell remain usable during email provider failure. The scheduler's thirty-second HTTP timeout exceeds the dispatcher's twenty-second budget.
+Do not add scheduler secrets to Vault/pg_net. Supabase-managed net grants are a
+platform constraint, not a supported owner/support provisioning procedure.
+Retirement removes the secret-bearing helper and its guard together, rather
+than weakening it while retaining that path. Historical applied migrations
+remain. Existing Vault entries are inert after retirement: remove only the two
+old scheduler entries through an authorized private workflow after checking
+other consumers; never display decrypted values or inspect queued headers. If
+a real dispatch secret was ever queued, rotate it privately before activation.
 
-For emergency pause, set backend dispatch off and pause only this named cron job, preserving its former state. For dispatch-secret rotation, pause the email job, disable dispatch, replace the backend value and matching Vault entry through private settings, redeploy/restart as needed, verify authenticated behavior with synthetic data, then restore the original job state and enable dispatch. Rotate a Resend key only in backend settings. Configuration changes can invalidate an in-flight payload fingerprint; do not replay terminal rows or alter stored digests to force sends.
+Activation sequence:
+
+1. Verify code CI and the target's applied retirement migration. Deploy the
+   compatible backend with dispatch off and configure the caller disabled.
+2. Verify correct environment, matching secret, confirmed Auth test recipient,
+   eligible linked coursework and the full eligible queue scope. The normal
+   dispatcher has no recipient filter; current one-inbox QA authorization does
+   not permit sending to every other dev recipient. Controlled tests use a
+   synthetic queue/provider rather than an unreviewed shared live queue.
+3. Confirm sender/domain, disable open/click tracking and review Resend quota
+   and billing with its owner. Provider billing is not an application spend cap.
+4. With explicit live recipient/queue authorization, enable backend/caller for
+   the designated hosted smoke. Check scheduled run outcome, durable queue state,
+   provider acceptance and inbox separately. Validate opt-out/no replay.
+5. Review ongoing activation. A local manual invocation or checked-in schedule
+   is not proof of hosted timer execution. Fresh due-soon delivery was skipped
+   during the 2026-11-12 QA session and remains unverified.
+
+The 2026-11-12 direct template smoke and recipient-restricted Return delivery
+proved inbox receipt; they did not exercise the normal HTTP timer. Subsequent
+caller-to-route CI uses synthetic resources and makes no Resend request.
+
+To pause, disable the caller flag and backend dispatch; leave the database
+notification-deadline sweep and pending rows in place. To rotate the dispatch
+secret, pause both, update their values privately, restart as needed, verify a
+controlled smoke, then restore the reviewed activation state. Rotate Resend keys
+only in backend settings. Do not restore the old pg_net path as rollback, reset
+queue rows, alter payload fingerprints or replay terminal messages.

@@ -35,7 +35,7 @@ export default async function ParentSettingsPage() {
   const email = user.email || parentProfile?.email || "";
 
   return (
-    <div className="w-full max-w-4xl mx-auto min-w-0 space-y-8 pb-20 sm:pb-16">
+    <div className="mx-auto w-full max-w-4xl min-w-0 space-y-8 pb-20 sm:pb-16">
       {/* Return to Progress Navigation */}
       <div>
         <Link

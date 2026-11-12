@@ -28,4 +28,20 @@ The same notification transaction now inserts a service-only email outbox for Re
 
 The existing FastAPI service performs bounded async dispatch through committed claim/prepare/reserve/finalize RPCs. Activity-first eligibility locks end before provider I/O. A rotated reservation token, payload fingerprint, stable Resend key, two-minute lease and three-attempt/one-hour window support bounded uncertain-send recovery without an exactly-once guarantee. Provider/quota failures stay isolated to email. No extra service, Uvicorn worker, CV/CNN architecture change, rate limiter or spending cap is introduced. Implementation, CI, manual QA and hosted activation remain separate evidence.
 
-The platform owns pg_net/Vault ACLs. An ordinary migration role's attempted revokes did not remove inherited network access in CI. Activation therefore requires owner replay of the versioned hardening migration; the private scheduled helper checks the resulting permissions and refuses HTTP until safe. The disposable runner tests both states without weakening browser denial tests. Hosted owner/support provisioning remains separate from code verification.
+The original platform-owner replay assumption was rejected during hosted QA:
+Supabase documents per-project pg_net grant customization as unsupported.
+The approved 2026-11-12 replacement removes the old email job/helper in a new
+migration and uses a separate dependency-free Node 24 Railway timer to call the
+same authenticated FastAPI endpoint. No dispatch secret enters the database
+network queue. Existing migrations and business authorization/retry semantics
+remain. The database deadline job is unchanged.
+
+This process is only an HTTP trigger: it exits after one bounded request and
+has no scoring/model, Supabase or Resend access. The backend keeps its single
+Uvicorn worker and resident model. The earlier "no extra service" statement
+applies to the original design and is superseded solely for this HTTP trigger.
+CI now verifies retirement/data preservation, actual browser API schema
+exclusion, preserved Vault protections, caller privacy/bounds and real endpoint
+behavior using controlled dependencies, without platform-owner replay. Hosted
+service creation, configuration, timer execution and inbox evidence remain
+separate deployment gates.
