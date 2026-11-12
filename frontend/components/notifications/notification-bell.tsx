@@ -108,7 +108,7 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
             variant="ghost"
             size="icon"
             aria-label={label}
-            className="relative shrink-0"
+            className="relative shrink-0 size-10 sm:size-9 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0"
             disabled={!active}
           />
         }
@@ -130,6 +130,7 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
           <Button
             variant="ghost"
             size="xs"
+            className="min-h-10 sm:min-h-7 px-2.5"
             disabled={readAll.isPending || count.data === 0}
             onClick={() => readAll.mutate(undefined, { onError: feedback })}
           >

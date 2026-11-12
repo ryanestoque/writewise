@@ -23,16 +23,12 @@ import {
   type DiagnosticOverlayData,
   type ActiveAnnotationHover,
 } from "@/components/shared/diagnostic-overlay";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
+import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import { cn } from "@/lib/utils";
 import {
   PARENT_CRITERIA_LIST,
+  PARENT_BAND_EXPLANATIONS,
   PARENT_CRITERIA_METADATA,
   DIAGNOSTIC_NOTES,
   computeStrengthAndFocus,
@@ -45,8 +41,8 @@ import {
   ArrowLeft,
   Trash2,
   Loader2,
-  Eye,
   Lightbulb,
+  PenLine,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -60,13 +56,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useDeleteSubmission } from "@/lib/hooks/use-submissions";
 import { toast } from "sonner";
-
-const PARENT_BAND_EXPLANATIONS: Record<string, string> = {
-  excellent: "Fluent, highly consistent handwriting meeting grade-level goals.",
-  satisfactory: "Solid cursive foundation with minor areas to refine.",
-  developing: "Actively learning and building muscle memory — a normal, key stage in cursive.",
-  needs_improvement: "Working on basic letter strokes and pencil control with guided practice.",
-};
 
 interface WorksheetViewDialogProps {
   open: boolean;
@@ -97,14 +86,12 @@ interface WorksheetViewDialogProps {
     baseline_alignment: ScoreBand | null;
     composite?: ScoreBand | null;
   };
-  /** CV pipeline guide-line coordinates from raw_output */
   guideLines?: GuideLines | null;
-  /** Diagnostic Engine overlay coordinates and findings */
   overlay?: DiagnosticOverlayData | null;
-  /** Optional back action when opened from a parent history view */
   onBack?: () => void;
   backLabel?: string;
   returnNote?: string | null;
+  onPracticeNow?: () => void;
 }
 
 export function WorksheetViewDialog({
@@ -123,10 +110,11 @@ export function WorksheetViewDialog({
   guideLines,
   overlay,
   onBack,
-  backLabel = "Back to History",
+  backLabel = "Back",
   submissionId,
   canDelete = false,
   returnNote,
+  onPracticeNow,
 }: WorksheetViewDialogProps) {
   const [showGuideLines, setShowGuideLines] = useState(false);
   const [criterionOverride, setCriterionOverride] = useState<CriterionFilter | null>(null);
@@ -135,9 +123,7 @@ export function WorksheetViewDialog({
   const [selectedAttentionItem, setSelectedAttentionItem] =
     useState<ActiveAnnotationHover | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [mobileTab, setMobileTab] = useState<"photo" | "scores">("photo");
 
-  // Synchronize score details visibility when dialog open state changes
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
     setPrevOpen(open);
@@ -156,7 +142,7 @@ export function WorksheetViewDialog({
     if (!submissionId) return;
     try {
       await deleteMutation.mutateAsync(submissionId);
-      toast.success("Worksheet removed. You can upload a new photo anytime.");
+      toast.success("Photo removed. You can send a new photo anytime.");
       setIsDeleteDialogOpen(false);
       onOpenChange(false);
     } catch (err: unknown) {
@@ -170,12 +156,11 @@ export function WorksheetViewDialog({
     if (!nextOpen) {
       setCriterionOverride(null);
       setSelectedAttentionItem(null);
-      setMobileTab("photo");
     }
     onOpenChange(nextOpen);
   };
 
-  const handleCriterionSelect = (criterionKey: CriterionKey, switchMobileTab = false) => {
+  const handleCriterionSelect = (criterionKey: CriterionKey) => {
     const key = criterionKey as CriterionFilter;
     setCriterionOverride(key);
     if (overlay) {
@@ -186,19 +171,14 @@ export function WorksheetViewDialog({
         setSelectedAttentionItem(null);
       }
     }
-    if (switchMobileTab) {
-      setMobileTab("photo");
-    }
   };
 
-  // Respect user intent: honor initialCriterion ("all" by default), never force-filter to weakest criterion
   const effectiveInitialCriterion: CriterionFilter = useMemo(() => {
     return initialCriterion ?? "all";
   }, [initialCriterion]);
 
   const activeCriterion = criterionOverride ?? effectiveInitialCriterion;
 
-  // Auto-focus first attention item when overlay data is present to avoid unselected/empty pager state
   const activeAttentionItem = useMemo(() => {
     if (selectedAttentionItem) return selectedAttentionItem;
     if (!overlay || activeCriterion === "all") return null;
@@ -220,6 +200,73 @@ export function WorksheetViewDialog({
       : null;
   const compositeBandMeta = compositeBand ? getBandMeta(compositeBand) : null;
 
+  const renderOverallSummaryCard = (isMobile = false) => {
+    if (compositeScore == null) return null;
+    return (
+      <div
+        className={cn(
+          "rounded-xl border border-border/80 bg-card shadow-2xs",
+          isMobile ? "p-3.5 space-y-2.5" : "hidden lg:block p-4 space-y-3"
+        )}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {compositeBandMeta && (
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn("size-2.5 rounded-full shrink-0", compositeBandMeta.dotColor)}
+                  aria-hidden="true"
+                />
+                <h3 className="text-base sm:text-lg font-heading font-semibold text-foreground">
+                  {compositeBandMeta.label}
+                </h3>
+              </div>
+            )}
+            {showScoreDetails && (
+              <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/60">
+                {Math.round(compositeScore)}% overall
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowScoreDetails((prev) => !prev)}
+            aria-pressed={showScoreDetails}
+            className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-md px-2.5 py-1 min-h-[36px] flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
+          >
+            {showScoreDetails ? "Hide details" : "Show details"}
+          </button>
+        </div>
+
+        <BandPositionBar
+          score={compositeScore}
+          height="sm"
+          showThresholds={showScoreDetails}
+          ariaLabel={
+            showScoreDetails
+              ? `Overall score: ${Math.round(compositeScore)}%`
+              : compositeBandMeta
+                ? `Overall level: ${compositeBandMeta.label}`
+                : "Overall level not yet available"
+          }
+          ariaValueText={
+            showScoreDetails
+              ? `${Math.round(compositeScore)}% overall`
+              : compositeBandMeta
+                ? compositeBandMeta.label
+                : undefined
+          }
+        />
+
+        {compositeBand && PARENT_BAND_EXPLANATIONS[compositeBand] && (
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pt-0.5">
+            {PARENT_BAND_EXPLANATIONS[compositeBand]}
+          </p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-[calc(100%-1.5rem)] sm:max-w-3xl lg:max-w-4xl max-h-[min(94dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
@@ -238,16 +285,14 @@ export function WorksheetViewDialog({
                 </button>
               )}
               <DialogTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
-                Scored Worksheet Photo
+                Worksheet Photo &amp; Guide Lines
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
+              <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
                 <span className="font-medium text-foreground">
                   {childName}
                 </span>
                 <span>&middot;</span>
-                <span>
-                  {formattedDate}
-                </span>
+                <span className="font-sans tabular-nums">{formattedDate}</span>
                 {targetText && (
                   <>
                     <span>&middot;</span>
@@ -262,72 +307,18 @@ export function WorksheetViewDialog({
           {returnNote && <p className="text-sm whitespace-pre-wrap">{returnNote}</p>}
         </DialogHeader>
 
-        {/* Content Body: Split View */}
+        {/* Content Body: Unified Multimodal View */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-          {/* Mobile View Segmented Switcher */}
-          <div
-            role="tablist"
-            aria-label="Worksheet view options"
-            className="lg:hidden flex items-center p-1 bg-muted/50 rounded-xl border border-border/70 text-xs font-medium"
-          >
-            <button
-              type="button"
-              id="mobile-tab-photo"
-              role="tab"
-              aria-selected={mobileTab === "photo"}
-              aria-controls="mobile-panel-photo"
-              onClick={() => setMobileTab("photo")}
-              className={cn(
-                "flex-1 py-2 px-3 rounded-lg text-center transition-all cursor-pointer min-h-[40px] flex items-center justify-center font-medium touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
-                mobileTab === "photo"
-                  ? "bg-card text-foreground font-semibold shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Worksheet Photo
-            </button>
-            <button
-              type="button"
-              id="mobile-tab-scores"
-              role="tab"
-              aria-selected={mobileTab === "scores"}
-              aria-controls="mobile-panel-scores"
-              onClick={() => setMobileTab("scores")}
-              className={cn(
-                "flex-1 py-2 px-3 rounded-lg text-center transition-all cursor-pointer min-h-[40px] flex items-center justify-center gap-1.5 font-medium touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
-                mobileTab === "scores"
-                  ? "bg-card text-foreground font-semibold shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <span>Scores &amp; Skills</span>
-              {compositeBandMeta && (
-                <span
-                  className={cn("size-2 rounded-full shrink-0", compositeBandMeta.dotColor)}
-                  aria-hidden="true"
-                />
-              )}
-              {showScoreDetails && compositeScore != null && (
-                <span className="text-xs font-sans tabular-nums px-1.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-800 dark:text-brand-300 font-semibold border border-brand-200/60 dark:border-brand-800/60">
-                  {Math.round(compositeScore)}%
-                </span>
-              )}
-            </button>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            {/* Left: High-Resolution Worksheet Photo Inspector */}
-            <div
-              id="mobile-panel-photo"
-              role="tabpanel"
-              aria-labelledby="mobile-tab-photo"
-              className={cn("lg:col-span-7 flex flex-col justify-center w-full gap-3", mobileTab !== "photo" && "hidden lg:flex")}
-            >
+            {/* Left (Desktop) / Top (Mobile): High-Resolution Worksheet Photo Inspector */}
+            <div className="lg:col-span-7 flex flex-col justify-center w-full gap-3">
               <WorksheetImageInspector
                 imageUrl={imageUrl}
                 altText={`Handwriting worksheet submitted for ${childName}`}
                 isLoading={isImageLoading}
                 headerLabel="Handwritten Worksheet"
+                imageToolsDisclosure={true}
+                aspectRatioClass="h-[230px] sm:h-[320px] lg:h-auto lg:min-h-[420px] lg:max-h-[min(640px,calc(100dvh-14rem))]"
                 diagnosticToolbar={
                   overlay ? (
                     <OverlayToolbar
@@ -384,186 +375,164 @@ export function WorksheetViewDialog({
                 <button
                   type="button"
                   onClick={() => setShowGuideLines((prev) => !prev)}
-                  className={`self-start px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer flex items-center gap-1.5 min-h-[40px] sm:min-h-[36px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 ${showGuideLines
-                    ? "bg-brand-100 text-brand-900 border-brand-300 dark:bg-brand-950 dark:text-brand-200 dark:border-brand-800"
-                    : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted/70 hover:text-foreground"
-                    }`}
+                  className={cn(
+                    "self-start px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer flex items-center gap-1.5 min-h-[40px] sm:min-h-[36px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
+                    showGuideLines
+                      ? "bg-brand-100 text-brand-900 border-brand-300 dark:bg-brand-950 dark:text-brand-200 dark:border-brand-800"
+                      : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted/70 hover:text-foreground"
+                  )}
                   aria-pressed={showGuideLines}
-                  aria-label={showGuideLines ? "Hide detected guide lines on worksheet" : "Show detected guide lines on worksheet"}
-                  title={showGuideLines ? "Hide detected guide lines" : "Show detected guide lines on worksheet"}
+                  aria-label={showGuideLines ? "Hide guide lines on worksheet" : "Show guide lines on worksheet"}
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0" aria-hidden="true">
                     <line x1="1" y1="4" x2="13" y2="4" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2" />
                     <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.6" strokeDasharray="2 2" />
                     <line x1="1" y1="10" x2="13" y2="10" stroke="currentColor" strokeWidth="1.5" />
                   </svg>
-                  <span>Guidelines</span>
+                  <span>Writing Lines</span>
                 </button>
               )}
 
-              {/* Mobile Diagnostic Context Bridge: keeps parents informed while inspecting the photo */}
-              <div className="lg:hidden p-3.5 rounded-xl border border-brand-200/60 dark:border-brand-800/60 bg-brand-50/60 dark:bg-brand-950/40 space-y-2 text-xs shadow-xs">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="size-2 rounded-full bg-brand-600 dark:bg-brand-400 shrink-0" aria-hidden="true" />
-                    <span className="font-semibold text-foreground truncate">
-                      {activeCriterion === "all"
-                        ? "All Handwriting Guidelines"
-                        : PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.label ?? activeCriterion}
-                    </span>
-                    {activeCriterion !== "all" && bands && bands[activeCriterion as CriterionKey] && (
-                      <BandBadge band={bands[activeCriterion as CriterionKey]} size="sm" showDot />
-                    )}
-                  </div>
+              {/* Mobile Active Feedback Bridge: Co-located directly under photo */}
+              <div className="lg:hidden space-y-3 pt-1">
+                {/* 1. Mobile Overall Result Summary Card: Promoted above fold directly under photo */}
+                {renderOverallSummaryCard(true)}
+
+                {/* 2. Horizontal Quick Skill Pills Selector */}
+                <div
+                  role="toolbar"
+                  aria-label="Filter writing lines and feedback by skill"
+                  className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1"
+                >
                   <button
                     type="button"
-                    onClick={() => setMobileTab("scores")}
-                    className="text-xs font-semibold text-brand-700 dark:text-brand-300 hover:underline shrink-0 min-h-[40px] flex items-center px-2 -my-2 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
+                    onClick={() => {
+                      setCriterionOverride("all");
+                      setSelectedAttentionItem(null);
+                    }}
+                    aria-pressed={activeCriterion === "all"}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer border min-h-[36px] flex items-center gap-1.5 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
+                      activeCriterion === "all"
+                        ? "bg-brand-600 text-white border-brand-600 shadow-2xs dark:bg-brand-500 dark:border-brand-500"
+                        : "bg-muted/50 text-muted-foreground border-border/80 hover:bg-muted hover:text-foreground"
+                    )}
                   >
-                    View Skills &rarr;
+                    <span>All Lines</span>
                   </button>
+
+                  {PARENT_CRITERIA_LIST.map((c) => {
+                    const band = bands?.[c.key];
+                    const bandMeta = band ? getBandMeta(band) : null;
+                    const isSelected = activeCriterion === c.key;
+
+                    return (
+                      <button
+                        type="button"
+                        key={c.key}
+                        onClick={() => handleCriterionSelect(c.key)}
+                        aria-pressed={isSelected}
+                        className={cn(
+                          "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer border min-h-[36px] flex items-center gap-1.5 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
+                          isSelected
+                            ? "bg-brand-100 text-brand-900 border-brand-400 dark:bg-brand-950 dark:text-brand-100 dark:border-brand-600 shadow-2xs"
+                            : "bg-card text-foreground border-border/80 hover:bg-muted/50"
+                        )}
+                      >
+                        {bandMeta && (
+                          <span
+                            className={cn("size-2 rounded-full shrink-0", bandMeta.dotColor)}
+                            aria-hidden="true"
+                          />
+                        )}
+                        <span>{c.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
 
-                <p className="text-muted-foreground leading-relaxed">
-                  {activeCriterion === "all"
-                    ? "Showing baseline, slant, and spacing guides across the worksheet. Pinch to zoom in on specific strokes."
-                    : (bands && bands[activeCriterion as CriterionKey] && DIAGNOSTIC_NOTES[activeCriterion as CriterionKey]?.[bands[activeCriterion as CriterionKey]!]) ||
-                      PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.shortDescription}
-                </p>
-
-                {/* Active At-Home Coaching Tip if available */}
-                {(() => {
-                  const tip =
-                    activeCriterion === "all"
-                      ? practiceFocus?.meta.homeTip
-                      : activeCriterion === practiceFocus?.key
-                        ? practiceFocus?.meta.homeTip
-                        : PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.homeTip;
-                  if (!tip) return null;
-                  return (
-                    <div className="pt-2 border-t border-brand-200/50 dark:border-brand-800/50 flex items-start gap-2 text-band-2-text dark:text-amber-200">
-                      <Lightbulb className="size-3.5 shrink-0 mt-0.5 text-band-2-text dark:text-amber-200" aria-hidden="true" />
-                      <p className="leading-relaxed text-[11px] sm:text-xs">
-                        <span className="font-semibold">At-Home Tip: </span>
-                        {tip}
-                      </p>
+                {/* Active Skill Feedback Card */}
+                <div className="p-4 rounded-xl border border-border/80 bg-card space-y-2.5 text-sm shadow-2xs">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-heading font-semibold text-foreground text-sm truncate">
+                        {activeCriterion === "all"
+                          ? "All Writing Lines & Guides"
+                          : PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.label ?? activeCriterion}
+                      </span>
+                      {activeCriterion !== "all" && bands && bands[activeCriterion as CriterionKey] && (
+                        <BandBadge band={bands[activeCriterion as CriterionKey]} size="sm" showDot />
+                      )}
                     </div>
-                  );
-                })()}
-              </div>
-            </div>
-
-            {/* Right: Worksheet Details & Criterion Feedback */}
-            <div
-              id="mobile-panel-scores"
-              role="tabpanel"
-              aria-labelledby="mobile-tab-scores"
-              className={cn("lg:col-span-5 space-y-4", mobileTab !== "scores" && "hidden lg:block")}
-            >
-              {/* Activity Target Text */}
-              <div className="p-3.5 rounded-xl border border-border/80 bg-card/60 space-y-1 shadow-xs">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Assigned Target Text
-                </span>
-                <p className="text-sm font-semibold text-foreground leading-snug">
-                  &ldquo;{targetText}&rdquo;
-                </p>
-              </div>
-
-              {/* Composite Score Card (Qualitative Milestone First) */}
-              {compositeScore != null && (
-                <div className="p-4 rounded-xl border border-border/80 bg-card space-y-3 shadow-xs">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Current Milestone
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowScoreDetails((prev) => !prev)}
-                      aria-pressed={showScoreDetails}
-                      className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-md px-2.5 py-1 min-h-[40px] sm:min-h-[36px] flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
-                    >
-                      {showScoreDetails ? "Hide percentages" : "Show percentages"}
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    {compositeBandMeta && (
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={cn("size-2.5 rounded-full shrink-0", compositeBandMeta.dotColor)}
-                          aria-hidden="true"
-                        />
-                        <h4 className="text-lg sm:text-xl font-heading font-semibold text-foreground">
-                          {compositeBandMeta.label}
-                        </h4>
-                      </div>
-                    )}
-                    {showScoreDetails && (
-                      <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/60">
-                        {Math.round(compositeScore)}% overall
+                    {showScoreDetails && activeCriterion !== "all" && scores && scores[activeCriterion as CriterionKey] != null && (
+                      <span className="font-sans text-xs font-semibold tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/60">
+                        {Math.round(scores[activeCriterion as CriterionKey]!)}%
                       </span>
                     )}
                   </div>
 
-                  <BandPositionBar
-                    score={compositeScore}
-                    height="sm"
-                    showThresholds={showScoreDetails}
-                    ariaLabel={
-                      showScoreDetails
-                        ? `Diagnostic score position: ${Math.round(compositeScore)}% overall`
-                        : compositeBandMeta
-                          ? `Developmental milestone: ${compositeBandMeta.label}`
-                          : "Developmental milestone not yet available"
-                    }
-                    ariaValueText={
-                      showScoreDetails
-                        ? `${Math.round(compositeScore)}% overall`
-                        : compositeBandMeta
-                          ? compositeBandMeta.label
-                          : undefined
-                    }
-                  />
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {activeCriterion === "all"
+                      ? "Showing ruled writing lines, slant guides, and letter spacing on your child's paper. Tap any skill pill above to inspect specific strokes."
+                      : (bands && bands[activeCriterion as CriterionKey] && DIAGNOSTIC_NOTES[activeCriterion as CriterionKey]?.[bands[activeCriterion as CriterionKey]!]) ||
+                      PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.shortDescription}
+                  </p>
 
-                  {compositeBand && PARENT_BAND_EXPLANATIONS[compositeBand] && (
-                    <p className="text-xs text-muted-foreground leading-relaxed pt-0.5">
-                      {PARENT_BAND_EXPLANATIONS[compositeBand]}
-                    </p>
-                  )}
+                  {(() => {
+                    const tip =
+                      activeCriterion === "all"
+                        ? practiceFocus?.meta.homeTip
+                        : activeCriterion === practiceFocus?.key
+                          ? practiceFocus?.meta.homeTip
+                          : PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.homeTip;
+                    if (!tip) return null;
+                    return (
+                      <div className="pt-2 border-t border-border/70 flex flex-col gap-2.5">
+                        <div className="flex items-start gap-2 text-band-2-text">
+                          <Lightbulb className="size-4 shrink-0 mt-0.5 text-band-2-text" aria-hidden="true" />
+                          <p className="leading-relaxed text-xs sm:text-sm">
+                            <span className="font-semibold">Home tip: </span>
+                            {tip}
+                          </p>
+                        </div>
+                        {onPracticeNow && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => {
+                              onOpenChange(false);
+                              onPracticeNow();
+                            }}
+                            className="self-start h-9 min-h-[36px] px-3 text-xs font-semibold gap-1.5 cursor-pointer touch-manipulation bg-brand-700 hover:bg-brand-800 text-white dark:bg-brand-600 dark:hover:bg-brand-500 shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+                          >
+                            <PenLine className="size-3.5" aria-hidden="true" />
+                            <span>Practice this skill now</span>
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
-              )}
+              </div>
+            </div>
 
-              {/* Criteria Feedback Breakdown */}
+            {/* Right (Desktop) / Supporting (Mobile): Overall Result & 5 Skills List */}
+            <div className="lg:col-span-5 space-y-4 w-full">
+              {renderOverallSummaryCard(false)}
+
+              {/* 5 Handwriting Skills Breakdown (Desktop Right Column; Mobile uses active card under photo above) */}
               {scores && bands && (
-                <div className="p-3.5 rounded-xl border border-border/80 bg-muted/10 space-y-2.5 shadow-xs">
-                  <div className="flex items-center justify-between pb-1 border-b border-border/50">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Skill Breakdown
-                    </span>
+                <div className="hidden lg:block space-y-2">
+                  <div className="flex items-center justify-between gap-2 px-1">
+                    <h4 className="text-sm font-heading font-semibold text-foreground">
+                      5 Handwriting Skills
+                    </h4>
                     <span className="text-xs text-muted-foreground">
-                      5 skills
+                      Tap to highlight on worksheet
                     </span>
                   </div>
 
-                  <Accordion
-                    value={activeCriterion === "all" ? [] : [activeCriterion]}
-                    onValueChange={(val) => {
-                      const next = Array.isArray(val)
-                        ? (val as string[])
-                        : val
-                          ? [val as string]
-                          : [];
-                      if (next.length > 0) {
-                        const selected = next[next.length - 1] as CriterionKey;
-                        handleCriterionSelect(selected, false);
-                      } else {
-                        setCriterionOverride("all");
-                        setSelectedAttentionItem(null);
-                      }
-                    }}
-                    className="rounded-xl border border-border/80 bg-card overflow-hidden divide-y divide-border/60 shadow-2xs"
-                  >
+                  <div className="rounded-xl border border-border/80 bg-card overflow-hidden divide-y divide-border/60 shadow-2xs">
                     {PARENT_CRITERIA_LIST.map((criterion) => {
                       const isTop = topStrength?.key === criterion.key;
                       const isFocus = practiceFocus?.key === criterion.key;
@@ -574,100 +543,35 @@ export function WorksheetViewDialog({
                           : null;
                       const score = scores[criterion.key];
                       const band = bands[criterion.key];
-                      const diagnosticNote = band ? DIAGNOSTIC_NOTES[criterion.key][band] : null;
+                      const isRowActive = activeCriterion === criterion.key;
                       const criterionMeta = PARENT_CRITERIA_METADATA[criterion.key];
                       const homeTip = isFocus ? practiceFocus?.meta.homeTip : criterionMeta?.homeTip;
 
                       return (
-                        <AccordionItem
-                          value={criterion.key}
+                        <CriterionFeedbackRow
                           key={criterion.key}
-                          className="border-0 hover:bg-muted/10 transition-colors"
-                        >
-                          <AccordionTrigger className="hover:no-underline px-3.5 py-2.5 sm:py-3 items-center gap-3 cursor-pointer">
-                            <div className="flex items-center justify-between flex-1 min-w-0 pr-1 gap-2">
-                              {/* Left: Title + Highlight Badge */}
-                              <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                                <span className="text-xs sm:text-sm font-semibold text-foreground truncate">
-                                  {criterion.label}
-                                </span>
-                                {highlightBadge === "top_strength" && (
-                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 px-1.5 py-0.5 rounded-md border border-band-4/30 dark:border-band-4/40 shrink-0">
-                                    <span className="size-1.5 rounded-full bg-band-4 shrink-0" aria-hidden="true" />
-                                    Top Strength
-                                  </span>
-                                )}
-                                {highlightBadge === "practice_focus" && (
-                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 px-1.5 py-0.5 rounded-md border border-band-2/30 dark:border-band-2/40 shrink-0">
-                                    <span className="size-1.5 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
-                                    Practice Focus
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Right: Score + BandBadge */}
-                              <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 text-right">
-                                {showScoreDetails && score != null && (
-                                  <span className="font-sans text-xs font-semibold tabular-nums text-muted-foreground">
-                                    {Math.round(score)}%
-                                  </span>
-                                )}
-                                <BandBadge band={band} score={score} size="sm" showDot />
-                              </div>
-                            </div>
-                          </AccordionTrigger>
-
-                          <AccordionContent className="px-3.5 pb-3.5 pt-0 space-y-2.5 border-0">
-                            {/* Compact Band Position Bar with Accessible Values */}
-                            <div className="pt-0.5 pb-1">
-                              <BandPositionBar
-                                score={score}
-                                height="sm"
-                                showThresholds={showScoreDetails}
-                                ariaValueText={
-                                  showScoreDetails && score != null
-                                    ? `${Math.round(score)}%`
-                                    : band
-                                      ? band.replace("_", " ")
-                                      : undefined
-                                }
-                              />
-                            </div>
-
-                            {/* Diagnostic Note */}
-                            {diagnosticNote && (
-                              <p className="text-xs text-muted-foreground leading-relaxed">
-                                {diagnosticNote}
-                              </p>
-                            )}
-
-                            {/* Home Practice Coaching Tip */}
-                            {homeTip && (
-                              <div className="p-2.5 rounded-xl bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40 text-xs text-band-2-text dark:text-amber-200 shadow-2xs">
-                                <p className="leading-relaxed">
-                                  <strong className="font-semibold text-band-2-text dark:text-amber-200">Tip:</strong> {homeTip}
-                                </p>
-                              </div>
-                            )}
-
-                            {/* Mobile shortcut to switch to photo inspection */}
-                            <div className="lg:hidden pt-1">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setMobileTab("photo")}
-                                className="w-full h-10 min-h-[40px] text-xs font-medium gap-1.5 border-brand-200 dark:border-brand-900 bg-brand-50/50 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
-                              >
-                                <Eye className="size-3.5" aria-hidden="true" />
-                                <span>Inspect on Photo</span>
-                              </Button>
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
+                          criterionKey={criterion.key}
+                          label={criterion.label}
+                          score={score}
+                          band={band}
+                          highlightBadge={highlightBadge}
+                          isActive={isRowActive}
+                          showScoreDetails={showScoreDetails}
+                          showPositionBar={isRowActive}
+                          homePracticeTip={isRowActive || isFocus ? homeTip : null}
+                          inspectLabel={null}
+                          onInspect={() => {
+                            if (isRowActive) {
+                              setCriterionOverride("all");
+                              setSelectedAttentionItem(null);
+                            } else {
+                              handleCriterionSelect(criterion.key);
+                            }
+                          }}
+                        />
                       );
                     })}
-                  </Accordion>
+                  </div>
                 </div>
               )}
             </div>
@@ -675,7 +579,7 @@ export function WorksheetViewDialog({
         </div>
 
         {/* Footer */}
-        <div className="p-3.5 sm:p-4 border-t border-border bg-card/80 flex items-center justify-between">
+        <div className="p-3.5 sm:p-4 border-t border-border bg-card/80 flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2">
             {onBack && (
               <Button
@@ -696,21 +600,37 @@ export function WorksheetViewDialog({
                 onClick={() => setIsDeleteDialogOpen(true)}
                 disabled={deleteMutation.isPending}
                 className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-3 text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive rounded-xl border border-destructive/20 gap-1.5 cursor-pointer transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-destructive"
-                title="Delete this uploaded worksheet"
+                title="Delete this photo"
               >
                 <Trash2 className="size-3.5" aria-hidden="true" />
-                <span>Delete Upload</span>
+                <span>Delete Photo</span>
               </Button>
             )}
           </div>
-          <Button
-            variant="default"
-            size="sm"
-            className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-5 font-medium cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
-            onClick={() => onOpenChange(false)}
-          >
-            Close
-          </Button>
+          <div className="flex items-center gap-2">
+            {onPracticeNow && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  onOpenChange(false);
+                  onPracticeNow();
+                }}
+                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-3.5 text-xs sm:text-sm font-semibold gap-1.5 cursor-pointer touch-manipulation bg-brand-700 hover:bg-brand-800 text-white dark:bg-brand-600 dark:hover:bg-brand-500 shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+              >
+                <PenLine className="size-3.5" aria-hidden="true" />
+                <span>Practice together</span>
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-4 font-medium cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+              onClick={() => onOpenChange(false)}
+            >
+              Close
+            </Button>
+          </div>
         </div>
       </DialogContent>
 
@@ -718,10 +638,9 @@ export function WorksheetViewDialog({
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this uploaded worksheet?</AlertDialogTitle>
+            <AlertDialogTitle>Delete this photo?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove your uploaded worksheet photo. You will be able to take and upload
-              a new photo for this activity. This action cannot be undone.
+              This removes your uploaded worksheet photo. You can take and send a new photo anytime.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -746,7 +665,7 @@ export function WorksheetViewDialog({
                   <span>Deleting...</span>
                 </>
               ) : (
-                "Delete Upload"
+                "Delete Photo"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

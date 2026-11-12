@@ -11,7 +11,7 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { Lock, Loader2, Check } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface ParentProfileSettingsCardProps {
@@ -150,8 +150,8 @@ export function ParentProfileSettingsCard({
                   >
                     Email Address
                   </Label>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
-                    <Lock className="size-3" aria-hidden="true" /> Verified Login
+                  <span className="inline-flex items-center text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
+                    Verified Login
                   </span>
                 </div>
                 <Input

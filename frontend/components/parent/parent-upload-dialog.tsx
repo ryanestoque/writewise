@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { QueryRecovery } from "@/components/shared/query-recovery";
 import {
   useTakeHomeActivities,
   useChildSubmissionForActivity,
@@ -92,7 +93,7 @@ const PROCESSING_STAGES = [
 
 
 function subscribeTouch(callback: () => void) {
-  if (typeof window === "undefined") return () => {};
+  if (typeof window === "undefined") return () => { };
   const mql = window.matchMedia("(pointer: coarse)");
   mql.addEventListener("change", callback);
   return () => mql.removeEventListener("change", callback);
@@ -159,7 +160,7 @@ function ParentUploadFlow({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const previewUrlRef = useRef<string | null>(null);
   const originalFileRef = useRef<File | null>(null);
-  const dropzoneRef = useRef<HTMLDivElement>(null);
+  const choosePhotoButtonRef = useRef<HTMLButtonElement>(null);
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   const retryButtonRef = useRef<HTMLButtonElement>(null);
   const doneButtonRef = useRef<HTMLButtonElement>(null);
@@ -181,7 +182,13 @@ function ParentUploadFlow({
   );
   const [processingStageIndex, setProcessingStageIndex] = useState(0);
 
-  const { data: assignedActivities, isLoading: activitiesLoading } =
+  const {
+    data: assignedActivities,
+    isLoading: activitiesLoading,
+    isError: activitiesError,
+    isFetching: activitiesFetching,
+    refetch: refetchActivities,
+  } =
     useTakeHomeActivities(childId);
   const { data: priorSubmission } = useChildSubmissionForActivity(
     childId,
@@ -221,7 +228,7 @@ function ParentUploadFlow({
   // Programmatic focus steering upon step transitions
   useEffect(() => {
     if (step === 2) {
-      dropzoneRef.current?.focus();
+      choosePhotoButtonRef.current?.focus();
     } else if (step === 3) {
       submitButtonRef.current?.focus();
     } else if (step === 4 && uploadError) {
@@ -229,7 +236,7 @@ function ParentUploadFlow({
     } else if (step === 5) {
       doneButtonRef.current?.focus();
     }
-  }, [step, uploadError]);
+  }, [step, uploadError, isMobile, activitiesError]);
 
   // Revoke object URL on unmount
   useEffect(() => {
@@ -342,7 +349,7 @@ function ParentUploadFlow({
       },
       {
         onSuccess: () => {
-          toast.success("Worksheet uploaded successfully!");
+          toast.success("Worksheet sent — typically reviewed within 1–2 school days.");
           // Invalidate parent queries so progress page immediately updates
           queryClient.invalidateQueries({
             queryKey: ["parent-child-latest-scores"],
@@ -387,10 +394,6 @@ function ParentUploadFlow({
     handleSubmit(false);
   };
 
-  const handleProceedAnyway = () => {
-    handleSubmit(true);
-  };
-
   const isStepNavigable = (targetStep: Step): boolean => {
     if (isUploading) return false;
     if (targetStep === 1) return !prefilledActivityId;
@@ -408,20 +411,22 @@ function ParentUploadFlow({
       case 3:
         return "Step 3 of 3: Review and Confirm Submission";
       case 4:
-        return "Step 4: Analyzing handwriting";
+        return uploadError
+          ? "Photo needs attention. Review the feedback before trying again."
+          : "Sending and checking your worksheet photo";
       case 5:
-        return "Step 5: Assessment completed";
+        return "Photo sent—waiting for teacher review";
       default:
         return "";
     }
-  }, [step]);
+  }, [step, uploadError]);
 
   return (
     <>
       <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-border/80">
         <div className="min-w-0 pr-10 sm:pr-8">
           <DialogTitle className="text-base sm:text-lg font-semibold text-foreground truncate">
-            Upload Worksheet
+            Send worksheet photo
           </DialogTitle>
           <DialogDescription className="sr-only">
             Submitting for {childName}
@@ -442,9 +447,8 @@ function ParentUploadFlow({
               return (
                 <li
                   key={s.step}
-                  className={`flex items-center gap-1.5 sm:gap-2 min-w-0 ${
-                    s.step < STEPS.length ? "flex-1" : ""
-                  }`}
+                  className={`flex items-center gap-1.5 sm:gap-2 min-w-0 ${s.step < STEPS.length ? "flex-1" : ""
+                    }`}
                   aria-current={isCurrent ? "step" : undefined}
                 >
                   {canJump && !isCurrent ? (
@@ -452,14 +456,13 @@ function ParentUploadFlow({
                       type="button"
                       onClick={() => setStep(s.step as Step)}
                       aria-label={`${s.label} — Step ${s.step}, completed`}
-                      className="group flex items-center gap-1.5 sm:gap-2 min-w-0 p-1 -m-1 rounded-lg transition-colors hover:bg-muted/80 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary text-left cursor-pointer"
+                      className="group flex items-center gap-1.5 sm:gap-2 min-w-0 min-h-10 sm:min-h-9 p-1 -m-1 rounded-lg transition-colors hover:bg-muted/80 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary text-left cursor-pointer"
                     >
                       <div
-                        className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-all ${
-                          isCompleted
-                            ? "bg-primary text-primary-foreground group-hover:bg-primary/90 group-hover:scale-105"
-                            : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"
-                        }`}
+                        className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-all ${isCompleted
+                          ? "bg-primary text-primary-foreground group-hover:bg-primary/90 group-hover:scale-105"
+                          : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"
+                          }`}
                       >
                         {isCompleted ? (
                           <CheckIcon className="size-3.5" aria-hidden="true" />
@@ -474,13 +477,12 @@ function ParentUploadFlow({
                   ) : (
                     <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                       <div
-                        className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
-                          isCompleted
-                            ? "bg-primary text-primary-foreground"
-                            : isCurrent
+                        className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors ${isCompleted
+                          ? "bg-primary text-primary-foreground"
+                          : isCurrent
                             ? "bg-primary/15 text-primary ring-2 ring-primary ring-offset-2 ring-offset-background"
                             : "bg-muted text-muted-foreground"
-                        }`}
+                          }`}
                       >
                         {isCompleted ? (
                           <CheckIcon className="size-3.5" aria-hidden="true" />
@@ -489,13 +491,12 @@ function ParentUploadFlow({
                         )}
                       </div>
                       <span
-                        className={`text-xs sm:text-sm truncate font-medium ${
-                          isCurrent
-                            ? "text-foreground font-semibold"
-                            : isCompleted
+                        className={`text-xs sm:text-sm truncate font-medium ${isCurrent
+                          ? "text-foreground font-semibold"
+                          : isCompleted
                             ? "text-foreground"
                             : "text-muted-foreground"
-                        }`}
+                          }`}
                       >
                         {s.label}
                       </span>
@@ -504,9 +505,8 @@ function ParentUploadFlow({
 
                   {s.step < STEPS.length && (
                     <div
-                      className={`h-0.5 flex-1 rounded-full transition-colors ${
-                        step > s.step || step === 5 ? "bg-primary" : "bg-muted"
-                      }`}
+                      className={`h-0.5 flex-1 rounded-full transition-colors ${step > s.step || step === 5 ? "bg-primary" : "bg-muted"
+                        }`}
                       aria-hidden="true"
                     />
                   )}
@@ -518,7 +518,17 @@ function ParentUploadFlow({
       </DialogHeader>
 
       <div className="px-4 sm:px-6 py-4 max-h-[min(72dvh,calc(100vh-10rem))] overflow-y-auto overscroll-contain">
-        {!activitiesLoading && selectedActivityId && !selectedActivity && step !== 5 && <p role="alert" className="mb-3 rounded-lg border border-border bg-muted p-3 text-sm">
+        {activitiesError && step !== 5 && (
+          <QueryRecovery
+            title="Could not load take-home worksheets"
+            description={assignedActivities
+              ? "Your saved worksheets are still shown. Try again to check for assignment updates."
+              : "Check your connection and try again to choose a worksheet for this photo."}
+            onRetry={() => { void refetchActivities(); }}
+            isRetrying={activitiesFetching}
+          />
+        )}
+        {!activitiesLoading && !activitiesError && selectedActivityId && !selectedActivity && step !== 5 && <p role="alert" className="mb-3 rounded-lg border border-border bg-muted p-3 text-sm">
           This activity is no longer available for parent uploads. It may be closed or no longer assigned to your child. Close this dialog and choose another activity.
         </p>}
         {/* Step 4 — Uploading / Analyzing state */}
@@ -545,18 +555,17 @@ function ParentUploadFlow({
               {PROCESSING_STAGES.map((_, idx) => (
                 <span
                   key={idx}
-                  className={`size-1.5 rounded-full transition-all duration-300 ${
-                    idx === processingStageIndex
-                      ? "bg-primary w-4"
-                      : idx < processingStageIndex
+                  className={`size-1.5 rounded-full transition-all duration-300 ${idx === processingStageIndex
+                    ? "bg-primary w-4"
+                    : idx < processingStageIndex
                       ? "bg-primary/50"
                       : "bg-muted-foreground/30"
-                  }`}
+                    }`}
                 />
               ))}
             </div>
           </div>
-        ) : (
+        ) : activitiesError && !assignedActivities && step !== 5 ? null : (
           <div className="space-y-4">
             {/* Step 1 — Select Take-Home Activity */}
             {step === 1 && (
@@ -584,7 +593,7 @@ function ParentUploadFlow({
                       No take-home activities available
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Your teacher has not assigned any home practice worksheets yet.
+                      There are no open take-home worksheets to send right now. Closed worksheets remain in your child&apos;s progress page.
                     </p>
                   </div>
                 ) : (
@@ -599,11 +608,10 @@ function ParentUploadFlow({
                             setSelectedActivityId(act.id);
                             setStep(2);
                           }}
-                          className={`flex flex-col text-left p-3.5 rounded-xl border transition-all text-xs sm:text-sm cursor-pointer shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
-                            isSelected
-                              ? "border-primary bg-primary/5 ring-1 ring-primary"
-                              : "border-border/80 bg-card hover:border-primary/60 hover:bg-muted/30"
-                          }`}
+                          className={`flex flex-col text-left p-3.5 rounded-xl border transition-all text-xs sm:text-sm cursor-pointer shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${isSelected
+                            ? "border-primary bg-primary/5 ring-1 ring-primary"
+                            : "border-border/80 bg-card hover:border-primary/60 hover:bg-muted/30"
+                            }`}
                         >
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-semibold text-foreground line-clamp-2">
@@ -616,7 +624,7 @@ function ParentUploadFlow({
                               />
                             )}
                           </div>
-                          <span className="text-[11px] text-muted-foreground mt-1">
+                          <span className="text-xs text-muted-foreground mt-1 font-sans tabular-nums">
                             Assigned on{" "}
                             {new Date(act.createdAt).toLocaleDateString("en-US", {
                               month: "short",
@@ -646,22 +654,20 @@ function ParentUploadFlow({
                       {selectedActivity?.targetText ?? "Take-Home Activity"}
                     </span>
                   </div>
-                  {!prefilledActivityId && (
-                    <button
-                      type="button"
-                      onClick={() => setStep(1)}
-                      className="text-xs text-primary font-medium hover:underline shrink-0 cursor-pointer"
-                    >
-                      Change
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="inline-flex min-h-10 items-center px-2 text-xs text-primary font-medium hover:underline shrink-0 cursor-pointer rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    Change activity
+                  </button>
                 </div>
 
                 {/* Reassurance banner for re-attempts */}
                 {priorSubmission?.status === "completed" && (
-                  <div className="flex items-center gap-2 p-2.5 px-3 rounded-xl bg-primary/10 border border-primary/20 text-[11px] sm:text-xs text-foreground">
+                  <div className="flex items-center gap-2 p-2.5 px-3 rounded-xl bg-brand-50/80 dark:bg-brand-950/40 border border-brand-200/70 dark:border-brand-800/50 text-xs text-brand-900 dark:text-brand-200">
                     <CheckCircle2Icon
-                      className="size-4 shrink-0 text-primary"
+                      className="size-4 shrink-0 text-brand-600 dark:text-brand-400"
                       aria-hidden="true"
                     />
                     <span>
@@ -683,7 +689,7 @@ function ParentUploadFlow({
                     <button
                       type="button"
                       onClick={() => setLastRetakeTip(null)}
-                      className="text-muted-foreground hover:text-foreground shrink-0 p-0.5 rounded cursor-pointer"
+                      className="inline-flex size-10 sm:size-9 items-center justify-center text-muted-foreground hover:text-foreground shrink-0 rounded cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       aria-label="Dismiss tip"
                     >
                       <XIcon className="size-3.5" />
@@ -714,7 +720,6 @@ function ParentUploadFlow({
 
                 {/* Dropzone Container (Clean Non-Interactive Wrapper, WCAG 4.1.2) */}
                 <div
-                  ref={dropzoneRef}
                   aria-label="Worksheet photo upload dropzone"
                   onDragOver={(e) => {
                     e.preventDefault();
@@ -726,11 +731,10 @@ function ParentUploadFlow({
                     setIsDragging(false);
                     handleFileChange(e.dataTransfer.files?.[0]);
                   }}
-                  className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-all text-center shadow-warm ${
-                    isDragging
-                      ? "border-primary bg-primary/5 scale-[0.99]"
-                      : "border-border bg-card hover:border-primary/60 hover:bg-muted/10"
-                  }`}
+                  className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-all text-center shadow-warm ${isDragging
+                    ? "border-primary bg-primary/5 scale-[0.99]"
+                    : "border-border bg-card hover:border-primary/60 hover:bg-muted/10"
+                    }`}
                 >
                   <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-2.5">
                     {isMobile ? (
@@ -754,6 +758,7 @@ function ParentUploadFlow({
                   {isMobile ? (
                     <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-2 w-full max-w-xs mt-4">
                       <Button
+                        ref={choosePhotoButtonRef}
                         type="button"
                         variant="default"
                         className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
@@ -778,6 +783,7 @@ function ParentUploadFlow({
                   ) : (
                     <div className="w-full max-w-xs mt-4">
                       <Button
+                        ref={choosePhotoButtonRef}
                         type="button"
                         variant="default"
                         className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
@@ -822,9 +828,8 @@ function ParentUploadFlow({
                     <div className="flex items-center gap-1 text-muted-foreground text-xs font-medium">
                       <span>{showTips ? "Hide tips" : "Show tips"}</span>
                       <ChevronDownIcon
-                        className={`size-3.5 transition-transform duration-200 ${
-                          showTips ? "rotate-180" : ""
-                        }`}
+                        className={`size-3.5 transition-transform duration-200 ${showTips ? "rotate-180" : ""
+                          }`}
                         aria-hidden="true"
                       />
                     </div>
@@ -914,7 +919,7 @@ function ParentUploadFlow({
 
                 {/* Reassurance banner for re-attempts */}
                 {priorSubmission?.status === "completed" && (
-                  <div className="flex items-center gap-2 p-2.5 px-3 rounded-xl bg-brand-50/80 dark:bg-brand-950/40 border border-brand-200/70 dark:border-brand-800/50 text-[11px] sm:text-xs text-brand-900 dark:text-brand-200">
+                  <div className="flex items-center gap-2 p-2.5 px-3 rounded-xl bg-brand-50/80 dark:bg-brand-950/40 border border-brand-200/70 dark:border-brand-800/50 text-xs text-brand-900 dark:text-brand-200">
                     <CheckCircle2Icon
                       className="size-4 shrink-0 text-brand-600 dark:text-brand-400"
                       aria-hidden="true"
@@ -938,13 +943,13 @@ function ParentUploadFlow({
                           {selectedFile.name}
                         </p>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <p className="text-xs text-muted-foreground font-mono tabular-nums">
+                          <p className="text-xs text-muted-foreground font-sans tabular-nums">
                             {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
                           </p>
                           {rotationDegrees > 0 && (
                             <Badge
                               variant="outline"
-                              className="text-[10px] h-4 px-1.5 font-medium border-primary/30 text-primary bg-primary/5"
+                              className="text-xs h-5 px-1.5 font-medium font-sans tabular-nums border-primary/30 text-primary bg-primary/5"
                             >
                               Rotated {rotationDegrees}°
                             </Badge>
@@ -983,11 +988,10 @@ function ParentUploadFlow({
 
                   {previewUrl && (
                     <div
-                      className={`relative w-full rounded-xl overflow-hidden bg-muted/40 border border-border flex items-center justify-center transition-[aspect-ratio,max-height] duration-200 touch-pan-y ${
-                        isPortrait
-                          ? "aspect-3/4 max-h-[380px] sm:max-h-[440px]"
-                          : "aspect-4/3 max-h-[300px] sm:max-h-[360px]"
-                      }`}
+                      className={`relative w-full rounded-xl overflow-hidden bg-muted/40 border border-border flex items-center justify-center touch-pan-y ${isPortrait
+                        ? "aspect-3/4 max-h-[240px] sm:max-h-[400px]"
+                        : "aspect-4/3 max-h-[220px] sm:max-h-[340px]"
+                        }`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -1009,12 +1013,12 @@ function ParentUploadFlow({
             {/* Inline error card with rich quality feedback (step 4 failure) */}
             {step === 4 && uploadError && (
               <QualityErrorCard
+                variant="parent"
                 error={uploadError}
                 previewUrl={previewUrl}
                 retryRef={retryButtonRef}
                 onRetake={handleRetakePhoto}
                 onRetry={handleRetryUpload}
-                onProceedAnyway={handleProceedAnyway}
               />
             )}
 
@@ -1027,12 +1031,12 @@ function ParentUploadFlow({
 
                 <div className="space-y-1.5 max-w-sm">
                   <h3 className="text-base sm:text-lg font-semibold text-foreground tracking-tight font-heading">
-                    Worksheet turned in!
+                    Photo sent—waiting for teacher review
                   </h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     The cursive sample for{" "}
                     <strong className="text-foreground font-medium">{childName}</strong>{" "}
-                    has been uploaded. The teacher will share the scores and diagnostic feedback after review.
+                    has been sent. The teacher will share the handwriting feedback after review (typically within 1–2 school days).
                   </p>
                 </div>
 
@@ -1069,7 +1073,6 @@ function ParentUploadFlow({
             <Button
               variant="outline"
               onClick={() => setStep(1)}
-              disabled={Boolean(prefilledActivityId) && !!selectedActivity}
               className="gap-1.5 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
             >
               <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
@@ -1105,7 +1108,7 @@ function ParentUploadFlow({
               className="gap-2 h-10 sm:h-9 px-5 text-xs sm:text-sm font-semibold shadow-warm cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               <CheckCircle2Icon className="size-4" aria-hidden="true" />
-              Submit Assessment
+              Send worksheet photo
             </Button>
           )}
         </div>

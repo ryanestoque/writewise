@@ -4,53 +4,102 @@ import { useState, useMemo, useCallback } from "react";
 import Image from "next/image";
 import { useChildLatestScores } from "@/lib/hooks/use-parent-data";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
+import type { StudentScoreHistoryItem } from "@/lib/hooks/use-dashboard";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
-import { BandBadge } from "@/components/shared/band-badge";
+import { QueryRecovery } from "@/components/shared/query-recovery";
 import { WorksheetViewDialog } from "./worksheet-view-dialog";
+import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { cn } from "@/lib/utils";
 import {
   PARENT_CRITERIA_LIST,
-  DIAGNOSTIC_NOTES,
   getBandMeta,
   getBandFromScore,
   computeStrengthAndFocus,
 } from "@/lib/utils/scoring";
-
-const PARENT_BAND_EXPLANATIONS: Record<string, string> = {
-  excellent: "Fluent, highly consistent handwriting meeting grade-level goals.",
-  satisfactory: "Solid cursive foundation with minor areas to refine.",
-  developing: "Actively learning and building muscle memory — a normal, key stage in cursive.",
-  needs_improvement: "Working on basic letter strokes and pencil control with guided practice.",
-};
-
+import {
+  formatScoreDifference,
+  getScoreProgressDirection,
+  getScoreProgressLabel,
+} from "@/lib/utils/score-progress";
 import type { CriterionFilter } from "@/components/shared/diagnostic-overlay";
 import {
   FileText,
   Loader2,
   Eye,
-  Lightbulb,
   CheckCircle2,
-  ChevronRight,
-  Sparkles,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  PenLine,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-interface LatestSubmissionCardProps {
+export interface LatestSubmissionCardProps {
   childId: string | null;
   childName?: string;
+  section?: string;
+  history?: StudentScoreHistoryItem[];
+  showScoreDetails?: boolean;
+  onToggleScoreDetails?: () => void;
+  onNavigateToWrite?: () => void;
 }
 
 export function LatestSubmissionCard({
   childId,
   childName = "Your child",
+  history = [],
+  showScoreDetails = false,
+  onNavigateToWrite,
 }: LatestSubmissionCardProps) {
   const [viewImageOpen, setViewImageOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [showScoreDetails, setShowScoreDetails] = useState(false);
-  const [selectedCriterionForView, setSelectedCriterionForView] =
-    useState<CriterionFilter>("all");
-  const { data: latest, isLoading } = useChildLatestScores(childId);
+  const [selectedCriterionForView, setSelectedCriterionForView] = useState<CriterionFilter>("all");
+
+  const { data: latest, isLoading, isError, isFetching, refetch } = useChildLatestScores(childId);
   const { data: imageUrl } = useSubmissionImageUrl(latest?.imagePath ?? null);
+
+  const firstName = childName.trim().split(/\s+/)[0] || childName;
+
+  const { topStrength, practiceFocus, isBalanced } = useMemo(() => {
+    return computeStrengthAndFocus(latest?.scores, latest?.bands);
+  }, [latest]);
+
+  const trendSummary = useMemo(() => {
+    if (!history || history.length === 0) return null;
+    if (history.length === 1) {
+      const onlyDate = new Date(history[0].submissionDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+      return {
+        label: `First worksheet (${onlyDate})`,
+        deltaText: null,
+        tone: "neutral" as const,
+      };
+    }
+    const oldest = history[0];
+    const newest = history[history.length - 1];
+    const startDate = new Date(oldest.submissionDate).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+    const diff =
+      newest.compositeScore != null && oldest.compositeScore != null
+        ? newest.compositeScore - oldest.compositeScore
+        : 0;
+
+    const direction = getScoreProgressDirection(diff);
+    return {
+      label: `${getScoreProgressLabel(diff, "first")} (${startDate})`,
+      deltaText: formatScoreDifference(diff),
+      tone:
+        direction === "improving"
+          ? ("positive" as const)
+          : direction === "lower"
+            ? ("warm" as const)
+            : ("neutral" as const),
+    };
+  }, [history]);
 
   const openWorksheetForCriterion = useCallback((criterion: CriterionFilter = "all") => {
     setSelectedCriterionForView(criterion);
@@ -58,50 +107,61 @@ export function LatestSubmissionCard({
   }, []);
 
   const navigateToTakeHome = useCallback(() => {
-    const el = document.getElementById("assigned-take-home-section");
-    if (el && el.offsetParent !== null) {
-      el.scrollIntoView({ behavior: "smooth" });
-    } else {
-      const mobileTasksTab = document.getElementById("mobile-tab-tasks");
-      if (mobileTasksTab) {
-        mobileTasksTab.click();
-        mobileTasksTab.scrollIntoView({ behavior: "smooth" });
-      }
+    if (onNavigateToWrite) {
+      onNavigateToWrite();
+      return;
     }
-  }, []);
-
-  // Compute Top Strength and Primary Practice Focus based on criterion scores
-  const { topStrength, practiceFocus, isBalanced } = useMemo(() => {
-    return computeStrengthAndFocus(latest?.scores, latest?.bands);
-  }, [latest]);
+    const el = document.getElementById("assigned-take-home-section");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [onNavigateToWrite]);
 
   if (isLoading) {
     return (
       <div
         role="status"
         aria-live="polite"
-        className="rounded-xl border border-border bg-card shadow-warm p-8 flex flex-col items-center justify-center min-h-[220px] gap-2.5"
+        className="border-border bg-card shadow-warm flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-xl border p-8"
       >
-        <Loader2 className="size-6 animate-spin motion-reduce:animate-none text-muted-foreground" aria-hidden="true" />
-        <span className="text-xs text-muted-foreground">Loading latest assessment...</span>
+        <Loader2
+          className="text-brand-600 dark:text-brand-400 size-6 animate-spin motion-reduce:animate-none"
+          aria-hidden="true"
+        />
+        <span className="text-muted-foreground text-sm">
+          Loading {firstName}&apos;s latest worksheet overview...
+        </span>
       </div>
     );
   }
 
   if (!latest) {
+    if (isError) {
+      return (
+        <QueryRecovery
+          title="Couldn't load the latest worksheet"
+          description="Try again to see the worksheet photo and handwriting feedback."
+          onRetry={() => {
+            void refetch();
+          }}
+          isRetrying={isFetching}
+        />
+      );
+    }
     return (
-      <div className="rounded-xl border border-border bg-card shadow-warm p-8 text-center space-y-4">
+      <div className="border-border bg-card shadow-warm space-y-4 rounded-xl border p-6 text-center sm:p-8">
         <div className="flex justify-center">
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
+          <div className="bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 flex size-12 items-center justify-center rounded-2xl">
             <FileText className="size-6" aria-hidden="true" />
           </div>
         </div>
         <div className="space-y-1">
-          <h3 className="font-heading text-base font-semibold text-foreground">
-            No assessment results yet
+          <h3 className="font-heading text-foreground text-base font-semibold">
+            No scored worksheet yet
           </h3>
-          <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
-            Once a worksheet is uploaded and scored, {childName}&apos;s progress and diagnostic feedback will appear here.
+          <p className="text-muted-foreground mx-auto max-w-sm text-sm leading-relaxed">
+            Once a worksheet is checked, {childName}&apos;s handwriting photo and 5-skill diagnostic
+            feedback will appear here.
           </p>
         </div>
         <div>
@@ -110,9 +170,9 @@ export function LatestSubmissionCard({
             variant="outline"
             size="sm"
             onClick={navigateToTakeHome}
-            className="min-h-[40px] sm:min-h-[36px] text-xs font-medium cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+            className="focus-visible:ring-brand-500 min-h-[40px] cursor-pointer touch-manipulation text-xs font-medium focus-visible:ring-2 focus-visible:outline-hidden sm:text-sm"
           >
-            View Assigned Take-Home Worksheets
+            View Practice Worksheets
           </Button>
         </div>
       </div>
@@ -127,313 +187,205 @@ export function LatestSubmissionCard({
 
   const compositeBand =
     latest.scores.composite != null
-      ? latest.bands.composite ?? getBandFromScore(latest.scores.composite)
+      ? (latest.bands.composite ?? getBandFromScore(latest.scores.composite))
       : null;
   const compositeBandMeta = compositeBand ? getBandMeta(compositeBand) : null;
 
   return (
     <>
-      <div className="rounded-xl border border-border bg-card shadow-warm overflow-hidden transition-shadow hover:shadow-md">
-        {/* Header & Overall Milestone Section */}
-        <div className="p-5 sm:p-6 space-y-5 bg-card">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base sm:text-lg font-heading font-semibold text-foreground truncate" title={latest.activityText}>
-                &ldquo;{latest.activityText}&rdquo;
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {childName}&apos;s activity &bull; Assessed on {formattedDate}
-              </p>
-            </div>
-          </div>
+      {isError && (
+        <QueryRecovery
+          title="Latest worksheet couldn't refresh"
+          description="Your saved worksheet is still shown below. Try again to check for updates."
+          onRetry={() => {
+            void refetch();
+          }}
+          isRetrying={isFetching}
+        />
+      )}
 
-          {/* Worksheet Handwriting Preview Card with Uncropped Aspect Ratio */}
-          {imageUrl && !imageError && (
-            <button
-              type="button"
-              onClick={() => openWorksheetForCriterion("all")}
-              aria-label={`View ${childName}'s scored worksheet with interactive guide lines`}
-              aria-haspopup="dialog"
-              className="group relative w-full h-48 sm:h-56 rounded-xl overflow-hidden border border-border/80 bg-muted/20 dark:bg-muted/10 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 shadow-xs block text-left transition-colors hover:border-brand-500/50 hover:shadow-warm p-2.5 sm:p-3 touch-manipulation"
+      <section
+        aria-labelledby="latest-worksheet-heading"
+        className="border-border bg-card overflow-hidden rounded-xl border"
+      >
+        <div className="border-border flex flex-col gap-4 border-b p-4 min-[1100px]:flex-row min-[1100px]:items-center min-[1100px]:justify-between sm:p-5">
+          <div className="flex max-w-prose min-w-0 flex-col gap-1.5">
+            <h2
+              id="latest-worksheet-heading"
+              className="font-heading text-foreground text-lg font-semibold sm:text-xl"
             >
-              <div className="relative w-full h-full rounded-lg overflow-hidden bg-background/50 shadow-inner">
-                <Image
-                  src={imageUrl}
-                  alt={`Handwriting worksheet sample for ${latest.activityText}`}
-                  fill
-                  priority
-                  sizes="(max-width: 768px) 100vw, 600px"
-                  onError={() => setImageError(true)}
-                  className="object-contain object-center transition-opacity"
-                />
-              </div>
-              {/* Clean, single-icon top-right glass badge */}
-              <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-1.5 z-10">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-950/85 hover:bg-brand-900 text-brand-50 backdrop-blur-md border border-brand-400/30 text-xs font-medium shadow-xs transition-colors group-hover:bg-brand-900 group-hover:border-brand-400/60">
-                  <Eye className="size-3.5 text-brand-200" aria-hidden="true" />
-                  <span className="hidden sm:inline">View Worksheet &amp; Feedback</span>
-                  <span className="sm:hidden">Inspect Worksheet</span>
-                </span>
-              </div>
-            </button>
-          )}
-
-          {/* Overall Developmental Milestone (De-escalating raw percent grade panic) */}
-          <div className="space-y-3 pt-1">
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-0.5">
-                <span className="text-xs font-medium text-muted-foreground block">
-                  Current Milestone
-                </span>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {latest.scores.composite != null && compositeBandMeta ? (
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="text-lg sm:text-xl font-heading font-semibold text-foreground flex items-center gap-2">
-                        <span
-                          className={cn("size-2.5 rounded-full shrink-0", compositeBandMeta.dotColor)}
-                          aria-hidden="true"
-                        />
-                        <span>{compositeBandMeta.label}</span>
-                      </h4>
-                      {showScoreDetails && (
-                        <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/60">
-                          {Math.round(latest.scores.composite)}% overall
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-lg sm:text-xl font-heading font-semibold text-muted-foreground">
-                      Pending Assessment
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {latest.scores.composite != null && (
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setShowScoreDetails((prev) => !prev)}
-                    aria-pressed={showScoreDetails}
-                    className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-md px-3 py-1.5 min-h-[40px] sm:min-h-[36px] flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
-                  >
-                    {showScoreDetails ? "Hide percentages" : "Show percentages"}
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <BandPositionBar
-              score={latest.scores.composite}
-              height="default"
-              showThresholds={showScoreDetails}
-              ariaLabel={
-                showScoreDetails && latest.scores.composite != null
-                  ? `Diagnostic score position: ${Math.round(latest.scores.composite)}% overall`
-                  : compositeBandMeta
-                    ? `Developmental milestone: ${compositeBandMeta.label}`
-                    : "Developmental milestone not yet available"
-              }
-              ariaValueText={
-                showScoreDetails && latest.scores.composite != null
-                  ? `${Math.round(latest.scores.composite)}% overall`
-                  : compositeBandMeta
-                    ? compositeBandMeta.label
-                    : undefined
-              }
-            />
-
-            {compositeBand && PARENT_BAND_EXPLANATIONS[compositeBand] && (
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                {PARENT_BAND_EXPLANATIONS[compositeBand]}
+              {practiceFocus
+                ? `Focus on ${practiceFocus.meta.label.toLowerCase()}`
+                : isBalanced
+                  ? "Keep building steady handwriting habits"
+                  : `${firstName}'s next step`}
+            </h2>
+            <p className="text-foreground text-sm leading-relaxed">
+              {practiceFocus
+                ? practiceFocus.meta.homeTip
+                : "Keep practice brief and relaxed. Try another worksheet together."}
+            </p>
+            {topStrength && (
+              <p className="text-muted-foreground flex items-start gap-1.5 text-sm">
+                <CheckCircle2 className="text-primary mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                <span>Strength: {topStrength.meta.label.toLowerCase()}.</span>
               </p>
             )}
           </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={navigateToTakeHome}
+            className="min-h-11 w-full self-start sm:w-auto"
+          >
+            <PenLine data-icon="inline-start" aria-hidden="true" />
+            View practice worksheets
+          </Button>
+        </div>
 
-          {/* Key Insights (Top Strength & Consolidated Practice Focus with At-Home Tip) */}
-          {(topStrength || practiceFocus || isBalanced) && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
-              {isBalanced ? (
-                <div className="sm:col-span-2 flex items-start gap-3 p-3.5 rounded-lg bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/70 dark:border-brand-800/60">
-                  <CheckCircle2 className="size-4 text-brand-600 dark:text-brand-400 mt-0.5 shrink-0" aria-hidden="true" />
-                  <div className="min-w-0 space-y-0.5">
-                    <span className="text-xs font-semibold text-brand-900 dark:text-brand-100 block">
-                      All-Around Balanced Development
+        <div className="grid min-[1100px]:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+          <div className="flex min-w-0 flex-col gap-4 p-4 sm:p-5">
+            <div className="flex flex-col gap-1">
+              <h3 className="font-heading text-foreground text-base font-semibold">
+                Latest worksheet
+              </h3>
+              <p className="text-foreground text-sm [overflow-wrap:anywhere] break-words">
+                &ldquo;{latest.activityText}&rdquo;
+              </p>
+              <p className="text-muted-foreground font-sans text-xs tabular-nums">
+                {formattedDate}
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {latest.scores.composite != null && compositeBandMeta ? (
+                  <>
+                    <span className="text-foreground inline-flex items-center gap-2 text-sm font-semibold">
+                      <span
+                        className={cn("size-2 shrink-0 rounded-full", compositeBandMeta.dotColor)}
+                        aria-hidden="true"
+                      />
+                      Overall: {compositeBandMeta.label}
                     </span>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {childName} is demonstrating consistent cursive skills across all 5 criteria. Continue with steady practice to reinforce muscle memory.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {topStrength && (
-                    <div className="flex flex-col justify-between gap-3 p-3.5 rounded-lg bg-band-4/15 dark:bg-band-4/25 border border-band-4/30 dark:border-band-4/40 min-h-full">
-                      <div className="flex items-start gap-2.5">
-                        <span className="size-2 rounded-full bg-band-4 mt-1 shrink-0" aria-hidden="true" />
-                        <div className="min-w-0 space-y-0.5">
-                          <span className="text-xs font-semibold text-band-4-text dark:text-emerald-300 block">
-                            Top Strength: {topStrength.meta.label}
-                          </span>
-                          <p className="text-xs text-muted-foreground leading-snug">
-                            {topStrength.meta.shortDescription}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Balanced encouragement note matching practice focus height */}
-                      <div className="pt-2 border-t border-band-4/25 flex items-start gap-2 text-band-4-text dark:text-emerald-300">
-                        <Sparkles className="size-3.5 shrink-0 text-band-4 mt-0.5" aria-hidden="true" />
-                        <p className="leading-relaxed text-[11px] sm:text-xs">
-                          <span className="font-semibold text-band-4-text dark:text-emerald-300">Praise: </span>
-                          Celebrate this strong foundation with {childName} to build cursive confidence!
-                        </p>
-                      </div>
-                    </div>
+                    {showScoreDetails && (
+                      <span className="text-muted-foreground font-sans text-sm tabular-nums">
+                        {Math.round(latest.scores.composite)}%
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-muted-foreground text-sm">Awaiting teacher review</span>
+                )}
+              </div>
+              <BandPositionBar
+                score={latest.scores.composite}
+                height="sm"
+                showThresholds={showScoreDetails}
+                ariaLabel={
+                  showScoreDetails && latest.scores.composite != null
+                    ? `Overall handwriting score: ${Math.round(latest.scores.composite)}%`
+                    : compositeBandMeta
+                      ? `Overall handwriting level: ${compositeBandMeta.label}`
+                      : "Overall handwriting level not yet available"
+                }
+                ariaValueText={
+                  showScoreDetails && latest.scores.composite != null
+                    ? `${Math.round(latest.scores.composite)}% overall`
+                    : compositeBandMeta?.label
+                }
+              />
+              {trendSummary && (
+                <p className="text-muted-foreground flex items-start gap-1.5 text-xs">
+                  {trendSummary.tone === "positive" ? (
+                    <TrendingUp
+                      className="text-band-4-text mt-0.5 size-3.5 shrink-0"
+                      aria-hidden="true"
+                    />
+                  ) : trendSummary.tone === "warm" ? (
+                    <TrendingDown
+                      className="text-band-2-text mt-0.5 size-3.5 shrink-0"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <Minus className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                   )}
-
-                  {practiceFocus && (
-                    <div className="flex flex-col justify-between gap-3 p-3.5 rounded-lg bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40 min-h-full">
-                      <div className="space-y-2.5">
-                        <div className="flex items-start gap-2.5">
-                          <span className="size-2 rounded-full bg-band-2 mt-1 shrink-0" aria-hidden="true" />
-                          <div className="min-w-0 space-y-0.5">
-                            <span className="text-xs font-semibold text-band-2-text dark:text-amber-200 block">
-                              Practice Focus: {practiceFocus.meta.label}
-                            </span>
-                            <p className="text-xs text-muted-foreground leading-snug">
-                              {practiceFocus.meta.shortDescription}
-                            </p>
-                          </div>
-                        </div>
-
-                        {practiceFocus.meta.homeTip && (
-                          <div className="pt-2 border-t border-band-2/25 flex items-start gap-2 text-band-2-text dark:text-amber-200">
-                            <Lightbulb className="size-3.5 shrink-0 text-band-2-text dark:text-amber-200 mt-0.5" aria-hidden="true" />
-                            <p className="leading-relaxed text-[11px] sm:text-xs">
-                              <span className="font-semibold text-band-2-text dark:text-amber-200">At-Home Tip: </span>
-                              {practiceFocus.meta.homeTip}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Action bridge linking diagnosis directly to take-home practice with comfortable touch target */}
-                      <div className="pt-2 border-t border-band-2/20 flex items-center justify-between">
-                        <button
-                          type="button"
-                          onClick={navigateToTakeHome}
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-band-2-text dark:text-amber-200 hover:text-amber-900 dark:hover:text-amber-100 hover:underline cursor-pointer group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded px-1.5 py-1.5 min-h-[40px] sm:min-h-[36px] touch-manipulation"
-                        >
-                          <span>Practice this skill with take-home sheets</span>
-                          <ChevronRight className="size-3.5 text-band-2-text dark:text-amber-200 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </>
+                  <span>
+                    {trendSummary.label}
+                    {showScoreDetails && trendSummary.deltaText && (
+                      <span className="font-sans tabular-nums"> ({trendSummary.deltaText})</span>
+                    )}
+                  </span>
+                </p>
               )}
             </div>
-          )}
 
-          {/* Action Trigger Button (if image missing or failed) */}
-          {latest.imagePath && (!imageUrl || imageError) && (
-            <div className="pt-1">
+            {imageUrl && !imageError ? (
+              <button
+                type="button"
+                onClick={() => openWorksheetForCriterion("all")}
+                aria-label={`View worksheet for ${childName} with writing lines, slant, and spacing feedback`}
+                aria-haspopup="dialog"
+                className="group focus-visible:ring-ring flex cursor-pointer flex-col gap-2 rounded-lg text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
+              >
+                <span className="bg-muted/30 relative block h-36 w-full overflow-hidden rounded-lg min-[1100px]:h-56 sm:h-48">
+                  <Image
+                    src={imageUrl}
+                    alt={`Handwriting worksheet sample for ${latest.activityText}`}
+                    fill
+                    sizes="(min-width: 1100px) 40vw, 100vw"
+                    onError={() => setImageError(true)}
+                    className="object-contain object-center"
+                  />
+                </span>
+                <span className="text-primary inline-flex min-h-11 items-center gap-1.5 text-sm font-medium group-hover:underline">
+                  <Eye className="size-4" aria-hidden="true" />
+                  View worksheet
+                </span>
+              </button>
+            ) : latest.imagePath ? (
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => openWorksheetForCriterion("all")}
                 aria-haspopup="dialog"
-                className="w-full h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium gap-2 border-brand-200 dark:border-brand-900 bg-brand-50/50 dark:bg-brand-950/30 text-brand-800 dark:text-brand-200 hover:bg-brand-100/60 dark:hover:bg-brand-900/50 cursor-pointer shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 touch-manipulation"
+                className="min-h-11 w-full sm:w-auto sm:self-start"
               >
-                <Eye className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                <span>View Worksheet &amp; Guidelines</span>
+                <Eye data-icon="inline-start" aria-hidden="true" />
+                View worksheet
               </Button>
-            </div>
-          )}
-        </div>
+            ) : null}
+          </div>
 
-        {/* Diagnostic Criterion Breakdown */}
-        <div className="border-t border-border/70 p-5 sm:p-6 space-y-3.5">
-          <div className="flex items-center justify-between pb-1 border-b border-border/60">
-            <div>
-              <h4 className="text-xs sm:text-sm font-heading font-semibold text-foreground">
-                5-Skill Diagnostic Breakdown
-              </h4>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Select any skill to inspect interactive guide lines on the worksheet photo
+          <div className="border-border min-w-0 border-t p-4 min-[1100px]:border-t-0 min-[1100px]:border-l sm:p-5">
+            <div className="flex flex-col gap-1 pb-3">
+              <h3 className="font-heading text-foreground text-base font-semibold">
+                Handwriting skills
+              </h3>
+              <p className="text-muted-foreground text-xs">
+                Select a skill to see it on the worksheet.
               </p>
             </div>
-            <span className="text-xs text-muted-foreground hidden sm:inline">5-Skill Penmanship Guide</span>
-          </div>
-
-          <div className="divide-y divide-border/60 rounded-xl border border-border/70 bg-card overflow-hidden">
-            {PARENT_CRITERIA_LIST.map((criterion) => {
-              const isTop = topStrength?.key === criterion.key;
-              const isFocus = practiceFocus?.key === criterion.key;
-              const highlightBadge = isTop ? "top_strength" : isFocus ? "practice_focus" : null;
-              const score = latest.scores[criterion.key];
-              const band = latest.bands[criterion.key];
-              const bandMeta = band ? getBandMeta(band) : null;
-              const diagnosticNote = band ? DIAGNOSTIC_NOTES[criterion.key][band] : null;
-
-              return (
-                <button
-                  type="button"
+            <div className="divide-border/60 divide-y">
+              {PARENT_CRITERIA_LIST.map((criterion) => (
+                <CriterionFeedbackRow
                   key={criterion.key}
-                  onClick={() => openWorksheetForCriterion(criterion.key)}
-                  aria-label={`Inspect ${criterion.label} feedback and worksheet guide lines. Rating: ${bandMeta?.label ?? "Pending"}`}
-                  aria-haspopup="dialog"
-                  className="w-full text-left p-3.5 sm:p-4 space-y-2 hover:bg-muted/30 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 transition-colors group cursor-pointer block touch-manipulation"
-                >
-                  {/* Header Row: Title, Badges, Score, and Inspect Affordance */}
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                      <span className="text-xs sm:text-sm font-semibold text-foreground group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors">
-                        {criterion.label}
-                      </span>
-                      {highlightBadge === "top_strength" && (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 px-2 py-0.5 rounded-md border border-band-4/30 dark:border-band-4/40 shrink-0">
-                          <span className="size-1.5 rounded-full bg-band-4 shrink-0" aria-hidden="true" />
-                          Top Strength
-                        </span>
-                      )}
-                      {highlightBadge === "practice_focus" && (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 px-2 py-0.5 rounded-md border border-band-2/30 dark:border-band-2/40 shrink-0">
-                          <span className="size-1.5 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
-                          Practice Focus
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-end gap-2 shrink-0 text-right">
-                      {showScoreDetails && score != null && (
-                        <span className="font-sans text-xs font-semibold tabular-nums text-muted-foreground">
-                          {Math.round(score)}%
-                        </span>
-                      )}
-                      <BandBadge band={band} score={score} size="sm" showDot />
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors ml-1 bg-muted/40 group-hover:bg-brand-50 dark:group-hover:bg-brand-950/40 px-2 py-0.5 rounded border border-border/50 group-hover:border-brand-200/60 dark:group-hover:border-brand-800/60 shrink-0">
-                        <Eye className="size-3 text-muted-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400" aria-hidden="true" />
-                        <span className="hidden sm:inline">Inspect</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Direct Diagnostic Note */}
-                  {diagnosticNote && (
-                    <p className="text-xs text-muted-foreground leading-relaxed pr-2">
-                      {diagnosticNote}
-                    </p>
-                  )}
-                </button>
-              );
-            })}
+                  criterionKey={criterion.key}
+                  label={criterion.label}
+                  score={latest.scores[criterion.key]}
+                  band={latest.bands[criterion.key]}
+                  showScoreDetails={showScoreDetails}
+                  concise
+                  inspectOpensDialog
+                  onInspect={() => openWorksheetForCriterion(criterion.key)}
+                />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Worksheet Photo Viewer Modal */}
       <WorksheetViewDialog
         open={viewImageOpen}
         onOpenChange={setViewImageOpen}
@@ -451,7 +403,16 @@ export function LatestSubmissionCard({
         bands={latest.bands}
         guideLines={latest.guideLines}
         overlay={latest.overlay}
+        onPracticeNow={navigateToTakeHome}
       />
     </>
   );
+}
+
+/**
+ * Backwards compatibility alias for ParentStatusHero.
+ * Streamlined to render the consolidated LatestSubmissionCard directly.
+ */
+export function ParentStatusHero(props: LatestSubmissionCardProps) {
+  return <LatestSubmissionCard {...props} />;
 }

@@ -18,6 +18,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { BrandLogo } from "@/components/brand-logo";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { MIN_PASSWORD_LENGTH } from "@/lib/auth/password-policy";
+import { Turnstile } from "@marsidev/react-turnstile";
 import {
   CircleAlertIcon,
   EyeIcon,
@@ -47,6 +48,8 @@ function SignUpForm() {
 
   const [formError, setFormError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
 
   // Success state (confirmation email sent)
   const [isSuccess, setIsSuccess] = useState(false);
@@ -83,6 +86,11 @@ function SignUpForm() {
       return;
     }
 
+    if (turnstileSiteKey && !captchaToken) {
+      setFormError("Please complete the security verification.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -92,6 +100,8 @@ function SignUpForm() {
         email: email.trim(),
         password,
         options: {
+
+          captchaToken: captchaToken ?? undefined,
           data: {
             role,
             full_name: fullName.trim(),
@@ -121,6 +131,9 @@ function SignUpForm() {
           setFormError("Enter a valid email address.");
         } else if (code === "signup_disabled") {
           setFormError("Sign-ups are currently closed.");
+        } else if (code === "captcha_failed") {
+          setFormError("Security verification failed. Please try again.");
+          setCaptchaToken(null);
         } else {
           setFormError("Something went wrong. Please try again.");
         }
@@ -149,6 +162,7 @@ function SignUpForm() {
         type: "signup",
         email: submittedEmail,
         options: {
+
           emailRedirectTo: redirectUrl,
         },
       });
@@ -473,6 +487,25 @@ function SignUpForm() {
                 </button>
               </div>
             </div>
+
+            {turnstileSiteKey && (
+              <div className="my-2 flex justify-center">
+                <Turnstile
+                  siteKey={turnstileSiteKey}
+                  onSuccess={(token) => {
+                    setCaptchaToken(token);
+                    setFormError(null);
+                  }}
+                  onExpire={() => setCaptchaToken(null)}
+                  onError={() => {
+                    setCaptchaToken(null);
+                  }}
+                  options={{
+                    theme: "auto",
+                  }}
+                />
+              </div>
+            )}
 
             <Button
               id="signup-submit"

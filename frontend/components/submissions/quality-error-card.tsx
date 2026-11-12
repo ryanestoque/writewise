@@ -59,6 +59,7 @@ export interface QualityErrorCardProps {
   onRetry?: () => void;
   retryLabel?: string;
   onProceedAnyway?: () => void;
+  variant?: "teacher" | "parent";
 }
 
 interface ErrorPresentation {
@@ -432,6 +433,7 @@ export function QualityErrorCard({
   onRetry,
   retryLabel,
   onProceedAnyway,
+  variant = "teacher",
 }: QualityErrorCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isInspecting, setIsInspecting] = useState(false);
@@ -814,7 +816,7 @@ export function QualityErrorCard({
           </p>
 
           {/* Technical diagnostic disclosure (for teachers & calibration) */}
-          {hasTechnicalDetails && (
+          {hasTechnicalDetails && variant !== "parent" && (
             <div className="pt-0.5">
               <button
                 type="button"
@@ -833,7 +835,7 @@ export function QualityErrorCard({
               {showTechDetails && (
                 <div
                   id="technical-diagnostic-details"
-                  className="mt-1.5 p-2.5 rounded-lg bg-muted/60 text-[11px] font-mono text-muted-foreground space-y-1"
+                  className="mt-1.5 p-2.5 rounded-lg bg-muted/60 text-xs font-sans tabular-nums text-muted-foreground space-y-1"
                 >
                   {typeof error.details?.measured_value === "number" && (
                     <div className="flex justify-between items-center gap-2">
@@ -882,20 +884,20 @@ export function QualityErrorCard({
         </div>
       </div>
 
-      {/* Recognized Text Comparison Callout */}
-      {(typeof error.details?.detected_text === "string" ||
-        typeof error.details?.expected_text === "string") && (
+      {/* Recognized Text Comparison Callout (Teacher-only diagnostic comparison) */}
+      {variant !== "parent" &&
+        (typeof error.details?.detected_text === "string" ||
+          typeof error.details?.expected_text === "string") && (
         <div className="rounded-xl border border-border/80 bg-card p-3 sm:p-3.5 space-y-2.5 shadow-2xs">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <ScanText className="size-4 text-primary shrink-0" aria-hidden="true" />
+            <span className="text-xs font-semibold text-foreground">
               Handwriting Recognition Output
             </span>
             {typeof error.details?.similarity === "number" && (
               <Badge
                 variant="outline"
                 className={cn(
-                  "text-[10px] px-2 py-0.5 font-semibold",
+                  "text-xs px-2 py-0.5 font-semibold font-sans tabular-nums",
                   error.details.similarity >= 0.8
                     ? "bg-success/10 text-success border-success/30"
                     : error.details.similarity >= 0.4
@@ -914,7 +916,7 @@ export function QualityErrorCard({
                 <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
                   Recognized Cursive Text
                 </span>
-                <p className="font-mono text-xs text-foreground font-medium italic break-words">
+                <p className="font-sans text-xs text-foreground font-medium italic break-words">
                   &quot;{error.details.detected_text || "<no text recognized>"}&quot;
                 </p>
               </div>
@@ -924,7 +926,7 @@ export function QualityErrorCard({
                 <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
                   Assigned Activity Prompt
                 </span>
-                <p className="font-mono text-xs text-foreground font-medium italic break-words">
+                <p className="font-sans text-xs text-foreground font-medium italic break-words">
                   &quot;{error.details.expected_text}&quot;
                 </p>
               </div>
@@ -1022,7 +1024,7 @@ export function QualityErrorCard({
           Retake Photo
         </Button>
 
-        {error.code === "TARGET_TEXT_MISMATCH" && onProceedAnyway && (
+        {variant !== "parent" && error.code === "TARGET_TEXT_MISMATCH" && onProceedAnyway && (
           <Button
             type="button"
             variant="outline"
@@ -1034,7 +1036,7 @@ export function QualityErrorCard({
           </Button>
         )}
 
-        {error.code !== "TARGET_TEXT_MISMATCH" && onRetry && (
+        {!presentation.isQualityCheck && error.code !== "TARGET_TEXT_MISMATCH" && onRetry && (
           <Button
             type="button"
             variant="outline"
@@ -1088,7 +1090,7 @@ export function QualityErrorCard({
 
                   <div
                     aria-label={`Current zoom level: ${Math.round(zoomScale * 100)} percent`}
-                    className="text-xs font-mono font-medium text-muted-foreground w-12 text-center select-none"
+                    className="text-xs font-sans tabular-nums font-medium text-muted-foreground w-12 text-center select-none"
                   >
                     {Math.round(zoomScale * 100)}%
                   </div>

@@ -2,6 +2,13 @@ import type { ScoreBand } from "@/lib/hooks/use-submissions";
 
 export type { ScoreBand };
 
+export const PARENT_BAND_EXPLANATIONS: Record<ScoreBand, string> = {
+  excellent: "Consistent letter shapes, spacing, and alignment on this worksheet.",
+  satisfactory: "Solid cursive foundation with small areas to refine during practice.",
+  developing: "Actively learning and building muscle memory — a normal, healthy stage in cursive.",
+  needs_improvement: "Working on basic letter shapes and pencil control with guided practice.",
+};
+
 export interface RubricBandMeta {
   band: ScoreBand;
   label: string;
@@ -354,54 +361,3 @@ export function computeStrengthAndFocus(
     isBalanced,
   };
 }
-
-export interface ActivitySkillMeta {
-  criterionKey: CriterionKey;
-  label: string;
-  shortLabel: string;
-}
-
-export function getActivitySkillMeta(targetText: string): ActivitySkillMeta {
-  const trimmed = targetText.trim();
-  const words = trimmed.split(/\s+/);
-  const lower = trimmed.toLowerCase();
-
-  if (words.length >= 3) {
-    return {
-      criterionKey: "spacing",
-      label: "Inter-Word Spacing & Rhythm",
-      shortLabel: "Spacing",
-    };
-  }
-
-  if (lower.includes("banana") || lower === "b" || lower === "l" || lower === "e" || lower === "c") {
-    return {
-      criterionKey: "letter_formation",
-      label: "Letter Loops & Connectors",
-      shortLabel: "Letter Formation",
-    };
-  }
-
-  if (lower === "f" || lower.includes("q") || lower.includes("j") || lower.includes("p") || lower.includes("y") || lower.includes("g")) {
-    return {
-      criterionKey: "size_consistency",
-      label: "Ascenders, Descenders & Height",
-      shortLabel: "Size Consistency",
-    };
-  }
-
-  if (lower.includes("apple") || lower.includes("cat") || lower.includes("dog")) {
-    return {
-      criterionKey: "baseline_alignment",
-      label: "Baseline Grounding",
-      shortLabel: "Baseline Alignment",
-    };
-  }
-
-  return {
-    criterionKey: "slant",
-    label: "Uniform Forward Slant Angle",
-    shortLabel: "Slant Angle",
-  };
-}
-

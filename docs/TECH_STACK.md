@@ -274,6 +274,7 @@ FastAPI auto-generates interactive docs at **`/docs`** (Swagger UI) from the sam
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (dev or prod) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key — safe for client exposure, RLS enforces access |
 | `NEXT_PUBLIC_API_BASE_URL` | FastAPI backend base URL (local: `http://localhost:8000`; prod: Railway URL) |
+| `NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile public site key for the `/signup` bot check. Optional locally (widget is hidden and no token is sent when unset); required in Vercel Production/Preview once Supabase CAPTCHA protection is enabled. The matching **secret key** goes only in the Supabase dashboard, never in this file. |
 
 ### 8.3 Backend (`.env`)
 

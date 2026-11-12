@@ -45,7 +45,7 @@ export function NotificationRowItem({
           <time
             dateTime={row.created_at}
             title={new Date(row.created_at).toLocaleString()}
-            className="text-muted-foreground text-xs"
+            className="text-muted-foreground text-xs font-sans tabular-nums"
           >
             {formatDistanceToNow(new Date(row.created_at), { addSuffix: true })}
           </time>
@@ -62,7 +62,7 @@ export function NotificationRowItem({
       <Button
         variant="ghost"
         size="xs"
-        className="shrink-0 self-start"
+        className="shrink-0 self-start min-h-10 sm:min-h-7 px-2.5"
         disabled={pending}
         aria-disabled={!unread || pending}
         aria-label={`${unread ? "Mark read" : "Read"}: ${notificationCopy(row.type)}`}

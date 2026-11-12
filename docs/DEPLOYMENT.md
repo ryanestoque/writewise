@@ -122,6 +122,7 @@ Self-service signup requires specific configuration in both `writewise-dev` and 
 | **Minimum password length** | Auth → Password Policy | **10** | Enforces SECURITY.md §3 policy at the auth engine level. |
 | **Leaked password protection** | Auth → Password Policy | **Enabled (ON)** | Checks HaveIBeenPwned database on password set/reset. |
 | **Redirect URLs** | Auth → URL Configuration | Add `http://localhost:3000/auth/callback` (dev) and `https://<app>.vercel.app/auth/callback` (prod) | Required whitelist for email redirect validation. |
+| **CAPTCHA protection** | Auth → Attack Protection (Bot and Abuse Protection) | **Enabled**, provider **Cloudflare Turnstile**, paste the Turnstile **Secret Key** | Protects signup, password sign-in, and password recovery. Pair with `NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY` in local development and Vercel env vars (Production + Preview). Add `localhost` and deployed domains to the Turnstile widget's allowed hostnames. Enable the setting and set the site key in the same deploy — enabling it without frontend CAPTCHA support blocks these auth requests. Login and recovery forms send a fresh token and reset the challenge after every attempt. |
 | **Confirm signup email template** | Auth → Email Templates → Confirm signup | `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email&next=/login` | Uses `token_hash` OTP verification so links work reliably across devices/browsers (skipping PKCE cookie constraints). |
 
 ---

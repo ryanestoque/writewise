@@ -11,7 +11,6 @@ import { ParentUploadDialog } from "@/components/parent/parent-upload-dialog";
 import { CursiveGuideDialog } from "@/components/cursive-guide-dialog";
 import {
   useLinkedChildren,
-  useTakeHomeActivities,
   type LinkedChild,
 } from "@/lib/hooks/use-parent-data";
 
@@ -24,6 +23,9 @@ interface ParentPortalContextValue {
   selectedChild: LinkedChild | null;
   children: LinkedChild[];
   isLoading: boolean;
+  isError: boolean;
+  isRetrying: boolean;
+  retryChildren: () => void;
   uploadOpen: boolean;
   setUploadOpen: (open: boolean) => void;
   prefilledActivityId: string | undefined;
@@ -49,7 +51,16 @@ interface ParentPortalProviderProps {
 }
 
 export function ParentPortalProvider({ user, children: pageChildren }: ParentPortalProviderProps) {
-  const { data: linkedChildren, isLoading } = useLinkedChildren(user.id);
+  const {
+    data: linkedChildren,
+    isPending: isLoading,
+    isError,
+    isFetching: isRetrying,
+    refetch: refetchChildren,
+  } = useLinkedChildren(user.id);
+  const retryChildren = useCallback(() => {
+    void refetchChildren();
+  }, [refetchChildren]);
   const [selectedChildIdState, setSelectedChildIdState] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
@@ -67,15 +78,11 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
 
   // Derive the active selected child without cascading effect renders
   const selectedChildId =
-    notificationTarget.kind === "invalid"
-      ? null
-      : requestedChild
-        ? linkedChildren?.some((c) => c.id === requestedChild)
-          ? requestedChild
-          : null
-        : selectedChildIdState && linkedChildren?.some((c) => c.id === selectedChildIdState)
-          ? selectedChildIdState
-          : (linkedChildren?.[0]?.id ?? null);
+    requestedChild && linkedChildren?.some((c) => c.id === requestedChild)
+      ? requestedChild
+      : selectedChildIdState && linkedChildren?.some((c) => c.id === selectedChildIdState)
+        ? selectedChildIdState
+        : (linkedChildren?.[0]?.id ?? null);
 
   const selectedChild = linkedChildren?.find((c) => c.id === selectedChildId) ?? null;
 
@@ -97,9 +104,6 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
     clearTargetUrl();
   }, [clearTargetUrl, selectedChildId]);
 
-  const { data: activities } = useTakeHomeActivities(selectedChildId);
-  const hasActivities = (activities?.length ?? 0) > 0;
-
   const openUploadDialog = useCallback((activityId?: string) => {
     setPrefilledActivityId(activityId);
     setUploadOpen(true);
@@ -119,6 +123,9 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
       selectedChild,
       children: linkedChildren ?? [],
       isLoading,
+      isError,
+      isRetrying,
+      retryChildren,
       uploadOpen,
       setUploadOpen,
       prefilledActivityId,
@@ -136,6 +143,9 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
       selectedChild,
       linkedChildren,
       isLoading,
+      isError,
+      isRetrying,
+      retryChildren,
       uploadOpen,
       prefilledActivityId,
       openUploadDialog,
@@ -152,11 +162,8 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
           selectedChildId={selectedChildId}
           linkedChildren={linkedChildren ?? []}
           onChildChange={setSelectedChildId}
-          onUploadClick={() => openUploadDialog()}
-          onCursiveGuideClick={openCursiveGuide}
-          hasActivities={hasActivities}
         />
-        <main className="mx-auto w-full max-w-7xl min-w-0 flex-1 space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+        <main className="w-full min-w-0 flex-1 space-y-6 px-4 py-6 sm:px-6">
           {pageChildren}
         </main>
       </div>
