@@ -5,11 +5,48 @@ import json
 import os
 
 import asyncpg
+import httpx
 import pytest
 
 from tests.rls.notification_support import db_value
 
 SECRET = "synthetic-email-dispatch-secret-00000001"
+
+
+def test_database_email_job_is_retired():
+    assert db_value("select count(*) from cron.job where jobname='writewise-email-dispatch'") == 0
+
+
+def test_database_email_helper_is_retired():
+    assert db_value("select to_regprocedure('writewise_internal.request_email_dispatch()')") is None
+
+
+@pytest.mark.parametrize("role", ["anon", "authenticated"])
+@pytest.mark.parametrize(
+    ("schema", "table"), [("net", "http_request_queue"), ("vault", "decrypted_secrets")]
+)
+def test_network_and_vault_are_unavailable_through_browser_data_api(family, role, schema, table):
+    public_key = os.environ["SUPABASE_ANON_KEY"]
+    token = (
+        public_key if role == "anon" else family["parent_client"].auth.get_session().access_token
+    )
+    response = httpx.get(
+        os.environ["SUPABASE_URL"].rstrip("/") + "/rest/v1/" + table,
+        params={"select": "id", "limit": "1"},
+        headers={
+            "apikey": public_key,
+            "Authorization": "Bearer " + token,
+            "Accept-Profile": schema,
+        },
+        timeout=5.0,
+    )
+    assert response.status_code == 406
+    assert response.json()["code"] == "PGRST106"
+
+
+@pytest.mark.parametrize("role", ["anon", "authenticated"])
+def test_browser_roles_cannot_open_direct_database_sessions(role):
+    assert db_value("select rolcanlogin from pg_roles where rolname=$1", role) is False
 
 
 def test_one_private_email_job_without_embedded_configuration():
