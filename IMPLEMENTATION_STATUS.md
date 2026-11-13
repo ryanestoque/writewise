@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-12 (Slices 5 and 6 verification retained; current main/email reconciliation in progress; dispatch remains off)
+**Last updated:** 2026-11-13 (email, gradebook and private comments merged; final main CI verified; hosted email rollout remains pending)
 
 ## Summary
 
@@ -154,7 +154,15 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 
 **Design reference:** [Phase 3 proposal](docs/next_steps/PHASE_3_CLASSROOM_ACTIVITIES.md), especially §2 decisions, §8 slices, and §9 open details. Promoted contracts for implemented slices live in `docs/API_SPEC.md` and `docs/DATABASE.md`; later-slice sketches remain proposals.
 
-**Implementation records:** [Slice ③ — In-app notifications](docs/superpowers/plans/2026-11-03-phase3-in-app-notifications.md), [Slice ② — Return and release](docs/superpowers/plans/2026-11-02-phase3-return-release.md) and [Slice ① — Assignment and deadlines](docs/superpowers/plans/2026-11-01-phase3-assignment-deadlines.md) are verified. Slice ④ email notifications is next.
+**Implementation records:** Slices ①–③, ⑤ and ⑥ are verified by their dated CI and user QA records below. All six slices' application code is merged to remote `main`; Slice ④ email remains Partial with hosted rollout and activation pending. Older checkpoints retain their status at the time and are superseded by the current integration record below.
+
+### Current integration and remaining rollout (2026-11-13)
+
+Read-only GitHub API checks confirmed [email PR #9](https://github.com/ryanestoque/writewise/pull/9), [gradebook PR #7](https://github.com/ryanestoque/writewise/pull/7) and [private-comments PR #8](https://github.com/ryanestoque/writewise/pull/8) are merged. They merged on 2026-11-12 (UTC and Asia/Singapore). The final remote `main` commit is `43117d54714e8d99f3ad8d578cac2fb6c3474949`; its tree matches the reconciled private-comments application head `565701e`.
+
+[Final merged-main CI 43246028765](https://github.com/ryanestoque/writewise/actions/runs/43246028765) completed successfully on that exact commit. The run and job-step results were freshly checked on 2026-11-13: full backend pytest, all eight upgrade proofs, Ruff/ESLint/TypeScript, generated API/database contract comparisons, security advisors, external caller tests and the disabled timer container passed. This closes the previously pending combined-head integration check. It does not add a new real-portal walkthrough or establish a hosted deployment.
+
+Phase 3 remains **5/6 verified**. The remaining Slice ④ work follows [DEPLOYMENT.md's activation sequence](docs/DEPLOYMENT.md#phase-3-slice-4---external-email-timer-activation): confirm the intended hosted environment and backend; apply and verify the scheduler-retirement migration without resetting hosted data; deploy/configure the backend and timer disabled; review the eligible recipient/queue scope and sender configuration; then perform an authorized hosted timer/inbox smoke before reviewing ongoing activation. Fresh due-soon delivery remains user-skipped and unverified. This integration closeout changes no hosted settings and sends no email; normal dispatch remains recorded as off.
 
 ### Status and evidence rules
 

@@ -1,7 +1,7 @@
 # Phase 3 — Classroom-Style Activities (Deadlines, Returns, Notifications, Gradebook)
 
-**As of:** November 12, 2026
-**Status:** Slices 1-3, 5 and 6 are verified by their recorded CI and user QA sign-off: Phase 3 is 5/6 verified. Slice 4 email is merged with user-confirmed guided portal checks and API-verified disabled tracking; it remains Partial because fresh due-soon was user-skipped and hosted timer activation is pending. PRs #7 and #8 are being reconciled with current main and require fresh combined-head CI before integration. Preserve per-submission comment privacy/locking, gradebook publication behavior and disabled outbound email. Verification, integration and hosted rollout remain separate; see IMPLEMENTATION_STATUS.md and execution records.
+**As of:** November 13, 2026
+**Status:** Slices 1-3, 5 and 6 are verified by their recorded CI and user QA sign-off: Phase 3 is 5/6 verified. Email PR #9, gradebook PR #7 and private-comments PR #8 are merged; [CI on final main `43117d5`](https://github.com/ryanestoque/writewise/actions/runs/43246028765) passed, including all eight upgrade proofs and full backend pytest. Slice 4 email remains Partial: guided portal checks and disabled provider tracking are recorded, fresh due-soon delivery was user-skipped, and hosted retirement/backend/timer rollout and activation remain pending. Outbound dispatch remains recorded as off. Verification, integration and hosted rollout remain separate; see IMPLEMENTATION_STATUS.md and execution records. Older dated checkpoints below describe their historical state.
 **Origin:** Design-tree grill session, 2026-10-19 (19 decisions, all accepted). **Amended 2026-10-22:** private comments (Q20–Q28, Slice ⑥); Q16 revised.
 **Supersedes (when promoted):** PRD §13 "Notifications" deferred item, PRODUCT.md "Push notifications" deferred item.
 
