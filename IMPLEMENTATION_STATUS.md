@@ -2,7 +2,7 @@
 
 Live tracker of what's actually built, as opposed to what's planned. `PRD.md` §5 is the authoritative *plan* (phases, timeline, build order) — this doc is the reality check against it. Update this whenever an item's status changes; don't let it drift.
 
-**Last updated:** 2026-11-12 (Slices 5 and 6 verification retained; current main/email reconciliation in progress; dispatch remains off)
+**Last updated:** 2026-11-13 (merged-main CI and dev scheduler retirement verified; external timer configuration and email activation remain pending)
 
 ## Summary
 
@@ -154,7 +154,17 @@ One-time, shared-project-state facts. Not a place to track individual teammates'
 
 **Design reference:** [Phase 3 proposal](docs/next_steps/PHASE_3_CLASSROOM_ACTIVITIES.md), especially §2 decisions, §8 slices, and §9 open details. Promoted contracts for implemented slices live in `docs/API_SPEC.md` and `docs/DATABASE.md`; later-slice sketches remain proposals.
 
-**Implementation records:** [Slice ③ — In-app notifications](docs/superpowers/plans/2026-11-03-phase3-in-app-notifications.md), [Slice ② — Return and release](docs/superpowers/plans/2026-11-02-phase3-return-release.md) and [Slice ① — Assignment and deadlines](docs/superpowers/plans/2026-11-01-phase3-assignment-deadlines.md) are verified. Slice ④ email notifications is next.
+**Implementation records:** Slices ①–③, ⑤ and ⑥ are verified by their dated CI and user QA records below. All six slices' application code is merged to remote `main`; Slice ④ email remains Partial with hosted rollout and activation pending. Older checkpoints retain their status at the time and are superseded by the current integration record below.
+
+### Current integration and remaining rollout (2026-11-13)
+
+Read-only GitHub API checks confirmed [email PR #9](https://github.com/ryanestoque/writewise/pull/9), [gradebook PR #7](https://github.com/ryanestoque/writewise/pull/7) and [private-comments PR #8](https://github.com/ryanestoque/writewise/pull/8) are merged. They merged on 2026-11-12 (UTC and Asia/Singapore). The final remote `main` commit is `43117d54714e8d99f3ad8d578cac2fb6c3474949`; its tree matches the reconciled private-comments application head `565701e`.
+
+[Final merged-main CI 43246028765](https://github.com/ryanestoque/writewise/actions/runs/43246028765) completed successfully on that exact commit. The run and job-step results were freshly checked on 2026-11-13: full backend pytest, all eight upgrade proofs, Ruff/ESLint/TypeScript, generated API/database contract comparisons, security advisors, external caller tests and the disabled timer container passed. This closes the previously pending combined-head integration check. It does not add a new real-portal walkthrough or establish a hosted deployment.
+
+Phase 3 remains **5/6 verified**. The remaining Slice ④ work follows [DEPLOYMENT.md's activation sequence](docs/DEPLOYMENT.md#phase-3-slice-4---external-email-timer-activation): verify backend delivery configuration and configure the external timer disabled; review the eligible recipient/queue scope and sender configuration; then perform an authorized hosted timer/inbox smoke before reviewing ongoing activation. Fresh due-soon delivery remains user-skipped and unverified. The hosted dev checkpoint below supersedes the earlier unperformed-retirement gate; backend dispatch remains recorded as off, but Railway variables have not been independently inspected.
+
+**Hosted dev checkpoint (2026-11-13):** The user identified `https://writewise-production-f0be.up.railway.app` as the backend connected to `writewise-dev`. Its `/api/health` returned HTTP 200 with `environment=dev`, and its public OpenAPI schema includes gradebook, comments and the internal email route. The service's name does not establish a production database target. Cached linked-project metadata independently names `writewise-dev`; its project reference matches the backend env's Supabase origin and session-pooler username. A read-only pooler preflight and pinned CLI dry run found exactly one pending migration, `20261112094548_retire_database_email_dispatch.sql`, with no remote-only history. Applied that checked-in migration using CLI 2.115.0 `db push` with `--skip-vault`, without seeds, roles or a reset. Fresh read-only verification found retirement recorded, the old helper/job absent, the deadline job active and no pending migrations. Unrelated job IDs/schedules/active states were unchanged; outbox and notification counts stayed at 11 and 65 respectively. No provider request or email send was performed. External timer provisioning/execution, Railway delivery settings, eligible recipient/queue review and hosted inbox smoke remain unverified.
 
 ### Status and evidence rules
 
