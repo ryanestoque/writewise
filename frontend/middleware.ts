@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/middleware";
 
 // Routes that don't require authentication
-const publicRoutes = ["/login", "/signup", "/accept-invite", "/auth/callback", "/reset-password"];
+const publicRoutes = ["/login", "/signup", "/accept-invite", "/auth/callback", "/reset-password", "/privacy", "/terms"];
 
 // Route-to-role mapping (Next.js strips the route group prefix from URLs)
 const teacherRoutes = ["/dashboard", "/roster", "/activities", "/gradebook", "/settings"];

@@ -2,7 +2,6 @@
 
 import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
 import { memo } from "react";
-import Link from "next/link";
 import type { Activity } from "@/lib/hooks/use-activities";
 import type { ScoreBandInfo } from "@/lib/utils/submission-status";
 import { formatDate } from "@/lib/utils/formatters";
@@ -56,6 +55,7 @@ export interface ClassDiagnosticSummary {
 export interface ActivityDetailHeroProps {
   activity: Activity;
   isArchived: boolean;
+  progressUnavailable?: boolean;
   wordCount: number;
   totalStudents: number;
   uniqueStudentsCount: number;
@@ -74,6 +74,7 @@ export interface ActivityDetailHeroProps {
 export const ActivityDetailHero = memo(function ActivityDetailHero({
   activity,
   isArchived,
+  progressUnavailable = false,
   wordCount,
   totalStudents,
   uniqueStudentsCount,
@@ -106,7 +107,6 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
       <div className="mb-4 flex flex-col gap-2">
         <h2 className="font-heading text-xl font-semibold">{activity.title}</h2>
         <p className="text-sm text-muted-foreground">{activity.due_at ? `Due ${formatActivityDueAt(activity.due_at)}` : "No due date"}{activity.close_after_due ? " · Parent uploads close after due" : ""}</p>
-        {activity.instructions && <p className="whitespace-pre-wrap text-sm">{activity.instructions}</p>}
       </div>
       {/* Archived Top Warning Banner if Archived */}
       {isArchived && (
@@ -119,8 +119,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
             aria-hidden="true"
           />
           <span>
-            This activity is archived and hidden from student assignment
-            pickers.
+            This activity is archived and hidden from activity pickers.
           </span>
         </div>
       )}
@@ -252,6 +251,12 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
           </div>
         </div>
 
+        <details>
+          <summary className="cursor-pointer min-h-11 py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">
+            Activity instructions and target text
+            <span className="mt-1 block truncate font-normal text-muted-foreground">{activity.target_text?.trim() || "No target text specified"}</span>
+          </summary>
+          {activity.instructions && <p className="mb-4 whitespace-pre-wrap break-words text-sm">{activity.instructions}</p>}
         {/* Hero Penmanship Prompt on Authentic 3-Line Cursive Ruling */}
         <div className="relative group/prompt">
           <div className="relative rounded-xl border border-border/80 bg-background/60 dark:bg-card/60 p-4 sm:p-5 shadow-warm-sm overflow-hidden">
@@ -278,10 +283,12 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
             </div>
           </div>
         </div>
+        </details>
       </div>
 
       {/* Bottom Aggregate Bar: Class Roster Progress + Diagnostic Synthesis */}
       <div className="pt-3 border-t border-border/50 grid grid-cols-1 lg:grid-cols-2 gap-3.5 mt-4">
+        {progressUnavailable ? <p role="status" className="text-sm text-muted-foreground">Completion and class insights are unavailable until student work finishes loading. Retry any failed requests below.</p> : <>
         {/* Left: Class Roster Completion */}
         <div className="flex flex-col justify-center gap-2">
           <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
@@ -294,7 +301,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 <strong className="text-foreground font-semibold tabular-nums">
                   {totalStudents}
                 </strong>{" "}
-                enrolled students submitted
+                assigned students with counted worksheets
                 {totalScansCount > uniqueStudentsCount && (
                   <span className="text-muted-foreground/80 font-normal">
                     {" "}
@@ -334,14 +341,15 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
             </div>
           ) : (
             <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/20 px-2.5 py-1.5 rounded-lg border border-dashed border-border">
-              <span className="text-[11px]">No students enrolled yet</span>
-              <Link
-                href="/roster"
-                className="text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 inline-flex items-center gap-1 group/link focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm py-1.5 px-2 -my-1 sm:my-0 min-h-[36px] sm:min-h-0"
+              <span className="text-[11px]">No students assigned yet</span>
+              <button
+                type="button"
+                onClick={onEdit}
+                className="text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 inline-flex items-center gap-1 group/link focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm py-1.5 px-2 -my-1 sm:my-0 min-h-11 sm:min-h-9"
               >
-                <span>Manage Roster</span>
+                <span>Choose students</span>
                 <ArrowRight className="size-3 transition-transform group-hover/link:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" />
-              </Link>
+              </button>
             </div>
           )}
         </div>
@@ -569,6 +577,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
             </span>
           </div>
         )}
+        </>}
       </div>
     </section>
   );

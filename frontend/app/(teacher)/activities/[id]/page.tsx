@@ -4,43 +4,29 @@ import { use, useState, useMemo, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ActivityThreads } from "@/components/comments/activity-threads";
-import { WorkCommentsButton } from "@/components/comments/submission-comment-picker-sheet";
+
 import { commentThreadHref, parseTeacherCommentTarget } from "@/lib/comments/targets";
 import {
   type Activity,
   useActivity,
   useToggleArchive,
 } from "@/lib/hooks/use-activities";
-import { ActivityWorkStatus } from "@/components/activities/activity-work-status";
+import { ActivityReviewQueue } from "@/components/activities/activity-review-queue";
+import {
+  buildReviewRows, countReviewRows, filterReviewRows, sortReviewRows,
+  type ReviewFilter, type ReviewSort,
+} from "@/lib/utils/activity-review";
 import { useActivityWork } from "@/lib/hooks/use-activity-work";
-import { ReleaseActivityButton, StudentWorkControls } from "@/components/submissions/submission-lifecycle-controls";
+
 import { activityAssignedTo } from "@/lib/utils/activity-work";
 import { useStudents } from "@/lib/hooks/use-students";
-import {
-  type Submission,
-  useSubmissions,
-  useDeleteSubmission,
-  useBatchDeleteSubmissions,
-} from "@/lib/hooks/use-submissions";
+import { useSubmissions } from "@/lib/hooks/use-submissions";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import { EditActivityDialog } from "@/components/activities/edit-activity-dialog";
 import { DeleteActivityDialog } from "@/components/activities/delete-activity-dialog";
 import { CreateActivityDialog } from "@/components/activities/create-activity-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { FloatingActionBar } from "@/components/ui/floating-action-bar";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
 import {
@@ -61,17 +47,12 @@ import {
 import {
   ArrowLeft,
   ClipboardList,
-  Upload,
-  Inbox,
   AlertCircle,
   RotateCcw,
-  SearchX,
   ArrowUpDown,
-  GraduationCap,
-  Layers,
   Check,
-  Trash2,
-  Loader2,
+  MessageSquare,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getWordCount } from "@/lib/utils/formatters";
@@ -83,24 +64,9 @@ import {
   ActivityDetailHero,
   type ClassDiagnosticSummary,
 } from "@/components/activities/activity-detail-hero";
-import { SubmissionCard } from "@/components/activities/submission-card";
 
-type SubmissionFilter = "all" | "completed" | "processing" | "rejected" | "returned";
-type SubmissionSort =
-  | "newest"
-  | "oldest"
-  | "name_asc"
-  | "name_desc"
-  | "score_desc";
-type ViewMode = "grouped" | "all";
-
-interface StudentSubmissionGroup {
-  studentId: string;
-  studentName: string;
-  latestSubmission: Submission;
-  allSubmissions: Submission[];
-  attemptCount: number;
-}
+type SubmissionFilter = ReviewFilter;
+type SubmissionSort = ReviewSort;
 
 export default function ActivityDetailPage({
   params,
@@ -121,7 +87,7 @@ export default function ActivityDetailPage({
   };
 
   const { data: activity, isLoading, error, refetch } = useActivity(id);
-  const { data: students } = useStudents();
+  const { data: students, isLoading: rosterLoading, isError: rosterError, refetch: refetchStudents } = useStudents();
   const {
     data: submissions,
     isLoading: submissionsLoading,
@@ -137,32 +103,11 @@ export default function ActivityDetailPage({
   const [isDuplicateOpen, setIsDuplicateOpen] = useState(false);
   const [hasCopiedPrompt, setHasCopiedPrompt] = useState(false);
 
-  // View, search, filter, and sort states
-  const [viewMode, setViewMode] = useState<ViewMode>("grouped");
+  // Search, filter, and sort states
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<SubmissionFilter>("all");
-  const [sortBy, setSortBy] = useState<SubmissionSort>("newest");
+  const [statusFilter, setStatusFilter] = useState<SubmissionFilter>("attention");
+  const [sortBy, setSortBy] = useState<SubmissionSort>("attention");
   const searchInputRef = useRef<HTMLInputElement>(null);
-
-  // Group attempt selection map (key: studentId, value: Submission)
-  const [attemptOverrides, setAttemptOverrides] = useState<
-    Map<string, Submission>
-  >(new Map());
-
-  // Batch deletion selection state
-  const [selectedSubmissionIds, setSelectedSubmissionIds] = useState<Set<string>>(
-    new Set()
-  );
-  const [isBatchDeleteDialogOpen, setIsBatchDeleteDialogOpen] = useState(false);
-  const [singleAttemptToDelete, setSingleAttemptToDelete] =
-    useState<Submission | null>(null);
-  const [studentBatchToDelete, setStudentBatchToDelete] = useState<{
-    studentName: string;
-    submissions: Submission[];
-  } | null>(null);
-
-  const deleteSingleMutation = useDeleteSubmission();
-  const batchDeleteMutation = useBatchDeleteSubmissions();
 
   // Shortcut key listener for '/' and 'U'
   useEffect(() => {
@@ -186,14 +131,11 @@ export default function ActivityDetailPage({
       ) {
         e.preventDefault();
         openUpload({ activityId: id });
-      } else if (e.key === "Escape" && selectedSubmissionIds.size > 0) {
-        e.preventDefault();
-        setSelectedSubmissionIds(new Set());
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [id, openUpload, selectedSubmissionIds.size]);
+  }, [id, openUpload]);
 
   // Roster Metrics: Unique enrolled students with submissions
   const submittedStudentIds = useMemo(() => {
@@ -204,7 +146,10 @@ export default function ActivityDetailPage({
   }, [submissions, students, activity, activeIds]);
 
   const uniqueStudentsCount = submittedStudentIds.size;
-  const assignedStudents = (students ?? []).filter((student) => !!activity && activityAssignedTo(activity, student));
+  const assignedStudents = useMemo(
+    () => (students ?? []).filter(student => !!activity && activityAssignedTo(activity, student)),
+    [students, activity]
+  );
   const totalStudents = assignedStudents.length;
   const totalScansCount = submissions?.length ?? 0;
   const completionRate =
@@ -303,178 +248,27 @@ export default function ActivityDetailPage({
     };
   }, [submissions, activeIds]);
 
-  // Student Grouping
-  const studentGroups = useMemo<StudentSubmissionGroup[]>(() => {
-    if (!submissions) return [];
-
-    const map = new Map<string, Submission[]>();
-    for (const sub of submissions) {
-      const key = sub.student_id || sub.id;
-      const existing = map.get(key) ?? [];
-      existing.push(sub);
-      map.set(key, existing);
-    }
-
-    const groups: StudentSubmissionGroup[] = [];
-    map.forEach((subs, key) => {
-      const sortedSubs = [...subs].sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      const latest = sortedSubs[0];
-      const name =
-        latest.student?.full_name ||
-        students?.find((s) => s.id === key)?.full_name ||
-        "Unknown Student";
-
-      groups.push({
-        studentId: key,
-        studentName: name,
-        latestSubmission: latest,
-        allSubmissions: sortedSubs,
-        attemptCount: sortedSubs.length,
-      });
-    });
-
-    return groups;
-  }, [submissions, students]);
-
-  // Counts for filter pills
-  const counts = useMemo(() => {
-    if (!submissions)
-      return { all: 0, completed: 0, processing: 0, rejected: 0, returned: 0 };
-    if (viewMode === "grouped") {
-      return {
-        all: studentGroups.length,
-        returned: studentGroups.filter((group) => group.latestSubmission.status === "returned").length,
-        completed: studentGroups.filter(
-          (g) => g.latestSubmission.status === "completed"
-        ).length,
-        processing: studentGroups.filter(
-          (g) => g.latestSubmission.status === "processing"
-        ).length,
-        rejected: studentGroups.filter(
-          (g) => g.latestSubmission.status === "rejected"
-        ).length,
-      };
-    }
-    return {
-      all: submissions.length,
-      returned: submissions.filter((row) => row.status === "returned").length,
-      completed: submissions.filter((s) => s.status === "completed").length,
-      processing: submissions.filter((s) => s.status === "processing").length,
-      rejected: submissions.filter((s) => s.status === "rejected").length,
-    };
-  }, [submissions, viewMode, studentGroups]);
-
-  const submissionFilterItems = useMemo<
-    FilterPillItem<SubmissionFilter>[]
-  >(() => {
-    return [
-      { id: "all", label: "All", count: counts.all },
-      { id: "completed", label: "Completed", count: counts.completed },
-      { id: "processing", label: "Processing", count: counts.processing },
-      { id: "rejected", label: "Rejected", count: counts.rejected },
-      { id: "returned", label: "Returned", count: counts.returned },
-    ];
-  }, [counts]);
-
-  // Filtered & Sorted Student Groups
-  const filteredAndSortedGroups = useMemo(() => {
-    let result = studentGroups;
-
-    if (statusFilter !== "all") {
-      result = result.filter(
-        (g) => g.latestSubmission.status === statusFilter
-      );
-    }
-
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter((g) =>
-        g.studentName.toLowerCase().includes(query)
-      );
-    }
-
-    return [...result].sort((a, b) => {
-      if (sortBy === "newest") {
-        return (
-          new Date(b.latestSubmission.created_at).getTime() -
-          new Date(a.latestSubmission.created_at).getTime()
-        );
-      }
-      if (sortBy === "oldest") {
-        return (
-          new Date(a.latestSubmission.created_at).getTime() -
-          new Date(b.latestSubmission.created_at).getTime()
-        );
-      }
-      if (sortBy === "name_asc") {
-        return a.studentName.localeCompare(b.studentName);
-      }
-      if (sortBy === "name_desc") {
-        return b.studentName.localeCompare(a.studentName);
-      }
-      if (sortBy === "score_desc") {
-        const scoreA =
-          resolveSubmissionScore(a.latestSubmission).compositeScore ?? -1;
-        const scoreB =
-          resolveSubmissionScore(b.latestSubmission).compositeScore ?? -1;
-        return scoreB - scoreA;
-      }
-      return 0;
-    });
-  }, [studentGroups, searchQuery, statusFilter, sortBy]);
-
-  // Filtered & Sorted Raw Submissions (for "All Scans" view mode)
-  const filteredAndSortedSubmissions = useMemo(() => {
-    if (!submissions) return [];
-
-    let result = submissions;
-
-    if (statusFilter !== "all") {
-      result = result.filter((s) => s.status === statusFilter);
-    }
-
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter((s) =>
-        s.student?.full_name?.toLowerCase().includes(query)
-      );
-    }
-
-    return [...result].sort((a, b) => {
-      if (sortBy === "newest") {
-        return (
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-      }
-      if (sortBy === "oldest") {
-        return (
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        );
-      }
-      if (sortBy === "name_asc") {
-        return (a.student?.full_name ?? "").localeCompare(
-          b.student?.full_name ?? ""
-        );
-      }
-      if (sortBy === "name_desc") {
-        return (b.student?.full_name ?? "").localeCompare(
-          a.student?.full_name ?? ""
-        );
-      }
-      if (sortBy === "score_desc") {
-        const scoreA = resolveSubmissionScore(a).compositeScore ?? -1;
-        const scoreB = resolveSubmissionScore(b).compositeScore ?? -1;
-        return scoreB - scoreA;
-      }
-      return 0;
-    });
-  }, [submissions, searchQuery, statusFilter, sortBy]);
-
-
-
+  // One roster model drives both layouts, counts, filters and announcements.
+  const reviewRows = useMemo(
+    () => buildReviewRows(assignedStudents, submissions ?? [], workQuery.data ?? []),
+    [assignedStudents, submissions, workQuery.data]
+  );
+  const workspaceReady = !rosterLoading && !rosterError && !submissionsLoading &&
+    !submissionsError && !workQuery.isLoading && !workQuery.isError;
+  const counts = useMemo(() => countReviewRows(reviewRows), [reviewRows]);
+  const visibleRows = useMemo(() => sortReviewRows(
+    filterReviewRows(reviewRows, statusFilter, searchQuery), sortBy,
+    submission => resolveSubmissionScore(submission).compositeScore
+  ), [reviewRows, statusFilter, searchQuery, sortBy]);
+  const submissionFilterItems = useMemo<FilterPillItem<SubmissionFilter>[]>(() => [
+    { id: "attention", label: "Needs attention", count: workspaceReady ? counts.attention : "?" },
+    { id: "awaiting", label: "Awaiting upload", count: workspaceReady ? counts.awaiting : "?" },
+    { id: "all", label: "All students", count: workspaceReady ? counts.all : "?" },
+    { id: "completed", label: "Latest analyzed", count: workspaceReady ? counts.completed : "?" },
+    { id: "processing", label: "Processing", count: workspaceReady ? counts.processing : "?" },
+    { id: "rejected", label: "Rejected", count: workspaceReady ? counts.rejected : "?" },
+    { id: "returned", label: "Returned", count: workspaceReady ? counts.returned : "?" },
+  ], [counts, workspaceReady]);
   const handleToggleArchive = useCallback(() => {
     if (!activity) return;
     toggleArchive(activity.id, {
@@ -531,188 +325,12 @@ export default function ActivityDetailPage({
     if (activity) setDeletingActivity(activity);
   }, [activity]);
 
-  const handleSelectSubmission = useCallback(
-    (sub: Submission) => {
-      router.push(`/activities/${id}/submissions/${sub.id}`);
-    },
-    [router, id]
-  );
-
   const handleReupload = useCallback(
     (studentId?: string) => {
       openUpload({ activityId: id, studentId });
     },
     [id, openUpload]
   );
-
-  const handleSelectAttempt = useCallback(
-    (studentId: string, sub: Submission) => {
-      setAttemptOverrides((prev) => {
-        const next = new Map(prev);
-        next.set(studentId, sub);
-        return next;
-      });
-    },
-    []
-  );
-
-  // All selectable submission IDs in current view
-  const allSelectableSubmissionIds = useMemo(() => {
-    if (viewMode === "grouped") {
-      return filteredAndSortedGroups.flatMap((g) =>
-        g.allSubmissions.map((s) => s.id)
-      );
-    }
-    return filteredAndSortedSubmissions.map((s) => s.id);
-  }, [viewMode, filteredAndSortedGroups, filteredAndSortedSubmissions]);
-
-  const totalVisibleAttemptsCount = useMemo(() => {
-    if (viewMode === "grouped") {
-      return filteredAndSortedGroups.reduce((acc, g) => acc + g.attemptCount, 0);
-    }
-    return filteredAndSortedSubmissions.length;
-  }, [viewMode, filteredAndSortedGroups, filteredAndSortedSubmissions]);
-
-  const selectedStudentsCount = useMemo(() => {
-    if (viewMode !== "grouped") return 0;
-    return filteredAndSortedGroups.filter((g) =>
-      g.allSubmissions.some((s) => selectedSubmissionIds.has(s.id))
-    ).length;
-  }, [viewMode, filteredAndSortedGroups, selectedSubmissionIds]);
-
-  const allVisibleSelected = useMemo(
-    () =>
-      allSelectableSubmissionIds.length > 0 &&
-      allSelectableSubmissionIds.every((id) => selectedSubmissionIds.has(id)),
-    [allSelectableSubmissionIds, selectedSubmissionIds]
-  );
-
-  const someVisibleSelected = useMemo(
-    () =>
-      selectedSubmissionIds.size > 0 &&
-      !allVisibleSelected &&
-      allSelectableSubmissionIds.some((id) => selectedSubmissionIds.has(id)),
-    [allSelectableSubmissionIds, selectedSubmissionIds, allVisibleSelected]
-  );
-
-  const handleToggleSelectSubmission = useCallback((sub: Submission) => {
-    setSelectedSubmissionIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(sub.id)) {
-        next.delete(sub.id);
-      } else {
-        next.add(sub.id);
-      }
-      return next;
-    });
-  }, []);
-
-  const handleToggleSelectGroup = useCallback((groupSubmissions: Submission[]) => {
-    const ids = groupSubmissions.map((s) => s.id);
-    setSelectedSubmissionIds((prev) => {
-      const next = new Set(prev);
-      const allIn = ids.every((id) => next.has(id));
-      if (allIn) {
-        ids.forEach((id) => next.delete(id));
-      } else {
-        ids.forEach((id) => next.add(id));
-      }
-      return next;
-    });
-  }, []);
-
-  const handleToggleCardSelect = useCallback(
-    (sub: Submission, groupSubmissions?: Submission[]) => {
-      if (groupSubmissions && groupSubmissions.length > 0) {
-        handleToggleSelectGroup(groupSubmissions);
-      } else {
-        handleToggleSelectSubmission(sub);
-      }
-    },
-    [handleToggleSelectGroup, handleToggleSelectSubmission]
-  );
-
-  const clearSelection = useCallback(() => {
-    setSelectedSubmissionIds(new Set());
-  }, []);
-
-  const handleToggleSelectAll = useCallback(() => {
-    if (allVisibleSelected) {
-      clearSelection();
-    } else {
-      setSelectedSubmissionIds(new Set(allSelectableSubmissionIds));
-    }
-  }, [allVisibleSelected, clearSelection, allSelectableSubmissionIds]);
-
-  const handleBatchDeleteConfirm = async () => {
-    if (selectedSubmissionIds.size === 0) return;
-    try {
-      const result = await batchDeleteMutation.mutateAsync(
-        Array.from(selectedSubmissionIds)
-      );
-      toast.success(
-        `Deleted ${result.deleted_count} ${result.deleted_count === 1 ? "attempt" : "attempts"}.`
-      );
-      clearSelection();
-      setIsBatchDeleteDialogOpen(false);
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to delete selected attempts."
-      );
-    }
-  };
-
-  const handleDeleteSingleAttemptPrompt = useCallback((sub: Submission) => {
-    setSingleAttemptToDelete(sub);
-  }, []);
-
-  const handleDeleteAllStudentAttemptsPrompt = useCallback(
-    (studentName: string, subs: Submission[]) => {
-      setStudentBatchToDelete({ studentName, submissions: subs });
-    },
-    []
-  );
-
-  const handleConfirmDeleteSingleAttempt = async () => {
-    if (!singleAttemptToDelete) return;
-    const targetId = singleAttemptToDelete.id;
-    try {
-      await deleteSingleMutation.mutateAsync(targetId);
-      toast.success("Attempt deleted.");
-      setSelectedSubmissionIds((prev) => {
-        const next = new Set(prev);
-        next.delete(targetId);
-        return next;
-      });
-      setSingleAttemptToDelete(null);
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to delete attempt."
-      );
-    }
-  };
-
-  const handleConfirmDeleteStudentBatch = async () => {
-    if (!studentBatchToDelete) return;
-    const ids = studentBatchToDelete.submissions.map((s) => s.id);
-    const sName = studentBatchToDelete.studentName;
-    try {
-      const result = await batchDeleteMutation.mutateAsync(ids);
-      toast.success(
-        `Deleted ${result.deleted_count} ${result.deleted_count === 1 ? "attempt" : "attempts"} for ${sName}.`
-      );
-      setSelectedSubmissionIds((prev) => {
-        const next = new Set(prev);
-        ids.forEach((id) => next.delete(id));
-        return next;
-      });
-      setStudentBatchToDelete(null);
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to delete student attempts."
-      );
-    }
-  };
 
   if (error) {
     return (
@@ -831,10 +449,7 @@ export default function ActivityDetailPage({
   const wordCount = getWordCount(activity.target_text);
   const isArchived = activity.is_archived;
 
-  const currentListLength =
-    viewMode === "grouped"
-      ? filteredAndSortedGroups.length
-      : filteredAndSortedSubmissions.length;
+  const currentListLength = visibleRows.length;
 
   return (
     <div className="w-full min-w-0 space-y-5 sm:space-y-6 pb-28 sm:pb-24">
@@ -862,6 +477,7 @@ export default function ActivityDetailPage({
         totalScansCount={totalScansCount}
         completionRate={completionRate}
         classDiagnostics={classDiagnostics}
+        progressUnavailable={rosterLoading || rosterError || workQuery.isLoading || workQuery.isError || submissionsLoading || !!submissionsError}
         hasCopiedPrompt={hasCopiedPrompt}
         onCopyPrompt={handleCopyPrompt}
         onUpload={handleOpenUpload}
@@ -871,138 +487,23 @@ export default function ActivityDetailPage({
         onToggleArchive={handleToggleArchive}
       />
 
-      <section aria-labelledby="assigned-work-heading" className="rounded-xl border border-border bg-card p-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h2 id="assigned-work-heading" className="font-heading text-lg font-semibold">Assigned students ({assignedStudents.length})</h2>
-          <ReleaseActivityButton activityId={id} />
-        </div>
-        {workQuery.isError && <div role="alert" className="flex items-center gap-2 text-sm">
-          Could not load work status. <Button variant="outline" size="sm" onClick={() => workQuery.refetch()}>Try again</Button>
-        </div>}
-        {!assignedStudents.length && <p className="text-sm text-muted-foreground">Edit this activity to choose sections or students.</p>}
-        <ul className="divide-y divide-border">
-          {assignedStudents.map((student) => <li key={student.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
-            <span className="text-sm font-medium">{student.full_name}</span>
-            <div className="flex flex-wrap items-center gap-2">
-              <ActivityWorkStatus state={workQuery.data?.find((row) => row.student_id === student.id)} />
-              {submissions?.some(row => row.student_id === student.id) && <WorkCommentsButton
-                scope={{ activityId: id, studentId: student.id }}
-                activeSubmissionId={workQuery.data?.find(row => row.student_id === student.id)?.active_submission_id ?? null} />}
-              <StudentWorkControls activityId={id} studentId={student.id} studentName={student.full_name}
-                state={workQuery.data?.find((row) => row.student_id === student.id) ?? null}
-                attempts={(submissions ?? []).filter((row) => row.student_id === student.id)} />
-            </div>
-          </li>)}
-        </ul>
-      </section>
-      {/* Submissions Section */}
-      <ActivityThreads userId={activity.created_by} activityId={id} onOpen={(target) => router.push(commentThreadHref(target, "teacher"), { scroll: false })} />
-      {commentTarget.kind !== "none" && <div role="status" className="rounded-xl border p-4"><p>Choose a worksheet upload to view its comments.</p><Button variant="outline" onClick={closeComments}>Dismiss</Button></div>}
+      {/* Unified Classroom Submissions Workspace */}
       <section aria-labelledby="submissions-heading" className="space-y-4">
-        {/* Section Header with Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <h2
-              id="submissions-heading"
-              className="text-lg sm:text-xl font-heading font-semibold text-foreground tracking-tight"
-            >
-              Student Submissions
-            </h2>
-            {submissions && (
-              <Badge
-                variant="outline"
-                className="text-xs font-semibold px-2.5 py-0.5 bg-muted/50 text-muted-foreground border-border"
-              >
-                {viewMode === "grouped"
-                  ? `${studentGroups.length} ${studentGroups.length === 1 ? "student" : "students"}`
-                  : `${submissions.length} ${submissions.length === 1 ? "scan" : "scans"}`}
-              </Badge>
-            )}
-          </div>
-
-          {/* Controls: Select All & View Mode Switcher */}
-          {submissions && submissions.length > 0 && (
-            <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
-              {/* Select All Checkbox Header Control */}
-              {allSelectableSubmissionIds.length > 0 && (
-                <div className="flex items-center gap-2 px-2.5 py-1.5 min-h-[36px] sm:min-h-[28px] bg-surface dark:bg-card border border-border/70 rounded-lg text-xs shadow-2xs">
-                  <Checkbox
-                    checked={allVisibleSelected}
-                    indeterminate={someVisibleSelected}
-                    onCheckedChange={handleToggleSelectAll}
-                    aria-label="Select all visible attempts"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleToggleSelectAll}
-                    className="font-medium text-foreground cursor-pointer hover:text-primary transition-colors select-none text-xs"
-                  >
-                    {selectedSubmissionIds.size > 0
-                      ? `${selectedSubmissionIds.size} of ${totalVisibleAttemptsCount} Selected`
-                      : "Select All"}
-                  </button>
-                  {selectedSubmissionIds.size > 0 && (
-                    <button
-                      type="button"
-                      onClick={clearSelection}
-                      className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 ml-1 cursor-pointer transition-colors"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* View Mode Switcher (Grouped by Student vs All Scans) */}
-              <div
-                role="radiogroup"
-                aria-label="Submission display grouping"
-                className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-lg border border-border/60"
-              >
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={viewMode === "grouped"}
-                  onClick={() => setViewMode("grouped")}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] sm:min-h-[28px] text-xs font-medium rounded-md transition-all cursor-pointer",
-                    viewMode === "grouped"
-                      ? "bg-background text-foreground shadow-xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <GraduationCap className="size-3.5" />
-                  <span>By Student</span>
-                </button>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={viewMode === "all"}
-                  onClick={() => setViewMode("all")}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] sm:min-h-[28px] text-xs font-medium rounded-md transition-all cursor-pointer",
-                    viewMode === "all"
-                      ? "bg-background text-foreground shadow-xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <Layers className="size-3.5" />
-                  <span>All Scans</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
+        <h2
+          id="submissions-heading"
+          className="text-lg sm:text-xl font-heading font-semibold text-foreground tracking-tight"
+        >
+          Student work
+        </h2>
         {/* Filter & Search Bar */}
-        {submissions && submissions.length > 0 && (
+        {(assignedStudents.length > 0 || !workspaceReady) && (
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
             {/* Primary controls: Search + Filter Pills */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 min-w-0 flex-1">
-              {/* Search Student Input with '/' shortcut hint */}
               <SearchInput
                 ref={searchInputRef}
-                placeholder="Search student name... (/)"
+                showShortcut={false}
+                placeholder="Search student name"
                 aria-label="Search submissions by student name"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -1013,15 +514,15 @@ export default function ActivityDetailPage({
               <FilterPills
                 items={submissionFilterItems}
                 value={statusFilter}
-                onChange={(newFilter) => setStatusFilter(newFilter)}
+                onChange={setStatusFilter}
                 ariaLabel="Filter submissions by status"
                 containerClassName="min-w-0 flex-1"
+                pillClassName="min-h-11 sm:min-h-8"
               />
             </div>
 
             {/* Secondary controls: Sort Selector */}
             <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-border/50">
-              {/* Sort Selector */}
               <DropdownMenu>
                 <DropdownMenuTrigger
                   className="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 min-h-[40px] sm:min-h-[36px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
@@ -1029,6 +530,7 @@ export default function ActivityDetailPage({
                 >
                   <ArrowUpDown className="size-3 text-muted-foreground shrink-0" />
                   <span className="font-medium text-foreground">
+                    {sortBy === "attention" && "Needs attention first"}
                     {sortBy === "newest" && "Newest First"}
                     {sortBy === "oldest" && "Oldest First"}
                     {sortBy === "name_asc" && "Student (A-Z)"}
@@ -1037,9 +539,13 @@ export default function ActivityDetailPage({
                   </span>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem onClick={() => setSortBy("attention")} className="min-h-11 cursor-pointer justify-between text-xs sm:min-h-9">
+                    <span>Needs attention first</span>
+                    {sortBy === "attention" && <Check className="size-3.5 text-primary" />}
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setSortBy("newest")}
-                    className="cursor-pointer text-xs justify-between min-h-[36px]"
+                    className="cursor-pointer text-xs justify-between min-h-11 sm:min-h-9"
                   >
                     <span>Newest First</span>
                     {sortBy === "newest" && (
@@ -1048,7 +554,7 @@ export default function ActivityDetailPage({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setSortBy("oldest")}
-                    className="cursor-pointer text-xs justify-between min-h-[36px]"
+                    className="cursor-pointer text-xs justify-between min-h-11 sm:min-h-9"
                   >
                     <span>Oldest First</span>
                     {sortBy === "oldest" && (
@@ -1057,7 +563,7 @@ export default function ActivityDetailPage({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setSortBy("name_asc")}
-                    className="cursor-pointer text-xs justify-between min-h-[36px]"
+                    className="cursor-pointer text-xs justify-between min-h-11 sm:min-h-9"
                   >
                     <span>Student (A-Z)</span>
                     {sortBy === "name_asc" && (
@@ -1066,7 +572,7 @@ export default function ActivityDetailPage({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setSortBy("name_desc")}
-                    className="cursor-pointer text-xs justify-between min-h-[36px]"
+                    className="cursor-pointer text-xs justify-between min-h-11 sm:min-h-9"
                   >
                     <span>Student (Z-A)</span>
                     {sortBy === "name_desc" && (
@@ -1075,7 +581,7 @@ export default function ActivityDetailPage({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setSortBy("score_desc")}
-                    className="cursor-pointer text-xs justify-between min-h-[36px]"
+                    className="cursor-pointer text-xs justify-between min-h-11 sm:min-h-9"
                   >
                     <span>Highest Score</span>
                     {sortBy === "score_desc" && (
@@ -1090,17 +596,17 @@ export default function ActivityDetailPage({
 
         {/* Screen Reader Filter & Search Live Announcer */}
         <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-          {submissions && submissions.length > 0 && (
+          {workspaceReady && (
             <span>
-              {`Showing ${currentListLength} ${viewMode === "grouped" ? "student submissions" : "submissions"}${
-                statusFilter !== "all" ? ` filtered by ${statusFilter}` : ""
+              {`Showing ${currentListLength} students${
+                statusFilter !== "all" ? ` filtered by ${submissionFilterItems.find(item => item.id === statusFilter)?.label}` : ""
               }${searchQuery ? ` matching "${searchQuery}"` : ""}.`}
             </span>
           )}
         </div>
 
         {/* Search Results Filter Indicator */}
-        {searchQuery && submissions && submissions.length > 0 && (
+        {searchQuery && workspaceReady && (
           <div
             role="status"
             aria-live="polite"
@@ -1123,172 +629,44 @@ export default function ActivityDetailPage({
           </div>
         )}
 
-        {/* Submissions Content Grid */}
-        {submissionsLoading ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden"
-              >
-                <Skeleton className="aspect-4/3 w-full rounded-none" />
-                <div className="p-3.5 space-y-2">
-                  <Skeleton className="h-4 w-2/3" />
-                  <Skeleton className="h-4 w-1/3" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : submissionsError ? (
-          <div
-            role="alert"
-            className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl border border-destructive/20 bg-destructive/10 text-destructive"
-          >
-            <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 shrink-0" />
-              <span className="text-sm font-medium">
-                Couldn&apos;t load submissions. Check your connection and try
-                again.
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetchSubmissions()}
-              className="border-destructive/30 hover:bg-destructive/10 text-destructive cursor-pointer"
-            >
-              <RotateCcw className="w-4 h-4 mr-1.5" />
-              Retry
-            </Button>
-          </div>
-        ) : submissions?.length === 0 ? (
-          /* Empty state: No submissions at all */
-          <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
-            <Empty className="py-14 border-0">
-              <EmptyMedia
-                variant="icon"
-                className="bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300"
-              >
-                <Inbox className="w-6 h-6" />
-              </EmptyMedia>
-              <EmptyHeader>
-                <EmptyTitle className="text-lg sm:text-xl">
-                  No submissions yet
-                </EmptyTitle>
-                <EmptyDescription className="text-xs sm:text-sm max-w-sm mx-auto">
-                  Upload a student&apos;s handwriting worksheet for this activity
-                  to begin AI diagnostic assessment.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent className="flex items-center justify-center w-full sm:w-auto px-4 sm:px-0">
-                <Button
-                  className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl cursor-pointer"
-                  onClick={() => openUpload({ activityId: id })}
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  <span>Upload Submission</span>
-                </Button>
-              </EmptyContent>
-            </Empty>
-          </div>
-        ) : currentListLength === 0 ? (
-          /* Empty state: Filters returned 0 results */
-          <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
-            <Empty className="py-12 border-0">
-              <EmptyMedia
-                variant="icon"
-                className="bg-muted text-muted-foreground"
-              >
-                <SearchX className="w-6 h-6" />
-              </EmptyMedia>
-              <EmptyHeader>
-                <EmptyTitle className="text-lg sm:text-xl">
-                  No matching submissions
-                </EmptyTitle>
-                <EmptyDescription className="text-xs sm:text-sm max-w-sm mx-auto">
-                  No student submissions match your current search or status
-                  filter.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent className="flex gap-2">
-                {searchQuery && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setSearchQuery("")}
-                    className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl cursor-pointer"
-                  >
-                    Clear Search
-                  </Button>
-                )}
-                {statusFilter !== "all" && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => setStatusFilter("all")}
-                    className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl cursor-pointer"
-                  >
-                    View All
-                  </Button>
-                )}
-              </EmptyContent>
-            </Empty>
-          </div>
-        ) : (
-          /* Submissions Cards Grid */
-          <div
-            role="region"
-            aria-label="Student submissions list"
-            className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4"
-          >
-            {viewMode === "grouped"
-              ? filteredAndSortedGroups.map((group) => {
-                  const activeSub =
-                    attemptOverrides.get(group.studentId) ??
-                    group.latestSubmission;
-
-                  const groupAttemptIds = group.allSubmissions.map((s) => s.id);
-                  const isGroupSelected =
-                    groupAttemptIds.length > 0 &&
-                    groupAttemptIds.every((id) => selectedSubmissionIds.has(id));
-                  const isGroupIndeterminate =
-                    !isGroupSelected &&
-                    groupAttemptIds.some((id) => selectedSubmissionIds.has(id));
-
-                  return (
-                    <SubmissionCard
-                      key={group.studentId}
-                      submission={activeSub}
-                      studentName={group.studentName}
-                      attemptCount={group.attemptCount}
-                      allSubmissions={group.allSubmissions}
-                      onSelectAttempt={handleSelectAttempt}
-                      onSelect={handleSelectSubmission}
-                      onReupload={handleReupload}
-                      isSelected={isGroupSelected}
-                      isIndeterminate={isGroupIndeterminate}
-                      onToggleSelect={handleToggleCardSelect}
-                      onDeleteSingleAttempt={handleDeleteSingleAttemptPrompt}
-                      onDeleteAllStudentAttempts={
-                        handleDeleteAllStudentAttemptsPrompt
-                      }
-                    />
-                  );
-                })
-              : filteredAndSortedSubmissions.map((sub) => (
-                  <SubmissionCard
-                    key={sub.id}
-                    submission={sub}
-                    studentName={sub.student?.full_name ?? "Unknown Student"}
-                    onSelect={handleSelectSubmission}
-                    onReupload={handleReupload}
-                    isSelected={selectedSubmissionIds.has(sub.id)}
-                    onToggleSelect={handleToggleCardSelect}
-                    onDeleteSingleAttempt={handleDeleteSingleAttemptPrompt}
-                  />
-                ))}
-          </div>
-        )}
+        <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-warm">
+            <ActivityReviewQueue
+              activityId={id}
+              rows={visibleRows}
+              assignedStudentCount={assignedStudents.length}
+              rosterLoading={rosterLoading}
+              rosterError={rosterError}
+              workError={workQuery.isError}
+              workLoading={workQuery.isLoading}
+              uploadsLoading={submissionsLoading}
+              uploadsError={!!submissionsError}
+              searchQuery={searchQuery}
+              onClearFilters={() => { setSearchQuery(""); setStatusFilter("all"); }}
+              onRetryRoster={() => { void refetchStudents(); }}
+              onRetryWork={() => { void workQuery.refetch(); }}
+              onRetryUploads={() => { void refetchSubmissions(); }}
+              onUpload={handleReupload}
+              onEdit={handleEditActivity}
+            />
+        </div>
       </section>
-
+      <details className="group/threads rounded-xl sm:rounded-2xl border border-border bg-surface dark:bg-card p-4 sm:p-6 shadow-warm transition-all">
+        <summary className="cursor-pointer py-1 font-heading text-base sm:text-lg font-semibold text-foreground flex items-center justify-between focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg select-none list-none [&::-webkit-details-marker]:hidden">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+            <span>Classroom Conversations & Comments</span>
+          </div>
+          <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 group-open/threads:rotate-180" aria-hidden="true" />
+        </summary>
+        <div className="pt-4 border-t border-border/50 mt-4">
+          <ActivityThreads
+            userId={activity.created_by}
+            activityId={id}
+            onOpen={(target) => router.push(commentThreadHref(target, "teacher"), { scroll: false })}
+          />
+        </div>
+      </details>
+      {commentTarget.kind !== "none" && <div role="status" className="rounded-xl border p-4"><p>Choose a worksheet upload to view its comments.</p><Button variant="outline" onClick={closeComments}>Dismiss</Button></div>}
       {/* Edit Activity Dialog */}
       <EditActivityDialog
         activity={editingActivity}
@@ -1314,163 +692,6 @@ export default function ActivityDetailPage({
         open={!!deletingActivity}
         onOpenChange={(open) => !open && setDeletingActivity(null)}
       />
-
-      {/* Floating Batch Actions Bar */}
-      <FloatingActionBar
-        selectedCount={selectedSubmissionIds.size}
-        totalCount={totalVisibleAttemptsCount}
-        itemLabel={{ singular: "attempt", plural: "attempts" }}
-        allSelected={allVisibleSelected}
-        onSelectAll={handleToggleSelectAll}
-        onClearSelection={clearSelection}
-        ariaLabel="Batch attempt actions"
-      >
-        {selectedStudentsCount > 0 && (
-          <span className="text-xs text-muted-foreground hidden sm:inline mr-1">
-            ({selectedStudentsCount}{" "}
-            {selectedStudentsCount === 1 ? "student" : "students"})
-          </span>
-        )}
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={() => setIsBatchDeleteDialogOpen(true)}
-          disabled={batchDeleteMutation.isPending}
-          className="h-8 rounded-full text-xs font-semibold gap-1.5 px-3.5 cursor-pointer shadow-xs"
-        >
-          <Trash2 className="size-3.5" />
-          <span>Delete Attempts</span>
-        </Button>
-      </FloatingActionBar>
-
-      {/* Batch Delete Confirmation Alert Dialog */}
-      <AlertDialog
-        open={isBatchDeleteDialogOpen}
-        onOpenChange={setIsBatchDeleteDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Delete {selectedSubmissionIds.size}{" "}
-              {selectedSubmissionIds.size === 1 ? "attempt" : "attempts"}?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the uploaded worksheet{" "}
-              {selectedSubmissionIds.size === 1 ? "photo" : "photos"}, computer
-              vision analysis, comments, and recorded rubric scores for the selected{" "}
-              {selectedSubmissionIds.size === 1 ? "attempt" : "attempts"}. This
-              action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={batchDeleteMutation.isPending}
-              onClick={() => setIsBatchDeleteDialogOpen(false)}
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={batchDeleteMutation.isPending}
-              onClick={handleBatchDeleteConfirm}
-            >
-              {batchDeleteMutation.isPending ? (
-                <>
-                  <Loader2 className="size-4 animate-spin mr-1.5" />
-                  Deleting...
-                </>
-              ) : (
-                `Delete ${selectedSubmissionIds.size} ${
-                  selectedSubmissionIds.size === 1 ? "Attempt" : "Attempts"
-                }`
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Single Attempt Delete Confirmation Dialog */}
-      <AlertDialog
-        open={!!singleAttemptToDelete}
-        onOpenChange={(open) => !open && setSingleAttemptToDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this attempt?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this uploaded worksheet photo,
-              computer vision analysis, comments, and recorded rubric scores. This action
-              cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={deleteSingleMutation.isPending}
-              onClick={() => setSingleAttemptToDelete(null)}
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={deleteSingleMutation.isPending}
-              onClick={handleConfirmDeleteSingleAttempt}
-            >
-              {deleteSingleMutation.isPending ? (
-                <>
-                  <Loader2 className="size-4 animate-spin mr-1.5" />
-                  Deleting...
-                </>
-              ) : (
-                "Delete Attempt"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Student All Attempts Delete Confirmation Dialog */}
-      <AlertDialog
-        open={!!studentBatchToDelete}
-        onOpenChange={(open) => !open && setStudentBatchToDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Delete all {studentBatchToDelete?.submissions.length} attempts for{" "}
-              {studentBatchToDelete?.studentName}?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete all{" "}
-              {studentBatchToDelete?.submissions.length} uploaded worksheet
-              photos, computer vision analysis, comments, and recorded rubric scores for{" "}
-              {studentBatchToDelete?.studentName} on this activity. This action
-              cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={batchDeleteMutation.isPending}
-              onClick={() => setStudentBatchToDelete(null)}
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={batchDeleteMutation.isPending}
-              onClick={handleConfirmDeleteStudentBatch}
-            >
-              {batchDeleteMutation.isPending ? (
-                <>
-                  <Loader2 className="size-4 animate-spin mr-1.5" />
-                  Deleting...
-                </>
-              ) : (
-                `Delete All ${studentBatchToDelete?.submissions.length} Attempts`
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

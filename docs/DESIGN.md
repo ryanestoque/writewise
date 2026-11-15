@@ -488,3 +488,38 @@ The parent activity destination works independently of collapsed lists/mobile ta
 Parent settings and teacher settings each include a Notifications section with an Email updates card, a labeled “Email me” switch and explicit Save changes button. The parent helper is “Get email when work needs another attempt or an activity is due soon. In-app notifications stay on.” Teacher copy states “Classroom emails currently go to parents. Your in-app notifications stay on.” There is no bell opt-out.
 
 Render the actual stored boolean, including false. An unavailable profile read shows loading/retry rather than assuming true. Keep saved/draft values separate, disable duplicate/pending writes, revert draft to the last confirmed value on failure, and announce fixed success/error feedback. Empty/malformed updates are failures. Reload settings reconciles uncertain saves. Account changes abort requests and invalidate old responses; every transport pins its verified account token. Preserve existing profile/password controls, keyboard label association, focus and responsive layout.
+
+
+### Activity detail: review queue (2026-11-15)
+
+Activity detail opens with searchable Student work, defaulting to Needs attention. All students includes assigned students without uploads. The primary worksheet is the counted attempt; a newer rejected or returned upload receives a separate warning and replacement action. When no attempt counts, the newest upload is available for inspection only after work status loads. Unavailable roster or work reads show retry actions rather than empty setup guidance or invented completion counts.
+
+Worksheet upload history and batch deletion remain in an expandable secondary section. Its filters explicitly refer to the latest upload per student; conversations are expandable below it. The slash shortcut focuses the primary queue search. Mobile workflow controls use 44px targets, with compact desktop sizing.
+
+Validation: helper checks cover counted-result preservation, newest-upload fallback, empty histories, and attention classification. Authenticated desktop/mobile visual QA remains pending because the review browser has no signed-in teacher session.
+
+### Activity detail critique refinements (2026-11-15)
+
+Exception rows emphasize Upload replacement or Review newer upload, while retaining the counted worksheet as a separate secondary destination. Counted and latest uploads show their timestamps in Manila time. Comments, work settings and secondary upload inspection sit under More options. Individual unavailable work states offer Retry work status without assuming that no worksheet counts.
+
+Historical attempt choices include textual status alongside the colored dot. Batch selection explicitly includes older attempts in By Student view. Before deletion, show every selected attempt with student, timestamp, status and a hidden-in-current-view label, plus total students and hidden attempts. Missing selected records or an unsuccessful worksheet-history read block deletion until the teacher cancels and reconciles the selection.
+
+Refinement validation: ESLint, TypeScript and seven focused helper checks pass. Signed-in browser inspection covered the queue and a three-attempt deletion preview (two hidden attempts) at 1440px desktop and 390px mobile widths, with no horizontal overflow. The preview was canceled; no worksheets were deleted. Newer-upload exception actions and individual missing-state recovery still need live scenario coverage. Backend Ruff remains blocked by the missing Python 3.13 interpreter.
+
+Instructions and target text are expandable with a short preview. The queue preserves the counted worksheet while surfacing newer completed uploads in Needs attention with a direct link. Rejected uploads show code-based corrective guidance; returned uploads show the reason and teacher note beside replacement actions.
+
+Share results and grades remains available with zero Draft worksheets because eligible point grades may exist independently. Loading and failed work-status reads disable sharing and offer retry. The UI reports Draft worksheet counts without claiming point-grade eligibility; confirmation explains cross-section scope and server validation and links to the gradebook. Queue, sharing, conversation, history sort and batch-delete controls use mobile touch targets. History search no longer advertises the primary queue's slash shortcut.
+
+Validation: four review helper checks, ESLint and TypeScript pass. Authenticated desktop/mobile QA remains pending because browser access is locked. Check long content, points-only sharing, replacement guidance and both review links before release. Ruff could not run because the local backend virtual environment points to a missing Python interpreter.
+
+### Activity detail: shared student workspace (2026-11-16)
+
+The activity detail workspace defaults to Roster List and Needs attention, with Awaiting upload and All students available beside the latest-upload status filters. Both layouts use the same assigned-student rows, filter counts, sorting, search results and live announcements. Visual Grid includes assigned students without uploads, with a student-specific upload action; excused students do not enter Awaiting upload. Unknown work status offers a retry instead of assuming a missing worksheet. Filter counts are unavailable until roster, worksheet and work-status reads succeed.
+
+Latest analyzed means the newest upload finished analysis; it does not imply teacher grading or parent sharing. A newer rejected upload stays in Rejected even when an older official worksheet is completed. The roster retains separate official and latest-attempt destinations. Every sort applies to both layouts, with students without uploads last for date sorts.
+
+Batch selection is available only in Visual Grid. Each checkbox selects the displayed attempt, including an explicitly chosen historical attempt; Select all follows the same rule. Switching layouts clears selection. The deletion preview continues to list historical or filtered-out selections before confirmation. Rejected cards expose a keyboard-accessible View rejected upload button alongside Re-upload. Empty assignment actions open activity editing to choose students or sections.
+
+Validation: TypeScript, ESLint and ten focused review/selection helper checks pass. Backend Ruff passes via the installed executable. Signed-in browser QA at 1440px desktop and 390px mobile confirmed equal roster/grid counts, ascending/descending roster sorting, no-upload rows in both layouts, single-attempt selection and clearing on layout change, and focusable rejected-upload details through historical attempt selection. Neither viewport had horizontal overflow. No worksheet uploads, sharing, edits or deletions were submitted.
+
+Activity detail simplification: the Student work section now uses the roster exclusively. Its redundant submitted-count badge, Share results and grades button and helper text, and Visual Grid / Roster List switcher have been removed. Search, status filters, sorting and individual student workflow controls remain. Gallery-only selection and deletion UI are removed with the grid; worksheet detail pages remain the review destination.

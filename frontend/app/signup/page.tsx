@@ -507,6 +507,18 @@ function SignUpForm() {
               </div>
             )}
 
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Read our{" "}
+              <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
+                Privacy Policy (opens in a new tab)
+              </Link>{" "}
+              and{" "}
+              <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
+                Terms of Service (opens in a new tab)
+              </Link>{" "}
+              before creating an account. Account registration does not replace the separate paper consent for a child’s participation.
+            </p>
+
             <Button
               id="signup-submit"
               type="submit"

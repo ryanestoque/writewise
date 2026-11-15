@@ -43,15 +43,15 @@ const steps = [
 const trustPillars = [
   {
     title: "Students stay on paper",
-    body: "Learners write on physical ruled worksheets with a pencil. No student accounts, passwords, or screen time required.",
+    body: "No student accounts or screen time required.",
   },
   {
     title: "Automatic photo privacy",
-    body: "Location coordinates (GPS), timestamps, and device metadata are automatically stripped from every worksheet photo upon upload.",
+    body: "Embedded location and device metadata are removed before storage.",
   },
   {
-    title: "Role-scoped visibility",
-    body: "Teachers see only the learners enrolled in their classes, and parents see only their linked children’s worksheets and progress.",
+    title: "Access stays restricted",
+    body: "Records are available only to authorized teachers and linked parents.",
   },
 ];
 
@@ -215,6 +215,9 @@ export default async function Home() {
                 </div>
               ))}
             </div>
+            <Link href="/privacy" className={styles.trustPolicyLink}>
+              Read our Privacy Policy
+            </Link>
           </div>
         </section>
 
@@ -267,6 +270,10 @@ export default async function Home() {
             <p className={styles.footerCopy}>
               &copy; {new Date().getFullYear()} WriteWise (80-4).
             </p>
+            <nav aria-label="Legal" className={styles.footerLegal}>
+              <Link href="/privacy">Privacy Policy</Link>
+              <Link href="/terms">Terms of Service</Link>
+            </nav>
           </div>
         </div>
       </footer>

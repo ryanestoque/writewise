@@ -397,6 +397,8 @@ export function StudentWorkControls(props: {
     <>
       <Button
         ref={trigger}
+        className="min-h-11 sm:min-h-9"
+        aria-label={`Work settings for ${props.studentName}`}
         size="sm"
         variant="outline"
         onClick={() => setOpen(true)}
@@ -421,7 +423,7 @@ export function StudentWorkControls(props: {
 
 export function ReleaseActivityButton({ activityId }: { activityId: string }) {
   const focusTarget = useRef<HTMLSpanElement>(null);
-  const { data: states } = useActivityWork(activityId);
+  const { data: states, isLoading, isError, refetch } = useActivityWork(activityId);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mutation = useReleaseActivity();
@@ -439,17 +441,22 @@ export function ReleaseActivityButton({ activityId }: { activityId: string }) {
     }
   }
   return (
-    <span ref={focusTarget} tabIndex={-1} className="inline-flex">
+    <span ref={focusTarget} tabIndex={-1} className="inline-flex flex-col items-start gap-2">
       <Button
         variant="outline"
-        disabled={!count}
+        className="min-h-11 sm:min-h-9"
+        disabled={isLoading || isError || mutation.isPending}
         onClick={() => {
           setError(null);
           setOpen(true);
         }}
       >
-        Release activity
+        Share results and grades
       </Button>
+      <span className="text-xs text-muted-foreground" role="status">
+        {isLoading ? "Loading worksheet status…" : isError ? "Worksheet status unavailable." : `${count} draft worksheet results. Point grades checked separately.`}
+      </span>
+      {isError && <Button variant="outline" className="min-h-11 sm:min-h-9" onClick={() => void refetch()}>Retry status</Button>}
       <Dialog
         open={open}
         onOpenChange={(next) => {
@@ -467,19 +474,20 @@ export function ReleaseActivityButton({ activityId }: { activityId: string }) {
             </DialogDescription>
           </DialogHeader>
           <p className="text-muted-foreground text-sm">
-            {count} draft worksheet {count === 1 ? "result is" : "results are"} currently ready.
-            Additional point grades may be released. Review point grades in the gradebook before confirming.
+            {count} worksheet {count === 1 ? "result has" : "results have"} Draft status.
+            Point grades may be eligible even without draft worksheets. The server checks eligibility when sharing and reports what was shared.
           </p>
+          <a href="/gradebook" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Review point grades in gradebook</a>
           {error && (
             <p role="alert" className="text-destructive text-sm">
               {error}
             </p>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>
+            <Button className="min-h-11 sm:min-h-9" variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>
               Cancel
             </Button>
-            <Button onClick={release} disabled={mutation.isPending}>
+            <Button className="min-h-11 sm:min-h-9" onClick={release} disabled={mutation.isPending}>
               {mutation.isPending ? "Releasing…" : "Release all eligible results and grades"}
             </Button>
           </DialogFooter>

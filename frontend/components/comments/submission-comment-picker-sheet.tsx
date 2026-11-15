@@ -12,7 +12,7 @@ export function WorkCommentsButton({ scope, activeSubmissionId }: {
 }) {
   const [open, setOpen] = useState(false);
   return <Sheet open={open} onOpenChange={setOpen}>
-    <SheetTrigger render={<Button variant="outline" size="sm" />}>Comments</SheetTrigger>
+    <SheetTrigger render={<Button variant="outline" size="sm" className="min-h-11 sm:min-h-9" />}>Comments</SheetTrigger>
     <SheetContent className="w-full sm:max-w-lg">
       <SheetHeader className="shrink-0 border-b pr-14">
         <SheetTitle>Private comments</SheetTitle>
