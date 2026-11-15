@@ -39,13 +39,22 @@ export default async function TeacherLayout({
     (user.user_metadata?.school_name as string) ||
     undefined;
 
+  // Query pending submissions awaiting teacher review
+  const { count: pendingSubmissionsCount } = await supabase
+    .from("activity_work_state")
+    .select("active_submission_id", { count: "exact", head: true })
+    .eq("work_status", "Turned in");
+
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
 
   return (
     <TeacherModalsProvider>
       <SidebarProvider defaultOpen={defaultOpen}>
-        <TeacherSidebar user={{ fullName, email, schoolName }} />
+        <TeacherSidebar
+          user={{ fullName, email, schoolName }}
+          pendingSubmissionsCount={pendingSubmissionsCount ?? 0}
+        />
         <SidebarInset>
           <TeacherHeader userId={user.id} />
           <div className="flex-1 min-w-0 w-full px-4 sm:px-6 py-6 space-y-6">

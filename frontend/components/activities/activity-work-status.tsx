@@ -15,9 +15,12 @@ export function useActivityNow() {
 
 export function ActivityWorkStatus({
   state,
+  unavailable = false,
 }: {
   state?: ActivityWorkState | null;
+  unavailable?: boolean;
 }) {
+  if (!state && unavailable) return <span className="text-sm text-muted-foreground">Work status unavailable</span>;
   if (!state) return <span className="text-sm text-muted-foreground">Loading work status…</span>;
   const work = { status: state.work_status, late: state.late };
   return (

@@ -48,7 +48,7 @@ export interface SubmissionCardProps {
   onSelectAttempt?: (studentId: string, sub: Submission) => void;
   isSelected?: boolean;
   isIndeterminate?: boolean;
-  onToggleSelect?: (sub: Submission, allSubmissions?: Submission[]) => void;
+  onToggleSelect?: (sub: Submission) => void;
   onDeleteSingleAttempt?: (sub: Submission) => void;
   onDeleteAllStudentAttempts?: (studentName: string, subs: Submission[]) => void;
 }
@@ -154,7 +154,7 @@ export const SubmissionCard = memo(function SubmissionCard({
           ) : (
             <div className="size-full flex flex-col items-center justify-center gap-1.5 text-muted-foreground p-4 pointer-events-none">
               <FileText className="size-8 stroke-[1.5]" aria-hidden="true" />
-              <span className="text-[11px] font-medium tracking-tight">
+              <span className="text-xs font-medium tracking-tight">
                 Worksheet Preview
               </span>
             </div>
@@ -166,7 +166,7 @@ export const SubmissionCard = memo(function SubmissionCard({
           <div className="absolute top-2.5 left-2.5 z-20">
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="relative inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[40px] sm:min-h-[36px] rounded-full bg-background/95 text-foreground dark:bg-card/95 border border-border shadow-xs backdrop-blur-xs hover:bg-background transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                className="relative inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[44px] sm:min-h-[36px] rounded-full bg-background/95 text-foreground dark:bg-card/95 border border-border shadow-xs backdrop-blur-xs hover:bg-background transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label={`Switch submission attempt for ${studentName}. Currently showing attempt ${currentAttemptIndex} of ${attemptCount}.`}
               >
                 <History className="size-3 text-muted-foreground" aria-hidden="true" />
@@ -205,11 +205,11 @@ export const SubmissionCard = memo(function SubmissionCard({
                               aria-hidden="true"
                             />
                             <span className="truncate">
-                              Attempt {attemptNum} {isLatest && "(Latest)"}
+                              Attempt {attemptNum} · {subConfig.label} {isLatest && "(Latest)"}
                             </span>
                           </div>
                           <div className="flex items-center gap-1.5 text-muted-foreground shrink-0">
-                            <span className="text-[11px] tabular-nums">
+                            <span className="text-xs tabular-nums">
                               {getRelativeTime(sub.created_at)}
                             </span>
                             {isCurrent && (
@@ -232,7 +232,7 @@ export const SubmissionCard = memo(function SubmissionCard({
                             }}
                             title={`Delete Attempt ${attemptNum}`}
                             aria-label={`Delete Attempt ${attemptNum}`}
-                            className="size-8 min-h-[32px] min-w-[32px] sm:size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-70 group-hover/item:opacity-100 focus-visible:opacity-100 cursor-pointer shrink-0"
+                            className="size-8 min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-70 group-hover/item:opacity-100 focus-visible:opacity-100 cursor-pointer shrink-0"
                           >
                             <Trash2 className="size-3.5" aria-hidden="true" />
                           </Button>
@@ -269,7 +269,7 @@ export const SubmissionCard = memo(function SubmissionCard({
           >
             <label
               className={cn(
-                "inline-flex items-center justify-center min-h-[40px] min-w-[40px] p-2 rounded-lg transition-all shadow-2xs backdrop-blur-xs cursor-pointer",
+                "inline-flex items-center justify-center min-h-[44px] min-w-[40px] p-2 rounded-lg transition-all shadow-2xs backdrop-blur-xs cursor-pointer",
                 isSelected
                   ? "bg-background/95 dark:bg-card/95"
                   : "bg-background/85 dark:bg-card/85 hover:bg-background opacity-85 group-hover:opacity-100 hover:opacity-100"
@@ -278,8 +278,8 @@ export const SubmissionCard = memo(function SubmissionCard({
               <Checkbox
                 checked={isSelected}
                 indeterminate={isIndeterminate}
-                onCheckedChange={() => onToggleSelect(submission, allSubmissions)}
-                aria-label={`Select ${hasMultipleAttempts ? `all ${attemptCount} attempts for ${studentName}` : `attempt by ${studentName}`}`}
+                onCheckedChange={() => onToggleSelect(submission)}
+                aria-label={`Select displayed attempt ${currentAttemptIndex} of ${attemptCount} for ${studentName}`}
                 className="size-4"
               />
             </label>
@@ -310,7 +310,6 @@ export const SubmissionCard = memo(function SubmissionCard({
               type="button"
               onClick={() => onSelect(submission)}
               tabIndex={-1}
-              aria-hidden="true"
               className="text-left font-semibold text-foreground truncate hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded-xs max-w-full inline-block"
             >
               {studentName}
@@ -324,7 +323,7 @@ export const SubmissionCard = memo(function SubmissionCard({
                 <TooltipTrigger
                   type="button"
                   className={cn(
-                    "inline-flex items-center gap-1.5 text-[11px] font-semibold rounded-md border shadow-2xs cursor-help px-2 py-0.5 min-h-[24px] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 transition-all",
+                    "inline-flex items-center gap-1.5 text-xs font-semibold rounded-md border shadow-2xs cursor-help px-2 py-0.5 min-h-[24px] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 transition-all",
                     scoreBand.className
                   )}
                   aria-label={`Diagnostic score: ${scoreBand.label}. ${scoreBand.band} Penmanship: ${scoreBand.description}`}
@@ -340,7 +339,7 @@ export const SubmissionCard = memo(function SubmissionCard({
                     {scoreBand.band} Penmanship{" "}
                     {resolvedScore.source === "manual" && "(Teacher Rubric)"}
                   </p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {scoreBand.description}
                   </p>
                 </TooltipContent>
@@ -354,7 +353,7 @@ export const SubmissionCard = memo(function SubmissionCard({
                 <AlertCircle className="size-3 shrink-0" aria-hidden="true" />
                 <span>{rejection.label}</span>
               </p>
-              <p className="text-[11px] text-muted-foreground line-clamp-1">
+              <p className="text-xs text-muted-foreground line-clamp-1">
                 {rejection.detail}
               </p>
             </div>
@@ -373,33 +372,43 @@ export const SubmissionCard = memo(function SubmissionCard({
           <time
             dateTime={submission.created_at}
             title={formatDate(submission.created_at)}
-            className="text-[11px] sm:text-xs text-muted-foreground tabular-nums"
+            className="text-xs sm:text-xs text-muted-foreground tabular-nums"
           >
             {getRelativeTime(submission.created_at)}
           </time>
 
           {submission.status === "rejected" ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onReupload(submission.student_id)}
-              aria-label={`Re-upload worksheet for ${studentName}. Rejection reason: ${rejection.label}.`}
-              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-3 sm:px-2.5 text-xs font-semibold text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:bg-brand-50/50 dark:hover:bg-brand-950/50 rounded-lg gap-1.5 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <Camera className="size-3.5" aria-hidden="true" />
-              <span>Re-upload</span>
-            </Button>
+            <div className="flex flex-wrap justify-end gap-1.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onSelect(submission)}
+                aria-label={`View rejected upload for ${studentName}. ${rejection.label}. ${rejection.detail}.`}
+                className="min-h-11 sm:min-h-9 rounded-lg text-xs"
+              >
+                View rejected upload
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onReupload(submission.student_id)}
+                aria-label={`Re-upload worksheet for ${studentName}. Rejection reason: ${rejection.label}.`}
+                className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3 sm:px-2.5 text-xs font-semibold text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:bg-brand-50/50 dark:hover:bg-brand-950/50 rounded-lg gap-1.5 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Camera className="size-3.5" aria-hidden="true" />
+                <span>Re-upload</span>
+              </Button>
+            </div>
           ) : (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onSelect(submission)}
-              aria-haspopup="dialog"
               aria-label={accessibleLabel}
-              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-3 sm:px-2.5 text-xs font-medium text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:bg-brand-50/50 dark:hover:bg-brand-950/50 rounded-lg gap-1.5 group/btn cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+              className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3 sm:px-2.5 text-xs font-medium text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:bg-brand-50/50 dark:hover:bg-brand-950/50 rounded-lg gap-1.5 group/btn cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
             >
               <span>
-                {resolvedScore.isScored ? "Inspect details" : "Score rubric"}
+                {submission.status === "processing" ? "View processing upload" : submission.status === "returned" ? "View returned worksheet" : resolvedScore.isScored ? "Review result" : "Score rubric"}
               </span>
               <ArrowRight
                 className="size-3.5 transition-transform group-hover/btn:translate-x-0.5 motion-reduce:transform-none"
