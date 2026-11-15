@@ -28,6 +28,14 @@ Parent Progress includes Grades, grouped by teacher with released-only totals. P
 
 ---
 
+## Browser tab titles
+
+Page titles use `Page Name | WriteWise`, with the suffix supplied by the root Next.js metadata template. Server pages export their page name as metadata; client pages use a server layout for metadata. Nested activity and submission routes declare their own titles so they do not inherit the activity list title.
+
+The homepage retains `WriteWise | Cursive practice, turned into next steps` as an absolute title. Submission assessment retains its contextual student-and-prompt title once data loads, with `Submission Assessment | WriteWise` as the fallback.
+
+Validation: ESLint, TypeScript (after regenerating Next.js route types), and backend Ruff pass. Local HTTP checks confirmed rendered titles for the homepage, sign in, sign up, password reset, invitation acceptance, privacy policy, and terms. Authenticated portal navigation and contextual submission titles still need browser QA; the available browser session was locked.
+
 ## 1. Design Principles
 
 WriteWise sits between two audiences with genuinely different needs from the same screens: **teachers** need to trust it as a credible diagnostic instrument, and **parents** need it to feel supportive rather than alarming about their own child's developing skill. Almost every design decision in this document resolves that same tension — precision where it builds trust, warmth where it prevents anxiety — rather than picking one tone and applying it everywhere.
