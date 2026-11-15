@@ -412,9 +412,24 @@
 /* -------------------------------- Hero ------------------------------ */
 
 .hero {
+  position: relative;
+  isolation: isolate;
   max-width: var(--max);
   margin: 0 auto;
   padding: clamp(28px, 4.5vw, 56px) var(--gutter) var(--section);
+}
+
+/* Full-width practice paper; the content keeps its existing centered layout. */
+.hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset-block: 0;
+  inset-inline: calc(50% - 50vw);
+  pointer-events: none;
+  background-color: color-mix(in srgb, var(--paper) 96%, var(--warm) 4%);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='144' viewBox='0 0 16 144'%3E%3Cg fill='none' stroke-width='1' stroke-opacity='.2'%3E%3Cpath d='M0 32.5H16' stroke='%23727f7a'/%3E%3Cpath d='M0 80.5H16' stroke='%23298d83' stroke-dasharray='8 8'/%3E%3Cpath d='M0 128.5H16' stroke='%23a96840'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat;
 }
 
 @media (min-width: 1024px) {
