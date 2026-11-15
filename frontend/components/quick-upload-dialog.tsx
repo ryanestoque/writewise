@@ -225,8 +225,8 @@ function UploadFlow({
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
 
-  const { data: activities } = useActivities();
-  const { data: students } = useStudents();
+  const { data: activities, isPending: activitiesLoading, error: activitiesError } = useActivities();
+  const { data: students, isPending: studentsLoading, error: studentsError } = useStudents();
   const prefilledActivityId = activities?.some((a) => a.id === requestedActivityId)
     ? requestedActivityId : undefined;
   const chosenActivity = activities?.find((a) => a.id === (prefilledActivityId ?? activityChoice?.value));
@@ -889,7 +889,7 @@ function UploadFlow({
                         <ComboboxContent>
                           <ComboboxList>
                             <ComboboxEmpty>
-                              No activities found
+                              {activitiesLoading ? "Loading activities…" : activitiesError ? "Activities could not be loaded. Close and reopen upload to try again." : activityChoices.length === 0 ? "Create an activity before uploading a worksheet." : "No matching activities. Try another search."}
                             </ComboboxEmpty>
                             {activityChoices.map((choice) => (
                               <ComboboxItem
@@ -962,7 +962,7 @@ function UploadFlow({
                         <ComboboxContent>
                           <ComboboxList>
                             <ComboboxEmpty>
-                              No students found
+                              {studentsLoading ? "Loading students…" : studentsError ? "Students could not be loaded. Close and reopen upload to try again." : !selectedActivity ? "Choose an activity first." : !students?.length ? "Add students to your class roster first." : studentChoices.length === 0 ? "No students are assigned to this activity." : "No matching students. Try another search."}
                             </ComboboxEmpty>
                             {studentChoices.map((choice) => (
                               <ComboboxItem
@@ -988,6 +988,31 @@ function UploadFlow({
                 </Field>
 
                 {/* Duplicate Submission Warning Banner (Step 1) */}
+                {!activitiesLoading && !studentsLoading && !activitiesError && !studentsError && (
+                  activityChoices.length === 0 || !students?.length || (selectedActivity && studentChoices.length === 0)
+                ) && (
+                  <div role="status" className="rounded-lg border border-border bg-muted p-3 text-sm">
+                    <p>
+                      {!students?.length
+                        ? "Add students to your class roster before uploading a worksheet."
+                        : activityChoices.length === 0
+                          ? "Create an activity and assign students before uploading a worksheet."
+                          : "Assign students to this activity before uploading a worksheet."}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-2 min-h-10 md:min-h-9"
+                      onClick={() => {
+                        onClose();
+                        router.push(!students?.length ? "/roster" : activityChoices.length === 0 ? "/activities" : `/activities/${selectedActivity!.id}`);
+                      }}
+                    >
+                      {!students?.length ? "Go to Class Roster" : activityChoices.length === 0 ? "Go to Activities" : "Manage activity assignments"}
+                    </Button>
+                  </div>
+                )}
+
                 {isDuplicateSubmission && (
                   <div
                     role="alert"

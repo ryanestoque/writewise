@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { TeacherSidebar } from "@/components/teacher-sidebar";
@@ -38,9 +39,12 @@ export default async function TeacherLayout({
     (user.user_metadata?.school_name as string) ||
     undefined;
 
+  const cookieStore = await cookies();
+  const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
+
   return (
     <TeacherModalsProvider>
-      <SidebarProvider>
+      <SidebarProvider defaultOpen={defaultOpen}>
         <TeacherSidebar user={{ fullName, email, schoolName }} />
         <SidebarInset>
           <TeacherHeader userId={user.id} />

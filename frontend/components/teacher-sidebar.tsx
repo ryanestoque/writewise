@@ -1,6 +1,5 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -25,13 +24,16 @@ import {
   SettingsIcon,
   LogOutIcon,
   BookOpenIcon,
+  ScaleIcon,
   PenToolIcon,
   UploadCloudIcon,
   ChevronsUpDownIcon,
+  KeyboardIcon,
 } from "lucide-react";
 import { BrandIcon, BrandLogo } from "@/components/brand-logo";
 import { Kbd } from "@/components/ui/kbd";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
+import { useShortcutKeys } from "@/hooks/use-shortcut-keys";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,23 +77,21 @@ function getInitials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-const emptySubscribe = () => () => { };
-const getAltKeySnapshot = () => (typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent) ? "⌥" : "Alt");
-const getAltKeyServerSnapshot = () => "Alt";
-
 export function TeacherSidebar({ user }: TeacherSidebarProps) {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
-  const altKey = useSyncExternalStore(emptySubscribe, getAltKeySnapshot, getAltKeyServerSnapshot);
+  const { modifierKey, altKey } = useShortcutKeys();
 
   const {
     openUpload,
     openRubric,
     openCursiveGuide,
     openSignOut,
+    openShortcuts,
     uploadOpen,
     rubricOpen,
     cursiveGuideOpen,
+    shortcutsOpen,
   } = useTeacherModals();
 
   const handleNavClick = () => {
@@ -106,7 +106,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
   };
 
   return (
-    <Sidebar variant="floating" collapsible="icon">
+    <Sidebar id="teacher-sidebar" variant="floating" collapsible="icon">
       <SidebarHeader className="pb-2">
         <SidebarMenu>
           <SidebarMenuItem>
@@ -154,11 +154,15 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
             }}
             aria-haspopup="dialog"
             aria-expanded={uploadOpen}
-            className="flex items-center justify-center gap-2 w-full h-10 sm:h-9 px-3 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-medium text-xs shadow-xs hover:bg-sidebar-primary/90 transition-colors cursor-pointer group/cta focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
+            aria-keyshortcuts="Control+K Meta+K"
+            className="flex items-center justify-center gap-1.5 w-full h-10 md:h-9 px-2 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-medium text-xs shadow-xs hover:bg-sidebar-primary/90 transition-colors cursor-pointer group/cta focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
             id="quick-upload-worksheet"
           >
             <UploadCloudIcon className="size-4 shrink-0 transition-transform group-hover/cta:-translate-y-0.5" aria-hidden="true" />
-            <span>Upload Worksheet</span>
+            <span className="shrink-0 whitespace-nowrap">Upload Worksheet</span>
+            <Kbd className="ml-auto hidden h-4.5 shrink-0 bg-sidebar-primary-foreground/15 px-1 text-[10px] text-sidebar-primary-foreground md:inline-flex">
+              {modifierKey}+K
+            </Kbd>
           </button>
         </div>
 
@@ -172,140 +176,143 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                     if (isMobile) setOpenMobile(false);
                     openUpload();
                   }}
-                  aria-label="Upload cursive worksheets (⌘K / Ctrl+K)"
+                  aria-label="Upload Worksheet"
                   aria-haspopup="dialog"
                   aria-expanded={uploadOpen}
-                  className="flex aspect-square size-10 sm:size-8.5 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 transition-colors shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
+                  aria-keyshortcuts="Control+K Meta+K"
+                  className="flex aspect-square size-10 md:size-8.5 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 transition-colors shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
                 />
               }
             >
               <UploadCloudIcon className="size-4" aria-hidden="true" />
             </TooltipTrigger>
             <TooltipContent side="right" align="center" className="flex items-center gap-1.5">
-              <span>Upload & Scan Worksheets</span>
-              <Kbd className="text-xs h-4.5 px-1 font-mono font-normal">⌘K</Kbd>
+              <span>Upload Worksheet</span>
+              <Kbd className="text-xs h-4.5 px-1 font-mono font-normal">{modifierKey}+K</Kbd>
             </TooltipContent>
           </Tooltip>
         </div>
 
         <SidebarSeparator className="my-1 opacity-60" />
 
-        {/* Group 1: Classroom Navigation */}
-        <SidebarGroup className="py-1">
-          <SidebarGroupLabel className="text-xs font-semibold tracking-wider text-muted-foreground uppercase px-2">
-            Classroom
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {classroomNavItems.map((item) => {
-                const isActive = isItemActive(item.href);
+        <nav aria-label="Teacher navigation" className="flex flex-col gap-2">
+          {/* Group 1: Classroom Navigation */}
+          <SidebarGroup className="py-1">
+            <SidebarGroupLabel className="text-xs font-semibold tracking-wider text-muted-foreground uppercase px-2">
+              Classroom
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {classroomNavItems.map((item) => {
+                  const isActive = isItemActive(item.href);
 
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      render={
-                        <Link
-                          href={item.href}
-                          id={`nav-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
-                          aria-current={isActive ? "page" : undefined}
-                          onClick={handleNavClick}
-                        />
-                      }
-                      isActive={isActive}
-                      tooltip={item.title}
-                      className="h-10 sm:h-9.5"
-                    >
+                  return (
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton
+                        render={
+                          <Link
+                            href={item.href}
+                            id={`nav-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
+                            aria-current={isActive ? "page" : undefined}
+                            onClick={handleNavClick}
+                          />
+                        }
+                        isActive={isActive}
+                        tooltip={item.title}
+                        className="h-10 md:h-9.5"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <item.icon className="size-4 shrink-0" aria-hidden="true" />
+                          <span className="truncate group-data-[collapsible=icon]:hidden">{item.title}</span>
+                        </div>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          {/* Group 2: Reference Guides */}
+          <SidebarGroup className="py-1">
+            <SidebarGroupLabel className="text-xs font-semibold tracking-wider text-muted-foreground uppercase px-2">
+              Reference
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {/* Cursive Alphabet Guide Modal Trigger */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => {
+                      if (isMobile) setOpenMobile(false);
+                      openCursiveGuide();
+                    }}
+                    isActive={cursiveGuideOpen}
+                    aria-haspopup="dialog"
+                    aria-expanded={cursiveGuideOpen}
+                    aria-controls={cursiveGuideOpen ? "cursive-guide-dialog" : undefined}
+                    aria-label="Cursive Guide"
+                    tooltip={{
+                      children: (
+                        <div className="flex items-center gap-1.5">
+                          <span>Cursive Guide</span>
+                          <Kbd className="text-xs h-4.5 px-1 font-mono font-normal">{altKey}+C</Kbd>
+                        </div>
+                      ),
+                    }}
+                    className="h-10 md:h-9.5 cursor-pointer"
+                    id="open-cursive-guide"
+                  >
+                    <div className="flex items-center justify-between w-full min-w-0">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <item.icon className="size-4 shrink-0" aria-hidden="true" />
-                        <span className="truncate group-data-[collapsible=icon]:hidden">{item.title}</span>
+                        <PenToolIcon className="size-4 shrink-0" aria-hidden="true" />
+                        <span className="truncate group-data-[collapsible=icon]:hidden">Cursive Guide</span>
                       </div>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Group 2: Reference Guides */}
-        <SidebarGroup className="py-1">
-          <SidebarGroupLabel className="text-xs font-semibold tracking-wider text-muted-foreground uppercase px-2">
-            Reference
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {/* Cursive Alphabet Guide Modal Trigger */}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => {
-                    if (isMobile) setOpenMobile(false);
-                    openCursiveGuide();
-                  }}
-                  isActive={cursiveGuideOpen}
-                  aria-haspopup="dialog"
-                  aria-expanded={cursiveGuideOpen}
-                  aria-controls={cursiveGuideOpen ? "cursive-guide-dialog" : undefined}
-                  aria-label="Cursive Alphabet Guide (Standard Modal)"
-                  tooltip={{
-                    children: (
-                      <div className="flex items-center gap-1.5">
-                        <span>Cursive Guide</span>
-                        <Kbd className="text-xs h-4.5 px-1 font-mono font-normal">{altKey}+C</Kbd>
-                      </div>
-                    ),
-                  }}
-                  className="h-10 sm:h-9.5 cursor-pointer"
-                  id="open-cursive-guide"
-                >
-                  <div className="flex items-center justify-between w-full min-w-0">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <PenToolIcon className="size-4 shrink-0" aria-hidden="true" />
-                      <span className="truncate group-data-[collapsible=icon]:hidden">Cursive Guide</span>
+                      <Kbd className="hidden text-[10px] h-4 px-1.5 font-mono font-medium text-muted-foreground bg-muted/80 border border-border/50 shrink-0 md:inline-flex group-data-[collapsible=icon]:hidden">
+                        {altKey}+C
+                      </Kbd>
                     </div>
-                    <Kbd className="text-[10px] h-4 px-1.5 font-mono font-medium text-muted-foreground bg-muted/80 border border-border/50 shrink-0 group-data-[collapsible=icon]:hidden">
-                      {altKey}+C
-                    </Kbd>
-                  </div>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
 
-              {/* Scoring Rubric Reference Modal Trigger */}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => {
-                    if (isMobile) setOpenMobile(false);
-                    openRubric();
-                  }}
-                  isActive={rubricOpen}
-                  aria-haspopup="dialog"
-                  aria-expanded={rubricOpen}
-                  aria-controls={rubricOpen ? "rubric-reference-dialog" : undefined}
-                  aria-label="Scoring Rubric Reference (5 Diagnostic Criteria Modal)"
-                  tooltip={{
-                    children: (
-                      <div className="flex items-center gap-1.5">
-                        <span>Scoring Rubric</span>
-                        <Kbd className="text-xs h-4.5 px-1 font-mono font-normal">{altKey}+R</Kbd>
+                {/* Scoring Rubric Reference Modal Trigger */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => {
+                      if (isMobile) setOpenMobile(false);
+                      openRubric();
+                    }}
+                    isActive={rubricOpen}
+                    aria-haspopup="dialog"
+                    aria-expanded={rubricOpen}
+                    aria-controls={rubricOpen ? "rubric-reference-dialog" : undefined}
+                    aria-label="Scoring Rubric"
+                    tooltip={{
+                      children: (
+                        <div className="flex items-center gap-1.5">
+                          <span>Scoring Rubric</span>
+                          <Kbd className="text-xs h-4.5 px-1 font-mono font-normal">{altKey}+R</Kbd>
+                        </div>
+                      ),
+                    }}
+                    className="h-10 md:h-9.5 cursor-pointer"
+                    id="open-rubric-guide"
+                  >
+                    <div className="flex items-center justify-between w-full min-w-0">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <ScaleIcon className="size-4 shrink-0" aria-hidden="true" />
+                        <span className="truncate group-data-[collapsible=icon]:hidden">Scoring Rubric</span>
                       </div>
-                    ),
-                  }}
-                  className="h-10 sm:h-9.5 cursor-pointer"
-                  id="open-rubric-guide"
-                >
-                  <div className="flex items-center justify-between w-full min-w-0">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <BookOpenIcon className="size-4 shrink-0" aria-hidden="true" />
-                      <span className="truncate group-data-[collapsible=icon]:hidden">Scoring Rubric</span>
+                      <Kbd className="hidden text-[10px] h-4 px-1.5 font-mono font-medium text-muted-foreground bg-muted/80 border border-border/50 shrink-0 md:inline-flex group-data-[collapsible=icon]:hidden">
+                        {altKey}+R
+                      </Kbd>
                     </div>
-                    <Kbd className="text-[10px] h-4 px-1.5 font-mono font-medium text-muted-foreground bg-muted/80 border border-border/50 shrink-0 group-data-[collapsible=icon]:hidden">
-                      {altKey}+R
-                    </Kbd>
-                  </div>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </nav>
       </SidebarContent>
 
       <SidebarFooter className="p-2">
@@ -317,6 +324,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                 render={
                   <SidebarMenuButton
                     size="lg"
+                    isActive={isItemActive("/settings")}
                     tooltip={`${user.fullName} (${user.email})`}
                     aria-haspopup="menu"
                     className="data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:p-0 h-12"
@@ -366,11 +374,25 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                   <DropdownMenuItem
-                    render={<Link href="/settings" onClick={handleNavClick} />}
-                    className="cursor-pointer gap-2 py-2 text-xs"
+                    render={<Link href="/settings" onClick={handleNavClick} aria-current={isItemActive("/settings") ? "page" : undefined} />}
+                    className="min-h-10 cursor-pointer gap-2 py-2 text-xs md:min-h-0"
                   >
                     <SettingsIcon className="size-3.5 text-muted-foreground" />
                     <span>Account Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    id="open-keyboard-shortcuts"
+                    onClick={() => {
+                      if (isMobile) setOpenMobile(false);
+                      openShortcuts();
+                    }}
+                    aria-haspopup="dialog"
+                    aria-expanded={shortcutsOpen}
+                    className="min-h-10 cursor-pointer gap-2 py-2 text-xs md:min-h-0"
+                  >
+                    <KeyboardIcon className="size-3.5 text-muted-foreground" />
+                    <span>Keyboard shortcuts</span>
+                    <Kbd className="ml-auto">?</Kbd>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
@@ -380,7 +402,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
                     if (isMobile) setOpenMobile(false);
                     openSignOut();
                   }}
-                  className="cursor-pointer gap-2 py-2 text-xs text-destructive focus:text-destructive"
+                  className="min-h-10 cursor-pointer gap-2 py-2 text-xs text-destructive focus:text-destructive md:min-h-0"
                 >
                   <LogOutIcon className="size-3.5" />
                   <span>Sign out</span>
@@ -390,7 +412,7 @@ export function TeacherSidebar({ user }: TeacherSidebarProps) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
-      <SidebarRail />
+      <SidebarRail aria-controls="teacher-sidebar" />
     </Sidebar>
   );
 }

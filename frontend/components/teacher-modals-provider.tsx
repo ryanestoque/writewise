@@ -98,7 +98,7 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
 
       if (isUploadKey) {
         e.preventDefault();
-        setUploadOpen((prev) => !prev);
+        setUploadOpen(true);
       }
 
       // Alt+R (Option+R) -> Toggle handwriting rubric reference guide
@@ -146,13 +146,8 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
       setSignOutOpen(false);
       router.push("/login");
       router.refresh();
-    } catch (err: unknown) {
-      console.error("Sign out error:", err);
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Failed to sign out. Please check your connection and try again.";
-      toast.error(message);
+    } catch {
+      toast.error("We couldn't sign you out. Check your connection and try again.");
       setIsSigningOut(false);
     }
   }

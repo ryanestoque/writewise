@@ -455,6 +455,11 @@ export function ProgressPageContent() {
             >
               <TrendingUp className="size-4 shrink-0" aria-hidden="true" />
               <span>Progress</span>
+              {allHistory && allHistory.length > 0 && (
+                <span className="inline-flex items-center justify-center px-1.5 py-0 rounded-full text-xs font-bold tabular-nums bg-muted/80 text-foreground/80 border border-border/70">
+                  {allHistory.length}
+                </span>
+              )}
             </TabsTrigger>
             <TabsTrigger value="grades" className="min-h-11 px-3 sm:px-4 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap">
               Grades

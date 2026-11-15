@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Kbd } from "@/components/ui/kbd";
-import { CommandIcon } from "lucide-react";
+import { useShortcutKeys } from "@/hooks/use-shortcut-keys";
 
 interface ShortcutsDialogProps {
   open: boolean;
@@ -40,17 +40,17 @@ const shortcuts: ShortcutItem[] = [
   {
     category: "Worksheet & Assessment",
     keys: ["⌘", "K"],
-    description: "Open Quick Worksheet Upload / Scan dialog",
+    description: "Upload Worksheet",
   },
   {
     category: "Worksheet & Assessment",
     keys: ["Alt", "R"],
-    description: "Toggle Rubric Reference Guide (5 Diagnostic Criteria)",
+    description: "Open Scoring Rubric",
   },
   {
     category: "Worksheet & Assessment",
     keys: ["Alt", "C"],
-    description: "Toggle Cursive Alphabet Guide (Standard)",
+    description: "Open Cursive Guide",
   },
   {
     category: "Worksheet & Assessment",
@@ -85,6 +85,7 @@ const shortcuts: ShortcutItem[] = [
 ];
 
 export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
+  const { modifierKey, altKey } = useShortcutKeys();
   const categories = Array.from(new Set(shortcuts.map((s) => s.category)));
 
   return (
@@ -119,8 +120,7 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
                       <div className="flex items-center gap-1 shrink-0">
                         {item.keys.map((key, keyIdx) => (
                           <Kbd key={keyIdx} className="text-[11px] px-1.5 py-0.5 font-mono">
-                            {key === "⌘" ? <CommandIcon className="size-2.5 inline mr-0.5" /> : null}
-                            {key === "⌘" ? "Ctrl / ⌘" : key}
+                            {key === "⌘" ? modifierKey : key === "Alt" ? altKey : key}
                           </Kbd>
                         ))}
                       </div>

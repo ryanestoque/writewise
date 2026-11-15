@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Kbd } from "@/components/ui/kbd";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { useShortcutKeys } from "@/hooks/use-shortcut-keys";
 
 const routeTitles: Record<string, string> = {
   dashboard: "Dashboard",
@@ -29,6 +30,11 @@ const routeTitles: Record<string, string> = {
 
 export function TeacherHeader({ userId }: { userId: string }) {
   const pathname = usePathname();
+  const { modifierKey } = useShortcutKeys();
+  const { isMobile, open, openMobile } = useSidebar();
+  const sidebarToggleLabel = isMobile
+    ? openMobile ? "Close navigation" : "Open navigation"
+    : open ? "Collapse sidebar" : "Expand sidebar";
   const segments = pathname.split("/").filter(Boolean);
 
   const primarySegment = segments[0] || "dashboard";
@@ -56,15 +62,16 @@ export function TeacherHeader({ userId }: { userId: string }) {
           <TooltipTrigger
             render={
               <SidebarTrigger
-                className="-ml-1 text-muted-foreground hover:text-foreground"
+                className="-ml-1 size-10 text-muted-foreground hover:text-foreground md:size-8"
                 id="sidebar-toggle"
-                aria-label="Toggle sidebar (Ctrl+B / ⌘B)"
+                aria-controls="teacher-sidebar"
+                aria-keyshortcuts="Control+B Meta+B"
               />
             }
           />
           <TooltipContent side="bottom" align="start">
             <span className="flex items-center gap-1.5">
-              Toggle sidebar <Kbd>⌘B</Kbd>
+              {sidebarToggleLabel} <Kbd>{modifierKey}+B</Kbd>
             </span>
           </TooltipContent>
         </Tooltip>
