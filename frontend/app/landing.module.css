@@ -1514,6 +1514,21 @@
   color: #d4ebe7;
 }
 
+.trustPolicyLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 16px;
+  color: #d4ebe7;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.trustPolicyLink:hover {
+  color: #fff;
+}
+
 /* ------------------------------- Footer ----------------------------- */
 
 .footer {
@@ -1642,6 +1657,31 @@
 
 .footerCopy {
   margin: 0;
+}
+
+.footerLegal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+
+.footerLegal a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink-soft);
+  text-underline-offset: 4px;
+}
+
+.footerLegal a:hover {
+  color: var(--teal);
+  text-decoration: underline;
+}
+
+.footerLegal a:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 4px;
+  border-radius: 2px;
 }
 
 /* ---------------------------- Back to Top --------------------------- */
