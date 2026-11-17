@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,7 @@ import { NotificationList } from "./notification-list";
 import { createClient } from "@/lib/supabase/client";
 import { abortAccountRequests } from "@/lib/supabase/account-scope";
 import { ApiError } from "@/lib/utils/api-error";
+import { cn } from "@/lib/utils";
 import { notificationKeys } from "@/lib/notifications/query-keys";
 import type { NotificationLabels, NotificationRow } from "@/lib/notifications/data";
 import {
@@ -41,6 +42,7 @@ const EMPTY_LABELS: NotificationLabels = { students: {}, activities: {} };
 export function NotificationBell({ userId, role }: { userId: string; role: "teacher" | "parent" }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(true);
+  const [confirmingReadAll, setConfirmingReadAll] = useState(false);
   const [sessionController, setSessionController] = useState(() => new AbortController());
   const client = useQueryClient();
   const count = useNotificationCount(userId, active);
@@ -125,14 +127,64 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
       ? "Notifications, unread count unavailable"
       : `Notifications, ${count.data} unread`;
 
+  useEffect(() => {
+    if (!confirmingReadAll) return;
+    const timer = setTimeout(() => {
+      setConfirmingReadAll(false);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [confirmingReadAll]);
+
   const handleOpenChange = (value: boolean) => {
     setOpen(value);
+    if (!value) {
+      setConfirmingReadAll(false);
+    }
     if (value) {
       void count.refetch();
       void feed.refetch();
       void labels.refetch();
     }
   };
+
+  const handleReadAllClick = () => {
+    if (!confirmingReadAll) {
+      setConfirmingReadAll(true);
+      return;
+    }
+    setConfirmingReadAll(false);
+    readAll.mutate(undefined, {
+      onError: feedback,
+      onSuccess: () => {
+        toast.success("All notifications marked as read");
+      },
+    });
+  };
+
+  const markAllButton = (
+    <Button
+      variant={confirmingReadAll ? "secondary" : "ghost"}
+      size="xs"
+      className={cn(
+        "min-h-10 px-2.5 sm:min-h-7 transition-colors cursor-pointer",
+        confirmingReadAll &&
+          "border border-primary/30 bg-primary/10 text-primary font-medium hover:bg-primary/15"
+      )}
+      disabled={readAll.isPending || count.data === 0}
+      onClick={handleReadAllClick}
+      aria-label={
+        confirmingReadAll
+          ? "Confirm marking all notifications as read"
+          : "Mark all notifications as read"
+      }
+    >
+      {readAll.isPending
+        ? "Saving…"
+        : confirmingReadAll
+          ? "Confirm all read?"
+          : "Mark all read"}
+    </Button>
+  );
 
   const trigger = (
     <Button
@@ -193,15 +245,18 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
         <DrawerContent className="p-4 pt-2">
           <DrawerHeader className="flex flex-row items-center justify-between gap-2 p-0 pb-3">
             <DrawerTitle>Notifications</DrawerTitle>
-            <Button
-              variant="ghost"
-              size="xs"
-              className="min-h-10 px-2.5 sm:min-h-7"
-              disabled={readAll.isPending || count.data === 0}
-              onClick={() => readAll.mutate(undefined, { onError: feedback })}
-            >
-              {readAll.isPending ? "Saving…" : "Mark all read"}
-            </Button>
+            <div className="flex items-center gap-1.5">
+              {markAllButton}
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="size-8 text-muted-foreground hover:text-foreground cursor-pointer"
+                aria-label="Close notifications"
+                onClick={() => setOpen(false)}
+              >
+                <X className="size-4" aria-hidden="true" />
+              </Button>
+            </div>
           </DrawerHeader>
           {list}
         </DrawerContent>
@@ -218,15 +273,7 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
       <PopoverContent align="end" className="w-[min(24rem,calc(100vw-1.5rem))]">
         <PopoverHeader className="flex-row items-center justify-between gap-2">
           <PopoverTitle>Notifications</PopoverTitle>
-          <Button
-            variant="ghost"
-            size="xs"
-            className="min-h-10 px-2.5 sm:min-h-7"
-            disabled={readAll.isPending || count.data === 0}
-            onClick={() => readAll.mutate(undefined, { onError: feedback })}
-          >
-            {readAll.isPending ? "Saving…" : "Mark all read"}
-          </Button>
+          {markAllButton}
         </PopoverHeader>
         {list}
       </PopoverContent>

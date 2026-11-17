@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { isToday, isYesterday } from "date-fns";
-import { PenTool } from "lucide-react";
+import { FileCheck2, MessageSquareQuote, PenTool } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -91,6 +91,7 @@ export function NotificationList({
         <div className="flex items-center gap-1.5 border-b border-border/40 pb-2">
           <button
             type="button"
+            aria-pressed={filter === "all"}
             onClick={() => setFilter("all")}
             className={cn(
               "rounded-full px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer",
@@ -103,6 +104,7 @@ export function NotificationList({
           </button>
           <button
             type="button"
+            aria-pressed={filter === "unread"}
             onClick={() => setFilter("unread")}
             className={cn(
               "rounded-full px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer",
@@ -116,6 +118,7 @@ export function NotificationList({
           {noteRows.length > 0 && (
             <button
               type="button"
+              aria-pressed={filter === "notes"}
               onClick={() => setFilter("notes")}
               className={cn(
                 "rounded-full px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer",
@@ -160,14 +163,25 @@ export function NotificationList({
           </EmptyHeader>
         </Empty>
       ) : filteredRows.length === 0 ? (
-        <div className="py-8 text-center text-xs text-muted-foreground">
-          <p className="font-medium text-foreground">No {filter} notifications</p>
-          <p className="mt-1">
-            {filter === "unread"
-              ? "You've read all recent notifications."
-              : "No private notes or comments found."}
-          </p>
-        </div>
+        <Empty className="py-6">
+          <EmptyHeader>
+            <EmptyMedia variant="icon" className="size-8 bg-muted text-muted-foreground">
+              {filter === "unread" ? (
+                <FileCheck2 className="size-4" aria-hidden="true" />
+              ) : (
+                <MessageSquareQuote className="size-4" aria-hidden="true" />
+              )}
+            </EmptyMedia>
+            <EmptyTitle className="text-sm">
+              {filter === "unread" ? "No unread notifications" : "No notes found"}
+            </EmptyTitle>
+            <EmptyDescription className="text-xs">
+              {filter === "unread"
+                ? "You've read all recent notifications."
+                : "No private notes or comments found."}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <ScrollArea className="h-[min(60vh,24rem)]">
           <div className="pr-3">
