@@ -142,6 +142,35 @@ export function countReviewRows(rows: ActivityReviewRow[]) {
   return Object.fromEntries(filters.map(filter => [filter, filterReviewRows(rows, filter).length])) as Record<ReviewFilter, number>;
 }
 
+/** The workspace and worksheet traversal must use identical filters and ordering. */
+export function getReviewQueueRows(
+  rows: ActivityReviewRow[],
+  state: ReviewQueueState,
+  scoreFor: (submission: Submission | undefined) => number | null
+) {
+  return sortReviewRows(
+    filterReviewRows(filterReviewRows(rows, state.uploadFilter), state.statusFilter, state.searchQuery),
+    state.sortBy,
+    scoreFor
+  );
+}
+
+/** One destination per student, retaining the open attempt within that student's slot. */
+export function getReviewNavigation(
+  rows: ActivityReviewRow[],
+  current: Submission | undefined,
+  studentOrder: string[]
+): Submission[] {
+  if (!current || !studentOrder.includes(current.student_id)) return [];
+  const byStudent = new Map(rows.map(row => [row.student.id, row]));
+  return [...new Set(studentOrder)].flatMap(studentId => {
+    const row = byStudent.get(studentId);
+    if (!row) return [];
+    const attempt = studentId === current.student_id ? current : row.selected;
+    return attempt ? [attempt] : [];
+  });
+}
+
 export function sortReviewRows(
   rows: ActivityReviewRow[],
   sort: ReviewSort,

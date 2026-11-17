@@ -12,8 +12,9 @@ import {
   useToggleArchive,
 } from "@/lib/hooks/use-activities";
 import { ActivityReviewQueue } from "@/components/activities/activity-review-queue";
+import { useActivityReviewSession } from "@/components/activities/activity-review-session";
 import {
-  buildReviewRows, countReviewRows, filterReviewRows, sortReviewRows,
+  buildReviewRows, countReviewRows, getReviewQueueRows,
   readReviewQueue, updateReviewQueue, reviewQueueQuery,
   type ReviewView, type ReviewSort, type UploadFilter, type ReviewQueueState,
 } from "@/lib/utils/activity-review";
@@ -54,7 +55,6 @@ import {
   AlertCircle,
   RotateCcw,
   ArrowUpDown,
-  MessageSquare,
   ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -94,6 +94,9 @@ export default function ActivityDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const { setSession } = useActivityReviewSession();
+  // Returning to the workspace starts a fresh queue using its current filters.
+  useEffect(() => setSession(null), [setSession]);
   const workQuery = useActivityWork(id);
   const activeIds = useMemo(() => new Set((workQuery.data ?? [])
     .map((row) => row.active_submission_id).filter((id): id is string => !!id)), [workQuery.data]);
@@ -122,6 +125,7 @@ export default function ActivityDetailPage({
   const [deletingActivity, setDeletingActivity] = useState<Activity | null>(null);
   const [isDuplicateOpen, setIsDuplicateOpen] = useState(false);
   const [hasCopiedPrompt, setHasCopiedPrompt] = useState(false);
+  const [showQueueOptions, setShowQueueOptions] = useState(false);
 
   // The URL survives refresh, browser Back, and returning from a worksheet.
   const { searchQuery, statusFilter, uploadFilter, sortBy } = readReviewQueue(searchParams);
@@ -281,15 +285,11 @@ export default function ActivityDetailPage({
   const receivedStudentsCount = reviewRows.filter(row => row.attempts.length > 0).length;
   const sharedStudentsCount = reviewRows.filter(row => !!row.counted && row.state?.work_status === "Released").length;
   const totalScansCount = reviewRows.reduce((total, row) => total + row.attempts.length, 0);
-  const uploadFilteredRows = useMemo(
-    () => filterReviewRows(reviewRows, uploadFilter),
-    [reviewRows, uploadFilter]
-  );
   const counts = useMemo(() => countReviewRows(reviewRows), [reviewRows]);
-  const visibleRows = useMemo(() => sortReviewRows(
-    filterReviewRows(uploadFilteredRows, statusFilter, searchQuery), sortBy,
+  const visibleRows = useMemo(() => getReviewQueueRows(
+    reviewRows, { searchQuery, statusFilter, uploadFilter, sortBy },
     submission => resolveSubmissionScore(submission).compositeScore
-  ), [uploadFilteredRows, statusFilter, searchQuery, sortBy]);
+  ), [reviewRows, uploadFilter, statusFilter, searchQuery, sortBy]);
   const submissionFilterItems = useMemo<FilterPillItem<SubmissionFilter>[]>(() => [
     { id: "attention", label: "Needs attention", count: workspaceReady ? counts.attention : "?" },
     { id: "awaiting", label: "Awaiting upload", count: workspaceReady ? counts.awaiting : "?" },
@@ -499,7 +499,7 @@ export default function ActivityDetailPage({
   return (
     <div className="w-full min-w-0 space-y-5 sm:space-y-6 pb-28 sm:pb-24">
       {/* Top Back Navigation Trail */}
-      <nav aria-label="Breadcrumb navigation" className="print:hidden">
+      <nav aria-label="Breadcrumb navigation" className="flex items-center justify-between print:hidden">
         <Link
           href="/activities"
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-2.5 py-2 min-h-[44px] sm:min-h-[36px] hover:bg-muted/50 -ml-1 sm:-ml-2"
@@ -510,6 +510,9 @@ export default function ActivityDetailPage({
           />
           <span>Back to Activities</span>
         </Link>
+        <a href="#submissions-heading" className={buttonVariants({ variant: "ghost", className: "min-h-11 sm:hidden" })}>
+          Student work <ChevronDown data-icon="inline-end" />
+        </a>
       </nav>
 
       {/* Streamlined Activity Hero Card with Authentic 3-Line Cursive Ruling */}
@@ -536,15 +539,16 @@ export default function ActivityDetailPage({
       />
 
       {/* Unified Classroom Submissions Workspace */}
-      <section aria-labelledby="submissions-heading" className="space-y-4">
+      <section aria-labelledby="submissions-heading" className="space-y-3 sm:space-y-4">
         <h2
           id="submissions-heading"
-          className="text-lg sm:text-xl font-heading font-semibold text-foreground tracking-tight"
+          tabIndex={-1}
+          className="scroll-mt-20 text-lg sm:text-xl font-heading font-semibold text-foreground tracking-tight"
         >
           Student work
         </h2>
         <p className="max-w-prose text-sm text-muted-foreground">
-          Review each upload, choose the official worksheet used for assessment, then share its results with parents.
+          Open a worksheet to review it, choose the official assessment, and share its result with parents.
         </p>
         {/* Filter & Search Bar */}
         {(assignedStudents.length > 0 || !workspaceReady) && (
@@ -574,8 +578,13 @@ export default function ActivityDetailPage({
               />
             </div>
 
-            {/* Secondary controls: Sort Selector */}
-            <div className="flex flex-wrap items-center gap-2 border-t border-border/50 pt-3">
+            <Button variant="ghost" className="min-h-11 justify-between sm:hidden" aria-expanded={showQueueOptions} aria-controls="review-queue-options" onClick={() => setShowQueueOptions(value => !value)}>
+              {showQueueOptions ? "Fewer filters" : "More filters and sorting"}
+              {uploadFilter !== "all" && <span>1 filter active</span>}
+              <ChevronDown data-icon="inline-end" />
+            </Button>
+            {/* Secondary controls remain available without pushing mobile work down. */}
+            <div id="review-queue-options" className={cn("flex-wrap items-center gap-2 border-t border-border/50 pt-3 sm:flex", showQueueOptions ? "flex" : "hidden")}>
               <DropdownMenu>
                 <DropdownMenuTrigger
                   render={<Button variant="outline" className="min-h-11 sm:min-h-9" />}
@@ -678,9 +687,8 @@ export default function ActivityDetailPage({
         </div>
       </section>
       <details className="group/threads rounded-xl sm:rounded-2xl border border-border bg-surface dark:bg-card p-4 sm:p-6 shadow-warm transition-all">
-        <summary className="cursor-pointer py-1 font-heading text-base sm:text-lg font-semibold text-foreground flex items-center justify-between focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg select-none list-none [&::-webkit-details-marker]:hidden">
+        <summary className="min-h-11 cursor-pointer py-1 font-heading text-base sm:text-lg font-semibold text-foreground flex items-center justify-between focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg select-none list-none [&::-webkit-details-marker]:hidden">
           <div className="flex items-center gap-2">
-            <MessageSquare className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
             <span>Class conversations</span>
           </div>
           <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 group-open/threads:rotate-180" aria-hidden="true" />

@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Submission } from "@/lib/hooks/use-submissions";
 import type { ActivityReviewRow } from "@/lib/utils/activity-review";
 import { ActivityWorkStatus } from "./activity-work-status";
+import { WorksheetHistory } from "./worksheet-history";
 import {
   StudentWorkControls,
 } from "@/components/submissions/submission-lifecycle-controls";
@@ -11,6 +12,7 @@ import { WorkCommentsButton } from "@/components/comments/submission-comment-pic
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getRejectionSummary, resolveSubmissionScore } from "@/lib/utils/submission-status";
+import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
 
 const attemptDate = new Intl.DateTimeFormat("en-PH", {
   timeZone: "Asia/Manila",
@@ -167,6 +169,13 @@ export function ActivityReviewQueue({
                     unavailable={workError || (!state && !workLoading)}
                   />
                 </div>
+                {state?.effective_due_at && (state.work_status === "Missing" || (state.late && state.work_status !== "Excused")) && (
+                  <p className="text-muted-foreground text-xs">
+                    {state.due_at_override ? "Individual deadline" : "Due"}{" "}
+                    <time dateTime={state.effective_due_at}>{formatActivityDueAt(state.effective_due_at)}</time>
+                    {" · Manila time"}
+                  </p>
+                )}
                 {counted && (
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                     <AttemptScore label="Official assessment" submission={counted} />
@@ -249,11 +258,9 @@ export function ActivityReviewQueue({
                             ? "View rejected upload"
                             : selectedScore.isScored
                               ? counted
-                                ? "Review official result"
+                                ? selected.released_at ? "Review official result" : "Review and share result"
                                 : "Review latest result"
-                              : counted
-                                ? "Score worksheet"
-                                : "Score rubric"}
+                              : "Score worksheet"}
                       <span className="sr-only"> for {student.full_name}</span>
                     </Link>
                   ) : (
@@ -272,6 +279,16 @@ export function ActivityReviewQueue({
                     More options<span className="sr-only"> for {student.full_name}</span>
                   </summary>
                   <div className="flex flex-wrap gap-2 py-2">
+                    {attempts.length > 0 && (
+                      <WorksheetHistory activityId={activityId} studentName={student.full_name}
+                        attempts={attempts} officialId={state?.active_submission_id ?? null} queueQuery={queueQuery} />
+                    )}
+                    {!!state && !!selected && !needsReplacement && !uploadsLoading && !uploadsError && (
+                      <Button variant="outline" className="min-h-11 sm:min-h-9" onClick={() => onUpload(student.id)}>
+                        Upload another worksheet
+                        <span className="sr-only"> for {student.full_name}</span>
+                      </Button>
+                    )}
                     {hasSeparateLatest && !reviewNewer && (
                       <Link
                         className={buttonVariants({

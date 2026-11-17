@@ -10,7 +10,12 @@ import { ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { parseTeacherCommentTarget } from "@/lib/comments/targets";
 import { SubmissionCommentDestination } from "@/components/comments/submission-comment-destination";
-import { reviewQueueQuery } from "@/lib/utils/activity-review";
+import { buildReviewRows, getReviewQueueRows, getReviewNavigation, readReviewQueue, reviewQueueQuery } from "@/lib/utils/activity-review";
+import { useStudents } from "@/lib/hooks/use-students";
+import { useActivityWork } from "@/lib/hooks/use-activity-work";
+import { activityAssignedTo } from "@/lib/utils/activity-work";
+import { resolveSubmissionScore } from "@/lib/utils/submission-status";
+import { useActivityReviewSession } from "@/components/activities/activity-review-session";
 
 export default function SubmissionDetailPage({
   params,
@@ -26,16 +31,37 @@ export default function SubmissionDetailPage({
 
   const { data: activity, isLoading: activityLoading } = useActivity(activityId);
   const { data: submissions, isLoading: submissionsLoading } = useSubmissions(activityId);
+  const roster = useStudents();
+  const work = useActivityWork(activityId);
+  const { session: reviewSession, setSession: setReviewSession } = useActivityReviewSession();
+  const scope = `${activityId}${queueQuery}`;
+  const rows = useMemo(() => buildReviewRows(
+    (roster.data ?? []).filter(student => !!activity && activityAssignedTo(activity, student)),
+    submissions ?? [], work.data ?? []
+  ), [roster.data, activity, submissions, work.data]);
+  const queueRows = useMemo(() => getReviewQueueRows(
+    rows, readReviewQueue(new URLSearchParams(queueQuery)),
+    item => resolveSubmissionScore(item).compositeScore
+  ), [rows, queueQuery]);
+  const navigationReady = !!activity && !!submissions && !!roster.data && !!work.data &&
+    !roster.isError && !work.isError;
+  // Capture the selected review session once. Sharing a result must not remove its
+  // current position or reorder the remaining students while the teacher reviews.
+  useEffect(() => {
+    if (navigationReady && reviewSession?.scope !== scope) {
+      setReviewSession({ scope, studentIds: queueRows.filter(row => row.selected).map(row => row.student.id) });
+    }
+  }, [navigationReady, reviewSession, scope, queueRows, setReviewSession]);
 
   const submission = useMemo(
     () => submissions?.find((s) => s.id === submissionId) ?? null,
     [submissions, submissionId]
   );
 
-  const currentIndex = useMemo(() => {
-    if (!submissions || !submission) return -1;
-    return submissions.findIndex((s) => s.id === submission.id);
-  }, [submissions, submission]);
+  const navigation = useMemo(() => navigationReady && reviewSession?.scope === scope
+    ? getReviewNavigation(rows, submission ?? undefined, reviewSession.studentIds)
+    : [], [navigationReady, reviewSession, scope, rows, submission]);
+  const currentIndex = navigation.findIndex(item => item.id === submissionId);
 
   const handleNavigate = useCallback(
     (target: Submission) => {
@@ -169,10 +195,17 @@ export default function SubmissionDetailPage({
       </nav>
 
       {/* Main Content */}
+      <p role="status" className="text-sm text-muted-foreground">
+        {!navigationReady
+          ? "Student navigation is unavailable until the review queue loads. You can still review this worksheet."
+          : currentIndex < 0
+            ? "This worksheet is outside the current review view. Return to the activity to choose a student."
+            : `Review queue · Student ${currentIndex + 1} of ${navigation.length}. Open the official worksheet to review and share its result with parents.`}
+      </p>
       <SubmissionDetailContent
         key={submission.id}
         submission={submission}
-        submissions={submissions}
+        submissions={navigation}
         currentIndex={currentIndex >= 0 ? currentIndex : undefined}
         onNavigate={handleNavigate}
         activityTargetText={activity?.target_text}

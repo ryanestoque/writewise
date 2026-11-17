@@ -550,6 +550,14 @@ Follow-up validation: signed-in desktop (1440px) and mobile (390px) QA confirmed
 
 ### Activity detail: queue continuity and efficiency (2026-11-17)
 
+Critique implementation: worksheet Previous/Next follows the same filtered, sorted student queue as the workspace, with one destination per student. A review-session snapshot lives in the shared activity layout so sharing a result preserves its position across worksheet route changes. Returning to the workspace starts a fresh session; a worksheet opened outside the selected view explains how to return instead of inventing a queue position.
+
+Each student's More options includes Worksheet history with all uploads, newest first, including rejected and returned attempts, dates in Manila time, and official/shared markers. History links inspect attempts without changing the official worksheet. Unshared scored official worksheets use Review and share result; the introduction names worksheet review as the place to share.
+
+On mobile, secondary class insights and advanced queue filters are disclosures. Official-worksheet progress, search, and the three primary views remain visible. A Student work jump link skips the summary. Desktop keeps expanded insights and filters.
+
+Critique validation: TypeScript, ESLint, installed backend Ruff and 11 review-helper checks passed. Signed-in 1440px desktop and 390px mobile QA covered history with four attempts (three rejected), opening an attempt, Escape/focus return, disclosure expansion, jump navigation and no horizontal overflow. A browser-only work-status response simulation verified share-status change → Next student → Previous student while retaining all six queue positions across route changes; no application writes were submitted.
+
 Search, student view, latest-upload status and sort are stored in the URL (`q`, `workView`, `upload`, `sort`). Worksheet links carry only these queue controls; Back to Activity, Escape and navigation between worksheets preserve them. Browser refresh restores the selected queue. Conversation parameters stay separate. Invalid values fall back to safe defaults; bookmarked Awaiting upload views ignore incompatible upload filters.
 
 Review-ready first orders outstanding work by completed analysis, replacement needed, awaiting first upload, then processing. Unavailable work states follow those groups, and work without outstanding attention follows last. Student name breaks ties. Ordinary rows place identity and status together and allow official-score metadata and actions to share lines; newer-attempt exceptions retain their distinct details. A single visible result summary replaces repeated search narration. Loading announces its status and previews four compact roster rows rather than worksheet photo cards.

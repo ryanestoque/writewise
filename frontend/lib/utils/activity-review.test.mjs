@@ -47,6 +47,32 @@ const states = [
   { student_id: "cy", active_submission_id: "scored", work_status: "Draft" },
 ];
 
+test("student navigation follows the filtered queue and keeps one worksheet per student", () => {
+  const rows = review.buildReviewRows(students, uploads, states);
+  const queue = review.getReviewQueueRows(rows, {
+    searchQuery: "", statusFilter: "attention", uploadFilter: "all", sortBy: "name_desc",
+  }, () => null);
+  const navigation = review.getReviewNavigation(rows, uploads[1], queue.map(row => row.student.id));
+  assert.deepEqual(navigation.map(item => item.student_id), queue.filter(row => row.selected).map(row => row.student.id));
+  assert.equal(navigation.find(item => item.student_id === "ada").id, "retry");
+  assert.equal(navigation.filter(item => item.student_id === "ada").length, 1);
+});
+
+test("review session retains its order after sharing and does not invent a navigation position outside the queue", () => {
+  const rows = review.buildReviewRows(students, uploads, states);
+  assert.deepEqual(review.getReviewNavigation(rows, uploads[0], ["cy", "ada", "ben"]).map(item => item.id), ["scored", "official"]);
+  assert.deepEqual(review.getReviewNavigation(rows, uploads[0], ["cy"]), []);
+  assert.deepEqual(review.getReviewNavigation(rows, undefined, ["cy", "ada"]), []);
+});
+
+test("queue navigation respects combined upload and search filters", () => {
+  const rows = review.buildReviewRows(students, uploads, states);
+  const queue = review.getReviewQueueRows(rows, {
+    searchQuery: "Ada", statusFilter: "all", uploadFilter: "rejected", sortBy: "newest",
+  }, () => null);
+  assert.deepEqual(queue.map(row => row.student.id), ["ada"]);
+});
+
 test("shared review rows include assigned students without uploads and preserve official work", () => {
   const rows = review.buildReviewRows(students, uploads, states);
   assert.equal(rows.length, 3);

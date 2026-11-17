@@ -43,7 +43,7 @@ const criteria: CriterionItem[] = [
     name: "Letter Formation",
     category: "Shape & Joins",
     target: "Clear loops, proper cursive joins, legible character structure",
-    targetLabel: "Morphology & Joins",
+    targetLabel: "Loop Closures & Joins",
     parentTargetLabel: "Smooth Loops & Joins",
     classroomStandard: "Proper cursive loops and joining strokes without print breaks",
     description:
@@ -60,8 +60,8 @@ const criteria: CriterionItem[] = [
     id: "slant",
     name: "Slant",
     category: "Forward Lean",
-    target: "Standard ~68° forward slant (60°–75° from horizontal baseline)",
-    targetLabel: "60°–75° Slant (~68° Std)",
+    target: "Consistent, comfortable forward lean across all tall stems and joins",
+    targetLabel: "Steady Forward Slant",
     parentTargetLabel: "Steady Forward Tilt",
     classroomStandard: "Consistent, comfortable forward lean across all tall letters",
     description:
@@ -69,7 +69,7 @@ const criteria: CriterionItem[] = [
     parentDescription:
       "Checks that letters lean forward in the same direction across the word instead of tipping back and forth.",
     diagnosticFocus:
-      "Erratic tilt fluctuations, vertical rigidity (<60°), or excessive over-slanting (>75°).",
+      "Erratic tilt shifts, conflicting stroke directions, or backwards-leaning stems.",
     parentFocus:
       "Letters leaning in different directions within the same word or line.",
     keywords: ["slant", "angle", "degree", "tilt", "inclination", "lean"],
@@ -96,8 +96,8 @@ const criteria: CriterionItem[] = [
     id: "baseline",
     name: "Baseline Alignment",
     category: "Staying on the Line",
-    target: "±2px deviation from writing guideline",
-    targetLabel: "±2px Guideline Deviation",
+    target: "Letters resting evenly on the baseline without floating or sagging",
+    targetLabel: "Disciplined Baseline Grounding",
     parentTargetLabel: "Rests on the Bottom Line",
     classroomStandard: "Letters resting flat on the bottom writing line without floating or dipping",
     description:
@@ -114,8 +114,8 @@ const criteria: CriterionItem[] = [
     id: "size",
     name: "Size Consistency",
     category: "Letter Height",
-    target: "2:1 ratio for ascenders/descenders vs. x-height",
-    targetLabel: "2:1 Ascender/x-Height Ratio",
+    target: "Proportional letter heights aligned to headline, midline, and baseline",
+    targetLabel: "Proportional Guideline Heights",
     parentTargetLabel: "Even Letter Height",
     classroomStandard: "Tall letters (l, b, h) reach the top line; small letters (a, c, e) reach the dotted middle line",
     description:
@@ -147,7 +147,7 @@ const scoringBands: ScoringBandItem[] = [
     range: "75–100%",
     dotColor: "bg-band-4",
     containerClass: "border-band-4/30 bg-band-4/5 dark:bg-band-4/10",
-    desc: "Exemplary cursive discipline with fluid loop closures, uniform 60°–75° forward slant, and consistent baseline adherence.",
+    desc: "Exemplary cursive discipline with fluid loop closures, uniform forward slant, and consistent baseline adherence.",
     parentDesc: "Smooth, steady cursive handwriting with consistent letter shapes, spacing, and alignment across the worksheet.",
   },
   {
@@ -250,9 +250,9 @@ const CriterionVisualGuide = React.memo(function CriterionVisualGuide({
               strokeLinecap="round"
               opacity="0.85"
             />
-            <rect x="120" y="15" width="102" height="17" rx="4" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.3" />
-            <text x="126" y="27" fontSize="8" fill="currentColor" fontWeight="700" fontFamily="sans-serif">
-              {isParent ? "Same Forward Tilt" : "60°–75° Slant (~68° Std)"}
+            <rect x="116" y="15" width="108" height="17" rx="4" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.3" />
+            <text x="122" y="27" fontSize="8" fill="currentColor" fontWeight="700" fontFamily="sans-serif">
+              {isParent ? "Same Forward Tilt" : "Uniform Forward Lean"}
             </text>
           </svg>
         )}
@@ -320,7 +320,7 @@ const CriterionVisualGuide = React.memo(function CriterionVisualGuide({
             <circle cx="99" cy="40" r="2.2" fill="currentColor" />
 
             <text x="120" y="37" fontSize="8" fill="currentColor" fontWeight="700" fontFamily="sans-serif">
-              {isParent ? "Sits on Bottom Line" : "±2px Guideline Tolerance"}
+              {isParent ? "Sits on Bottom Line" : "Rests on Baseline"}
             </text>
           </svg>
         )}
@@ -350,9 +350,9 @@ const CriterionVisualGuide = React.memo(function CriterionVisualGuide({
               strokeLinecap="round"
             />
 
-            <rect x="140" y="15" width="94" height="17" rx="4" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.3" />
-            <text x="146" y="27" fontSize="8" fill="currentColor" fontWeight="700" fontFamily="sans-serif">
-              {isParent ? "Tall vs. Small Height" : "2:1 Height Ratio"}
+            <rect x="130" y="15" width="102" height="17" rx="4" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.3" />
+            <text x="136" y="27" fontSize="8" fill="currentColor" fontWeight="700" fontFamily="sans-serif">
+              {isParent ? "Tall vs. Small Height" : "Headline & Midline"}
             </text>
           </svg>
         )}
