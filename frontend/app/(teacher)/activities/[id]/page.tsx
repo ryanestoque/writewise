@@ -33,7 +33,10 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -50,7 +53,6 @@ import {
   AlertCircle,
   RotateCcw,
   ArrowUpDown,
-  Check,
   MessageSquare,
   ChevronDown,
 } from "lucide-react";
@@ -67,6 +69,24 @@ import {
 
 type SubmissionFilter = ReviewFilter;
 type SubmissionSort = ReviewSort;
+type UploadFilter = Exclude<ReviewFilter, "attention" | "awaiting">;
+
+const uploadFilterOptions: { id: UploadFilter; label: string }[] = [
+  { id: "all", label: "Any upload status" },
+  { id: "completed", label: "Analysis ready" },
+  { id: "processing", label: "Processing" },
+  { id: "rejected", label: "Rejected" },
+  { id: "returned", label: "Returned" },
+];
+
+const sortOptions: { id: SubmissionSort; label: string }[] = [
+  { id: "attention", label: "Needs attention first" },
+  { id: "newest", label: "Newest upload first" },
+  { id: "oldest", label: "Oldest upload first" },
+  { id: "name_asc", label: "Student (A–Z)" },
+  { id: "name_desc", label: "Student (Z–A)" },
+  { id: "score_desc", label: "Highest official score" },
+];
 
 export default function ActivityDetailPage({
   params,
@@ -106,6 +126,7 @@ export default function ActivityDetailPage({
   // Search, filter, and sort states
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<SubmissionFilter>("attention");
+  const [uploadFilter, setUploadFilter] = useState<UploadFilter>("all");
   const [sortBy, setSortBy] = useState<SubmissionSort>("attention");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -151,7 +172,6 @@ export default function ActivityDetailPage({
     [students, activity]
   );
   const totalStudents = assignedStudents.length;
-  const totalScansCount = submissions?.length ?? 0;
   const completionRate =
     totalStudents > 0
       ? Math.min(100, Math.round((uniqueStudentsCount / totalStudents) * 100))
@@ -163,7 +183,8 @@ export default function ActivityDetailPage({
     const scoredSubmissions = submissions
       .map((s) => ({ submission: s, resolved: resolveSubmissionScore(s) }))
       .filter(
-        (item) => activeIds.has(item.submission.id) && item.resolved.isScored
+        (item) => activeIds.has(item.submission.id) && item.resolved.isScored &&
+          assignedStudents.some(student => student.id === item.submission.student_id)
       );
     if (scoredSubmissions.length === 0) return null;
 
@@ -246,7 +267,7 @@ export default function ActivityDetailPage({
           ? criteriaList[criteriaList.length - 1]
           : null,
     };
-  }, [submissions, activeIds]);
+  }, [submissions, activeIds, assignedStudents]);
 
   // One roster model drives both layouts, counts, filters and announcements.
   const reviewRows = useMemo(
@@ -255,19 +276,22 @@ export default function ActivityDetailPage({
   );
   const workspaceReady = !rosterLoading && !rosterError && !submissionsLoading &&
     !submissionsError && !workQuery.isLoading && !workQuery.isError;
-  const counts = useMemo(() => countReviewRows(reviewRows), [reviewRows]);
+  const receivedStudentsCount = reviewRows.filter(row => row.attempts.length > 0).length;
+  const sharedStudentsCount = reviewRows.filter(row => !!row.counted && row.state?.work_status === "Released").length;
+  const totalScansCount = reviewRows.reduce((total, row) => total + row.attempts.length, 0);
+  const uploadFilteredRows = useMemo(
+    () => filterReviewRows(reviewRows, uploadFilter),
+    [reviewRows, uploadFilter]
+  );
+  const counts = useMemo(() => countReviewRows(uploadFilteredRows), [uploadFilteredRows]);
   const visibleRows = useMemo(() => sortReviewRows(
-    filterReviewRows(reviewRows, statusFilter, searchQuery), sortBy,
+    filterReviewRows(uploadFilteredRows, statusFilter, searchQuery), sortBy,
     submission => resolveSubmissionScore(submission).compositeScore
-  ), [reviewRows, statusFilter, searchQuery, sortBy]);
+  ), [uploadFilteredRows, statusFilter, searchQuery, sortBy]);
   const submissionFilterItems = useMemo<FilterPillItem<SubmissionFilter>[]>(() => [
     { id: "attention", label: "Needs attention", count: workspaceReady ? counts.attention : "?" },
     { id: "awaiting", label: "Awaiting upload", count: workspaceReady ? counts.awaiting : "?" },
     { id: "all", label: "All students", count: workspaceReady ? counts.all : "?" },
-    { id: "completed", label: "Latest analyzed", count: workspaceReady ? counts.completed : "?" },
-    { id: "processing", label: "Processing", count: workspaceReady ? counts.processing : "?" },
-    { id: "rejected", label: "Rejected", count: workspaceReady ? counts.rejected : "?" },
-    { id: "returned", label: "Returned", count: workspaceReady ? counts.returned : "?" },
   ], [counts, workspaceReady]);
   const handleToggleArchive = useCallback(() => {
     if (!activity) return;
@@ -474,6 +498,8 @@ export default function ActivityDetailPage({
         wordCount={wordCount}
         totalStudents={totalStudents}
         uniqueStudentsCount={uniqueStudentsCount}
+        receivedStudentsCount={receivedStudentsCount}
+        sharedStudentsCount={sharedStudentsCount}
         totalScansCount={totalScansCount}
         completionRate={completionRate}
         classDiagnostics={classDiagnostics}
@@ -497,14 +523,14 @@ export default function ActivityDetailPage({
         </h2>
         {/* Filter & Search Bar */}
         {(assignedStudents.length > 0 || !workspaceReady) && (
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
+          <div className="flex flex-col gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
             {/* Primary controls: Search + Filter Pills */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 min-w-0 flex-1">
+            <div className="flex flex-col gap-3 min-w-0 sm:flex-row sm:items-center sm:justify-between">
               <SearchInput
                 ref={searchInputRef}
                 showShortcut={false}
                 placeholder="Search student name"
-                aria-label="Search submissions by student name"
+                aria-label="Search student work by student name"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onClear={() => setSearchQuery("")}
@@ -515,82 +541,66 @@ export default function ActivityDetailPage({
                 items={submissionFilterItems}
                 value={statusFilter}
                 onChange={setStatusFilter}
-                ariaLabel="Filter submissions by status"
-                containerClassName="min-w-0 flex-1"
-                pillClassName="min-h-11 sm:min-h-8"
+                ariaLabel="Student work views"
+                containerClassName="min-w-0 w-full sm:w-auto sm:flex-none"
+                className="grid w-full grid-cols-3 overflow-visible"
+                pillClassName="min-h-11 sm:min-h-9 justify-center whitespace-normal"
               />
             </div>
 
             {/* Secondary controls: Sort Selector */}
-            <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-border/50">
+            <div className="flex flex-wrap items-center gap-2 border-t border-border/50 pt-3">
               <DropdownMenu>
                 <DropdownMenuTrigger
-                  className="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 min-h-[40px] sm:min-h-[36px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                  aria-label="Sort submissions list"
+                  render={<Button variant="outline" className="min-h-11 sm:min-h-9" />}
+                  aria-label={`Filter by latest upload: ${uploadFilterOptions.find(option => option.id === uploadFilter)?.label}`}
                 >
-                  <ArrowUpDown className="size-3 text-muted-foreground shrink-0" />
-                  <span className="font-medium text-foreground">
-                    {sortBy === "attention" && "Needs attention first"}
-                    {sortBy === "newest" && "Newest First"}
-                    {sortBy === "oldest" && "Oldest First"}
-                    {sortBy === "name_asc" && "Student (A-Z)"}
-                    {sortBy === "name_desc" && "Student (Z-A)"}
-                    {sortBy === "score_desc" && "Highest Score"}
-                  </span>
+                  Latest upload: {uploadFilterOptions.find(option => option.id === uploadFilter)?.label}
+                  <ChevronDown data-icon="inline-end" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuItem onClick={() => setSortBy("attention")} className="min-h-11 cursor-pointer justify-between text-xs sm:min-h-9">
-                    <span>Needs attention first</span>
-                    {sortBy === "attention" && <Check className="size-3.5 text-primary" />}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setSortBy("newest")}
-                    className="cursor-pointer text-xs justify-between min-h-11 sm:min-h-9"
-                  >
-                    <span>Newest First</span>
-                    {sortBy === "newest" && (
-                      <Check className="size-3.5 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setSortBy("oldest")}
-                    className="cursor-pointer text-xs justify-between min-h-11 sm:min-h-9"
-                  >
-                    <span>Oldest First</span>
-                    {sortBy === "oldest" && (
-                      <Check className="size-3.5 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setSortBy("name_asc")}
-                    className="cursor-pointer text-xs justify-between min-h-11 sm:min-h-9"
-                  >
-                    <span>Student (A-Z)</span>
-                    {sortBy === "name_asc" && (
-                      <Check className="size-3.5 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setSortBy("name_desc")}
-                    className="cursor-pointer text-xs justify-between min-h-11 sm:min-h-9"
-                  >
-                    <span>Student (Z-A)</span>
-                    {sortBy === "name_desc" && (
-                      <Check className="size-3.5 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setSortBy("score_desc")}
-                    className="cursor-pointer text-xs justify-between min-h-11 sm:min-h-9"
-                  >
-                    <span>Highest Score</span>
-                    {sortBy === "score_desc" && (
-                      <Check className="size-3.5 text-primary" />
-                    )}
-                  </DropdownMenuItem>
+                <DropdownMenuContent align="start" className="w-64">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>Latest upload status</DropdownMenuLabel>
+                    <DropdownMenuRadioGroup value={uploadFilter} onValueChange={value => setUploadFilter(value as UploadFilter)}>
+                      {uploadFilterOptions.map(option => (
+                        <DropdownMenuRadioItem key={option.id} value={option.id} closeOnClick className="min-h-11 sm:min-h-9">
+                          {option.label}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={<Button variant="outline" className="min-h-11 sm:min-h-9" />}
+                  aria-label={`Sort student work: ${sortOptions.find(option => option.id === sortBy)?.label}`}
+                >
+                  <ArrowUpDown data-icon="inline-start" />
+                  {sortOptions.find(option => option.id === sortBy)?.label}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-64">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>Sort student work</DropdownMenuLabel>
+                    <DropdownMenuRadioGroup value={sortBy} onValueChange={value => setSortBy(value as SubmissionSort)}>
+                      {sortOptions.map(option => (
+                        <DropdownMenuRadioItem key={option.id} value={option.id} closeOnClick className="min-h-11 sm:min-h-9">
+                          {option.label}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {uploadFilter !== "all" && (
+                <Button variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => setUploadFilter("all")}>
+                  Clear upload filter
+                </Button>
+              )}
             </div>
+            {uploadFilter === "completed" && (
+              <p className="text-xs text-muted-foreground">Analysis is ready for the latest upload. Teacher review and sharing may still be needed.</p>
+            )}
           </div>
         )}
 
@@ -600,6 +610,7 @@ export default function ActivityDetailPage({
             <span>
               {`Showing ${currentListLength} students${
                 statusFilter !== "all" ? ` filtered by ${submissionFilterItems.find(item => item.id === statusFilter)?.label}` : ""
+              }${uploadFilter !== "all" ? ` with latest upload ${uploadFilterOptions.find(option => option.id === uploadFilter)?.label.toLowerCase()}` : ""
               }${searchQuery ? ` matching "${searchQuery}"` : ""}.`}
             </span>
           )}
@@ -608,8 +619,6 @@ export default function ActivityDetailPage({
         {/* Search Results Filter Indicator */}
         {searchQuery && workspaceReady && (
           <div
-            role="status"
-            aria-live="polite"
             className="flex items-center justify-between text-xs text-muted-foreground px-1"
           >
             <span>
@@ -622,7 +631,7 @@ export default function ActivityDetailPage({
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="text-primary hover:underline font-medium cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1 py-0.5"
+              className="text-primary hover:underline font-medium cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm min-h-11 px-2 sm:min-h-9"
             >
               Clear search
             </button>
@@ -641,7 +650,7 @@ export default function ActivityDetailPage({
               uploadsLoading={submissionsLoading}
               uploadsError={!!submissionsError}
               searchQuery={searchQuery}
-              onClearFilters={() => { setSearchQuery(""); setStatusFilter("all"); }}
+              onClearFilters={() => { setSearchQuery(""); setStatusFilter("all"); setUploadFilter("all"); }}
               onRetryRoster={() => { void refetchStudents(); }}
               onRetryWork={() => { void workQuery.refetch(); }}
               onRetryUploads={() => { void refetchSubmissions(); }}
@@ -654,7 +663,7 @@ export default function ActivityDetailPage({
         <summary className="cursor-pointer py-1 font-heading text-base sm:text-lg font-semibold text-foreground flex items-center justify-between focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg select-none list-none [&::-webkit-details-marker]:hidden">
           <div className="flex items-center gap-2">
             <MessageSquare className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-            <span>Classroom Conversations & Comments</span>
+            <span>Class conversations</span>
           </div>
           <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 group-open/threads:rotate-180" aria-hidden="true" />
         </summary>

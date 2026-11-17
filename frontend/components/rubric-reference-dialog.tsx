@@ -566,17 +566,12 @@ export function RubricReferenceDialog({
             {/* Section 1: 5 Handwriting Skills */}
             <section aria-labelledby="criteria-heading" className="space-y-3">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <h3
-                    id="criteria-heading"
-                    className="text-sm font-heading font-semibold text-foreground"
-                  >
-                    {isParent ? "5 Handwriting Skills" : "Diagnostic Criteria"}
-                  </h3>
-                  <span className="text-xs text-muted-foreground font-sans tabular-nums">
-                    ({filteredCriteria.length})
-                  </span>
-                </div>
+                <h3
+                  id="criteria-heading"
+                  className="text-sm font-heading font-semibold text-foreground"
+                >
+                  {isParent ? "Handwriting Skills" : "Diagnostic Criteria"}
+                </h3>
 
                 <button
                   type="button"
@@ -692,11 +687,8 @@ export function RubricReferenceDialog({
                   id="bands-heading"
                   className="text-sm font-heading font-semibold text-foreground"
                 >
-                  {isParent ? "4 Score Levels" : "Qualitative Scoring Bands"}
+                  {isParent ? "Score Levels" : "Qualitative Scoring Bands"}
                 </h3>
-                <span className="text-xs text-muted-foreground font-sans tabular-nums">
-                  4 Levels
-                </span>
               </div>
 
               {filteredBands.length === 0 ? (
@@ -735,11 +727,6 @@ export function RubricReferenceDialog({
                           <span className="text-sm font-semibold text-foreground whitespace-nowrap">
                             {band.band}
                           </span>
-                          {!isParent && (
-                            <span className="text-xs text-muted-foreground font-sans whitespace-nowrap">
-                              ({band.level})
-                            </span>
-                          )}
                         </div>
                         {(!isParent || showScoreDetails) && (
                           <span className="text-xs font-semibold text-foreground/90 font-sans tabular-nums shrink-0 whitespace-nowrap">

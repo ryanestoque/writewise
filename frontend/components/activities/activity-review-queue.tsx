@@ -9,6 +9,7 @@ import {
 } from "@/components/submissions/submission-lifecycle-controls";
 import { WorkCommentsButton } from "@/components/comments/submission-comment-picker-sheet";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { getRejectionSummary, resolveSubmissionScore } from "@/lib/utils/submission-status";
 
 const attemptDate = new Intl.DateTimeFormat("en-PH", {
@@ -28,6 +29,24 @@ function AttemptIdentity({ label, submission }: { label: string; submission: Sub
         {attemptDate.format(new Date(submission.created_at))}
       </time>
     </p>
+  );
+}
+
+function AttemptScore({ label, submission }: { label: string; submission: Submission }) {
+  const { compositeScore, scoreBand } = resolveSubmissionScore(submission);
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-xs">
+      <span className="text-muted-foreground">{label}</span>
+      {compositeScore != null ? (
+        <Badge variant="outline" className={scoreBand.className}>
+          <span className="tabular-nums">{Math.round(compositeScore)}%</span>
+          <span aria-hidden="true">·</span>
+          {scoreBand.band}
+        </Badge>
+      ) : (
+        <span className="text-muted-foreground">Not scored yet</span>
+      )}
+    </div>
   );
 }
 
@@ -123,10 +142,11 @@ export function ActivityReviewQueue({
             !!state && !!latest && (latest.status === "rejected" || latest.status === "returned");
           const hasSeparateLatest = !!selected && !!latest && latest.id !== selected.id;
           const reviewNewer = hasSeparateLatest && latest.status === "completed";
+          const selectedScore = resolveSubmissionScore(selected);
           return (
             <li
               key={student.id}
-              className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="flex min-w-0 flex-col gap-2">
                 <h3 className="text-sm font-semibold break-words">{student.full_name}</h3>
@@ -137,13 +157,23 @@ export function ActivityReviewQueue({
                   />
                   {counted && (
                     <span className="text-muted-foreground text-xs">
-                      {counted.released_at ? "Shared with parent" : "Not shared yet"}
+                      {state?.work_status === "Released" ? "Shared with parents" : "Not shared with parents"}
                     </span>
                   )}
                 </div>
-                {counted && <AttemptIdentity label="Official record" submission={counted} />}
+                {counted && (
+                  <>
+                    <AttemptScore label="Official result" submission={counted} />
+                    <AttemptIdentity label="Official worksheet" submission={counted} />
+                  </>
+                )}
                 {latest && latest.id !== counted?.id && (
-                  <AttemptIdentity label="Latest attempt" submission={latest} />
+                  <>
+                    {state && latest.status === "completed" && (
+                      <AttemptScore label="Latest attempt (not official)" submission={latest} />
+                    )}
+                    <AttemptIdentity label="Latest attempt" submission={latest} />
+                  </>
                 )}
                 {!state && !workLoading && (
                   <div className="flex flex-col items-start gap-2">
@@ -165,7 +195,7 @@ export function ActivityReviewQueue({
                           ? "Latest upload is processing."
                           : counted
                             ? "A newer attempt is awaiting your review."
-                            : "Awaiting first completed submission."}
+                            : "Analysis is ready. Review this attempt before sharing results."}
                   </p>
                 )}
                 {latest?.status === "rejected" && (
@@ -195,6 +225,7 @@ export function ActivityReviewQueue({
                   {needsReplacement && (
                     <Button onClick={() => onUpload(student.id)} className="min-h-11 sm:min-h-9">
                       Upload replacement
+                      <span className="sr-only"> for {student.full_name}</span>
                     </Button>
                   )}
                   {reviewNewer && (
@@ -220,10 +251,10 @@ export function ActivityReviewQueue({
                           ? "View returned worksheet"
                           : selected.status === "rejected"
                             ? "View rejected upload"
-                            : resolveSubmissionScore(selected).isScored
+                            : selectedScore.isScored
                               ? counted
-                                ? "Review graded result"
-                                : "Review result"
+                                ? "Review official result"
+                                : "Review latest result"
                               : counted
                                 ? "Score worksheet"
                                 : "Score rubric"}
@@ -235,6 +266,7 @@ export function ActivityReviewQueue({
                     !!state && (
                       <Button onClick={() => onUpload(student.id)} className="min-h-11 sm:min-h-9">
                         Upload worksheet
+                        <span className="sr-only"> for {student.full_name}</span>
                       </Button>
                     )
                   )}

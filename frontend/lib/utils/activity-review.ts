@@ -103,7 +103,7 @@ export function sortReviewRows(
     if (sort === "name_asc") return byName;
     if (sort === "name_desc") return -byName;
     if (sort === "score_desc") {
-      return (scoreFor(b.latest) ?? -1) - (scoreFor(a.latest) ?? -1) || byName;
+      return (scoreFor(b.counted) ?? -1) - (scoreFor(a.counted) ?? -1) || byName;
     }
     if (!a.latest || !b.latest) return Number(!!b.latest) - Number(!!a.latest) || byName;
     const byDate = Date.parse(a.latest.created_at) - Date.parse(b.latest.created_at);

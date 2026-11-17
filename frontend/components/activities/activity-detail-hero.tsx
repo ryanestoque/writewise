@@ -59,6 +59,8 @@ export interface ActivityDetailHeroProps {
   wordCount: number;
   totalStudents: number;
   uniqueStudentsCount: number;
+  receivedStudentsCount: number;
+  sharedStudentsCount: number;
   totalScansCount: number;
   completionRate: number;
   classDiagnostics: ClassDiagnosticSummary | null;
@@ -78,6 +80,8 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
   wordCount,
   totalStudents,
   uniqueStudentsCount,
+  receivedStudentsCount,
+  sharedStudentsCount,
   totalScansCount,
   completionRate,
   classDiagnostics,
@@ -288,7 +292,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
 
       {/* Bottom Aggregate Bar: Class Roster Progress + Diagnostic Synthesis */}
       <div className="pt-3 border-t border-border/50 grid grid-cols-1 lg:grid-cols-2 gap-3.5 mt-4">
-        {progressUnavailable ? <p role="status" className="text-sm text-muted-foreground">Completion and class insights are unavailable until student work finishes loading. Retry any failed requests below.</p> : <>
+        {progressUnavailable ? <p role="status" className="text-sm text-muted-foreground">Worksheet counts and class insights are unavailable until student work finishes loading. Retry any failed requests below.</p> : <>
         {/* Left: Class Roster Completion */}
         <div className="flex flex-col justify-center gap-2">
           <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
@@ -301,14 +305,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 <strong className="text-foreground font-semibold tabular-nums">
                   {totalStudents}
                 </strong>{" "}
-                assigned students with counted worksheets
-                {totalScansCount > uniqueStudentsCount && (
-                  <span className="text-muted-foreground/80 font-normal">
-                    {" "}
-                    ({totalScansCount} total{" "}
-                    {totalScansCount === 1 ? "scan" : "scans"})
-                  </span>
-                )}
+                students have an official worksheet
               </span>
             </div>
             {totalStudents > 0 && (
@@ -316,7 +313,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 variant="outline"
                 className="text-[11px] font-semibold px-2 py-0.5 bg-muted/60 text-foreground shrink-0 tabular-nums"
               >
-                {completionRate}% complete
+                {completionRate}%
               </Badge>
             )}
           </div>
@@ -329,8 +326,8 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
               aria-valuenow={completionRate}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-valuetext={`${uniqueStudentsCount} of ${totalStudents} students submitted (${completionRate}%)`}
-              aria-label={`Class completion rate: ${completionRate}%`}
+              aria-valuetext={`${uniqueStudentsCount} of ${totalStudents} students have an official worksheet (${completionRate}%)`}
+              aria-label="Students with an official worksheet"
             >
               <div
                 className="h-full bg-brand-600 dark:bg-brand-500 rounded-full transition-all duration-500 ease-out motion-reduce:transition-none"
@@ -350,6 +347,13 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 <span>Choose students</span>
                 <ArrowRight className="size-3 transition-transform group-hover/link:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" />
               </button>
+            </div>
+          )}
+          {totalStudents > 0 && (
+            <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+              <p>Received: {receivedStudentsCount} of {totalStudents} students · {totalScansCount} {totalScansCount === 1 ? "upload" : "uploads"}</p>
+              <p>Shared with parents: {sharedStudentsCount} of {totalStudents} students</p>
+              <p>Official worksheets are the attempts used for assessment.</p>
             </div>
           )}
         </div>
@@ -391,7 +395,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                     className="size-3.5 text-brand-600 dark:text-brand-400"
                     aria-hidden="true"
                   />
-                  <span className="hidden sm:inline">Class Breakdown</span>
+                  <span>Breakdown</span>
                   <ChevronDown
                     className="size-3 opacity-60"
                     aria-hidden="true"
