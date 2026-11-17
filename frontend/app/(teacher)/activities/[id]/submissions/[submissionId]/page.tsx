@@ -10,6 +10,12 @@ import { ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { parseTeacherCommentTarget } from "@/lib/comments/targets";
 import { SubmissionCommentDestination } from "@/components/comments/submission-comment-destination";
+import { buildReviewRows, getReviewQueueRows, getReviewNavigation, readReviewQueue, reviewQueueQuery } from "@/lib/utils/activity-review";
+import { useStudents } from "@/lib/hooks/use-students";
+import { useActivityWork } from "@/lib/hooks/use-activity-work";
+import { activityAssignedTo } from "@/lib/utils/activity-work";
+import { resolveSubmissionScore } from "@/lib/utils/submission-status";
+import { useActivityReviewSession } from "@/components/activities/activity-review-session";
 
 export default function SubmissionDetailPage({
   params,
@@ -18,34 +24,58 @@ export default function SubmissionDetailPage({
 }) {
   const { id: activityId, submissionId } = use(params);
   const router = useRouter();
-  const commentTarget = parseTeacherCommentTarget(useSearchParams(), activityId, submissionId);
+  const searchParams = useSearchParams();
+  const commentTarget = parseTeacherCommentTarget(searchParams, activityId, submissionId);
+  const queueQuery = reviewQueueQuery(searchParams);
+  const activityHref = `/activities/${activityId}${queueQuery}`;
 
   const { data: activity, isLoading: activityLoading } = useActivity(activityId);
   const { data: submissions, isLoading: submissionsLoading } = useSubmissions(activityId);
+  const roster = useStudents();
+  const work = useActivityWork(activityId);
+  const { session: reviewSession, setSession: setReviewSession } = useActivityReviewSession();
+  const scope = `${activityId}${queueQuery}`;
+  const rows = useMemo(() => buildReviewRows(
+    (roster.data ?? []).filter(student => !!activity && activityAssignedTo(activity, student)),
+    submissions ?? [], work.data ?? []
+  ), [roster.data, activity, submissions, work.data]);
+  const queueRows = useMemo(() => getReviewQueueRows(
+    rows, readReviewQueue(new URLSearchParams(queueQuery)),
+    item => resolveSubmissionScore(item).compositeScore
+  ), [rows, queueQuery]);
+  const navigationReady = !!activity && !!submissions && !!roster.data && !!work.data &&
+    !roster.isError && !work.isError;
+  // Capture the selected review session once. Sharing a result must not remove its
+  // current position or reorder the remaining students while the teacher reviews.
+  useEffect(() => {
+    if (navigationReady && reviewSession?.scope !== scope) {
+      setReviewSession({ scope, studentIds: queueRows.filter(row => row.selected).map(row => row.student.id) });
+    }
+  }, [navigationReady, reviewSession, scope, queueRows, setReviewSession]);
 
   const submission = useMemo(
     () => submissions?.find((s) => s.id === submissionId) ?? null,
     [submissions, submissionId]
   );
 
-  const currentIndex = useMemo(() => {
-    if (!submissions || !submission) return -1;
-    return submissions.findIndex((s) => s.id === submission.id);
-  }, [submissions, submission]);
+  const navigation = useMemo(() => navigationReady && reviewSession?.scope === scope
+    ? getReviewNavigation(rows, submission ?? undefined, reviewSession.studentIds)
+    : [], [navigationReady, reviewSession, scope, rows, submission]);
+  const currentIndex = navigation.findIndex(item => item.id === submissionId);
 
   const handleNavigate = useCallback(
     (target: Submission) => {
       router.replace(
-        `/activities/${activityId}/submissions/${target.id}`,
+        `/activities/${activityId}/submissions/${target.id}${queueQuery}`,
         { scroll: false }
       );
     },
-    [router, activityId]
+    [router, activityId, queueQuery]
   );
 
   const handleClose = useCallback(() => {
-    router.push(`/activities/${activityId}`);
-  }, [router, activityId]);
+    router.push(activityHref);
+  }, [router, activityHref]);
 
   // Handle Esc key to return to activity view
   useEffect(() => {
@@ -137,7 +167,7 @@ export default function SubmissionDetailPage({
           </p>
         </div>
         <Link
-          href={`/activities/${activityId}`}
+          href={activityHref}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-xs"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
@@ -153,7 +183,7 @@ export default function SubmissionDetailPage({
       {/* Top Back Navigation Trail */}
       <nav aria-label="Breadcrumb navigation" className="print:hidden">
         <Link
-          href={`/activities/${activityId}`}
+          href={activityHref}
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-2.5 py-2 min-h-[44px] sm:min-h-[36px] hover:bg-muted/50 -ml-1 sm:-ml-2"
         >
           <ArrowLeft
@@ -165,10 +195,17 @@ export default function SubmissionDetailPage({
       </nav>
 
       {/* Main Content */}
+      <p role="status" className="text-sm text-muted-foreground">
+        {!navigationReady
+          ? "Student navigation is unavailable until the review queue loads. You can still review this worksheet."
+          : currentIndex < 0
+            ? "This worksheet is outside the current review view. Return to the activity to choose a student."
+            : `Review queue · Student ${currentIndex + 1} of ${navigation.length}. Open the official worksheet to review and share its result with parents.`}
+      </p>
       <SubmissionDetailContent
         key={submission.id}
         submission={submission}
-        submissions={submissions}
+        submissions={navigation}
         currentIndex={currentIndex >= 0 ? currentIndex : undefined}
         onNavigate={handleNavigate}
         activityTargetText={activity?.target_text}

@@ -344,14 +344,9 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                     )}
                     id="open-cursive-guide"
                   >
-                    <div className="flex items-center justify-between w-full min-w-0">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <PenLineIcon className="size-4 shrink-0 text-muted-foreground group-hover:text-sidebar-foreground" aria-hidden="true" />
-                        <span className="truncate group-data-[collapsible=icon]:hidden">Cursive Guide</span>
-                      </div>
-                      <Kbd aria-hidden="true" className="hidden text-xs h-5 px-1.5 font-mono font-medium text-muted-foreground bg-muted/80 border border-border/50 shrink-0 md:inline-flex group-data-[collapsible=icon]:hidden">
-                        {altKey}+C
-                      </Kbd>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <PenLineIcon className="size-4 shrink-0 text-muted-foreground group-hover:text-sidebar-foreground" aria-hidden="true" />
+                      <span className="truncate group-data-[collapsible=icon]:hidden">Cursive Guide</span>
                     </div>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -384,14 +379,9 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                     )}
                     id="open-rubric-guide"
                   >
-                    <div className="flex items-center justify-between w-full min-w-0">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <ScaleIcon className="size-4 shrink-0 text-muted-foreground group-hover:text-sidebar-foreground" aria-hidden="true" />
-                        <span className="truncate group-data-[collapsible=icon]:hidden">Scoring Rubric</span>
-                      </div>
-                      <Kbd aria-hidden="true" className="hidden text-xs h-5 px-1.5 font-mono font-medium text-muted-foreground bg-muted/80 border border-border/50 shrink-0 md:inline-flex group-data-[collapsible=icon]:hidden">
-                        {altKey}+R
-                      </Kbd>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <ScaleIcon className="size-4 shrink-0 text-muted-foreground group-hover:text-sidebar-foreground" aria-hidden="true" />
+                      <span className="truncate group-data-[collapsible=icon]:hidden">Scoring Rubric</span>
                     </div>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

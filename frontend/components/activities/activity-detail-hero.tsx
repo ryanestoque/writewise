@@ -1,7 +1,7 @@
 "use client";
 
 import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
-import { memo } from "react";
+import { memo, useState, useId } from "react";
 import type { Activity } from "@/lib/hooks/use-activities";
 import type { ScoreBandInfo } from "@/lib/utils/submission-status";
 import { formatDate } from "@/lib/utils/formatters";
@@ -55,10 +55,13 @@ export interface ClassDiagnosticSummary {
 export interface ActivityDetailHeroProps {
   activity: Activity;
   isArchived: boolean;
+  archivePending?: boolean;
   progressUnavailable?: boolean;
   wordCount: number;
   totalStudents: number;
   uniqueStudentsCount: number;
+  receivedStudentsCount: number;
+  sharedStudentsCount: number;
   totalScansCount: number;
   completionRate: number;
   classDiagnostics: ClassDiagnosticSummary | null;
@@ -74,10 +77,13 @@ export interface ActivityDetailHeroProps {
 export const ActivityDetailHero = memo(function ActivityDetailHero({
   activity,
   isArchived,
+  archivePending = false,
   progressUnavailable = false,
   wordCount,
   totalStudents,
   uniqueStudentsCount,
+  receivedStudentsCount,
+  sharedStudentsCount,
   totalScansCount,
   completionRate,
   classDiagnostics,
@@ -89,6 +95,8 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
   onDelete,
   onToggleArchive,
 }: ActivityDetailHeroProps) {
+  const [showInsights, setShowInsights] = useState(false);
+  const insightsId = useId();
   return (
     <section
       aria-labelledby="activity-prompt-heading"
@@ -99,13 +107,8 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
           : "border-border"
       )}
     >
-      {/* Screen Reader Semantic Heading */}
-      <h1 id="activity-prompt-heading" className="sr-only">
-        Activity: {activity.title || "Untitled Activity"}
-      </h1>
-
-      <div className="mb-4 flex flex-col gap-2">
-        <h2 className="font-heading text-xl font-semibold">{activity.title}</h2>
+      <div className="mb-2 flex flex-col gap-2 sm:mb-4">
+        <h1 id="activity-prompt-heading" className="font-heading text-xl font-semibold break-words">{activity.title || "Untitled Activity"}</h1>
         <p className="text-sm text-muted-foreground">{activity.due_at ? `Due ${formatActivityDueAt(activity.due_at)}` : "No due date"}{activity.close_after_due ? " · Parent uploads close after due" : ""}</p>
       </div>
       {/* Archived Top Warning Banner if Archived */}
@@ -154,14 +157,14 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 </Badge>
               )}
 
-              <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-muted/40 dark:bg-muted/30 px-2 py-0.5 rounded-md border border-border/50 tabular-nums shrink-0 print:border-black/30 print:text-black">
+              <span className="hidden sm:inline-flex items-center text-xs font-medium text-muted-foreground bg-muted/40 dark:bg-muted/30 px-2 py-0.5 rounded-md border border-border/50 tabular-nums shrink-0 print:border-black/30 print:text-black">
                 {wordCount} {wordCount === 1 ? "word" : "words"}
               </span>
             </div>
 
             <time
               dateTime={activity.created_at}
-              className="text-xs text-muted-foreground inline-flex items-center print:text-black"
+              className="hidden text-xs text-muted-foreground sm:inline-flex items-center print:text-black"
             >
               <span>Created {formatDate(activity.created_at)}</span>
             </time>
@@ -173,13 +176,14 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
               size="sm"
               onClick={onUpload}
               className="min-h-[44px] sm:min-h-[36px] h-auto sm:h-9 px-3 sm:px-3.5 bg-primary hover:bg-brand-700 dark:hover:bg-brand-500 text-primary-foreground text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer"
-              title="Upload Worksheets (U)"
+              title="Upload Worksheets (Alt+U)"
+              aria-keyshortcuts="Alt+U"
             >
               <Upload className="w-4 h-4 mr-1 sm:mr-1.5 shrink-0" />
               <span className="inline sm:hidden">Upload</span>
               <span className="hidden sm:inline">Upload Worksheets</span>
               <kbd className="hidden sm:inline-flex items-center justify-center ml-2 px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground/90 bg-white/20 dark:bg-white/15 rounded border border-white/30 font-mono">
-                U
+                Alt U
               </kbd>
             </Button>
 
@@ -222,17 +226,18 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
 
                 <DropdownMenuItem
                   onClick={onToggleArchive}
+                  disabled={archivePending}
                   className="cursor-pointer text-xs flex items-center min-h-[44px] sm:min-h-[36px]"
                 >
                   {isArchived ? (
                     <>
                       <ArchiveRestore className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
-                      <span>Unarchive Activity</span>
+                      <span>{archivePending ? "Restoring…" : "Unarchive Activity"}</span>
                     </>
                   ) : (
                     <>
                       <Archive className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
-                      <span>Archive Activity</span>
+                      <span>{archivePending ? "Archiving…" : "Archive Activity"}</span>
                     </>
                   )}
                 </DropdownMenuItem>
@@ -286,9 +291,13 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
         </details>
       </div>
 
+      <span role="status" className="sr-only">
+        {archivePending ? (isArchived ? "Restoring activity…" : "Archiving activity…") : ""}
+      </span>
+
       {/* Bottom Aggregate Bar: Class Roster Progress + Diagnostic Synthesis */}
       <div className="pt-3 border-t border-border/50 grid grid-cols-1 lg:grid-cols-2 gap-3.5 mt-4">
-        {progressUnavailable ? <p role="status" className="text-sm text-muted-foreground">Completion and class insights are unavailable until student work finishes loading. Retry any failed requests below.</p> : <>
+        {progressUnavailable ? <p role="status" className="text-sm text-muted-foreground">Worksheet counts and class insights are unavailable until student work finishes loading. Retry any failed requests below.</p> : <>
         {/* Left: Class Roster Completion */}
         <div className="flex flex-col justify-center gap-2">
           <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
@@ -301,14 +310,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 <strong className="text-foreground font-semibold tabular-nums">
                   {totalStudents}
                 </strong>{" "}
-                assigned students with counted worksheets
-                {totalScansCount > uniqueStudentsCount && (
-                  <span className="text-muted-foreground/80 font-normal">
-                    {" "}
-                    ({totalScansCount} total{" "}
-                    {totalScansCount === 1 ? "scan" : "scans"})
-                  </span>
-                )}
+                students have an official worksheet
               </span>
             </div>
             {totalStudents > 0 && (
@@ -316,7 +318,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 variant="outline"
                 className="text-[11px] font-semibold px-2 py-0.5 bg-muted/60 text-foreground shrink-0 tabular-nums"
               >
-                {completionRate}% complete
+                {completionRate}%
               </Badge>
             )}
           </div>
@@ -329,8 +331,8 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
               aria-valuenow={completionRate}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-valuetext={`${uniqueStudentsCount} of ${totalStudents} students submitted (${completionRate}%)`}
-              aria-label={`Class completion rate: ${completionRate}%`}
+              aria-valuetext={`${uniqueStudentsCount} of ${totalStudents} students have an official worksheet (${completionRate}%)`}
+              aria-label="Students with an official worksheet"
             >
               <div
                 className="h-full bg-brand-600 dark:bg-brand-500 rounded-full transition-all duration-500 ease-out motion-reduce:transition-none"
@@ -352,13 +354,26 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
               </button>
             </div>
           )}
+          <Button variant="ghost" className="min-h-11 justify-between px-0 sm:hidden"
+            aria-expanded={showInsights} aria-controls={`${insightsId}-counts ${insightsId}-performance`}
+            onClick={() => setShowInsights(value => !value)}>
+            {showInsights ? "Hide class insights" : `Class insights · ${sharedStudentsCount} shared`}
+            <ChevronDown data-icon="inline-end" />
+          </Button>
+          {totalStudents > 0 && (
+            <div id={`${insightsId}-counts`} className={cn("flex-col gap-1 text-xs text-muted-foreground sm:flex", showInsights ? "flex" : "hidden")}>
+              <p>Received: {receivedStudentsCount} of {totalStudents} students · {totalScansCount} {totalScansCount === 1 ? "upload" : "uploads"}</p>
+              <p>Shared with parents: {sharedStudentsCount} of {totalStudents} students</p>
+              <p>Official worksheets are the attempts used for assessment.</p>
+            </div>
+          )}
         </div>
 
         {/* Right: Class Diagnostic Synthesis (when completed scans exist) */}
         {classDiagnostics ? (
-          <div className="flex items-center justify-between gap-2.5 bg-muted/25 dark:bg-muted/15 p-2.5 rounded-xl border border-border/60 text-xs">
+          <div id={`${insightsId}-performance`} className={cn("items-center justify-between gap-2.5 bg-muted/25 dark:bg-muted/15 p-2.5 rounded-xl border border-border/60 text-xs sm:flex", showInsights ? "flex" : "hidden")}>
             <div className="min-w-0">
-              <span className="text-[11px] text-muted-foreground font-medium block truncate">
+              <span className="text-xs text-muted-foreground font-medium block truncate">
                 Class Performance ({classDiagnostics.completedCount} scored)
               </span>
               <div className="flex items-center gap-1.5 mt-0.5">
@@ -391,7 +406,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                     className="size-3.5 text-brand-600 dark:text-brand-400"
                     aria-hidden="true"
                   />
-                  <span className="hidden sm:inline">Class Breakdown</span>
+                  <span>Breakdown</span>
                   <ChevronDown
                     className="size-3 opacity-60"
                     aria-hidden="true"
@@ -399,10 +414,10 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 </PopoverTrigger>
                 <PopoverContent
                   align="end"
-                  className="w-72 p-3.5 space-y-3 z-50 text-xs"
+                  className="w-80 max-w-[calc(100vw-2rem)] max-h-[min(36rem,70dvh)] overflow-y-auto p-4 text-sm"
                 >
                   <PopoverHeader>
-                    <PopoverTitle className="text-xs font-semibold text-foreground flex items-center justify-between">
+                    <PopoverTitle className="text-sm font-semibold text-foreground flex flex-wrap items-center justify-between gap-2">
                       <span>5-Criterion Class Average</span>
                       <span className="text-primary font-bold tabular-nums">
                         {classDiagnostics.avgCompositeScore}%
@@ -415,7 +430,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
 
                   <div className="space-y-2 pt-1">
                     <div>
-                      <div className="flex justify-between text-[11px] mb-0.5 text-muted-foreground">
+                      <div className="flex justify-between gap-2 text-xs mb-1 text-muted-foreground">
                         <span>Letter Formation</span>
                         <span className="font-medium tabular-nums text-foreground">
                           {classDiagnostics.criteriaAverages.letterFormation}%
@@ -439,7 +454,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] mb-0.5 text-muted-foreground">
+                      <div className="flex justify-between gap-2 text-xs mb-1 text-muted-foreground">
                         <span>Size Consistency</span>
                         <span className="font-medium tabular-nums text-foreground">
                           {classDiagnostics.criteriaAverages.sizeConsistency}%
@@ -463,7 +478,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] mb-0.5 text-muted-foreground">
+                      <div className="flex justify-between gap-2 text-xs mb-1 text-muted-foreground">
                         <span>Spacing</span>
                         <span className="font-medium tabular-nums text-foreground">
                           {classDiagnostics.criteriaAverages.spacing}%
@@ -487,7 +502,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] mb-0.5 text-muted-foreground">
+                      <div className="flex justify-between gap-2 text-xs mb-1 text-muted-foreground">
                         <span>Slant Consistency</span>
                         <span className="font-medium tabular-nums text-foreground">
                           {classDiagnostics.criteriaAverages.slant}%
@@ -511,7 +526,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] mb-0.5 text-muted-foreground">
+                      <div className="flex justify-between gap-2 text-xs mb-1 text-muted-foreground">
                         <span>Baseline Alignment</span>
                         <span className="font-medium tabular-nums text-foreground">
                           {classDiagnostics.criteriaAverages.baselineAlignment}%
@@ -536,7 +551,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                   </div>
 
                   {classDiagnostics.strongestCriterion && (
-                    <div className="pt-2 border-t border-border/60 text-[11px] space-y-1 text-muted-foreground">
+                    <div className="flex flex-col gap-2 pt-3 border-t border-border/60 text-sm leading-relaxed text-muted-foreground">
                       <p>
                         <span className="font-semibold text-band-4-text dark:text-band-4">
                           Strength:
@@ -566,7 +581,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-2 p-2.5 rounded-xl border border-dashed border-border/80 text-xs text-muted-foreground bg-muted/10">
+          <div id={`${insightsId}-performance`} className={cn("items-center gap-2 p-2.5 rounded-xl border border-dashed border-border/80 text-xs text-muted-foreground bg-muted/10 sm:flex", showInsights ? "flex" : "hidden")}>
             <BarChart3
               className="size-4 text-muted-foreground/60 shrink-0"
               aria-hidden="true"

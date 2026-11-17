@@ -14,7 +14,7 @@ import { createClient } from "@/lib/supabase/server";
 import styles from "./landing.module.css";
 
 export const metadata: Metadata = {
-  title: "WriteWise | Cursive practice, turned into next steps",
+  title: { absolute: "WriteWise | Cursive practice, turned into next steps" },
   description:
     "WriteWise assesses photographed cursive worksheets across five criteria, writes encouraging next-step feedback, and tracks each learner’s progress for teachers and parents. Students stay on paper.",
 };

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { LegalPage, type LegalSection } from "@/components/legal/legal-page";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | WriteWise",
+  title: "Terms of Service",
   description:
     "Guidelines for teacher and parent accounts, authorized worksheet uploads, and responsible use of WriteWise assessments.",
 };

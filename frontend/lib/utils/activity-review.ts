@@ -31,6 +31,56 @@ export function needsReviewAttention(workStatus?: string, latestUploadStatus?: s
 
 export type ReviewFilter = "all" | "attention" | "awaiting" | "completed" | "processing" | "rejected" | "returned";
 export type ReviewSort = "attention" | "newest" | "oldest" | "name_asc" | "name_desc" | "score_desc";
+export type ReviewView = "attention" | "awaiting" | "all";
+export type UploadFilter = Exclude<ReviewFilter, "attention" | "awaiting">;
+
+export interface ReviewQueueState {
+  searchQuery: string;
+  statusFilter: ReviewView;
+  uploadFilter: UploadFilter;
+  sortBy: ReviewSort;
+}
+
+const queueKeys = ["q", "workView", "upload", "sort"] as const;
+
+export function readReviewQueue(params: Pick<URLSearchParams, "get">): ReviewQueueState {
+  const view = params.get("workView");
+  const upload = params.get("upload");
+  const sort = params.get("sort");
+  const statusFilter = view === "all" || view === "awaiting" ? view : "attention";
+  return {
+    searchQuery: params.get("q") ?? "",
+    statusFilter,
+    // Awaiting a first upload and filtering an existing upload are mutually exclusive.
+    uploadFilter: statusFilter !== "awaiting" &&
+      (upload === "completed" || upload === "processing" || upload === "rejected" || upload === "returned")
+      ? upload : "all",
+    sortBy: sort === "newest" || sort === "oldest" || sort === "name_asc" ||
+      sort === "name_desc" || sort === "score_desc" ? sort : "attention",
+  };
+}
+
+/** Preserve unrelated parameters, including conversation links, when controls change. */
+export function updateReviewQueue(params: URLSearchParams, patch: Partial<ReviewQueueState>) {
+  const state = { ...readReviewQueue(params), ...patch };
+  if (patch.statusFilter === "awaiting") state.uploadFilter = "all";
+  else if (patch.uploadFilter && patch.uploadFilter !== "all" && state.statusFilter === "awaiting") {
+    state.statusFilter = "all";
+  }
+  const next = new URLSearchParams(params);
+  queueKeys.forEach(key => next.delete(key));
+  if (state.searchQuery) next.set("q", state.searchQuery);
+  if (state.statusFilter !== "attention") next.set("workView", state.statusFilter);
+  if (state.uploadFilter !== "all") next.set("upload", state.uploadFilter);
+  if (state.sortBy !== "attention") next.set("sort", state.sortBy);
+  return next;
+}
+
+/** Carry only queue controls to worksheet routes; never carry a conversation destination. */
+export function reviewQueueQuery(params: Pick<URLSearchParams, "get">) {
+  const query = updateReviewQueue(new URLSearchParams(), readReviewQueue(params)).toString();
+  return query ? `?${query}` : "";
+}
 
 export interface ActivityReviewRow {
   student: Student;
@@ -92,6 +142,35 @@ export function countReviewRows(rows: ActivityReviewRow[]) {
   return Object.fromEntries(filters.map(filter => [filter, filterReviewRows(rows, filter).length])) as Record<ReviewFilter, number>;
 }
 
+/** The workspace and worksheet traversal must use identical filters and ordering. */
+export function getReviewQueueRows(
+  rows: ActivityReviewRow[],
+  state: ReviewQueueState,
+  scoreFor: (submission: Submission | undefined) => number | null
+) {
+  return sortReviewRows(
+    filterReviewRows(filterReviewRows(rows, state.uploadFilter), state.statusFilter, state.searchQuery),
+    state.sortBy,
+    scoreFor
+  );
+}
+
+/** One destination per student, retaining the open attempt within that student's slot. */
+export function getReviewNavigation(
+  rows: ActivityReviewRow[],
+  current: Submission | undefined,
+  studentOrder: string[]
+): Submission[] {
+  if (!current || !studentOrder.includes(current.student_id)) return [];
+  const byStudent = new Map(rows.map(row => [row.student.id, row]));
+  return [...new Set(studentOrder)].flatMap(studentId => {
+    const row = byStudent.get(studentId);
+    if (!row) return [];
+    const attempt = studentId === current.student_id ? current : row.selected;
+    return attempt ? [attempt] : [];
+  });
+}
+
 export function sortReviewRows(
   rows: ActivityReviewRow[],
   sort: ReviewSort,
@@ -99,14 +178,23 @@ export function sortReviewRows(
 ) {
   return [...rows].sort((a, b) => {
     const byName = a.student.full_name.localeCompare(b.student.full_name);
-    if (sort === "attention") return Number(b.attention) - Number(a.attention) || byName;
+    if (sort === "attention") return reviewPriority(a) - reviewPriority(b) || byName;
     if (sort === "name_asc") return byName;
     if (sort === "name_desc") return -byName;
     if (sort === "score_desc") {
-      return (scoreFor(b.latest) ?? -1) - (scoreFor(a.latest) ?? -1) || byName;
+      return (scoreFor(b.counted) ?? -1) - (scoreFor(a.counted) ?? -1) || byName;
     }
     if (!a.latest || !b.latest) return Number(!!b.latest) - Number(!!a.latest) || byName;
     const byDate = Date.parse(a.latest.created_at) - Date.parse(b.latest.created_at);
     return (sort === "oldest" ? byDate : -byDate) || byName;
   });
+}
+
+function reviewPriority(row: ActivityReviewRow) {
+  if (!row.attention) return 5;
+  if (!row.state) return 4;
+  if (row.latest?.status === "completed") return 0;
+  if (row.latest?.status === "rejected" || row.latest?.status === "returned") return 1;
+  if (!row.latest) return 2;
+  return 3;
 }

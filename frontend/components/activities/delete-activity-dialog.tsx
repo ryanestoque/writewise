@@ -47,7 +47,7 @@ export function DeleteActivityDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-md p-5 sm:p-6 rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl border border-border/80 bg-surface dark:bg-card">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-md p-5 sm:p-6 rounded-2xl sm:rounded-3xl overflow-y-auto shadow-xl border border-border/80 bg-surface dark:bg-card">
         <DialogHeader className="pb-3 text-left">
           <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">
             {hasSubmissions ? "Cannot Delete Activity" : "Delete Activity"}

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { LegalPage, type LegalSection } from "@/components/legal/legal-page";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | WriteWise",
+  title: "Privacy Policy",
   description:
     "How WriteWise handles account information, children's handwriting worksheets, assessment records, and privacy requests.",
 };

@@ -13,6 +13,14 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { NotificationList } from "./notification-list";
 import { createClient } from "@/lib/supabase/client";
 import { abortAccountRequests } from "@/lib/supabase/account-scope";
@@ -111,44 +119,102 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
     if (!row.read_at && row.type !== "comment_posted") markRead(row.id);
     setOpen(false);
   }
+  const isMobile = useIsMobile();
   const label =
     count.data === undefined || count.isError
       ? "Notifications, unread count unavailable"
       : `Notifications, ${count.data} unread`;
+
+  const handleOpenChange = (value: boolean) => {
+    setOpen(value);
+    if (value) {
+      void count.refetch();
+      void feed.refetch();
+      void labels.refetch();
+    }
+  };
+
+  const trigger = (
+    <Button
+      variant="ghost"
+      size="icon"
+      aria-label={label}
+      className="relative size-10 min-h-[40px] min-w-[40px] shrink-0 sm:size-9 sm:min-h-0 sm:min-w-0"
+      disabled={!active}
+    >
+      <Bell aria-hidden="true" />
+      {count.data !== undefined && count.data > 0 && (
+        <Badge
+          aria-hidden="true"
+          className="absolute -top-1 -right-1 min-w-5 justify-center px-1 text-[11px] font-sans font-medium bg-primary text-primary-foreground shadow-xs"
+        >
+          {count.data > 99 ? "99+" : count.data}
+        </Badge>
+      )}
+    </Button>
+  );
+
+  const list = (
+    <>
+      {count.isError && (
+        <p role="status" className="text-muted-foreground text-xs pb-1">
+          Unread count unavailable.
+        </p>
+      )}
+      <NotificationList
+        rows={rows}
+        labels={labels.data ?? EMPTY_LABELS}
+        role={role}
+        loading={feed.isPending && feed.isFetching}
+        error={feed.isError || labels.isError || !!feed.loadMoreError}
+        retry={() => {
+          void feed.retry();
+          void labels.refetch();
+          void count.refetch();
+        }}
+        hasMore={feed.data?.hasMore ?? false}
+        loadingMore={feed.isLoadingMore}
+        loadMore={() => feed.loadMore()}
+        pendingId={read.isPending ? read.variables.id : null}
+        onRead={markRead}
+        onActivate={activate}
+      />
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer
+        open={open && active}
+        onOpenChange={handleOpenChange}
+        showSwipeHandle
+      >
+        <DrawerTrigger render={trigger} />
+        <DrawerContent className="p-4 pt-2">
+          <DrawerHeader className="flex flex-row items-center justify-between gap-2 p-0 pb-3">
+            <DrawerTitle>Notifications</DrawerTitle>
+            <Button
+              variant="ghost"
+              size="xs"
+              className="min-h-10 px-2.5 sm:min-h-7"
+              disabled={readAll.isPending || count.data === 0}
+              onClick={() => readAll.mutate(undefined, { onError: feedback })}
+            >
+              {readAll.isPending ? "Saving…" : "Mark all read"}
+            </Button>
+          </DrawerHeader>
+          {list}
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Popover
       open={open && active}
-      onOpenChange={(value) => {
-        setOpen(value);
-        if (value) {
-          void count.refetch();
-          void feed.refetch();
-          void labels.refetch();
-        }
-      }}
+      onOpenChange={handleOpenChange}
     >
-      <PopoverTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={label}
-            className="relative size-10 min-h-[40px] min-w-[40px] shrink-0 sm:size-9 sm:min-h-0 sm:min-w-0"
-            disabled={!active}
-          />
-        }
-      >
-        <Bell aria-hidden="true" />
-        {count.data !== undefined && count.data > 0 && (
-          <Badge
-            aria-hidden="true"
-            variant="secondary"
-            className="absolute -top-1 -right-1 min-w-5 justify-center px-1 text-[10px]"
-          >
-            {count.data > 99 ? "99+" : count.data}
-          </Badge>
-        )}
-      </PopoverTrigger>
+      <PopoverTrigger render={trigger} />
       <PopoverContent align="end" className="w-[min(24rem,calc(100vw-1.5rem))]">
         <PopoverHeader className="flex-row items-center justify-between gap-2">
           <PopoverTitle>Notifications</PopoverTitle>
@@ -162,29 +228,7 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
             {readAll.isPending ? "Saving…" : "Mark all read"}
           </Button>
         </PopoverHeader>
-        {count.isError && (
-          <p role="status" className="text-muted-foreground text-xs">
-            Unread count unavailable.
-          </p>
-        )}
-        <NotificationList
-          rows={rows}
-          labels={labels.data ?? EMPTY_LABELS}
-          role={role}
-          loading={feed.isPending && feed.isFetching}
-          error={feed.isError || labels.isError || !!feed.loadMoreError}
-          retry={() => {
-            void feed.retry();
-            void labels.refetch();
-            void count.refetch();
-          }}
-          hasMore={feed.data?.hasMore ?? false}
-          loadingMore={feed.isLoadingMore}
-          loadMore={() => feed.loadMore()}
-          pendingId={read.isPending ? read.variables.id : null}
-          onRead={markRead}
-          onActivate={activate}
-        />
+        {list}
       </PopoverContent>
     </Popover>
   );

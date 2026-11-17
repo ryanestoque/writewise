@@ -47,6 +47,32 @@ const states = [
   { student_id: "cy", active_submission_id: "scored", work_status: "Draft" },
 ];
 
+test("student navigation follows the filtered queue and keeps one worksheet per student", () => {
+  const rows = review.buildReviewRows(students, uploads, states);
+  const queue = review.getReviewQueueRows(rows, {
+    searchQuery: "", statusFilter: "attention", uploadFilter: "all", sortBy: "name_desc",
+  }, () => null);
+  const navigation = review.getReviewNavigation(rows, uploads[1], queue.map(row => row.student.id));
+  assert.deepEqual(navigation.map(item => item.student_id), queue.filter(row => row.selected).map(row => row.student.id));
+  assert.equal(navigation.find(item => item.student_id === "ada").id, "retry");
+  assert.equal(navigation.filter(item => item.student_id === "ada").length, 1);
+});
+
+test("review session retains its order after sharing and does not invent a navigation position outside the queue", () => {
+  const rows = review.buildReviewRows(students, uploads, states);
+  assert.deepEqual(review.getReviewNavigation(rows, uploads[0], ["cy", "ada", "ben"]).map(item => item.id), ["scored", "official"]);
+  assert.deepEqual(review.getReviewNavigation(rows, uploads[0], ["cy"]), []);
+  assert.deepEqual(review.getReviewNavigation(rows, undefined, ["cy", "ada"]), []);
+});
+
+test("queue navigation respects combined upload and search filters", () => {
+  const rows = review.buildReviewRows(students, uploads, states);
+  const queue = review.getReviewQueueRows(rows, {
+    searchQuery: "Ada", statusFilter: "all", uploadFilter: "rejected", sortBy: "newest",
+  }, () => null);
+  assert.deepEqual(queue.map(row => row.student.id), ["ada"]);
+});
+
 test("shared review rows include assigned students without uploads and preserve official work", () => {
   const rows = review.buildReviewRows(students, uploads, states);
   assert.equal(rows.length, 3);
@@ -89,4 +115,20 @@ test("excused students are not awaiting an upload and unavailable work does not 
   assert.equal(rows[0].selected, undefined);
   assert.equal(rows[0].counted, undefined);
   assert.equal(rows[0].attention, true);
+});
+
+test("score sorting follows official results instead of newer attempts", () => {
+  const rows = review.buildReviewRows(students, [
+    { id: "ada-official", student_id: "ada", status: "completed", created_at: "2026-11-14", score: 40 },
+    { id: "ada-newer", student_id: "ada", status: "completed", created_at: "2026-11-15", score: 95 },
+    { id: "ben-official", student_id: "ben", status: "completed", created_at: "2026-11-14", score: 70 },
+    { id: "cy-latest", student_id: "cy", status: "completed", created_at: "2026-11-15", score: 100 },
+  ], [
+    { student_id: "ada", active_submission_id: "ada-official", work_status: "Released" },
+    { student_id: "ben", active_submission_id: "ben-official", work_status: "Draft" },
+    { student_id: "cy", active_submission_id: null, work_status: "Turned in" },
+  ]);
+  const sorted = review.sortReviewRows(rows, "score_desc", submission => submission?.score ?? null);
+  assert.deepEqual(sorted.map(row => row.student.id), ["ben", "ada", "cy"]);
+  assert.deepEqual(sorted.slice(0, 2).map(row => row.selected.id), ["ben-official", "ada-official"]);
 });
