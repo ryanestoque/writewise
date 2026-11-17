@@ -14,7 +14,8 @@ import {
 import { ActivityReviewQueue } from "@/components/activities/activity-review-queue";
 import {
   buildReviewRows, countReviewRows, filterReviewRows, sortReviewRows,
-  type ReviewFilter, type ReviewSort,
+  readReviewQueue, updateReviewQueue, reviewQueueQuery,
+  type ReviewView, type ReviewSort, type UploadFilter, type ReviewQueueState,
 } from "@/lib/utils/activity-review";
 import { useActivityWork } from "@/lib/hooks/use-activity-work";
 
@@ -67,9 +68,8 @@ import {
   type ClassDiagnosticSummary,
 } from "@/components/activities/activity-detail-hero";
 
-type SubmissionFilter = ReviewFilter;
+type SubmissionFilter = ReviewView;
 type SubmissionSort = ReviewSort;
-type UploadFilter = Exclude<ReviewFilter, "attention" | "awaiting">;
 
 const uploadFilterOptions: { id: UploadFilter; label: string }[] = [
   { id: "all", label: "Any upload status" },
@@ -80,7 +80,7 @@ const uploadFilterOptions: { id: UploadFilter; label: string }[] = [
 ];
 
 const sortOptions: { id: SubmissionSort; label: string }[] = [
-  { id: "attention", label: "Needs attention first" },
+  { id: "attention", label: "Review-ready first" },
   { id: "newest", label: "Newest upload first" },
   { id: "oldest", label: "Oldest upload first" },
   { id: "name_asc", label: "Student (A–Z)" },
@@ -115,7 +115,7 @@ export default function ActivityDetailPage({
     refetch: refetchSubmissions,
   } = useSubmissions(id);
   const { openUpload } = useTeacherModals();
-  const { mutate: toggleArchive } = useToggleArchive();
+  const { mutate: toggleArchive, isPending: archivePending } = useToggleArchive();
 
   // Dialog states
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
@@ -123,14 +123,17 @@ export default function ActivityDetailPage({
   const [isDuplicateOpen, setIsDuplicateOpen] = useState(false);
   const [hasCopiedPrompt, setHasCopiedPrompt] = useState(false);
 
-  // Search, filter, and sort states
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<SubmissionFilter>("attention");
-  const [uploadFilter, setUploadFilter] = useState<UploadFilter>("all");
-  const [sortBy, setSortBy] = useState<SubmissionSort>("attention");
+  // The URL survives refresh, browser Back, and returning from a worksheet.
+  const { searchQuery, statusFilter, uploadFilter, sortBy } = readReviewQueue(searchParams);
+  const queueQuery = reviewQueueQuery(searchParams);
+  const changeQueue = useCallback((patch: Partial<ReviewQueueState>) => {
+    const next = updateReviewQueue(new URLSearchParams(window.location.search), patch);
+    const query = next.toString();
+    window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+  }, []);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Shortcut key listener for '/' and 'U'
+  // Modifier shortcuts stay inactive while a dialog owns keyboard focus.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -139,16 +142,15 @@ export default function ActivityDetailPage({
       const isInput =
         ["INPUT", "TEXTAREA", "SELECT"].includes(targetTag || "") ||
         isContentEditable;
-      if (isInput) return;
+      if (isInput || e.defaultPrevented || e.repeat || e.isComposing ||
+        document.querySelector('[role="dialog"]:not([hidden]), [role="alertdialog"]:not([hidden])') ||
+        !e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
 
-      if (e.key === "/") {
+      if (e.code === "Slash") {
         e.preventDefault();
         searchInputRef.current?.focus();
       } else if (
-        e.key.toLowerCase() === "u" &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !e.altKey
+        e.code === "KeyU"
       ) {
         e.preventDefault();
         openUpload({ activityId: id });
@@ -283,7 +285,7 @@ export default function ActivityDetailPage({
     () => filterReviewRows(reviewRows, uploadFilter),
     [reviewRows, uploadFilter]
   );
-  const counts = useMemo(() => countReviewRows(uploadFilteredRows), [uploadFilteredRows]);
+  const counts = useMemo(() => countReviewRows(reviewRows), [reviewRows]);
   const visibleRows = useMemo(() => sortReviewRows(
     filterReviewRows(uploadFilteredRows, statusFilter, searchQuery), sortBy,
     submission => resolveSubmissionScore(submission).compositeScore
@@ -293,8 +295,19 @@ export default function ActivityDetailPage({
     { id: "awaiting", label: "Awaiting upload", count: workspaceReady ? counts.awaiting : "?" },
     { id: "all", label: "All students", count: workspaceReady ? counts.all : "?" },
   ], [counts, workspaceReady]);
+  const activeViewLabel = String(submissionFilterItems.find(item => item.id === statusFilter)?.label ?? "All students");
+  const activeUploadLabel = uploadFilterOptions.find(option => option.id === uploadFilter)?.label;
+  const queueEmptyMessage = uploadFilter !== "all"
+    ? `No students match ${activeViewLabel?.toLowerCase()} with latest upload status ${activeUploadLabel?.toLowerCase()}${searchQuery.trim() ? ` and the search “${searchQuery.trim()}”` : ""}.`
+    : searchQuery.trim()
+      ? `No students match “${searchQuery.trim()}” in ${activeViewLabel?.toLowerCase()}.`
+      : statusFilter === "attention"
+        ? "No students need attention right now."
+        : statusFilter === "awaiting"
+          ? "No students are awaiting their first upload."
+          : "No student work matches the current view.";
   const handleToggleArchive = useCallback(() => {
-    if (!activity) return;
+    if (!activity || archivePending) return;
     toggleArchive(activity.id, {
       onSuccess: (result) => {
         toast.success(
@@ -313,7 +326,7 @@ export default function ActivityDetailPage({
         toast.error("Failed to update activity archive state.");
       },
     });
-  }, [activity, toggleArchive]);
+  }, [activity, archivePending, toggleArchive]);
 
   const handleCopyPrompt = useCallback(() => {
     if (!activity) return;
@@ -394,7 +407,8 @@ export default function ActivityDetailPage({
 
   if (isLoading) {
     return (
-      <div className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
+      <div role="status" aria-label="Loading activity and student work" className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
+        <span className="sr-only">Loading activity and student work…</span>
         <Skeleton className="h-4 w-40" />
         <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-6 space-y-4 shadow-warm">
           <div className="flex items-center justify-between">
@@ -412,11 +426,18 @@ export default function ActivityDetailPage({
             <Skeleton className="h-6 w-36" />
             <Skeleton className="h-8 w-44 rounded-lg" />
           </div>
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="aspect-4/3 w-full rounded-xl" />
-                <Skeleton className="h-4 w-1/2" />
+          <div aria-hidden="true" className="divide-y divide-border">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-36" />
+                  <Skeleton className="h-5 w-24 rounded-md" />
+                  <Skeleton className="h-3 w-48" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-11 w-36 sm:h-9 rounded-lg" />
+                  <Skeleton className="h-11 w-24 sm:h-9 rounded-lg" />
+                </div>
               </div>
             ))}
           </div>
@@ -495,6 +516,7 @@ export default function ActivityDetailPage({
       <ActivityDetailHero
         activity={activity}
         isArchived={isArchived}
+        archivePending={archivePending}
         wordCount={wordCount}
         totalStudents={totalStudents}
         uniqueStudentsCount={uniqueStudentsCount}
@@ -521,6 +543,9 @@ export default function ActivityDetailPage({
         >
           Student work
         </h2>
+        <p className="max-w-prose text-sm text-muted-foreground">
+          Review each upload, choose the official worksheet used for assessment, then share its results with parents.
+        </p>
         {/* Filter & Search Bar */}
         {(assignedStudents.length > 0 || !workspaceReady) && (
           <div className="flex flex-col gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
@@ -528,19 +553,20 @@ export default function ActivityDetailPage({
             <div className="flex flex-col gap-3 min-w-0 sm:flex-row sm:items-center sm:justify-between">
               <SearchInput
                 ref={searchInputRef}
-                showShortcut={false}
+                shortcutKey="Alt /"
                 placeholder="Search student name"
                 aria-label="Search student work by student name"
+                aria-keyshortcuts="Alt+/"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onClear={() => setSearchQuery("")}
+                onChange={(e) => changeQueue({ searchQuery: e.target.value })}
+                onClear={() => changeQueue({ searchQuery: "" })}
                 containerClassName="w-full sm:w-56 lg:w-64 shrink-0"
               />
 
               <FilterPills
                 items={submissionFilterItems}
                 value={statusFilter}
-                onChange={setStatusFilter}
+                onChange={statusFilter => changeQueue({ statusFilter })}
                 ariaLabel="Student work views"
                 containerClassName="min-w-0 w-full sm:w-auto sm:flex-none"
                 className="grid w-full grid-cols-3 overflow-visible"
@@ -561,7 +587,7 @@ export default function ActivityDetailPage({
                 <DropdownMenuContent align="start" className="w-64">
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>Latest upload status</DropdownMenuLabel>
-                    <DropdownMenuRadioGroup value={uploadFilter} onValueChange={value => setUploadFilter(value as UploadFilter)}>
+                    <DropdownMenuRadioGroup value={uploadFilter} onValueChange={value => changeQueue({ uploadFilter: value as UploadFilter })}>
                       {uploadFilterOptions.map(option => (
                         <DropdownMenuRadioItem key={option.id} value={option.id} closeOnClick className="min-h-11 sm:min-h-9">
                           {option.label}
@@ -582,7 +608,7 @@ export default function ActivityDetailPage({
                 <DropdownMenuContent align="start" className="w-64">
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>Sort student work</DropdownMenuLabel>
-                    <DropdownMenuRadioGroup value={sortBy} onValueChange={value => setSortBy(value as SubmissionSort)}>
+                    <DropdownMenuRadioGroup value={sortBy} onValueChange={value => changeQueue({ sortBy: value as SubmissionSort })}>
                       {sortOptions.map(option => (
                         <DropdownMenuRadioItem key={option.id} value={option.id} closeOnClick className="min-h-11 sm:min-h-9">
                           {option.label}
@@ -592,14 +618,25 @@ export default function ActivityDetailPage({
                   </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
-              {uploadFilter !== "all" && (
-                <Button variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => setUploadFilter("all")}>
-                  Clear upload filter
+              {(uploadFilter !== "all" || searchQuery || statusFilter !== "all") && (
+                <Button variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => changeQueue({ searchQuery: "", statusFilter: "all", uploadFilter: "all" })}>
+                  Clear filters
                 </Button>
               )}
             </div>
+            {statusFilter === "awaiting" && (
+              <p className="text-xs text-muted-foreground">Choosing a latest-upload status switches to All students.</p>
+            )}
             {uploadFilter === "completed" && (
               <p className="text-xs text-muted-foreground">Analysis is ready for the latest upload. Teacher review and sharing may still be needed.</p>
+            )}
+            {workspaceReady && (
+              <p className="break-words text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">{visibleRows.length} of {assignedStudents.length} assigned students shown</span>
+                {" · "}{activeViewLabel}
+                {uploadFilter !== "all" && <> · Latest upload: {activeUploadLabel}</>}
+                {searchQuery.trim() && <> · Matching “{searchQuery.trim()}”</>}
+              </p>
             )}
           </div>
         )}
@@ -616,31 +653,10 @@ export default function ActivityDetailPage({
           )}
         </div>
 
-        {/* Search Results Filter Indicator */}
-        {searchQuery && workspaceReady && (
-          <div
-            className="flex items-center justify-between text-xs text-muted-foreground px-1"
-          >
-            <span>
-              Showing{" "}
-              <strong className="text-foreground">{currentListLength}</strong>{" "}
-              matching &ldquo;
-              <strong className="text-foreground">{searchQuery}</strong>
-              &rdquo;
-            </span>
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="text-primary hover:underline font-medium cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm min-h-11 px-2 sm:min-h-9"
-            >
-              Clear search
-            </button>
-          </div>
-        )}
-
         <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-warm">
             <ActivityReviewQueue
               activityId={id}
+              queueQuery={queueQuery}
               rows={visibleRows}
               assignedStudentCount={assignedStudents.length}
               rosterLoading={rosterLoading}
@@ -650,7 +666,9 @@ export default function ActivityDetailPage({
               uploadsLoading={submissionsLoading}
               uploadsError={!!submissionsError}
               searchQuery={searchQuery}
-              onClearFilters={() => { setSearchQuery(""); setStatusFilter("all"); setUploadFilter("all"); }}
+              emptyMessage={queueEmptyMessage}
+              onClearUploadFilter={uploadFilter !== "all" ? () => changeQueue({ uploadFilter: "all" }) : undefined}
+              onClearFilters={() => changeQueue({ searchQuery: "", statusFilter: "all", uploadFilter: "all" })}
               onRetryRoster={() => { void refetchStudents(); }}
               onRetryWork={() => { void workQuery.refetch(); }}
               onRetryUploads={() => { void refetchSubmissions(); }}

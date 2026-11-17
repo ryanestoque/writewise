@@ -52,6 +52,7 @@ function AttemptScore({ label, submission }: { label: string; submission: Submis
 
 export function ActivityReviewQueue({
   activityId,
+  queueQuery = "",
   rows,
   assignedStudentCount,
   rosterLoading,
@@ -61,6 +62,8 @@ export function ActivityReviewQueue({
   uploadsLoading,
   uploadsError,
   searchQuery,
+  emptyMessage,
+  onClearUploadFilter,
   onClearFilters,
   onRetryRoster,
   onRetryWork,
@@ -69,6 +72,7 @@ export function ActivityReviewQueue({
   onEdit,
 }: {
   activityId: string;
+  queueQuery?: string;
   rows: ActivityReviewRow[];
   assignedStudentCount: number;
   rosterLoading: boolean;
@@ -78,6 +82,8 @@ export function ActivityReviewQueue({
   uploadsLoading: boolean;
   uploadsError: boolean;
   searchQuery: string;
+  emptyMessage?: string;
+  onClearUploadFilter?: () => void;
   onClearFilters: () => void;
   onRetryRoster: () => void;
   onRetryWork: () => void;
@@ -128,8 +134,13 @@ export function ActivityReviewQueue({
       {!rosterLoading && !rosterError && !workLoading && !workError && !uploadsLoading && !uploadsError && assignedStudentCount > 0 && rows.length === 0 && (
         <div className="flex flex-col items-start gap-3 py-6">
           <p className="text-muted-foreground text-sm">
-            {searchQuery.trim() ? "No students match your search and filter." : "No student work matches the current filter."}
+            {emptyMessage ?? (searchQuery.trim() ? "No students match your search and filter." : "No student work matches the current filter.")}
           </p>
+          {onClearUploadFilter && (
+            <Button variant="outline" className="min-h-11 sm:min-h-9" onClick={onClearUploadFilter}>
+              Clear latest-upload filter
+            </Button>
+          )}
           <Button variant="outline" className="min-h-11 sm:min-h-9" onClick={onClearFilters}>
             Show all students
           </Button>
@@ -149,31 +160,29 @@ export function ActivityReviewQueue({
               className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="flex min-w-0 flex-col gap-2">
-                <h3 className="text-sm font-semibold break-words">{student.full_name}</h3>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <h3 className="text-sm font-semibold break-words">{student.full_name}</h3>
                   <ActivityWorkStatus
                     state={state}
                     unavailable={workError || (!state && !workLoading)}
                   />
-                  {counted && (
-                    <span className="text-muted-foreground text-xs">
-                      {state?.work_status === "Released" ? "Shared with parents" : "Not shared with parents"}
-                    </span>
-                  )}
                 </div>
                 {counted && (
-                  <>
-                    <AttemptScore label="Official result" submission={counted} />
-                    <AttemptIdentity label="Official worksheet" submission={counted} />
-                  </>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                    <AttemptScore label="Official assessment" submission={counted} />
+                    <AttemptIdentity label="Uploaded" submission={counted} />
+                  </div>
                 )}
                 {latest && latest.id !== counted?.id && (
-                  <>
+                  <div className="flex flex-col gap-1">
                     {state && latest.status === "completed" && (
-                      <AttemptScore label="Latest attempt (not official)" submission={latest} />
+                      <AttemptScore label={counted ? "New upload · not official" : "Awaiting review"} submission={latest} />
                     )}
-                    <AttemptIdentity label="Latest attempt" submission={latest} />
-                  </>
+                    <AttemptIdentity label={latest.status === "completed" ? "Uploaded" : "Latest upload"} submission={latest} />
+                    {state && latest.status === "processing" && (
+                      <p className="text-muted-foreground text-sm">Analysis is processing.</p>
+                    )}
+                  </div>
                 )}
                 {!state && !workLoading && (
                   <div className="flex flex-col items-start gap-2">
@@ -185,28 +194,15 @@ export function ActivityReviewQueue({
                     </Button>
                   </div>
                 )}
-                {state && latest && latest.id !== counted?.id && (
-                  <p className="text-muted-foreground text-sm">
-                    {latest.status === "rejected"
-                      ? "Latest upload rejected — a replacement photo is needed."
-                      : latest.status === "returned"
-                        ? "Latest worksheet returned for revision."
-                        : latest.status === "processing"
-                          ? "Latest upload is processing."
-                          : counted
-                            ? "A newer attempt is awaiting your review."
-                            : "Analysis is ready. Review this attempt before sharing results."}
-                  </p>
-                )}
                 {latest?.status === "rejected" && (
                   <p className="text-muted-foreground text-sm">
-                    {getRejectionSummary(latest.rejection_code).label}:{" "}
+                    Upload rejected · {getRejectionSummary(latest.rejection_code).label}:{" "}
                     {getRejectionSummary(latest.rejection_code).detail}.
                   </p>
                 )}
                 {latest?.status === "returned" && (
                   <p className="text-muted-foreground text-sm break-words whitespace-pre-wrap">
-                    Reason:{" "}
+                    Returned for revision · {" "}
                     {(
                       {
                         wrong_worksheet: "Wrong worksheet",
@@ -220,7 +216,7 @@ export function ActivityReviewQueue({
                   </p>
                 )}
               </div>
-              <div className="flex min-w-0 flex-col items-start gap-2 sm:max-w-[55%] sm:items-end">
+              <div className="flex min-w-0 flex-wrap items-center gap-2 sm:max-w-[55%] sm:justify-end">
                 <div className="flex flex-wrap items-center gap-2">
                   {needsReplacement && (
                     <Button onClick={() => onUpload(student.id)} className="min-h-11 sm:min-h-9">
@@ -231,7 +227,7 @@ export function ActivityReviewQueue({
                   {reviewNewer && (
                     <Link
                       className={buttonVariants({ className: "min-h-11 sm:min-h-9" })}
-                      href={`/activities/${activityId}/submissions/${latest.id}`}
+                      href={`/activities/${activityId}/submissions/${latest.id}${queueQuery}`}
                       aria-label={`Review newer upload for ${student.full_name}`}
                     >
                       Review new attempt
@@ -243,7 +239,7 @@ export function ActivityReviewQueue({
                         variant: needsReplacement || reviewNewer ? "outline" : "default",
                         className: "min-h-11 sm:min-h-9",
                       })}
-                      href={`/activities/${activityId}/submissions/${selected.id}`}
+                      href={`/activities/${activityId}/submissions/${selected.id}${queueQuery}`}
                     >
                       {selected.status === "processing"
                         ? "View processing upload"
@@ -282,7 +278,7 @@ export function ActivityReviewQueue({
                           variant: "outline",
                           className: "min-h-11 sm:min-h-9",
                         })}
-                        href={`/activities/${activityId}/submissions/${latest.id}`}
+                        href={`/activities/${activityId}/submissions/${latest.id}${queueQuery}`}
                       >
                         View latest attempt<span className="sr-only"> for {student.full_name}</span>
                       </Link>

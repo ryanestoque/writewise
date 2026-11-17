@@ -27,6 +27,7 @@ import {
 import type { Submission } from "@/lib/hooks/use-submissions";
 import type { components } from "@/types/api";
 import { ApiError } from "@/lib/utils/api-error";
+import { teacherWorkStatusLabel } from "@/lib/utils/activity-work";
 import { resolveSubmissionScore } from "@/lib/utils/submission-status";
 import {
   toActivityDueAt,
@@ -48,7 +49,7 @@ export function workActionError(error: unknown): string {
     if (error.code === "SUBMISSION_NOT_RETURNABLE")
       return "This attempt has changed and cannot be returned. Refresh and try again.";
     if (error.code === "SUBMISSION_NOT_RELEASABLE")
-      return "Choose the active graded attempt before releasing its result.";
+      return "Choose the official graded worksheet before sharing its result.";
     if (error.code === "INVALID_WORK_SELECTION")
       return "Choose a completed attempt for this student and activity.";
     if (error.code === "NOT_FOUND")
@@ -164,7 +165,7 @@ export function SubmissionLifecycleControls({ submission, showRelease = true }: 
           body: { pinned_submission_id: action === "pin" ? submission.id : null },
         });
       toast.success(
-        action === "release" ? "Result released to the parent." : "Counted attempt updated."
+        action === "release" ? "Result shared with parents." : "Official worksheet updated."
       );
     } catch (error) {
       setError(workActionError(error));
@@ -172,7 +173,7 @@ export function SubmissionLifecycleControls({ submission, showRelease = true }: 
   }
   return (
     <section
-      aria-label="Worksheet return and release"
+      aria-label="Worksheet return and sharing"
       ref={focusTarget}
       tabIndex={-1}
       className="border-border bg-card my-3 flex flex-col gap-3 rounded-xl border p-3"
@@ -184,10 +185,10 @@ export function SubmissionLifecycleControls({ submission, showRelease = true }: 
             : !work
               ? "Loading work status…"
               : active
-                ? work.work_status
+                ? teacherWorkStatusLabel(work.work_status)
                 : "Historical attempt"}
         </Badge>
-        {active && <Badge variant="outline">Counted attempt</Badge>}
+        {active && <Badge variant="outline">Official worksheet</Badge>}
         {work?.pinned_submission_id === submission.id && <Badge variant="outline">Pinned</Badge>}
         {completed && (
           <Button
@@ -204,7 +205,7 @@ export function SubmissionLifecycleControls({ submission, showRelease = true }: 
           !submission.released_at &&
           resolveSubmissionScore(submission).isScored && (
             <Button size="sm" onClick={() => act("release")} disabled={pending}>
-              Release result
+              Share result with parents
             </Button>
           )}
         {completed && !active && (
@@ -214,7 +215,7 @@ export function SubmissionLifecycleControls({ submission, showRelease = true }: 
             onClick={() => act("pin")}
             disabled={pending || !work}
           >
-            Count this attempt
+            Use as official worksheet
           </Button>
         )}
         {work?.pinned_submission_id && (
@@ -240,8 +241,8 @@ export function SubmissionLifecycleControls({ submission, showRelease = true }: 
       )}
       {completed && active && !submission.released_at && (
         <p className="text-muted-foreground text-sm">
-          The parent can see the upload. Scores and diagnostic feedback are shared when you release
-          the result.
+          The parent can see the upload. Choose Share result with parents to make scores and
+          diagnostic feedback visible too.
         </p>
       )}
       {(error || isError) && (
@@ -296,7 +297,7 @@ function WorkSettingsForm({
     event.preventDefault();
     setError(null);
     if (!dueEdited && !pinEdited) {
-      setError("Change a deadline or counted attempt before saving.");
+      setError("Change a deadline or official worksheet before saving.");
       return;
     }
     try {
@@ -336,12 +337,12 @@ function WorkSettingsForm({
           </FieldDescription>
           {due && Date.parse(`${due}:00+08:00`) < now && (
             <p className="text-muted-foreground text-sm">
-              This deadline has passed. Work without a counted attempt will be Missing.
+              This deadline has passed. Work without an official worksheet will be Missing.
             </p>
           )}
         </Field>
         <Field>
-          <FieldLabel htmlFor={`${id}-pin`}>Counted attempt</FieldLabel>
+          <FieldLabel htmlFor={`${id}-pin`}>Official worksheet</FieldLabel>
           <NativeSelect
             id={`${id}-pin`}
             value={pin}
@@ -363,7 +364,7 @@ function WorkSettingsForm({
               ))}
           </NativeSelect>
           <FieldDescription>
-            A pin can count an older completed attempt after a Return.
+            Pin an older completed attempt to keep it as the official worksheet after a return.
           </FieldDescription>
         </Field>
       </FieldGroup>
@@ -411,7 +412,7 @@ export function StudentWorkControls(props: {
           <DialogHeader>
             <DialogTitle>Work settings</DialogTitle>
             <DialogDescription>
-              {props.studentName}: deadline and counted attempt.
+              {props.studentName}: deadline and official worksheet.
             </DialogDescription>
           </DialogHeader>
           {open && <WorkSettingsForm {...props} onDone={() => setOpen(false)} />}
@@ -433,7 +434,7 @@ export function ReleaseActivityButton({ activityId }: { activityId: string }) {
     try {
       const result = await mutation.mutateAsync(activityId);
       toast.success(
-        `Released ${result.released_count} worksheet ${result.released_count === 1 ? "result" : "results"} and ${result.released_grade_count} point ${result.released_grade_count === 1 ? "grade" : "grades"}.`
+        `Shared ${result.released_count} worksheet ${result.released_count === 1 ? "result" : "results"} and ${result.released_grade_count} point ${result.released_grade_count === 1 ? "grade" : "grades"} with parents.`
       );
       setOpen(false);
     } catch (error) {
@@ -454,7 +455,7 @@ export function ReleaseActivityButton({ activityId }: { activityId: string }) {
         Share results and grades
       </Button>
       <span className="text-xs text-muted-foreground" role="status">
-        {isLoading ? "Loading worksheet status…" : isError ? "Worksheet status unavailable." : `${count} draft worksheet results. Point grades checked separately.`}
+        {isLoading ? "Loading worksheet status…" : isError ? "Worksheet status unavailable." : `${count} worksheet results need review. Point grades checked separately.`}
       </span>
       {isError && <Button variant="outline" className="min-h-11 sm:min-h-9" onClick={() => void refetch()}>Retry status</Button>}
       <Dialog
@@ -465,7 +466,7 @@ export function ReleaseActivityButton({ activityId }: { activityId: string }) {
       >
         <DialogContent finalFocus={focusTarget}>
           <DialogHeader>
-            <DialogTitle>Release activity results and grades?</DialogTitle>
+            <DialogTitle>Share activity results and grades with parents?</DialogTitle>
             <DialogDescription>
               Share all eligible worksheet results and point grades for this activity across its
               assigned sections. This includes draft overrides and zeros, even without uploads.
@@ -474,8 +475,8 @@ export function ReleaseActivityButton({ activityId }: { activityId: string }) {
             </DialogDescription>
           </DialogHeader>
           <p className="text-muted-foreground text-sm">
-            {count} worksheet {count === 1 ? "result has" : "results have"} Draft status.
-            Point grades may be eligible even without draft worksheets. The server checks eligibility when sharing and reports what was shared.
+            {count} worksheet {count === 1 ? "result needs" : "results need"} review.
+            Point grades may be eligible even without worksheets needing review. The server checks eligibility when sharing and reports what was shared.
           </p>
           <a href="/gradebook" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Review point grades in gradebook</a>
           {error && (
@@ -488,7 +489,7 @@ export function ReleaseActivityButton({ activityId }: { activityId: string }) {
               Cancel
             </Button>
             <Button className="min-h-11 sm:min-h-9" onClick={release} disabled={mutation.isPending}>
-              {mutation.isPending ? "Releasing…" : "Release all eligible results and grades"}
+              {mutation.isPending ? "Sharing…" : "Share all eligible results and grades"}
             </Button>
           </DialogFooter>
         </DialogContent>

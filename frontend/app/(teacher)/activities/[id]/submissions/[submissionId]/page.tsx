@@ -10,6 +10,7 @@ import { ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { parseTeacherCommentTarget } from "@/lib/comments/targets";
 import { SubmissionCommentDestination } from "@/components/comments/submission-comment-destination";
+import { reviewQueueQuery } from "@/lib/utils/activity-review";
 
 export default function SubmissionDetailPage({
   params,
@@ -18,7 +19,10 @@ export default function SubmissionDetailPage({
 }) {
   const { id: activityId, submissionId } = use(params);
   const router = useRouter();
-  const commentTarget = parseTeacherCommentTarget(useSearchParams(), activityId, submissionId);
+  const searchParams = useSearchParams();
+  const commentTarget = parseTeacherCommentTarget(searchParams, activityId, submissionId);
+  const queueQuery = reviewQueueQuery(searchParams);
+  const activityHref = `/activities/${activityId}${queueQuery}`;
 
   const { data: activity, isLoading: activityLoading } = useActivity(activityId);
   const { data: submissions, isLoading: submissionsLoading } = useSubmissions(activityId);
@@ -36,16 +40,16 @@ export default function SubmissionDetailPage({
   const handleNavigate = useCallback(
     (target: Submission) => {
       router.replace(
-        `/activities/${activityId}/submissions/${target.id}`,
+        `/activities/${activityId}/submissions/${target.id}${queueQuery}`,
         { scroll: false }
       );
     },
-    [router, activityId]
+    [router, activityId, queueQuery]
   );
 
   const handleClose = useCallback(() => {
-    router.push(`/activities/${activityId}`);
-  }, [router, activityId]);
+    router.push(activityHref);
+  }, [router, activityHref]);
 
   // Handle Esc key to return to activity view
   useEffect(() => {
@@ -137,7 +141,7 @@ export default function SubmissionDetailPage({
           </p>
         </div>
         <Link
-          href={`/activities/${activityId}`}
+          href={activityHref}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-xs"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
@@ -153,7 +157,7 @@ export default function SubmissionDetailPage({
       {/* Top Back Navigation Trail */}
       <nav aria-label="Breadcrumb navigation" className="print:hidden">
         <Link
-          href={`/activities/${activityId}`}
+          href={activityHref}
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-2.5 py-2 min-h-[44px] sm:min-h-[36px] hover:bg-muted/50 -ml-1 sm:-ml-2"
         >
           <ArrowLeft

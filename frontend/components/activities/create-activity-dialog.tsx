@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ActivityAssignmentFields, activitySchema, type ActivityFormValues } from "./activity-assignment-fields";
@@ -67,6 +67,20 @@ interface CreateActivityDialogProps {
   isDuplicate?: boolean;
 }
 
+function activityDraftDefaults(initialValues?: Partial<Activity>): ActivityFormValues {
+  return {
+    title: initialValues?.title ?? "",
+    instructions: initialValues?.instructions ?? "",
+    assignments: initialValues?.assignments ?? [],
+    due_input: "",
+    close_after_due: false,
+    target_text: initialValues?.target_text ?? "",
+    is_take_home: initialValues?.is_take_home ?? false,
+    points_input: initialValues?.points_possible?.toString() ?? "",
+    confirm_remove_points: false,
+  };
+}
+
 export function CreateActivityDialog({
   open,
   onOpenChange,
@@ -74,18 +88,12 @@ export function CreateActivityDialog({
   isDuplicate = false,
 }: CreateActivityDialogProps) {
   const { mutate: createActivity, isPending } = useCreateActivity();
+  const sourceKey = isDuplicate ? `duplicate:${initialValues?.id ?? ""}` : "create";
+  const draftSourceRef = useRef(sourceKey);
 
   const form = useForm<ActivityFormValues>({
     resolver: zodResolver(activitySchema),
-    defaultValues: {
-      title: initialValues?.title ?? "",
-      instructions: initialValues?.instructions ?? "",
-      assignments: initialValues?.assignments ?? [],
-      due_input: "", close_after_due: false,
-      target_text: initialValues?.target_text ?? "",
-      is_take_home: initialValues?.is_take_home ?? false,
-      points_input: initialValues?.points_possible?.toString() ?? "", confirm_remove_points: false,
-    },
+    defaultValues: activityDraftDefaults(initialValues),
   });
 
   const targetText = useWatch({ control: form.control, name: "target_text" });
@@ -93,18 +101,12 @@ export function CreateActivityDialog({
   const wordCount = getWordCount(targetText || "");
 
   useEffect(() => {
-    if (open) {
-      form.reset({
-        title: initialValues?.title ?? "",
-      instructions: initialValues?.instructions ?? "",
-      assignments: initialValues?.assignments ?? [],
-      due_input: "", close_after_due: false,
-      target_text: initialValues?.target_text ?? "",
-        is_take_home: initialValues?.is_take_home ?? false,
-        points_input: initialValues?.points_possible?.toString() ?? "", confirm_remove_points: false,
-      });
+    // Reopening or a fresh props object must not replace an unsaved draft.
+    if (open && draftSourceRef.current !== sourceKey) {
+      draftSourceRef.current = sourceKey;
+      form.reset(activityDraftDefaults(initialValues));
     }
-  }, [open, initialValues, form]);
+  }, [open, sourceKey, initialValues, form]);
 
   const onSubmit = (data: ActivityFormValues) => {
     if (!data.assignments.length) {
@@ -122,6 +124,7 @@ export function CreateActivityDialog({
       },
       {
         onSuccess: () => {
+          form.reset();
           toast.success(
             isDuplicate
               ? "Activity duplicated successfully."

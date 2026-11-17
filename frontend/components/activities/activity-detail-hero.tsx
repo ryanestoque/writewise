@@ -55,6 +55,7 @@ export interface ClassDiagnosticSummary {
 export interface ActivityDetailHeroProps {
   activity: Activity;
   isArchived: boolean;
+  archivePending?: boolean;
   progressUnavailable?: boolean;
   wordCount: number;
   totalStudents: number;
@@ -76,6 +77,7 @@ export interface ActivityDetailHeroProps {
 export const ActivityDetailHero = memo(function ActivityDetailHero({
   activity,
   isArchived,
+  archivePending = false,
   progressUnavailable = false,
   wordCount,
   totalStudents,
@@ -177,13 +179,14 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
               size="sm"
               onClick={onUpload}
               className="min-h-[44px] sm:min-h-[36px] h-auto sm:h-9 px-3 sm:px-3.5 bg-primary hover:bg-brand-700 dark:hover:bg-brand-500 text-primary-foreground text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer"
-              title="Upload Worksheets (U)"
+              title="Upload Worksheets (Alt+U)"
+              aria-keyshortcuts="Alt+U"
             >
               <Upload className="w-4 h-4 mr-1 sm:mr-1.5 shrink-0" />
               <span className="inline sm:hidden">Upload</span>
               <span className="hidden sm:inline">Upload Worksheets</span>
               <kbd className="hidden sm:inline-flex items-center justify-center ml-2 px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground/90 bg-white/20 dark:bg-white/15 rounded border border-white/30 font-mono">
-                U
+                Alt U
               </kbd>
             </Button>
 
@@ -226,17 +229,18 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
 
                 <DropdownMenuItem
                   onClick={onToggleArchive}
+                  disabled={archivePending}
                   className="cursor-pointer text-xs flex items-center min-h-[44px] sm:min-h-[36px]"
                 >
                   {isArchived ? (
                     <>
                       <ArchiveRestore className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
-                      <span>Unarchive Activity</span>
+                      <span>{archivePending ? "Restoring…" : "Unarchive Activity"}</span>
                     </>
                   ) : (
                     <>
                       <Archive className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
-                      <span>Archive Activity</span>
+                      <span>{archivePending ? "Archiving…" : "Archive Activity"}</span>
                     </>
                   )}
                 </DropdownMenuItem>
@@ -289,6 +293,10 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
         </div>
         </details>
       </div>
+
+      <span role="status" className="sr-only">
+        {archivePending ? (isArchived ? "Restoring activity…" : "Archiving activity…") : ""}
+      </span>
 
       {/* Bottom Aggregate Bar: Class Roster Progress + Diagnostic Synthesis */}
       <div className="pt-3 border-t border-border/50 grid grid-cols-1 lg:grid-cols-2 gap-3.5 mt-4">
