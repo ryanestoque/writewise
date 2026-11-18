@@ -1,4 +1,5 @@
 import { createClient as createCaller, type SupabaseClient } from "@supabase/supabase-js";
+import type { QueryClient } from "@tanstack/react-query";
 import { createClient as createBrowser } from "@/lib/supabase/client";
 import { getAuthToken } from "@/lib/supabase/auth-helper";
 import { ApiError } from "@/lib/utils/api-error";
@@ -18,6 +19,22 @@ export function accountRequestSignal(userId: string, signal?: AbortSignal): Abor
 export function abortAccountRequests(userId: string) {
   accounts.get(userId)?.abort();
   accounts.delete(userId);
+}
+
+export function purgeAccountCaches(client: QueryClient, userId: string) {
+  abortAccountRequests(userId);
+  for (const mutation of client.getMutationCache().findAll({ mutationKey: ["comments", userId] })) {
+    client.getMutationCache().remove(mutation);
+  }
+  void client.cancelQueries({ queryKey: ["comments", userId] }).then(() => {
+    client.removeQueries({ queryKey: ["comments", userId] });
+  });
+  void client.cancelQueries({ queryKey: ["gradebook", userId] }).then(() => {
+    client.removeQueries({ queryKey: ["gradebook", userId] });
+  });
+  void client.cancelQueries({ queryKey: ["notifications", userId] }).then(() => {
+    client.removeQueries({ queryKey: ["notifications", userId] });
+  });
 }
 
 export async function withAccountScope<T>(

@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,12 @@ import {
   formatActivityDueAt,
 } from "@/lib/utils/activity-deadlines";
 import { useActivityNow } from "@/components/activities/activity-work-status";
+import { Checkbox } from "@/components/ui/checkbox";
+import type { Student } from "@/lib/hooks/use-students";
+import {
+  ActivityReleaseGradePreview,
+  useActivityReleaseGrades,
+} from "./activity-release-grade-preview";
 
 const REASONS: { value: components["schemas"]["ReturnReason"]; label: string }[] = [
   { value: "wrong_worksheet", label: "Wrong worksheet" },
@@ -131,10 +138,16 @@ function ReturnForm({ submission, onDone }: { submission: Submission; onDone: ()
         </p>
       )}
       <DialogFooter>
-        <Button type="button" variant="outline" onClick={onDone} disabled={mutation.isPending}>
+        <Button
+          className="min-h-10 md:min-h-9"
+          type="button"
+          variant="outline"
+          onClick={onDone}
+          disabled={mutation.isPending}
+        >
           Cancel
         </Button>
-        <Button type="submit" disabled={mutation.isPending}>
+        <Button className="min-h-10 md:min-h-9" type="submit" disabled={mutation.isPending}>
           {mutation.isPending ? "Returning…" : "Return worksheet"}
         </Button>
       </DialogFooter>
@@ -142,7 +155,13 @@ function ReturnForm({ submission, onDone }: { submission: Submission; onDone: ()
   );
 }
 
-export function SubmissionLifecycleControls({ submission, showRelease = true }: { submission: Submission; showRelease?: boolean }) {
+export function SubmissionLifecycleControls({
+  submission,
+  showRelease = true,
+}: {
+  submission: Submission;
+  showRelease?: boolean;
+}) {
   const focusTarget = useRef<HTMLElement>(null);
   const { data: states, isError } = useActivityWork(submission.activity_id);
   const work = states?.find((row) => row.student_id === submission.student_id);
@@ -199,7 +218,8 @@ export function SubmissionLifecycleControls({ submission, showRelease = true }: 
             Return
           </Button>
         )}
-        {showRelease && completed &&
+        {showRelease &&
+          completed &&
           active &&
           !submission.released_at &&
           resolveSubmissionScore(submission).isScored && (
@@ -373,10 +393,20 @@ function WorkSettingsForm({
         </p>
       )}
       <DialogFooter>
-        <Button type="button" variant="outline" onClick={onDone} disabled={update.isPending}>
+        <Button
+          className="min-h-10 md:min-h-9"
+          type="button"
+          variant="outline"
+          onClick={onDone}
+          disabled={update.isPending}
+        >
           Cancel
         </Button>
-        <Button type="submit" disabled={update.isPending || (!dueEdited && !pinEdited)}>
+        <Button
+          className="min-h-10 md:min-h-9"
+          type="submit"
+          disabled={update.isPending || (!dueEdited && !pinEdited)}
+        >
           {update.isPending ? "Saving…" : "Save work settings"}
         </Button>
       </DialogFooter>
@@ -401,13 +431,15 @@ export function StudentWorkControls(props: {
         variant="outline"
         onClick={() => setOpen(true)}
         disabled={!props.state}
+        aria-label={`Deadline and counted attempt for ${props.studentName}`}
+        className="min-h-11 md:min-h-9"
       >
-        Work settings
+        Deadline & attempt
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent finalFocus={trigger}>
           <DialogHeader>
-            <DialogTitle>Work settings</DialogTitle>
+            <DialogTitle>Deadline and counted attempt</DialogTitle>
             <DialogDescription>
               {props.studentName}: deadline and counted attempt.
             </DialogDescription>
@@ -419,19 +451,62 @@ export function StudentWorkControls(props: {
   );
 }
 
-export function ReleaseActivityButton({ activityId }: { activityId: string }) {
+export function ReleaseActivityButton({
+  activityId,
+  userId,
+  hasPointGrades = false,
+  students = [],
+  rosterReady = true,
+}: {
+  activityId: string;
+  userId: string;
+  hasPointGrades?: boolean;
+  students?: Student[];
+  rosterReady?: boolean;
+}) {
   const focusTarget = useRef<HTMLSpanElement>(null);
-  const { data: states } = useActivityWork(activityId);
+  const descriptionId = useId();
+  const { data: states, isPending, isError, isFetching, refetch } = useActivityWork(activityId);
   const [open, setOpen] = useState(false);
+  const [step, setStep] = useState<"review" | "confirm">("review");
+  const [manualReviewSnapshot, setManualReviewSnapshot] = useState<string | null>(null);
+  const [reviewedSnapshot, setReviewedSnapshot] = useState("");
+  const [receipt, setReceipt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const mutation = useReleaseActivity();
-  const count = states?.filter((row) => row.work_status === "Draft").length ?? 0;
+  const inventory = useActivityReleaseGrades({
+    userId,
+    activityId,
+    students,
+    states,
+    enabled: open && hasPointGrades,
+  });
+  const drafts = states?.filter((row) => row.work_status === "Draft") ?? [];
+  const count = drafts.length;
+  const snapshot = JSON.stringify({
+    work: [...(states ?? [])].sort((a, b) => a.student_id.localeCompare(b.student_id)),
+    grades: hasPointGrades ? inventory.snapshot : null,
+    uncovered: inventory.uncovered.map((student) => student.id).sort(),
+  });
+  const changedSinceReview = step === "confirm" && reviewedSnapshot !== snapshot;
+  const gradesReviewed = manualReviewSnapshot === snapshot;
+  const canReview =
+    !isPending &&
+    !isFetching &&
+    !isError &&
+    rosterReady &&
+    (!hasPointGrades ||
+      (inventory.ready && inventory.unknownCount === 0 && (inventory.complete || gradesReviewed)));
   async function release() {
+    if (!canReview || changedSinceReview || step !== "confirm") return;
     setError(null);
     try {
       const result = await mutation.mutateAsync(activityId);
       toast.success(
         `Released ${result.released_count} worksheet ${result.released_count === 1 ? "result" : "results"} and ${result.released_grade_count} point ${result.released_grade_count === 1 ? "grade" : "grades"}.`
+      );
+      setReceipt(
+        `Shared ${result.released_count} worksheet results and ${result.released_grade_count} point grades with parents.`
       );
       setOpen(false);
     } catch (error) {
@@ -439,17 +514,57 @@ export function ReleaseActivityButton({ activityId }: { activityId: string }) {
     }
   }
   return (
-    <span ref={focusTarget} tabIndex={-1} className="inline-flex">
-      <Button
-        variant="outline"
-        disabled={!count}
-        onClick={() => {
-          setError(null);
-          setOpen(true);
-        }}
+    <span ref={focusTarget} tabIndex={-1} className="flex flex-col gap-1.5 sm:items-end">
+      {(isPending || isError || !rosterReady || count > 0 || hasPointGrades) && (
+        <Button
+          variant="outline"
+          disabled={isPending || !rosterReady || (!count && !hasPointGrades && !isError)}
+          aria-describedby={descriptionId}
+          className="min-h-11 md:min-h-9"
+          onClick={() => {
+            setError(null);
+            setStep("review");
+            setManualReviewSnapshot(null);
+            setOpen(true);
+            void refetch();
+          }}
+        >
+          Review release
+        </Button>
+      )}
+      <span
+        id={descriptionId}
+        className="text-muted-foreground max-w-sm text-xs sm:text-right"
+        role="status"
       >
-        Release activity
-      </Button>
+        {!rosterReady
+          ? "Load the student roster before reviewing release."
+          : isPending
+            ? "Checking release readiness…"
+            : isError
+              ? "Release readiness unavailable. Retry work status below."
+              : count > 0
+                ? `${count} draft worksheet ${count === 1 ? "result" : "results"} ready to share.`
+                : "No draft worksheet results to release."}
+        {hasPointGrades && (
+          <>
+            {" "}
+            Review point grades before release.{" "}
+            <Link
+              href={`/gradebook?activity=${encodeURIComponent(activityId)}`}
+              className="focus-visible:ring-ring inline-flex min-h-10 items-center underline underline-offset-4 focus-visible:ring-2 focus-visible:outline-none md:min-h-9"
+            >
+              Review in Gradebook
+            </Link>
+            .
+          </>
+        )}
+      </span>
+      {receipt && (
+        <span role="status" className="text-muted-foreground max-w-sm text-xs sm:text-right">
+          {receipt}
+        </span>
+      )}
       <Dialog
         open={open}
         onOpenChange={(next) => {
@@ -458,29 +573,140 @@ export function ReleaseActivityButton({ activityId }: { activityId: string }) {
       >
         <DialogContent finalFocus={focusTarget}>
           <DialogHeader>
-            <DialogTitle>Release activity results and grades?</DialogTitle>
+            <DialogTitle>
+              {step === "review"
+                ? "Review what parents will see"
+                : `Release ${hasPointGrades ? "results and grades" : "worksheet results"}?`}
+            </DialogTitle>
             <DialogDescription>
-              Share all eligible worksheet results and point grades for this activity across its
-              assigned sections. This includes draft overrides and zeros, even without uploads.
-              Excused work is skipped. A worksheet&apos;s assessment and diagnostic feedback are shared
-              only when that attempt is scored.
+              Share all eligible worksheet results{hasPointGrades ? " and point grades" : ""} for
+              this activity across its assigned sections.{" "}
+              {hasPointGrades && "This includes draft overrides and zeros, even without uploads. "}
+              Excused work is skipped. A worksheet&apos;s assessment and diagnostic feedback are
+              shared only when that attempt is scored.
             </DialogDescription>
           </DialogHeader>
-          <p className="text-muted-foreground text-sm">
-            {count} draft worksheet {count === 1 ? "result is" : "results are"} currently ready.
-            Additional point grades may be released. Review point grades in the gradebook before confirming.
-          </p>
+          {step === "review" ? (
+            <div className="flex flex-col gap-4">
+              <p className="text-sm">
+                {count} draft worksheet {count === 1 ? "result" : "results"} ready across this
+                activity. Search and filters on the page do not limit this release.
+              </p>
+              {count > 0 && (
+                <ul
+                  aria-label="Worksheet results ready for release"
+                  className="flex max-h-48 flex-col gap-2 overflow-y-auto text-sm"
+                  tabIndex={0}
+                >
+                  {drafts.map((row) => {
+                    const student = students.find((entry) => entry.id === row.student_id);
+                    return (
+                      <li key={row.student_id} className="flex flex-col gap-0.5 border-b pb-2">
+                        <strong className="font-medium break-words">
+                          {student?.full_name ?? "Student unavailable"}
+                        </strong>
+                        <span className="text-muted-foreground">
+                          {student?.section || "No section"} · Counted worksheet result
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              {count} draft worksheet {count === 1 ? "result is" : "results are"} currently ready.
+              {hasPointGrades && (
+                <>
+                  {" "}
+                  {inventory.entries.length} draft point grades in the inventory will also be
+                  shared.
+                  {!inventory.complete &&
+                    " Additional eligible grades for the uncovered students may also be shared."}
+                </>
+              )}
+            </p>
+          )}
+          {hasPointGrades && (
+            <ActivityReleaseGradePreview inventory={inventory} activityId={activityId} />
+          )}
+          {step === "review" && hasPointGrades && inventory.ready && !inventory.complete && (
+            <label className="flex min-h-10 cursor-pointer items-start gap-3 text-sm">
+              <Checkbox
+                checked={gradesReviewed}
+                onCheckedChange={(checked) =>
+                  setManualReviewSnapshot(checked === true ? snapshot : null)
+                }
+              />
+              <span>
+                I manually reviewed the uncovered students&apos; point grades, including overrides
+                and zeros.
+              </span>
+            </label>
+          )}
+          {isError && (
+            <div className="flex flex-col gap-2">
+              <p role="alert">Could not refresh worksheet results. Retry before continuing.</p>
+              <Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
+                Retry worksheet results
+              </Button>
+            </div>
+          )}
+          {changedSinceReview && (
+            <p role="alert" className="text-sm">
+              Worksheet results or point grades changed. Go back and review the updated inventory
+              before releasing.
+            </p>
+          )}
           {error && (
             <p role="alert" className="text-destructive text-sm">
               {error}
             </p>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>
+          <DialogFooter className="sm:flex-col sm:items-stretch">
+            {step === "confirm" && (
+              <Button
+                variant="outline"
+                disabled={mutation.isPending}
+                onClick={() => {
+                  setStep("review");
+                  setManualReviewSnapshot(null);
+                }}
+              >
+                Back to review
+              </Button>
+            )}
+            <Button
+              className="min-h-10 md:min-h-9"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={mutation.isPending}
+            >
               Cancel
             </Button>
-            <Button onClick={release} disabled={mutation.isPending}>
-              {mutation.isPending ? "Releasing…" : "Release all eligible results and grades"}
+            <Button
+              className="h-auto min-h-11 whitespace-normal"
+              onClick={() => {
+                if (step === "review") {
+                  setReviewedSnapshot(snapshot);
+                  setStep("confirm");
+                } else void release();
+              }}
+              disabled={
+                mutation.isPending ||
+                !canReview ||
+                changedSinceReview ||
+                (!count && !hasPointGrades)
+              }
+            >
+              {mutation.isPending
+                ? "Releasing…"
+                : step === "review"
+                  ? "Continue to confirmation"
+                  : hasPointGrades
+                    ? "Release all eligible results and grades"
+                    : "Release all eligible results"}
             </Button>
           </DialogFooter>
         </DialogContent>

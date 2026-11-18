@@ -2,13 +2,13 @@ import type { NotificationRow } from "./data";
 import { commentThreadHref } from "@/lib/comments/targets";
 
 const COPY: Record<NotificationRow["type"], string> = {
-  activity_assigned: "New activity assigned",
-  due_soon: "Activity due soon",
-  submission_returned: "Another attempt requested",
-  submission_rejected: "Photo needs another upload",
-  score_released: "Result shared",
-  activity_missing: "Activity is missing",
-  resubmitted_after_return: "New attempt after Return",
+  activity_assigned: "New handwriting activity assigned",
+  due_soon: "Handwriting activity due soon",
+  submission_returned: "Teacher requested another practice attempt",
+  submission_rejected: "Worksheet photo unclear: Tap for retake tips",
+  score_released: "Handwriting assessment ready",
+  activity_missing: "Pending worksheet: Ready for submission",
+  resubmitted_after_return: "New cursive worksheet submitted",
   comment_posted: "New private comment",
 };
 

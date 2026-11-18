@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ApiError } from "@/lib/utils/api-error";
 import {
@@ -185,7 +185,7 @@ export function NotificationSettingsCard({
           <CardContent className="flex flex-col gap-4">
             {isLoading ? (
               <div role="status" className="flex flex-col gap-2">
-                <span>Loading email settings…</span>
+                <span className="text-xs text-muted-foreground">Loading email settings…</span>
                 <Skeleton className="h-5 w-40" aria-hidden="true" />
               </div>
             ) : draftEnabled !== null ? (
@@ -196,7 +196,7 @@ export function NotificationSettingsCard({
                     <FieldDescription id={descriptionId}>
                       {role === "parent"
                         ? "Get email when work needs another attempt or an activity is due soon. In-app notifications stay on."
-                        : "Classroom emails currently go to parents. Your in-app notifications stay on."}
+                        : "Opt in for upcoming classroom email summaries. Immediate activity updates always appear in-app."}
                     </FieldDescription>
                   </FieldContent>
                   <Switch
@@ -216,35 +216,41 @@ export function NotificationSettingsCard({
             {failure && (
               <Alert variant="destructive">
                 <AlertTitle>Email settings need attention</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
+                <AlertDescription className="flex items-center justify-between gap-2">
+                  <span>{failure}</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="xs"
+                    disabled={busy}
+                    className="h-9 min-h-[44px] px-3 md:h-7 md:min-h-0 md:px-2.5 touch-manipulation cursor-pointer"
+                    onClick={() => {
+                      setIsLoading(true);
+                      setFailure(null);
+                      setSavedMessage(false);
+                      void load();
+                    }}
+                  >
+                    Try again
+                  </Button>
+                </AlertDescription>
               </Alert>
             )}
             {savedMessage && (
-              <p role="status" className="text-muted-foreground">
-                Email settings saved.
+              <p role="status" className="text-sm font-medium text-primary flex items-center gap-1.5">
+                <Check className="size-4" aria-hidden="true" />
+                <span>Email settings saved.</span>
               </p>
             )}
           </CardContent>
-          <CardFooter className="flex-wrap justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={busy}
-              onClick={() => {
-                setIsLoading(true);
-                setFailure(null);
-                setSavedMessage(false);
-                void load();
-              }}
-            >
-              Reload settings
-            </Button>
+          <CardFooter className="justify-end gap-2">
             <Button
               type="submit"
+              className="min-h-[44px] md:min-h-0 touch-manipulation cursor-pointer"
               disabled={busy || draftEnabled === null || draftEnabled === savedEnabled}
             >
               {isSaving && (
-                <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />
+                <Loader2 data-icon="inline-start" className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
               )}
               {isSaving ? "Saving…" : "Save changes"}
             </Button>

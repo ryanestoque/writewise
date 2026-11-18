@@ -104,7 +104,9 @@ export function NotificationWorkDestination({
             {work.status === "ready" ? work.activity.title : "Activity update"}
           </DialogTitle>
           <DialogDescription>
-            {work.status === "ready" ? childName : "View your activity update."}
+            {work.status === "ready"
+              ? `Review activity instructions, due date, and submission status for ${childName}.`
+              : "View your activity update."}
           </DialogDescription>
         </DialogHeader>
         {work.status === "loading" ? (
@@ -123,7 +125,7 @@ export function NotificationWorkDestination({
             <Button
               variant="outline"
               onClick={work.retry}
-              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] cursor-pointer"
+              className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] touch-manipulation cursor-pointer"
             >
               Try again
             </Button>
@@ -171,7 +173,7 @@ export function NotificationWorkDestination({
           <Button
             variant="outline"
             onClick={onClose}
-            className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] cursor-pointer"
+            className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] touch-manipulation cursor-pointer"
           >
             Back to progress
           </Button>
@@ -182,7 +184,7 @@ export function NotificationWorkDestination({
                 onClose();
                 onUploadActivity?.(work.activity.id);
               }}
-              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 font-semibold cursor-pointer"
+              className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] gap-1.5 font-semibold touch-manipulation cursor-pointer"
             >
               <Camera className="size-4" aria-hidden="true" />
               <span>

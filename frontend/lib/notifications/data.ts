@@ -115,7 +115,9 @@ export async function readNotificationPage(
   };
 }
 
-// Refresh all previously loaded work, including a gap of more than one new page.
+export const MAX_NOTIFICATION_WINDOW = 100;
+
+// Refresh all previously loaded work up to the through cursor in an efficient batch.
 export async function readNotificationWindow(
   client: BrowserClient,
   userId: string,
@@ -123,25 +125,50 @@ export async function readNotificationWindow(
   signal?: AbortSignal
 ): Promise<NotificationWindow> {
   if (!through) return readNotificationPage(client, userId, null, signal);
-  let cursor: NotificationCursor | null = null;
-  const collected: NotificationRow[] = [];
-  for (;;) {
-    const page = await readNotificationPage(client, userId, cursor, signal);
-    const reached = page.rows.some((row) => compareNotificationCursor(row, through) >= 0);
-    collected.push(...page.rows.filter((row) => compareNotificationCursor(row, through) <= 0));
-    if (reached || !page.hasMore || !page.oldest) {
-      const rows = mergeNotificationRows(collected);
-      const last = rows.at(-1);
-      return {
-        rows,
-        oldest: last ? { id: last.id, created_at: last.created_at } : null,
-        hasMore:
-          page.hasMore || page.rows.some((row) => compareNotificationCursor(row, through) > 0),
-      };
-    }
-    if (page.oldest.id === cursor?.id) throw new Error("Notification page did not advance");
-    cursor = page.oldest;
+  if (!isNotificationUuid(through.id)) throw new Error("Invalid notification cursor");
+  timestampKey(through.created_at);
+
+  // Single batch query from newest items through the cursor position
+  let query = client
+    .from("notification")
+    .select("*")
+    .eq("recipient_id", userId)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .or(
+      `created_at.gt.${through.created_at},and(created_at.eq.${through.created_at},id.gte.${through.id})`
+    )
+    .limit(MAX_NOTIFICATION_WINDOW);
+  if (signal) query = query.abortSignal(signal);
+
+  let moreQuery = client
+    .from("notification")
+    .select("id")
+    .eq("recipient_id", userId)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .or(
+      `created_at.lt.${through.created_at},and(created_at.eq.${through.created_at},id.lt.${through.id})`
+    )
+    .limit(1);
+  if (signal) moreQuery = moreQuery.abortSignal(signal);
+
+  const [res, moreRes] = await Promise.all([query, moreQuery]);
+  if (res.error) throw res.error;
+  if (moreRes.error) throw moreRes.error;
+
+  const rows = (res.data ?? []) as NotificationRow[];
+  if (rows.length === 0) {
+    // If through was removed or obsolete, gracefully fallback to the first page
+    return readNotificationPage(client, userId, null, signal);
   }
+
+  const last = rows.at(-1);
+  return {
+    rows,
+    oldest: last ? { id: last.id, created_at: last.created_at } : through,
+    hasMore: (moreRes.data?.length ?? 0) > 0,
+  };
 }
 
 export async function readNotificationLabels(

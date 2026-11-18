@@ -13,16 +13,12 @@ export function useActivityNow() {
   return now;
 }
 
-export function ActivityWorkStatus({
-  state,
-}: {
-  state?: ActivityWorkState | null;
-}) {
-  if (!state) return <span className="text-sm text-muted-foreground">Loading work status…</span>;
+export function ActivityWorkStatus({ state }: { state?: ActivityWorkState | null }) {
+  if (!state) return <span className="text-muted-foreground text-sm">Loading work status…</span>;
   const work = { status: state.work_status, late: state.late };
   return (
     <span className="inline-flex flex-wrap gap-1.5">
-      <Badge variant={work.status === "Missing" ? "destructive" : "secondary"}>{work.status}</Badge>
+      <Badge variant="secondary">{work.status}</Badge>
       {work.late && work.status !== "Excused" && <Badge variant="outline">Late</Badge>}
     </span>
   );

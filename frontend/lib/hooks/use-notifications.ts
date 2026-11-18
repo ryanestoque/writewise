@@ -70,7 +70,8 @@ export function useNotificationFeed(
     },
     placeholderData: keepPreviousData,
     enabled: enabled && !paging && !!userId && (open || !!client.getQueryData(key)),
-    refetchInterval: 60_000,
+    staleTime: 15_000,
+    refetchInterval: open ? 60_000 : false,
     refetchOnWindowFocus: "always",
   });
   const more = useMutation({
@@ -103,7 +104,6 @@ export function useNotificationFeed(
     onSettled: () => {
       pagingRef.current = false;
       setPaging(false);
-      void invalidateNotifications(client);
     },
   });
   return {
@@ -131,7 +131,7 @@ export function useNotificationLabels(userId: string, rows: NotificationRow[], e
     queryKey: notificationKeys.labels(userId, identity),
     queryFn: ({ signal }) => readNotificationLabels(createClient(), rows, signal),
     enabled: enabled && rows.length > 0,
-    refetchInterval: 60_000,
+    staleTime: 5 * 60_000,
   });
 }
 

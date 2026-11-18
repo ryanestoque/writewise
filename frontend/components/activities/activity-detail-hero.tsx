@@ -1,13 +1,14 @@
 "use client";
 
 import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
-import { memo } from "react";
-import Link from "next/link";
+import { memo, useState } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { Activity } from "@/lib/hooks/use-activities";
 import type { ScoreBandInfo } from "@/lib/utils/submission-status";
 import { formatDate } from "@/lib/utils/formatters";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
   Popover,
@@ -40,6 +41,8 @@ import {
 
 export interface ClassDiagnosticSummary {
   completedCount: number;
+  manualCount: number;
+  calibratedCount: number;
   avgCompositeScore: number;
   scoreBand: ScoreBandInfo;
   criteriaAverages: {
@@ -62,6 +65,7 @@ export interface ActivityDetailHeroProps {
   totalScansCount: number;
   completionRate: number;
   classDiagnostics: ClassDiagnosticSummary | null;
+  summaryState?: "loading" | "error" | "ready";
   hasCopiedPrompt: boolean;
   onCopyPrompt: () => void;
   onUpload: () => void;
@@ -80,6 +84,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
   totalScansCount,
   completionRate,
   classDiagnostics,
+  summaryState = "ready",
   hasCopiedPrompt,
   onCopyPrompt,
   onUpload,
@@ -88,333 +93,273 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
   onDelete,
   onToggleArchive,
 }: ActivityDetailHeroProps) {
+  const [promptOpen, setPromptOpen] = useState(false);
   return (
     <section
       aria-labelledby="activity-prompt-heading"
-      className={cn(
-        "relative bg-surface dark:bg-card border rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-warm transition-colors duration-200 overflow-hidden print:shadow-none print:border-black/30 print:p-4 print:bg-white",
-        isArchived
-          ? "border-muted-foreground/30 bg-muted/20 opacity-95"
-          : "border-border"
-      )}
+      className="bg-surface rounded-xl border p-4 sm:p-5"
     >
-      {/* Screen Reader Semantic Heading */}
-      <h1 id="activity-prompt-heading" className="sr-only">
-        Activity: {activity.title || "Untitled Activity"}
-      </h1>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1
+            id="activity-prompt-heading"
+            className="font-heading text-lg font-semibold break-words sm:text-xl"
+          >
+            {activity.title || "Untitled Activity"}
+          </h1>
+          <p className="text-muted-foreground mt-1 text-xs">
+            {activity.is_take_home ? "Take-home" : "In-class"} ·{" "}
+            {activity.due_at ? "Due " + formatActivityDueAt(activity.due_at) : "No due date"}
+            {activity.close_after_due ? " · Parent uploads close after due" : ""}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2 print:hidden">
+          <Button
+            size="sm"
+            onClick={onUpload}
+            className="min-h-11 md:min-h-9"
+            title="Upload worksheets (U)"
+          >
+            <Upload data-icon="inline-start" />
+            <span className="sm:hidden">Upload</span>
+            <span className="hidden sm:inline">Upload worksheets</span>
+            <kbd className="ml-1 hidden rounded border px-1 text-xs md:inline">U</kbd>
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="border-border bg-background hover:bg-muted/60 text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex size-11 cursor-pointer items-center justify-center rounded-lg border transition-all focus-visible:ring-2 focus-visible:outline-hidden sm:size-9 sm:rounded-xl"
+              aria-label="More activity options"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="z-50 w-48">
+              <DropdownMenuItem
+                onClick={onCopyPrompt}
+                className="flex min-h-[44px] cursor-pointer items-center text-xs md:min-h-[36px]"
+              >
+                {hasCopiedPrompt ? (
+                  <Check className="text-primary mr-2 h-3.5 w-3.5 stroke-[2.5]" />
+                ) : (
+                  <Copy className="text-muted-foreground mr-2 h-3.5 w-3.5" />
+                )}
+                <span>{hasCopiedPrompt ? "Prompt Copied!" : "Copy Prompt Text"}</span>
+              </DropdownMenuItem>
 
-      <div className="mb-4 flex flex-col gap-2">
-        <h2 className="font-heading text-xl font-semibold">{activity.title}</h2>
-        <p className="text-sm text-muted-foreground">{activity.due_at ? `Due ${formatActivityDueAt(activity.due_at)}` : "No due date"}{activity.close_after_due ? " · Parent uploads close after due" : ""}</p>
-        {activity.instructions && <p className="whitespace-pre-wrap text-sm">{activity.instructions}</p>}
+              <DropdownMenuItem
+                onClick={onDuplicate}
+                className="flex min-h-[44px] cursor-pointer items-center text-xs md:min-h-[36px]"
+              >
+                <Copy className="text-muted-foreground mr-2 h-3.5 w-3.5" />
+                <span>Duplicate Activity</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={onEdit}
+                className="flex min-h-[44px] cursor-pointer items-center text-xs md:min-h-[36px]"
+              >
+                <Edit3 className="text-muted-foreground mr-2 h-3.5 w-3.5" />
+                <span>Edit Activity</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={onToggleArchive}
+                className="flex min-h-[44px] cursor-pointer items-center text-xs md:min-h-[36px]"
+              >
+                {isArchived ? (
+                  <>
+                    <ArchiveRestore className="text-muted-foreground mr-2 h-3.5 w-3.5" />
+                    <span>Unarchive Activity</span>
+                  </>
+                ) : (
+                  <>
+                    <Archive className="text-muted-foreground mr-2 h-3.5 w-3.5" />
+                    <span>Archive Activity</span>
+                  </>
+                )}
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                onClick={onDelete}
+                className="text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10 flex min-h-[44px] cursor-pointer items-center text-xs md:min-h-[36px]"
+              >
+                <Trash2 className="mr-2 h-3.5 w-3.5" />
+                <span>Delete Activity</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-      {/* Archived Top Warning Banner if Archived */}
       {isArchived && (
-        <div
-          role="status"
-          className="mb-4 -mt-1 -mx-1 px-3 py-1.5 rounded-lg bg-warning/10 border border-warning/25 text-warning-foreground dark:text-warning text-xs flex items-center gap-2 print:border-black/30 print:bg-muted/10 print:text-black"
-        >
-          <Archive
-            className="size-3.5 shrink-0 text-warning print:text-black"
-            aria-hidden="true"
-          />
-          <span>
-            This activity is archived and hidden from student assignment
-            pickers.
-          </span>
-        </div>
+        <p role="status" className="text-muted-foreground mt-3 text-sm">
+          <Archive className="mr-1 inline size-4" aria-hidden="true" />
+          Archived and hidden from student assignment pickers.
+        </p>
       )}
-
-      <div className="flex flex-col gap-4 min-w-0">
-        {/* Top Row: Context Badges + Action Buttons */}
-        <div className="flex items-start justify-between gap-2 sm:gap-3 min-w-0">
-          {/* Badges & Metadata */}
-          <div className="flex flex-col gap-1.5 min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap text-xs text-muted-foreground min-w-0">
-              {isArchived ? (
-                <Badge
-                  variant="outline"
-                  className="text-xs font-semibold px-2 sm:px-2.5 py-0.5 bg-muted/60 text-muted-foreground border-border/80 shrink-0 print:border-black/30 print:text-black"
-                >
-                  <Archive className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
-                  Archived
-                </Badge>
-              ) : activity.is_take_home ? (
-                <Badge
-                  variant="outline"
-                  className="text-xs font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900 shrink-0 print:border-black/30 print:text-black"
-                >
-                  <span>Take-home Activity</span>
-                </Badge>
-              ) : (
-                <Badge
-                  variant="outline"
-                  className="text-xs font-semibold px-2.5 py-0.5 bg-brand-100/70 text-brand-800 dark:bg-brand-900/50 dark:text-brand-200 border-brand-200/70 dark:border-brand-800/80 shrink-0 print:border-black/30 print:text-black"
-                >
-                  <span>In-Class Activity</span>
-                </Badge>
-              )}
-
-              <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground bg-muted/40 dark:bg-muted/30 px-2 py-0.5 rounded-md border border-border/50 tabular-nums shrink-0 print:border-black/30 print:text-black">
-                {wordCount} {wordCount === 1 ? "word" : "words"}
-              </span>
-            </div>
-
-            <time
-              dateTime={activity.created_at}
-              className="text-xs text-muted-foreground inline-flex items-center print:text-black"
-            >
-              <span>Created {formatDate(activity.created_at)}</span>
-            </time>
-          </div>
-
-          {/* Fast Action CTAs */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 self-start print:hidden">
-            <Button
-              size="sm"
-              onClick={onUpload}
-              className="min-h-[44px] sm:min-h-[36px] h-auto sm:h-9 px-3 sm:px-3.5 bg-primary hover:bg-brand-700 dark:hover:bg-brand-500 text-primary-foreground text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer"
-              title="Upload Worksheets (U)"
-            >
-              <Upload className="w-4 h-4 mr-1 sm:mr-1.5 shrink-0" />
-              <span className="inline sm:hidden">Upload</span>
-              <span className="hidden sm:inline">Upload Worksheets</span>
-              <kbd className="hidden sm:inline-flex items-center justify-center ml-2 px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground/90 bg-white/20 dark:bg-white/15 rounded border border-white/30 font-mono">
-                U
-              </kbd>
-            </Button>
-
-            {/* Options Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className="inline-flex items-center justify-center size-11 sm:size-9 rounded-lg sm:rounded-xl border border-border bg-background hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label="More activity options"
-              >
-                <MoreVertical className="w-4 h-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 z-50">
-                <DropdownMenuItem
-                  onClick={onCopyPrompt}
-                  className="cursor-pointer text-xs flex items-center min-h-[44px] sm:min-h-[36px]"
-                >
-                  {hasCopiedPrompt ? (
-                    <Check className="w-3.5 h-3.5 mr-2 text-primary stroke-[2.5]" />
-                  ) : (
-                    <Copy className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
-                  )}
-                  <span>{hasCopiedPrompt ? "Prompt Copied!" : "Copy Prompt Text"}</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  onClick={onDuplicate}
-                  className="cursor-pointer text-xs flex items-center min-h-[44px] sm:min-h-[36px]"
-                >
-                  <Copy className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
-                  <span>Duplicate Activity</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  onClick={onEdit}
-                  className="cursor-pointer text-xs flex items-center min-h-[44px] sm:min-h-[36px]"
-                >
-                  <Edit3 className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
-                  <span>Edit Activity</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  onClick={onToggleArchive}
-                  className="cursor-pointer text-xs flex items-center min-h-[44px] sm:min-h-[36px]"
-                >
-                  {isArchived ? (
-                    <>
-                      <ArchiveRestore className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
-                      <span>Unarchive Activity</span>
-                    </>
-                  ) : (
-                    <>
-                      <Archive className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
-                      <span>Archive Activity</span>
-                    </>
-                  )}
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-
-                <DropdownMenuItem
-                  onClick={onDelete}
-                  className="cursor-pointer text-xs text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10 flex items-center min-h-[44px] sm:min-h-[36px]"
-                >
-                  <Trash2 className="w-3.5 h-3.5 mr-2" />
-                  <span>Delete Activity</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
-        {/* Hero Penmanship Prompt on Authentic 3-Line Cursive Ruling */}
-        <div className="relative group/prompt">
-          <div className="relative rounded-xl border border-border/80 bg-background/60 dark:bg-card/60 p-4 sm:p-5 shadow-warm-sm overflow-hidden">
-            <div className="relative overflow-hidden">
-              <div
-                className="absolute inset-0 pointer-events-none cursive-guidelines overflow-hidden print:opacity-60"
-                aria-hidden="true"
-              />
-              <p
-                className={cn(
-                  "relative z-10 tracking-wide select-all break-words print:text-black",
-                  activity.target_text?.trim()
-                    ? "font-cursive text-foreground/90 font-medium text-[32px]/[48px] sm:text-[36px]/[48px] leading-[48px]"
-                    : "text-muted-foreground italic font-sans text-sm sm:text-base leading-normal py-3"
-                )}
-                style={
-                  activity.target_text?.trim()
-                    ? { lineHeight: "48px" }
-                    : undefined
-                }
-              >
-                {activity.target_text?.trim() || "No target text specified"}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Aggregate Bar: Class Roster Progress + Diagnostic Synthesis */}
-      <div className="pt-3 border-t border-border/50 grid grid-cols-1 lg:grid-cols-2 gap-3.5 mt-4">
-        {/* Left: Class Roster Completion */}
-        <div className="flex flex-col justify-center gap-2">
-          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span>
-                <strong className="text-foreground font-semibold tabular-nums">
-                  {uniqueStudentsCount}
-                </strong>{" "}
-                of{" "}
-                <strong className="text-foreground font-semibold tabular-nums">
-                  {totalStudents}
-                </strong>{" "}
-                enrolled students submitted
-                {totalScansCount > uniqueStudentsCount && (
-                  <span className="text-muted-foreground/80 font-normal">
-                    {" "}
-                    ({totalScansCount} total{" "}
-                    {totalScansCount === 1 ? "scan" : "scans"})
-                  </span>
-                )}
-              </span>
-            </div>
-            {totalStudents > 0 && (
-              <Badge
-                variant="outline"
-                className="text-[11px] font-semibold px-2 py-0.5 bg-muted/60 text-foreground shrink-0 tabular-nums"
-              >
-                {completionRate}% complete
-              </Badge>
+      <Collapsible open={promptOpen} onOpenChange={setPromptOpen} className="mt-1">
+        <CollapsibleTrigger
+          render={<Button variant="ghost" className="min-h-11 px-0 md:min-h-9" />}
+        >
+          {promptOpen ? "Hide activity details" : "Activity details"}
+          <ChevronDown
+            data-icon="inline-end"
+            className={cn(
+              "transition-transform motion-reduce:transition-none",
+              promptOpen && "rotate-180"
             )}
-          </div>
-
-          {/* Progress bar or Empty Roster Prompt */}
-          {totalStudents > 0 ? (
+          />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pb-3">
+          <p className="text-muted-foreground mb-3 text-xs">
+            {wordCount} {wordCount === 1 ? "word" : "words"} · Created{" "}
+            <time dateTime={activity.created_at}>{formatDate(activity.created_at)}</time> ·{" "}
+            {totalScansCount} total uploads
+          </p>
+          {activity.instructions && (
+            <p className="mb-3 max-w-prose text-sm break-words whitespace-pre-wrap">
+              {activity.instructions}
+            </p>
+          )}
+          <div className="bg-muted/30 relative overflow-hidden rounded-lg p-4">
             <div
-              className="w-full h-2 rounded-full bg-muted overflow-hidden"
-              role="progressbar"
-              aria-valuenow={completionRate}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuetext={`${uniqueStudentsCount} of ${totalStudents} students submitted (${completionRate}%)`}
-              aria-label={`Class completion rate: ${completionRate}%`}
+              className="cursive-guidelines pointer-events-none absolute inset-0"
+              aria-hidden="true"
+            />
+            <p
+              className={cn(
+                "relative break-words whitespace-pre-wrap select-all",
+                activity.target_text?.trim()
+                  ? "font-cursive text-3xl leading-[48px]"
+                  : "text-muted-foreground text-sm"
+              )}
             >
-              <div
-                className="h-full bg-brand-600 dark:bg-brand-500 rounded-full transition-all duration-500 ease-out motion-reduce:transition-none"
-                style={{
-                  width: `${completionRate}%`,
-                }}
-              />
-            </div>
+              {activity.target_text?.trim() || "No target text specified"}
+            </p>
+          </div>
+          <Button variant="ghost" onClick={onCopyPrompt} className="mt-1 min-h-11">
+            {hasCopiedPrompt ? (
+              <Check data-icon="inline-start" />
+            ) : (
+              <Copy data-icon="inline-start" />
+            )}
+            {hasCopiedPrompt ? "Copied" : "Copy worksheet prompt"}
+          </Button>
+        </CollapsibleContent>
+      </Collapsible>
+      {summaryState !== "ready" ? (
+        <div role="status" className="text-muted-foreground mt-2 text-sm">
+          {summaryState === "loading" ? (
+            <>
+              <span>Loading class progress...</span>
+              <Skeleton className="mt-2 h-2 w-full" />
+            </>
           ) : (
-            <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/20 px-2.5 py-1.5 rounded-lg border border-dashed border-border">
-              <span className="text-[11px]">No students enrolled yet</span>
-              <Link
-                href="/roster"
-                className="text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 inline-flex items-center gap-1 group/link focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm py-1.5 px-2 -my-1 sm:my-0 min-h-[36px] sm:min-h-0"
-              >
-                <span>Manage Roster</span>
-                <ArrowRight className="size-3 transition-transform group-hover/link:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" />
-              </Link>
-            </div>
+            "Class progress is unavailable. Retry the failed section below."
           )}
         </div>
-
-        {/* Right: Class Diagnostic Synthesis (when completed scans exist) */}
-        {classDiagnostics ? (
-          <div className="flex items-center justify-between gap-2.5 bg-muted/25 dark:bg-muted/15 p-2.5 rounded-xl border border-border/60 text-xs">
-            <div className="min-w-0">
-              <span className="text-[11px] text-muted-foreground font-medium block truncate">
-                Class Performance ({classDiagnostics.completedCount} scored)
-              </span>
-              <div className="flex items-center gap-1.5 mt-0.5">
+      ) : (
+        <div className="flex flex-col gap-3 border-t pt-3 sm:flex-row sm:items-center sm:gap-6">
+          <div className="min-w-0 flex-1">
+            <p className="text-muted-foreground text-xs">
+              <strong className="text-foreground tabular-nums">
+                {uniqueStudentsCount} of {totalStudents}
+              </strong>{" "}
+              assigned students have counted work
+            </p>
+            {totalStudents > 0 ? (
+              <div
+                className="bg-muted mt-2 h-1.5 overflow-hidden rounded-full"
+                role="progressbar"
+                aria-valuenow={completionRate}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Students with counted work"
+                aria-valuetext={
+                  uniqueStudentsCount +
+                  " of " +
+                  totalStudents +
+                  " assigned students have counted work (" +
+                  completionRate +
+                  "%)"
+                }
+              >
+                <div
+                  className="bg-primary h-full rounded-full"
+                  style={{ width: completionRate + "%" }}
+                />
+              </div>
+            ) : (
+              <Button variant="link" onClick={onEdit} className="min-h-11 px-0">
+                Edit assignments
+                <ArrowRight data-icon="inline-end" />
+              </Button>
+            )}
+          </div>
+          {classDiagnostics ? (
+            <div className="flex min-w-0 flex-1 flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-muted-foreground text-xs">
+                  Class performance · {classDiagnostics.completedCount} scored
+                </p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {classDiagnostics.manualCount > 0 && classDiagnostics.calibratedCount > 0
+                    ? `Mixed sources: ${classDiagnostics.manualCount} teacher rubric · ${classDiagnostics.calibratedCount} calibrated`
+                    : classDiagnostics.manualCount > 0
+                      ? "Based on teacher rubric scores"
+                      : "Based on calibrated scores"}
+                </p>
                 <Badge
                   variant="outline"
-                  className={cn(
-                    "text-xs font-semibold px-2 py-0.5 inline-flex items-center gap-1.5",
-                    classDiagnostics.scoreBand.className
-                  )}
+                  className={cn("mt-1", classDiagnostics.scoreBand.className)}
                 >
-                  <span
-                    className={cn(
-                      "size-1.5 rounded-full shrink-0",
-                      classDiagnostics.scoreBand.dotColor
-                    )}
-                    aria-hidden="true"
-                  />
-                  <span>{classDiagnostics.scoreBand.label}</span>
+                  {classDiagnostics.scoreBand.label}
                 </Badge>
+                {classDiagnostics.focusCriterion && (
+                  <p className="mt-1 text-xs break-words">
+                    Practice focus:{" "}
+                    <strong className="font-medium">
+                      {classDiagnostics.focusCriterion.name.toLowerCase()}
+                    </strong>
+                  </p>
+                )}
               </div>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
               <Popover>
                 <PopoverTrigger
-                  className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 min-h-[44px] sm:min-h-[36px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                  className="border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 focus-visible:ring-ring inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden sm:gap-1.5 sm:px-3 md:min-h-[36px]"
                   aria-label="View class criteria breakdown"
                 >
                   <BarChart3
-                    className="size-3.5 text-brand-600 dark:text-brand-400"
+                    className="text-brand-600 dark:text-brand-400 size-3.5"
                     aria-hidden="true"
                   />
-                  <span className="hidden sm:inline">Class Breakdown</span>
-                  <ChevronDown
-                    className="size-3 opacity-60"
-                    aria-hidden="true"
-                  />
+                  <span className="inline">Class Breakdown</span>
+                  <ChevronDown className="size-3 opacity-60" aria-hidden="true" />
                 </PopoverTrigger>
-                <PopoverContent
-                  align="end"
-                  className="w-72 p-3.5 space-y-3 z-50 text-xs"
-                >
+                <PopoverContent align="end" className="z-50 w-72 space-y-3 p-3.5 text-xs">
                   <PopoverHeader>
-                    <PopoverTitle className="text-xs font-semibold text-foreground flex items-center justify-between">
+                    <PopoverTitle className="text-foreground flex items-center justify-between text-xs font-semibold">
                       <span>5-Criterion Class Average</span>
                       <span className="text-primary font-bold tabular-nums">
                         {classDiagnostics.avgCompositeScore}%
                       </span>
                     </PopoverTitle>
                     <PopoverDescription className="sr-only">
-                      Aggregated class diagnostic scores across Letter Formation, Size Consistency, Spacing, Slant, and Baseline Alignment.
+                      Aggregated class diagnostic scores across Letter Formation, Size Consistency,
+                      Spacing, Slant, and Baseline Alignment.
                     </PopoverDescription>
                   </PopoverHeader>
 
                   <div className="space-y-2 pt-1">
                     <div>
-                      <div className="flex justify-between text-[11px] mb-0.5 text-muted-foreground">
+                      <div className="text-muted-foreground mb-0.5 flex justify-between text-[11px]">
                         <span>Letter Formation</span>
-                        <span className="font-medium tabular-nums text-foreground">
+                        <span className="text-foreground font-medium tabular-nums">
                           {classDiagnostics.criteriaAverages.letterFormation}%
                         </span>
                       </div>
                       <div
-                        className="h-1.5 w-full bg-muted rounded-full overflow-hidden"
+                        className="bg-muted h-1.5 w-full overflow-hidden rounded-full"
                         role="progressbar"
                         aria-valuenow={classDiagnostics.criteriaAverages.letterFormation}
                         aria-valuemin={0}
@@ -422,7 +367,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                         aria-label={`Letter Formation class average: ${classDiagnostics.criteriaAverages.letterFormation}%`}
                       >
                         <div
-                          className="h-full bg-brand-500 rounded-full transition-all duration-300 motion-reduce:transition-none"
+                          className="bg-brand-500 h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
                           style={{
                             width: `${classDiagnostics.criteriaAverages.letterFormation}%`,
                           }}
@@ -431,14 +376,14 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] mb-0.5 text-muted-foreground">
+                      <div className="text-muted-foreground mb-0.5 flex justify-between text-[11px]">
                         <span>Size Consistency</span>
-                        <span className="font-medium tabular-nums text-foreground">
+                        <span className="text-foreground font-medium tabular-nums">
                           {classDiagnostics.criteriaAverages.sizeConsistency}%
                         </span>
                       </div>
                       <div
-                        className="h-1.5 w-full bg-muted rounded-full overflow-hidden"
+                        className="bg-muted h-1.5 w-full overflow-hidden rounded-full"
                         role="progressbar"
                         aria-valuenow={classDiagnostics.criteriaAverages.sizeConsistency}
                         aria-valuemin={0}
@@ -446,7 +391,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                         aria-label={`Size Consistency class average: ${classDiagnostics.criteriaAverages.sizeConsistency}%`}
                       >
                         <div
-                          className="h-full bg-brand-500 rounded-full transition-all duration-300 motion-reduce:transition-none"
+                          className="bg-brand-500 h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
                           style={{
                             width: `${classDiagnostics.criteriaAverages.sizeConsistency}%`,
                           }}
@@ -455,14 +400,14 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] mb-0.5 text-muted-foreground">
+                      <div className="text-muted-foreground mb-0.5 flex justify-between text-[11px]">
                         <span>Spacing</span>
-                        <span className="font-medium tabular-nums text-foreground">
+                        <span className="text-foreground font-medium tabular-nums">
                           {classDiagnostics.criteriaAverages.spacing}%
                         </span>
                       </div>
                       <div
-                        className="h-1.5 w-full bg-muted rounded-full overflow-hidden"
+                        className="bg-muted h-1.5 w-full overflow-hidden rounded-full"
                         role="progressbar"
                         aria-valuenow={classDiagnostics.criteriaAverages.spacing}
                         aria-valuemin={0}
@@ -470,7 +415,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                         aria-label={`Spacing class average: ${classDiagnostics.criteriaAverages.spacing}%`}
                       >
                         <div
-                          className="h-full bg-brand-500 rounded-full transition-all duration-300 motion-reduce:transition-none"
+                          className="bg-brand-500 h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
                           style={{
                             width: `${classDiagnostics.criteriaAverages.spacing}%`,
                           }}
@@ -479,14 +424,14 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] mb-0.5 text-muted-foreground">
+                      <div className="text-muted-foreground mb-0.5 flex justify-between text-[11px]">
                         <span>Slant Consistency</span>
-                        <span className="font-medium tabular-nums text-foreground">
+                        <span className="text-foreground font-medium tabular-nums">
                           {classDiagnostics.criteriaAverages.slant}%
                         </span>
                       </div>
                       <div
-                        className="h-1.5 w-full bg-muted rounded-full overflow-hidden"
+                        className="bg-muted h-1.5 w-full overflow-hidden rounded-full"
                         role="progressbar"
                         aria-valuenow={classDiagnostics.criteriaAverages.slant}
                         aria-valuemin={0}
@@ -494,7 +439,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                         aria-label={`Slant Consistency class average: ${classDiagnostics.criteriaAverages.slant}%`}
                       >
                         <div
-                          className="h-full bg-brand-500 rounded-full transition-all duration-300 motion-reduce:transition-none"
+                          className="bg-brand-500 h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
                           style={{
                             width: `${classDiagnostics.criteriaAverages.slant}%`,
                           }}
@@ -503,14 +448,14 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] mb-0.5 text-muted-foreground">
+                      <div className="text-muted-foreground mb-0.5 flex justify-between text-[11px]">
                         <span>Baseline Alignment</span>
-                        <span className="font-medium tabular-nums text-foreground">
+                        <span className="text-foreground font-medium tabular-nums">
                           {classDiagnostics.criteriaAverages.baselineAlignment}%
                         </span>
                       </div>
                       <div
-                        className="h-1.5 w-full bg-muted rounded-full overflow-hidden"
+                        className="bg-muted h-1.5 w-full overflow-hidden rounded-full"
                         role="progressbar"
                         aria-valuenow={classDiagnostics.criteriaAverages.baselineAlignment}
                         aria-valuemin={0}
@@ -518,7 +463,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                         aria-label={`Baseline Alignment class average: ${classDiagnostics.criteriaAverages.baselineAlignment}%`}
                       >
                         <div
-                          className="h-full bg-brand-500 rounded-full transition-all duration-300 motion-reduce:transition-none"
+                          className="bg-brand-500 h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
                           style={{
                             width: `${classDiagnostics.criteriaAverages.baselineAlignment}%`,
                           }}
@@ -528,9 +473,9 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                   </div>
 
                   {classDiagnostics.strongestCriterion && (
-                    <div className="pt-2 border-t border-border/60 text-[11px] space-y-1 text-muted-foreground">
+                    <div className="border-border/60 text-muted-foreground space-y-1 border-t pt-2 text-[11px]">
                       <p>
-                        <span className="font-semibold text-band-4-text dark:text-band-4">
+                        <span className="text-band-4-text dark:text-band-4 font-semibold">
                           Strength:
                         </span>{" "}
                         {classDiagnostics.strongestCriterion.name} (
@@ -541,7 +486,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                       </p>
                       {classDiagnostics.focusCriterion && (
                         <p>
-                          <span className="font-semibold text-band-2-text dark:text-band-2">
+                          <span className="text-band-2-text dark:text-band-2 font-semibold">
                             Practice Focus:
                           </span>{" "}
                           {classDiagnostics.focusCriterion.name} (
@@ -556,20 +501,13 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 </PopoverContent>
               </Popover>
             </div>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 p-2.5 rounded-xl border border-dashed border-border/80 text-xs text-muted-foreground bg-muted/10">
-            <BarChart3
-              className="size-4 text-muted-foreground/60 shrink-0"
-              aria-hidden="true"
-            />
-            <span>
-              Class diagnostic insights will unlock as student worksheets
-              are scored.
-            </span>
-          </div>
-        )}
-      </div>
+          ) : (
+            <p className="text-muted-foreground flex-1 text-xs">
+              Class insights appear as worksheets are scored.
+            </p>
+          )}
+        </div>
+      )}
     </section>
   );
 });
