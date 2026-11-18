@@ -64,10 +64,11 @@ export function ActivityAssignmentFields({ form }: { form: UseFormReturn<Activit
           id={`${id}-title`}
           {...form.register("title")}
           aria-invalid={!!form.formState.errors.title}
+          aria-describedby={form.formState.errors.title ? `${id}-title-error` : undefined}
           required
           placeholder="e.g., Loop and join practice"
         />
-        <FieldError errors={[form.formState.errors.title]} />
+        <FieldError id={`${id}-title-error`} errors={[form.formState.errors.title]} />
       </Field>
       <Field>
         <FieldLabel htmlFor={`${id}-instructions`}>Instructions (optional)</FieldLabel>
@@ -184,8 +185,9 @@ export function ActivityAssignmentFields({ form }: { form: UseFormReturn<Activit
             },
           })}
           aria-invalid={!!form.formState.errors.due_input}
+          aria-describedby={form.formState.errors.due_input ? `${id}-due-error` : undefined}
         />
-        <FieldError errors={[form.formState.errors.due_input]} />
+        <FieldError id={`${id}-due-error`} errors={[form.formState.errors.due_input]} />
         <label className="flex min-h-10 items-center justify-between gap-3 text-sm">
           Close parent uploads after the due date
           <Switch

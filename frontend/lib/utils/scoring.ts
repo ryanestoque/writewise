@@ -129,7 +129,7 @@ export const RUBRIC_CRITERIA: Array<{
     scoreKey: "slant_score",
     name: "4. Slant Angle",
     shortName: "Slant Angle",
-    hint: "Uniform forward slant tilt (target 60°–68° angle)",
+    hint: "Uniform forward slant tilt across letter stems",
   },
   {
     key: "baseline_alignment_band",

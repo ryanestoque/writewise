@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,11 +9,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  SearchIcon,
-  XCircleIcon,
   ChevronDownIcon,
   ChevronsUpDownIcon,
-  RotateCcwIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -46,7 +43,7 @@ const criteria: CriterionItem[] = [
     name: "Letter Formation",
     category: "Shape & Joins",
     target: "Clear loops, proper cursive joins, legible character structure",
-    targetLabel: "Morphology & Joins",
+    targetLabel: "Loop Closures & Joins",
     parentTargetLabel: "Smooth Loops & Joins",
     classroomStandard: "Proper cursive loops and joining strokes without print breaks",
     description:
@@ -63,8 +60,8 @@ const criteria: CriterionItem[] = [
     id: "slant",
     name: "Slant",
     category: "Forward Lean",
-    target: "Standard ~68° forward slant (60°–75° from horizontal baseline)",
-    targetLabel: "60°–75° Slant (~68° Std)",
+    target: "Consistent, comfortable forward lean across all tall stems and joins",
+    targetLabel: "Steady Forward Slant",
     parentTargetLabel: "Steady Forward Tilt",
     classroomStandard: "Consistent, comfortable forward lean across all tall letters",
     description:
@@ -72,7 +69,7 @@ const criteria: CriterionItem[] = [
     parentDescription:
       "Checks that letters lean forward in the same direction across the word instead of tipping back and forth.",
     diagnosticFocus:
-      "Erratic tilt fluctuations, vertical rigidity (<60°), or excessive over-slanting (>75°).",
+      "Erratic tilt shifts, conflicting stroke directions, or backwards-leaning stems.",
     parentFocus:
       "Letters leaning in different directions within the same word or line.",
     keywords: ["slant", "angle", "degree", "tilt", "inclination", "lean"],
@@ -99,8 +96,8 @@ const criteria: CriterionItem[] = [
     id: "baseline",
     name: "Baseline Alignment",
     category: "Staying on the Line",
-    target: "±2px deviation from writing guideline",
-    targetLabel: "±2px Guideline Deviation",
+    target: "Letters resting evenly on the baseline without floating or sagging",
+    targetLabel: "Disciplined Baseline Grounding",
     parentTargetLabel: "Rests on the Bottom Line",
     classroomStandard: "Letters resting flat on the bottom writing line without floating or dipping",
     description:
@@ -117,8 +114,8 @@ const criteria: CriterionItem[] = [
     id: "size",
     name: "Size Consistency",
     category: "Letter Height",
-    target: "2:1 ratio for ascenders/descenders vs. x-height",
-    targetLabel: "2:1 Ascender/x-Height Ratio",
+    target: "Proportional letter heights aligned to headline, midline, and baseline",
+    targetLabel: "Proportional Guideline Heights",
     parentTargetLabel: "Even Letter Height",
     classroomStandard: "Tall letters (l, b, h) reach the top line; small letters (a, c, e) reach the dotted middle line",
     description:
@@ -150,7 +147,7 @@ const scoringBands: ScoringBandItem[] = [
     range: "75–100%",
     dotColor: "bg-band-4",
     containerClass: "border-band-4/30 bg-band-4/5 dark:bg-band-4/10",
-    desc: "Exemplary cursive discipline with fluid loop closures, uniform 60°–75° forward slant, and consistent baseline adherence.",
+    desc: "Exemplary cursive discipline with fluid loop closures, uniform forward slant, and consistent baseline adherence.",
     parentDesc: "Smooth, steady cursive handwriting with consistent letter shapes, spacing, and alignment across the worksheet.",
   },
   {
@@ -194,12 +191,9 @@ const CriterionVisualGuide = React.memo(function CriterionVisualGuide({
       className="relative rounded-lg border border-border/70 bg-background/90 dark:bg-surface/80 p-2.5 overflow-hidden select-none"
       aria-hidden="true"
     >
-      <div className="flex items-center justify-between gap-2 mb-1.5">
+      <div className="mb-1.5">
         <span className="text-xs font-sans font-semibold text-primary">
           {isParent ? "On 3-Line Paper" : "Penmanship Geometry"}
-        </span>
-        <span className="text-xs font-sans text-muted-foreground tabular-nums">
-          {isParent ? "Top · Middle · Bottom" : "3-Line Ruling Standard"}
         </span>
       </div>
 
@@ -256,9 +250,9 @@ const CriterionVisualGuide = React.memo(function CriterionVisualGuide({
               strokeLinecap="round"
               opacity="0.85"
             />
-            <rect x="120" y="15" width="102" height="17" rx="4" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.3" />
-            <text x="126" y="27" fontSize="8" fill="currentColor" fontWeight="700" fontFamily="sans-serif">
-              {isParent ? "Same Forward Tilt" : "60°–75° Slant (~68° Std)"}
+            <rect x="116" y="15" width="108" height="17" rx="4" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.3" />
+            <text x="122" y="27" fontSize="8" fill="currentColor" fontWeight="700" fontFamily="sans-serif">
+              {isParent ? "Same Forward Tilt" : "Uniform Forward Lean"}
             </text>
           </svg>
         )}
@@ -326,7 +320,7 @@ const CriterionVisualGuide = React.memo(function CriterionVisualGuide({
             <circle cx="99" cy="40" r="2.2" fill="currentColor" />
 
             <text x="120" y="37" fontSize="8" fill="currentColor" fontWeight="700" fontFamily="sans-serif">
-              {isParent ? "Sits on Bottom Line" : "±2px Guideline Tolerance"}
+              {isParent ? "Sits on Bottom Line" : "Rests on Baseline"}
             </text>
           </svg>
         )}
@@ -356,9 +350,9 @@ const CriterionVisualGuide = React.memo(function CriterionVisualGuide({
               strokeLinecap="round"
             />
 
-            <rect x="140" y="15" width="94" height="17" rx="4" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.3" />
-            <text x="146" y="27" fontSize="8" fill="currentColor" fontWeight="700" fontFamily="sans-serif">
-              {isParent ? "Tall vs. Small Height" : "2:1 Height Ratio"}
+            <rect x="130" y="15" width="102" height="17" rx="4" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.3" />
+            <text x="136" y="27" fontSize="8" fill="currentColor" fontWeight="700" fontFamily="sans-serif">
+              {isParent ? "Tall vs. Small Height" : "Headline & Midline"}
             </text>
           </svg>
         )}
@@ -381,74 +375,7 @@ export function RubricReferenceDialog({
   const toggleScoreDetails =
     onToggleScoreDetails || (() => setInternalShowDetails((prev) => !prev));
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [expandedCriteria, setExpandedCriteria] = useState<Set<string>>(new Set());
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (
-        e.key === "/" &&
-        document.activeElement !== searchInputRef.current &&
-        !(
-          document.activeElement instanceof HTMLInputElement ||
-          document.activeElement instanceof HTMLTextAreaElement ||
-          (document.activeElement as HTMLElement)?.isContentEditable
-        )
-      ) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", handleGlobalKeyDown);
-    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [open]);
-
-  const filteredCriteria = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return criteria;
-    return criteria.filter((item) => (
-      item.name.toLowerCase().includes(q) ||
-      item.target.toLowerCase().includes(q) ||
-      item.targetLabel.toLowerCase().includes(q) ||
-      item.parentTargetLabel.toLowerCase().includes(q) ||
-      item.classroomStandard.toLowerCase().includes(q) ||
-      item.description.toLowerCase().includes(q) ||
-      item.parentDescription.toLowerCase().includes(q) ||
-      item.diagnosticFocus.toLowerCase().includes(q) ||
-      item.parentFocus.toLowerCase().includes(q) ||
-      item.keywords.some((k) => k.includes(q))
-    ));
-  }, [searchQuery]);
-
-  const handleSearchChange = (val: string) => {
-    setSearchQuery(val);
-    const q = val.trim().toLowerCase();
-    if (q) {
-      const matchingIds = criteria
-        .filter((item) => (
-          item.name.toLowerCase().includes(q) ||
-          item.target.toLowerCase().includes(q) ||
-          item.targetLabel.toLowerCase().includes(q) ||
-          item.parentTargetLabel.toLowerCase().includes(q) ||
-          item.classroomStandard.toLowerCase().includes(q) ||
-          item.description.toLowerCase().includes(q) ||
-          item.parentDescription.toLowerCase().includes(q) ||
-          item.diagnosticFocus.toLowerCase().includes(q) ||
-          item.parentFocus.toLowerCase().includes(q) ||
-          item.keywords.some((k) => k.includes(q))
-        ))
-        .map((c) => c.id);
-      setExpandedCriteria(new Set(matchingIds));
-    }
-  };
-
-  const handleClearSearch = () => {
-    setSearchQuery("");
-    searchInputRef.current?.focus();
-  };
 
   const toggleCriterion = (id: string) => {
     setExpandedCriteria((prev) => {
@@ -460,36 +387,23 @@ export function RubricReferenceDialog({
   };
 
   const allExpanded =
-    filteredCriteria.length > 0 &&
-    filteredCriteria.every((c) => expandedCriteria.has(c.id));
+    criteria.length > 0 && criteria.every((c) => expandedCriteria.has(c.id));
 
   const toggleAll = () => {
     if (allExpanded) {
       setExpandedCriteria((prev) => {
         const next = new Set(prev);
-        filteredCriteria.forEach((c) => next.delete(c.id));
+        criteria.forEach((c) => next.delete(c.id));
         return next;
       });
     } else {
       setExpandedCriteria((prev) => {
         const next = new Set(prev);
-        filteredCriteria.forEach((c) => next.add(c.id));
+        criteria.forEach((c) => next.add(c.id));
         return next;
       });
     }
   };
-
-  const filteredBands = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return scoringBands;
-    return scoringBands.filter((band) => (
-      band.band.toLowerCase().includes(q) ||
-      band.level.toLowerCase().includes(q) ||
-      band.desc.toLowerCase().includes(q) ||
-      band.parentDesc.toLowerCase().includes(q) ||
-      band.range.toLowerCase().includes(q)
-    ));
-  }, [searchQuery]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -498,7 +412,7 @@ export function RubricReferenceDialog({
         overlayClassName="bg-foreground/25 supports-backdrop-filter:backdrop-blur-xs"
         className="p-0 overflow-hidden flex flex-col gap-0 shadow-warm w-[calc(100%-1.5rem)] sm:max-w-2xl max-h-[min(90dvh,calc(100vh-2rem))] rounded-2xl"
       >
-        <DialogHeader className="p-4 sm:p-5 pb-3 sm:pb-3.5 border-b border-border/70 bg-background/95 backdrop-blur-xs shrink-0 space-y-3">
+        <DialogHeader className="p-4 sm:p-5 border-b border-border/70 bg-background/95 backdrop-blur-xs shrink-0">
           <div className="flex items-center justify-between gap-2 min-w-0 pr-10 sm:pr-8">
             <DialogTitle className="text-base sm:text-lg font-heading font-semibold text-foreground tracking-tight">
               {isParent ? "How Scores Work" : "Scoring Rubric"}
@@ -518,47 +432,6 @@ export function RubricReferenceDialog({
           <DialogDescription className="sr-only">
             Handwriting skills and developmental score levels used in WriteWise.
           </DialogDescription>
-
-          <div role="search" aria-label="Search skills and score levels" className="relative w-full">
-            <label htmlFor="rubric-search-input" className="sr-only">
-              Search skills or score levels
-            </label>
-            <SearchIcon
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/70 pointer-events-none"
-              aria-hidden="true"
-            />
-            <input
-              id="rubric-search-input"
-              ref={searchInputRef}
-              type="search"
-              placeholder={isParent ? "Search skills or score levels..." : "Search criteria or bands... (Press '/' to focus)"}
-              value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape" && searchQuery) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleClearSearch();
-                }
-              }}
-              className="w-full h-10 sm:h-9 pl-8 pr-9 text-base sm:text-sm rounded-lg border border-border/80 bg-background placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all [&::-webkit-search-cancel-button]:hidden"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={handleClearSearch}
-                className="absolute right-1 top-1/2 -translate-y-1/2 size-10 sm:size-7 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer rounded-md hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                aria-label="Clear search"
-              >
-                <XCircleIcon className="size-3.5" />
-              </button>
-            )}
-          </div>
-          <div aria-live="polite" aria-atomic="true" className="sr-only">
-            {searchQuery.trim()
-              ? `${filteredCriteria.length} skills and ${filteredBands.length} levels match "${searchQuery}"`
-              : "Showing all handwriting skills and score levels"}
-          </div>
         </DialogHeader>
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain focus-visible:outline-none">
@@ -566,17 +439,12 @@ export function RubricReferenceDialog({
             {/* Section 1: 5 Handwriting Skills */}
             <section aria-labelledby="criteria-heading" className="space-y-3">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <h3
-                    id="criteria-heading"
-                    className="text-sm font-heading font-semibold text-foreground"
-                  >
-                    {isParent ? "5 Handwriting Skills" : "Diagnostic Criteria"}
-                  </h3>
-                  <span className="text-xs text-muted-foreground font-sans tabular-nums">
-                    ({filteredCriteria.length})
-                  </span>
-                </div>
+                <h3
+                  id="criteria-heading"
+                  className="text-sm font-heading font-semibold text-foreground"
+                >
+                  {isParent ? "Handwriting Skills" : "Diagnostic Criteria"}
+                </h3>
 
                 <button
                   type="button"
@@ -589,21 +457,8 @@ export function RubricReferenceDialog({
                 </button>
               </div>
 
-              {filteredCriteria.length === 0 ? (
-                <div className="p-6 text-center rounded-xl border border-dashed border-border/80 bg-muted/20 space-y-3">
-                  <p className="text-sm font-medium text-foreground">No skills match your search</p>
-                  <button
-                    type="button"
-                    onClick={handleClearSearch}
-                    className="inline-flex items-center justify-center gap-1.5 h-10 sm:h-8 px-4 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/15 rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                  >
-                    <RotateCcwIcon className="size-3" aria-hidden="true" />
-                    Reset search
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredCriteria.map((item) => {
+              <div className="space-y-2">
+                {criteria.map((item) => {
                     const isExpanded = expandedCriteria.has(item.id);
 
                     return (
@@ -651,15 +506,8 @@ export function RubricReferenceDialog({
                             id={`criterion-panel-${item.id}`}
                             role="region"
                             aria-labelledby={`criterion-header-${item.id}`}
-                            className="px-3.5 sm:px-4 pb-4 pt-1 border-t border-border/50 space-y-3 bg-muted/10"
+                            className="px-3.5 sm:px-4 pb-4 pt-3.5 border-t border-border/50 space-y-3 bg-muted/10"
                           >
-                            <div className="flex items-center gap-1.5 flex-wrap text-xs pt-1">
-                              <span className="text-muted-foreground font-medium">Goal:</span>
-                              <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary font-semibold text-xs border border-primary/20">
-                                {isParent ? item.parentTargetLabel : item.targetLabel}
-                              </span>
-                            </div>
-
                             <CriterionVisualGuide criterionId={item.id} isParent={isParent} />
 
                             <div className="text-sm text-muted-foreground leading-relaxed space-y-1.5 bg-muted/30 p-3 rounded-lg border border-border/40">
@@ -682,7 +530,6 @@ export function RubricReferenceDialog({
                     );
                   })}
                 </div>
-              )}
             </section>
 
             {/* Section 2: Score Levels */}
@@ -692,32 +539,16 @@ export function RubricReferenceDialog({
                   id="bands-heading"
                   className="text-sm font-heading font-semibold text-foreground"
                 >
-                  {isParent ? "4 Score Levels" : "Qualitative Scoring Bands"}
+                  {isParent ? "Score Levels" : "Scoring Bands"}
                 </h3>
-                <span className="text-xs text-muted-foreground font-sans tabular-nums">
-                  4 Levels
-                </span>
               </div>
 
-              {filteredBands.length === 0 ? (
-                <div className="p-6 text-center rounded-xl border border-dashed border-border/80 bg-muted/20 space-y-3">
-                  <p className="text-sm font-medium text-foreground">No levels match your search</p>
-                  <button
-                    type="button"
-                    onClick={handleClearSearch}
-                    className="inline-flex items-center justify-center gap-1.5 h-10 sm:h-8 px-4 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/15 rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                  >
-                    <RotateCcwIcon className="size-3" aria-hidden="true" />
-                    Reset search
-                  </button>
-                </div>
-              ) : (
-                <div
-                  role="list"
-                  aria-label="Handwriting score levels"
-                  className="grid gap-2.5 grid-cols-1 sm:grid-cols-2"
-                >
-                  {filteredBands.map((band) => (
+              <div
+                role="list"
+                aria-label="Handwriting score levels"
+                className="grid gap-2.5 grid-cols-1 sm:grid-cols-2"
+              >
+                {scoringBands.map((band) => (
                     <div
                       key={band.band}
                       role="listitem"
@@ -735,11 +566,6 @@ export function RubricReferenceDialog({
                           <span className="text-sm font-semibold text-foreground whitespace-nowrap">
                             {band.band}
                           </span>
-                          {!isParent && (
-                            <span className="text-xs text-muted-foreground font-sans whitespace-nowrap">
-                              ({band.level})
-                            </span>
-                          )}
                         </div>
                         {(!isParent || showScoreDetails) && (
                           <span className="text-xs font-semibold text-foreground/90 font-sans tabular-nums shrink-0 whitespace-nowrap">
@@ -753,7 +579,6 @@ export function RubricReferenceDialog({
                     </div>
                   ))}
                 </div>
-              )}
             </section>
           </div>
         </div>

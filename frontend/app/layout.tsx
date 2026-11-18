@@ -20,7 +20,10 @@ const learningCurve = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "WriteWise",
+  title: {
+    default: "WriteWise",
+    template: "%s | WriteWise",
+  },
   description: "Cursive Handwriting Assessment and Progress Monitoring System",
   manifest: "/manifest.json",
   icons: {

@@ -7,7 +7,7 @@ import { NotificationSettingsCard } from "@/components/settings/notification-set
 import { Separator } from "@/components/ui/separator";
 
 export const metadata: Metadata = {
-  title: "Account Settings — WriteWise",
+  title: "Account Settings",
   description: "Manage your teacher profile and account credentials.",
 };
 

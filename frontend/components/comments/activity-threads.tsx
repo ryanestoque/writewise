@@ -24,7 +24,7 @@ export function ActivityThreads({
       {query.isError ? (
         <div role="status">
           <p>Could not load conversations.</p>
-          <Button size="sm" variant="outline" onClick={() => void query.refetch()}>
+          <Button className="min-h-11 sm:min-h-9" size="sm" variant="outline" onClick={() => void query.refetch()}>
             Try again
           </Button>
         </div>
@@ -59,6 +59,7 @@ export function ActivityThreads({
               <Button
                 variant="outline"
                 size="sm"
+                className="min-h-11 sm:min-h-9"
                 onClick={() =>
                   onOpen(
                     { activityId: row.activity_id, studentId: row.student_id, submissionId: row.submission_id },
