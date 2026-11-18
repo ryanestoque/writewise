@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Bell } from "lucide-react";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Popover,
   PopoverContent,
+  PopoverDescription,
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
@@ -16,6 +17,7 @@ import {
 import {
   Drawer,
   DrawerContent,
+  DrawerDescription,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
@@ -23,7 +25,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NotificationList } from "./notification-list";
 import { createClient } from "@/lib/supabase/client";
-import { abortAccountRequests } from "@/lib/supabase/account-scope";
+import { purgeAccountCaches } from "@/lib/supabase/account-scope";
 import { ApiError } from "@/lib/utils/api-error";
 import { notificationKeys } from "@/lib/notifications/query-keys";
 import type { NotificationLabels, NotificationRow } from "@/lib/notifications/data";
@@ -41,8 +43,16 @@ const EMPTY_LABELS: NotificationLabels = { students: {}, activities: {} };
 export function NotificationBell({ userId, role }: { userId: string; role: "teacher" | "parent" }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(true);
+  const isMobile = useIsMobile();
   const [sessionController, setSessionController] = useState(() => new AbortController());
+  const abortRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    abortRef.current = () => sessionController.abort();
+  }, [sessionController]);
+
   const client = useQueryClient();
+  const listContainerRef = useRef<HTMLDivElement>(null);
   const count = useNotificationCount(userId, active);
   const feed = useNotificationFeed(userId, open, active, sessionController.signal);
   const rows = feed.data?.rows ?? EMPTY_ROWS;
@@ -52,19 +62,7 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
 
   useEffect(() => {
     const clear = (id: string) => {
-      abortAccountRequests(id);
-      for (const mutation of client.getMutationCache().findAll({ mutationKey: ["comments", id] })) {
-        client.getMutationCache().remove(mutation);
-      }
-      void client.cancelQueries({ queryKey: ["comments", id] }).then(() => {
-        client.removeQueries({ queryKey: ["comments", id] });
-      });
-      void client.cancelQueries({ queryKey: ["gradebook", id] }).then(() => {
-        client.removeQueries({ queryKey: ["gradebook", id] });
-      });
-      void client.cancelQueries({ queryKey: notificationKeys.account(id) }).then(() => {
-        client.removeQueries({ queryKey: notificationKeys.account(id) });
-      });
+      purgeAccountCaches(client, id);
     };
     for (const [key] of client.getQueriesData({ queryKey: notificationKeys.root })) {
       if (typeof key[1] === "string" && key[1] !== userId) clear(key[1]);
@@ -81,20 +79,20 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
         (event === "INITIAL_SESSION" && !session) ||
         (session && session.user.id !== userId)
       ) {
-        sessionController.abort();
+        abortRef.current?.();
         setActive(false);
         setOpen(false);
         clear(userId);
       } else if (session?.user.id === userId) {
-        if (sessionController.signal.aborted) setSessionController(new AbortController());
+        setSessionController((prev) => (prev.signal.aborted ? new AbortController() : prev));
         setActive(true);
       }
     });
     return () => {
       data.subscription.unsubscribe();
-      sessionController.abort();
+      abortRef.current?.();
     };
-  }, [client, userId, sessionController]);
+  }, [client, userId]);
 
   function feedback(error: unknown) {
     if (error instanceof Error && error.name === "AbortError") return;
@@ -119,7 +117,14 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
     if (!row.read_at && row.type !== "comment_posted") markRead(row.id);
     setOpen(false);
   }
-  const isMobile = useIsMobile();
+  function handleMarkAllRead() {
+    readAll.mutate(undefined, {
+      onError: feedback,
+      onSettled: () => {
+        listContainerRef.current?.focus();
+      },
+    });
+  }
   const label =
     count.data === undefined || count.isError
       ? "Notifications, unread count unavailable"
@@ -134,19 +139,19 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
     }
   };
 
-  const trigger = (
+  const triggerButton = (
     <Button
       variant="ghost"
       size="icon"
       aria-label={label}
-      className="relative size-10 min-h-[40px] min-w-[40px] shrink-0 sm:size-9 sm:min-h-0 sm:min-w-0"
+      className="relative size-10 min-h-[44px] min-w-[44px] shrink-0 md:size-9 md:min-h-0 md:min-w-0"
       disabled={!active}
     >
       <Bell aria-hidden="true" />
       {count.data !== undefined && count.data > 0 && (
         <Badge
           aria-hidden="true"
-          className="absolute -top-1 -right-1 min-w-5 justify-center px-1 text-[11px] font-sans font-medium bg-primary text-primary-foreground shadow-xs"
+          className="absolute -top-1 -right-1 min-w-5 justify-center rounded-full px-1 text-xs leading-none bg-primary text-primary-foreground font-semibold shadow-xs"
         >
           {count.data > 99 ? "99+" : count.data}
         </Badge>
@@ -154,81 +159,115 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
     </Button>
   );
 
-  const list = (
-    <>
-      {count.isError && (
-        <p role="status" className="text-muted-foreground text-xs pb-1">
-          Unread count unavailable.
-        </p>
-      )}
-      <NotificationList
-        rows={rows}
-        labels={labels.data ?? EMPTY_LABELS}
-        role={role}
-        loading={feed.isPending && feed.isFetching}
-        error={feed.isError || labels.isError || !!feed.loadMoreError}
-        retry={() => {
-          void feed.retry();
-          void labels.refetch();
-          void count.refetch();
-        }}
-        hasMore={feed.data?.hasMore ?? false}
-        loadingMore={feed.isLoadingMore}
-        loadMore={() => feed.loadMore()}
-        pendingId={read.isPending ? read.variables.id : null}
-        onRead={markRead}
-        onActivate={activate}
-      />
-    </>
+  const listElement = (
+    <NotificationList
+      rows={rows}
+      labels={labels.data ?? EMPTY_LABELS}
+      role={role}
+      loading={feed.isPending && feed.isFetching}
+      error={feed.isError || labels.isError}
+      retry={() => {
+        void feed.retry();
+        void labels.refetch();
+        void count.refetch();
+      }}
+      hasMore={feed.data?.hasMore ?? false}
+      loadingMore={feed.isLoadingMore}
+      loadMoreError={feed.loadMoreError}
+      loadMore={() => feed.loadMore()}
+      pendingId={read.isPending ? read.variables.id : null}
+      onRead={markRead}
+      onActivate={activate}
+      isMobile={isMobile}
+      containerRef={listContainerRef}
+    />
   );
 
   if (isMobile) {
     return (
-      <Drawer
-        open={open && active}
-        onOpenChange={handleOpenChange}
-        showSwipeHandle
-      >
-        <DrawerTrigger render={trigger} />
-        <DrawerContent className="p-4 pt-2">
-          <DrawerHeader className="flex flex-row items-center justify-between gap-2 p-0 pb-3">
-            <DrawerTitle>Notifications</DrawerTitle>
-            <Button
-              variant="ghost"
-              size="xs"
-              className="min-h-10 px-2.5 sm:min-h-7"
-              disabled={readAll.isPending || count.data === 0}
-              onClick={() => readAll.mutate(undefined, { onError: feedback })}
-            >
-              {readAll.isPending ? "Saving…" : "Mark all read"}
-            </Button>
+      <Drawer open={open && active} onOpenChange={handleOpenChange} showSwipeHandle>
+        <DrawerTrigger render={triggerButton} />
+        <DrawerContent className="max-h-[85dvh] px-5 pb-6 pt-3 flex flex-col">
+          <DrawerHeader className="flex-row items-center justify-between gap-2 border-b pb-3 pt-4 px-2 text-left shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <DrawerTitle className="font-heading text-base font-semibold text-foreground shrink-0">
+                Notifications
+              </DrawerTitle>
+              <DrawerDescription className="sr-only">
+                Recent cursive handwriting submissions, updates, and diagnostic feedback
+              </DrawerDescription>
+              {count.data !== undefined && count.data > 0 && (
+                <span className="rounded-full bg-primary/10 dark:bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary tabular-nums shrink-0">
+                  {count.data > 99 ? "99+" : count.data} unread
+                </span>
+              )}
+            </div>
+            {count.data !== undefined && count.data > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 min-h-[44px] px-2.5 sm:px-3 text-xs text-muted-foreground hover:text-foreground active:bg-muted touch-manipulation cursor-pointer shrink-0"
+                disabled={readAll.isPending}
+                onClick={handleMarkAllRead}
+              >
+                {readAll.isPending ? "Saving…" : "Mark all read"}
+              </Button>
+            )}
           </DrawerHeader>
-          {list}
+          {count.isError && (
+            <p role="status" className="text-muted-foreground text-xs py-1 px-2 shrink-0">
+              Unread count unavailable.
+            </p>
+          )}
+          <div className="flex-1 min-h-0 pt-2 px-1 flex flex-col overflow-hidden">
+            {listElement}
+          </div>
         </DrawerContent>
       </Drawer>
     );
   }
 
   return (
-    <Popover
-      open={open && active}
-      onOpenChange={handleOpenChange}
-    >
-      <PopoverTrigger render={trigger} />
-      <PopoverContent align="end" className="w-[min(24rem,calc(100vw-1.5rem))]">
-        <PopoverHeader className="flex-row items-center justify-between gap-2">
-          <PopoverTitle>Notifications</PopoverTitle>
-          <Button
-            variant="ghost"
-            size="xs"
-            className="min-h-10 px-2.5 sm:min-h-7"
-            disabled={readAll.isPending || count.data === 0}
-            onClick={() => readAll.mutate(undefined, { onError: feedback })}
-          >
-            {readAll.isPending ? "Saving…" : "Mark all read"}
-          </Button>
+    <Popover open={open && active} onOpenChange={handleOpenChange}>
+      <PopoverTrigger render={triggerButton} />
+      <PopoverContent
+        align="end"
+        className="w-[min(24rem,calc(100vw-1.5rem))] max-h-[min(calc(100dvh-4rem),38rem)] flex flex-col overflow-hidden p-3 sm:p-4 gap-3"
+      >
+        <PopoverHeader className="flex-row items-center justify-between gap-2 border-b pb-2 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <PopoverTitle className="font-heading text-sm font-semibold text-foreground shrink-0">
+              Notifications
+            </PopoverTitle>
+            <PopoverDescription className="sr-only">
+              Recent cursive handwriting submissions, updates, and diagnostic feedback
+            </PopoverDescription>
+            {count.data !== undefined && count.data > 0 && (
+              <span className="rounded-full bg-primary/10 dark:bg-primary/20 px-1.5 py-0.5 text-xs font-semibold text-primary tabular-nums shrink-0">
+                {count.data > 99 ? "99+" : count.data} unread
+              </span>
+            )}
+          </div>
+          {count.data !== undefined && count.data > 0 && (
+            <Button
+              variant="ghost"
+              size="xs"
+              className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+              disabled={readAll.isPending}
+              onClick={handleMarkAllRead}
+            >
+              {readAll.isPending ? "Saving…" : "Mark all read"}
+            </Button>
+          )}
         </PopoverHeader>
-        {list}
+        {count.isError && (
+          <p role="status" className="text-muted-foreground text-xs shrink-0">
+            Unread count unavailable.
+          </p>
+        )}
+        <div className="flex-1 min-h-0 flex flex-col">
+          {listElement}
+        </div>
       </PopoverContent>
     </Popover>
   );

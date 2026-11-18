@@ -35,7 +35,7 @@ function AttemptIdentity({ label, submission }: { label: string; submission: Sub
 }
 
 function AttemptScore({ label, submission }: { label: string; submission: Submission }) {
-  const { compositeScore, scoreBand } = resolveSubmissionScore(submission);
+  const { compositeScore, scoreBand, source } = resolveSubmissionScore(submission);
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs">
       <span className="text-muted-foreground">{label}</span>
@@ -44,6 +44,7 @@ function AttemptScore({ label, submission }: { label: string; submission: Submis
           <span className="tabular-nums">{Math.round(compositeScore)}%</span>
           <span aria-hidden="true">·</span>
           {scoreBand.band}
+          <span>{source === "manual" ? "Teacher rubric" : "Calibrated"}</span>
         </Badge>
       ) : (
         <span className="text-muted-foreground">Not scored yet</span>

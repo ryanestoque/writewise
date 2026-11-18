@@ -1,0 +1,7 @@
+﻿# Microsoft Playwright MCP, scoped to this project.
+# Pinned deliberately; update the version manually when needed.
+[mcp_servers.playwright]
+command = "npx.cmd"
+args = ["-y", "@playwright/mcp@0.0.84", "--output-dir", "output/playwright-mcp"]
+startup_timeout_sec = 60
+

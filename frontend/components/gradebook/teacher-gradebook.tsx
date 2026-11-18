@@ -25,7 +25,15 @@ import { useUnreadCommentThreads } from "@/lib/hooks/use-comments";
 const selectClass =
   "min-h-10 rounded-lg border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
-export function TeacherGradebook({ userId }: { userId: string }) {
+export function TeacherGradebook({
+  userId,
+  initialActivityId,
+  initialSectionId,
+}: {
+  userId: string;
+  initialActivityId?: string;
+  initialSectionId?: string;
+}) {
   const active = useActiveGradebookAccount(userId);
   const sections = useQuery({
     queryKey: ["gradebook", userId, "sections"],
@@ -34,7 +42,8 @@ export function TeacherGradebook({ userId }: { userId: string }) {
     staleTime: 30_000,
     enabled: active,
   });
-  const [chosenSection, setSection] = useState<string | null>(null);
+  const [chosenSection, setSection] = useState<string | null>(initialSectionId ?? null);
+  const [activityId, setActivityId] = useState(initialActivityId);
   const sectionId = sections.data?.some((section) => section.id === chosenSection)
     ? chosenSection
     : sections.data?.[0]?.id;
@@ -77,6 +86,26 @@ export function TeacherGradebook({ userId }: { userId: string }) {
         </div>
       ) : (
         <>
+          {activityId && (
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <p className="text-muted-foreground">
+                Showing the linked activity. Choose a section to review its grades.
+              </p>
+              <Button
+                variant="outline"
+                className="min-h-11"
+                onClick={() => setActivityId(undefined)}
+              >
+                Show all activities
+              </Button>
+              <Link
+                href={`/activities/${encodeURIComponent(activityId)}`}
+                className="focus-visible:ring-ring inline-flex min-h-11 items-center rounded underline underline-offset-4 focus-visible:ring-2"
+              >
+                Back to activity
+              </Link>
+            </div>
+          )}
           <label className="flex flex-wrap items-center gap-3 text-sm font-medium">
             Section
             <select
@@ -92,7 +121,12 @@ export function TeacherGradebook({ userId }: { userId: string }) {
             </select>
           </label>
           {sectionId && (
-            <SectionGrid key={`${userId}:${sectionId}`} userId={userId} sectionId={sectionId} />
+            <SectionGrid
+              key={`${userId}:${sectionId}`}
+              userId={userId}
+              sectionId={sectionId}
+              activityId={activityId}
+            />
           )}
         </>
       )}
@@ -100,7 +134,15 @@ export function TeacherGradebook({ userId }: { userId: string }) {
   );
 }
 
-function SectionGrid({ userId, sectionId }: { userId: string; sectionId: string }) {
+function SectionGrid({
+  userId,
+  sectionId,
+  activityId,
+}: {
+  userId: string;
+  sectionId: string;
+  activityId?: string;
+}) {
   const query = useSectionGradebook(userId, sectionId);
   const unread = useUnreadCommentThreads(userId);
   const [search, setSearch] = useState("");
@@ -142,7 +184,9 @@ function SectionGrid({ userId, sectionId }: { userId: string; sectionId: string 
     row.student_name.toLocaleLowerCase().includes(search.toLocaleLowerCase())
   );
   const activities = book.activities.filter(
-    (activity) => filter === "all" || activity.is_archived === (filter === "archived")
+    (activity) =>
+      (!activityId || activity.id === activityId) &&
+      (filter === "all" || activity.is_archived === (filter === "archived"))
   );
   const targets = selected.size ? book.rows.filter((row) => selected.has(row.student_id)) : rows;
   function beginBulk(activityId: string, operation: "zero" | "excuse" | "release") {
@@ -248,9 +292,13 @@ function SectionGrid({ userId, sectionId }: { userId: string; sectionId: string 
         <p className="bg-card rounded-xl border p-6 text-sm">
           This section has no students. Add students from the class roster.
         </p>
-      ) : !book.activities.length ? (
+      ) : !activities.length ? (
         <p className="bg-card rounded-xl border p-6 text-sm">
-          No coursework yet. Assign an activity to this section or its students to begin.
+          {activityId
+            ? "The linked activity is not available in this section with the current activity filter. Choose another section or show all activities."
+            : book.activities.length
+              ? "No activities match this filter. Choose All activities to see the class record."
+              : "No coursework yet. Assign an activity to this section or its students to begin."}
         </p>
       ) : (
         <div
@@ -359,9 +407,10 @@ function SectionGrid({ userId, sectionId }: { userId: string; sectionId: string 
                         <div data-row={rowIndex} data-column={column}>
                           <GradebookCellButton
                             cell={work}
-                            hasUnreadComments={
-                              hasUnreadWorkComments(unread.data, { activityId: work.activity_id, studentId: work.student_id })
-                            }
+                            hasUnreadComments={hasUnreadWorkComments(unread.data, {
+                              activityId: work.activity_id,
+                              studentId: work.student_id,
+                            })}
                             label={`${row.student_name}, ${activity.title}`}
                             onOpen={() => setCell(work)}
                             row={rowIndex}

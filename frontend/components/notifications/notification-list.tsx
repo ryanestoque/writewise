@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { isToday, isYesterday } from "date-fns";
-import { PenTool } from "lucide-react";
+import { Check, PenTool } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import {
   Empty,
   EmptyHeader,
@@ -13,39 +14,8 @@ import {
   EmptyTitle,
   EmptyDescription,
 } from "@/components/ui/empty";
-import { cn } from "@/lib/utils";
 import { NotificationRowItem } from "./notification-row";
 import type { NotificationLabels, NotificationRow } from "@/lib/notifications/data";
-
-type FilterTab = "all" | "unread" | "notes";
-
-type TemporalGroup = {
-  title: string;
-  rows: NotificationRow[];
-};
-
-function groupRowsByTime(rows: NotificationRow[]): TemporalGroup[] {
-  const today: NotificationRow[] = [];
-  const yesterday: NotificationRow[] = [];
-  const earlier: NotificationRow[] = [];
-
-  for (const row of rows) {
-    const d = new Date(row.created_at);
-    if (isToday(d)) {
-      today.push(row);
-    } else if (isYesterday(d)) {
-      yesterday.push(row);
-    } else {
-      earlier.push(row);
-    }
-  }
-
-  const groups: TemporalGroup[] = [];
-  if (today.length > 0) groups.push({ title: "Today", rows: today });
-  if (yesterday.length > 0) groups.push({ title: "Yesterday", rows: yesterday });
-  if (earlier.length > 0) groups.push({ title: "Earlier", rows: earlier });
-  return groups;
-}
 
 export function NotificationList({
   rows,
@@ -56,10 +26,13 @@ export function NotificationList({
   retry,
   hasMore,
   loadingMore,
+  loadMoreError,
   loadMore,
   pendingId,
   onRead,
   onActivate,
+  isMobile = false,
+  containerRef,
 }: {
   rows: NotificationRow[];
   labels: NotificationLabels;
@@ -69,136 +42,300 @@ export function NotificationList({
   retry: () => void;
   hasMore: boolean;
   loadingMore: boolean;
+  loadMoreError?: unknown;
   loadMore: () => void;
   pendingId: string | null;
   onRead: (id: string) => void;
   onActivate: (row: NotificationRow) => void;
+  isMobile?: boolean;
+  containerRef?: React.RefObject<HTMLDivElement | null>;
 }) {
-  const [filter, setFilter] = useState<FilterTab>("all");
+  const [filter, setFilter] = useState<"all" | "unread">("all");
+  const fallbackRef = useRef<HTMLDivElement>(null);
+  const listContainerRef = containerRef ?? fallbackRef;
+  const wasLoadingMoreRef = useRef(false);
+  const lastPendingIdRef = useRef<string | null>(null);
 
-  const unreadRows = rows.filter((r) => r.read_at === null);
-  const noteRows = rows.filter((r) => r.type === "comment_posted");
+  useEffect(() => {
+    if (wasLoadingMoreRef.current && !loadingMore) {
+      wasLoadingMoreRef.current = false;
+      if (!hasMore) {
+        // Prevent focus loss to body when the Load More button unmounts
+        listContainerRef.current?.focus();
+      }
+    }
+  }, [hasMore, loadingMore, listContainerRef]);
 
-  const filteredRows =
-    filter === "unread" ? unreadRows : filter === "notes" ? noteRows : rows;
+  const unreadCount = useMemo(
+    () => rows.filter((r) => r.read_at === null).length,
+    [rows]
+  );
 
-  const groups = groupRowsByTime(filteredRows);
+  const displayedRows = useMemo(
+    () => (filter === "unread" ? rows.filter((r) => r.read_at === null) : rows),
+    [rows, filter]
+  );
+
+  useEffect(() => {
+    if (pendingId) {
+      lastPendingIdRef.current = pendingId;
+    } else if (lastPendingIdRef.current) {
+      const completedId = lastPendingIdRef.current;
+      lastPendingIdRef.current = null;
+      // If the row that was just marked read is no longer in displayedRows (e.g. in unread filter)
+      // or if the focused check button inside the row unmounted (e.g. in all filter),
+      // restore focus defensively so it is not dropped to body.
+      const frame = requestAnimationFrame(() => {
+        const active = typeof document !== "undefined" ? document.activeElement : null;
+        const isLost = !active || active === document.body || !listContainerRef.current?.contains(active);
+        if (isLost) {
+          const rowLink = listContainerRef.current?.querySelector<HTMLElement>(
+            `[data-notification-id="${completedId}"] a`
+          );
+          if (rowLink) {
+            rowLink.focus();
+          } else {
+            listContainerRef.current?.focus();
+          }
+        }
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [pendingId, displayedRows, listContainerRef]);
+
+  const groups = useMemo(() => {
+    const today: NotificationRow[] = [];
+    const yesterday: NotificationRow[] = [];
+    const earlier: NotificationRow[] = [];
+
+    for (const row of displayedRows) {
+      const d = new Date(row.created_at);
+      if (isToday(d)) {
+        today.push(row);
+      } else if (isYesterday(d)) {
+        yesterday.push(row);
+      } else {
+        earlier.push(row);
+      }
+    }
+
+    const result: { label: string; items: NotificationRow[] }[] = [];
+    if (today.length > 0) result.push({ label: "Today", items: today });
+    if (yesterday.length > 0) result.push({ label: "Yesterday", items: yesterday });
+    if (earlier.length > 0) result.push({ label: "Earlier", items: earlier });
+    return result;
+  }, [displayedRows]);
 
   return (
-    <div className="flex flex-col gap-2">
-      {/* Category Filter Pills (All / Unread / Notes) */}
+    <div ref={listContainerRef} tabIndex={-1} className="flex-1 min-h-0 flex flex-col gap-2 outline-none">
+      {error && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-foreground shrink-0"
+        >
+          <p className="font-medium text-destructive dark:text-destructive">Could not refresh notifications. Your last updates are still shown.</p>
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={retry}
+            className="h-9 min-h-[44px] px-3 border-destructive/30 hover:bg-destructive/15 shrink-0 md:h-7 md:min-h-0 md:px-2.5 touch-manipulation cursor-pointer"
+          >
+            Try again
+          </Button>
+        </div>
+      )}
+
+      {/* Filter controls */}
       {rows.length > 0 && (
-        <div className="flex items-center gap-1.5 border-b border-border/40 pb-2">
+        <div
+          className="flex items-center gap-1.5 border-b pb-2 px-1 text-xs shrink-0"
+          role="group"
+          aria-label="Filter notifications"
+        >
           <button
             type="button"
+            aria-pressed={filter === "all"}
             onClick={() => setFilter("all")}
             className={cn(
-              "rounded-full px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer",
+              "min-h-[44px] md:min-h-[28px] rounded-md px-3 py-1 font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer touch-manipulation",
               filter === "all"
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-muted text-foreground font-semibold shadow-2xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
             )}
           >
             All ({rows.length})
           </button>
           <button
             type="button"
+            aria-pressed={filter === "unread"}
             onClick={() => setFilter("unread")}
             className={cn(
-              "rounded-full px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer",
+              "min-h-[44px] md:min-h-[28px] flex items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer touch-manipulation",
               filter === "unread"
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-muted text-foreground font-semibold shadow-2xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
             )}
           >
-            Unread{unreadRows.length > 0 ? ` (${unreadRows.length})` : ""}
+            Unread
+            {unreadCount > 0 && (
+              <span className="rounded-full bg-primary/10 dark:bg-primary/20 px-1.5 py-0.5 text-xs font-semibold text-primary tabular-nums">
+                {unreadCount}
+              </span>
+            )}
           </button>
-          {noteRows.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setFilter("notes")}
-              className={cn(
-                "rounded-full px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer",
-                filter === "notes"
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              Notes ({noteRows.length})
-            </button>
-          )}
         </div>
       )}
 
-      {error && (
-        <div
-          role="alert"
-          className="flex items-center justify-between gap-2 rounded-lg border p-2 text-xs"
-        >
-          <p>Could not refresh notifications. Your last updates are still shown.</p>
-          <Button variant="outline" size="xs" onClick={retry}>
-            Try again
-          </Button>
-        </div>
-      )}
+      {/* Screen reader dynamic status announcement */}
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {filter === "all"
+          ? `Showing all ${rows.length} notifications (${unreadCount} unread).`
+          : `Showing ${unreadCount} unread notification${unreadCount === 1 ? "" : "s"}.`}
+      </div>
 
       {loading && rows.length === 0 ? (
-        <div role="status" aria-label="Loading notifications" className="flex flex-col gap-3 py-2">
+        <div role="status" aria-label="Loading notifications" className="flex flex-col gap-3 py-2 flex-1">
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-16 w-full" />
         </div>
       ) : rows.length === 0 && !error ? (
-        <Empty className="py-8">
+        <Empty className="py-8 my-auto">
           <EmptyHeader>
-            <EmptyMedia variant="icon" className="bg-secondary text-primary">
-              <PenTool className="size-5" aria-hidden="true" />
+            <EmptyMedia variant="icon">
+              <PenTool className="size-5 text-muted-foreground" />
             </EmptyMedia>
-            <EmptyTitle>All caught up!</EmptyTitle>
-            <EmptyDescription>
-              New cursive practice submissions, teacher notes, and diagnostic scores will appear here.
+            <EmptyTitle className="font-heading text-sm font-semibold">No notifications yet</EmptyTitle>
+            <EmptyDescription className="text-xs text-muted-foreground">
+              Worksheet submissions, practice attempts, and penmanship diagnostic results will appear here.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
-      ) : filteredRows.length === 0 ? (
-        <div className="py-8 text-center text-xs text-muted-foreground">
-          <p className="font-medium text-foreground">No {filter} notifications</p>
-          <p className="mt-1">
-            {filter === "unread"
-              ? "You've read all recent notifications."
-              : "No private notes or comments found."}
-          </p>
+      ) : displayedRows.length === 0 && filter === "unread" ? (
+        <Empty className="py-8 my-auto">
+          <EmptyHeader>
+            <EmptyMedia variant="icon" className="bg-primary/10 text-primary">
+              <Check className="size-4" aria-hidden="true" />
+            </EmptyMedia>
+            <EmptyTitle className="font-heading text-sm font-semibold">All caught up!</EmptyTitle>
+            <EmptyDescription className="text-xs text-muted-foreground">
+              No unread notifications right now.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      ) : isMobile ? (
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col gap-3 pr-1 pb-4">
+          {groups.map((group) => (
+            <div key={group.label} className="flex flex-col gap-1">
+              <h3 className="sticky top-0 z-10 bg-background/95 backdrop-blur-xs px-2 py-1 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                {group.label}
+              </h3>
+              <ul aria-label={`${group.label} notifications`} className="flex flex-col gap-1">
+                {group.items.map((row) => (
+                  <NotificationRowItem
+                    key={row.id}
+                    row={row}
+                    labels={labels}
+                    role={role}
+                    pending={row.id === pendingId}
+                    onRead={onRead}
+                    onActivate={onActivate}
+                  />
+                ))}
+              </ul>
+            </div>
+          ))}
+          {hasMore && (
+            <div className="flex flex-col gap-1.5 pt-2 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="min-h-[44px] touch-manipulation cursor-pointer w-full"
+                disabled={loadingMore}
+                onClick={() => {
+                  wasLoadingMoreRef.current = true;
+                  loadMore();
+                }}
+              >
+                {loadingMore ? "Loading…" : "Load more"}
+              </Button>
+              {Boolean(loadMoreError) && (
+                <div role="alert" className="flex items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-xs text-foreground">
+                  <span className="text-destructive font-medium">Failed to load more.</span>
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    onClick={() => {
+                      wasLoadingMoreRef.current = true;
+                      loadMore();
+                    }}
+                    className="h-8 px-2.5 border-destructive/30 hover:bg-destructive/15 text-xs touch-manipulation cursor-pointer"
+                  >
+                    Retry
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       ) : (
-        <ScrollArea className="h-[min(60vh,24rem)]">
-          <div className="pr-3">
-            {groups.map((group) => (
-              <div key={group.title} className="mb-2 last:mb-0">
-                <div className="sticky top-0 z-10 bg-popover/95 backdrop-blur-xs px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/75">
-                  {group.title}
+        <div className="flex-1 min-h-0 flex flex-col gap-2">
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="flex flex-col gap-3 pr-3">
+              {groups.map((group) => (
+                <div key={group.label} className="flex flex-col gap-1">
+                  <h3 className="sticky top-0 z-10 bg-popover/95 backdrop-blur-xs px-2 py-1 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                    {group.label}
+                  </h3>
+                  <ul aria-label={`${group.label} notifications`} className="flex flex-col gap-1">
+                    {group.items.map((row) => (
+                      <NotificationRowItem
+                        key={row.id}
+                        row={row}
+                        labels={labels}
+                        role={role}
+                        pending={row.id === pendingId}
+                        onRead={onRead}
+                        onActivate={onActivate}
+                      />
+                    ))}
+                  </ul>
                 </div>
-                <ul aria-label={`${group.title} notifications`}>
-                  {group.rows.map((row) => (
-                    <NotificationRowItem
-                      key={row.id}
-                      row={row}
-                      labels={labels}
-                      role={role}
-                      pending={row.id === pendingId}
-                      onRead={onRead}
-                      onActivate={onActivate}
-                    />
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-      )}
-
-      {hasMore && (
-        <Button variant="outline" size="sm" disabled={loadingMore} onClick={loadMore}>
-          {loadingMore ? "Loading…" : "Load more"}
-        </Button>
+              ))}
+            </div>
+          </ScrollArea>
+          {hasMore && (
+            <div className="flex flex-col gap-1.5 pt-1 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="min-h-[36px] touch-manipulation cursor-pointer w-full"
+                disabled={loadingMore}
+                onClick={() => {
+                  wasLoadingMoreRef.current = true;
+                  loadMore();
+                }}
+              >
+                {loadingMore ? "Loading…" : "Load more"}
+              </Button>
+              {Boolean(loadMoreError) && (
+                <div role="alert" className="flex items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-xs text-foreground">
+                  <span className="text-destructive font-medium">Failed to load more.</span>
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    onClick={() => {
+                      wasLoadingMoreRef.current = true;
+                      loadMore();
+                    }}
+                    className="h-7 px-2 border-destructive/30 hover:bg-destructive/15 text-xs touch-manipulation cursor-pointer"
+                  >
+                    Retry
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

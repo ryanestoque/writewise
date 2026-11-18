@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, Check, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ApiError } from "@/lib/utils/api-error";
 import {
@@ -11,7 +11,6 @@ import {
   type PreferenceRole,
 } from "@/lib/notifications/preferences";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -174,43 +173,18 @@ export function NotificationSettingsCard({
       aria-labelledby={headingId}
       className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-[280px_1fr] lg:grid-cols-[320px_1fr]"
     >
-      <div className="flex flex-col gap-1">
-        <h2 id={headingId} className="font-heading text-lg font-semibold">
-          Notifications
-        </h2>
-        <p className="text-xs text-muted-foreground">
-          Manage classroom communication channels and email alert preferences.
-        </p>
-      </div>
-
+      <h2 id={headingId} className="font-heading text-lg font-semibold">
+        Notifications
+      </h2>
       <Card>
         <form onSubmit={save} aria-busy={busy} className="flex flex-col gap-6">
           <CardHeader>
-            <div className="flex items-center justify-between gap-2">
-              <CardTitle as="h3">Email updates</CardTitle>
-              {role === "teacher" && (
-                <Badge variant="outline" className="text-xs font-normal text-muted-foreground">
-                  Parent channel active
-                </Badge>
-              )}
-            </div>
-            <CardDescription>
-              {role === "parent"
-                ? "Choose whether to receive email notifications when your child needs practice support or deadlines approach."
-                : "Classroom email notifications are currently configured for parents. Teacher summary digests are planned for a future update."}
-            </CardDescription>
+            <CardTitle as="h3">Email updates</CardTitle>
+            <CardDescription>Manage your classroom email preferences.</CardDescription>
           </CardHeader>
-
           <CardContent className="flex flex-col gap-4">
-            <div className="flex items-center gap-2.5 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-              <Bell className="size-4 shrink-0 text-primary" aria-hidden="true" />
-              <span>
-                <strong>In-app notifications:</strong> Always active in the top navigation bell for immediate real-time updates.
-              </span>
-            </div>
-
             {isLoading ? (
-              <div role="status" className="flex flex-col gap-2 py-2">
+              <div role="status" className="flex flex-col gap-2">
                 <span className="text-xs text-muted-foreground">Loading email settings…</span>
                 <Skeleton className="h-5 w-40" aria-hidden="true" />
               </div>
@@ -218,13 +192,11 @@ export function NotificationSettingsCard({
               <FieldGroup>
                 <Field orientation="horizontal" data-disabled={busy}>
                   <FieldContent>
-                    <FieldLabel htmlFor={controlId} className="text-sm font-medium">
-                      {role === "parent" ? "Worksheet & deadline alerts" : "Enable email notifications"}
-                    </FieldLabel>
-                    <FieldDescription id={descriptionId} className="text-xs text-muted-foreground">
+                    <FieldLabel htmlFor={controlId}>Email me</FieldLabel>
+                    <FieldDescription id={descriptionId}>
                       {role === "parent"
-                        ? "Receive email notifications when a completed worksheet needs another upload or an activity deadline is near. Does not contain student names or scores."
-                        : "Save your preference for upcoming teacher email summaries. Currently, transactional emails are sent exclusively to parents."}
+                        ? "Get email when work needs another attempt or an activity is due soon. In-app notifications stay on."
+                        : "Opt in for upcoming classroom email summaries. Immediate activity updates always appear in-app."}
                     </FieldDescription>
                   </FieldContent>
                   <Switch
@@ -241,61 +213,46 @@ export function NotificationSettingsCard({
                 </Field>
               </FieldGroup>
             ) : null}
-
             {failure && (
               <Alert variant="destructive">
                 <AlertTitle>Email settings need attention</AlertTitle>
-                <AlertDescription>{failure}</AlertDescription>
+                <AlertDescription className="flex items-center justify-between gap-2">
+                  <span>{failure}</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="xs"
+                    disabled={busy}
+                    className="h-9 min-h-[44px] px-3 md:h-7 md:min-h-0 md:px-2.5 touch-manipulation cursor-pointer"
+                    onClick={() => {
+                      setIsLoading(true);
+                      setFailure(null);
+                      setSavedMessage(false);
+                      void load();
+                    }}
+                  >
+                    Try again
+                  </Button>
+                </AlertDescription>
               </Alert>
             )}
-
             {savedMessage && (
-              <div role="status" className="flex items-center gap-2 text-xs text-primary font-medium">
-                <Check className="size-4 shrink-0" aria-hidden="true" />
-                <span>Email preferences updated successfully.</span>
-              </div>
+              <p role="status" className="text-sm font-medium text-primary flex items-center gap-1.5">
+                <Check className="size-4" aria-hidden="true" />
+                <span>Email settings saved.</span>
+              </p>
             )}
           </CardContent>
-
-          <CardFooter className="flex-wrap justify-end gap-2 border-t border-border/40 pt-4">
-            {draftEnabled !== savedEnabled && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={busy}
-                onClick={() => {
-                  setDraftEnabled(savedEnabled);
-                  setFailure(null);
-                  setSavedMessage(false);
-                }}
-              >
-                Cancel
-              </Button>
-            )}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={busy}
-              onClick={() => {
-                setIsLoading(true);
-                setFailure(null);
-                setSavedMessage(false);
-                void load();
-              }}
-            >
-              Reload
-            </Button>
+          <CardFooter className="justify-end gap-2">
             <Button
               type="submit"
-              size="sm"
+              className="min-h-[44px] md:min-h-0 touch-manipulation cursor-pointer"
               disabled={busy || draftEnabled === null || draftEnabled === savedEnabled}
             >
               {isSaving && (
-                <Loader2 data-icon="inline-start" className="animate-spin mr-1.5 size-4" aria-hidden="true" />
+                <Loader2 data-icon="inline-start" className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
               )}
-              {isSaving ? "Saving…" : "Save preferences"}
+              {isSaving ? "Saving…" : "Save changes"}
             </Button>
           </CardFooter>
         </form>

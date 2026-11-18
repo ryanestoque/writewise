@@ -11,6 +11,7 @@ import {
   useActivity,
   useToggleArchive,
 } from "@/lib/hooks/use-activities";
+import { ReleaseActivityButton } from "@/components/submissions/submission-lifecycle-controls";
 import { ActivityReviewQueue } from "@/components/activities/activity-review-queue";
 import { useActivityReviewSession } from "@/components/activities/activity-review-session";
 import {
@@ -251,12 +252,14 @@ export default function ActivityDetailPage({
       { name: "Spacing", score: avgSpacing },
       { name: "Slant Consistency", score: avgSlant },
       { name: "Baseline Alignment", score: avgBaseline },
-    ].filter((c) => c.score > 0);
+    ];
 
     criteriaList.sort((a, b) => b.score - a.score);
 
     return {
       completedCount: scoredSubmissions.length,
+      manualCount: scoredSubmissions.filter(item => item.resolved.source === "manual").length,
+      calibratedCount: scoredSubmissions.filter(item => item.resolved.source === "calibrated").length,
       avgCompositeScore: avgComposite,
       scoreBand: getScoreBandLabel(avgComposite),
       criteriaAverages: {
@@ -282,8 +285,6 @@ export default function ActivityDetailPage({
   );
   const workspaceReady = !rosterLoading && !rosterError && !submissionsLoading &&
     !submissionsError && !workQuery.isLoading && !workQuery.isError;
-  const receivedStudentsCount = reviewRows.filter(row => row.attempts.length > 0).length;
-  const sharedStudentsCount = reviewRows.filter(row => !!row.counted && row.state?.work_status === "Released").length;
   const totalScansCount = reviewRows.reduce((total, row) => total + row.attempts.length, 0);
   const counts = useMemo(() => countReviewRows(reviewRows), [reviewRows]);
   const visibleRows = useMemo(() => getReviewQueueRows(
@@ -519,16 +520,13 @@ export default function ActivityDetailPage({
       <ActivityDetailHero
         activity={activity}
         isArchived={isArchived}
-        archivePending={archivePending}
         wordCount={wordCount}
         totalStudents={totalStudents}
         uniqueStudentsCount={uniqueStudentsCount}
-        receivedStudentsCount={receivedStudentsCount}
-        sharedStudentsCount={sharedStudentsCount}
         totalScansCount={totalScansCount}
         completionRate={completionRate}
         classDiagnostics={classDiagnostics}
-        progressUnavailable={rosterLoading || rosterError || workQuery.isLoading || workQuery.isError || submissionsLoading || !!submissionsError}
+        summaryState={rosterError || workQuery.isError || submissionsError ? "error" : rosterLoading || workQuery.isLoading || submissionsLoading ? "loading" : "ready"}
         hasCopiedPrompt={hasCopiedPrompt}
         onCopyPrompt={handleCopyPrompt}
         onUpload={handleOpenUpload}
@@ -538,6 +536,9 @@ export default function ActivityDetailPage({
         onToggleArchive={handleToggleArchive}
       />
 
+      <ReleaseActivityButton activityId={id} userId={activity.created_by}
+        hasPointGrades={activity.points_possible !== null} students={students ?? []}
+        rosterReady={!rosterLoading && !rosterError} />
       {/* Unified Classroom Submissions Workspace */}
       <section aria-labelledby="submissions-heading" className="space-y-3 sm:space-y-4">
         <h2
