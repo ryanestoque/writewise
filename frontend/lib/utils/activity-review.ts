@@ -19,7 +19,11 @@ export function selectReviewAttempt<T extends { id: string; created_at: string }
   );
 }
 
-export function needsReviewAttention(workStatus?: string, latestUploadStatus?: string, hasNewerCompletedUpload = false) {
+export function needsReviewAttention(
+  workStatus?: string,
+  latestUploadStatus?: string,
+  hasNewerCompletedUpload = false
+) {
   if (workStatus === "Excused") return false;
   return (
     (latestUploadStatus === "completed" && hasNewerCompletedUpload) ||
@@ -29,8 +33,10 @@ export function needsReviewAttention(workStatus?: string, latestUploadStatus?: s
   );
 }
 
-export type ReviewFilter = "all" | "attention" | "awaiting" | "completed" | "processing" | "rejected" | "returned";
-export type ReviewSort = "attention" | "newest" | "oldest" | "name_asc" | "name_desc" | "score_desc";
+export type ReviewFilter =
+  "all" | "attention" | "awaiting" | "completed" | "processing" | "rejected" | "returned";
+export type ReviewSort =
+  "attention" | "newest" | "oldest" | "name_asc" | "name_desc" | "score_desc";
 export type ReviewView = "attention" | "awaiting" | "all";
 export type UploadFilter = Exclude<ReviewFilter, "attention" | "awaiting">;
 
@@ -52,11 +58,22 @@ export function readReviewQueue(params: Pick<URLSearchParams, "get">): ReviewQue
     searchQuery: params.get("q") ?? "",
     statusFilter,
     // Awaiting a first upload and filtering an existing upload are mutually exclusive.
-    uploadFilter: statusFilter !== "awaiting" &&
-      (upload === "completed" || upload === "processing" || upload === "rejected" || upload === "returned")
-      ? upload : "all",
-    sortBy: sort === "newest" || sort === "oldest" || sort === "name_asc" ||
-      sort === "name_desc" || sort === "score_desc" ? sort : "attention",
+    uploadFilter:
+      statusFilter !== "awaiting" &&
+      (upload === "completed" ||
+        upload === "processing" ||
+        upload === "rejected" ||
+        upload === "returned")
+        ? upload
+        : "all",
+    sortBy:
+      sort === "newest" ||
+      sort === "oldest" ||
+      sort === "name_asc" ||
+      sort === "name_desc" ||
+      sort === "score_desc"
+        ? sort
+        : "attention",
   };
 }
 
@@ -64,11 +81,15 @@ export function readReviewQueue(params: Pick<URLSearchParams, "get">): ReviewQue
 export function updateReviewQueue(params: URLSearchParams, patch: Partial<ReviewQueueState>) {
   const state = { ...readReviewQueue(params), ...patch };
   if (patch.statusFilter === "awaiting") state.uploadFilter = "all";
-  else if (patch.uploadFilter && patch.uploadFilter !== "all" && state.statusFilter === "awaiting") {
+  else if (
+    patch.uploadFilter &&
+    patch.uploadFilter !== "all" &&
+    state.statusFilter === "awaiting"
+  ) {
     state.statusFilter = "all";
   }
   const next = new URLSearchParams(params);
-  queueKeys.forEach(key => next.delete(key));
+  queueKeys.forEach((key) => next.delete(key));
   if (state.searchQuery) next.set("q", state.searchQuery);
   if (state.statusFilter !== "attention") next.set("workView", state.statusFilter);
   if (state.uploadFilter !== "all") next.set("upload", state.uploadFilter);
@@ -78,7 +99,12 @@ export function updateReviewQueue(params: URLSearchParams, patch: Partial<Review
 
 /** Carry only queue controls to worksheet routes; never carry a conversation destination. */
 export function reviewQueueQuery(params: Pick<URLSearchParams, "get">) {
-  const query = updateReviewQueue(new URLSearchParams(), readReviewQueue(params)).toString();
+  const next = updateReviewQueue(new URLSearchParams(), readReviewQueue(params));
+  for (const key of ["group", "status", "layout"]) {
+    const value = params.get(key);
+    if (value) next.set(key, value);
+  }
+  const query = next.toString();
   return query ? `?${query}` : "";
 }
 
@@ -98,48 +124,67 @@ export function buildReviewRows(
   submissions: Submission[],
   states: ActivityWorkState[]
 ): ActivityReviewRow[] {
-  const stateMap = new Map(states.map(state => [state.student_id, state]));
+  const stateMap = new Map(states.map((state) => [state.student_id, state]));
   const attemptsMap = new Map<string, Submission[]>();
   for (const submission of submissions) {
     const attempts = attemptsMap.get(submission.student_id) ?? [];
     attempts.push(submission);
     attemptsMap.set(submission.student_id, attempts);
   }
-  return students.map(student => {
+  return students.map((student) => {
     const state = stateMap.get(student.id);
     const attempts = [...(attemptsMap.get(student.id) ?? [])].sort(
       (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)
     );
     const latest = attempts[0];
-    const counted = attempts.find(attempt => attempt.id === state?.active_submission_id);
+    const counted = attempts.find((attempt) => attempt.id === state?.active_submission_id);
     return {
-      student, state, attempts, latest, counted,
+      student,
+      state,
+      attempts,
+      latest,
+      counted,
       selected: state ? selectReviewAttempt(attempts, state.active_submission_id) : undefined,
-      attention: !state || needsReviewAttention(
-        state.work_status,
-        latest?.status,
-        !!counted && !!latest && latest.id !== counted.id &&
-          Date.parse(latest.created_at) > Date.parse(counted.created_at)
-      ),
+      attention:
+        !state ||
+        needsReviewAttention(
+          state.work_status,
+          latest?.status,
+          !!counted &&
+            !!latest &&
+            latest.id !== counted.id &&
+            Date.parse(latest.created_at) > Date.parse(counted.created_at)
+        ),
     };
   });
 }
 
 export function filterReviewRows(rows: ActivityReviewRow[], filter: ReviewFilter, search = "") {
   const query = search.trim().toLocaleLowerCase();
-  return rows.filter(row => {
+  return rows.filter((row) => {
     if (query && !row.student.full_name.toLocaleLowerCase().includes(query)) return false;
     if (filter === "all") return true;
     if (filter === "attention") return row.attention;
-    if (filter === "awaiting") return !!row.state && row.state.work_status !== "Excused" && !row.latest;
+    if (filter === "awaiting")
+      return !!row.state && row.state.work_status !== "Excused" && !row.latest;
     // Upload filters always describe the latest upload, never an older official result.
     return row.latest?.status === filter;
   });
 }
 
 export function countReviewRows(rows: ActivityReviewRow[]) {
-  const filters: ReviewFilter[] = ["all", "attention", "awaiting", "completed", "processing", "rejected", "returned"];
-  return Object.fromEntries(filters.map(filter => [filter, filterReviewRows(rows, filter).length])) as Record<ReviewFilter, number>;
+  const filters: ReviewFilter[] = [
+    "all",
+    "attention",
+    "awaiting",
+    "completed",
+    "processing",
+    "rejected",
+    "returned",
+  ];
+  return Object.fromEntries(
+    filters.map((filter) => [filter, filterReviewRows(rows, filter).length])
+  ) as Record<ReviewFilter, number>;
 }
 
 /** The workspace and worksheet traversal must use identical filters and ordering. */
@@ -149,7 +194,11 @@ export function getReviewQueueRows(
   scoreFor: (submission: Submission | undefined) => number | null
 ) {
   return sortReviewRows(
-    filterReviewRows(filterReviewRows(rows, state.uploadFilter), state.statusFilter, state.searchQuery),
+    filterReviewRows(
+      filterReviewRows(rows, state.uploadFilter),
+      state.statusFilter,
+      state.searchQuery
+    ),
     state.sortBy,
     scoreFor
   );
@@ -162,13 +211,35 @@ export function getReviewNavigation(
   studentOrder: string[]
 ): Submission[] {
   if (!current || !studentOrder.includes(current.student_id)) return [];
-  const byStudent = new Map(rows.map(row => [row.student.id, row]));
-  return [...new Set(studentOrder)].flatMap(studentId => {
+  const byStudent = new Map(rows.map((row) => [row.student.id, row]));
+  return [...new Set(studentOrder)].flatMap((studentId) => {
     const row = byStudent.get(studentId);
     if (!row) return [];
     const attempt = studentId === current.student_id ? current : row.selected;
     return attempt ? [attempt] : [];
   });
+}
+
+export function getAttemptReviewNavigation(
+  rows: ActivityReviewRow[],
+  group: "grouped" | "all",
+  search: string,
+  sort: ReviewSort,
+  matches: (submission: Submission, row: ActivityReviewRow) => boolean,
+  scoreFor: (submission: Submission) => number | null
+): Submission[] {
+  const query = search.trim().toLocaleLowerCase();
+  return rows.flatMap(row => {
+    if (!row.student.full_name.toLocaleLowerCase().includes(query)) return [];
+    const attempts = group === "all" ? row.attempts : row.selected ? [row.selected] : [];
+    return attempts.filter(attempt => matches(attempt, row)).map(attempt => ({ attempt, name: row.student.full_name }));
+  }).sort((a, b) => {
+    if (sort === "name_asc") return a.name.localeCompare(b.name);
+    if (sort === "name_desc") return b.name.localeCompare(a.name);
+    if (sort === "score_desc") return (scoreFor(b.attempt) ?? -1) - (scoreFor(a.attempt) ?? -1);
+    const date = Date.parse(a.attempt.created_at) - Date.parse(b.attempt.created_at);
+    return sort === "oldest" ? date : -date;
+  }).map(item => item.attempt);
 }
 
 export function sortReviewRows(

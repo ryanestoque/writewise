@@ -4,44 +4,56 @@ import { use, useState, useMemo, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ActivityThreads } from "@/components/comments/activity-threads";
-
-import { commentThreadHref, parseTeacherCommentTarget } from "@/lib/comments/targets";
-import {
-  type Activity,
-  useActivity,
-  useToggleArchive,
-} from "@/lib/hooks/use-activities";
-import { ReleaseActivityButton } from "@/components/submissions/submission-lifecycle-controls";
 import { ActivityReviewQueue } from "@/components/activities/activity-review-queue";
 import { useActivityReviewSession } from "@/components/activities/activity-review-session";
 import {
-  buildReviewRows, countReviewRows, getReviewQueueRows,
-  readReviewQueue, updateReviewQueue, reviewQueueQuery,
-  type ReviewView, type ReviewSort, type UploadFilter, type ReviewQueueState,
+  buildReviewRows,
+  getReviewQueueRows,
+  readReviewQueue,
+  reviewQueueQuery,
+  updateReviewQueue,
+  type ReviewView,
+  type UploadFilter,
 } from "@/lib/utils/activity-review";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { StudentWorkSummary } from "@/components/activities/student-work-summary";
+import { commentThreadHref, parseTeacherCommentTarget } from "@/lib/comments/targets";
+import { type Activity, useActivity, useToggleArchive } from "@/lib/hooks/use-activities";
 import { useActivityWork } from "@/lib/hooks/use-activity-work";
-
+import { ReleaseActivityButton } from "@/components/submissions/submission-lifecycle-controls";
 import { activityAssignedTo } from "@/lib/utils/activity-work";
 import { useStudents } from "@/lib/hooks/use-students";
-import { useSubmissions } from "@/lib/hooks/use-submissions";
+import {
+  type Submission,
+  useSubmissions,
+  useDeleteSubmission,
+  useBatchDeleteSubmissions,
+  useSubmissionImageUrls,
+} from "@/lib/hooks/use-submissions";
+import dynamic from "next/dynamic";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
-import { EditActivityDialog } from "@/components/activities/edit-activity-dialog";
-import { DeleteActivityDialog } from "@/components/activities/delete-activity-dialog";
-import { CreateActivityDialog } from "@/components/activities/create-activity-dialog";
+
+const EditActivityDialog = dynamic(
+  () => import("@/components/activities/edit-activity-dialog").then((m) => m.EditActivityDialog),
+  { ssr: false }
+);
+const DeleteActivityDialog = dynamic(
+  () =>
+    import("@/components/activities/delete-activity-dialog").then((m) => m.DeleteActivityDialog),
+  { ssr: false }
+);
+const CreateActivityDialog = dynamic(
+  () =>
+    import("@/components/activities/create-activity-dialog").then((m) => m.CreateActivityDialog),
+  { ssr: false }
+);
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { SearchInput } from "@/components/ui/search-input";
-import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { FloatingActionBar } from "@/components/ui/floating-action-bar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Empty,
   EmptyContent,
@@ -53,65 +65,80 @@ import {
 import {
   ArrowLeft,
   ClipboardList,
+  Upload,
+  Inbox,
   AlertCircle,
   RotateCcw,
-  ArrowUpDown,
+  SearchX,
+  Trash2,
   ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getWordCount } from "@/lib/utils/formatters";
-import {
-  getScoreBandLabel,
-  resolveSubmissionScore,
-} from "@/lib/utils/submission-status";
+import { getScoreBandLabel, resolveSubmissionScore } from "@/lib/utils/submission-status";
 import {
   ActivityDetailHero,
   type ClassDiagnosticSummary,
 } from "@/components/activities/activity-detail-hero";
+import { SubmissionCard } from "@/components/activities/submission-card";
+import { matchesReviewFilter, reviewFilterLabels } from "@/lib/utils/activity-attempt-review";
+import {
+  ActivityReviewToolbar,
+  type SubmissionFilter,
+  type SubmissionSort,
+  type ViewMode,
+} from "@/components/activities/activity-review-toolbar";
+import { AttemptDeletionDialogs } from "@/components/activities/attempt-deletion-dialogs";
+import { useShortcutKeys } from "@/hooks/use-shortcut-keys";
 
-type SubmissionFilter = ReviewView;
-type SubmissionSort = ReviewSort;
+interface StudentSubmissionGroup {
+  studentId: string;
+  studentName: string;
+  latestSubmission: Submission;
+  reviewSubmission: Submission;
+  allSubmissions: Submission[];
+  attemptCount: number;
+}
 
-const uploadFilterOptions: { id: UploadFilter; label: string }[] = [
-  { id: "all", label: "Any upload status" },
-  { id: "completed", label: "Analysis ready" },
-  { id: "processing", label: "Processing" },
-  { id: "rejected", label: "Rejected" },
-  { id: "returned", label: "Returned" },
-];
-
-const sortOptions: { id: SubmissionSort; label: string }[] = [
-  { id: "attention", label: "Review-ready first" },
-  { id: "newest", label: "Newest upload first" },
-  { id: "oldest", label: "Oldest upload first" },
-  { id: "name_asc", label: "Student (A–Z)" },
-  { id: "name_desc", label: "Student (Z–A)" },
-  { id: "score_desc", label: "Highest official score" },
-];
-
-export default function ActivityDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default function ActivityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { altKey } = useShortcutKeys();
   const { setSession } = useActivityReviewSession();
-  // Returning to the workspace starts a fresh queue using its current filters.
   useEffect(() => setSession(null), [setSession]);
   const workQuery = useActivityWork(id);
-  const activeIds = useMemo(() => new Set((workQuery.data ?? [])
-    .map((row) => row.active_submission_id).filter((id): id is string => !!id)), [workQuery.data]);
+  const workByStudent = useMemo(
+    () =>
+      new Map(
+        (workQuery.isError ? [] : (workQuery.data ?? [])).map((row) => [row.student_id, row])
+      ),
+    [workQuery.data, workQuery.isError]
+  );
+  const activeIds = useMemo(
+    () =>
+      new Set(
+        (workQuery.data ?? [])
+          .map((row) => row.active_submission_id)
+          .filter((id): id is string => !!id)
+      ),
+    [workQuery.data]
+  );
   const router = useRouter();
   const searchParams = useSearchParams();
   const commentTarget = parseTeacherCommentTarget(searchParams, id);
   const closeComments = () => {
     const next = new URLSearchParams(searchParams.toString());
-    next.delete("student"); next.delete("view");
+    next.delete("student");
+    next.delete("view");
     router.replace(`/activities/${id}${next.size ? `?${next}` : ""}`, { scroll: false });
   };
 
   const { data: activity, isLoading, error, refetch } = useActivity(id);
-  const { data: students, isLoading: rosterLoading, isError: rosterError, refetch: refetchStudents } = useStudents();
+  const {
+    data: students,
+    isPending: studentsLoading,
+    isError: studentsError,
+    refetch: refetchStudents,
+  } = useStudents();
   const {
     data: submissions,
     isLoading: submissionsLoading,
@@ -119,46 +146,129 @@ export default function ActivityDetailPage({
     refetch: refetchSubmissions,
   } = useSubmissions(id);
   const { openUpload } = useTeacherModals();
-  const { mutate: toggleArchive, isPending: archivePending } = useToggleArchive();
+  const { mutate: toggleArchive } = useToggleArchive();
 
   // Dialog states
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [deletingActivity, setDeletingActivity] = useState<Activity | null>(null);
   const [isDuplicateOpen, setIsDuplicateOpen] = useState(false);
   const [hasCopiedPrompt, setHasCopiedPrompt] = useState(false);
-  const [showQueueOptions, setShowQueueOptions] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [managingAttempts, setManagingAttempts] = useState(false);
 
-  // The URL survives refresh, browser Back, and returning from a worksheet.
-  const { searchQuery, statusFilter, uploadFilter, sortBy } = readReviewQueue(searchParams);
-  const queueQuery = reviewQueueQuery(searchParams);
-  const changeQueue = useCallback((patch: Partial<ReviewQueueState>) => {
-    const next = updateReviewQueue(new URLSearchParams(window.location.search), patch);
-    const query = next.toString();
-    window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+  // View, search, filter, and sort states
+  // Keep review context when opening a worksheet, refreshing, or sharing this URL.
+  const viewMode: ViewMode =
+    searchParams.get("group") === "all"
+      ? "all"
+      : searchParams.get("group") === "review"
+        ? "review"
+        : "grouped";
+  const urlSearchQuery = String(searchParams.get("q") ?? "");
+  const [searchQuery, setSearchQuery] = useState(urlSearchQuery);
+  const lastSyncedUrlQueryRef = useRef(urlSearchQuery);
+
+  useEffect(() => {
+    if (urlSearchQuery !== lastSyncedUrlQueryRef.current) {
+      lastSyncedUrlQueryRef.current = urlSearchQuery;
+      setSearchQuery(urlSearchQuery);
+    }
+  }, [urlSearchQuery]);
+
+  const requestedFilter = String(searchParams.get("status") ?? "all");
+  const statusFilter: SubmissionFilter = Object.hasOwn(reviewFilterLabels, requestedFilter)
+    ? (requestedFilter as SubmissionFilter)
+    : "all";
+  const requestedSort = String(searchParams.get("sort") ?? "newest");
+  const sortBy: SubmissionSort = ["oldest", "name_asc", "name_desc", "score_desc"].includes(
+    requestedSort ?? ""
+  )
+    ? (requestedSort as SubmissionSort)
+    : "newest";
+  const compact = searchParams.get("layout") !== "photos";
+  const updateReviewParams = useCallback((updates: Record<string, string | null>) => {
+    const next = new URLSearchParams(window.location.search);
+    for (const [key, value] of Object.entries(updates)) {
+      if (value) next.set(key, value);
+      else next.delete(key);
+    }
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${next.size ? `?${next}` : ""}`
+    );
   }, []);
+
+  // Debounce search query updates to browser history to avoid synchronous thrashing on keystrokes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const currentParam = new URLSearchParams(window.location.search).get("q") ?? "";
+      const trimmed = searchQuery.trim();
+      if (trimmed !== currentParam) {
+        lastSyncedUrlQueryRef.current = trimmed;
+        updateReviewParams({ q: trimmed || null });
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery, updateReviewParams]);
+
+  const setViewMode = (value: ViewMode) => updateReviewParams({ group: value, status: null });
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery("");
+    lastSyncedUrlQueryRef.current = "";
+    updateReviewParams({ q: null });
+  }, [updateReviewParams]);
+  const setStatusFilter = (value: SubmissionFilter) =>
+    updateReviewParams({ status: value === "all" ? null : value });
+  const setSortBy = (value: SubmissionSort) => updateReviewParams({ sort: value });
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Modifier shortcuts stay inactive while a dialog owns keyboard focus.
+  // Group attempt selection map (key: studentId, value: Submission)
+  const [attemptOverrides, setAttemptOverrides] = useState<Map<string, Submission>>(new Map());
+
+  // Batch deletion selection state
+  const [selectedSubmissionIds, setSelectedSubmissionIds] = useState<Set<string>>(new Set());
+  const [isBatchDeleteDialogOpen, setIsBatchDeleteDialogOpen] = useState(false);
+  const [singleAttemptToDelete, setSingleAttemptToDelete] = useState<Submission | null>(null);
+  const [studentBatchToDelete, setStudentBatchToDelete] = useState<{
+    studentName: string;
+    submissions: Submission[];
+  } | null>(null);
+
+  const deleteSingleMutation = useDeleteSubmission();
+  const batchDeleteMutation = useBatchDeleteSubmissions();
+
+  // Activity shortcuts use Alt to avoid intercepting single-character input.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       const targetTag = target?.tagName;
       const isContentEditable = Boolean(target?.isContentEditable);
       const isInput =
-        ["INPUT", "TEXTAREA", "SELECT"].includes(targetTag || "") ||
-        isContentEditable;
-      if (isInput || e.defaultPrevented || e.repeat || e.isComposing ||
-        document.querySelector('[role="dialog"]:not([hidden]), [role="alertdialog"]:not([hidden])') ||
-        !e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        ["INPUT", "TEXTAREA", "SELECT"].includes(targetTag || "") || isContentEditable;
+      if (
+        isInput ||
+        e.defaultPrevented ||
+        document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')
+      ) {
+        return;
+      }
 
-      if (e.code === "Slash") {
+      const isActivityShortcut = e.altKey && !e.metaKey && !e.ctrlKey && !e.shiftKey;
+      if (isActivityShortcut && (e.key === "/" || e.code === "Slash")) {
         e.preventDefault();
         searchInputRef.current?.focus();
-      } else if (
-        e.code === "KeyU"
-      ) {
+      } else if (isActivityShortcut && (e.key.toLowerCase() === "u" || e.code === "KeyU")) {
         e.preventDefault();
         openUpload({ activityId: id });
+      } else if (e.key === "Escape") {
+        setSelectedSubmissionIds((prev) => {
+          if (prev.size > 0) {
+            e.preventDefault();
+            return new Set();
+          }
+          return prev;
+        });
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -168,31 +278,77 @@ export default function ActivityDetailPage({
   // Roster Metrics: Unique enrolled students with submissions
   const submittedStudentIds = useMemo(() => {
     if (!submissions) return new Set<string>();
-    return new Set(submissions.filter((s) => activeIds.has(s.id) &&
-      students?.some((student) => student.id === s.student_id && !!activity && activityAssignedTo(activity, student))
-    ).map((s) => s.student_id));
+    return new Set(
+      submissions
+        .filter(
+          (s) =>
+            activeIds.has(s.id) &&
+            students?.some(
+              (student) =>
+                student.id === s.student_id && !!activity && activityAssignedTo(activity, student)
+            )
+        )
+        .map((s) => s.student_id)
+    );
   }, [submissions, students, activity, activeIds]);
 
   const uniqueStudentsCount = submittedStudentIds.size;
   const assignedStudents = useMemo(
-    () => (students ?? []).filter(student => !!activity && activityAssignedTo(activity, student)),
+    () => (students ?? []).filter((student) => !!activity && activityAssignedTo(activity, student)),
     [students, activity]
   );
+  const rosterReady = !studentsLoading && !studentsError;
+  const summaryReady =
+    rosterReady && workQuery.isSuccess && !submissionsLoading && !submissionsError;
+  const studentsWithoutUploads = useMemo(
+    () =>
+      assignedStudents.filter(
+        (student) => !submissions?.some((submission) => submission.student_id === student.id)
+      ),
+    [assignedStudents, submissions]
+  );
+  const filteredStudentsWithoutUploads = useMemo(() => {
+    if (viewMode !== "grouped") return [];
+    return studentsWithoutUploads
+      .filter((student) =>
+        matchesReviewFilter(null, workByStudent.get(student.id) ?? null, statusFilter)
+      )
+      .filter((student) =>
+        student.full_name.toLowerCase().includes(searchQuery.trim().toLowerCase())
+      )
+      .sort((a, b) =>
+        sortBy === "name_desc"
+          ? b.full_name.localeCompare(a.full_name)
+          : a.full_name.localeCompare(b.full_name)
+      );
+  }, [viewMode, studentsWithoutUploads, workByStudent, statusFilter, searchQuery, sortBy]);
+  const queueState = readReviewQueue(searchParams);
+  const queueQuery = reviewQueueQuery(searchParams);
+  const reviewRows = buildReviewRows(
+    assignedStudents,
+    submissions ?? [],
+    workQuery.isError ? [] : (workQuery.data ?? [])
+  );
+  const queueRows = getReviewQueueRows(
+    reviewRows,
+    queueState,
+    (item) => resolveSubmissionScore(item).compositeScore
+  );
+  const changeQueue = (patch: Partial<typeof queueState>) => {
+    const next = updateReviewQueue(new URLSearchParams(window.location.search), patch);
+    window.history.replaceState(null, "", window.location.pathname + (next.size ? "?" + next : ""));
+  };
   const totalStudents = assignedStudents.length;
+  const totalScansCount = submissions?.length ?? 0;
   const completionRate =
-    totalStudents > 0
-      ? Math.min(100, Math.round((uniqueStudentsCount / totalStudents) * 100))
-      : 0;
+    totalStudents > 0 ? Math.min(100, Math.round((uniqueStudentsCount / totalStudents) * 100)) : 0;
 
   // Class Diagnostic Synthesis: Calculate class average and priority criteria
   const classDiagnostics = useMemo<ClassDiagnosticSummary | null>(() => {
     if (!submissions) return null;
     const scoredSubmissions = submissions
       .map((s) => ({ submission: s, resolved: resolveSubmissionScore(s) }))
-      .filter(
-        (item) => activeIds.has(item.submission.id) && item.resolved.isScored &&
-          assignedStudents.some(student => student.id === item.submission.student_id)
-      );
+      .filter((item) => activeIds.has(item.submission.id) && item.resolved.isScored);
     if (scoredSubmissions.length === 0) return null;
 
     let totalComposite = 0;
@@ -234,32 +390,31 @@ export default function ActivityDetailPage({
     }
 
     const avgComposite = Math.round(totalComposite / scoredSubmissions.length);
-    const avgFormation = formationCount
-      ? Math.round(totalFormation / formationCount)
-      : 0;
+    const avgFormation = formationCount ? Math.round(totalFormation / formationCount) : 0;
     const avgSize = sizeCount ? Math.round(totalSize / sizeCount) : 0;
-    const avgSpacing = spacingCount
-      ? Math.round(totalSpacing / spacingCount)
-      : 0;
+    const avgSpacing = spacingCount ? Math.round(totalSpacing / spacingCount) : 0;
     const avgSlant = slantCount ? Math.round(totalSlant / slantCount) : 0;
-    const avgBaseline = baselineCount
-      ? Math.round(totalBaseline / baselineCount)
-      : 0;
+    const avgBaseline = baselineCount ? Math.round(totalBaseline / baselineCount) : 0;
 
     const criteriaList = [
-      { name: "Letter Formation", score: avgFormation },
-      { name: "Size Consistency", score: avgSize },
-      { name: "Spacing", score: avgSpacing },
-      { name: "Slant Consistency", score: avgSlant },
-      { name: "Baseline Alignment", score: avgBaseline },
-    ];
+      { name: "Letter Formation", score: avgFormation, count: formationCount },
+      { name: "Size Consistency", score: avgSize, count: sizeCount },
+      { name: "Spacing", score: avgSpacing, count: spacingCount },
+      { name: "Slant Consistency", score: avgSlant, count: slantCount },
+      { name: "Baseline Alignment", score: avgBaseline, count: baselineCount },
+    ].filter((c) => c.count > 0);
 
     criteriaList.sort((a, b) => b.score - a.score);
 
+    const lowest = criteriaList.length > 1 ? criteriaList[criteriaList.length - 1] : null;
+    const focusCriterion =
+      lowest && (lowest.score < 80 || criteriaList[0].score - lowest.score >= 10) ? lowest : null;
+
     return {
       completedCount: scoredSubmissions.length,
-      manualCount: scoredSubmissions.filter(item => item.resolved.source === "manual").length,
-      calibratedCount: scoredSubmissions.filter(item => item.resolved.source === "calibrated").length,
+      manualCount: scoredSubmissions.filter((item) => item.resolved.source === "manual").length,
+      calibratedCount: scoredSubmissions.filter((item) => item.resolved.source === "calibrated")
+        .length,
       avgCompositeScore: avgComposite,
       scoreBand: getScoreBandLabel(avgComposite),
       criteriaAverages: {
@@ -269,52 +424,224 @@ export default function ActivityDetailPage({
         slant: avgSlant,
         baselineAlignment: avgBaseline,
       },
-      strongestCriterion:
-        criteriaList.length > 0 ? criteriaList[0] : null,
-      focusCriterion:
-        criteriaList.length > 1
-          ? criteriaList[criteriaList.length - 1]
-          : null,
+      strongestCriterion: criteriaList.length > 0 ? criteriaList[0] : null,
+      focusCriterion,
     };
-  }, [submissions, activeIds, assignedStudents]);
+  }, [submissions, activeIds]);
 
-  // One roster model drives both layouts, counts, filters and announcements.
-  const reviewRows = useMemo(
-    () => buildReviewRows(assignedStudents, submissions ?? [], workQuery.data ?? []),
-    [assignedStudents, submissions, workQuery.data]
-  );
-  const workspaceReady = !rosterLoading && !rosterError && !submissionsLoading &&
-    !submissionsError && !workQuery.isLoading && !workQuery.isError;
-  const totalScansCount = reviewRows.reduce((total, row) => total + row.attempts.length, 0);
-  const counts = useMemo(() => countReviewRows(reviewRows), [reviewRows]);
-  const visibleRows = useMemo(() => getReviewQueueRows(
-    reviewRows, { searchQuery, statusFilter, uploadFilter, sortBy },
-    submission => resolveSubmissionScore(submission).compositeScore
-  ), [reviewRows, uploadFilter, statusFilter, searchQuery, sortBy]);
-  const submissionFilterItems = useMemo<FilterPillItem<SubmissionFilter>[]>(() => [
-    { id: "attention", label: "Needs attention", count: workspaceReady ? counts.attention : "?" },
-    { id: "awaiting", label: "Awaiting upload", count: workspaceReady ? counts.awaiting : "?" },
-    { id: "all", label: "All students", count: workspaceReady ? counts.all : "?" },
-  ], [counts, workspaceReady]);
-  const activeViewLabel = String(submissionFilterItems.find(item => item.id === statusFilter)?.label ?? "All students");
-  const activeUploadLabel = uploadFilterOptions.find(option => option.id === uploadFilter)?.label;
-  const queueEmptyMessage = uploadFilter !== "all"
-    ? `No students match ${activeViewLabel?.toLowerCase()} with latest upload status ${activeUploadLabel?.toLowerCase()}${searchQuery.trim() ? ` and the search “${searchQuery.trim()}”` : ""}.`
-    : searchQuery.trim()
-      ? `No students match “${searchQuery.trim()}” in ${activeViewLabel?.toLowerCase()}.`
-      : statusFilter === "attention"
-        ? "No students need attention right now."
-        : statusFilter === "awaiting"
-          ? "No students are awaiting their first upload."
-          : "No student work matches the current view.";
+  // Student Grouping
+  const studentGroups = useMemo<StudentSubmissionGroup[]>(() => {
+    if (!submissions) return [];
+
+    const map = new Map<string, Submission[]>();
+    for (const sub of submissions) {
+      const key = sub.student_id || sub.id;
+      const existing = map.get(key) ?? [];
+      existing.push(sub);
+      map.set(key, existing);
+    }
+
+    const groups: StudentSubmissionGroup[] = [];
+    map.forEach((subs, key) => {
+      const sortedSubs = [...subs].sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime() ||
+          b.id.localeCompare(a.id)
+      );
+      const latest = sortedSubs[0];
+      const countedId = workByStudent.get(key)?.active_submission_id;
+      const name =
+        latest.student?.full_name ||
+        students?.find((s) => s.id === key)?.full_name ||
+        "Unknown Student";
+
+      groups.push({
+        studentId: key,
+        studentName: name,
+        latestSubmission: latest,
+        reviewSubmission: sortedSubs.find((sub) => sub.id === countedId) ?? latest,
+        allSubmissions: sortedSubs,
+        attemptCount: sortedSubs.length,
+      });
+    });
+
+    return groups;
+  }, [submissions, students, workByStudent]);
+
+  const submissionFilterItems = (Object.keys(reviewFilterLabels) as SubmissionFilter[])
+    .filter((filter) => viewMode === "grouped" || filter !== "no_upload")
+    .map((filter) => ({
+      id: filter,
+      label: reviewFilterLabels[filter],
+      disabled: filter !== "all" && !summaryReady,
+      count: !summaryReady
+        ? undefined
+        : viewMode === "grouped"
+          ? studentGroups.filter((group) =>
+              matchesReviewFilter(
+                group.reviewSubmission,
+                workByStudent.get(group.studentId) ?? null,
+                filter
+              )
+            ).length +
+            studentsWithoutUploads.filter((student) =>
+              matchesReviewFilter(null, workByStudent.get(student.id) ?? null, filter)
+            ).length
+          : (submissions ?? []).filter((sub) =>
+              matchesReviewFilter(sub, workByStudent.get(sub.student_id) ?? null, filter)
+            ).length,
+    }));
+
+  // Filtered & Sorted Student Groups
+  const filteredAndSortedGroups = useMemo(() => {
+    let result = studentGroups;
+
+    if (statusFilter !== "all") {
+      result = result.filter((g) =>
+        matchesReviewFilter(
+          g.reviewSubmission,
+          workByStudent.get(g.studentId) ?? null,
+          statusFilter
+        )
+      );
+    }
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.trim().toLowerCase();
+      result = result.filter((g) => g.studentName.toLowerCase().includes(query));
+    }
+
+    return [...result].sort((a, b) => {
+      if (sortBy === "newest") {
+        return (
+          new Date(b.reviewSubmission.created_at).getTime() -
+          new Date(a.reviewSubmission.created_at).getTime()
+        );
+      }
+      if (sortBy === "oldest") {
+        return (
+          new Date(a.reviewSubmission.created_at).getTime() -
+          new Date(b.reviewSubmission.created_at).getTime()
+        );
+      }
+      if (sortBy === "name_asc") {
+        return a.studentName.localeCompare(b.studentName);
+      }
+      if (sortBy === "name_desc") {
+        return b.studentName.localeCompare(a.studentName);
+      }
+      if (sortBy === "score_desc") {
+        const scoreA = resolveSubmissionScore(a.reviewSubmission).compositeScore ?? -1;
+        const scoreB = resolveSubmissionScore(b.reviewSubmission).compositeScore ?? -1;
+        return scoreB - scoreA;
+      }
+      return 0;
+    });
+  }, [studentGroups, searchQuery, statusFilter, sortBy, workByStudent]);
+
+  // Filtered & Sorted Raw Submissions (for "All Scans" view mode)
+  const filteredAndSortedSubmissions = useMemo(() => {
+    if (!submissions) return [];
+
+    let result = submissions;
+
+    if (statusFilter !== "all") {
+      result = result.filter((s) =>
+        matchesReviewFilter(s, workByStudent.get(s.student_id) ?? null, statusFilter)
+      );
+    }
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.trim().toLowerCase();
+      result = result.filter((s) => s.student?.full_name?.toLowerCase().includes(query));
+    }
+
+    return [...result].sort((a, b) => {
+      if (sortBy === "newest") {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+      if (sortBy === "oldest") {
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      }
+      if (sortBy === "name_asc") {
+        return (a.student?.full_name ?? "").localeCompare(b.student?.full_name ?? "");
+      }
+      if (sortBy === "name_desc") {
+        return (b.student?.full_name ?? "").localeCompare(a.student?.full_name ?? "");
+      }
+      if (sortBy === "score_desc") {
+        const scoreA = resolveSubmissionScore(a).compositeScore ?? -1;
+        const scoreB = resolveSubmissionScore(b).compositeScore ?? -1;
+        return scoreB - scoreA;
+      }
+      return 0;
+    });
+  }, [submissions, searchQuery, statusFilter, sortBy, workByStudent]);
+
+  // Unified review entries for grouped student review list
+  const studentReviewEntries = useMemo(() => {
+    const entries = [
+      ...filteredAndSortedGroups.map((group) => ({
+        kind: "upload" as const,
+        group,
+        name: group.studentName,
+      })),
+      ...filteredStudentsWithoutUploads.map((student) => ({
+        kind: "no_upload" as const,
+        student,
+        name: student.full_name,
+      })),
+    ];
+    if (sortBy === "name_asc" || sortBy === "name_desc") {
+      entries.sort((a, b) =>
+        sortBy === "name_desc" ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name)
+      );
+    }
+    return entries;
+  }, [filteredAndSortedGroups, filteredStudentsWithoutUploads, sortBy]);
+
+  // Batched image URLs for photos view mode
+  const visibleImagePaths = useMemo(() => {
+    if (compact || viewMode === "review") return [];
+    if (viewMode === "grouped") {
+      return studentReviewEntries
+        .filter(
+          (
+            entry
+          ): entry is {
+            kind: "upload";
+            group: StudentSubmissionGroup;
+            name: string;
+          } => entry.kind === "upload"
+        )
+        .map((entry) => {
+          const activeSub =
+            (statusFilter === "all"
+              ? entry.group.allSubmissions.find(
+                  (sub) => sub.id === attemptOverrides.get(entry.group.studentId)?.id
+                )
+              : null) ?? entry.group.reviewSubmission;
+          return activeSub.image_path;
+        });
+    }
+    return filteredAndSortedSubmissions.map((s) => s.image_path);
+  }, [
+    compact,
+    viewMode,
+    studentReviewEntries,
+    statusFilter,
+    attemptOverrides,
+    filteredAndSortedSubmissions,
+  ]);
+
+  const { data: signedUrlsMap } = useSubmissionImageUrls(visibleImagePaths);
+
   const handleToggleArchive = useCallback(() => {
-    if (!activity || archivePending) return;
+    if (!activity) return;
     toggleArchive(activity.id, {
       onSuccess: (result) => {
         toast.success(
-          result.is_archived
-            ? "Activity moved to archive."
-            : "Activity restored from archive.",
+          result.is_archived ? "Activity moved to archive." : "Activity restored from archive.",
           {
             action: {
               label: "Undo",
@@ -327,7 +654,7 @@ export default function ActivityDetailPage({
         toast.error("Failed to update activity archive state.");
       },
     });
-  }, [activity, archivePending, toggleArchive]);
+  }, [activity, toggleArchive]);
 
   const handleCopyPrompt = useCallback(() => {
     if (!activity) return;
@@ -363,6 +690,22 @@ export default function ActivityDetailPage({
     if (activity) setDeletingActivity(activity);
   }, [activity]);
 
+  const handleSelectSubmission = useCallback(
+    (sub: Submission) => {
+      const query = reviewQueueQuery(new URLSearchParams(window.location.search));
+      const studentIds =
+        viewMode === "grouped"
+          ? filteredAndSortedGroups.map((group) => group.studentId)
+          : [...new Set(filteredAndSortedSubmissions.map((item) => item.student_id))];
+      const submissionIds = viewMode === "grouped"
+        ? filteredAndSortedGroups.map(group => (statusFilter === "all" ? group.allSubmissions.find(attempt => attempt.id === attemptOverrides.get(group.studentId)?.id) : null)?.id ?? group.reviewSubmission.id)
+        : filteredAndSortedSubmissions.map(attempt => attempt.id);
+      setSession({ scope: id + query, studentIds, submissionIds });
+      router.push("/activities/" + id + "/submissions/" + sub.id + query);
+    },
+    [router, id, viewMode, filteredAndSortedGroups, filteredAndSortedSubmissions, setSession, statusFilter, attemptOverrides]
+  );
+
   const handleReupload = useCallback(
     (studentId?: string) => {
       openUpload({ activityId: id, studentId });
@@ -370,24 +713,198 @@ export default function ActivityDetailPage({
     [id, openUpload]
   );
 
+  const handleSelectAttempt = useCallback((studentId: string, sub: Submission) => {
+    // Historical browsing leaves the task queue so its displayed work stays truthful.
+    const next = new URLSearchParams(window.location.search);
+    next.delete("status");
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${next.size ? `?${next}` : ""}`
+    );
+    setAttemptOverrides((prev) => {
+      const next = new Map(prev);
+      next.set(studentId, sub);
+      return next;
+    });
+  }, []);
+
+  // All selectable submission IDs in current view
+  const allSelectableSubmissionIds = useMemo(() => {
+    if (viewMode === "grouped") {
+      return filteredAndSortedGroups.map(
+        (g) =>
+          (statusFilter === "all"
+            ? g.allSubmissions.find((sub) => sub.id === attemptOverrides.get(g.studentId)?.id)?.id
+            : null) ?? g.reviewSubmission.id
+      );
+    }
+    return filteredAndSortedSubmissions.map((s) => s.id);
+  }, [
+    viewMode,
+    filteredAndSortedGroups,
+    filteredAndSortedSubmissions,
+    attemptOverrides,
+    statusFilter,
+  ]);
+
+  const allSelectableSubmissionIdsSet = useMemo(
+    () => new Set(allSelectableSubmissionIds),
+    [allSelectableSubmissionIds]
+  );
+
+  const selectedSubmissions = useMemo(
+    () => (submissions ?? []).filter((sub) => selectedSubmissionIds.has(sub.id)),
+    [submissions, selectedSubmissionIds]
+  );
+  const selectedCount = selectedSubmissions.length;
+  const hiddenSelectedCount = useMemo(
+    () => selectedSubmissions.filter((sub) => !allSelectableSubmissionIdsSet.has(sub.id)).length,
+    [selectedSubmissions, allSelectableSubmissionIdsSet]
+  );
+
+  const selectedStudentsCount = useMemo(() => {
+    return new Set(
+      (submissions ?? [])
+        .filter((sub) => selectedSubmissionIds.has(sub.id))
+        .map((sub) => sub.student_id)
+    ).size;
+  }, [submissions, selectedSubmissionIds]);
+
+  const allVisibleSelected = useMemo(
+    () =>
+      allSelectableSubmissionIds.length > 0 &&
+      allSelectableSubmissionIds.every((id) => selectedSubmissionIds.has(id)),
+    [allSelectableSubmissionIds, selectedSubmissionIds]
+  );
+
+  const someVisibleSelected = useMemo(
+    () =>
+      selectedSubmissionIds.size > 0 &&
+      !allVisibleSelected &&
+      allSelectableSubmissionIds.some((id) => selectedSubmissionIds.has(id)),
+    [allSelectableSubmissionIds, selectedSubmissionIds, allVisibleSelected]
+  );
+
+  const handleToggleSelectSubmission = useCallback((sub: Submission) => {
+    setSelectedSubmissionIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(sub.id)) {
+        next.delete(sub.id);
+      } else {
+        next.add(sub.id);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleToggleCardSelect = handleToggleSelectSubmission;
+
+  const clearSelection = useCallback(() => {
+    setSelectedSubmissionIds(new Set());
+  }, []);
+
+  const handleToggleSelectAll = useCallback(() => {
+    if (allVisibleSelected) {
+      setSelectedSubmissionIds(
+        (previous) =>
+          new Set(
+            [...previous].filter((attemptId) => !allSelectableSubmissionIds.includes(attemptId))
+          )
+      );
+    } else {
+      setSelectedSubmissionIds((previous) => new Set([...previous, ...allSelectableSubmissionIds]));
+    }
+  }, [allVisibleSelected, allSelectableSubmissionIds]);
+
+  const handleBatchDeleteConfirm = async () => {
+    if (!selectedCount || selectedSubmissionIds.size !== selectedCount || submissionsError || submissionsLoading) return;
+    try {
+      const result = await batchDeleteMutation.mutateAsync(
+        selectedSubmissions.map((sub) => sub.id)
+      );
+      toast.success(
+        `Deleted ${result.deleted_count} ${result.deleted_count === 1 ? "attempt" : "attempts"}.`
+      );
+      clearSelection();
+      setIsBatchDeleteDialogOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete selected attempts.");
+    }
+  };
+
+  const handleDeleteSingleAttemptPrompt = useCallback(
+    (sub: Submission) => {
+      setSingleAttemptToDelete(sub);
+    },
+    [setSingleAttemptToDelete]
+  );
+
+  const handleDeleteAllStudentAttemptsPrompt = useCallback(
+    (studentName: string, subs: Submission[]) => {
+      setStudentBatchToDelete({ studentName, submissions: subs });
+    },
+    []
+  );
+
+  const handleConfirmDeleteSingleAttempt = async () => {
+    if (!singleAttemptToDelete) return;
+    const targetId = singleAttemptToDelete.id;
+    try {
+      await deleteSingleMutation.mutateAsync(targetId);
+      toast.success("Attempt deleted.");
+      setSelectedSubmissionIds((prev) => {
+        const next = new Set(prev);
+        next.delete(targetId);
+        return next;
+      });
+      setSingleAttemptToDelete(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete attempt.");
+    }
+  };
+
+  const handleConfirmDeleteStudentBatch = async () => {
+    if (!studentBatchToDelete) return;
+    const ids = studentBatchToDelete.submissions.map((s) => s.id);
+    const sName = studentBatchToDelete.studentName;
+    try {
+      const result = await batchDeleteMutation.mutateAsync(ids);
+      toast.success(
+        `Deleted ${result.deleted_count} ${result.deleted_count === 1 ? "attempt" : "attempts"} for ${sName}.`
+      );
+      setSelectedSubmissionIds((prev) => {
+        const next = new Set(prev);
+        ids.forEach((id) => next.delete(id));
+        return next;
+      });
+      setStudentBatchToDelete(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete student attempts.");
+    }
+  };
+
   if (error) {
     return (
-      <div className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
+      <div className="w-full space-y-5 px-1 pb-28 sm:space-y-6 sm:px-0 sm:pb-24">
         <div>
           <Link
             href="/activities"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium group"
+            className="text-muted-foreground hover:text-foreground group focus-visible:ring-ring hover:bg-muted/50 -ml-1 inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden md:min-h-[36px]"
           >
-            <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+            <ArrowLeft
+              className="size-3.5 transition-transform group-hover:-translate-x-0.5 motion-reduce:transform-none"
+              aria-hidden="true"
+            />
             <span>Back to Activities</span>
           </Link>
         </div>
         <div
           role="alert"
-          className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl border border-destructive/20 bg-destructive/10 text-destructive"
+          className="border-destructive/20 bg-destructive/10 text-destructive flex flex-col items-center justify-between gap-4 rounded-xl border p-4 sm:flex-row"
         >
           <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 shrink-0" />
+            <AlertCircle className="h-5 w-5 shrink-0" />
             <span className="text-sm font-medium">
               Activity not found or unable to load. Please check your connection and try again.
             </span>
@@ -396,9 +913,9 @@ export default function ActivityDetailPage({
             variant="outline"
             size="sm"
             onClick={() => refetch()}
-            className="border-destructive/30 hover:bg-destructive/10 text-destructive cursor-pointer"
+            className="border-destructive/30 hover:bg-destructive/10 text-destructive min-h-11 cursor-pointer md:min-h-9"
           >
-            <RotateCcw className="w-4 h-4 mr-1.5" />
+            <RotateCcw className="mr-1.5 h-4 w-4" />
             Retry
           </Button>
         </div>
@@ -408,10 +925,9 @@ export default function ActivityDetailPage({
 
   if (isLoading) {
     return (
-      <div role="status" aria-label="Loading activity and student work" className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
-        <span className="sr-only">Loading activity and student work…</span>
+      <div className="w-full space-y-5 px-1 pb-28 sm:space-y-6 sm:px-0 sm:pb-24">
         <Skeleton className="h-4 w-40" />
-        <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-6 space-y-4 shadow-warm">
+        <div className="bg-surface dark:bg-card border-border shadow-warm space-y-4 rounded-xl border p-6 sm:rounded-2xl">
           <div className="flex items-center justify-between">
             <Skeleton className="h-7 w-1/3 rounded-lg" />
             <Skeleton className="h-9 w-28 rounded-lg" />
@@ -422,23 +938,16 @@ export default function ActivityDetailPage({
             <Skeleton className="h-5 w-16 rounded-full" />
           </div>
         </div>
-        <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-6 space-y-4 shadow-warm">
-          <div className="flex justify-between items-center">
+        <div className="bg-surface dark:bg-card border-border shadow-warm space-y-4 rounded-xl border p-6 sm:rounded-2xl">
+          <div className="flex items-center justify-between">
             <Skeleton className="h-6 w-36" />
             <Skeleton className="h-8 w-44 rounded-lg" />
           </div>
-          <div aria-hidden="true" className="divide-y divide-border">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-36" />
-                  <Skeleton className="h-5 w-24 rounded-md" />
-                  <Skeleton className="h-3 w-48" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-11 w-36 sm:h-9 rounded-lg" />
-                  <Skeleton className="h-11 w-24 sm:h-9 rounded-lg" />
-                </div>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="aspect-4/3 w-full rounded-xl" />
+                <Skeleton className="h-4 w-1/2" />
               </div>
             ))}
           </div>
@@ -449,29 +958,28 @@ export default function ActivityDetailPage({
 
   if (!activity) {
     return (
-      <div className="w-full space-y-5 sm:space-y-6 pb-28 sm:pb-24 px-1 sm:px-0">
+      <div className="w-full space-y-5 px-1 pb-28 sm:space-y-6 sm:px-0 sm:pb-24">
         <div>
           <Link
             href="/activities"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium group"
+            className="text-muted-foreground hover:text-foreground group focus-visible:ring-ring hover:bg-muted/50 -ml-1 inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden md:min-h-[36px]"
           >
-            <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+            <ArrowLeft
+              className="size-3.5 transition-transform group-hover:-translate-x-0.5 motion-reduce:transform-none"
+              aria-hidden="true"
+            />
             <span>Back to Activities</span>
           </Link>
         </div>
-        <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
-          <Empty className="py-14 border-0">
-            <EmptyMedia
-              variant="icon"
-              className="bg-muted text-muted-foreground"
-            >
-              <ClipboardList className="w-6 h-6" />
+        <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">
+          <Empty className="border-0 py-14">
+            <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
+              <ClipboardList className="h-6 w-6" />
             </EmptyMedia>
             <EmptyHeader>
               <EmptyTitle>Activity not found</EmptyTitle>
               <EmptyDescription>
-                This activity may have been removed or you don&apos;t have
-                access.
+                This activity may have been removed or you don&apos;t have access.
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
@@ -479,10 +987,10 @@ export default function ActivityDetailPage({
                 href="/activities"
                 className={cn(
                   buttonVariants({ variant: "outline" }),
-                  "rounded-lg sm:rounded-xl"
+                  "min-h-11 rounded-lg sm:rounded-xl md:min-h-9"
                 )}
               >
-                <ArrowLeft className="w-4 h-4 mr-1.5" />
+                <ArrowLeft className="mr-1.5 h-4 w-4" />
                 Back to Activities
               </Link>
             </EmptyContent>
@@ -495,25 +1003,26 @@ export default function ActivityDetailPage({
   const wordCount = getWordCount(activity.target_text);
   const isArchived = activity.is_archived;
 
-  const currentListLength = visibleRows.length;
+  const currentListLength =
+    viewMode === "grouped"
+      ? filteredAndSortedGroups.length + filteredStudentsWithoutUploads.length
+      : filteredAndSortedSubmissions.length;
+  const resultUnit = viewMode === "grouped" ? "student" : "upload";
 
   return (
-    <div className="w-full min-w-0 space-y-5 sm:space-y-6 pb-28 sm:pb-24">
+    <div className="flex w-full min-w-0 flex-col gap-3 pb-28 sm:gap-5 sm:pb-24">
       {/* Top Back Navigation Trail */}
-      <nav aria-label="Breadcrumb navigation" className="flex items-center justify-between print:hidden">
+      <nav aria-label="Breadcrumb navigation" className="hidden sm:block print:hidden">
         <Link
           href="/activities"
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-2.5 py-2 min-h-[44px] sm:min-h-[36px] hover:bg-muted/50 -ml-1 sm:-ml-2"
+          className="text-muted-foreground hover:text-foreground group focus-visible:ring-ring hover:bg-muted/50 -ml-1 inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden sm:-ml-2 md:min-h-[36px]"
         >
           <ArrowLeft
-            className="size-3.5 transition-transform group-hover:-translate-x-0.5"
+            className="size-3.5 transition-transform group-hover:-translate-x-0.5 motion-reduce:transform-none"
             aria-hidden="true"
           />
           <span>Back to Activities</span>
         </Link>
-        <a href="#submissions-heading" className={buttonVariants({ variant: "ghost", className: "min-h-11 sm:hidden" })}>
-          Student work <ChevronDown data-icon="inline-end" />
-        </a>
       </nav>
 
       {/* Streamlined Activity Hero Card with Authentic 3-Line Cursive Ruling */}
@@ -526,7 +1035,13 @@ export default function ActivityDetailPage({
         totalScansCount={totalScansCount}
         completionRate={completionRate}
         classDiagnostics={classDiagnostics}
-        summaryState={rosterError || workQuery.isError || submissionsError ? "error" : rosterLoading || workQuery.isLoading || submissionsLoading ? "loading" : "ready"}
+        summaryState={
+          summaryReady
+            ? "ready"
+            : studentsError || workQuery.isError || submissionsError
+              ? "error"
+              : "loading"
+        }
         hasCopiedPrompt={hasCopiedPrompt}
         onCopyPrompt={handleCopyPrompt}
         onUpload={handleOpenUpload}
@@ -536,173 +1051,455 @@ export default function ActivityDetailPage({
         onToggleArchive={handleToggleArchive}
       />
 
-      <ReleaseActivityButton activityId={id} userId={activity.created_by}
-        hasPointGrades={activity.points_possible !== null} students={students ?? []}
-        rosterReady={!rosterLoading && !rosterError} />
-      {/* Unified Classroom Submissions Workspace */}
-      <section aria-labelledby="submissions-heading" className="space-y-3 sm:space-y-4">
-        <h2
-          id="submissions-heading"
-          tabIndex={-1}
-          className="scroll-mt-20 text-lg sm:text-xl font-heading font-semibold text-foreground tracking-tight"
+      {commentTarget.kind !== "none" && (
+        <div
+          role="status"
+          className="bg-muted/40 border-border flex flex-col items-start justify-between gap-3 rounded-xl border p-4 sm:flex-row sm:items-center"
         >
-          Student work
-        </h2>
-        <p className="max-w-prose text-sm text-muted-foreground">
-          Open a worksheet to review it, choose the official assessment, and share its result with parents.
-        </p>
-        {/* Filter & Search Bar */}
-        {(assignedStudents.length > 0 || !workspaceReady) && (
-          <div className="flex flex-col gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
-            {/* Primary controls: Search + Filter Pills */}
-            <div className="flex flex-col gap-3 min-w-0 sm:flex-row sm:items-center sm:justify-between">
-              <SearchInput
-                ref={searchInputRef}
-                shortcutKey="Alt /"
-                placeholder="Search student name"
-                aria-label="Search student work by student name"
-                aria-keyshortcuts="Alt+/"
-                value={searchQuery}
-                onChange={(e) => changeQueue({ searchQuery: e.target.value })}
-                onClear={() => changeQueue({ searchQuery: "" })}
-                containerClassName="w-full sm:w-56 lg:w-64 shrink-0"
-              />
-
-              <FilterPills
-                items={submissionFilterItems}
-                value={statusFilter}
-                onChange={statusFilter => changeQueue({ statusFilter })}
-                ariaLabel="Student work views"
-                containerClassName="min-w-0 w-full sm:w-auto sm:flex-none"
-                className="grid w-full grid-cols-3 overflow-visible"
-                pillClassName="min-h-11 sm:min-h-9 justify-center whitespace-normal"
-              />
-            </div>
-
-            <Button variant="ghost" className="min-h-11 justify-between sm:hidden" aria-expanded={showQueueOptions} aria-controls="review-queue-options" onClick={() => setShowQueueOptions(value => !value)}>
-              {showQueueOptions ? "Fewer filters" : "More filters and sorting"}
-              {uploadFilter !== "all" && <span>1 filter active</span>}
-              <ChevronDown data-icon="inline-end" />
-            </Button>
-            {/* Secondary controls remain available without pushing mobile work down. */}
-            <div id="review-queue-options" className={cn("flex-wrap items-center gap-2 border-t border-border/50 pt-3 sm:flex", showQueueOptions ? "flex" : "hidden")}>
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={<Button variant="outline" className="min-h-11 sm:min-h-9" />}
-                  aria-label={`Filter by latest upload: ${uploadFilterOptions.find(option => option.id === uploadFilter)?.label}`}
-                >
-                  Latest upload: {uploadFilterOptions.find(option => option.id === uploadFilter)?.label}
-                  <ChevronDown data-icon="inline-end" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-64">
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel>Latest upload status</DropdownMenuLabel>
-                    <DropdownMenuRadioGroup value={uploadFilter} onValueChange={value => changeQueue({ uploadFilter: value as UploadFilter })}>
-                      {uploadFilterOptions.map(option => (
-                        <DropdownMenuRadioItem key={option.id} value={option.id} closeOnClick className="min-h-11 sm:min-h-9">
-                          {option.label}
-                        </DropdownMenuRadioItem>
-                      ))}
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={<Button variant="outline" className="min-h-11 sm:min-h-9" />}
-                  aria-label={`Sort student work: ${sortOptions.find(option => option.id === sortBy)?.label}`}
-                >
-                  <ArrowUpDown data-icon="inline-start" />
-                  {sortOptions.find(option => option.id === sortBy)?.label}
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-64">
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel>Sort student work</DropdownMenuLabel>
-                    <DropdownMenuRadioGroup value={sortBy} onValueChange={value => changeQueue({ sortBy: value as SubmissionSort })}>
-                      {sortOptions.map(option => (
-                        <DropdownMenuRadioItem key={option.id} value={option.id} closeOnClick className="min-h-11 sm:min-h-9">
-                          {option.label}
-                        </DropdownMenuRadioItem>
-                      ))}
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              {(uploadFilter !== "all" || searchQuery || statusFilter !== "all") && (
-                <Button variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => changeQueue({ searchQuery: "", statusFilter: "all", uploadFilter: "all" })}>
-                  Clear filters
-                </Button>
-              )}
-            </div>
-            {statusFilter === "awaiting" && (
-              <p className="text-xs text-muted-foreground">Choosing a latest-upload status switches to All students.</p>
-            )}
-            {uploadFilter === "completed" && (
-              <p className="text-xs text-muted-foreground">Analysis is ready for the latest upload. Teacher review and sharing may still be needed.</p>
-            )}
-            {workspaceReady && (
-              <p className="break-words text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">{visibleRows.length} of {assignedStudents.length} assigned students shown</span>
-                {" · "}{activeViewLabel}
-                {uploadFilter !== "all" && <> · Latest upload: {activeUploadLabel}</>}
-                {searchQuery.trim() && <> · Matching “{searchQuery.trim()}”</>}
-              </p>
+          <p className="text-muted-foreground text-sm">
+            Choose a worksheet upload to view its comments.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={closeComments}
+            className="min-h-11 md:min-h-9"
+          >
+            Dismiss
+          </Button>
+        </div>
+      )}
+      <section aria-labelledby="submissions-heading" className="space-y-3 sm:space-y-4">
+        {/* Section Header with Controls */}
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2">
+            <h2
+              id="submissions-heading"
+              className="font-heading text-foreground text-lg font-semibold tracking-tight sm:text-xl"
+            >
+              Student work
+            </h2>
+            {submissions && (viewMode === "all" || rosterReady) && (
+              <Badge
+                variant="outline"
+                className="bg-muted/50 text-muted-foreground border-border px-2.5 py-0.5 text-xs font-semibold"
+              >
+                {viewMode !== "all"
+                  ? `${assignedStudents.length} students`
+                  : `${submissions.length} ${submissions.length === 1 ? "upload" : "uploads"}`}
+              </Badge>
             )}
           </div>
-        )}
 
-        {/* Screen Reader Filter & Search Live Announcer */}
-        <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-          {workspaceReady && (
-            <span>
-              {`Showing ${currentListLength} students${
-                statusFilter !== "all" ? ` filtered by ${submissionFilterItems.find(item => item.id === statusFilter)?.label}` : ""
-              }${uploadFilter !== "all" ? ` with latest upload ${uploadFilterOptions.find(option => option.id === uploadFilter)?.label.toLowerCase()}` : ""
-              }${searchQuery ? ` matching "${searchQuery}"` : ""}.`}
-            </span>
-          )}
+          <ReleaseActivityButton
+            activityId={id}
+            userId={activity.created_by}
+            hasPointGrades={activity.points_possible != null}
+            students={students ?? []}
+            rosterReady={rosterReady}
+          />
         </div>
 
-        <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-warm">
+        {studentsError && (
+          <Alert variant="destructive">
+            <AlertTitle>Could not load assigned students</AlertTitle>
+            <AlertDescription>
+              Assignment totals are unavailable. Existing uploads remain below.
+              <Button
+                variant="outline"
+                className="ml-2 min-h-11 md:min-h-9"
+                onClick={() => void refetchStudents()}
+              >
+                Retry students
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        {workQuery.isError && (
+          <Alert variant="destructive">
+            <AlertTitle>Could not load work status</AlertTitle>
+            <AlertDescription>
+              Counted attempts and release status cannot be confirmed. Showing newest uploads until
+              status loads.
+              <Button
+                variant="outline"
+                className="ml-2 min-h-11 md:min-h-9"
+                onClick={() => void workQuery.refetch()}
+              >
+                Retry work status
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        {rosterReady && !assignedStudents.length && (
+          <Alert>
+            <AlertTitle>No students assigned</AlertTitle>
+            <AlertDescription>
+              Choose the students or sections who should complete this activity.
+              <Button
+                variant="outline"
+                className="ml-2 min-h-11 md:min-h-9"
+                onClick={handleEditActivity}
+              >
+                Edit assignments
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {submissions && (submissions.length > 0 || assignedStudents.length > 0) && (
+          <ActivityReviewToolbar
+            searchInputRef={searchInputRef}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            onClearSearch={handleClearSearch}
+            altKey={altKey}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            submissionFilterItems={submissionFilterItems}
+            viewMode={viewMode}
+            onViewModeChange={(val) => {
+              setViewMode(val);
+              clearSelection();
+              setManagingAttempts(false);
+              setAttemptOverrides(new Map());
+            }}
+            compact={compact}
+            onLayoutChange={(val) =>
+              updateReviewParams({ layout: val === "photos" ? "photos" : null })
+            }
+            sortBy={viewMode === "review" ? queueState.sortBy : sortBy}
+            onSortByChange={setSortBy}
+            managingAttempts={managingAttempts}
+            onToggleManagingAttempts={() => {
+              setManagingAttempts(!managingAttempts);
+              clearSelection();
+            }}
+            allVisibleSelected={allVisibleSelected}
+            someVisibleSelected={someVisibleSelected}
+            onToggleSelectAll={handleToggleSelectAll}
+            selectedCount={selectedCount}
+            hiddenSelectedCount={hiddenSelectedCount}
+            onClearSelection={clearSelection}
+          />
+        )}
+
+        {viewMode === "review" && (
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap gap-2">
+              <NativeSelect
+                aria-label="Review queue"
+                className="[&_select]:min-h-11 md:[&_select]:min-h-9"
+                value={queueState.statusFilter}
+                onChange={(event) =>
+                  changeQueue({ statusFilter: event.target.value as ReviewView })
+                }
+              >
+                <NativeSelectOption value="attention">Needs attention</NativeSelectOption>
+                <NativeSelectOption value="awaiting">Awaiting first upload</NativeSelectOption>
+                <NativeSelectOption value="all">All students</NativeSelectOption>
+              </NativeSelect>
+              <NativeSelect
+                aria-label="Latest upload status"
+                className="[&_select]:min-h-11 md:[&_select]:min-h-9"
+                value={queueState.uploadFilter}
+                onChange={(event) =>
+                  changeQueue({ uploadFilter: event.target.value as UploadFilter })
+                }
+              >
+                <NativeSelectOption value="all">Any upload status</NativeSelectOption>
+                <NativeSelectOption value="completed">Analysis ready</NativeSelectOption>
+                <NativeSelectOption value="processing">Processing</NativeSelectOption>
+                <NativeSelectOption value="rejected">Rejected</NativeSelectOption>
+                <NativeSelectOption value="returned">Returned</NativeSelectOption>
+              </NativeSelect>
+            </div>
             <ActivityReviewQueue
               activityId={id}
               queueQuery={queueQuery}
-              rows={visibleRows}
+              rows={queueRows}
               assignedStudentCount={assignedStudents.length}
-              rosterLoading={rosterLoading}
-              rosterError={rosterError}
+              rosterLoading={studentsLoading}
+              rosterError={studentsError}
               workError={workQuery.isError}
               workLoading={workQuery.isLoading}
               uploadsLoading={submissionsLoading}
               uploadsError={!!submissionsError}
               searchQuery={searchQuery}
-              emptyMessage={queueEmptyMessage}
-              onClearUploadFilter={uploadFilter !== "all" ? () => changeQueue({ uploadFilter: "all" }) : undefined}
-              onClearFilters={() => changeQueue({ searchQuery: "", statusFilter: "all", uploadFilter: "all" })}
-              onRetryRoster={() => { void refetchStudents(); }}
-              onRetryWork={() => { void workQuery.refetch(); }}
-              onRetryUploads={() => { void refetchSubmissions(); }}
+              onClearFilters={() => {
+                handleClearSearch();
+                changeQueue({ searchQuery: "", statusFilter: "all", uploadFilter: "all" });
+              }}
+              onClearUploadFilter={
+                queueState.uploadFilter !== "all"
+                  ? () => changeQueue({ uploadFilter: "all" })
+                  : undefined
+              }
+              onRetryRoster={() => void refetchStudents()}
+              onRetryWork={() => void workQuery.refetch()}
+              onRetryUploads={() => void refetchSubmissions()}
               onUpload={handleReupload}
               onEdit={handleEditActivity}
             />
-        </div>
-      </section>
-      <details className="group/threads rounded-xl sm:rounded-2xl border border-border bg-surface dark:bg-card p-4 sm:p-6 shadow-warm transition-all">
-        <summary className="min-h-11 cursor-pointer py-1 font-heading text-base sm:text-lg font-semibold text-foreground flex items-center justify-between focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg select-none list-none [&::-webkit-details-marker]:hidden">
-          <div className="flex items-center gap-2">
-            <span>Class conversations</span>
           </div>
-          <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 group-open/threads:rotate-180" aria-hidden="true" />
-        </summary>
-        <div className="pt-4 border-t border-border/50 mt-4">
-          <ActivityThreads
-            userId={activity.created_by}
-            activityId={id}
-            onOpen={(target) => router.push(commentThreadHref(target, "teacher"), { scroll: false })}
+        )}
+        {viewMode !== "review" && (
+          <>
+            {/* Screen Reader Filter & Search Live Announcer */}
+            <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+              {submissions && (
+                <span>
+                  {`Showing ${currentListLength} ${resultUnit}${currentListLength === 1 ? "" : "s"}${
+                    statusFilter !== "all" ? ` filtered by ${reviewFilterLabels[statusFilter]}` : ""
+                  }${searchQuery ? ` matching "${searchQuery}"` : ""}.`}
+                </span>
+              )}
+            </div>
+
+            {/* Submissions Content Grid */}
+            {submissionsLoading || (viewMode === "grouped" && studentsLoading) ? (
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl"
+                  >
+                    <Skeleton className="aspect-4/3 w-full rounded-none" />
+                    <div className="space-y-2 p-3.5">
+                      <Skeleton className="h-4 w-2/3" />
+                      <Skeleton className="h-4 w-1/3" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : submissionsError ? (
+              <div
+                role="alert"
+                className="border-destructive/20 bg-destructive/10 text-destructive flex flex-col items-center justify-between gap-4 rounded-xl border p-4 sm:flex-row"
+              >
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-5 w-5 shrink-0" />
+                  <span className="text-sm font-medium">
+                    Couldn&apos;t load submissions. Check your connection and try again.
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refetchSubmissions()}
+                  className="border-destructive/30 hover:bg-destructive/10 text-destructive min-h-11 cursor-pointer md:min-h-9"
+                >
+                  <RotateCcw className="mr-1.5 h-4 w-4" />
+                  Retry
+                </Button>
+              </div>
+            ) : submissions?.length === 0 && (viewMode === "all" || !assignedStudents.length) ? (
+              /* Empty state: No submissions at all */
+              <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">
+                <Empty className="border-0 py-14">
+                  <EmptyMedia variant="icon" className="bg-primary/10 text-primary">
+                    <Inbox className="h-6 w-6" />
+                  </EmptyMedia>
+                  <EmptyHeader>
+                    <EmptyTitle className="text-lg sm:text-xl">No submissions yet</EmptyTitle>
+                    <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm">
+                      Upload a student&apos;s handwriting worksheet for this activity to begin AI
+                      diagnostic assessment.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  <EmptyContent className="flex w-full items-center justify-center px-4 sm:w-auto sm:px-0">
+                    <Button
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 min-h-[44px] w-full cursor-pointer rounded-lg text-xs font-medium sm:w-auto sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                      onClick={() => openUpload({ activityId: id })}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      <span>Upload worksheet</span>
+                    </Button>
+                  </EmptyContent>
+                </Empty>
+              </div>
+            ) : currentListLength === 0 ? (
+              /* Empty state: Filters returned 0 results */
+              <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">
+                <Empty className="border-0 py-12">
+                  <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
+                    <SearchX className="h-6 w-6" />
+                  </EmptyMedia>
+                  <EmptyHeader>
+                    <EmptyTitle className="text-lg sm:text-xl">No matching {resultUnit}s</EmptyTitle>
+                    <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm">
+                      Try a different name or status filter.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  <EmptyContent className="flex gap-2">
+                    {searchQuery && (
+                      <Button
+                        variant="outline"
+                        onClick={handleClearSearch}
+                        className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                      >
+                        Clear search
+                      </Button>
+                    )}
+                    {statusFilter !== "all" && (
+                      <Button
+                        variant="ghost"
+                        onClick={() => setStatusFilter("all")}
+                        className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                      >
+                        View All
+                      </Button>
+                    )}
+                  </EmptyContent>
+                </Empty>
+              </div>
+            ) : (
+              /* Submissions Cards Grid */
+              <div
+                role="region"
+                aria-label="Student submissions list"
+                className={cn(
+                  "grid gap-3",
+                  !compact && "grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-4"
+                )}
+              >
+                {viewMode === "grouped"
+                  ? studentReviewEntries.map((entry) => {
+                      if (entry.kind === "no_upload") {
+                        const { student } = entry;
+                        return (
+                          <article
+                            key={student.id}
+                            className={cn(
+                              "border-border bg-surface dark:bg-card flex flex-col gap-4 self-start rounded-xl border p-4",
+                              compact &&
+                                "lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,.85fr)_minmax(0,1.2fr)_auto] lg:items-center lg:gap-4"
+                            )}
+                          >
+                            <div className={cn("flex flex-col gap-1", compact && "lg:col-span-2")}>
+                              <h3 className="text-sm font-semibold break-words">
+                                {student.full_name}
+                              </h3>
+                              <p className="text-muted-foreground text-sm">
+                                No worksheet uploaded yet.
+                              </p>
+                            </div>
+                            <StudentWorkSummary
+                              activityId={id}
+                              studentId={student.id}
+                              studentName={student.full_name}
+                              state={
+                                workQuery.isError ? null : (workByStudent.get(student.id) ?? null)
+                              }
+                              attempts={[]}
+                              isLoading={workQuery.isPending}
+                            />
+                            <Button
+                              variant="outline"
+                              className="h-11 md:h-9"
+                              onClick={() => handleReupload(student.id)}
+                              aria-label={`Upload worksheet for ${student.full_name}`}
+                            >
+                              <Upload data-icon="inline-start" /> Upload worksheet
+                            </Button>
+                          </article>
+                        );
+                      }
+                      const { group } = entry;
+                      const activeSub =
+                        (statusFilter === "all"
+                          ? group.allSubmissions.find(
+                              (sub) => sub.id === attemptOverrides.get(group.studentId)?.id
+                            )
+                          : null) ?? group.reviewSubmission;
+                      const workState = workQuery.isError
+                        ? null
+                        : (workByStudent.get(group.studentId) ?? null);
+
+                      return (
+                        <SubmissionCard
+                          key={group.studentId}
+                          compact={compact}
+                          submission={activeSub}
+                          studentName={group.studentName}
+                          imageUrl={signedUrlsMap?.get(activeSub.image_path)}
+                          attemptCount={group.attemptCount}
+                          allSubmissions={group.allSubmissions}
+                          countedSubmissionId={
+                            workQuery.isSuccess
+                              ? (workState?.active_submission_id ?? null)
+                              : undefined
+                          }
+                          latestSubmission={group.latestSubmission}
+                          activityId={id}
+                          workState={workState}
+                          workLoading={workQuery.isPending}
+                          onSelectAttempt={handleSelectAttempt}
+                          onSelect={handleSelectSubmission}
+                          onReupload={handleReupload}
+                          isSelected={selectedSubmissionIds.has(activeSub.id)}
+                          onToggleSelect={managingAttempts ? handleToggleCardSelect : undefined}
+                          onDeleteSingleAttempt={
+                            managingAttempts ? handleDeleteSingleAttemptPrompt : undefined
+                          }
+                          onDeleteAllStudentAttempts={
+                            managingAttempts ? handleDeleteAllStudentAttemptsPrompt : undefined
+                          }
+                        />
+                      );
+                    })
+                  : filteredAndSortedSubmissions.map((sub) => (
+                      <SubmissionCard
+                        key={sub.id}
+                        compact={compact}
+                        submission={sub}
+                        studentName={sub.student?.full_name ?? "Unknown Student"}
+                        imageUrl={signedUrlsMap?.get(sub.image_path)}
+                        onSelect={handleSelectSubmission}
+                        onReupload={handleReupload}
+                        isSelected={selectedSubmissionIds.has(sub.id)}
+                        onToggleSelect={managingAttempts ? handleToggleCardSelect : undefined}
+                        onDeleteSingleAttempt={
+                          managingAttempts ? handleDeleteSingleAttemptPrompt : undefined
+                        }
+                      />
+                    ))}
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
+      <Collapsible
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        className="border-border border-t pt-4"
+      >
+        <CollapsibleTrigger
+          render={<Button variant="ghost" className="min-h-11 gap-2 md:min-h-9" />}
+        >
+          Conversation history{" "}
+          <ChevronDown
+            className={cn(
+              "transition-transform motion-reduce:transition-none",
+              historyOpen && "rotate-180"
+            )}
+            aria-hidden="true"
           />
-        </div>
-      </details>
-      {commentTarget.kind !== "none" && <div role="status" className="rounded-xl border p-4"><p>Choose a worksheet upload to view its comments.</p><Button variant="outline" onClick={closeComments}>Dismiss</Button></div>}
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-3">
+          {historyOpen && (
+            <ActivityThreads
+              userId={activity.created_by}
+              activityId={id}
+              onOpen={(target) =>
+                router.push(commentThreadHref(target, "teacher"), { scroll: false })
+              }
+            />
+          )}
+        </CollapsibleContent>
+      </Collapsible>
+
       {/* Edit Activity Dialog */}
       <EditActivityDialog
         activity={editingActivity}
@@ -715,7 +1512,9 @@ export default function ActivityDetailPage({
         open={isDuplicateOpen}
         onOpenChange={setIsDuplicateOpen}
         initialValues={{
-          ...activity, due_at: null, close_after_due: false,
+          ...activity,
+          due_at: null,
+          close_after_due: false,
           target_text: activity.target_text,
           is_take_home: activity.is_take_home,
         }}
@@ -727,6 +1526,60 @@ export default function ActivityDetailPage({
         activity={deletingActivity}
         open={!!deletingActivity}
         onOpenChange={(open) => !open && setDeletingActivity(null)}
+      />
+
+      {/* Floating Batch Actions Bar */}
+      <FloatingActionBar
+        selectedCount={selectedCount}
+        totalCount={allSelectableSubmissionIds.length + hiddenSelectedCount}
+        itemLabel={{ singular: "attempt", plural: "attempts" }}
+        allSelected={allVisibleSelected}
+        onSelectAll={handleToggleSelectAll}
+        onClearSelection={clearSelection}
+        ariaLabel="Batch attempt actions"
+      >
+        {hiddenSelectedCount > 0 && (
+          <span className="text-muted-foreground text-xs">{hiddenSelectedCount} not shown</span>
+        )}
+        {selectedStudentsCount > 0 && (
+          <span className="text-muted-foreground mr-1 hidden text-xs sm:inline">
+            ({selectedStudentsCount} {selectedStudentsCount === 1 ? "student" : "students"})
+          </span>
+        )}
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => setIsBatchDeleteDialogOpen(true)}
+          disabled={batchDeleteMutation.isPending}
+          className="min-h-11 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-semibold shadow-xs md:min-h-9"
+        >
+          <Trash2 className="size-3.5" />
+          <span>Delete Attempts</span>
+        </Button>
+      </FloatingActionBar>
+
+      {/* Attempt Deletion Alert Dialogs */}
+      <AttemptDeletionDialogs
+        isBatchDeleteDialogOpen={isBatchDeleteDialogOpen}
+        onBatchDialogOpenChange={setIsBatchDeleteDialogOpen}
+        selectedCount={selectedCount}
+        hiddenSelectedCount={hiddenSelectedCount}
+        unavailableSelectedCount={selectedSubmissionIds.size - selectedCount}
+        selectedSubmissions={selectedSubmissions}
+        activeIds={activeIds}
+        students={students}
+        isBatchDeleting={batchDeleteMutation.isPending}
+        hasSubmissionsError={!!submissionsError}
+        isSubmissionsLoading={submissionsLoading}
+        onConfirmBatchDelete={handleBatchDeleteConfirm}
+        singleAttemptToDelete={singleAttemptToDelete}
+        onSingleAttemptDialogOpenChange={(open) => !open && setSingleAttemptToDelete(null)}
+        isSingleDeleting={deleteSingleMutation.isPending}
+        onConfirmSingleDelete={handleConfirmDeleteSingleAttempt}
+        studentBatchToDelete={studentBatchToDelete}
+        onStudentBatchDialogOpenChange={(open) => !open && setStudentBatchToDelete(null)}
+        isStudentBatchDeleting={batchDeleteMutation.isPending}
+        onConfirmStudentBatchDelete={handleConfirmDeleteStudentBatch}
       />
     </div>
   );

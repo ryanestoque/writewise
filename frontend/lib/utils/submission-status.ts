@@ -54,8 +54,8 @@ export function getScoreBandLabel(
         label: "Needs Review",
         band: "Pending Rubric",
         className:
-          "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200/80 dark:border-amber-900",
-        dotColor: "bg-amber-500",
+          "bg-warning/10 text-warning-foreground dark:text-warning border-warning/30",
+        dotColor: "bg-warning",
         icon: Clock,
         description: "Worksheet processed. Teacher manual rubric scoring pending.",
         source: options?.source ?? "none",
@@ -79,9 +79,8 @@ export function getScoreBandLabel(
     return {
       label: `${rounded}% • Excellent`,
       band: "Excellent",
-      className:
-        "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-900",
-      dotColor: "bg-emerald-500",
+      className: "bg-band-4/10 text-band-4-text border-band-4/30",
+      dotColor: "bg-band-4",
       icon: Award,
       description: isManual
         ? `Teacher rubric score (${rounded}%). Excellent foundation.`
@@ -93,8 +92,7 @@ export function getScoreBandLabel(
     return {
       label: `${rounded}% • Satisfactory`,
       band: "Satisfactory",
-      className:
-        "bg-brand-50 text-brand-800 dark:bg-brand-950/80 dark:text-brand-300 border-brand-300/50 dark:border-brand-900",
+      className: "bg-band-3/10 text-band-3-text border-band-3/30",
       dotColor: "bg-band-3",
       icon: CheckCircle2,
       description: isManual
@@ -107,9 +105,8 @@ export function getScoreBandLabel(
     return {
       label: `${rounded}% • Developing`,
       band: "Developing",
-      className:
-        "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200/80 dark:border-amber-900",
-      dotColor: "bg-amber-500",
+      className: "bg-band-2/10 text-band-2-text border-band-2/30",
+      dotColor: "bg-band-2",
       icon: TrendingUp,
       description: isManual
         ? `Teacher rubric score (${rounded}%). Developing penmanship.`
@@ -120,9 +117,8 @@ export function getScoreBandLabel(
   return {
     label: `${rounded}% • Needs Impr.`,
     band: "Needs Improvement",
-    className:
-      "bg-orange-50 text-orange-800 dark:bg-orange-950 dark:text-orange-300 border-orange-200/80 dark:border-orange-900",
-    dotColor: "bg-orange-500",
+    className: "bg-band-1/10 text-band-1-text border-band-1/30",
+    dotColor: "bg-band-1",
     icon: AlertCircle,
     description: isManual
       ? `Teacher rubric score (${rounded}%). Targeted practice recommended.`
@@ -321,21 +317,21 @@ export const statusConfig = {
     label: "Processing",
     icon: Clock,
     className:
-      "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200 dark:border-amber-900",
-    dotClass: "bg-amber-500 motion-safe:animate-pulse",
+      "bg-warning/10 text-warning-foreground dark:text-warning border-warning/30",
+    dotClass: "bg-warning motion-safe:animate-pulse",
   },
   completed: {
     label: "Completed",
     icon: CheckCircle2,
     className:
-      "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900",
-    dotClass: "bg-emerald-500",
+      "bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 border-brand-300 dark:border-brand-800",
+    dotClass: "bg-primary dark:bg-brand-400",
   },
   rejected: {
     label: "Rejected",
     icon: AlertCircle,
     className:
-      "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border-rose-200 dark:border-rose-900",
-    dotClass: "bg-rose-500",
+      "bg-destructive/10 text-destructive border-destructive/30",
+    dotClass: "bg-destructive",
   },
 } as const;

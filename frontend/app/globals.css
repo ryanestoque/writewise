@@ -26,13 +26,13 @@
 
   /* Custom Band Colors */
   --color-band-1: #b6754a;
-  --color-band-1-text: #8f4a21;
+  --color-band-1-text: var(--band-1-text);
   --color-band-2: #c9a227;
-  --color-band-2-text: #7a4e00;
+  --color-band-2-text: var(--band-2-text);
   --color-band-3: #7c9b6e;
-  --color-band-3-text: #36542c;
+  --color-band-3-text: var(--band-3-text);
   --color-band-4: #4a8b5c;
-  --color-band-4-text: #1a4a2b;
+  --color-band-4-text: var(--band-4-text);
 
   --color-surface: var(--surface);
 
@@ -91,6 +91,10 @@
   --card-foreground: #1e2422;
   --popover: #ffffff;
   --popover-foreground: #1e2422;
+  --band-1-text: #8f4a21;
+  --band-2-text: #7a4e00;
+  --band-3-text: #36542c;
+  --band-4-text: #1a4a2b;
 
   /* Primary mapped to brand-600 */
   --primary: #1b6b63;
@@ -176,10 +180,10 @@
   --chart-4: #4a8b5c;
   --chart-5: #1b6b63;
 
-  --color-band-1-text: #fdba74;
-  --color-band-2-text: #fde68a;
-  --color-band-3-text: #a7f3d0;
-  --color-band-4-text: #6ee7b7;
+  --band-1-text: #fdba74;
+  --band-2-text: #fde68a;
+  --band-3-text: #a7f3d0;
+  --band-4-text: #6ee7b7;
 
   --sidebar: #1e2422;
   --sidebar-foreground: #f7f8f7;

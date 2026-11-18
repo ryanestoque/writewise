@@ -139,7 +139,7 @@ function ReturnForm({ submission, onDone }: { submission: Submission; onDone: ()
       )}
       <DialogFooter>
         <Button
-          className="min-h-10 md:min-h-9"
+          className="min-h-11 md:min-h-9"
           type="button"
           variant="outline"
           onClick={onDone}
@@ -147,7 +147,7 @@ function ReturnForm({ submission, onDone }: { submission: Submission; onDone: ()
         >
           Cancel
         </Button>
-        <Button className="min-h-10 md:min-h-9" type="submit" disabled={mutation.isPending}>
+        <Button className="min-h-11 md:min-h-9" type="submit" disabled={mutation.isPending}>
           {mutation.isPending ? "Returning…" : "Return worksheet"}
         </Button>
       </DialogFooter>
@@ -435,10 +435,20 @@ function WorkSettingsForm({
         </p>
       )}
       <DialogFooter>
-        <Button type="button" variant="outline" onClick={onDone} disabled={update.isPending}>
+        <Button
+          className="min-h-11 md:min-h-9"
+          type="button"
+          variant="outline"
+          onClick={onDone}
+          disabled={update.isPending}
+        >
           Cancel
         </Button>
-        <Button type="submit" disabled={update.isPending || (!dueEdited && !pinEdited)}>
+        <Button
+          className="min-h-11 md:min-h-9"
+          type="submit"
+          disabled={update.isPending || (!dueEdited && !pinEdited)}
+        >
           {update.isPending ? "Saving…" : "Save work settings"}
         </Button>
       </DialogFooter>
@@ -464,7 +474,7 @@ export function StudentWorkControls(props: {
         onClick={() => setOpen(true)}
         disabled={!props.state}
         aria-label={`Deadline and counted attempt for ${props.studentName}`}
-        className="min-h-11 md:min-h-9"
+        className="h-11 md:h-9"
       >
         Deadline & attempt
       </Button>
@@ -546,13 +556,13 @@ export function ReleaseActivityButton({
     }
   }
   return (
-    <span ref={focusTarget} tabIndex={-1} className="flex flex-col gap-1.5 sm:items-end">
+    <span ref={focusTarget} tabIndex={-1} className="flex flex-wrap items-center gap-x-2 gap-y-1 sm:flex-col sm:items-end">
       {(isPending || isError || !rosterReady || count > 0 || hasPointGrades) && (
         <Button
           variant="outline"
           disabled={isPending || !rosterReady || (!count && !hasPointGrades && !isError)}
           aria-describedby={descriptionId}
-          className="min-h-11 md:min-h-9"
+          className="h-11 md:h-9"
           onClick={() => {
             setError(null);
             setStep("review");
@@ -577,14 +587,17 @@ export function ReleaseActivityButton({
               ? "Release readiness unavailable. Retry work status below."
               : count > 0
                 ? `${count} draft worksheet ${count === 1 ? "result" : "results"} ready to share.`
-                : "No draft worksheet results to release."}
+                : "No worksheet results ready to share."}
+        {rosterReady && !isPending && !isError && (count > 0 || hasPointGrades) && (
+          <> Applies to the whole activity.</>
+        )}
         {hasPointGrades && (
           <>
             {" "}
             Review point grades before release.{" "}
             <Link
               href={`/gradebook?activity=${encodeURIComponent(activityId)}`}
-              className="focus-visible:ring-ring inline-flex min-h-10 items-center underline underline-offset-4 focus-visible:ring-2 focus-visible:outline-none md:min-h-9"
+              className="focus-visible:ring-ring inline-flex min-h-11 items-center underline underline-offset-4 focus-visible:ring-2 focus-visible:outline-none md:min-h-9"
             >
               Review in Gradebook
             </Link>

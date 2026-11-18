@@ -95,7 +95,14 @@ export function TeacherHeader({ userId }: { userId: string }) {
                     render={<Link href={`/${primarySegment}`} />}
                     className="text-xs truncate max-w-[110px] sm:max-w-none"
                   >
-                    {primaryTitle}
+                    {primarySegment === "activities" && segments.length === 2 ? (
+                      <>
+                        <span className="sm:hidden">Activities</span>
+                        <span className="hidden sm:inline">{primaryTitle}</span>
+                      </>
+                    ) : (
+                      primaryTitle
+                    )}
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />

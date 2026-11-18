@@ -5,6 +5,7 @@ import { createContext, useContext, useMemo, useState, type Dispatch, type SetSt
 interface ReviewSession {
   scope: string;
   studentIds: string[];
+  submissionIds?: string[];
 }
 
 const ReviewSessionContext = createContext<{

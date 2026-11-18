@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "../supabase/client";
 import { getAuthToken } from "../supabase/auth-helper";
@@ -216,6 +217,41 @@ export function useSubmissionImageUrl(imagePath: string | null) {
     },
     enabled: !!imagePath,
     // Cache for 30 minutes — well within the 1-hour signing window
+    staleTime: 30 * 60 * 1000,
+  });
+}
+
+export function useSubmissionImageUrls(imagePaths: (string | null | undefined)[]) {
+  const supabase = createClient();
+  const validPaths = useMemo(
+    () => Array.from(new Set(imagePaths.filter((p): p is string => Boolean(p)))),
+    [imagePaths]
+  );
+  const cacheKey = useMemo(() => [...validPaths].sort().join(","), [validPaths]);
+
+  return useQuery({
+    queryKey: ["submission-images-batch", cacheKey],
+    queryFn: async (): Promise<Map<string, string>> => {
+      const urlMap = new Map<string, string>();
+      if (validPaths.length === 0) return urlMap;
+
+      const { data, error } = await supabase.storage
+        .from("submission-images")
+        .createSignedUrls(validPaths, 3600);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      for (const item of data ?? []) {
+        if (item.path && item.signedUrl) {
+          urlMap.set(item.path, item.signedUrl);
+        }
+      }
+
+      return urlMap;
+    },
+    enabled: validPaths.length > 0,
     staleTime: 30 * 60 * 1000,
   });
 }

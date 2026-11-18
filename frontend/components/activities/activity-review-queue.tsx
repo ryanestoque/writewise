@@ -274,48 +274,55 @@ export function ActivityReviewQueue({
                       </Button>
                     )
                   )}
+                  <StudentWorkControls
+                    activityId={activityId}
+                    studentId={student.id}
+                    studentName={student.full_name}
+                    state={state ?? null}
+                    attempts={attempts}
+                  />
                 </div>
-                <details className="max-w-full">
-                  <summary className="text-muted-foreground focus-visible:outline-ring min-h-11 cursor-pointer rounded-md px-2 py-3 text-sm focus-visible:outline-2 sm:min-h-9 sm:py-2">
-                    More options<span className="sr-only"> for {student.full_name}</span>
-                  </summary>
-                  <div className="flex flex-wrap gap-2 py-2">
-                    {attempts.length > 0 && (
-                      <WorksheetHistory activityId={activityId} studentName={student.full_name}
-                        attempts={attempts} officialId={state?.active_submission_id ?? null} queueQuery={queueQuery} />
-                    )}
-                    {!!state && !!selected && !needsReplacement && !uploadsLoading && !uploadsError && (
-                      <Button variant="outline" className="min-h-11 sm:min-h-9" onClick={() => onUpload(student.id)}>
-                        Upload another worksheet
-                        <span className="sr-only"> for {student.full_name}</span>
-                      </Button>
-                    )}
-                    {hasSeparateLatest && !reviewNewer && (
-                      <Link
-                        className={buttonVariants({
-                          variant: "outline",
-                          className: "min-h-11 sm:min-h-9",
-                        })}
-                        href={`/activities/${activityId}/submissions/${latest.id}${queueQuery}`}
-                      >
-                        View latest attempt<span className="sr-only"> for {student.full_name}</span>
-                      </Link>
-                    )}
-                    {attempts.length > 0 && (
+                {attempts.length > 0 && (
+                  <details className="max-w-full">
+                    <summary className="text-muted-foreground focus-visible:outline-ring min-h-11 cursor-pointer rounded-md px-2 py-3 text-sm focus-visible:outline-2 sm:min-h-9 sm:py-2">
+                      More worksheet actions<span className="sr-only"> for {student.full_name}</span>
+                    </summary>
+                    <div className="flex flex-wrap gap-2 py-2">
+                      <WorksheetHistory
+                        activityId={activityId}
+                        studentName={student.full_name}
+                        attempts={attempts}
+                        officialId={state?.active_submission_id ?? null}
+                        queueQuery={queueQuery}
+                      />
+                      {!!state && !!selected && !needsReplacement && !uploadsLoading && !uploadsError && (
+                        <Button
+                          variant="outline"
+                          className="min-h-11 sm:min-h-9"
+                          onClick={() => onUpload(student.id)}
+                        >
+                          Upload another worksheet
+                          <span className="sr-only"> for {student.full_name}</span>
+                        </Button>
+                      )}
+                      {hasSeparateLatest && !reviewNewer && (
+                        <Link
+                          className={buttonVariants({
+                            variant: "outline",
+                            className: "min-h-11 sm:min-h-9",
+                          })}
+                          href={`/activities/${activityId}/submissions/${latest.id}${queueQuery}`}
+                        >
+                          View latest attempt<span className="sr-only"> for {student.full_name}</span>
+                        </Link>
+                      )}
                       <WorkCommentsButton
                         scope={{ activityId, studentId: student.id }}
                         activeSubmissionId={state?.active_submission_id ?? null}
                       />
-                    )}
-                    <StudentWorkControls
-                      activityId={activityId}
-                      studentId={student.id}
-                      studentName={student.full_name}
-                      state={state ?? null}
-                      attempts={attempts}
-                    />
-                  </div>
-                </details>
+                    </div>
+                  </details>
+                )}
               </div>
             </li>
           );

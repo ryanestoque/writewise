@@ -8,6 +8,7 @@ import type { Activity } from "@/lib/hooks/use-activities";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { WorksheetPrompt } from "@/components/activities/worksheet-prompt";
 import {
   Tooltip,
   TooltipTrigger,
@@ -291,31 +292,7 @@ export const ActivityCard = memo(function ActivityCard({
           <p className="mb-3 text-xs text-muted-foreground">
             {activity.due_at ? `Due ${formatActivityDueAt(activity.due_at)}` : "No due date"}
           </p>
-          <div className="relative p-3.5 sm:p-4 pb-5 sm:pb-6 rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 mb-3.5 overflow-hidden shadow-warm-sm">
-            <div className="relative max-h-[148px] sm:max-h-[156px] overflow-hidden">
-              {/* Authentic 3-line ruling aligned with Cedarville Cursive baseline */}
-              <div
-                className="absolute inset-0 pointer-events-none cursive-guidelines overflow-hidden z-0 print:opacity-60"
-                aria-hidden="true"
-              />
-
-              <p
-                className={cn(
-                  "relative z-10 font-cursive tracking-wide break-words line-clamp-3 print:text-black",
-                  activity.target_text?.trim()
-                    ? "text-[32px]/[48px] sm:text-[34px]/[48px] md:text-[36px]/[48px] leading-[48px] text-foreground/90 font-medium"
-                    : "text-base sm:text-lg text-muted-foreground/70 italic font-sans"
-                )}
-                style={
-                  activity.target_text?.trim()
-                    ? { lineHeight: "48px" }
-                    : undefined
-                }
-              >
-                {activity.target_text?.trim() || "No text specified"}
-              </p>
-            </div>
-          </div>
+          <WorksheetPrompt text={activity.target_text} preview />
         </Link>
       </div>
 

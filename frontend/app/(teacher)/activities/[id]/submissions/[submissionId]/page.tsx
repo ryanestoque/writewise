@@ -10,7 +10,8 @@ import { ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { parseTeacherCommentTarget } from "@/lib/comments/targets";
 import { SubmissionCommentDestination } from "@/components/comments/submission-comment-destination";
-import { buildReviewRows, getReviewQueueRows, getReviewNavigation, readReviewQueue, reviewQueueQuery } from "@/lib/utils/activity-review";
+import { buildReviewRows, getReviewQueueRows, getReviewNavigation, readReviewQueue, reviewQueueQuery, getAttemptReviewNavigation } from "@/lib/utils/activity-review";
+import { matchesReviewFilter, reviewFilterLabels, type LegacyReviewFilter } from "@/lib/utils/activity-attempt-review";
 import { useStudents } from "@/lib/hooks/use-students";
 import { useActivityWork } from "@/lib/hooks/use-activity-work";
 import { activityAssignedTo } from "@/lib/utils/activity-work";
@@ -43,24 +44,44 @@ export default function SubmissionDetailPage({
     rows, readReviewQueue(new URLSearchParams(queueQuery)),
     item => resolveSubmissionScore(item).compositeScore
   ), [rows, queueQuery]);
+  const attemptGroup = searchParams.get("group");
+  const attemptNavigation = useMemo(() => {
+    if (attemptGroup !== "grouped" && attemptGroup !== "all") return null;
+    const params = new URLSearchParams(queueQuery);
+    const requested = params.get("status") ?? "all";
+    const filter = Object.hasOwn(reviewFilterLabels, requested) ? requested as LegacyReviewFilter : "all";
+    const state = readReviewQueue(params);
+    return getAttemptReviewNavigation(rows, attemptGroup, state.searchQuery, state.sortBy,
+      (attempt, row) => matchesReviewFilter(attempt, row.state ?? null, filter),
+      attempt => resolveSubmissionScore(attempt).compositeScore);
+  }, [rows, queueQuery, attemptGroup]);
   const navigationReady = !!activity && !!submissions && !!roster.data && !!work.data &&
     !roster.isError && !work.isError;
   // Capture the selected review session once. Sharing a result must not remove its
   // current position or reorder the remaining students while the teacher reviews.
   useEffect(() => {
     if (navigationReady && reviewSession?.scope !== scope) {
-      setReviewSession({ scope, studentIds: queueRows.filter(row => row.selected).map(row => row.student.id) });
+      setReviewSession({ scope, studentIds: queueRows.filter(row => row.selected).map(row => row.student.id), submissionIds: attemptNavigation?.map(attempt => attempt.id) });
     }
-  }, [navigationReady, reviewSession, scope, queueRows, setReviewSession]);
+  }, [navigationReady, reviewSession, scope, queueRows, setReviewSession, attemptNavigation]);
 
   const submission = useMemo(
     () => submissions?.find((s) => s.id === submissionId) ?? null,
     [submissions, submissionId]
   );
 
-  const navigation = useMemo(() => navigationReady && reviewSession?.scope === scope
-    ? getReviewNavigation(rows, submission ?? undefined, reviewSession.studentIds)
-    : [], [navigationReady, reviewSession, scope, rows, submission]);
+  const navigation = useMemo(() => {
+    if (!navigationReady || reviewSession?.scope !== scope) return [];
+    if (reviewSession.submissionIds) {
+      const byId = new Map((submissions ?? []).map(attempt => [attempt.id, attempt]));
+      return reviewSession.submissionIds.flatMap(id => {
+        const attempt = byId.get(id);
+        if (!attempt) return [];
+        return [attemptGroup === "grouped" && submission?.student_id === attempt.student_id ? submission : attempt];
+      });
+    }
+    return getReviewNavigation(rows, submission ?? undefined, reviewSession.studentIds);
+  }, [navigationReady, reviewSession, scope, rows, submission, submissions, attemptGroup]);
   const currentIndex = navigation.findIndex(item => item.id === submissionId);
 
   const handleNavigate = useCallback(

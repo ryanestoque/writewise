@@ -31,7 +31,7 @@ export function WorkCommentsButton({
           <Button
             variant="outline"
             size="sm"
-            className="min-h-10 md:min-h-9"
+            className="min-h-11 md:min-h-9"
             aria-label={studentName ? `Comments for ${studentName}` : "Comments"}
           />
         }

@@ -1,8 +1,8 @@
 "use client";
 
 import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
-import { memo, useState } from "react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { memo } from "react";
+import { useShortcutKeys } from "@/hooks/use-shortcut-keys";
 import type { Activity } from "@/lib/hooks/use-activities";
 import type { ScoreBandInfo } from "@/lib/utils/submission-status";
 import { formatDate } from "@/lib/utils/formatters";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { WorksheetPrompt } from "@/components/activities/worksheet-prompt";
 import {
   Popover,
   PopoverContent,
@@ -93,11 +94,11 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
   onDelete,
   onToggleArchive,
 }: ActivityDetailHeroProps) {
-  const [promptOpen, setPromptOpen] = useState(false);
+  const { altKey } = useShortcutKeys();
   return (
     <section
       aria-labelledby="activity-prompt-heading"
-      className="bg-surface rounded-xl border p-4 sm:p-5"
+      className="bg-surface dark:bg-card rounded-xl border px-4 py-3 sm:p-5"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -107,27 +108,25 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
           >
             {activity.title || "Untitled Activity"}
           </h1>
-          <p className="text-muted-foreground mt-1 text-xs">
-            {activity.is_take_home ? "Take-home" : "In-class"} ·{" "}
-            {activity.due_at ? "Due " + formatActivityDueAt(activity.due_at) : "No due date"}
-            {activity.close_after_due ? " · Parent uploads close after due" : ""}
-          </p>
         </div>
         <div className="flex shrink-0 items-center gap-2 print:hidden">
           <Button
             size="sm"
             onClick={onUpload}
-            className="min-h-11 md:min-h-9"
-            title="Upload worksheets (U)"
+            className="h-11 md:h-9"
+            title={`Upload worksheets (${altKey}+U)`}
+            aria-keyshortcuts="Alt+U"
           >
             <Upload data-icon="inline-start" />
             <span className="sm:hidden">Upload</span>
             <span className="hidden sm:inline">Upload worksheets</span>
-            <kbd className="ml-1 hidden rounded border px-1 text-xs md:inline">U</kbd>
+            <kbd className="ml-1 hidden rounded border px-1 text-xs md:inline">
+              {altKey}+U
+            </kbd>
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger
-              className="border-border bg-background hover:bg-muted/60 text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex size-11 cursor-pointer items-center justify-center rounded-lg border transition-all focus-visible:ring-2 focus-visible:outline-hidden sm:size-9 sm:rounded-xl"
+              className="border-border bg-background hover:bg-muted/60 text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex size-11 cursor-pointer items-center justify-center rounded-lg border transition-all focus-visible:ring-2 focus-visible:outline-hidden md:size-9 md:rounded-xl"
               aria-label="More activity options"
             >
               <MoreVertical className="h-4 w-4" />
@@ -191,62 +190,48 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
           </DropdownMenu>
         </div>
       </div>
+      <p className="text-muted-foreground mt-1 text-xs">
+        {activity.is_take_home ? "Take-home" : "In-class"} ·{" "}
+        {activity.due_at ? "Due " + formatActivityDueAt(activity.due_at) : "No due date"}
+        {activity.close_after_due ? " · Parent uploads close at the deadline" : ""}
+      </p>
       {isArchived && (
         <p role="status" className="text-muted-foreground mt-3 text-sm">
           <Archive className="mr-1 inline size-4" aria-hidden="true" />
           Archived and hidden from student assignment pickers.
         </p>
       )}
-      <Collapsible open={promptOpen} onOpenChange={setPromptOpen} className="mt-1">
-        <CollapsibleTrigger
-          render={<Button variant="ghost" className="min-h-11 px-0 md:min-h-9" />}
-        >
-          {promptOpen ? "Hide activity details" : "Activity details"}
-          <ChevronDown
-            data-icon="inline-end"
-            className={cn(
-              "transition-transform motion-reduce:transition-none",
-              promptOpen && "rotate-180"
-            )}
-          />
-        </CollapsibleTrigger>
-        <CollapsibleContent className="pb-3">
-          <p className="text-muted-foreground mb-3 text-xs">
-            {wordCount} {wordCount === 1 ? "word" : "words"} · Created{" "}
-            <time dateTime={activity.created_at}>{formatDate(activity.created_at)}</time> ·{" "}
-            {totalScansCount} total uploads
-          </p>
-          {activity.instructions && (
-            <p className="mb-3 max-w-prose text-sm break-words whitespace-pre-wrap">
-              {activity.instructions}
-            </p>
-          )}
-          <div className="bg-muted/30 relative overflow-hidden rounded-lg p-4">
-            <div
-              className="cursive-guidelines pointer-events-none absolute inset-0"
-              aria-hidden="true"
-            />
-            <p
-              className={cn(
-                "relative break-words whitespace-pre-wrap select-all",
-                activity.target_text?.trim()
-                  ? "font-cursive text-3xl leading-[48px]"
-                  : "text-muted-foreground text-sm"
-              )}
-            >
-              {activity.target_text?.trim() || "No target text specified"}
-            </p>
-          </div>
-          <Button variant="ghost" onClick={onCopyPrompt} className="mt-1 min-h-11">
+      <section aria-labelledby="worksheet-prompt-heading" className="mt-2 flex flex-col gap-2 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-3">
+          <h2 id="worksheet-prompt-heading" className="font-heading text-sm font-semibold">
+            Worksheet prompt
+          </h2>
+          <Button
+            variant="ghost"
+            onClick={onCopyPrompt}
+            aria-label={hasCopiedPrompt ? "Worksheet prompt copied" : "Copy worksheet prompt"}
+            className="h-11 md:h-9"
+          >
             {hasCopiedPrompt ? (
               <Check data-icon="inline-start" />
             ) : (
               <Copy data-icon="inline-start" />
             )}
-            {hasCopiedPrompt ? "Copied" : "Copy worksheet prompt"}
+            {hasCopiedPrompt ? "Copied" : "Copy"}
           </Button>
-        </CollapsibleContent>
-      </Collapsible>
+        </div>
+        {activity.instructions && (
+          <p className="max-w-prose text-sm break-words whitespace-pre-wrap">
+            {activity.instructions}
+          </p>
+        )}
+        <WorksheetPrompt text={activity.target_text} />
+        <p className="text-muted-foreground text-xs">
+          {wordCount} {wordCount === 1 ? "word" : "words"} · Created{" "}
+          <time dateTime={activity.created_at}>{formatDate(activity.created_at)}</time> ·{" "}
+          {totalScansCount} total uploads
+        </p>
+      </section>
       {summaryState !== "ready" ? (
         <div role="status" className="text-muted-foreground mt-2 text-sm">
           {summaryState === "loading" ? (
@@ -265,7 +250,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
               <strong className="text-foreground tabular-nums">
                 {uniqueStudentsCount} of {totalStudents}
               </strong>{" "}
-              assigned students have counted work
+              assigned students have an official worksheet
             </p>
             {totalStudents > 0 ? (
               <div
@@ -274,12 +259,12 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 aria-valuenow={completionRate}
                 aria-valuemin={0}
                 aria-valuemax={100}
-                aria-label="Students with counted work"
+                aria-label="Students with an official worksheet"
                 aria-valuetext={
                   uniqueStudentsCount +
                   " of " +
                   totalStudents +
-                  " assigned students have counted work (" +
+                  " assigned students have an official worksheet (" +
                   completionRate +
                   "%)"
                 }
@@ -294,6 +279,11 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 Edit assignments
                 <ArrowRight data-icon="inline-end" />
               </Button>
+            )}
+            {totalStudents > 0 && (
+              <p className="text-muted-foreground mt-1.5 text-xs">
+                The official worksheet counts toward the result. A newer upload may still need review.
+              </p>
             )}
           </div>
           {classDiagnostics ? (
@@ -336,7 +326,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                   <span className="inline">Class Breakdown</span>
                   <ChevronDown className="size-3 opacity-60" aria-hidden="true" />
                 </PopoverTrigger>
-                <PopoverContent align="end" className="z-50 w-72 space-y-3 p-3.5 text-xs">
+                <PopoverContent align="end" className="z-50 w-[min(calc(100vw-2rem),18rem)] space-y-3 p-3.5 text-xs">
                   <PopoverHeader>
                     <PopoverTitle className="text-foreground flex items-center justify-between text-xs font-semibold">
                       <span>5-Criterion Class Average</span>
@@ -367,7 +357,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                         aria-label={`Letter Formation class average: ${classDiagnostics.criteriaAverages.letterFormation}%`}
                       >
                         <div
-                          className="bg-brand-500 h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
+                          className="bg-brand-600 dark:bg-brand-400 h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
                           style={{
                             width: `${classDiagnostics.criteriaAverages.letterFormation}%`,
                           }}
@@ -391,7 +381,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                         aria-label={`Size Consistency class average: ${classDiagnostics.criteriaAverages.sizeConsistency}%`}
                       >
                         <div
-                          className="bg-brand-500 h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
+                          className="bg-brand-600 dark:bg-brand-400 h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
                           style={{
                             width: `${classDiagnostics.criteriaAverages.sizeConsistency}%`,
                           }}
@@ -415,7 +405,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                         aria-label={`Spacing class average: ${classDiagnostics.criteriaAverages.spacing}%`}
                       >
                         <div
-                          className="bg-brand-500 h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
+                          className="bg-brand-600 dark:bg-brand-400 h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
                           style={{
                             width: `${classDiagnostics.criteriaAverages.spacing}%`,
                           }}
@@ -439,7 +429,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                         aria-label={`Slant Consistency class average: ${classDiagnostics.criteriaAverages.slant}%`}
                       >
                         <div
-                          className="bg-brand-500 h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
+                          className="bg-brand-600 dark:bg-brand-400 h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
                           style={{
                             width: `${classDiagnostics.criteriaAverages.slant}%`,
                           }}
@@ -463,7 +453,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                         aria-label={`Baseline Alignment class average: ${classDiagnostics.criteriaAverages.baselineAlignment}%`}
                       >
                         <div
-                          className="bg-brand-500 h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
+                          className="bg-brand-600 dark:bg-brand-400 h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
                           style={{
                             width: `${classDiagnostics.criteriaAverages.baselineAlignment}%`,
                           }}
@@ -475,7 +465,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                   {classDiagnostics.strongestCriterion && (
                     <div className="border-border/60 text-muted-foreground space-y-1 border-t pt-2 text-[11px]">
                       <p>
-                        <span className="text-band-4-text dark:text-band-4 font-semibold">
+                        <span className="text-band-4-text font-semibold">
                           Strength:
                         </span>{" "}
                         {classDiagnostics.strongestCriterion.name} (
@@ -486,7 +476,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                       </p>
                       {classDiagnostics.focusCriterion && (
                         <p>
-                          <span className="text-band-2-text dark:text-band-2 font-semibold">
+                          <span className="text-band-2-text font-semibold">
                             Practice Focus:
                           </span>{" "}
                           {classDiagnostics.focusCriterion.name} (
@@ -502,7 +492,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
               </Popover>
             </div>
           ) : (
-            <p className="text-muted-foreground flex-1 text-xs">
+            <p className="text-muted-foreground hidden flex-1 text-xs sm:block">
               Class insights appear as worksheets are scored.
             </p>
           )}

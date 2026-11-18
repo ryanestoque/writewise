@@ -44,6 +44,16 @@ const shortcuts: ShortcutItem[] = [
   },
   {
     category: "Worksheet & Assessment",
+    keys: ["Alt", "U"],
+    description: "Upload worksheets for the current activity",
+  },
+  {
+    category: "Worksheet & Assessment",
+    keys: ["Alt", "/"],
+    description: "Search student work in the current activity",
+  },
+  {
+    category: "Worksheet & Assessment",
     keys: ["Alt", "R"],
     description: "Open Scoring Rubric",
   },
