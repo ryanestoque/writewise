@@ -113,7 +113,7 @@ const COLUMNS: Array<{
     label: "Slant Angle",
     shortLabel: "Slant",
     isNumeric: true,
-    description: "Forward slant consistency (60°–68°)",
+    description: "Forward slant consistency and parallel tilt",
   },
   {
     field: "baseline_alignment",

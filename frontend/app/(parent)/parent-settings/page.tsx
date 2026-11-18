@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Account Settings — WriteWise",
+  title: "Account Settings",
   description: "Manage your parent profile and account credentials.",
 };
 

@@ -62,7 +62,7 @@ export function TeacherHeader({ userId }: { userId: string }) {
           <TooltipTrigger
             render={
               <SidebarTrigger
-                className="-ml-1 size-10 text-muted-foreground hover:text-foreground md:size-8"
+                className="-ml-1 size-10 text-muted-foreground hover:text-foreground md:size-9"
                 id="sidebar-toggle"
                 aria-controls="teacher-sidebar"
                 aria-keyshortcuts="Control+B Meta+B"

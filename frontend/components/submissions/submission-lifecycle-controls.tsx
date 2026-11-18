@@ -3,7 +3,7 @@
 import { useId, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -309,6 +309,10 @@ function WorkSettingsForm({
   const [pin, setPin] = useState(state?.pinned_submission_id ?? "");
   const [dueEdited, setDueEdited] = useState(false);
   const [pinEdited, setPinEdited] = useState(false);
+  const selectedAttempt = attempts.find(
+    (attempt) => attempt.id === pin && attempt.status === "completed",
+  );
+  const selectedScore = resolveSubmissionScore(selectedAttempt);
   const now = useActivityNow();
   const [error, setError] = useState<string | null>(null);
   const update = useUpdateStudentWork();
@@ -316,7 +320,7 @@ function WorkSettingsForm({
     event.preventDefault();
     setError(null);
     if (!dueEdited && !pinEdited) {
-      setError("Change a deadline or counted attempt before saving.");
+      setError("Change a deadline or official worksheet before saving.");
       return;
     }
     try {
@@ -356,14 +360,15 @@ function WorkSettingsForm({
           </FieldDescription>
           {due && Date.parse(`${due}:00+08:00`) < now && (
             <p className="text-muted-foreground text-sm">
-              This deadline has passed. Work without a counted attempt will be Missing.
+              This deadline has passed. Work without an official worksheet will be Missing.
             </p>
           )}
         </Field>
         <Field>
-          <FieldLabel htmlFor={`${id}-pin`}>Counted attempt</FieldLabel>
+          <FieldLabel htmlFor={`${id}-pin`}>Official worksheet</FieldLabel>
           <NativeSelect
             id={`${id}-pin`}
+            className="w-full min-w-0 max-w-full"
             value={pin}
             onChange={(event) => {
               setPin(event.target.value);
@@ -376,15 +381,52 @@ function WorkSettingsForm({
             </NativeSelectOption>
             {attempts
               .filter((row) => row.status === "completed")
-              .map((row) => (
-                <NativeSelectOption key={row.id} value={row.id}>
-                  {new Date(row.created_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" })}
-                </NativeSelectOption>
-              ))}
+              .map((row) => {
+                const { compositeScore, scoreBand } = resolveSubmissionScore(row);
+                const score = compositeScore == null
+                  ? "Not scored yet"
+                  : `${Math.round(compositeScore)}% · ${scoreBand.band}`;
+                return (
+                  <NativeSelectOption key={row.id} value={row.id}>
+                    {new Date(row.created_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" })}
+                    {` · ${score}${row.id === state?.active_submission_id ? " · Current official" : ""}`}
+                  </NativeSelectOption>
+                );
+              })}
           </NativeSelect>
           <FieldDescription>
-            A pin can count an older completed attempt after a Return.
+            Pin an older completed attempt to keep it as the official worksheet after a return.
           </FieldDescription>
+          {selectedAttempt && (
+            <div className="flex flex-col items-start gap-2 rounded-lg border p-3 text-sm">
+              <p className="font-medium">
+                Uploaded{" "}
+                <time dateTime={selectedAttempt.created_at}>
+                  {formatActivityDueAt(selectedAttempt.created_at)}
+                </time>
+                {" · Manila time"}
+              </p>
+              <p>
+                {selectedScore.compositeScore == null
+                  ? "Not scored yet"
+                  : `${Math.round(selectedScore.compositeScore)}% · ${selectedScore.scoreBand.band}`}
+                {selectedAttempt.id === state?.active_submission_id && " · Current official worksheet"}
+              </p>
+              <p>Inspect this worksheet before saving your choice.</p>
+              <Link
+                href={`/activities/${activityId}/submissions/${selectedAttempt.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={buttonVariants({
+                  variant: "outline",
+                  className: "min-h-11 h-auto whitespace-normal",
+                })}
+              >
+                Inspect selected worksheet (opens in new tab)
+              </Link>
+              <p className="text-muted-foreground">Your selection is saved only when you choose Save work settings.</p>
+            </div>
+          )}
         </Field>
       </FieldGroup>
       {error && (
@@ -393,20 +435,10 @@ function WorkSettingsForm({
         </p>
       )}
       <DialogFooter>
-        <Button
-          className="min-h-10 md:min-h-9"
-          type="button"
-          variant="outline"
-          onClick={onDone}
-          disabled={update.isPending}
-        >
+        <Button type="button" variant="outline" onClick={onDone} disabled={update.isPending}>
           Cancel
         </Button>
-        <Button
-          className="min-h-10 md:min-h-9"
-          type="submit"
-          disabled={update.isPending || (!dueEdited && !pinEdited)}
-        >
+        <Button type="submit" disabled={update.isPending || (!dueEdited && !pinEdited)}>
           {update.isPending ? "Saving…" : "Save work settings"}
         </Button>
       </DialogFooter>

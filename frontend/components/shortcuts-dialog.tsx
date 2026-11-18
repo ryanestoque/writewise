@@ -53,6 +53,16 @@ const shortcuts: ShortcutItem[] = [
     description: "Open Cursive Guide",
   },
   {
+    category: "Activity Detail",
+    keys: ["Alt", "U"],
+    description: "Upload to the current activity",
+  },
+  {
+    category: "Activity Detail",
+    keys: ["Alt", "/"],
+    description: "Search student work",
+  },
+  {
     category: "Worksheet & Assessment",
     keys: ["[", "]"],
     description: "Step through diagnostic practice areas (or Alt+[ / Alt+])",

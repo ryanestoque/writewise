@@ -412,9 +412,24 @@
 /* -------------------------------- Hero ------------------------------ */
 
 .hero {
+  position: relative;
+  isolation: isolate;
   max-width: var(--max);
   margin: 0 auto;
   padding: clamp(28px, 4.5vw, 56px) var(--gutter) var(--section);
+}
+
+/* Full-width practice paper; the content keeps its existing centered layout. */
+.hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset-block: 0;
+  inset-inline: calc(50% - 50vw);
+  pointer-events: none;
+  background-color: color-mix(in srgb, var(--paper) 96%, var(--warm) 4%);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='144' viewBox='0 0 16 144'%3E%3Cg fill='none' stroke-width='1' stroke-opacity='.2'%3E%3Cpath d='M0 32.5H16' stroke='%23727f7a'/%3E%3Cpath d='M0 80.5H16' stroke='%23298d83' stroke-dasharray='8 8'/%3E%3Cpath d='M0 128.5H16' stroke='%23a96840'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat;
 }
 
 @media (min-width: 1024px) {
@@ -1514,6 +1529,21 @@
   color: #d4ebe7;
 }
 
+.trustPolicyLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 16px;
+  color: #d4ebe7;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.trustPolicyLink:hover {
+  color: #fff;
+}
+
 /* ------------------------------- Footer ----------------------------- */
 
 .footer {
@@ -1642,6 +1672,31 @@
 
 .footerCopy {
   margin: 0;
+}
+
+.footerLegal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+
+.footerLegal a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink-soft);
+  text-underline-offset: 4px;
+}
+
+.footerLegal a:hover {
+  color: var(--teal);
+  text-decoration: underline;
+}
+
+.footerLegal a:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 4px;
+  border-radius: 2px;
 }
 
 /* ---------------------------- Back to Top --------------------------- */

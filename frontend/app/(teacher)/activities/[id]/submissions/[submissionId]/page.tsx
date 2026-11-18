@@ -10,7 +10,12 @@ import { ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { parseTeacherCommentTarget } from "@/lib/comments/targets";
 import { SubmissionCommentDestination } from "@/components/comments/submission-comment-destination";
-import { activityReviewQuery } from "@/lib/utils/activity-review";
+import { buildReviewRows, getReviewQueueRows, getReviewNavigation, readReviewQueue, reviewQueueQuery } from "@/lib/utils/activity-review";
+import { useStudents } from "@/lib/hooks/use-students";
+import { useActivityWork } from "@/lib/hooks/use-activity-work";
+import { activityAssignedTo } from "@/lib/utils/activity-work";
+import { resolveSubmissionScore } from "@/lib/utils/submission-status";
+import { useActivityReviewSession } from "@/components/activities/activity-review-session";
 
 export default function SubmissionDetailPage({
   params,
@@ -21,29 +26,51 @@ export default function SubmissionDetailPage({
   const router = useRouter();
   const searchParams = useSearchParams();
   const commentTarget = parseTeacherCommentTarget(searchParams, activityId, submissionId);
-  const reviewQuery = activityReviewQuery(searchParams);
-  const activityHref = `/activities/${activityId}${reviewQuery}`;
+  const queueQuery = reviewQueueQuery(searchParams);
+  const activityHref = `/activities/${activityId}${queueQuery}`;
 
   const { data: activity, isLoading: activityLoading } = useActivity(activityId);
   const { data: submissions, isLoading: submissionsLoading } = useSubmissions(activityId);
+  const roster = useStudents();
+  const work = useActivityWork(activityId);
+  const { session: reviewSession, setSession: setReviewSession } = useActivityReviewSession();
+  const scope = `${activityId}${queueQuery}`;
+  const rows = useMemo(() => buildReviewRows(
+    (roster.data ?? []).filter(student => !!activity && activityAssignedTo(activity, student)),
+    submissions ?? [], work.data ?? []
+  ), [roster.data, activity, submissions, work.data]);
+  const queueRows = useMemo(() => getReviewQueueRows(
+    rows, readReviewQueue(new URLSearchParams(queueQuery)),
+    item => resolveSubmissionScore(item).compositeScore
+  ), [rows, queueQuery]);
+  const navigationReady = !!activity && !!submissions && !!roster.data && !!work.data &&
+    !roster.isError && !work.isError;
+  // Capture the selected review session once. Sharing a result must not remove its
+  // current position or reorder the remaining students while the teacher reviews.
+  useEffect(() => {
+    if (navigationReady && reviewSession?.scope !== scope) {
+      setReviewSession({ scope, studentIds: queueRows.filter(row => row.selected).map(row => row.student.id) });
+    }
+  }, [navigationReady, reviewSession, scope, queueRows, setReviewSession]);
 
   const submission = useMemo(
     () => submissions?.find((s) => s.id === submissionId) ?? null,
     [submissions, submissionId]
   );
 
-  const currentIndex = useMemo(() => {
-    if (!submissions || !submission) return -1;
-    return submissions.findIndex((s) => s.id === submission.id);
-  }, [submissions, submission]);
+  const navigation = useMemo(() => navigationReady && reviewSession?.scope === scope
+    ? getReviewNavigation(rows, submission ?? undefined, reviewSession.studentIds)
+    : [], [navigationReady, reviewSession, scope, rows, submission]);
+  const currentIndex = navigation.findIndex(item => item.id === submissionId);
 
   const handleNavigate = useCallback(
     (target: Submission) => {
-      router.replace(`/activities/${activityId}/submissions/${target.id}${reviewQuery}`, {
-        scroll: false,
-      });
+      router.replace(
+        `/activities/${activityId}/submissions/${target.id}${queueQuery}`,
+        { scroll: false }
+      );
     },
-    [router, activityId, reviewQuery]
+    [router, activityId, queueQuery]
   );
 
   const handleClose = useCallback(() => {
@@ -62,7 +89,7 @@ export default function SubmissionDetailPage({
           document.querySelector('[data-rubric-editing="true"]') ||
           document.querySelector('[data-diagnostic-active="true"]') ||
           document.querySelector('[role="tooltip"]') ||
-          document.querySelector("#diagnostic-annotation-tooltip")
+          document.querySelector('#diagnostic-annotation-tooltip')
         ) {
           return;
         }
@@ -85,54 +112,40 @@ export default function SubmissionDetailPage({
 
   const isLoading = activityLoading || submissionsLoading;
 
-  if (commentTarget.kind === "valid")
-    return (
-      <SubmissionCommentDestination
-        activityId={commentTarget.target.activityId}
-        submissionId={commentTarget.target.submissionId}
-      />
-    );
-  if (commentTarget.kind === "invalid")
-    return (
-      <p role="status" className="p-4">
-        This conversation link is invalid. Choose a worksheet upload to view its comments.
-      </p>
-    );
+  if (commentTarget.kind === "valid") return <SubmissionCommentDestination
+    activityId={commentTarget.target.activityId} submissionId={commentTarget.target.submissionId} />;
+  if (commentTarget.kind === "invalid") return <p role="status" className="p-4">This conversation link is invalid. Choose a worksheet upload to view its comments.</p>;
 
   if (isLoading) {
     return (
-      <div
-        className="w-full animate-pulse space-y-4"
-        role="status"
-        aria-label="Loading handwriting submission details"
-      >
+      <div className="w-full space-y-4 animate-pulse" role="status" aria-label="Loading handwriting submission details">
         {/* Top Back Navigation Trail Skeleton */}
-        <div className="-ml-1 py-2 sm:-ml-2">
+        <div className="py-2 -ml-1 sm:-ml-2">
           <Skeleton className="h-4 w-28 rounded-md" />
         </div>
 
         {/* Header Skeleton matching rendered responsive layout */}
-        <div className="border-border/70 space-y-2 border-b pb-2.5 sm:pb-3">
+        <div className="space-y-2 pb-2.5 sm:pb-3 border-b border-border/70">
           {/* Main identity row */}
           <div className="flex items-center justify-between gap-2.5 sm:gap-3">
-            <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
-              <Skeleton className="size-9 shrink-0 rounded-xl sm:size-10" />
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <Skeleton className="h-5 w-36 rounded-md sm:h-6 sm:w-48" />
-                <Skeleton className="h-3 w-40 rounded-md sm:w-52" />
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+              <Skeleton className="size-9 sm:size-10 rounded-xl shrink-0" />
+              <div className="space-y-1.5 min-w-0 flex-1">
+                <Skeleton className="h-5 sm:h-6 w-36 sm:w-48 rounded-md" />
+                <Skeleton className="h-3 w-40 sm:w-52 rounded-md" />
               </div>
             </div>
-            <Skeleton className="h-9 w-32 shrink-0 rounded-xl" />
+            <Skeleton className="h-9 w-32 rounded-xl shrink-0" />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 py-2.5 sm:gap-6 sm:py-3.5 lg:grid-cols-12 lg:items-start">
-          <div className="space-y-2.5 lg:col-span-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 lg:items-start py-2.5 sm:py-3.5">
+          <div className="lg:col-span-6 space-y-2.5">
             <Skeleton className="h-9 w-full rounded-xl" />
-            <Skeleton className="aspect-4/3 min-h-[320px] w-full rounded-2xl sm:aspect-3/2 lg:aspect-4/3" />
+            <Skeleton className="aspect-4/3 sm:aspect-3/2 lg:aspect-4/3 w-full rounded-2xl min-h-[320px]" />
             <Skeleton className="h-9 w-full rounded-xl" />
           </div>
-          <div className="space-y-3 lg:col-span-6">
+          <div className="lg:col-span-6 space-y-3">
             <Skeleton className="h-14 w-full rounded-xl" />
             <Skeleton className="h-44 w-full rounded-xl" />
             <Skeleton className="h-32 w-full rounded-xl" />
@@ -144,19 +157,18 @@ export default function SubmissionDetailPage({
 
   if (!submission) {
     return (
-      <div className="bg-surface/50 dark:bg-card/50 border-border/80 flex flex-col items-center justify-center space-y-4 rounded-2xl border border-dashed px-4 py-20 text-center">
-        <div className="max-w-md space-y-1.5">
-          <h3 className="font-heading text-foreground text-lg font-semibold">
+      <div className="flex flex-col items-center justify-center py-20 px-4 text-center space-y-4 bg-surface/50 dark:bg-card/50 rounded-2xl border border-dashed border-border/80">
+        <div className="space-y-1.5 max-w-md">
+          <h3 className="font-heading text-lg font-semibold text-foreground">
             Submission Not Found
           </h3>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            The handwriting submission you are looking for may have been deleted, or the submission
-            ID is invalid.
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            The handwriting submission you are looking for may have been deleted, or the submission ID is invalid.
           </p>
         </div>
         <Link
           href={activityHref}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium shadow-xs transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-xs"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
           <span>Return to Activity</span>
@@ -165,13 +177,14 @@ export default function SubmissionDetailPage({
     );
   }
 
+
   return (
     <div className="w-full space-y-3 sm:space-y-4">
       {/* Top Back Navigation Trail */}
       <nav aria-label="Breadcrumb navigation" className="print:hidden">
         <Link
           href={activityHref}
-          className="text-muted-foreground hover:text-foreground group focus-visible:ring-ring hover:bg-muted/50 -ml-1 inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden sm:-ml-2 sm:min-h-[36px]"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-2.5 py-2 min-h-[44px] sm:min-h-[36px] hover:bg-muted/50 -ml-1 sm:-ml-2"
         >
           <ArrowLeft
             className="size-3.5 transition-transform group-hover:-translate-x-0.5"
@@ -182,10 +195,17 @@ export default function SubmissionDetailPage({
       </nav>
 
       {/* Main Content */}
+      <p role="status" className="text-sm text-muted-foreground">
+        {!navigationReady
+          ? "Student navigation is unavailable until the review queue loads. You can still review this worksheet."
+          : currentIndex < 0
+            ? "This worksheet is outside the current review view. Return to the activity to choose a student."
+            : `Review queue · Student ${currentIndex + 1} of ${navigation.length}. Open the official worksheet to review and share its result with parents.`}
+      </p>
       <SubmissionDetailContent
         key={submission.id}
         submission={submission}
-        submissions={submissions}
+        submissions={navigation}
         currentIndex={currentIndex >= 0 ? currentIndex : undefined}
         onNavigate={handleNavigate}
         activityTargetText={activity?.target_text}
