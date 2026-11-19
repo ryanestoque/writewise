@@ -516,7 +516,7 @@ export const SubmissionCard = memo(function SubmissionCard({
         isSelected || isIndeterminate ? "border-primary ring-primary/25 ring-2" : "border-border",
         compact
           ? "flex flex-col gap-3 p-3 sm:p-4 lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,.85fr)_minmax(0,1.2fr)_auto] lg:items-center lg:gap-4"
-          : "flex flex-col overflow-hidden"
+          : "flex flex-col overflow-hidden h-full"
       )}
     >
       {compact ? (

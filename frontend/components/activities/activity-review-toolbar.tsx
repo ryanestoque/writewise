@@ -118,6 +118,29 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
       >
         <Button
           type="button"
+          variant={statusFilter === "all" ? "secondary" : "ghost"}
+          aria-pressed={statusFilter === "all"}
+          onClick={() => {
+            if (viewMode !== "grouped") onViewModeChange("grouped");
+            onStatusFilterChange("all");
+          }}
+          className={cn(
+            "min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
+            statusFilter === "all"
+              ? "bg-primary/10 text-primary hover:bg-primary/15 font-semibold ring-1 ring-primary/20"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          )}
+        >
+          <span>All Students</span>
+          {allWorkFilter?.count != null && (
+            <span className="text-muted-foreground text-xs tabular-nums font-normal">
+              ({allWorkFilter.count})
+            </span>
+          )}
+        </Button>
+
+        <Button
+          type="button"
           variant={statusFilter === "needs_action" ? "secondary" : "ghost"}
           aria-pressed={statusFilter === "needs_action"}
           onClick={() => {
@@ -172,29 +195,6 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
               )}
             >
               {needsScoringCount}
-            </span>
-          )}
-        </Button>
-
-        <Button
-          type="button"
-          variant={statusFilter === "all" ? "secondary" : "ghost"}
-          aria-pressed={statusFilter === "all"}
-          onClick={() => {
-            if (viewMode !== "grouped") onViewModeChange("grouped");
-            onStatusFilterChange("all");
-          }}
-          className={cn(
-            "min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
-            statusFilter === "all"
-              ? "bg-primary/10 text-primary hover:bg-primary/15 font-semibold ring-1 ring-primary/20"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          )}
-        >
-          <span>All Students</span>
-          {allWorkFilter?.count != null && (
-            <span className="text-muted-foreground text-xs tabular-nums font-normal">
-              ({allWorkFilter.count})
             </span>
           )}
         </Button>

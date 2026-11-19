@@ -567,13 +567,16 @@ export function ReleaseActivityButton({
       setError(workActionError(error));
     }
   }
+  const hasDescription =
+    !rosterReady || isPending || isError || count > 0 || hasPointGrades;
+
   return (
     <span ref={focusTarget} tabIndex={-1} className="flex flex-wrap items-center gap-x-2 gap-y-1 sm:flex-col sm:items-end">
       {(isPending || isError || !rosterReady || count > 0 || hasPointGrades) && (
         <Button
           variant="outline"
           disabled={isPending || !rosterReady || (!count && !hasPointGrades && !isError)}
-          aria-describedby={descriptionId}
+          aria-describedby={hasDescription ? descriptionId : undefined}
           className="h-11 md:h-9 font-semibold"
           onClick={() => {
             setError(null);
@@ -586,42 +589,39 @@ export function ReleaseActivityButton({
           {isPending ? "Checking release…" : count > 0 ? `Review & Release (${count})` : "Review release"}
         </Button>
       )}
-      <span
-        id={descriptionId}
-        className="text-muted-foreground max-w-sm text-xs sm:text-right"
-        role="status"
-      >
-        {!rosterReady
-          ? "Load the student roster before reviewing release."
-          : isPending
-            ? "Checking release readiness…"
-            : isError
-              ? "Release readiness unavailable. Retry work status below."
-              : count > 0
-                ? `${count} draft worksheet ${count === 1 ? "result" : "results"} ready to share.`
-                : "No worksheet results ready to share."}
-        {rosterReady && !isPending && !isError && (count > 0 || hasPointGrades) && (
-          <> Applies to the whole activity.</>
-        )}
-        {isFiltered && (
-          <span className="mt-0.5 block font-medium text-amber-700 dark:text-amber-400">
-            Filtered view ({filteredCount ?? 0}/{totalCount ?? 0}): Release applies to all {count} drafts class-wide.
-          </span>
-        )}
-        {hasPointGrades && (
-          <>
-            {" "}
-            Review point grades before release.{" "}
-            <Link
-              href={`/gradebook?activity=${encodeURIComponent(activityId)}`}
-              className="focus-visible:ring-ring inline-flex min-h-11 items-center underline underline-offset-4 focus-visible:ring-2 focus-visible:outline-none md:min-h-9"
-            >
-              Review in Gradebook
-            </Link>
-            .
-          </>
-        )}
-      </span>
+      {hasDescription && (
+        <span
+          id={descriptionId}
+          className="text-muted-foreground max-w-sm text-xs sm:text-right"
+          role="status"
+        >
+          {!rosterReady
+            ? "Load the student roster before reviewing release."
+            : isPending
+              ? "Checking release readiness…"
+              : isError
+                ? "Release readiness unavailable. Retry work status below."
+                : count > 0
+                  ? `${count} draft worksheet ${count === 1 ? "result" : "results"} ready to share.`
+                  : null}
+          {rosterReady && !isPending && !isError && count > 0 && (
+            <> Applies to the whole activity.</>
+          )}
+          {hasPointGrades && (
+            <>
+              {" "}
+              Review point grades before release.{" "}
+              <Link
+                href={`/gradebook?activity=${encodeURIComponent(activityId)}`}
+                className="focus-visible:ring-ring inline-flex min-h-11 items-center underline underline-offset-4 focus-visible:ring-2 focus-visible:outline-none md:min-h-9"
+              >
+                Review in Gradebook
+              </Link>
+              .
+            </>
+          )}
+        </span>
+      )}
       {receipt && (
         <span role="status" className="text-muted-foreground max-w-sm text-xs sm:text-right">
           {receipt}

@@ -1167,7 +1167,6 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
               Showing <strong>{currentListLength}</strong> of <strong>{totalStudents}</strong> {resultUnit}s
               {statusFilter !== "all" ? ` (${reviewFilterLabels[statusFilter]})` : ""}
               {searchQuery ? ` matching "${searchQuery}"` : ""}.
-              {" "}Release action in the header will publish results for all ready drafts across the activity.
             </span>
             <Button
               variant="ghost"
@@ -1301,42 +1300,109 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                   ? studentReviewEntries.map((entry) => {
                       if (entry.kind === "no_upload") {
                         const { student } = entry;
+                        if (compact) {
+                          return (
+                            <article
+                              key={student.id}
+                              className="border-border bg-surface dark:bg-card flex flex-col gap-3 rounded-xl border p-3 text-left sm:p-4 lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,.85fr)_minmax(0,1.2fr)_auto] lg:items-center lg:gap-4"
+                            >
+                              <div className="flex flex-col gap-1 lg:col-span-2">
+                                <h3 className="text-sm font-semibold break-words">
+                                  {student.full_name}
+                                </h3>
+                                <p className="text-muted-foreground text-xs sm:text-sm">
+                                  No worksheet uploaded yet.
+                                </p>
+                              </div>
+                              <StudentWorkSummary
+                                activityId={id}
+                                studentId={student.id}
+                                studentName={student.full_name}
+                                state={
+                                  workQuery.isError ? null : (workByStudent.get(student.id) ?? null)
+                                }
+                                attempts={[]}
+                                isLoading={workQuery.isPending}
+                                compact={compact}
+                              />
+                              <div className="flex items-center justify-end">
+                                <Button
+                                  variant="outline"
+                                  className="h-10 min-h-[44px] md:h-9 md:min-h-[36px]"
+                                  onClick={() => handleReupload(student.id)}
+                                  aria-label={`Upload worksheet for ${student.full_name}`}
+                                >
+                                  <Upload data-icon="inline-start" /> Upload worksheet
+                                </Button>
+                              </div>
+                            </article>
+                          );
+                        }
+
                         return (
                           <article
                             key={student.id}
-                            className={cn(
-                              "border-border bg-surface dark:bg-card flex flex-col gap-4 self-start rounded-xl border p-4",
-                              compact &&
-                                "lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,.85fr)_minmax(0,1.2fr)_auto] lg:items-center lg:gap-4"
-                            )}
+                            className="group bg-surface dark:bg-card border-border relative flex h-full min-w-0 flex-col overflow-hidden rounded-xl border text-left"
                           >
-                            <div className={cn("flex flex-col gap-1", compact && "lg:col-span-2")}>
-                              <h3 className="text-sm font-semibold break-words">
-                                {student.full_name}
-                              </h3>
-                              <p className="text-muted-foreground text-sm">
-                                No worksheet uploaded yet.
-                              </p>
+                            <div className="bg-muted/20 relative flex aspect-4/3 items-center justify-center overflow-hidden border-b">
+                              <button
+                                type="button"
+                                onClick={() => handleReupload(student.id)}
+                                className="group/dropzone hover:bg-muted/40 focus-visible:ring-ring flex size-full flex-col items-center justify-center gap-2 p-4 text-center transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-hidden"
+                                aria-label={`Upload worksheet for ${student.full_name}`}
+                              >
+                                <div className="bg-surface dark:bg-card border-border/80 text-muted-foreground group-hover/dropzone:border-primary group-hover/dropzone:text-primary flex size-10 items-center justify-center rounded-lg border border-dashed transition-colors shadow-2xs">
+                                  <Upload className="size-5 transition-transform group-hover/dropzone:-translate-y-0.5" aria-hidden="true" />
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-foreground group-hover/dropzone:text-primary text-xs font-semibold transition-colors">
+                                    Upload worksheet
+                                  </span>
+                                  <span className="text-muted-foreground text-[11px]">
+                                    No image uploaded yet
+                                  </span>
+                                </div>
+                              </button>
                             </div>
-                            <StudentWorkSummary
-                              activityId={id}
-                              studentId={student.id}
-                              studentName={student.full_name}
-                              state={
-                                workQuery.isError ? null : (workByStudent.get(student.id) ?? null)
-                              }
-                              attempts={[]}
-                              isLoading={workQuery.isPending}
-                              compact={compact}
-                            />
-                            <Button
-                              variant="outline"
-                              className="h-11 md:h-9"
-                              onClick={() => handleReupload(student.id)}
-                              aria-label={`Upload worksheet for ${student.full_name}`}
-                            >
-                              <Upload data-icon="inline-start" /> Upload worksheet
-                            </Button>
+
+                            <div className="flex flex-1 flex-col gap-3 p-4">
+                              <div>
+                                <h3 className="text-foreground text-sm font-semibold break-words" title={student.full_name}>
+                                  {student.full_name}
+                                </h3>
+                                <p className="text-muted-foreground mt-1 text-xs">
+                                  Awaiting submission
+                                </p>
+                              </div>
+
+                              <div className="mt-auto flex items-center justify-between gap-2 border-t pt-2">
+                                <span className="text-muted-foreground text-xs">Missing</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-primary hover:text-primary/90 hover:bg-primary/10 group/btn focus-visible:ring-ring h-10 min-h-[44px] cursor-pointer gap-1.5 rounded-lg px-3 text-xs font-semibold focus-visible:ring-2 focus-visible:outline-hidden md:h-9 md:px-2.5 md:min-h-[36px]"
+                                  onClick={() => handleReupload(student.id)}
+                                  aria-label={`Upload worksheet for ${student.full_name}`}
+                                >
+                                  <Upload className="size-3.5" aria-hidden="true" />
+                                  <span>Upload</span>
+                                </Button>
+                              </div>
+                            </div>
+
+                            <div className="border-t p-4">
+                              <StudentWorkSummary
+                                activityId={id}
+                                studentId={student.id}
+                                studentName={student.full_name}
+                                state={
+                                  workQuery.isError ? null : (workByStudent.get(student.id) ?? null)
+                                }
+                                attempts={[]}
+                                isLoading={workQuery.isPending}
+                                compact={false}
+                              />
+                            </div>
                           </article>
                         );
                       }
