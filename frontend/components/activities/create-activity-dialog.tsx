@@ -249,6 +249,7 @@ export function CreateActivityDialog({
                           className="absolute inset-0 pointer-events-none cursive-guidelines overflow-hidden"
                           aria-hidden="true"
                         />
+                        {/* impeccable-disable-next-line design-system-font-size -- optical alignment to 48px baseline ruling grid */}
                         <p
                           className="relative z-10 font-cursive text-[34px]/[48px] sm:text-[36px]/[48px] leading-[48px] text-foreground/90 font-medium tracking-wide break-words"
                           style={{ lineHeight: "48px" }}

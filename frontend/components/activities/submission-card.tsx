@@ -23,6 +23,8 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { StudentWorkSummary } from "@/components/activities/student-work-summary";
+import { WorkCommentsButton } from "@/components/comments/submission-comment-picker-sheet";
+import { StudentWorkControls } from "@/components/submissions/submission-lifecycle-controls";
 import type { ActivityWorkState } from "@/lib/hooks/use-activity-work";
 import {
   AlertCircle,
@@ -34,6 +36,9 @@ import {
   ArrowRight,
   Clock,
   Trash2,
+  MoreHorizontal,
+  MessageSquare,
+  CalendarClock,
 } from "lucide-react";
 
 export interface SubmissionCardProps {
@@ -90,6 +95,8 @@ export const SubmissionCard = memo(function SubmissionCard({
   );
   const imageUrl = propImageUrl !== undefined ? propImageUrl : fetchedImageUrl;
   const [imageError, setImageError] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [deadlineOpen, setDeadlineOpen] = useState(false);
   const config = statusConfig[submission.status];
   const resolvedScore = useMemo(() => resolveSubmissionScore(submission), [submission]);
   const compositeScore = resolvedScore.compositeScore;
@@ -103,8 +110,14 @@ export const SubmissionCard = memo(function SubmissionCard({
     return idx >= 0 ? attemptCount - idx : attemptCount;
   }, [hasMultipleAttempts, allSubmissions, submission.id, attemptCount]);
 
+  const inspectActionLabel =
+    submission.status === "completed"
+      ? resolvedScore.isScored
+        ? "View assessment"
+        : "Score rubric"
+      : "View worksheet";
   const accessibleLabel = useMemo(() => {
-    let text = `View diagnostic details for ${studentName}. Status: ${config.label}.`;
+    let text = `${inspectActionLabel} for ${studentName}. Status: ${config.label}.`;
     if (submission.status === "completed") {
       if (resolvedScore.isScored && compositeScore !== null) {
         const sourceLabel =
@@ -121,6 +134,7 @@ export const SubmissionCard = memo(function SubmissionCard({
     }
     return text;
   }, [
+    inspectActionLabel,
     studentName,
     config.label,
     submission.status,
@@ -146,6 +160,8 @@ export const SubmissionCard = memo(function SubmissionCard({
         state={workState ?? null}
         attempts={allSubmissions}
         isLoading={Boolean(workLoading)}
+        compact={compact}
+        isScored={resolvedScore.isScored}
       />
     ) : null);
 
@@ -153,7 +169,7 @@ export const SubmissionCard = memo(function SubmissionCard({
     <div className={compact ? "mr-auto" : "absolute top-2.5 left-2.5 z-20"}>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="bg-background/95 text-foreground dark:bg-card/95 border-border hover:bg-background focus-visible:ring-ring relative inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold shadow-xs backdrop-blur-xs transition-colors focus-visible:ring-2 focus-visible:outline-hidden sm:px-2.5 sm:py-1 md:min-h-[36px]"
+          className="bg-background/95 text-foreground dark:bg-card/95 border-border hover:bg-background focus-visible:ring-ring relative inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-xs backdrop-blur-xs transition-colors focus-visible:ring-2 focus-visible:outline-hidden sm:px-2.5 sm:py-1 md:min-h-[36px]"
           aria-label={`Switch submission attempt for ${studentName}. Currently showing attempt ${currentAttemptIndex} of ${attemptCount}.`}
         >
           <History className="text-muted-foreground size-3" aria-hidden="true" />
@@ -192,7 +208,7 @@ export const SubmissionCard = memo(function SubmissionCard({
                     </span>
                   </div>
                   <div className="text-muted-foreground flex shrink-0 items-center gap-1.5">
-                    <span className="text-[11px] tabular-nums">
+                    <span className="text-xs tabular-nums">
                       {getRelativeTime(sub.created_at)}
                     </span>
                     {isCurrent && (
@@ -269,16 +285,11 @@ export const SubmissionCard = memo(function SubmissionCard({
         {studentName}
       </h3>
 
-      {countedSubmissionId !== undefined && (
-        <p className="text-muted-foreground mt-1 text-xs">
-          {submission.id === countedSubmissionId
-            ? "Counted attempt"
-            : countedSubmissionId
-              ? "Viewing another attempt · not counted"
-              : latestSubmission && latestSubmission.id !== submission.id
-                ? "Historical attempt · not counted"
-                : "No counted attempt · newest upload"}
-        </p>
+      {countedSubmissionId !== undefined && submission.id !== countedSubmissionId && (
+        <span className="inline-flex items-center gap-1 mt-1 text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-900/50">
+          <History className="size-3 shrink-0" />
+          <span>Viewing past attempt</span>
+        </span>
       )}
     </>
   );
@@ -291,22 +302,36 @@ export const SubmissionCard = memo(function SubmissionCard({
               type="button"
               className={cn(
                 "focus-visible:ring-ring inline-flex min-h-11 cursor-help items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-semibold transition-all focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-hidden md:min-h-9",
-                scoreBand.className
+                !resolvedScore.isScored
+                  ? "border-amber-300/80 bg-amber-50/80 text-amber-900 dark:border-amber-800/80 dark:bg-amber-950/40 dark:text-amber-200"
+                  : scoreBand.className
               )}
-              aria-label={`Diagnostic score: ${scoreBand.label}. ${scoreBand.band} Penmanship: ${scoreBand.description}`}
+              aria-label={
+                !resolvedScore.isScored
+                  ? "Pending teacher rubric evaluation"
+                  : `Diagnostic score: ${scoreBand.label}. ${scoreBand.band} Penmanship: ${scoreBand.description}`
+              }
             >
               <span
-                className={cn("size-1.5 shrink-0 rounded-full", scoreBand.dotColor)}
+                className={cn(
+                  "size-1.5 shrink-0 rounded-full",
+                  !resolvedScore.isScored ? "bg-amber-600 dark:bg-amber-400" : scoreBand.dotColor
+                )}
                 aria-hidden="true"
               />
-              <span>{scoreBand.label}</span>
+              <span>{!resolvedScore.isScored ? "Needs Rubric Scoring" : scoreBand.label}</span>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-xs text-xs">
               <p className="font-semibold">
-                {scoreBand.band} Penmanship{" "}
-                {resolvedScore.source === "manual" && "(Teacher Rubric)"}
+                {!resolvedScore.isScored
+                  ? "Teacher Rubric Required"
+                  : `${scoreBand.band} Penmanship ${resolvedScore.source === "manual" ? "(Teacher Rubric)" : ""}`}
               </p>
-              <p className="text-muted-foreground mt-0.5 text-[11px]">{scoreBand.description}</p>
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                {!resolvedScore.isScored
+                  ? "Worksheet processed by OpenCV/CNN. Click Score rubric to grade handwriting criteria."
+                  : scoreBand.description}
+              </p>
             </TooltipContent>
           </Tooltip>
           {resolvedScore.isScored && (
@@ -323,14 +348,17 @@ export const SubmissionCard = memo(function SubmissionCard({
             <AlertCircle className="size-3 shrink-0" aria-hidden="true" />
             <span>{rejection.label}</span>
           </p>
-          <p className="text-muted-foreground line-clamp-1 text-[11px]">{rejection.detail}</p>
+          <p className="text-muted-foreground line-clamp-1 text-xs">{rejection.detail}</p>
         </div>
       )}
 
       {submission.status === "processing" && (
-        <p className="text-warning mt-1 flex items-center gap-1 truncate text-xs font-medium">
-          <Clock className="size-3 shrink-0 motion-safe:animate-pulse" aria-hidden="true" />
-          <span>Analyzing cursive strokes...</span>
+        <p className="text-warning-foreground mt-1 flex items-center gap-1 truncate text-xs font-medium">
+          <Clock
+            className="text-warning size-3 shrink-0 motion-safe:animate-pulse"
+            aria-hidden="true"
+          />
+          <span>Analyzing cursive strokes…</span>
         </p>
       )}
     </>
@@ -371,13 +399,7 @@ export const SubmissionCard = memo(function SubmissionCard({
         aria-label={accessibleLabel}
         className="text-primary hover:text-primary/90 hover:bg-primary/10 group/btn focus-visible:ring-ring h-10 min-h-[44px] cursor-pointer gap-1.5 rounded-lg px-3 text-xs font-medium focus-visible:ring-2 focus-visible:outline-hidden md:h-9 md:px-2.5 md:min-h-[36px]"
       >
-        <span>
-          {submission.status === "completed"
-            ? resolvedScore.isScored
-              ? "View assessment"
-              : "Score rubric"
-            : "View worksheet"}
-        </span>
+        <span>{inspectActionLabel}</span>
         <ArrowRight
           className="size-3.5 transition-transform group-hover/btn:translate-x-0.5 motion-reduce:transform-none"
           aria-hidden="true"
@@ -390,7 +412,7 @@ export const SubmissionCard = memo(function SubmissionCard({
       size="sm"
       className="min-h-11 md:min-h-9"
       onClick={() => onSelect(submission)}
-      aria-label={`View rejected worksheet for ${studentName}`}
+      aria-label={`View worksheet for ${studentName}. Upload rejected.`}
     >
       View worksheet
     </Button>
@@ -399,10 +421,92 @@ export const SubmissionCard = memo(function SubmissionCard({
     <time
       dateTime={submission.created_at}
       title={formatDate(submission.created_at)}
-      className="text-muted-foreground text-[11px] tabular-nums sm:text-xs"
+      className="text-muted-foreground text-xs tabular-nums"
     >
       {getRelativeTime(submission.created_at)}
     </time>
+  );
+
+  const compactOverflowMenu = compact && activityId && (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8 min-h-[32px] text-muted-foreground hover:text-foreground hover:bg-muted/60 cursor-pointer rounded-lg shrink-0"
+            aria-label={`More actions for ${studentName}`}
+          />
+        }
+      >
+        <MoreHorizontal className="size-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52 text-xs">
+        {allSubmissions.length > 0 && (
+          <DropdownMenuItem
+            onClick={() => setCommentsOpen(true)}
+            className="min-h-9 cursor-pointer gap-2"
+          >
+            <MessageSquare className="size-3.5 text-muted-foreground" />
+            <span>Private comments</span>
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem
+          onClick={() => setDeadlineOpen(true)}
+          disabled={!workState}
+          className="min-h-9 cursor-pointer gap-2"
+        >
+          <CalendarClock className="size-3.5 text-muted-foreground" />
+          <span>Deadline & attempt</span>
+        </DropdownMenuItem>
+        {hasMultipleAttempts && (
+          <>
+            <DropdownMenuSeparator />
+            {onDeleteSingleAttempt && (
+              <DropdownMenuItem
+                onClick={() => onDeleteSingleAttempt(submission)}
+                className="text-destructive focus:text-destructive focus:bg-destructive/10 min-h-9 cursor-pointer gap-2"
+              >
+                <Trash2 className="size-3.5" />
+                <span>Delete displayed attempt</span>
+              </DropdownMenuItem>
+            )}
+            {onDeleteAllStudentAttempts && (
+              <DropdownMenuItem
+                onClick={() => onDeleteAllStudentAttempts(studentName, allSubmissions)}
+                className="text-destructive focus:text-destructive focus:bg-destructive/10 min-h-9 cursor-pointer gap-2"
+              >
+                <Trash2 className="size-3.5" />
+                <span>Delete all {attemptCount} attempts</span>
+              </DropdownMenuItem>
+            )}
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  const controlledDialogs = compact && activityId && (
+    <>
+      <WorkCommentsButton
+        scope={{ activityId, studentId: submission.student_id }}
+        activeSubmissionId={workState?.active_submission_id ?? null}
+        studentName={studentName}
+        open={commentsOpen}
+        onOpenChange={setCommentsOpen}
+        showTrigger={false}
+      />
+      <StudentWorkControls
+        activityId={activityId}
+        studentId={submission.student_id}
+        studentName={studentName}
+        state={workState ?? null}
+        attempts={allSubmissions}
+        open={deadlineOpen}
+        onOpenChange={setDeadlineOpen}
+        showTrigger={false}
+      />
+    </>
   );
 
   return (
@@ -420,7 +524,10 @@ export const SubmissionCard = memo(function SubmissionCard({
           <div className="min-w-0">
             <div className="flex items-start justify-between gap-2 lg:block">
               <div className="min-w-0">{studentIdentity}</div>
-              <div className="shrink-0 lg:hidden">{inspectAction}</div>
+              <div className="flex items-center gap-1 shrink-0 lg:hidden">
+                {inspectAction}
+                {compactOverflowMenu}
+              </div>
             </div>
             <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
               {attemptMenu}
@@ -440,8 +547,12 @@ export const SubmissionCard = memo(function SubmissionCard({
           >
             {selectionControl}
             {rejectedWorksheetAction}
-            <div className="hidden lg:block">{inspectAction}</div>
+            <div className="hidden lg:flex items-center gap-1.5">
+              {inspectAction}
+              {compactOverflowMenu}
+            </div>
           </div>
+          {controlledDialogs}
         </>
       ) : (
         <>
@@ -472,7 +583,7 @@ export const SubmissionCard = memo(function SubmissionCard({
                 <div className="text-muted-foreground pointer-events-none flex size-full flex-col items-center justify-center gap-1.5 p-4">
                   <FileText className="size-8 stroke-[1.5]" aria-hidden="true" />
                   {!compact && (
-                    <span className="text-[11px] font-medium tracking-tight">
+                    <span className="text-xs font-medium tracking-tight">
                       Worksheet preview
                     </span>
                   )}

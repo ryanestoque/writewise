@@ -1,7 +1,7 @@
 "use client";
 
 import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
-import { memo } from "react";
+import { memo, useState } from "react";
 import { useShortcutKeys } from "@/hooks/use-shortcut-keys";
 import type { Activity } from "@/lib/hooks/use-activities";
 import type { ScoreBandInfo } from "@/lib/utils/submission-status";
@@ -95,6 +95,9 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
   onToggleArchive,
 }: ActivityDetailHeroProps) {
   const { altKey } = useShortcutKeys();
+  const [isPromptExpanded, setIsPromptExpanded] = useState(false);
+  const targetText = activity.target_text?.trim() ?? "";
+  const isLongPrompt = wordCount > 10 || targetText.includes("\n") || targetText.length > 60;
   return (
     <section
       aria-labelledby="activity-prompt-heading"
@@ -201,16 +204,17 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
           Archived and hidden from student assignment pickers.
         </p>
       )}
-      <section aria-labelledby="worksheet-prompt-heading" className="mt-2 flex flex-col gap-2 pb-3">
+      <section aria-labelledby="worksheet-prompt-heading" className="mt-2 flex flex-col gap-2 pb-2">
         <div className="flex flex-wrap items-center justify-between gap-x-3">
           <h2 id="worksheet-prompt-heading" className="font-heading text-sm font-semibold">
             Worksheet prompt
           </h2>
           <Button
             variant="ghost"
+            size="sm"
             onClick={onCopyPrompt}
             aria-label={hasCopiedPrompt ? "Worksheet prompt copied" : "Copy worksheet prompt"}
-            className="h-11 md:h-9"
+            className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
             {hasCopiedPrompt ? (
               <Check data-icon="inline-start" />
@@ -221,16 +225,35 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
           </Button>
         </div>
         {activity.instructions && (
-          <p className="max-w-prose text-sm break-words whitespace-pre-wrap">
+          <p className="max-w-prose text-xs text-muted-foreground break-words whitespace-pre-wrap">
             {activity.instructions}
           </p>
         )}
-        <WorksheetPrompt text={activity.target_text} />
-        <p className="text-muted-foreground text-xs">
-          {wordCount} {wordCount === 1 ? "word" : "words"} · Created{" "}
-          <time dateTime={activity.created_at}>{formatDate(activity.created_at)}</time> ·{" "}
-          {totalScansCount} total uploads
-        </p>
+        <WorksheetPrompt text={activity.target_text} preview={isLongPrompt && !isPromptExpanded} />
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+          {isLongPrompt ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsPromptExpanded(!isPromptExpanded)}
+              className="h-7 px-2 text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1 cursor-pointer"
+            >
+              <ChevronDown
+                className={cn("size-3.5 transition-transform duration-200", isPromptExpanded && "rotate-180")}
+                aria-hidden="true"
+              />
+              <span>{isPromptExpanded ? "Collapse prompt" : "Show full prompt"}</span>
+            </Button>
+          ) : (
+            <div />
+          )}
+          <p className="text-muted-foreground text-xs">
+            {wordCount} {wordCount === 1 ? "word" : "words"} · Created{" "}
+            <time dateTime={activity.created_at}>{formatDate(activity.created_at)}</time> ·{" "}
+            {totalScansCount} total uploads
+          </p>
+        </div>
       </section>
       {summaryState !== "ready" ? (
         <div role="status" className="text-muted-foreground mt-2 text-sm">
@@ -326,7 +349,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                   <span className="inline">Class Breakdown</span>
                   <ChevronDown className="size-3 opacity-60" aria-hidden="true" />
                 </PopoverTrigger>
-                <PopoverContent align="end" className="z-50 w-[min(calc(100vw-2rem),18rem)] space-y-3 p-3.5 text-xs">
+                <PopoverContent align="end" className="z-50 w-[min(calc(100vw-2rem),21rem)] space-y-3.5 p-4 text-xs">
                   <PopoverHeader>
                     <PopoverTitle className="text-foreground flex items-center justify-between text-xs font-semibold">
                       <span>5-Criterion Class Average</span>
@@ -340,9 +363,9 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                     </PopoverDescription>
                   </PopoverHeader>
 
-                  <div className="space-y-2 pt-1">
+                  <div className="space-y-2.5 pt-1">
                     <div>
-                      <div className="text-muted-foreground mb-0.5 flex justify-between text-[11px]">
+                      <div className="text-muted-foreground mb-1 flex justify-between text-xs">
                         <span>Letter Formation</span>
                         <span className="text-foreground font-medium tabular-nums">
                           {classDiagnostics.criteriaAverages.letterFormation}%
@@ -366,7 +389,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                     </div>
 
                     <div>
-                      <div className="text-muted-foreground mb-0.5 flex justify-between text-[11px]">
+                      <div className="text-muted-foreground mb-1 flex justify-between text-xs">
                         <span>Size Consistency</span>
                         <span className="text-foreground font-medium tabular-nums">
                           {classDiagnostics.criteriaAverages.sizeConsistency}%
@@ -390,7 +413,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                     </div>
 
                     <div>
-                      <div className="text-muted-foreground mb-0.5 flex justify-between text-[11px]">
+                      <div className="text-muted-foreground mb-1 flex justify-between text-xs">
                         <span>Spacing</span>
                         <span className="text-foreground font-medium tabular-nums">
                           {classDiagnostics.criteriaAverages.spacing}%
@@ -414,7 +437,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                     </div>
 
                     <div>
-                      <div className="text-muted-foreground mb-0.5 flex justify-between text-[11px]">
+                      <div className="text-muted-foreground mb-1 flex justify-between text-xs">
                         <span>Slant Consistency</span>
                         <span className="text-foreground font-medium tabular-nums">
                           {classDiagnostics.criteriaAverages.slant}%
@@ -438,7 +461,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                     </div>
 
                     <div>
-                      <div className="text-muted-foreground mb-0.5 flex justify-between text-[11px]">
+                      <div className="text-muted-foreground mb-1 flex justify-between text-xs">
                         <span>Baseline Alignment</span>
                         <span className="text-foreground font-medium tabular-nums">
                           {classDiagnostics.criteriaAverages.baselineAlignment}%
@@ -463,7 +486,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                   </div>
 
                   {classDiagnostics.strongestCriterion && (
-                    <div className="border-border/60 text-muted-foreground space-y-1 border-t pt-2 text-[11px]">
+                    <div className="border-border/60 text-muted-foreground space-y-1.5 border-t pt-2.5 text-xs">
                       <p>
                         <span className="text-band-4-text font-semibold">
                           Strength:

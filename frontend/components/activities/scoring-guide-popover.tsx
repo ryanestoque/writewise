@@ -31,7 +31,7 @@ export function ScoringGuidePopover() {
               <PopoverTitle className="text-sm font-semibold text-foreground">
                 Cursive Diagnostic Criteria
               </PopoverTitle>
-              <PopoverDescription className="text-[11px]">
+              <PopoverDescription className="text-xs text-muted-foreground">
                 Composite score (0–100%) weighted across 5 penmanship markers:
               </PopoverDescription>
             </div>

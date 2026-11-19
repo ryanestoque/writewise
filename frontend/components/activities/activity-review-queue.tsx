@@ -174,7 +174,6 @@ export function ActivityReviewQueue({
                   <p className="text-muted-foreground text-xs">
                     {state.due_at_override ? "Individual deadline" : "Due"}{" "}
                     <time dateTime={state.effective_due_at}>{formatActivityDueAt(state.effective_due_at)}</time>
-                    {" · Manila time"}
                   </p>
                 )}
                 {counted && (
@@ -238,7 +237,7 @@ export function ActivityReviewQueue({
                     <Link
                       className={buttonVariants({ className: "min-h-11 sm:min-h-9" })}
                       href={`/activities/${activityId}/submissions/${latest.id}${queueQuery}`}
-                      aria-label={`Review newer upload for ${student.full_name}`}
+                      aria-label={`Review new attempt for ${student.full_name}`}
                     >
                       Review new attempt
                     </Link>

@@ -4,18 +4,10 @@ import { use, useState, useMemo, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ActivityThreads } from "@/components/comments/activity-threads";
-import { ActivityReviewQueue } from "@/components/activities/activity-review-queue";
 import { useActivityReviewSession } from "@/components/activities/activity-review-session";
 import {
-  buildReviewRows,
-  getReviewQueueRows,
-  readReviewQueue,
   reviewQueueQuery,
-  updateReviewQueue,
-  type ReviewView,
-  type UploadFilter,
 } from "@/lib/utils/activity-review";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { StudentWorkSummary } from "@/components/activities/student-work-summary";
 import { commentThreadHref, parseTeacherCommentTarget } from "@/lib/comments/targets";
 import { type Activity, useActivity, useToggleArchive } from "@/lib/hooks/use-activities";
@@ -158,12 +150,8 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
 
   // View, search, filter, and sort states
   // Keep review context when opening a worksheet, refreshing, or sharing this URL.
-  const viewMode: ViewMode =
-    searchParams.get("group") === "all"
-      ? "all"
-      : searchParams.get("group") === "review"
-        ? "review"
-        : "grouped";
+  const requestedGroup = searchParams.get("group");
+  const viewMode: ViewMode = requestedGroup === "all" ? "all" : "grouped";
   const urlSearchQuery = String(searchParams.get("q") ?? "");
   const [searchQuery, setSearchQuery] = useState(urlSearchQuery);
   const lastSyncedUrlQueryRef = useRef(urlSearchQuery);
@@ -175,7 +163,9 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
     }
   }, [urlSearchQuery]);
 
-  const requestedFilter = String(searchParams.get("status") ?? "all");
+  const requestedFilter = String(
+    searchParams.get("status") ?? (requestedGroup === "review" ? "needs_scoring" : "all")
+  );
   const statusFilter: SubmissionFilter = Object.hasOwn(reviewFilterLabels, requestedFilter)
     ? (requestedFilter as SubmissionFilter)
     : "all";
@@ -322,22 +312,6 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
           : a.full_name.localeCompare(b.full_name)
       );
   }, [viewMode, studentsWithoutUploads, workByStudent, statusFilter, searchQuery, sortBy]);
-  const queueState = readReviewQueue(searchParams);
-  const queueQuery = reviewQueueQuery(searchParams);
-  const reviewRows = buildReviewRows(
-    assignedStudents,
-    submissions ?? [],
-    workQuery.isError ? [] : (workQuery.data ?? [])
-  );
-  const queueRows = getReviewQueueRows(
-    reviewRows,
-    queueState,
-    (item) => resolveSubmissionScore(item).compositeScore
-  );
-  const changeQueue = (patch: Partial<typeof queueState>) => {
-    const next = updateReviewQueue(new URLSearchParams(window.location.search), patch);
-    window.history.replaceState(null, "", window.location.pathname + (next.size ? "?" + next : ""));
-  };
   const totalStudents = assignedStudents.length;
   const totalScansCount = submissions?.length ?? 0;
   const completionRate =
@@ -602,7 +576,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
 
   // Batched image URLs for photos view mode
   const visibleImagePaths = useMemo(() => {
-    if (compact || viewMode === "review") return [];
+    if (compact) return [];
     if (viewMode === "grouped") {
       return studentReviewEntries
         .filter(
@@ -616,7 +590,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
         )
         .map((entry) => {
           const activeSub =
-            (statusFilter === "all"
+            (statusFilter === "all" || statusFilter === "needs_action"
               ? entry.group.allSubmissions.find(
                   (sub) => sub.id === attemptOverrides.get(entry.group.studentId)?.id
                 )
@@ -734,7 +708,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
     if (viewMode === "grouped") {
       return filteredAndSortedGroups.map(
         (g) =>
-          (statusFilter === "all"
+          (statusFilter === "all" || statusFilter === "needs_action"
             ? g.allSubmissions.find((sub) => sub.id === attemptOverrides.get(g.studentId)?.id)?.id
             : null) ?? g.reviewSubmission.id
       );
@@ -1097,6 +1071,9 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
             hasPointGrades={activity.points_possible != null}
             students={students ?? []}
             rosterReady={rosterReady}
+            isFiltered={Boolean(searchQuery.trim() || statusFilter !== "all")}
+            filteredCount={currentListLength}
+            totalCount={totalStudents}
           />
         </div>
 
@@ -1168,7 +1145,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
             onLayoutChange={(val) =>
               updateReviewParams({ layout: val === "photos" ? "photos" : null })
             }
-            sortBy={viewMode === "review" ? queueState.sortBy : sortBy}
+            sortBy={sortBy}
             onSortByChange={setSortBy}
             managingAttempts={managingAttempts}
             onToggleManagingAttempts={() => {
@@ -1184,79 +1161,36 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
           />
         )}
 
-        {viewMode === "review" && (
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap gap-2">
-              <NativeSelect
-                aria-label="Review queue"
-                className="[&_select]:min-h-11 md:[&_select]:min-h-9"
-                value={queueState.statusFilter}
-                onChange={(event) =>
-                  changeQueue({ statusFilter: event.target.value as ReviewView })
-                }
-              >
-                <NativeSelectOption value="attention">Needs attention</NativeSelectOption>
-                <NativeSelectOption value="awaiting">Awaiting first upload</NativeSelectOption>
-                <NativeSelectOption value="all">All students</NativeSelectOption>
-              </NativeSelect>
-              <NativeSelect
-                aria-label="Latest upload status"
-                className="[&_select]:min-h-11 md:[&_select]:min-h-9"
-                value={queueState.uploadFilter}
-                onChange={(event) =>
-                  changeQueue({ uploadFilter: event.target.value as UploadFilter })
-                }
-              >
-                <NativeSelectOption value="all">Any upload status</NativeSelectOption>
-                <NativeSelectOption value="completed">Analysis ready</NativeSelectOption>
-                <NativeSelectOption value="processing">Processing</NativeSelectOption>
-                <NativeSelectOption value="rejected">Rejected</NativeSelectOption>
-                <NativeSelectOption value="returned">Returned</NativeSelectOption>
-              </NativeSelect>
-            </div>
-            <ActivityReviewQueue
-              activityId={id}
-              queueQuery={queueQuery}
-              rows={queueRows}
-              assignedStudentCount={assignedStudents.length}
-              rosterLoading={studentsLoading}
-              rosterError={studentsError}
-              workError={workQuery.isError}
-              workLoading={workQuery.isLoading}
-              uploadsLoading={submissionsLoading}
-              uploadsError={!!submissionsError}
-              searchQuery={searchQuery}
-              onClearFilters={() => {
+        {submissions && (searchQuery.trim() || statusFilter !== "all") && (
+          <div className="flex items-center justify-between gap-2 rounded-lg border border-amber-300/60 bg-amber-50/50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+            <span>
+              Showing <strong>{currentListLength}</strong> of <strong>{totalStudents}</strong> {resultUnit}s
+              {statusFilter !== "all" ? ` (${reviewFilterLabels[statusFilter]})` : ""}
+              {searchQuery ? ` matching "${searchQuery}"` : ""}.
+              {" "}Release action in the header will publish results for all ready drafts across the activity.
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
                 handleClearSearch();
-                changeQueue({ searchQuery: "", statusFilter: "all", uploadFilter: "all" });
+                setStatusFilter("all");
               }}
-              onClearUploadFilter={
-                queueState.uploadFilter !== "all"
-                  ? () => changeQueue({ uploadFilter: "all" })
-                  : undefined
-              }
-              onRetryRoster={() => void refetchStudents()}
-              onRetryWork={() => void workQuery.refetch()}
-              onRetryUploads={() => void refetchSubmissions()}
-              onUpload={handleReupload}
-              onEdit={handleEditActivity}
-            />
+              className="h-6 px-2 text-xs text-amber-800 hover:text-amber-950 hover:bg-amber-100/60 dark:text-amber-300 dark:hover:text-amber-100 dark:hover:bg-amber-900/40 cursor-pointer"
+            >
+              Reset filters
+            </Button>
           </div>
         )}
-        {viewMode !== "review" && (
-          <>
-            {/* Screen Reader Filter & Search Live Announcer */}
-            <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-              {submissions && (
-                <span>
-                  {`Showing ${currentListLength} ${resultUnit}${currentListLength === 1 ? "" : "s"}${
-                    statusFilter !== "all" ? ` filtered by ${reviewFilterLabels[statusFilter]}` : ""
-                  }${searchQuery ? ` matching "${searchQuery}"` : ""}.`}
-                </span>
-              )}
-            </div>
 
-            {/* Submissions Content Grid */}
+        <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+          {submissions &&
+            `Showing ${currentListLength} ${resultUnit}${currentListLength === 1 ? "" : "s"}${
+              statusFilter !== "all" ? ` filtered by ${reviewFilterLabels[statusFilter]}` : ""
+            }${searchQuery ? ` matching "${searchQuery}"` : ""}.`}
+        </div>
+
+        {/* Submissions Content Grid */}
             {submissionsLoading || (viewMode === "grouped" && studentsLoading) ? (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -1393,6 +1327,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                               }
                               attempts={[]}
                               isLoading={workQuery.isPending}
+                              compact={compact}
                             />
                             <Button
                               variant="outline"
@@ -1407,7 +1342,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                       }
                       const { group } = entry;
                       const activeSub =
-                        (statusFilter === "all"
+                        (statusFilter === "all" || statusFilter === "needs_action"
                           ? group.allSubmissions.find(
                               (sub) => sub.id === attemptOverrides.get(group.studentId)?.id
                             )
@@ -1466,8 +1401,6 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                     ))}
               </div>
             )}
-          </>
-        )}
       </section>
 
       <Collapsible

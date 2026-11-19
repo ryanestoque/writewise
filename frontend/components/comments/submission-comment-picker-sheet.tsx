@@ -18,26 +18,37 @@ export function WorkCommentsButton({
   scope,
   activeSubmissionId,
   studentName,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  showTrigger = true,
 }: {
   scope: WorkCommentScope;
   activeSubmissionId: string | null;
   studentName?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = controlledOnOpenChange ?? setInternalOpen;
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger
-        render={
-          <Button
-            variant="outline"
-            size="sm"
-            className="min-h-11 md:min-h-9"
-            aria-label={studentName ? `Comments for ${studentName}` : "Comments"}
-          />
-        }
-      >
-        Comments
-      </SheetTrigger>
+      {showTrigger && (
+        <SheetTrigger
+          render={
+            <Button
+              variant="outline"
+              size="sm"
+              className="min-h-11 md:min-h-9"
+              aria-label={studentName ? `Comments for ${studentName}` : "Comments"}
+            />
+          }
+        >
+          Comments
+        </SheetTrigger>
+      )}
       <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader className="shrink-0 border-b pr-14">
           <SheetTitle>Private comments</SheetTitle>

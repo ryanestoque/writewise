@@ -2,7 +2,6 @@
 
 import { memo, type RefObject } from "react";
 import { SearchInput } from "@/components/ui/search-input";
-import { NativeSelect, NativeSelectOptGroup, NativeSelectOption } from "@/components/ui/native-select";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -11,29 +10,28 @@ import {
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuItem,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { SlidersHorizontal, Trash2 } from "lucide-react";
+import { SlidersHorizontal, Trash2, Filter, X, ChevronDown, Check } from "lucide-react";
 import { reviewFilterHelp, type LegacyReviewFilter } from "@/lib/utils/activity-attempt-review";
+import { cn } from "@/lib/utils";
 
 export type SubmissionFilter = LegacyReviewFilter;
 export type SubmissionSort =
   "attention" | "newest" | "oldest" | "name_asc" | "name_desc" | "score_desc";
 export type ViewMode = "review" | "grouped" | "all";
 
-const workViews = [
-  { id: "review", label: "Review queue" },
-  { id: "grouped", label: "By student" },
-  { id: "all", label: "All uploads" },
-] as const;
-
-const filterGroups = [
-  { label: "Needs action", filters: ["needs_scoring", "ready", "needs_upload", "missing", "returned"] },
-  { label: "Other statuses", filters: ["processing", "released", "excused", "no_upload"] },
-] as const;
+const secondaryFilters: { id: SubmissionFilter; label: string }[] = [
+  { id: "ready", label: "Ready to release" },
+  { id: "released", label: "Shared with parents" },
+  { id: "returned", label: "Returned for redo" },
+  { id: "excused", label: "Excused" },
+  { id: "processing", label: "Analyzing strokes" },
+  { id: "needs_upload", label: "Needs an upload" },
+];
 
 export interface ActivityReviewToolbarProps {
   searchInputRef: RefObject<HTMLInputElement | null>;
@@ -97,27 +95,207 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
 }: ActivityReviewToolbarProps) {
   const allWorkFilter = submissionFilterItems.find(({ id }) => id === "all");
 
+  const needsActionCount =
+    submissionFilterItems.find(({ id }) => id === "needs_action")?.count ??
+    submissionFilterItems
+      .filter(({ id }) => ["needs_scoring", "ready", "needs_upload", "missing", "returned"].includes(id))
+      .reduce((sum, item) => sum + (item.count ?? 0), 0);
+
+  const needsScoringCount =
+    submissionFilterItems.find(({ id }) => id === "needs_scoring")?.count ?? 0;
+  const missingCount =
+    submissionFilterItems.find(({ id }) => id === "missing")?.count ?? 0;
+
+  const isSecondaryActive = secondaryFilters.some((f) => f.id === statusFilter);
+  const activeSecondaryItem = secondaryFilters.find((f) => f.id === statusFilter);
+
   return (
     <div className="flex flex-col gap-2.5">
       <div
         role="group"
-        aria-label="Student work view"
-        className="border-border grid grid-cols-3 gap-1 border-b pb-2 sm:flex sm:flex-wrap"
+        aria-label="Student work inbox filters"
+        className="border-border flex flex-wrap items-center gap-1.5 border-b pb-2.5"
       >
-        {workViews.map(({ id, label }) => (
-          <Button
-            key={id}
-            variant={id === viewMode ? "secondary" : "ghost"}
-            aria-pressed={id === viewMode}
-            onClick={() => {
-              if (id !== viewMode) onViewModeChange(id);
-            }}
-            className="h-auto min-h-11 min-w-0 px-1.5 text-center whitespace-normal sm:px-3 md:min-h-9"
+        <Button
+          type="button"
+          variant={statusFilter === "needs_action" ? "secondary" : "ghost"}
+          aria-pressed={statusFilter === "needs_action"}
+          onClick={() => {
+            if (viewMode !== "grouped") onViewModeChange("grouped");
+            onStatusFilterChange("needs_action");
+          }}
+          className={cn(
+            "min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
+            statusFilter === "needs_action"
+              ? "bg-primary/10 text-primary hover:bg-primary/15 font-semibold ring-1 ring-primary/20"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          )}
+        >
+          <span>Needs Action</span>
+          {needsActionCount > 0 && (
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
+                statusFilter === "needs_action"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              {needsActionCount}
+            </span>
+          )}
+        </Button>
+
+        <Button
+          type="button"
+          variant={statusFilter === "needs_scoring" ? "secondary" : "ghost"}
+          aria-pressed={statusFilter === "needs_scoring"}
+          onClick={() => {
+            if (viewMode !== "grouped") onViewModeChange("grouped");
+            onStatusFilterChange("needs_scoring");
+          }}
+          className={cn(
+            "min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
+            statusFilter === "needs_scoring"
+              ? "bg-amber-500/15 text-amber-900 dark:text-amber-300 hover:bg-amber-500/20 font-semibold ring-1 ring-amber-500/30"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          )}
+        >
+          <span>Needs Scoring</span>
+          {needsScoringCount > 0 && (
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
+                statusFilter === "needs_scoring"
+                  ? "bg-amber-600 text-white dark:bg-amber-500"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              {needsScoringCount}
+            </span>
+          )}
+        </Button>
+
+        <Button
+          type="button"
+          variant={statusFilter === "all" ? "secondary" : "ghost"}
+          aria-pressed={statusFilter === "all"}
+          onClick={() => {
+            if (viewMode !== "grouped") onViewModeChange("grouped");
+            onStatusFilterChange("all");
+          }}
+          className={cn(
+            "min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
+            statusFilter === "all"
+              ? "bg-primary/10 text-primary hover:bg-primary/15 font-semibold ring-1 ring-primary/20"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          )}
+        >
+          <span>All Students</span>
+          {allWorkFilter?.count != null && (
+            <span className="text-muted-foreground text-xs tabular-nums font-normal">
+              ({allWorkFilter.count})
+            </span>
+          )}
+        </Button>
+
+        <Button
+          type="button"
+          variant={statusFilter === "missing" ? "secondary" : "ghost"}
+          aria-pressed={statusFilter === "missing"}
+          onClick={() => {
+            if (viewMode !== "grouped") onViewModeChange("grouped");
+            onStatusFilterChange("missing");
+          }}
+          className={cn(
+            "min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
+            statusFilter === "missing"
+              ? "bg-amber-700/15 text-amber-900 dark:text-amber-300 hover:bg-amber-700/20 font-semibold ring-1 ring-amber-700/30"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          )}
+        >
+          <span>Missing</span>
+          {missingCount > 0 && (
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
+                statusFilter === "missing"
+                  ? "bg-amber-700 text-white dark:bg-amber-600"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              {missingCount}
+            </span>
+          )}
+        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                type="button"
+                variant={isSecondaryActive ? "secondary" : "ghost"}
+                className={cn(
+                  "min-h-[36px] px-3 text-xs font-medium rounded-lg gap-1.5 cursor-pointer transition-all",
+                  isSecondaryActive
+                    ? "bg-primary/10 text-primary hover:bg-primary/15 font-semibold ring-1 ring-primary/20"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              />
+            }
           >
-            {label}
-          </Button>
-        ))}
+            <Filter className="size-3.5" aria-hidden="true" />
+            <span>{isSecondaryActive ? activeSecondaryItem?.label : "More filters"}</span>
+            {isSecondaryActive ? (
+              <span
+                role="button"
+                tabIndex={0}
+                aria-label="Clear filter"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStatusFilterChange("all");
+                }}
+                className="hover:text-destructive ml-1 rounded p-0.5"
+              >
+                <X className="size-3" />
+              </span>
+            ) : (
+              <ChevronDown className="size-3 opacity-60" />
+            )}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56 text-xs">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="text-muted-foreground px-2 py-1.5 text-xs font-semibold uppercase tracking-wider">
+                Additional Statuses
+              </DropdownMenuLabel>
+              {secondaryFilters.map((sf) => {
+                const item = submissionFilterItems.find((f) => f.id === sf.id);
+                const isSelected = statusFilter === sf.id;
+                return (
+                  <DropdownMenuItem
+                    key={sf.id}
+                    onClick={() => {
+                      if (viewMode !== "grouped") onViewModeChange("grouped");
+                      onStatusFilterChange(sf.id);
+                    }}
+                    className={cn(
+                      "min-h-9 cursor-pointer justify-between text-xs",
+                      isSelected && "bg-primary/10 text-primary font-medium"
+                    )}
+                  >
+                    <span>{sf.label}</span>
+                    <div className="text-muted-foreground flex items-center gap-1.5">
+                      {item?.count != null && <span className="tabular-nums">({item.count})</span>}
+                      {isSelected && <Check className="text-primary size-3 stroke-[2.5]" />}
+                    </div>
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
+
       <div className="flex flex-wrap items-center gap-2">
         <SearchInput
           ref={searchInputRef}
@@ -130,35 +308,6 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
           onClear={onClearSearch}
           containerClassName="w-full sm:w-64 sm:flex-1"
         />
-        {viewMode !== "review" && (
-          <NativeSelect
-            aria-label="Filter student work by status"
-            aria-describedby={reviewFilterHelp[statusFilter] ? "review-filter-help" : undefined}
-            value={statusFilter}
-            onChange={(event) => onStatusFilterChange(event.target.value as SubmissionFilter)}
-            className="min-w-0 flex-1 sm:flex-none [&_select]:min-h-11 md:[&_select]:min-h-9"
-          >
-            <NativeSelectOption value="all">
-              {allWorkFilter?.label ?? "All work"}
-              {allWorkFilter?.count != null && ` (${allWorkFilter.count})`}
-            </NativeSelectOption>
-            {filterGroups.map(({ label, filters }) => {
-              const options = submissionFilterItems.filter(({ id }) =>
-                filters.some((filter) => filter === id)
-              );
-              return (
-                <NativeSelectOptGroup key={label} label={label}>
-                  {options.map(({ id, label, disabled, count }) => (
-                    <NativeSelectOption key={id} value={id} disabled={disabled}>
-                      {label}
-                      {count != null && ` (${count})`}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelectOptGroup>
-              );
-            })}
-          </NativeSelect>
-        )}
         <DropdownMenu>
           <DropdownMenuTrigger
             render={<Button variant="outline" className="h-11 md:h-9" />}
@@ -214,19 +363,27 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                 </DropdownMenuRadioItem>
               </DropdownMenuRadioGroup>
             </DropdownMenuGroup>
-            {viewMode !== "review" && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuItem className="min-h-11" onClick={onToggleManagingAttempts}>
-                    <Trash2 />
-                    {managingAttempts ? "Done managing attempts" : "Manage attempts"}
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </>
-            )}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {viewMode !== "review" && (
+          <Button
+            type="button"
+            variant={managingAttempts ? "secondary" : "outline"}
+            size="default"
+            onClick={onToggleManagingAttempts}
+            aria-pressed={managingAttempts}
+            className={cn(
+              "h-10 md:h-9 rounded-lg text-xs font-medium cursor-pointer transition-all gap-1.5",
+              managingAttempts
+                ? "bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/15 font-semibold"
+                : "text-muted-foreground hover:text-foreground border-border hover:bg-muted/50"
+            )}
+          >
+            <Trash2 className="size-3.5 shrink-0" aria-hidden="true" />
+            <span>{managingAttempts ? "Done Managing" : "Manage Attempts"}</span>
+          </Button>
+        )}
       </div>
 
       {viewMode !== "review" && reviewFilterHelp[statusFilter] && (

@@ -13,6 +13,8 @@ export function StudentWorkSummary({
   state,
   attempts,
   isLoading,
+  compact = false,
+  isScored,
 }: {
   activityId: string;
   studentId: string;
@@ -20,32 +22,36 @@ export function StudentWorkSummary({
   state: ActivityWorkState | null;
   attempts: Submission[];
   isLoading: boolean;
+  compact?: boolean;
+  isScored?: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className={compact ? "flex items-center min-w-0" : "flex flex-col gap-3"}>
       {state ? (
-        <ActivityWorkStatus state={state} />
+        <ActivityWorkStatus state={state} isScored={isScored} />
       ) : (
         <p className="text-muted-foreground text-xs" role="status">
           {isLoading ? "Loading work status…" : "Work status unavailable"}
         </p>
       )}
-      <div className="flex flex-wrap gap-2">
-        {attempts.length > 0 && (
-          <WorkCommentsButton
-            scope={{ activityId, studentId }}
-            activeSubmissionId={state?.active_submission_id ?? null}
+      {!compact && (
+        <div className="flex flex-wrap gap-2">
+          {attempts.length > 0 && (
+            <WorkCommentsButton
+              scope={{ activityId, studentId }}
+              activeSubmissionId={state?.active_submission_id ?? null}
+              studentName={studentName}
+            />
+          )}
+          <StudentWorkControls
+            activityId={activityId}
+            studentId={studentId}
             studentName={studentName}
+            state={state}
+            attempts={attempts}
           />
-        )}
-        <StudentWorkControls
-          activityId={activityId}
-          studentId={studentId}
-          studentName={studentName}
-          state={state}
-          attempts={attempts}
-        />
-      </div>
+        </div>
+      )}
     </div>
   );
 }

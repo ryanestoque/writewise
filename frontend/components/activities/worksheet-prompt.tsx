@@ -26,7 +26,8 @@ export function WorksheetPrompt({
             "relative z-10 tracking-wide break-words print:text-black",
             preview ? "line-clamp-3" : "whitespace-pre-wrap select-all",
             prompt
-              ? "font-cursive text-foreground/90 text-[32px]/[48px] font-medium sm:text-[34px]/[48px] md:text-[36px]/[48px]"
+              ? // impeccable-disable-next-line design-system-font-size -- optical alignment to 48px baseline ruling grid
+                "font-cursive text-foreground/90 text-[32px]/[48px] font-medium sm:text-[34px]/[48px] md:text-[36px]/[48px]"
               : "font-sans text-muted-foreground/70 text-base italic sm:text-lg"
           )}
         >

@@ -4,6 +4,7 @@ import { resolveSubmissionScore } from "./submission-status";
 
 export const reviewFilterLabels = {
   all: "All work",
+  needs_action: "Needs action",
   needs_scoring: "Needs scoring",
   ready: "Ready to release",
   needs_upload: "Needs an upload",
@@ -16,6 +17,8 @@ export const reviewFilterLabels = {
 } as const;
 
 export const reviewFilterHelp: Partial<Record<keyof typeof reviewFilterLabels, string>> = {
+  needs_action:
+    "Students with pending uploads, missing work, returned worksheets, or unreviewed submissions.",
   needs_upload:
     "Includes students who have never uploaded, need to replace a rejected or returned worksheet, or have missing work.",
   no_upload: "Students with no upload history for this activity, including excused work.",
@@ -29,6 +32,15 @@ export function matchesReviewFilter(
   filter: LegacyReviewFilter
 ): boolean {
   if (filter === "all") return true;
+  if (filter === "needs_action") {
+    return (
+      matchesReviewFilter(submission, state, "needs_scoring") ||
+      matchesReviewFilter(submission, state, "ready") ||
+      matchesReviewFilter(submission, state, "needs_upload") ||
+      matchesReviewFilter(submission, state, "missing") ||
+      matchesReviewFilter(submission, state, "returned")
+    );
+  }
   if (filter === "no_upload") return !submission;
   if (filter === "processing") return submission?.status === "processing";
   if (filter === "excused") return state?.work_status === "Excused";

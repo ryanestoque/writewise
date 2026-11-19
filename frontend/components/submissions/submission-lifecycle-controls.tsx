@@ -127,9 +127,7 @@ function ReturnForm({ submission, onDone }: { submission: Submission; onDone: ()
             onChange={(event) => setDue(event.target.value)}
             disabled={mutation.isPending}
           />
-          <FieldDescription>
-            Manila time. Leave blank to keep the current deadline.
-          </FieldDescription>
+          <FieldDescription>Leave blank to keep the current deadline.</FieldDescription>
         </Field>
       </FieldGroup>
       {error && (
@@ -354,7 +352,7 @@ function WorkSettingsForm({
             disabled={update.isPending}
           />
           <FieldDescription>
-            Manila time. Clear this field to use the activity deadline.
+            Clear this field to use the activity deadline.
             {state?.effective_due_at &&
               ` Current effective deadline: ${formatActivityDueAt(state.effective_due_at)}.`}
           </FieldDescription>
@@ -404,7 +402,6 @@ function WorkSettingsForm({
                 <time dateTime={selectedAttempt.created_at}>
                   {formatActivityDueAt(selectedAttempt.created_at)}
                 </time>
-                {" · Manila time"}
               </p>
               <p>
                 {selectedScore.compositeScore == null
@@ -462,22 +459,31 @@ export function StudentWorkControls(props: {
   studentName: string;
   state: ActivityWorkState | null;
   attempts: Submission[];
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = props.open !== undefined ? props.open : internalOpen;
+  const setOpen = props.onOpenChange ?? setInternalOpen;
   const trigger = useRef<HTMLButtonElement>(null);
+  const showTrigger = props.showTrigger ?? true;
+
   return (
     <>
-      <Button
-        ref={trigger}
-        size="sm"
-        variant="outline"
-        onClick={() => setOpen(true)}
-        disabled={!props.state}
-        aria-label={`Deadline and counted attempt for ${props.studentName}`}
-        className="h-11 md:h-9"
-      >
-        Deadline & attempt
-      </Button>
+      {showTrigger && (
+        <Button
+          ref={trigger}
+          size="sm"
+          variant="outline"
+          onClick={() => setOpen(true)}
+          disabled={!props.state}
+          aria-label={`Deadline and counted attempt for ${props.studentName}`}
+          className="h-11 md:h-9"
+        >
+          Deadline & attempt
+        </Button>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent finalFocus={trigger}>
           <DialogHeader>
@@ -499,12 +505,18 @@ export function ReleaseActivityButton({
   hasPointGrades = false,
   students = [],
   rosterReady = true,
+  isFiltered = false,
+  filteredCount,
+  totalCount,
 }: {
   activityId: string;
   userId: string;
   hasPointGrades?: boolean;
   students?: Student[];
   rosterReady?: boolean;
+  isFiltered?: boolean;
+  filteredCount?: number;
+  totalCount?: number;
 }) {
   const focusTarget = useRef<HTMLSpanElement>(null);
   const descriptionId = useId();
@@ -562,7 +574,7 @@ export function ReleaseActivityButton({
           variant="outline"
           disabled={isPending || !rosterReady || (!count && !hasPointGrades && !isError)}
           aria-describedby={descriptionId}
-          className="h-11 md:h-9"
+          className="h-11 md:h-9 font-semibold"
           onClick={() => {
             setError(null);
             setStep("review");
@@ -571,7 +583,7 @@ export function ReleaseActivityButton({
             void refetch();
           }}
         >
-          Review release
+          {isPending ? "Checking release…" : count > 0 ? `Review & Release (${count})` : "Review release"}
         </Button>
       )}
       <span
@@ -590,6 +602,11 @@ export function ReleaseActivityButton({
                 : "No worksheet results ready to share."}
         {rosterReady && !isPending && !isError && (count > 0 || hasPointGrades) && (
           <> Applies to the whole activity.</>
+        )}
+        {isFiltered && (
+          <span className="mt-0.5 block font-medium text-amber-700 dark:text-amber-400">
+            Filtered view ({filteredCount ?? 0}/{totalCount ?? 0}): Release applies to all {count} drafts class-wide.
+          </span>
         )}
         {hasPointGrades && (
           <>
@@ -620,7 +637,7 @@ export function ReleaseActivityButton({
           <DialogHeader>
             <DialogTitle>
               {step === "review"
-                ? "Review what parents will see"
+                ? `Review what parents will see (${count} eligible)`
                 : `Release ${hasPointGrades ? "results and grades" : "worksheet results"}?`}
             </DialogTitle>
             <DialogDescription>
@@ -633,6 +650,14 @@ export function ReleaseActivityButton({
           </DialogHeader>
           {step === "review" ? (
             <div className="flex flex-col gap-4">
+              {isFiltered && (
+                <div className="rounded-lg border border-amber-300/80 bg-amber-50/80 p-3 text-xs text-amber-900 dark:border-amber-800/80 dark:bg-amber-950/40 dark:text-amber-200">
+                  <p className="font-semibold">⚠️ Filtered view active on page ({filteredCount ?? 0} of {totalCount ?? 0} students shown)</p>
+                  <p className="mt-0.5">
+                    Releasing will share results for <strong>all {count} eligible draft worksheets</strong> across all assigned sections, not just the students currently visible.
+                  </p>
+                </div>
+              )}
               <p className="text-sm">
                 {count} draft worksheet {count === 1 ? "result" : "results"} ready across this
                 activity. Search and filters on the page do not limit this release.

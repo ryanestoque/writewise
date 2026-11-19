@@ -29,7 +29,7 @@ export function WorksheetHistory({ activityId, studentName, attempts, officialId
           <SheetTitle>Worksheet history</SheetTitle>
           <SheetDescription>
             {studentName} · {attempts.length} {attempts.length === 1 ? "upload" : "uploads"}, newest first.
-            Open a worksheet to inspect its assessment and feedback. Times are in Manila time.
+            Open a worksheet to inspect its assessment and feedback.
           </SheetDescription>
         </SheetHeader>
         <ol className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 pb-6">

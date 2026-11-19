@@ -17,17 +17,42 @@ export function useActivityNow() {
 export function ActivityWorkStatus({
   state,
   unavailable = false,
+  isScored,
 }: {
   state?: ActivityWorkState | null;
   unavailable?: boolean;
+  isScored?: boolean;
 }) {
   if (!state && unavailable) return <span className="text-sm text-muted-foreground">Work status unavailable</span>;
   if (!state) return <span className="text-sm text-muted-foreground">Loading work status…</span>;
   const work = { status: state.work_status, late: state.late };
   return (
-    <span className="inline-flex flex-wrap gap-1.5">
-      <Badge variant={work.status === "Missing" ? "destructive" : "secondary"}>{teacherWorkStatusLabel(work.status)}</Badge>
-      {work.late && work.status !== "Excused" && <Badge variant="outline">Late</Badge>}
+    <span className="inline-flex flex-wrap items-center gap-1.5">
+      <Badge
+        variant={work.status === "Missing" || work.status === "Released" ? "outline" : "secondary"}
+        className={
+          work.status === "Missing"
+            ? "border-amber-300/80 bg-amber-50/80 text-amber-800 dark:border-amber-800/80 dark:bg-amber-950/40 dark:text-amber-300"
+            : work.status === "Released"
+              ? "border-emerald-300/80 bg-emerald-50/80 text-emerald-800 dark:border-emerald-800/80 dark:bg-emerald-950/40 dark:text-emerald-300 font-medium"
+              : work.status === "Draft"
+                ? isScored
+                  ? "border-primary/30 text-primary bg-primary/10 font-medium"
+                  : "border-border text-muted-foreground bg-muted/50 font-normal"
+                : undefined
+        }
+      >
+        {work.status === "Draft"
+          ? isScored
+            ? "Ready to release"
+            : "Draft (unscored)"
+          : teacherWorkStatusLabel(work.status)}
+      </Badge>
+      {work.late && work.status !== "Excused" && (
+        <Badge variant="outline" className="border-amber-300/60 text-amber-700 dark:text-amber-400">
+          Late
+        </Badge>
+      )}
     </span>
   );
 }
