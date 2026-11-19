@@ -452,18 +452,18 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
         ? undefined
         : viewMode === "grouped"
           ? studentGroups.filter((group) =>
-              matchesReviewFilter(
-                group.reviewSubmission,
-                workByStudent.get(group.studentId) ?? null,
-                filter
-              )
-            ).length +
-            studentsWithoutUploads.filter((student) =>
-              matchesReviewFilter(null, workByStudent.get(student.id) ?? null, filter)
-            ).length
+            matchesReviewFilter(
+              group.reviewSubmission,
+              workByStudent.get(group.studentId) ?? null,
+              filter
+            )
+          ).length +
+          studentsWithoutUploads.filter((student) =>
+            matchesReviewFilter(null, workByStudent.get(student.id) ?? null, filter)
+          ).length
           : (submissions ?? []).filter((sub) =>
-              matchesReviewFilter(sub, workByStudent.get(sub.student_id) ?? null, filter)
-            ).length,
+            matchesReviewFilter(sub, workByStudent.get(sub.student_id) ?? null, filter)
+          ).length,
     }));
 
   // Filtered & Sorted Student Groups
@@ -592,8 +592,8 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
           const activeSub =
             (statusFilter === "all" || statusFilter === "needs_action"
               ? entry.group.allSubmissions.find(
-                  (sub) => sub.id === attemptOverrides.get(entry.group.studentId)?.id
-                )
+                (sub) => sub.id === attemptOverrides.get(entry.group.studentId)?.id
+              )
               : null) ?? entry.group.reviewSubmission;
           return activeSub.image_path;
         });
@@ -1184,289 +1184,288 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
 
         <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
           {submissions &&
-            `Showing ${currentListLength} ${resultUnit}${currentListLength === 1 ? "" : "s"}${
-              statusFilter !== "all" ? ` filtered by ${reviewFilterLabels[statusFilter]}` : ""
+            `Showing ${currentListLength} ${resultUnit}${currentListLength === 1 ? "" : "s"}${statusFilter !== "all" ? ` filtered by ${reviewFilterLabels[statusFilter]}` : ""
             }${searchQuery ? ` matching "${searchQuery}"` : ""}.`}
         </div>
 
         {/* Submissions Content Grid */}
-            {submissionsLoading || (viewMode === "grouped" && studentsLoading) ? (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl"
-                  >
-                    <Skeleton className="aspect-4/3 w-full rounded-none" />
-                    <div className="space-y-2 p-3.5">
-                      <Skeleton className="h-4 w-2/3" />
-                      <Skeleton className="h-4 w-1/3" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : submissionsError ? (
+        {submissionsLoading || (viewMode === "grouped" && studentsLoading) ? (
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
               <div
-                role="alert"
-                className="border-destructive/20 bg-destructive/10 text-destructive flex flex-col items-center justify-between gap-4 rounded-xl border p-4 sm:flex-row"
+                key={i}
+                className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl"
               >
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="h-5 w-5 shrink-0" />
-                  <span className="text-sm font-medium">
-                    Couldn&apos;t load submissions. Check your connection and try again.
-                  </span>
+                <Skeleton className="aspect-4/3 w-full rounded-none" />
+                <div className="space-y-2 p-3.5">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-4 w-1/3" />
                 </div>
+              </div>
+            ))}
+          </div>
+        ) : submissionsError ? (
+          <div
+            role="alert"
+            className="border-destructive/20 bg-destructive/10 text-destructive flex flex-col items-center justify-between gap-4 rounded-xl border p-4 sm:flex-row"
+          >
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 shrink-0" />
+              <span className="text-sm font-medium">
+                Couldn&apos;t load submissions. Check your connection and try again.
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetchSubmissions()}
+              className="border-destructive/30 hover:bg-destructive/10 text-destructive min-h-11 cursor-pointer md:min-h-9"
+            >
+              <RotateCcw className="mr-1.5 h-4 w-4" />
+              Retry
+            </Button>
+          </div>
+        ) : submissions?.length === 0 && (viewMode === "all" || !assignedStudents.length) ? (
+          /* Empty state: No submissions at all */
+          <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">
+            <Empty className="border-0 py-14">
+              <EmptyMedia variant="icon" className="bg-primary/10 text-primary">
+                <Inbox className="h-6 w-6" />
+              </EmptyMedia>
+              <EmptyHeader>
+                <EmptyTitle className="text-lg sm:text-xl">No submissions yet</EmptyTitle>
+                <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm">
+                  Upload a student&apos;s handwriting worksheet for this activity to begin AI
+                  diagnostic assessment.
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent className="flex w-full items-center justify-center px-4 sm:w-auto sm:px-0">
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => refetchSubmissions()}
-                  className="border-destructive/30 hover:bg-destructive/10 text-destructive min-h-11 cursor-pointer md:min-h-9"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 min-h-[44px] w-full cursor-pointer rounded-lg text-xs font-medium sm:w-auto sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                  onClick={() => openUpload({ activityId: id })}
                 >
-                  <RotateCcw className="mr-1.5 h-4 w-4" />
-                  Retry
+                  <Upload className="mr-2 h-4 w-4" />
+                  <span>Upload worksheet</span>
                 </Button>
-              </div>
-            ) : submissions?.length === 0 && (viewMode === "all" || !assignedStudents.length) ? (
-              /* Empty state: No submissions at all */
-              <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">
-                <Empty className="border-0 py-14">
-                  <EmptyMedia variant="icon" className="bg-primary/10 text-primary">
-                    <Inbox className="h-6 w-6" />
-                  </EmptyMedia>
-                  <EmptyHeader>
-                    <EmptyTitle className="text-lg sm:text-xl">No submissions yet</EmptyTitle>
-                    <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm">
-                      Upload a student&apos;s handwriting worksheet for this activity to begin AI
-                      diagnostic assessment.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                  <EmptyContent className="flex w-full items-center justify-center px-4 sm:w-auto sm:px-0">
-                    <Button
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 min-h-[44px] w-full cursor-pointer rounded-lg text-xs font-medium sm:w-auto sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
-                      onClick={() => openUpload({ activityId: id })}
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      <span>Upload worksheet</span>
-                    </Button>
-                  </EmptyContent>
-                </Empty>
-              </div>
-            ) : currentListLength === 0 ? (
-              /* Empty state: Filters returned 0 results */
-              <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">
-                <Empty className="border-0 py-12">
-                  <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
-                    <SearchX className="h-6 w-6" />
-                  </EmptyMedia>
-                  <EmptyHeader>
-                    <EmptyTitle className="text-lg sm:text-xl">No matching {resultUnit}s</EmptyTitle>
-                    <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm">
-                      Try a different name or status filter.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                  <EmptyContent className="flex gap-2">
-                    {searchQuery && (
-                      <Button
-                        variant="outline"
-                        onClick={handleClearSearch}
-                        className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
-                      >
-                        Clear search
-                      </Button>
-                    )}
-                    {statusFilter !== "all" && (
-                      <Button
-                        variant="ghost"
-                        onClick={() => setStatusFilter("all")}
-                        className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
-                      >
-                        View All
-                      </Button>
-                    )}
-                  </EmptyContent>
-                </Empty>
-              </div>
-            ) : (
-              /* Submissions Cards Grid */
-              <div
-                role="region"
-                aria-label="Student submissions list"
-                className={cn(
-                  "grid gap-3",
-                  !compact && "grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-4"
+              </EmptyContent>
+            </Empty>
+          </div>
+        ) : currentListLength === 0 ? (
+          /* Empty state: Filters returned 0 results */
+          <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">
+            <Empty className="border-0 py-12">
+              <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
+                <SearchX className="h-6 w-6" />
+              </EmptyMedia>
+              <EmptyHeader>
+                <EmptyTitle className="text-lg sm:text-xl">No matching {resultUnit}s</EmptyTitle>
+                <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm">
+                  Try a different name or status filter.
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent className="flex gap-2">
+                {searchQuery && (
+                  <Button
+                    variant="outline"
+                    onClick={handleClearSearch}
+                    className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                  >
+                    Clear search
+                  </Button>
                 )}
-              >
-                {viewMode === "grouped"
-                  ? studentReviewEntries.map((entry) => {
-                      if (entry.kind === "no_upload") {
-                        const { student } = entry;
-                        if (compact) {
-                          return (
-                            <article
-                              key={student.id}
-                              className="border-border bg-surface dark:bg-card flex flex-col gap-3 rounded-xl border p-3 text-left sm:p-4 lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,.85fr)_minmax(0,1.2fr)_auto] lg:items-center lg:gap-4"
-                            >
-                              <div className="flex flex-col gap-1 lg:col-span-2">
-                                <h3 className="text-sm font-semibold break-words">
-                                  {student.full_name}
-                                </h3>
-                                <p className="text-muted-foreground text-xs sm:text-sm">
-                                  No worksheet uploaded yet.
-                                </p>
-                              </div>
-                              <StudentWorkSummary
-                                activityId={id}
-                                studentId={student.id}
-                                studentName={student.full_name}
-                                state={
-                                  workQuery.isError ? null : (workByStudent.get(student.id) ?? null)
-                                }
-                                attempts={[]}
-                                isLoading={workQuery.isPending}
-                                compact={compact}
-                              />
-                              <div className="flex items-center justify-end">
-                                <Button
-                                  variant="outline"
-                                  className="h-10 min-h-[44px] md:h-9 md:min-h-[36px]"
-                                  onClick={() => handleReupload(student.id)}
-                                  aria-label={`Upload worksheet for ${student.full_name}`}
-                                >
-                                  <Upload data-icon="inline-start" /> Upload worksheet
-                                </Button>
-                              </div>
-                            </article>
-                          );
-                        }
-
-                        return (
-                          <article
-                            key={student.id}
-                            className="group bg-surface dark:bg-card border-border relative flex h-full min-w-0 flex-col overflow-hidden rounded-xl border text-left"
-                          >
-                            <div className="bg-muted/20 relative flex aspect-4/3 items-center justify-center overflow-hidden border-b">
-                              <button
-                                type="button"
-                                onClick={() => handleReupload(student.id)}
-                                className="group/dropzone hover:bg-muted/40 focus-visible:ring-ring flex size-full flex-col items-center justify-center gap-2 p-4 text-center transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-hidden"
-                                aria-label={`Upload worksheet for ${student.full_name}`}
-                              >
-                                <div className="bg-surface dark:bg-card border-border/80 text-muted-foreground group-hover/dropzone:border-primary group-hover/dropzone:text-primary flex size-10 items-center justify-center rounded-lg border border-dashed transition-colors shadow-2xs">
-                                  <Upload className="size-5 transition-transform group-hover/dropzone:-translate-y-0.5" aria-hidden="true" />
-                                </div>
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="text-foreground group-hover/dropzone:text-primary text-xs font-semibold transition-colors">
-                                    Upload worksheet
-                                  </span>
-                                  <span className="text-muted-foreground text-[11px]">
-                                    No image uploaded yet
-                                  </span>
-                                </div>
-                              </button>
-                            </div>
-
-                            <div className="flex flex-1 flex-col gap-3 p-4">
-                              <div>
-                                <h3 className="text-foreground text-sm font-semibold break-words" title={student.full_name}>
-                                  {student.full_name}
-                                </h3>
-                                <p className="text-muted-foreground mt-1 text-xs">
-                                  Awaiting submission
-                                </p>
-                              </div>
-
-                              <div className="mt-auto flex items-center justify-between gap-2 border-t pt-2">
-                                <span className="text-muted-foreground text-xs">Missing</span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-primary hover:text-primary/90 hover:bg-primary/10 group/btn focus-visible:ring-ring h-10 min-h-[44px] cursor-pointer gap-1.5 rounded-lg px-3 text-xs font-semibold focus-visible:ring-2 focus-visible:outline-hidden md:h-9 md:px-2.5 md:min-h-[36px]"
-                                  onClick={() => handleReupload(student.id)}
-                                  aria-label={`Upload worksheet for ${student.full_name}`}
-                                >
-                                  <Upload className="size-3.5" aria-hidden="true" />
-                                  <span>Upload</span>
-                                </Button>
-                              </div>
-                            </div>
-
-                            <div className="border-t p-4">
-                              <StudentWorkSummary
-                                activityId={id}
-                                studentId={student.id}
-                                studentName={student.full_name}
-                                state={
-                                  workQuery.isError ? null : (workByStudent.get(student.id) ?? null)
-                                }
-                                attempts={[]}
-                                isLoading={workQuery.isPending}
-                                compact={false}
-                              />
-                            </div>
-                          </article>
-                        );
-                      }
-                      const { group } = entry;
-                      const activeSub =
-                        (statusFilter === "all" || statusFilter === "needs_action"
-                          ? group.allSubmissions.find(
-                              (sub) => sub.id === attemptOverrides.get(group.studentId)?.id
-                            )
-                          : null) ?? group.reviewSubmission;
-                      const workState = workQuery.isError
-                        ? null
-                        : (workByStudent.get(group.studentId) ?? null);
-
-                      return (
-                        <SubmissionCard
-                          key={group.studentId}
-                          compact={compact}
-                          submission={activeSub}
-                          studentName={group.studentName}
-                          imageUrl={signedUrlsMap?.get(activeSub.image_path)}
-                          attemptCount={group.attemptCount}
-                          allSubmissions={group.allSubmissions}
-                          countedSubmissionId={
-                            workQuery.isSuccess
-                              ? (workState?.active_submission_id ?? null)
-                              : undefined
-                          }
-                          latestSubmission={group.latestSubmission}
-                          activityId={id}
-                          workState={workState}
-                          workLoading={workQuery.isPending}
-                          onSelectAttempt={handleSelectAttempt}
-                          onSelect={handleSelectSubmission}
-                          onReupload={handleReupload}
-                          isSelected={selectedSubmissionIds.has(activeSub.id)}
-                          onToggleSelect={managingAttempts ? handleToggleCardSelect : undefined}
-                          onDeleteSingleAttempt={
-                            managingAttempts ? handleDeleteSingleAttemptPrompt : undefined
-                          }
-                          onDeleteAllStudentAttempts={
-                            managingAttempts ? handleDeleteAllStudentAttemptsPrompt : undefined
-                          }
-                        />
-                      );
-                    })
-                  : filteredAndSortedSubmissions.map((sub) => (
-                      <SubmissionCard
-                        key={sub.id}
-                        compact={compact}
-                        submission={sub}
-                        studentName={sub.student?.full_name ?? "Unknown Student"}
-                        imageUrl={signedUrlsMap?.get(sub.image_path)}
-                        onSelect={handleSelectSubmission}
-                        onReupload={handleReupload}
-                        isSelected={selectedSubmissionIds.has(sub.id)}
-                        onToggleSelect={managingAttempts ? handleToggleCardSelect : undefined}
-                        onDeleteSingleAttempt={
-                          managingAttempts ? handleDeleteSingleAttemptPrompt : undefined
-                        }
-                      />
-                    ))}
-              </div>
+                {statusFilter !== "all" && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setStatusFilter("all")}
+                    className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                  >
+                    View All
+                  </Button>
+                )}
+              </EmptyContent>
+            </Empty>
+          </div>
+        ) : (
+          /* Submissions Cards Grid */
+          <div
+            role="region"
+            aria-label="Student submissions list"
+            className={cn(
+              "grid gap-3",
+              !compact && "grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-4"
             )}
+          >
+            {viewMode === "grouped"
+              ? studentReviewEntries.map((entry) => {
+                if (entry.kind === "no_upload") {
+                  const { student } = entry;
+                  if (compact) {
+                    return (
+                      <article
+                        key={student.id}
+                        className="border-border bg-surface dark:bg-card flex flex-col gap-3 rounded-xl border p-3 text-left sm:p-4 lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,.85fr)_minmax(0,1.2fr)_auto] lg:items-center lg:gap-4"
+                      >
+                        <div className="flex flex-col gap-1 lg:col-span-2">
+                          <h3 className="text-sm font-semibold break-words">
+                            {student.full_name}
+                          </h3>
+                          <p className="text-muted-foreground text-xs sm:text-sm">
+                            No worksheet uploaded yet.
+                          </p>
+                        </div>
+                        <StudentWorkSummary
+                          activityId={id}
+                          studentId={student.id}
+                          studentName={student.full_name}
+                          state={
+                            workQuery.isError ? null : (workByStudent.get(student.id) ?? null)
+                          }
+                          attempts={[]}
+                          isLoading={workQuery.isPending}
+                          compact={compact}
+                        />
+                        <div className="flex items-center justify-end">
+                          <Button
+                            variant="outline"
+                            className="h-10 min-h-[44px] md:h-9 md:min-h-[36px]"
+                            onClick={() => handleReupload(student.id)}
+                            aria-label={`Upload worksheet for ${student.full_name}`}
+                          >
+                            <Upload data-icon="inline-start" /> Upload worksheet
+                          </Button>
+                        </div>
+                      </article>
+                    );
+                  }
+
+                  return (
+                    <article
+                      key={student.id}
+                      className="group bg-surface dark:bg-card border-border relative flex h-full min-w-0 flex-col overflow-hidden rounded-xl border text-left"
+                    >
+                      <div className="bg-muted/20 relative flex aspect-4/3 items-center justify-center overflow-hidden border-b">
+                        <button
+                          type="button"
+                          onClick={() => handleReupload(student.id)}
+                          className="group/dropzone hover:bg-muted/40 focus-visible:ring-ring flex size-full flex-col items-center justify-center gap-2 p-4 text-center transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-hidden"
+                          aria-label={`Upload worksheet for ${student.full_name}`}
+                        >
+                          <div className="bg-surface dark:bg-card border-border/80 text-muted-foreground group-hover/dropzone:border-primary group-hover/dropzone:text-primary flex size-10 items-center justify-center rounded-lg border border-dashed transition-colors shadow-2xs">
+                            <Upload className="size-5 transition-transform group-hover/dropzone:-translate-y-0.5" aria-hidden="true" />
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-foreground group-hover/dropzone:text-primary text-xs font-semibold transition-colors">
+                              Upload worksheet
+                            </span>
+                            <span className="text-muted-foreground text-[11px]">
+                              No image uploaded yet
+                            </span>
+                          </div>
+                        </button>
+                      </div>
+
+                      <div className="flex flex-1 flex-col gap-3 p-4">
+                        <div>
+                          <h3 className="text-foreground text-sm font-semibold break-words" title={student.full_name}>
+                            {student.full_name}
+                          </h3>
+                          <p className="text-muted-foreground mt-1 text-xs">
+                            Awaiting submission
+                          </p>
+                        </div>
+
+                        <div className="mt-auto flex items-center justify-between gap-2 border-t pt-2">
+                          <span className="text-muted-foreground text-xs">Missing</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-primary hover:text-primary/90 hover:bg-primary/10 group/btn focus-visible:ring-ring h-10 min-h-[44px] cursor-pointer gap-1.5 rounded-lg px-3 text-xs font-semibold focus-visible:ring-2 focus-visible:outline-hidden md:h-9 md:px-2.5 md:min-h-[36px]"
+                            onClick={() => handleReupload(student.id)}
+                            aria-label={`Upload worksheet for ${student.full_name}`}
+                          >
+                            <Upload className="size-3.5" aria-hidden="true" />
+                            <span>Upload</span>
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="border-t p-4">
+                        <StudentWorkSummary
+                          activityId={id}
+                          studentId={student.id}
+                          studentName={student.full_name}
+                          state={
+                            workQuery.isError ? null : (workByStudent.get(student.id) ?? null)
+                          }
+                          attempts={[]}
+                          isLoading={workQuery.isPending}
+                          compact={false}
+                        />
+                      </div>
+                    </article>
+                  );
+                }
+                const { group } = entry;
+                const activeSub =
+                  (statusFilter === "all" || statusFilter === "needs_action"
+                    ? group.allSubmissions.find(
+                      (sub) => sub.id === attemptOverrides.get(group.studentId)?.id
+                    )
+                    : null) ?? group.reviewSubmission;
+                const workState = workQuery.isError
+                  ? null
+                  : (workByStudent.get(group.studentId) ?? null);
+
+                return (
+                  <SubmissionCard
+                    key={group.studentId}
+                    compact={compact}
+                    submission={activeSub}
+                    studentName={group.studentName}
+                    imageUrl={signedUrlsMap?.get(activeSub.image_path)}
+                    attemptCount={group.attemptCount}
+                    allSubmissions={group.allSubmissions}
+                    countedSubmissionId={
+                      workQuery.isSuccess
+                        ? (workState?.active_submission_id ?? null)
+                        : undefined
+                    }
+                    latestSubmission={group.latestSubmission}
+                    activityId={id}
+                    workState={workState}
+                    workLoading={workQuery.isPending}
+                    onSelectAttempt={handleSelectAttempt}
+                    onSelect={handleSelectSubmission}
+                    onReupload={handleReupload}
+                    isSelected={selectedSubmissionIds.has(activeSub.id)}
+                    onToggleSelect={managingAttempts ? handleToggleCardSelect : undefined}
+                    onDeleteSingleAttempt={
+                      managingAttempts ? handleDeleteSingleAttemptPrompt : undefined
+                    }
+                    onDeleteAllStudentAttempts={
+                      managingAttempts ? handleDeleteAllStudentAttemptsPrompt : undefined
+                    }
+                  />
+                );
+              })
+              : filteredAndSortedSubmissions.map((sub) => (
+                <SubmissionCard
+                  key={sub.id}
+                  compact={compact}
+                  submission={sub}
+                  studentName={sub.student?.full_name ?? "Unknown Student"}
+                  imageUrl={signedUrlsMap?.get(sub.image_path)}
+                  onSelect={handleSelectSubmission}
+                  onReupload={handleReupload}
+                  isSelected={selectedSubmissionIds.has(sub.id)}
+                  onToggleSelect={managingAttempts ? handleToggleCardSelect : undefined}
+                  onDeleteSingleAttempt={
+                    managingAttempts ? handleDeleteSingleAttemptPrompt : undefined
+                  }
+                />
+              ))}
+          </div>
+        )}
       </section>
 
       <Collapsible

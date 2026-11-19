@@ -133,8 +133,15 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
         >
           <span>All Students</span>
           {allWorkFilter?.count != null && (
-            <span className="text-muted-foreground text-xs tabular-nums font-normal">
-              ({allWorkFilter.count})
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
+                statusFilter === "all"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              {allWorkFilter.count}
             </span>
           )}
         </Button>
