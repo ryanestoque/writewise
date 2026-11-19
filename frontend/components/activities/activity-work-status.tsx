@@ -45,7 +45,7 @@ export function ActivityWorkStatus({
         {work.status === "Draft"
           ? isScored
             ? "Ready to release"
-            : "Draft (unscored)"
+            : "Needs rubric scoring"
           : teacherWorkStatusLabel(work.status)}
       </Badge>
       {work.late && work.status !== "Excused" && (

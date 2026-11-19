@@ -26,11 +26,10 @@ export type ViewMode = "review" | "grouped" | "all";
 
 const secondaryFilters: { id: SubmissionFilter; label: string }[] = [
   { id: "ready", label: "Ready to release" },
-  { id: "released", label: "Shared with parents" },
   { id: "returned", label: "Returned for redo" },
   { id: "excused", label: "Excused" },
   { id: "processing", label: "Analyzing strokes" },
-  { id: "needs_upload", label: "Needs an upload" },
+  { id: "needs_action", label: "Needs action (any)" },
 ];
 
 export interface ActivityReviewToolbarProps {
@@ -67,6 +66,7 @@ export interface ActivityReviewToolbarProps {
   selectedCount: number;
   hiddenSelectedCount: number;
   onClearSelection: () => void;
+  onClearHiddenSelection?: () => void;
 }
 
 export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
@@ -92,22 +92,22 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
   selectedCount,
   hiddenSelectedCount,
   onClearSelection,
+  onClearHiddenSelection,
 }: ActivityReviewToolbarProps) {
   const allWorkFilter = submissionFilterItems.find(({ id }) => id === "all");
-
-  const needsActionCount =
-    submissionFilterItems.find(({ id }) => id === "needs_action")?.count ??
-    submissionFilterItems
-      .filter(({ id }) => ["needs_scoring", "ready", "needs_upload", "missing", "returned"].includes(id))
-      .reduce((sum, item) => sum + (item.count ?? 0), 0);
 
   const needsScoringCount =
     submissionFilterItems.find(({ id }) => id === "needs_scoring")?.count ?? 0;
   const missingCount =
     submissionFilterItems.find(({ id }) => id === "missing")?.count ?? 0;
+  const releasedCount =
+    submissionFilterItems.find(({ id }) => id === "released")?.count ?? 0;
 
   const isSecondaryActive = secondaryFilters.some((f) => f.id === statusFilter);
   const activeSecondaryItem = secondaryFilters.find((f) => f.id === statusFilter);
+  const activeSecondaryCount = activeSecondaryItem
+    ? submissionFilterItems.find((f) => f.id === activeSecondaryItem.id)?.count
+    : undefined;
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -125,9 +125,9 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
             onStatusFilterChange("all");
           }}
           className={cn(
-            "min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
+            "min-h-[44px] md:min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
             statusFilter === "all"
-              ? "bg-primary/10 text-primary hover:bg-primary/15 font-semibold ring-1 ring-primary/20"
+              ? "bg-primary/10 text-primary hover:bg-primary/15 font-semibold"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
         >
@@ -148,36 +148,6 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
 
         <Button
           type="button"
-          variant={statusFilter === "needs_action" ? "secondary" : "ghost"}
-          aria-pressed={statusFilter === "needs_action"}
-          onClick={() => {
-            if (viewMode !== "grouped") onViewModeChange("grouped");
-            onStatusFilterChange("needs_action");
-          }}
-          className={cn(
-            "min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
-            statusFilter === "needs_action"
-              ? "bg-primary/10 text-primary hover:bg-primary/15 font-semibold ring-1 ring-primary/20"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          )}
-        >
-          <span>Needs Action</span>
-          {needsActionCount > 0 && (
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
-                statusFilter === "needs_action"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
-              )}
-            >
-              {needsActionCount}
-            </span>
-          )}
-        </Button>
-
-        <Button
-          type="button"
           variant={statusFilter === "needs_scoring" ? "secondary" : "ghost"}
           aria-pressed={statusFilter === "needs_scoring"}
           onClick={() => {
@@ -185,20 +155,20 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
             onStatusFilterChange("needs_scoring");
           }}
           className={cn(
-            "min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
+            "min-h-[44px] md:min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
             statusFilter === "needs_scoring"
-              ? "bg-amber-500/15 text-amber-900 dark:text-amber-300 hover:bg-amber-500/20 font-semibold ring-1 ring-amber-500/30"
+              ? "bg-amber-500/15 text-amber-900 dark:text-amber-300 hover:bg-amber-500/20 font-semibold"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
         >
-          <span>Needs Scoring</span>
+          <span>To Grade</span>
           {needsScoringCount > 0 && (
             <span
               className={cn(
                 "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
                 statusFilter === "needs_scoring"
-                  ? "bg-amber-600 text-white dark:bg-amber-500"
-                  : "bg-muted text-muted-foreground"
+                  ? "bg-amber-900 text-white dark:bg-amber-300 dark:text-amber-950"
+                  : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
               )}
             >
               {needsScoringCount}
@@ -215,9 +185,9 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
             onStatusFilterChange("missing");
           }}
           className={cn(
-            "min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
+            "min-h-[44px] md:min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
             statusFilter === "missing"
-              ? "bg-amber-700/15 text-amber-900 dark:text-amber-300 hover:bg-amber-700/20 font-semibold ring-1 ring-amber-700/30"
+              ? "bg-primary/10 text-primary hover:bg-primary/15 font-semibold"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
         >
@@ -227,7 +197,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
               className={cn(
                 "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
                 statusFilter === "missing"
-                  ? "bg-amber-700 text-white dark:bg-amber-600"
+                  ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground"
               )}
             >
@@ -236,71 +206,105 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
           )}
         </Button>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button
-                type="button"
-                variant={isSecondaryActive ? "secondary" : "ghost"}
-                className={cn(
-                  "min-h-[36px] px-3 text-xs font-medium rounded-lg gap-1.5 cursor-pointer transition-all",
-                  isSecondaryActive
-                    ? "bg-primary/10 text-primary hover:bg-primary/15 font-semibold ring-1 ring-primary/20"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                )}
-              />
-            }
-          >
-            <Filter className="size-3.5" aria-hidden="true" />
-            <span>{isSecondaryActive ? activeSecondaryItem?.label : "More filters"}</span>
-            {isSecondaryActive ? (
-              <span
-                role="button"
-                tabIndex={0}
-                aria-label="Clear filter"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStatusFilterChange("all");
-                }}
-                className="hover:text-destructive ml-1 rounded p-0.5"
-              >
-                <X className="size-3" />
-              </span>
-            ) : (
-              <ChevronDown className="size-3 opacity-60" />
-            )}
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56 text-xs">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel className="text-muted-foreground px-2 py-1.5 text-xs font-semibold uppercase tracking-wider">
-                Additional Statuses
-              </DropdownMenuLabel>
-              {secondaryFilters.map((sf) => {
-                const item = submissionFilterItems.find((f) => f.id === sf.id);
-                const isSelected = statusFilter === sf.id;
-                return (
-                  <DropdownMenuItem
-                    key={sf.id}
-                    onClick={() => {
-                      if (viewMode !== "grouped") onViewModeChange("grouped");
-                      onStatusFilterChange(sf.id);
-                    }}
-                    className={cn(
-                      "min-h-9 cursor-pointer justify-between text-xs",
-                      isSelected && "bg-primary/10 text-primary font-medium"
-                    )}
-                  >
-                    <span>{sf.label}</span>
-                    <div className="text-muted-foreground flex items-center gap-1.5">
-                      {item?.count != null && <span className="tabular-nums">({item.count})</span>}
-                      {isSelected && <Check className="text-primary size-3 stroke-[2.5]" />}
-                    </div>
-                  </DropdownMenuItem>
-                );
-              })}
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button
+          type="button"
+          variant={statusFilter === "released" ? "secondary" : "ghost"}
+          aria-pressed={statusFilter === "released"}
+          onClick={() => {
+            if (viewMode !== "grouped") onViewModeChange("grouped");
+            onStatusFilterChange("released");
+          }}
+          className={cn(
+            "min-h-[44px] md:min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
+            statusFilter === "released"
+              ? "bg-emerald-500/15 text-emerald-900 dark:text-emerald-300 hover:bg-emerald-500/20 font-semibold"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          )}
+        >
+          <span>Done &amp; Released</span>
+          {releasedCount > 0 && (
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
+                statusFilter === "released"
+                  ? "bg-emerald-900 text-white dark:bg-emerald-300 dark:text-emerald-950"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              {releasedCount}
+            </span>
+          )}
+        </Button>
+
+        <div className="inline-flex items-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  type="button"
+                  variant={isSecondaryActive ? "secondary" : "ghost"}
+                  className={cn(
+                    "min-h-[44px] md:min-h-[36px] px-3 text-xs font-medium rounded-lg gap-1.5 cursor-pointer transition-all",
+                    isSecondaryActive
+                      ? "rounded-r-none bg-primary/10 text-primary hover:bg-primary/15 font-semibold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  )}
+                />
+              }
+            >
+              <Filter className="size-3.5" aria-hidden="true" />
+              <span>{isSecondaryActive ? activeSecondaryItem?.label : "More filters"}</span>
+              {isSecondaryActive && activeSecondaryCount != null && (
+                <span className="rounded-full bg-primary/20 text-primary px-1.5 py-0.5 text-xs font-bold tabular-nums">
+                  {activeSecondaryCount}
+                </span>
+              )}
+              <ChevronDown className="size-3 opacity-60" aria-hidden="true" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56 text-xs">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="text-muted-foreground px-2 py-1.5 text-xs font-semibold uppercase tracking-wider">
+                  Additional Statuses
+                </DropdownMenuLabel>
+                {secondaryFilters.map((sf) => {
+                  const item = submissionFilterItems.find((f) => f.id === sf.id);
+                  const isSelected = statusFilter === sf.id;
+                  return (
+                    <DropdownMenuItem
+                      key={sf.id}
+                      onClick={() => {
+                        if (viewMode !== "grouped") onViewModeChange("grouped");
+                        onStatusFilterChange(sf.id);
+                      }}
+                      className={cn(
+                        "min-h-9 cursor-pointer justify-between text-xs",
+                        isSelected && "bg-primary/10 text-primary font-medium"
+                      )}
+                    >
+                      <span>{sf.label}</span>
+                      <div className="text-muted-foreground flex items-center gap-1.5">
+                        {item?.count != null && <span className="tabular-nums">({item.count})</span>}
+                        {isSelected && <Check className="text-primary size-3 stroke-[2.5]" aria-hidden="true" />}
+                      </div>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {isSecondaryActive && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Clear additional filter"
+              onClick={() => onStatusFilterChange("all")}
+              className="size-11 min-h-[44px] min-w-[44px] md:size-9 md:min-h-[36px] md:min-w-[36px] rounded-l-none bg-primary/10 text-primary hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer active:translate-y-0 active:not-aria-[haspopup]:translate-y-0"
+            >
+              <X className="size-3.5" aria-hidden="true" />
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -381,7 +385,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
             onClick={onToggleManagingAttempts}
             aria-pressed={managingAttempts}
             className={cn(
-              "h-10 md:h-9 rounded-lg text-xs font-medium cursor-pointer transition-all gap-1.5",
+              "min-h-[44px] md:min-h-[36px] px-3 rounded-lg text-xs font-medium cursor-pointer transition-all gap-1.5",
               managingAttempts
                 ? "bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/15 font-semibold"
                 : "text-muted-foreground hover:text-foreground border-border hover:bg-muted/50"
@@ -432,10 +436,22 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
             </label>
           </div>
           <span className="text-muted-foreground text-xs">
-            {selectedCount} selected
-            {hiddenSelectedCount ? " · " + hiddenSelectedCount + " not shown" : ""}. Selection does
-            not limit release.
+            {selectedCount} selected. Selection does not limit release.
           </span>
+          {hiddenSelectedCount > 0 && (
+            <div className="flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-xs text-amber-900 dark:text-amber-200">
+              <span>{hiddenSelectedCount} hidden not shown</span>
+              {onClearHiddenSelection && (
+                <button
+                  type="button"
+                  onClick={onClearHiddenSelection}
+                  className="ml-1 underline hover:no-underline font-semibold cursor-pointer"
+                >
+                  Clear hidden
+                </button>
+              )}
+            </div>
+          )}
           {selectedCount > 0 && (
             <Button variant="ghost" onClick={onClearSelection} className="min-h-11">
               Clear

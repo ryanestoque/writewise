@@ -30,6 +30,8 @@ export interface AttemptDeletionDialogsProps {
   hasSubmissionsError: boolean;
   isSubmissionsLoading: boolean;
   onConfirmBatchDelete: () => void;
+  onClearSelection?: () => void;
+  onClearHiddenSelection?: () => void;
 
   // Single attempt deletion state & handlers
   singleAttemptToDelete: Submission | null;
@@ -60,6 +62,8 @@ export const AttemptDeletionDialogs = memo(function AttemptDeletionDialogs({
   hasSubmissionsError,
   isSubmissionsLoading,
   onConfirmBatchDelete,
+  onClearSelection,
+  onClearHiddenSelection,
 
   singleAttemptToDelete,
   onSingleAttemptDialogOpenChange,
@@ -94,16 +98,36 @@ export const AttemptDeletionDialogs = memo(function AttemptDeletionDialogs({
             tabIndex={0}
           >
             {hiddenSelectedCount > 0 && (
-              <p role="status">
-                {hiddenSelectedCount} selected{" "}
-                {hiddenSelectedCount === 1 ? "attempt is" : "attempts are"} not shown in the current
-                view. Included below.
-              </p>
+              <div role="status" className="flex items-center justify-between gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-900 dark:text-amber-200">
+                <span>
+                  <strong>{hiddenSelectedCount}</strong> hidden {hiddenSelectedCount === 1 ? "attempt is" : "attempts are"} included in this deletion.
+                </span>
+                {onClearHiddenSelection && (
+                  <button
+                    type="button"
+                    onClick={onClearHiddenSelection}
+                    className="underline hover:no-underline font-semibold cursor-pointer shrink-0"
+                  >
+                    Remove hidden
+                  </button>
+                )}
+              </div>
             )}
             {unavailableSelectedCount > 0 && (
-              <p role="alert">
-                {unavailableSelectedCount} selected attempts are unavailable. Refresh worksheets or clear your selection before deleting.
-              </p>
+              <div role="alert" className="flex items-center justify-between gap-2 rounded-lg border border-destructive/20 bg-destructive/10 p-2 text-xs text-destructive">
+                <span>
+                  {unavailableSelectedCount} selected {unavailableSelectedCount === 1 ? "attempt is" : "attempts are"} unavailable.
+                </span>
+                {onClearSelection && (
+                  <button
+                    type="button"
+                    onClick={onClearSelection}
+                    className="underline hover:no-underline font-semibold cursor-pointer shrink-0"
+                  >
+                    Clear selection
+                  </button>
+                )}
+              </div>
             )}
             {selectedSubmissions.map((sub) => (
               <div key={sub.id} className="flex flex-col gap-1 border-b pb-2">
@@ -116,7 +140,7 @@ export const AttemptDeletionDialogs = memo(function AttemptDeletionDialogs({
                   Uploaded {formatDate(sub.created_at)}
                 </span>
                 <span>
-                  {activeIds.has(sub.id) ? "Counted attempt" : "Not counted"}
+                  {activeIds.has(sub.id) ? "Official attempt" : "Past attempt"}
                   {sub.released_at ? " · Released to parents" : " · Not released"}
                 </span>
               </div>
@@ -145,7 +169,7 @@ export const AttemptDeletionDialogs = memo(function AttemptDeletionDialogs({
             >
               {isBatchDeleting ? (
                 <>
-                  <Loader2 className="mr-1.5 size-4 animate-spin" />
+                  <Loader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
                   Deleting...
                 </>
               ) : (
@@ -183,7 +207,7 @@ export const AttemptDeletionDialogs = memo(function AttemptDeletionDialogs({
             >
               {isSingleDeleting ? (
                 <>
-                  <Loader2 className="mr-1.5 size-4 animate-spin" />
+                  <Loader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
                   Deleting...
                 </>
               ) : (
@@ -225,7 +249,7 @@ export const AttemptDeletionDialogs = memo(function AttemptDeletionDialogs({
             >
               {isStudentBatchDeleting ? (
                 <>
-                  <Loader2 className="mr-1.5 size-4 animate-spin" />
+                  <Loader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
                   Deleting...
                 </>
               ) : (

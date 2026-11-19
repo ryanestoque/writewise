@@ -41,7 +41,6 @@ const CreateActivityDialog = dynamic(
 );
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { FloatingActionBar } from "@/components/ui/floating-action-bar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
@@ -64,6 +63,8 @@ import {
   SearchX,
   Trash2,
   ChevronDown,
+  CheckCircle2,
+  CheckCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getWordCount } from "@/lib/utils/formatters";
@@ -208,8 +209,10 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
     lastSyncedUrlQueryRef.current = "";
     updateReviewParams({ q: null });
   }, [updateReviewParams]);
-  const setStatusFilter = (value: SubmissionFilter) =>
+  const setStatusFilter = (value: SubmissionFilter) => {
+    clearSelection();
     updateReviewParams({ status: value === "all" ? null : value });
+  };
   const setSortBy = (value: SubmissionSort) => updateReviewParams({ sort: value });
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -688,20 +691,12 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
   );
 
   const handleSelectAttempt = useCallback((studentId: string, sub: Submission) => {
-    // Historical browsing leaves the task queue so its displayed work stays truthful.
-    const next = new URLSearchParams(window.location.search);
-    next.delete("status");
-    window.history.replaceState(
-      null,
-      "",
-      `${window.location.pathname}${next.size ? `?${next}` : ""}`
-    );
     setAttemptOverrides((prev) => {
       const next = new Map(prev);
       next.set(studentId, sub);
       return next;
     });
-  }, []);
+  }, [setAttemptOverrides]);
 
   // All selectable submission IDs in current view
   const allSelectableSubmissionIds = useMemo(() => {
@@ -770,13 +765,25 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
       }
       return next;
     });
-  }, []);
+  }, [setSelectedSubmissionIds]);
 
   const handleToggleCardSelect = handleToggleSelectSubmission;
 
   const clearSelection = useCallback(() => {
     setSelectedSubmissionIds(new Set());
-  }, []);
+  }, [setSelectedSubmissionIds]);
+
+  const clearHiddenSelections = useCallback(() => {
+    setSelectedSubmissionIds((prev) => {
+      const next = new Set<string>();
+      for (const id of prev) {
+        if (allSelectableSubmissionIdsSet.has(id)) {
+          next.add(id);
+        }
+      }
+      return next;
+    });
+  }, [allSelectableSubmissionIdsSet, setSelectedSubmissionIds]);
 
   const handleToggleSelectAll = useCallback(() => {
     if (allVisibleSelected) {
@@ -789,7 +796,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
     } else {
       setSelectedSubmissionIds((previous) => new Set([...previous, ...allSelectableSubmissionIds]));
     }
-  }, [allVisibleSelected, allSelectableSubmissionIds]);
+  }, [allVisibleSelected, allSelectableSubmissionIds, setSelectedSubmissionIds]);
 
   const handleBatchDeleteConfirm = async () => {
     if (!selectedCount || selectedSubmissionIds.size !== selectedCount || submissionsError || submissionsLoading) return;
@@ -818,7 +825,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
     (studentName: string, subs: Submission[]) => {
       setStudentBatchToDelete({ studentName, submissions: subs });
     },
-    []
+    [setStudentBatchToDelete]
   );
 
   const handleConfirmDeleteSingleAttempt = async () => {
@@ -878,7 +885,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
           className="border-destructive/20 bg-destructive/10 text-destructive flex flex-col items-center justify-between gap-4 rounded-xl border p-4 sm:flex-row"
         >
           <div className="flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 shrink-0" />
+            <AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
             <span className="text-sm font-medium">
               Activity not found or unable to load. Please check your connection and try again.
             </span>
@@ -889,7 +896,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
             onClick={() => refetch()}
             className="border-destructive/30 hover:bg-destructive/10 text-destructive min-h-11 cursor-pointer md:min-h-9"
           >
-            <RotateCcw className="mr-1.5 h-4 w-4" />
+            <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" />
             Retry
           </Button>
         </div>
@@ -948,7 +955,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
         <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">
           <Empty className="border-0 py-14">
             <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
-              <ClipboardList className="h-6 w-6" />
+              <ClipboardList className="h-6 w-6" aria-hidden="true" />
             </EmptyMedia>
             <EmptyHeader>
               <EmptyTitle>Activity not found</EmptyTitle>
@@ -964,7 +971,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                   "min-h-11 rounded-lg sm:rounded-xl md:min-h-9"
                 )}
               >
-                <ArrowLeft className="mr-1.5 h-4 w-4" />
+                <ArrowLeft className="mr-1.5 h-4 w-4" aria-hidden="true" />
                 Back to Activities
               </Link>
             </EmptyContent>
@@ -986,7 +993,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
   return (
     <div className="flex w-full min-w-0 flex-col gap-3 pb-28 sm:gap-5 sm:pb-24">
       {/* Top Back Navigation Trail */}
-      <nav aria-label="Breadcrumb navigation" className="hidden sm:block print:hidden">
+      <nav aria-label="Breadcrumb navigation" className="flex items-center print:hidden">
         <Link
           href="/activities"
           className="text-muted-foreground hover:text-foreground group focus-visible:ring-ring hover:bg-muted/50 -ml-1 inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden sm:-ml-2 md:min-h-[36px]"
@@ -1046,23 +1053,13 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
       <section aria-labelledby="submissions-heading" className="space-y-3 sm:space-y-4">
         {/* Section Header with Controls */}
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2">
+          <div>
             <h2
               id="submissions-heading"
               className="font-heading text-foreground text-lg font-semibold tracking-tight sm:text-xl"
             >
               Student work
             </h2>
-            {submissions && (viewMode === "all" || rosterReady) && (
-              <Badge
-                variant="outline"
-                className="bg-muted/50 text-muted-foreground border-border px-2.5 py-0.5 text-xs font-semibold"
-              >
-                {viewMode !== "all"
-                  ? `${assignedStudents.length} students`
-                  : `${submissions.length} ${submissions.length === 1 ? "upload" : "uploads"}`}
-              </Badge>
-            )}
           </div>
 
           <ReleaseActivityButton
@@ -1158,13 +1155,14 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
             selectedCount={selectedCount}
             hiddenSelectedCount={hiddenSelectedCount}
             onClearSelection={clearSelection}
+            onClearHiddenSelection={clearHiddenSelections}
           />
         )}
 
         {submissions && (searchQuery.trim() || statusFilter !== "all") && (
-          <div className="flex items-center justify-between gap-2 rounded-lg border border-amber-300/60 bg-amber-50/50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/80 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
             <span>
-              Showing <strong>{currentListLength}</strong> of <strong>{totalStudents}</strong> {resultUnit}s
+              Showing <strong className="text-foreground">{currentListLength}</strong> of <strong className="text-foreground">{totalStudents}</strong> {resultUnit}s
               {statusFilter !== "all" ? ` (${reviewFilterLabels[statusFilter]})` : ""}
               {searchQuery ? ` matching "${searchQuery}"` : ""}.
             </span>
@@ -1175,7 +1173,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                 handleClearSearch();
                 setStatusFilter("all");
               }}
-              className="h-6 px-2 text-xs text-amber-800 hover:text-amber-950 hover:bg-amber-100/60 dark:text-amber-300 dark:hover:text-amber-100 dark:hover:bg-amber-900/40 cursor-pointer"
+              className="h-8 min-h-[36px] sm:min-h-[28px] px-2.5 text-xs text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
             >
               Reset filters
             </Button>
@@ -1210,7 +1208,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
             className="border-destructive/20 bg-destructive/10 text-destructive flex flex-col items-center justify-between gap-4 rounded-xl border p-4 sm:flex-row"
           >
             <div className="flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 shrink-0" />
+              <AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
               <span className="text-sm font-medium">
                 Couldn&apos;t load submissions. Check your connection and try again.
               </span>
@@ -1221,7 +1219,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
               onClick={() => refetchSubmissions()}
               className="border-destructive/30 hover:bg-destructive/10 text-destructive min-h-11 cursor-pointer md:min-h-9"
             >
-              <RotateCcw className="mr-1.5 h-4 w-4" />
+              <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" />
               Retry
             </Button>
           </div>
@@ -1230,7 +1228,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
           <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">
             <Empty className="border-0 py-14">
               <EmptyMedia variant="icon" className="bg-primary/10 text-primary">
-                <Inbox className="h-6 w-6" />
+                <Inbox className="h-6 w-6" aria-hidden="true" />
               </EmptyMedia>
               <EmptyHeader>
                 <EmptyTitle className="text-lg sm:text-xl">No submissions yet</EmptyTitle>
@@ -1244,27 +1242,99 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                   className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 min-h-[44px] w-full cursor-pointer rounded-lg text-xs font-medium sm:w-auto sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
                   onClick={() => openUpload({ activityId: id })}
                 >
-                  <Upload className="mr-2 h-4 w-4" />
+                  <Upload className="mr-2 h-4 w-4" aria-hidden="true" />
                   <span>Upload worksheet</span>
                 </Button>
               </EmptyContent>
             </Empty>
           </div>
         ) : currentListLength === 0 ? (
-          /* Empty state: Filters returned 0 results */
+          /* Empty state: Filters or search returned 0 results */
           <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">
-            <Empty className="border-0 py-12">
-              <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
-                <SearchX className="h-6 w-6" />
-              </EmptyMedia>
-              <EmptyHeader>
-                <EmptyTitle className="text-lg sm:text-xl">No matching {resultUnit}s</EmptyTitle>
-                <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm">
-                  Try a different name or status filter.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent className="flex gap-2">
-                {searchQuery && (
+            {!searchQuery.trim() &&
+            (statusFilter === "needs_scoring" || statusFilter === "needs_action") &&
+            (submissions?.length ?? 0) > 0 ? (
+              /* Celebratory Inbox Zero: All pending worksheets graded */
+              <Empty className="border-0 py-12">
+                <EmptyMedia
+                  variant="icon"
+                  className="bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400"
+                >
+                  <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
+                </EmptyMedia>
+                <EmptyHeader>
+                  <EmptyTitle className="text-lg sm:text-xl">All caught up! No worksheets to grade</EmptyTitle>
+                  <EmptyDescription className="mx-auto max-w-md text-xs sm:text-sm">
+                    Every submitted cursive worksheet has been reviewed and scored. You can inspect all student
+                    diagnostics, check released grades, or return to the complete roster.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    variant="default"
+                    onClick={() => setStatusFilter("all")}
+                    className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                  >
+                    View all students
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setStatusFilter("released")}
+                    className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                  >
+                    View released results
+                  </Button>
+                  {studentsWithoutUploads.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => setStatusFilter("no_upload")}
+                      className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                    >
+                      View missing ({studentsWithoutUploads.length})
+                    </Button>
+                  )}
+                </EmptyContent>
+              </Empty>
+            ) : !searchQuery.trim() && statusFilter === "no_upload" && assignedStudents.length > 0 ? (
+              /* Celebratory All-Turned-In state */
+              <Empty className="border-0 py-12">
+                <EmptyMedia
+                  variant="icon"
+                  className="bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400"
+                >
+                  <CheckCheck className="h-6 w-6" aria-hidden="true" />
+                </EmptyMedia>
+                <EmptyHeader>
+                  <EmptyTitle className="text-lg sm:text-xl">All worksheets submitted!</EmptyTitle>
+                  <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm">
+                    Every assigned student has turned in their cursive handwriting activity sheet.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent className="flex gap-2">
+                  <Button
+                    variant="default"
+                    onClick={() => setStatusFilter("all")}
+                    className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                  >
+                    View all students
+                  </Button>
+                </EmptyContent>
+              </Empty>
+            ) : searchQuery.trim() ? (
+              /* Search with 0 results */
+              <Empty className="border-0 py-12">
+                <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
+                  <SearchX className="h-6 w-6" aria-hidden="true" />
+                </EmptyMedia>
+                <EmptyHeader>
+                  <EmptyTitle className="text-lg sm:text-xl">
+                    No {resultUnit}s matching &quot;{searchQuery.trim()}&quot;
+                  </EmptyTitle>
+                  <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm">
+                    We couldn&apos;t find any students matching this query. Check for typos or reset your search.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent className="flex gap-2">
                   <Button
                     variant="outline"
                     onClick={handleClearSearch}
@@ -1272,18 +1342,42 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                   >
                     Clear search
                   </Button>
-                )}
-                {statusFilter !== "all" && (
+                  {statusFilter !== "all" && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => setStatusFilter("all")}
+                      className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                    >
+                      View All
+                    </Button>
+                  )}
+                </EmptyContent>
+              </Empty>
+            ) : (
+              /* Specific status filter with 0 results */
+              <Empty className="border-0 py-12">
+                <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
+                  <Inbox className="h-6 w-6" aria-hidden="true" />
+                </EmptyMedia>
+                <EmptyHeader>
+                  <EmptyTitle className="text-lg sm:text-xl">
+                    No {reviewFilterLabels[statusFilter] ?? "matching"} {resultUnit}s
+                  </EmptyTitle>
+                  <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm">
+                    There are currently no student worksheets under this review status.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent className="flex gap-2">
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     onClick={() => setStatusFilter("all")}
                     className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
                   >
-                    View All
+                    View all students
                   </Button>
-                )}
-              </EmptyContent>
-            </Empty>
+                </EmptyContent>
+              </Empty>
+            )}
           </div>
         ) : (
           /* Submissions Cards Grid */
@@ -1357,7 +1451,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                             <span className="text-foreground group-hover/dropzone:text-primary text-xs font-semibold transition-colors">
                               Upload worksheet
                             </span>
-                            <span className="text-muted-foreground text-[11px]">
+                            <span className="text-muted-foreground text-xs opacity-80">
                               No image uploaded yet
                             </span>
                           </div>
@@ -1537,7 +1631,19 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
         ariaLabel="Batch attempt actions"
       >
         {hiddenSelectedCount > 0 && (
-          <span className="text-muted-foreground text-xs">{hiddenSelectedCount} not shown</span>
+          <div className="flex items-center gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-900 dark:text-amber-200">
+            <AlertCircle className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+            <span>
+              {hiddenSelectedCount} hidden {hiddenSelectedCount === 1 ? "attempt" : "attempts"}
+            </span>
+            <button
+              type="button"
+              onClick={clearHiddenSelections}
+              className="ml-1 font-semibold underline hover:no-underline text-amber-950 dark:text-amber-100 cursor-pointer"
+            >
+              Clear hidden
+            </button>
+          </div>
         )}
         {selectedStudentsCount > 0 && (
           <span className="text-muted-foreground mr-1 hidden text-xs sm:inline">
@@ -1551,7 +1657,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
           disabled={batchDeleteMutation.isPending}
           className="min-h-11 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-semibold shadow-xs md:min-h-9"
         >
-          <Trash2 className="size-3.5" />
+          <Trash2 className="size-3.5" aria-hidden="true" />
           <span>Delete Attempts</span>
         </Button>
       </FloatingActionBar>
@@ -1570,6 +1676,8 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
         hasSubmissionsError={!!submissionsError}
         isSubmissionsLoading={submissionsLoading}
         onConfirmBatchDelete={handleBatchDeleteConfirm}
+        onClearSelection={clearSelection}
+        onClearHiddenSelection={clearHiddenSelections}
         singleAttemptToDelete={singleAttemptToDelete}
         onSingleAttemptDialogOpenChange={(open) => !open && setSingleAttemptToDelete(null)}
         isSingleDeleting={deleteSingleMutation.isPending}

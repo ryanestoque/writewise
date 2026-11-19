@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -104,6 +105,42 @@ export const SubmissionCard = memo(function SubmissionCard({
   const rejection = getRejectionSummary(submission.rejection_code);
   const hasMultipleAttempts = attemptCount > 1 && allSubmissions.length > 1;
 
+  const criteriaData = useMemo(() => {
+    if (!resolvedScore.isScored) return null;
+    const { letterFormation, sizeConsistency, spacing, slant, baselineAlignment } =
+      resolvedScore.criteriaScores;
+    const items = [
+      { key: "formation", name: "Letter Formation", short: "Form", score: letterFormation },
+      { key: "size", name: "Size Consistency", short: "Size", score: sizeConsistency },
+      { key: "spacing", name: "Spacing", short: "Space", score: spacing },
+      { key: "slant", name: "Slant", short: "Slant", score: slant },
+      { key: "baseline", name: "Baseline Alignment", short: "Base", score: baselineAlignment },
+    ];
+    const hasAny = items.some((item) => item.score != null);
+    if (!hasAny) return null;
+    return items.map((item) => {
+      const val = item.score;
+      let band = "Unrated";
+      let barClass = "bg-muted";
+      if (val != null) {
+        if (val >= 80) {
+          band = "Excellent";
+          barClass = "bg-band-4";
+        } else if (val >= 60) {
+          band = "Satisfactory";
+          barClass = "bg-band-3";
+        } else if (val >= 40) {
+          band = "Developing";
+          barClass = "bg-band-2";
+        } else {
+          band = "Needs Improvement";
+          barClass = "bg-band-1";
+        }
+      }
+      return { ...item, band, barClass };
+    });
+  }, [resolvedScore]);
+
   const currentAttemptIndex = useMemo(() => {
     if (!hasMultipleAttempts) return 1;
     const idx = allSubmissions.findIndex((s) => s.id === submission.id);
@@ -131,12 +168,19 @@ export const SubmissionCard = memo(function SubmissionCard({
     }
     if (hasMultipleAttempts) {
       text += ` Attempt ${currentAttemptIndex} of ${attemptCount} total attempts.`;
+      if (countedSubmissionId !== undefined) {
+        text +=
+          submission.id === countedSubmissionId
+            ? " This is the official attempt."
+            : " This is a past attempt.";
+      }
     }
     return text;
   }, [
     inspectActionLabel,
     studentName,
     config.label,
+    submission.id,
     submission.status,
     resolvedScore.isScored,
     resolvedScore.source,
@@ -146,6 +190,7 @@ export const SubmissionCard = memo(function SubmissionCard({
     hasMultipleAttempts,
     currentAttemptIndex,
     attemptCount,
+    countedSubmissionId,
   ]);
 
   const showImage = Boolean(imageUrl && !imageError);
@@ -160,7 +205,7 @@ export const SubmissionCard = memo(function SubmissionCard({
         state={workState ?? null}
         attempts={allSubmissions}
         isLoading={Boolean(workLoading)}
-        compact={compact}
+        compact={true}
         isScored={resolvedScore.isScored}
       />
     ) : null);
@@ -204,7 +249,7 @@ export const SubmissionCard = memo(function SubmissionCard({
                     />
                     <span className="truncate">
                       Attempt {attemptNum}{" "}
-                      {sub.id === countedSubmissionId ? "(Counted)" : isLatest ? "(Newest)" : ""}
+                      {sub.id === countedSubmissionId ? "(Official)" : isLatest ? "(Newest)" : ""}
                     </span>
                   </div>
                   <div className="text-muted-foreground flex shrink-0 items-center gap-1.5">
@@ -286,9 +331,15 @@ export const SubmissionCard = memo(function SubmissionCard({
       </h3>
 
       {countedSubmissionId !== undefined && submission.id !== countedSubmissionId && (
-        <span className="inline-flex items-center gap-1 mt-1 text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-900/50">
-          <History className="size-3 shrink-0" />
-          <span>Viewing past attempt</span>
+        <span className="inline-flex items-center gap-1.5 mt-1 text-xs font-medium text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-900/50">
+          <History className="size-3 shrink-0" aria-hidden="true" />
+          <span>Viewing past attempt (not official)</span>
+        </span>
+      )}
+      {hasMultipleAttempts && countedSubmissionId !== undefined && submission.id === countedSubmissionId && (
+        <span className="inline-flex items-center gap-1 mt-1 text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-900/50">
+          <Check className="size-3 shrink-0" aria-hidden="true" />
+          <span>Official Attempt</span>
         </span>
       )}
     </>
@@ -296,48 +347,101 @@ export const SubmissionCard = memo(function SubmissionCard({
   const scoreSummary = (
     <>
       {submission.status === "completed" && (
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <Tooltip>
-            <TooltipTrigger
-              type="button"
-              className={cn(
-                "focus-visible:ring-ring inline-flex min-h-11 cursor-help items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-semibold transition-all focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-hidden md:min-h-9",
-                !resolvedScore.isScored
-                  ? "border-amber-300/80 bg-amber-50/80 text-amber-900 dark:border-amber-800/80 dark:bg-amber-950/40 dark:text-amber-200"
-                  : scoreBand.className
-              )}
-              aria-label={
-                !resolvedScore.isScored
-                  ? "Pending teacher rubric evaluation"
-                  : `Diagnostic score: ${scoreBand.label}. ${scoreBand.band} Penmanship: ${scoreBand.description}`
-              }
-            >
-              <span
+        <div className="mt-1.5 flex flex-col gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Tooltip>
+              <TooltipTrigger
+                type="button"
                 className={cn(
-                  "size-1.5 shrink-0 rounded-full",
-                  !resolvedScore.isScored ? "bg-amber-600 dark:bg-amber-400" : scoreBand.dotColor
+                  "focus-visible:ring-ring inline-flex min-h-11 cursor-help items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-semibold transition-all focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-hidden md:min-h-9",
+                  !resolvedScore.isScored
+                    ? "border-amber-300/80 bg-amber-50/80 text-amber-900 dark:border-amber-800/80 dark:bg-amber-950/40 dark:text-amber-200"
+                    : scoreBand.className
                 )}
-                aria-hidden="true"
-              />
-              <span>{!resolvedScore.isScored ? "Needs Rubric Scoring" : scoreBand.label}</span>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-xs text-xs">
-              <p className="font-semibold">
-                {!resolvedScore.isScored
-                  ? "Teacher Rubric Required"
-                  : `${scoreBand.band} Penmanship ${resolvedScore.source === "manual" ? "(Teacher Rubric)" : ""}`}
-              </p>
-              <p className="text-muted-foreground mt-0.5 text-xs">
-                {!resolvedScore.isScored
-                  ? "Worksheet processed by OpenCV/CNN. Click Score rubric to grade handwriting criteria."
-                  : scoreBand.description}
-              </p>
-            </TooltipContent>
-          </Tooltip>
-          {resolvedScore.isScored && (
-            <span className="text-muted-foreground text-xs">
-              {resolvedScore.source === "manual" ? "Teacher rubric" : "Calibrated"}
-            </span>
+                aria-label={
+                  !resolvedScore.isScored
+                    ? "Pending teacher rubric evaluation"
+                    : `Diagnostic score: ${scoreBand.label}. ${scoreBand.band} Penmanship: ${scoreBand.description}`
+                }
+              >
+                <span
+                  className={cn(
+                    "size-1.5 shrink-0 rounded-full",
+                    !resolvedScore.isScored ? "bg-amber-600 dark:bg-amber-400" : scoreBand.dotColor
+                  )}
+                  aria-hidden="true"
+                />
+                <span>{!resolvedScore.isScored ? "Needs Rubric Scoring" : scoreBand.label}</span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs text-xs">
+                <p className="font-semibold">
+                  {!resolvedScore.isScored
+                    ? "Teacher Rubric Required"
+                    : `${scoreBand.band} Penmanship ${resolvedScore.source === "manual" ? "(Teacher Rubric)" : ""}`}
+                </p>
+                <p className="text-muted-foreground mt-0.5 text-xs">
+                  {!resolvedScore.isScored
+                    ? "Worksheet processed by OpenCV/CNN. Click Score rubric to grade handwriting criteria."
+                    : scoreBand.description}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+            {resolvedScore.isScored && (
+              <span className="text-muted-foreground text-xs">
+                {resolvedScore.source === "manual" ? "Teacher rubric" : "Calibrated"}
+              </span>
+            )}
+          </div>
+
+          {criteriaData && (
+            <div className="mt-1 flex flex-col gap-1 w-full max-w-[210px]">
+              <Popover>
+                <PopoverTrigger
+                  type="button"
+                  className="group/crit flex flex-col gap-1 w-full rounded-md p-1.5 min-h-[40px] md:min-h-[36px] hover:bg-muted/60 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden text-left cursor-pointer border border-transparent hover:border-border/60"
+                  aria-label={`Diagnostic criteria breakdown: ${criteriaData
+                    .map((c) => `${c.name}: ${c.score != null ? `${Math.round(c.score)}% (${c.band})` : "Unrated"}`)
+                    .join(", ")}. Tap to view full breakdown.`}
+                >
+                  <div className="flex h-3 w-full items-center gap-1 rounded-sm bg-muted/80 p-0.5">
+                    {criteriaData.map((c) => (
+                      <span
+                        key={c.key}
+                        className={cn("block h-full flex-1 rounded-2xs transition-transform group-hover/crit:scale-y-110", c.barClass)}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex w-full justify-between text-xs text-muted-foreground/85 px-0.5 font-medium tracking-tight" aria-hidden="true">
+                    {criteriaData.map((c) => (
+                      <span key={c.key} title={c.name}>{c.short}</span>
+                    ))}
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent side="top" align="start" className="w-64 p-3 text-xs shadow-md">
+                  <div className="flex items-center justify-between border-b pb-1.5 mb-2">
+                    <p className="font-semibold text-foreground">5-Criteria Breakdown</p>
+                    {resolvedScore.isScored && compositeScore !== null && (
+                      <span className={cn("text-xs font-bold px-1.5 py-0.5 rounded", scoreBand.className)}>
+                        {Math.round(compositeScore)}%
+                      </span>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    {criteriaData.map((c) => (
+                      <div key={c.key} className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground flex items-center gap-1.5">
+                          <span className={cn("size-2 rounded-full", c.barClass)} aria-hidden="true" />
+                          {c.name}
+                        </span>
+                        <span className="font-semibold tabular-nums text-foreground">
+                          {c.score != null ? `${Math.round(c.score)}% (${c.band})` : "Pending"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           )}
         </div>
       )}
@@ -393,11 +497,16 @@ export const SubmissionCard = memo(function SubmissionCard({
       </Button>
     ) : (
       <Button
-        variant="ghost"
+        variant={!resolvedScore.isScored && submission.status === "completed" ? "default" : "ghost"}
         size="sm"
         onClick={() => onSelect(submission)}
         aria-label={accessibleLabel}
-        className="text-primary hover:text-primary/90 hover:bg-primary/10 group/btn focus-visible:ring-ring h-10 min-h-[44px] cursor-pointer gap-1.5 rounded-lg px-3 text-xs font-medium focus-visible:ring-2 focus-visible:outline-hidden md:h-9 md:px-2.5 md:min-h-[36px]"
+        className={cn(
+          "focus-visible:ring-ring h-10 min-h-[44px] cursor-pointer gap-1.5 rounded-lg px-3 text-xs focus-visible:ring-2 focus-visible:outline-hidden md:h-9 md:px-2.5 md:min-h-[36px]",
+          !resolvedScore.isScored && submission.status === "completed"
+            ? "bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-xs"
+            : "text-primary hover:text-primary/90 hover:bg-primary/10 group/btn font-medium"
+        )}
       >
         <span>{inspectActionLabel}</span>
         <ArrowRight
@@ -427,19 +536,19 @@ export const SubmissionCard = memo(function SubmissionCard({
     </time>
   );
 
-  const compactOverflowMenu = compact && activityId && (
+  const cardOverflowMenu = activityId && (
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
           <Button
             variant="ghost"
             size="icon"
-            className="size-8 min-h-[32px] text-muted-foreground hover:text-foreground hover:bg-muted/60 cursor-pointer rounded-lg shrink-0"
+            className="size-11 min-h-[44px] min-w-[44px] md:size-8 md:min-h-[32px] md:min-w-[32px] text-muted-foreground hover:text-foreground hover:bg-muted/60 cursor-pointer rounded-lg shrink-0"
             aria-label={`More actions for ${studentName}`}
           />
         }
       >
-        <MoreHorizontal className="size-4" />
+        <MoreHorizontal className="size-4" aria-hidden="true" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52 text-xs">
         {allSubmissions.length > 0 && (
@@ -447,7 +556,7 @@ export const SubmissionCard = memo(function SubmissionCard({
             onClick={() => setCommentsOpen(true)}
             className="min-h-9 cursor-pointer gap-2"
           >
-            <MessageSquare className="size-3.5 text-muted-foreground" />
+            <MessageSquare className="size-3.5 text-muted-foreground" aria-hidden="true" />
             <span>Private comments</span>
           </DropdownMenuItem>
         )}
@@ -456,7 +565,7 @@ export const SubmissionCard = memo(function SubmissionCard({
           disabled={!workState}
           className="min-h-9 cursor-pointer gap-2"
         >
-          <CalendarClock className="size-3.5 text-muted-foreground" />
+          <CalendarClock className="size-3.5 text-muted-foreground" aria-hidden="true" />
           <span>Deadline & attempt</span>
         </DropdownMenuItem>
         {hasMultipleAttempts && (
@@ -467,7 +576,7 @@ export const SubmissionCard = memo(function SubmissionCard({
                 onClick={() => onDeleteSingleAttempt(submission)}
                 className="text-destructive focus:text-destructive focus:bg-destructive/10 min-h-9 cursor-pointer gap-2"
               >
-                <Trash2 className="size-3.5" />
+                <Trash2 className="size-3.5" aria-hidden="true" />
                 <span>Delete displayed attempt</span>
               </DropdownMenuItem>
             )}
@@ -476,7 +585,7 @@ export const SubmissionCard = memo(function SubmissionCard({
                 onClick={() => onDeleteAllStudentAttempts(studentName, allSubmissions)}
                 className="text-destructive focus:text-destructive focus:bg-destructive/10 min-h-9 cursor-pointer gap-2"
               >
-                <Trash2 className="size-3.5" />
+                <Trash2 className="size-3.5" aria-hidden="true" />
                 <span>Delete all {attemptCount} attempts</span>
               </DropdownMenuItem>
             )}
@@ -486,7 +595,7 @@ export const SubmissionCard = memo(function SubmissionCard({
     </DropdownMenu>
   );
 
-  const controlledDialogs = compact && activityId && (
+  const controlledDialogs = activityId && (
     <>
       <WorkCommentsButton
         scope={{ activityId, studentId: submission.student_id }}
@@ -526,7 +635,7 @@ export const SubmissionCard = memo(function SubmissionCard({
               <div className="min-w-0">{studentIdentity}</div>
               <div className="flex items-center gap-1 shrink-0 lg:hidden">
                 {inspectAction}
-                {compactOverflowMenu}
+                {cardOverflowMenu}
               </div>
             </div>
             <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
@@ -549,10 +658,9 @@ export const SubmissionCard = memo(function SubmissionCard({
             {rejectedWorksheetAction}
             <div className="hidden lg:flex items-center gap-1.5">
               {inspectAction}
-              {compactOverflowMenu}
+              {cardOverflowMenu}
             </div>
           </div>
-          {controlledDialogs}
         </>
       ) : (
         <>
@@ -603,14 +711,20 @@ export const SubmissionCard = memo(function SubmissionCard({
             <div>{scoreSummary}</div>
             {newestUpload}
             <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t pt-2">
-              {timestamp}
-              {rejectedWorksheetAction}
-              {inspectAction}
+              <div className="flex items-center gap-1">
+                {timestamp}
+                {cardOverflowMenu}
+              </div>
+              <div className="flex items-center gap-1.5">
+                {rejectedWorksheetAction}
+                {inspectAction}
+              </div>
             </div>
           </div>
-          {renderedWorkSummary && <div className="border-t p-4">{renderedWorkSummary}</div>}
+          {renderedWorkSummary && <div className="border-t p-3">{renderedWorkSummary}</div>}
         </>
       )}
+      {controlledDialogs}
     </article>
   );
 });
