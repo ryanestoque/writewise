@@ -11,7 +11,7 @@ import {
 import { StudentWorkSummary } from "@/components/activities/student-work-summary";
 import { commentThreadHref, parseTeacherCommentTarget } from "@/lib/comments/targets";
 import { type Activity, useActivity, useToggleArchive } from "@/lib/hooks/use-activities";
-import { useActivityWork } from "@/lib/hooks/use-activity-work";
+import { useActivityWork, useReleaseSubmission, useUpdateStudentWork } from "@/lib/hooks/use-activity-work";
 import { ReleaseActivityButton } from "@/components/submissions/submission-lifecycle-controls";
 import { activityAssignedTo } from "@/lib/utils/activity-work";
 import { useStudents } from "@/lib/hooks/use-students";
@@ -65,6 +65,7 @@ import {
   ChevronDown,
   CheckCircle2,
   CheckCheck,
+  PenLine,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getWordCount } from "@/lib/utils/formatters";
@@ -215,6 +216,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
   };
   const setSortBy = (value: SubmissionSort) => updateReviewParams({ sort: value });
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const handleStartGradingSprintRef = useRef<() => void>(() => {});
 
   // Group attempt selection map (key: studentId, value: Submission)
   const [attemptOverrides, setAttemptOverrides] = useState<Map<string, Submission>>(new Map());
@@ -230,6 +232,10 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
 
   const deleteSingleMutation = useDeleteSubmission();
   const batchDeleteMutation = useBatchDeleteSubmissions();
+  const releaseSubmissionMutation = useReleaseSubmission();
+  const updateWorkMutation = useUpdateStudentWork();
+  const [isBatchReleasing, setIsBatchReleasing] = useState(false);
+  const [isBatchExcusing, setIsBatchExcusing] = useState(false);
 
   // Activity shortcuts use Alt to avoid intercepting single-character input.
   useEffect(() => {
@@ -254,6 +260,9 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
       } else if (isActivityShortcut && (e.key.toLowerCase() === "u" || e.code === "KeyU")) {
         e.preventDefault();
         openUpload({ activityId: id });
+      } else if (isActivityShortcut && (e.key.toLowerCase() === "g" || e.code === "KeyG")) {
+        e.preventDefault();
+        handleStartGradingSprintRef.current();
       } else if (e.key === "Escape") {
         setSelectedSubmissionIds((prev) => {
           if (prev.size > 0) {
@@ -667,6 +676,44 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
     if (activity) setDeletingActivity(activity);
   }, [activity]);
 
+  const allPendingScoringSubmissions = useMemo(() => {
+    if (!submissions) return [];
+    return studentGroups
+      .map((g) => g.reviewSubmission)
+      .filter((sub) =>
+        matchesReviewFilter(sub, workByStudent.get(sub.student_id) ?? null, "needs_scoring")
+      );
+  }, [submissions, studentGroups, workByStudent]);
+
+  const filteredPendingScoringSubmissions = useMemo(() => {
+    if (!submissions) return [];
+    const source =
+      viewMode === "grouped"
+        ? filteredAndSortedGroups.map((g) => g.reviewSubmission)
+        : filteredAndSortedSubmissions;
+    return source.filter((sub) =>
+      matchesReviewFilter(sub, workByStudent.get(sub.student_id) ?? null, "needs_scoring")
+    );
+  }, [submissions, viewMode, filteredAndSortedGroups, filteredAndSortedSubmissions, workByStudent]);
+
+  const handleStartGradingSprint = useCallback(() => {
+    const queue =
+      filteredPendingScoringSubmissions.length > 0
+        ? filteredPendingScoringSubmissions
+        : allPendingScoringSubmissions;
+    if (queue.length === 0) return;
+    const firstSub = queue[0];
+    const query = reviewQueueQuery(new URLSearchParams(window.location.search));
+    const studentIds = queue.map((sub) => sub.student_id);
+    const submissionIds = queue.map((sub) => sub.id);
+    setSession({ scope: id + query, studentIds, submissionIds });
+    router.push("/activities/" + id + "/submissions/" + firstSub.id + query);
+  }, [filteredPendingScoringSubmissions, allPendingScoringSubmissions, id, router, setSession]);
+
+  useEffect(() => {
+    handleStartGradingSprintRef.current = handleStartGradingSprint;
+  }, [handleStartGradingSprint]);
+
   const handleSelectSubmission = useCallback(
     (sub: Submission) => {
       const query = reviewQueueQuery(new URLSearchParams(window.location.search));
@@ -811,6 +858,59 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
       setIsBatchDeleteDialogOpen(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to delete selected attempts.");
+    }
+  };
+
+  const releasableSelected = useMemo(() => {
+    return selectedSubmissions.filter((sub) => {
+      const isCompleted = sub.status === "completed";
+      const isNotReleased = !sub.released_at;
+      const score = resolveSubmissionScore(sub);
+      return isCompleted && isNotReleased && score.isScored;
+    });
+  }, [selectedSubmissions]);
+
+  const handleBatchRelease = async () => {
+    if (!releasableSelected.length) return;
+    setIsBatchReleasing(true);
+    try {
+      let count = 0;
+      for (const sub of releasableSelected) {
+        await releaseSubmissionMutation.mutateAsync(sub.id);
+        count++;
+      }
+      toast.success(`Released ${count} ${count === 1 ? "worksheet" : "worksheets"} to parents.`);
+      clearSelection();
+    } catch {
+      toast.error("Failed to release selected worksheets.");
+    } finally {
+      setIsBatchReleasing(false);
+    }
+  };
+
+  const selectedStudentIds = useMemo(() => {
+    return Array.from(new Set(selectedSubmissions.map((s) => s.student_id)));
+  }, [selectedSubmissions]);
+
+  const handleBatchExcuse = async () => {
+    if (!selectedStudentIds.length) return;
+    setIsBatchExcusing(true);
+    try {
+      for (const studentId of selectedStudentIds) {
+        await updateWorkMutation.mutateAsync({
+          activityId: id,
+          studentId,
+          body: { excused: true },
+        });
+      }
+      toast.success(
+        `Marked ${selectedStudentIds.length} ${selectedStudentIds.length === 1 ? "student" : "students"} as excused.`
+      );
+      clearSelection();
+    } catch {
+      toast.error("Failed to excuse selected students.");
+    } finally {
+      setIsBatchExcusing(false);
     }
   };
 
@@ -1062,16 +1162,35 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
             </h2>
           </div>
 
-          <ReleaseActivityButton
-            activityId={id}
-            userId={activity.created_by}
-            hasPointGrades={activity.points_possible != null}
-            students={students ?? []}
-            rosterReady={rosterReady}
-            isFiltered={Boolean(searchQuery.trim() || statusFilter !== "all")}
-            filteredCount={currentListLength}
-            totalCount={totalStudents}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            {allPendingScoringSubmissions.length > 0 && (
+              <Button
+                type="button"
+                variant="default"
+                size="default"
+                onClick={handleStartGradingSprint}
+                className="min-h-[44px] md:min-h-[36px] px-3.5 rounded-lg text-xs font-semibold cursor-pointer shadow-xs gap-1.5"
+                aria-label={`Start grading sprint. ${allPendingScoringSubmissions.length} worksheets pending scoring.`}
+              >
+                <PenLine className="size-3.5 shrink-0" aria-hidden="true" />
+                <span>Start Grading ({allPendingScoringSubmissions.length} Pending)</span>
+                <kbd className="text-primary-foreground/75 border-primary-foreground/30 ml-1 hidden rounded border px-1.5 py-0.5 text-[10px] font-mono sm:inline-block">
+                  {altKey}+G
+                </kbd>
+              </Button>
+            )}
+
+            <ReleaseActivityButton
+              activityId={id}
+              userId={activity.created_by}
+              hasPointGrades={activity.points_possible != null}
+              students={students ?? []}
+              rosterReady={rosterReady}
+              isFiltered={Boolean(searchQuery.trim() || statusFilter !== "all")}
+              filteredCount={currentListLength}
+              totalCount={totalStudents}
+            />
+          </div>
         </div>
 
         {studentsError && (
@@ -1258,7 +1377,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
               <Empty className="border-0 py-12">
                 <EmptyMedia
                   variant="icon"
-                  className="bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400"
+                  className="bg-band-4/10 text-band-4-text dark:bg-band-4/15"
                 >
                   <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
                 </EmptyMedia>
@@ -1287,7 +1406,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                   {studentsWithoutUploads.length > 0 && (
                     <Button
                       variant="ghost"
-                      onClick={() => setStatusFilter("no_upload")}
+                      onClick={() => setStatusFilter("missing")}
                       className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
                     >
                       View missing ({studentsWithoutUploads.length})
@@ -1295,17 +1414,17 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                   )}
                 </EmptyContent>
               </Empty>
-            ) : !searchQuery.trim() && statusFilter === "no_upload" && assignedStudents.length > 0 ? (
+            ) : !searchQuery.trim() && (statusFilter === "no_upload" || statusFilter === "missing") && assignedStudents.length > 0 ? (
               /* Celebratory All-Turned-In state */
               <Empty className="border-0 py-12">
                 <EmptyMedia
                   variant="icon"
-                  className="bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400"
+                  className="bg-band-4/10 text-band-4-text dark:bg-band-4/15"
                 >
                   <CheckCheck className="h-6 w-6" aria-hidden="true" />
                 </EmptyMedia>
                 <EmptyHeader>
-                  <EmptyTitle className="text-lg sm:text-xl">All worksheets submitted!</EmptyTitle>
+                  <EmptyTitle className="text-lg sm:text-xl">No missing submissions</EmptyTitle>
                   <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm">
                     Every assigned student has turned in their cursive handwriting activity sheet.
                   </EmptyDescription>
@@ -1361,10 +1480,14 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                 </EmptyMedia>
                 <EmptyHeader>
                   <EmptyTitle className="text-lg sm:text-xl">
-                    No {reviewFilterLabels[statusFilter] ?? "matching"} {resultUnit}s
+                    {statusFilter === "missing" || statusFilter === "no_upload"
+                      ? "No missing submissions"
+                      : `No ${reviewFilterLabels[statusFilter] ?? "matching"} ${resultUnit}s`}
                   </EmptyTitle>
                   <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm">
-                    There are currently no student worksheets under this review status.
+                    {statusFilter === "missing" || statusFilter === "no_upload"
+                      ? "There are currently no missing student worksheets for this activity."
+                      : "There are currently no student worksheets under this review status."}
                   </EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent className="flex gap-2">
@@ -1397,7 +1520,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                     return (
                       <article
                         key={student.id}
-                        className="border-border bg-surface dark:bg-card flex flex-col gap-3 rounded-xl border p-3 text-left sm:p-4 lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,.85fr)_minmax(0,1.2fr)_auto] lg:items-center lg:gap-4"
+                        className="border-border bg-surface dark:bg-card flex flex-col gap-3 rounded-xl border p-3.5 text-left sm:p-4 lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.1fr)_minmax(0,0.9fr)_auto] lg:items-center lg:gap-4 transition-all hover:border-border/80"
                       >
                         <div className="flex flex-col gap-1 lg:col-span-2">
                           <h3 className="text-sm font-semibold break-words">
@@ -1533,12 +1656,8 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                     onReupload={handleReupload}
                     isSelected={selectedSubmissionIds.has(activeSub.id)}
                     onToggleSelect={managingAttempts ? handleToggleCardSelect : undefined}
-                    onDeleteSingleAttempt={
-                      managingAttempts ? handleDeleteSingleAttemptPrompt : undefined
-                    }
-                    onDeleteAllStudentAttempts={
-                      managingAttempts ? handleDeleteAllStudentAttemptsPrompt : undefined
-                    }
+                    onDeleteSingleAttempt={handleDeleteSingleAttemptPrompt}
+                    onDeleteAllStudentAttempts={handleDeleteAllStudentAttemptsPrompt}
                   />
                 );
               })
@@ -1553,9 +1672,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                   onReupload={handleReupload}
                   isSelected={selectedSubmissionIds.has(sub.id)}
                   onToggleSelect={managingAttempts ? handleToggleCardSelect : undefined}
-                  onDeleteSingleAttempt={
-                    managingAttempts ? handleDeleteSingleAttemptPrompt : undefined
-                  }
+                  onDeleteSingleAttempt={handleDeleteSingleAttemptPrompt}
                 />
               ))}
           </div>
@@ -1650,11 +1767,37 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
             ({selectedStudentsCount} {selectedStudentsCount === 1 ? "student" : "students"})
           </span>
         )}
+        {releasableSelected.length > 0 && (
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            onClick={handleBatchRelease}
+            disabled={isBatchReleasing || batchDeleteMutation.isPending}
+            className="min-h-11 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-semibold shadow-xs md:min-h-9"
+          >
+            <CheckCircle2 className="size-3.5" aria-hidden="true" />
+            <span>Release ({releasableSelected.length})</span>
+          </Button>
+        )}
+        {selectedStudentIds.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleBatchExcuse}
+            disabled={isBatchExcusing || batchDeleteMutation.isPending}
+            className="min-h-11 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-medium md:min-h-9"
+          >
+            <span>Mark Excused ({selectedStudentIds.length})</span>
+          </Button>
+        )}
         <Button
+          type="button"
           variant="destructive"
           size="sm"
           onClick={() => setIsBatchDeleteDialogOpen(true)}
-          disabled={batchDeleteMutation.isPending}
+          disabled={batchDeleteMutation.isPending || isBatchReleasing || isBatchExcusing}
           className="min-h-11 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-semibold shadow-xs md:min-h-9"
         >
           <Trash2 className="size-3.5" aria-hidden="true" />

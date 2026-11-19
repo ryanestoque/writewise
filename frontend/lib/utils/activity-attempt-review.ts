@@ -73,5 +73,14 @@ export function matchesReviewFilter(
       state?.active_submission_id === submission.id &&
       state.work_status === "Released"
     );
+  if (filter === "missing")
+    return (
+      (!submission ||
+        state?.work_status === "Missing" ||
+        state?.work_status === "Assigned" ||
+        (!state?.active_submission_id && submission?.status === "rejected")) &&
+      submission?.status !== "processing" &&
+      submission?.status !== "completed"
+    );
   return state?.work_status === reviewFilterLabels[filter];
 }

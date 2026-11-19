@@ -5,7 +5,6 @@ import { memo, useState } from "react";
 import { useShortcutKeys } from "@/hooks/use-shortcut-keys";
 import type { Activity } from "@/lib/hooks/use-activities";
 import type { ScoreBandInfo } from "@/lib/utils/submission-status";
-import { formatDate } from "@/lib/utils/formatters";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -193,10 +192,18 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
           </DropdownMenu>
         </div>
       </div>
-      <p className="text-muted-foreground mt-1 text-xs">
-        {activity.is_take_home ? "Take-home" : "In-class"} ·{" "}
-        {activity.due_at ? "Due " + formatActivityDueAt(activity.due_at) : "No due date"}
-        {activity.close_after_due ? " · Parent uploads close at the deadline" : ""}
+      <p className="text-muted-foreground mt-1 text-xs flex flex-wrap items-center gap-x-1.5">
+        <span>{activity.is_take_home ? "Take-home" : "In-class"}</span>
+        <span aria-hidden="true" className="text-muted-foreground/60">·</span>
+        <span>{wordCount} {wordCount === 1 ? "word" : "words"}</span>
+        <span aria-hidden="true" className="text-muted-foreground/60">·</span>
+        <span>{activity.due_at ? "Due " + formatActivityDueAt(activity.due_at) : "No due date"}</span>
+        {activity.close_after_due && (
+          <>
+            <span aria-hidden="true" className="text-muted-foreground/60">·</span>
+            <span>Closes at deadline</span>
+          </>
+        )}
       </p>
       {isArchived && (
         <p role="status" className="text-muted-foreground mt-3 text-sm">
@@ -204,40 +211,39 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
           Archived and hidden from student assignment pickers.
         </p>
       )}
-      <section aria-labelledby="worksheet-prompt-heading" className="mt-2 flex flex-col gap-2 pb-2">
-        <div className="flex flex-wrap items-center justify-between gap-x-3">
-          <h2 id="worksheet-prompt-heading" className="font-heading text-sm font-semibold">
-            Worksheet prompt
-          </h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onCopyPrompt}
-            aria-label={hasCopiedPrompt ? "Worksheet prompt copied" : "Copy worksheet prompt"}
-            className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
-          >
-            {hasCopiedPrompt ? (
-              <Check data-icon="inline-start" />
-            ) : (
-              <Copy data-icon="inline-start" />
-            )}
-            {hasCopiedPrompt ? "Copied" : "Copy"}
-          </Button>
-        </div>
+      <section aria-label="Worksheet prompt" className="mt-3 flex flex-col gap-2">
         {activity.instructions && (
           <p className="max-w-prose text-xs text-muted-foreground break-words whitespace-pre-wrap">
             {activity.instructions}
           </p>
         )}
-        <WorksheetPrompt text={activity.target_text} preview={isLongPrompt && !isPromptExpanded} />
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
-          {isLongPrompt ? (
+        <div className="group relative">
+          <WorksheetPrompt text={activity.target_text} preview={isLongPrompt && !isPromptExpanded} />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onCopyPrompt}
+            aria-label={hasCopiedPrompt ? "Worksheet prompt copied" : "Copy worksheet prompt text"}
+            className="absolute top-2 right-2 h-7 px-2 text-xs text-muted-foreground hover:text-foreground bg-surface/85 dark:bg-card/85 backdrop-blur-xs rounded-md border border-border/40 shadow-xs opacity-70 hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+            title="Copy prompt text"
+          >
+            {hasCopiedPrompt ? (
+              <Check className="text-primary size-3.5 mr-1" data-icon="inline-start" />
+            ) : (
+              <Copy className="size-3.5 mr-1" data-icon="inline-start" />
+            )}
+            <span className="text-[11px] font-medium">{hasCopiedPrompt ? "Copied" : "Copy"}</span>
+          </Button>
+        </div>
+        {isLongPrompt && (
+          <div className="pt-0.5">
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={() => setIsPromptExpanded(!isPromptExpanded)}
-              className="h-7 px-2 text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1 cursor-pointer"
+              className="min-h-[36px] md:min-h-[28px] h-auto px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1 cursor-pointer rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
             >
               <ChevronDown
                 className={cn("size-3.5 transition-transform duration-200", isPromptExpanded && "rotate-180")}
@@ -245,15 +251,8 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
               />
               <span>{isPromptExpanded ? "Collapse prompt" : "Show full prompt"}</span>
             </Button>
-          ) : (
-            <div />
-          )}
-          <p className="text-muted-foreground text-xs">
-            {wordCount} {wordCount === 1 ? "word" : "words"} · Created{" "}
-            <time dateTime={activity.created_at}>{formatDate(activity.created_at)}</time> ·{" "}
-            {totalScansCount} total uploads
-          </p>
-        </div>
+          </div>
+        )}
       </section>
       {summaryState !== "ready" ? (
         <div role="status" className="text-muted-foreground mt-2 text-sm">
@@ -267,17 +266,27 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
           )}
         </div>
       ) : (
-        <div className="flex flex-col gap-3 border-t pt-3 sm:flex-row sm:items-center sm:gap-6">
-          <div className="min-w-0 flex-1">
-            <p className="text-muted-foreground text-xs">
-              <strong className="text-foreground tabular-nums">
-                {uniqueStudentsCount} of {totalStudents}
-              </strong>{" "}
-              assigned students have an official worksheet
-            </p>
+        <div className="flex flex-col gap-3.5 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:gap-6">
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span
+                className="text-muted-foreground"
+                title={`${uniqueStudentsCount} of ${totalStudents} students submitted (${totalScansCount} total ${totalScansCount === 1 ? "upload" : "uploads"})`}
+              >
+                <strong className="text-foreground font-semibold tabular-nums">
+                  {uniqueStudentsCount} of {totalStudents}
+                </strong>{" "}
+                students submitted
+              </span>
+              {totalStudents > 0 && (
+                <span className="text-muted-foreground text-[11px] font-medium tabular-nums">
+                  {completionRate}%
+                </span>
+              )}
+            </div>
             {totalStudents > 0 ? (
               <div
-                className="bg-muted mt-2 h-1.5 overflow-hidden rounded-full"
+                className="bg-muted h-1.5 overflow-hidden rounded-full"
                 role="progressbar"
                 aria-valuenow={completionRate}
                 aria-valuemin={0}
@@ -293,70 +302,68 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 }
               >
                 <div
-                  className="bg-primary h-full rounded-full"
+                  className="bg-primary h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
                   style={{ width: completionRate + "%" }}
                 />
               </div>
             ) : (
-              <Button variant="link" onClick={onEdit} className="min-h-11 px-0">
+              <Button variant="link" onClick={onEdit} className="min-h-9 px-0 text-xs">
                 Edit assignments
                 <ArrowRight data-icon="inline-end" />
               </Button>
             )}
-            {totalStudents > 0 && (
-              <p className="text-muted-foreground mt-1.5 text-xs">
-                The official worksheet counts toward the result. A newer upload may still need review.
-              </p>
-            )}
           </div>
           {classDiagnostics ? (
-            <div className="flex min-w-0 flex-1 flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
+            <div className="flex min-w-0 flex-1 flex-col items-start justify-between gap-2.5 border-t border-border/40 pt-3 sm:border-t-0 sm:pt-0 sm:flex-row sm:items-center">
+              <div className="min-w-0 space-y-1">
                 <p className="text-muted-foreground text-xs">
-                  Class performance · {classDiagnostics.completedCount} scored
+                  Class average ·{" "}
+                  <span className="tabular-nums">{classDiagnostics.completedCount} scored</span>
                 </p>
-                <p className="text-muted-foreground mt-1 text-xs">
-                  {classDiagnostics.manualCount > 0 && classDiagnostics.calibratedCount > 0
-                    ? `Mixed sources: ${classDiagnostics.manualCount} teacher rubric · ${classDiagnostics.calibratedCount} calibrated`
-                    : classDiagnostics.manualCount > 0
-                      ? "Based on teacher rubric scores"
-                      : "Based on calibrated scores"}
-                </p>
-                <Badge
-                  variant="outline"
-                  className={cn("mt-1", classDiagnostics.scoreBand.className)}
-                >
-                  {classDiagnostics.scoreBand.label}
-                </Badge>
-                {classDiagnostics.focusCriterion && (
-                  <p className="mt-1 text-xs break-words">
-                    Practice focus:{" "}
-                    <strong className="font-medium">
-                      {classDiagnostics.focusCriterion.name.toLowerCase()}
-                    </strong>
-                  </p>
-                )}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Badge
+                    variant="outline"
+                    className={cn("px-2 py-0.5 text-xs font-medium", classDiagnostics.scoreBand.className)}
+                  >
+                    {classDiagnostics.scoreBand.label}
+                  </Badge>
+                  {classDiagnostics.focusCriterion && (
+                    <span className="text-muted-foreground text-xs truncate">
+                      · Focus:{" "}
+                      <strong className="text-foreground font-medium">
+                        {classDiagnostics.focusCriterion.name.toLowerCase()}
+                      </strong>
+                    </span>
+                  )}
+                </div>
               </div>
               <Popover>
                 <PopoverTrigger
-                  className="border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 focus-visible:ring-ring inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden sm:gap-1.5 sm:px-3 md:min-h-[36px]"
+                  className="border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 focus-visible:ring-ring inline-flex min-h-[36px] shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
                   aria-label="View class criteria breakdown"
                 >
                   <BarChart3
                     className="text-brand-600 dark:text-brand-400 size-3.5"
                     aria-hidden="true"
                   />
-                  <span className="inline">Class Breakdown</span>
+                  <span>Breakdown</span>
                   <ChevronDown className="size-3 opacity-60" aria-hidden="true" />
                 </PopoverTrigger>
                 <PopoverContent align="end" className="z-50 w-[min(calc(100vw-2rem),21rem)] space-y-3.5 p-4 text-xs">
-                  <PopoverHeader>
+                  <PopoverHeader className="space-y-1">
                     <PopoverTitle className="text-foreground flex items-center justify-between text-xs font-semibold">
                       <span>5-Criterion Class Average</span>
                       <span className="text-primary font-bold tabular-nums">
                         {classDiagnostics.avgCompositeScore}%
                       </span>
                     </PopoverTitle>
+                    <p className="text-muted-foreground text-[11px]">
+                      {classDiagnostics.manualCount > 0 && classDiagnostics.calibratedCount > 0
+                        ? `Mixed sources: ${classDiagnostics.manualCount} teacher rubric · ${classDiagnostics.calibratedCount} calibrated`
+                        : classDiagnostics.manualCount > 0
+                          ? "Based on teacher rubric scores"
+                          : "Based on calibrated scores"}
+                    </p>
                     <PopoverDescription className="sr-only">
                       Aggregated class diagnostic scores across Letter Formation, Size Consistency,
                       Spacing, Slant, and Baseline Alignment.

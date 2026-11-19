@@ -106,7 +106,7 @@ export const AttemptDeletionDialogs = memo(function AttemptDeletionDialogs({
                   <button
                     type="button"
                     onClick={onClearHiddenSelection}
-                    className="underline hover:no-underline font-semibold cursor-pointer shrink-0"
+                    className="underline hover:no-underline font-semibold cursor-pointer shrink-0 rounded focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
                   >
                     Remove hidden
                   </button>
@@ -122,7 +122,7 @@ export const AttemptDeletionDialogs = memo(function AttemptDeletionDialogs({
                   <button
                     type="button"
                     onClick={onClearSelection}
-                    className="underline hover:no-underline font-semibold cursor-pointer shrink-0"
+                    className="underline hover:no-underline font-semibold cursor-pointer shrink-0 rounded focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
                   >
                     Clear selection
                   </button>

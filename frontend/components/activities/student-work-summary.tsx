@@ -15,6 +15,7 @@ export function StudentWorkSummary({
   isLoading,
   compact = false,
   isScored,
+  hideDraftPending = false,
 }: {
   activityId: string;
   studentId: string;
@@ -24,11 +25,12 @@ export function StudentWorkSummary({
   isLoading: boolean;
   compact?: boolean;
   isScored?: boolean;
+  hideDraftPending?: boolean;
 }) {
   return (
     <div className={compact ? "flex items-center min-w-0" : "flex flex-col gap-3"}>
       {state ? (
-        <ActivityWorkStatus state={state} isScored={isScored} />
+        <ActivityWorkStatus state={state} isScored={isScored} hideDraftPending={hideDraftPending} />
       ) : (
         <p className="text-muted-foreground text-xs" role="status">
           {isLoading ? "Loading work status…" : "Work status unavailable"}

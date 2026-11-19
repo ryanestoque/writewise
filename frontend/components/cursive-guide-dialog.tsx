@@ -199,10 +199,10 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
   const handleGridKeyDown = (e: React.KeyboardEvent) => {
     if (!["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
     e.preventDefault();
-    
+
     const index = filteredLetters.findIndex((l) => l.id === activeLetter.id);
     if (index === -1) return;
-    
+
     let columns = 2; // mobile default
     if (typeof window !== "undefined") {
       if (window.matchMedia("(min-width: 1024px)").matches) columns = 4;
@@ -216,9 +216,9 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
     else if (e.key === "ArrowUp") nextIndex = index - columns;
     else if (e.key === "Home") nextIndex = 0;
     else if (e.key === "End") nextIndex = filteredLetters.length - 1;
-    
+
     nextIndex = Math.max(0, Math.min(nextIndex, filteredLetters.length - 1));
-    
+
     const targetLetter = filteredLetters[nextIndex];
     if (targetLetter) {
       setSelectedLetterId(targetLetter.id);
@@ -240,25 +240,13 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
         )}
       >
         {/* Spotlight Header: Letter Title */}
-        <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-border/70">
-          <div className="flex items-center gap-2.5">
-            <span className="size-9 rounded-xl bg-primary text-primary-foreground font-heading font-bold text-lg flex items-center justify-center shadow-xs">
-              {activeLetter.id}
-            </span>
-            <div>
-              <h3 className="text-base font-heading font-semibold text-foreground leading-tight">
-                {activeLetter.name}
-              </h3>
-              <p className="text-[11px] text-muted-foreground">
-                {activeLetter.zoneLabel} zone • ~{activeLetter.slantDegree}° forward slant
-              </p>
-            </div>
-          </div>
-          {activeLetter.isHighJoiner && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/15 text-primary border border-primary/25">
-              High Joiner
-            </span>
-          )}
+        <div className="flex items-center gap-2.5 pb-3 border-b border-border/70">
+          <span className="size-9 rounded-xl bg-primary text-primary-foreground font-heading font-bold text-lg flex items-center justify-center shadow-xs">
+            {activeLetter.id}
+          </span>
+          <h3 className="text-base font-heading font-semibold text-foreground leading-tight">
+            {activeLetter.name}
+          </h3>
         </div>
 
         {/* Realistic Animated Penmanship Stroke Display */}
@@ -568,10 +556,10 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                     {zoneFilter === "ascender"
                       ? "Ascenders"
                       : zoneFilter === "midline"
-                      ? "Midline"
-                      : zoneFilter === "descender"
-                      ? "Descenders"
-                      : "High Joiners"}
+                        ? "Midline"
+                        : zoneFilter === "descender"
+                          ? "Descenders"
+                          : "High Joiners"}
                     <button
                       type="button"
                       onClick={() => setZoneFilter("all")}
@@ -731,8 +719,8 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                       caseFilter === "pairs"
                         ? `${item.upper}${item.lower}`
                         : caseFilter === "upper"
-                        ? item.upper
-                        : item.lower;
+                          ? item.upper
+                          : item.lower;
 
                     return (
                       <div key={item.id} className="min-w-0 print:break-inside-avoid">

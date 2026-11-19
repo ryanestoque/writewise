@@ -157,7 +157,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
           className={cn(
             "min-h-[44px] md:min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
             statusFilter === "needs_scoring"
-              ? "bg-amber-500/15 text-amber-900 dark:text-amber-300 hover:bg-amber-500/20 font-semibold"
+              ? "bg-primary/10 text-primary hover:bg-primary/15 font-semibold"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
         >
@@ -167,8 +167,8 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
               className={cn(
                 "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
                 statusFilter === "needs_scoring"
-                  ? "bg-amber-900 text-white dark:bg-amber-300 dark:text-amber-950"
-                  : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-primary/15 text-primary"
               )}
             >
               {needsScoringCount}
@@ -217,7 +217,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
           className={cn(
             "min-h-[44px] md:min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
             statusFilter === "released"
-              ? "bg-emerald-500/15 text-emerald-900 dark:text-emerald-300 hover:bg-emerald-500/20 font-semibold"
+              ? "bg-band-4/15 text-band-4-text hover:bg-band-4/20 font-semibold"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
         >
@@ -227,7 +227,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
               className={cn(
                 "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
                 statusFilter === "released"
-                  ? "bg-emerald-900 text-white dark:bg-emerald-300 dark:text-emerald-950"
+                  ? "bg-band-4 text-white"
                   : "bg-muted text-muted-foreground"
               )}
             >
@@ -374,27 +374,23 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                 </DropdownMenuRadioItem>
               </DropdownMenuRadioGroup>
             </DropdownMenuGroup>
+            {viewMode !== "review" && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Batch actions</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={onToggleManagingAttempts}
+                    className="min-h-11 cursor-pointer text-muted-foreground hover:text-foreground gap-2"
+                  >
+                    <Trash2 className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    <span>{managingAttempts ? "Exit batch selection" : "Batch select attempts..."}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {viewMode !== "review" && (
-          <Button
-            type="button"
-            variant={managingAttempts ? "secondary" : "outline"}
-            size="default"
-            onClick={onToggleManagingAttempts}
-            aria-pressed={managingAttempts}
-            className={cn(
-              "min-h-[44px] md:min-h-[36px] px-3 rounded-lg text-xs font-medium cursor-pointer transition-all gap-1.5",
-              managingAttempts
-                ? "bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/15 font-semibold"
-                : "text-muted-foreground hover:text-foreground border-border hover:bg-muted/50"
-            )}
-          >
-            <Trash2 className="size-3.5 shrink-0" aria-hidden="true" />
-            <span>{managingAttempts ? "Done Managing" : "Manage Attempts"}</span>
-          </Button>
-        )}
       </div>
 
       {viewMode !== "review" && reviewFilterHelp[statusFilter] && (
@@ -445,7 +441,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                 <button
                   type="button"
                   onClick={onClearHiddenSelection}
-                  className="ml-1 underline hover:no-underline font-semibold cursor-pointer"
+                  className="ml-1 underline hover:no-underline font-semibold cursor-pointer rounded focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
                 >
                   Clear hidden
                 </button>

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Table2, Send } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -571,13 +573,27 @@ export function ReleaseActivityButton({
     !rosterReady || isPending || isError || count > 0 || hasPointGrades;
 
   return (
-    <span ref={focusTarget} tabIndex={-1} className="flex flex-wrap items-center gap-x-2 gap-y-1 sm:flex-col sm:items-end">
+    <span ref={focusTarget} tabIndex={-1} className="inline-flex flex-wrap items-center gap-2">
+      {hasPointGrades && (
+        <Link
+          href={`/gradebook?activity=${encodeURIComponent(activityId)}`}
+          aria-label="Open point grades in Gradebook"
+          className={cn(
+            buttonVariants({ variant: "outline" }),
+            "min-h-[44px] md:min-h-[36px] px-3 rounded-lg text-xs font-medium cursor-pointer gap-1.5"
+          )}
+        >
+          <Table2 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <span>Gradebook</span>
+        </Link>
+      )}
+
       {(isPending || isError || !rosterReady || count > 0 || hasPointGrades) && (
         <Button
           variant="outline"
           disabled={isPending || !rosterReady || (!count && !hasPointGrades && !isError)}
           aria-describedby={hasDescription ? descriptionId : undefined}
-          className="h-11 md:h-9 font-semibold"
+          className="min-h-[44px] md:min-h-[36px] px-3.5 rounded-lg text-xs font-semibold cursor-pointer shadow-xs gap-1.5"
           onClick={() => {
             setError(null);
             setStep("review");
@@ -586,42 +602,18 @@ export function ReleaseActivityButton({
             void refetch();
           }}
         >
-          {isPending ? "Checking release…" : count > 0 ? `Review & Release (${count})` : "Review release"}
+          <Send className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <span>{isPending ? "Checking release…" : count > 0 ? `Review & Release (${count})` : "Review release"}</span>
         </Button>
       )}
-      {hasDescription && (
-        <span
-          id={descriptionId}
-          className="text-muted-foreground max-w-sm text-xs sm:text-right"
-          role="status"
-        >
+
+      {!rosterReady || isError ? (
+        <span id={descriptionId} className="sr-only" role="status">
           {!rosterReady
             ? "Load the student roster before reviewing release."
-            : isPending
-              ? "Checking release readiness…"
-              : isError
-                ? "Release readiness unavailable. Retry work status below."
-                : count > 0
-                  ? `${count} draft worksheet ${count === 1 ? "result" : "results"} ready to share.`
-                  : null}
-          {rosterReady && !isPending && !isError && count > 0 && (
-            <> Applies to the whole activity.</>
-          )}
-          {hasPointGrades && (
-            <>
-              {" "}
-              Review point grades before release.{" "}
-              <Link
-                href={`/gradebook?activity=${encodeURIComponent(activityId)}`}
-                className="focus-visible:ring-ring inline-flex min-h-11 items-center underline underline-offset-4 focus-visible:ring-2 focus-visible:outline-none md:min-h-9"
-              >
-                Review in Gradebook
-              </Link>
-              .
-            </>
-          )}
+            : "Release readiness unavailable. Retry work status below."}
         </span>
-      )}
+      ) : null}
       {receipt && (
         <span role="status" className="text-muted-foreground max-w-sm text-xs sm:text-right">
           {receipt}
