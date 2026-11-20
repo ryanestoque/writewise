@@ -77,6 +77,7 @@ function getCriterionBandStyle(score: number) {
       band: "Excellent",
       barClass: "bg-band-4",
       textClass: "text-band-4-text",
+      dotClass: "bg-band-4",
     };
   }
   if (score >= 60) {
@@ -84,6 +85,7 @@ function getCriterionBandStyle(score: number) {
       band: "Satisfactory",
       barClass: "bg-band-3",
       textClass: "text-band-3-text",
+      dotClass: "bg-band-3",
     };
   }
   if (score >= 40) {
@@ -91,12 +93,14 @@ function getCriterionBandStyle(score: number) {
       band: "Developing",
       barClass: "bg-band-2",
       textClass: "text-band-2-text",
+      dotClass: "bg-band-2",
     };
   }
   return {
-    band: "Needs Impr.",
+    band: "Needs Improvement",
     barClass: "bg-band-1",
     textClass: "text-band-1-text",
+    dotClass: "bg-band-1",
   };
 }
 
@@ -487,7 +491,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 <span>Breakdown</span>
                 <ChevronDown className="size-3 opacity-60" aria-hidden="true" />
               </PopoverTrigger>
-              <PopoverContent align="end" className="z-50 w-[min(calc(100vw-2rem),21rem)] space-y-3.5 p-4 text-xs">
+              <PopoverContent align="end" className="z-50 w-[min(calc(100vw-2rem),21rem)] gap-2.5 p-3.5 text-xs">
                 <PopoverHeader className="space-y-1">
                   <PopoverTitle className="text-foreground flex items-center justify-between text-xs font-semibold">
                     <span>5-Criterion Class Average</span>
@@ -510,16 +514,16 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                   </PopoverDescription>
                 </PopoverHeader>
 
-                <div className="space-y-2.5 pt-1">
+                <div className="space-y-2">
                   {CRITERIA_METRICS.map(({ key, label }) => {
                     const score = classDiagnostics.criteriaAverages[key];
                     const { band, barClass, textClass } = getCriterionBandStyle(score);
 
                     return (
                       <div key={key}>
-                        <div className="mb-1 flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">{label}</span>
-                          <div className="flex items-center gap-1.5">
+                        <div className="mb-1 flex items-baseline justify-between gap-2 text-xs">
+                          <span className="text-muted-foreground min-w-0 truncate">{label}</span>
+                          <div className="flex shrink-0 items-center gap-1.5">
                             <span className={cn("text-[11px] font-medium", textClass)}>
                               {band}
                             </span>
@@ -529,7 +533,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                           </div>
                         </div>
                         <div
-                          className="bg-muted h-1.5 w-full overflow-hidden rounded-full"
+                          className="bg-muted/80 dark:bg-white/10 dark:ring-1 dark:ring-white/10 h-1.5 w-full overflow-hidden rounded-full"
                           role="progressbar"
                           aria-valuenow={score}
                           aria-valuemin={0}
@@ -538,11 +542,11 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                         >
                           <div
                             className={cn(
-                              "h-full rounded-full transition-all duration-300 motion-reduce:transition-none",
+                              "h-full w-full rounded-full transition-transform duration-300 ease-out origin-left motion-reduce:transition-none",
                               barClass
                             )}
                             style={{
-                              width: `${score}%`,
+                              transform: `scaleX(${Math.max(0, Math.min(100, score)) / 100})`,
                             }}
                           />
                         </div>
@@ -552,38 +556,54 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 </div>
 
                 {classDiagnostics.strongestCriterion && (
-                  <div className="border-border/60 text-muted-foreground space-y-1.5 border-t pt-2.5 text-xs">
-                    <p>
-                      <span
-                        className={cn(
-                          getCriterionBandStyle(classDiagnostics.strongestCriterion.score).textClass,
-                          "font-semibold"
-                        )}
-                      >
-                        Strength:
-                      </span>{" "}
-                      {classDiagnostics.strongestCriterion.name} (
-                      <span className="tabular-nums">
-                        {classDiagnostics.strongestCriterion.score}%
-                      </span>
-                      )
-                    </p>
-                    {classDiagnostics.focusCriterion && (
-                      <p>
+                  <div className="border-border/60 text-muted-foreground space-y-1.5 border-t pt-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
                         <span
                           className={cn(
-                            getCriterionBandStyle(classDiagnostics.focusCriterion.score).textClass,
-                            "font-semibold"
+                            "size-1.5 shrink-0 rounded-full",
+                            getCriterionBandStyle(classDiagnostics.strongestCriterion.score).dotClass
+                          )}
+                          aria-hidden="true"
+                        />
+                        <span
+                          className={cn(
+                            getCriterionBandStyle(classDiagnostics.strongestCriterion.score).textClass,
+                            "font-semibold shrink-0"
                           )}
                         >
-                          Practice Focus:
-                        </span>{" "}
-                        {classDiagnostics.focusCriterion.name} (
-                        <span className="tabular-nums">
+                          Strength:
+                        </span>
+                        <span className="truncate">{classDiagnostics.strongestCriterion.name}</span>
+                      </div>
+                      <span className="text-foreground font-medium tabular-nums shrink-0">
+                        {classDiagnostics.strongestCriterion.score}%
+                      </span>
+                    </div>
+                    {classDiagnostics.focusCriterion && (
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span
+                            className={cn(
+                              "size-1.5 shrink-0 rounded-full",
+                              getCriterionBandStyle(classDiagnostics.focusCriterion.score).dotClass
+                            )}
+                            aria-hidden="true"
+                          />
+                          <span
+                            className={cn(
+                              getCriterionBandStyle(classDiagnostics.focusCriterion.score).textClass,
+                              "font-semibold shrink-0"
+                            )}
+                          >
+                            Practice Focus:
+                          </span>
+                          <span className="truncate">{classDiagnostics.focusCriterion.name}</span>
+                        </div>
+                        <span className="text-foreground font-medium tabular-nums shrink-0">
                           {classDiagnostics.focusCriterion.score}%
                         </span>
-                        )
-                      </p>
+                      </div>
                     )}
                   </div>
                 )}
