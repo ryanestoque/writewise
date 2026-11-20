@@ -32,6 +32,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { FloatingActionBar } from "@/components/ui/floating-action-bar";
 import { QueryRecovery } from "@/components/shared/query-recovery";
@@ -66,6 +69,17 @@ export function TeacherGradebook({
   const sectionId = sections.data?.some((section) => section.id === chosenSection)
     ? chosenSection
     : sections.data?.[0]?.id;
+
+  function handleClearActivityFilter() {
+    setActivityId(undefined);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("activity");
+      const cleanPath = url.pathname + (url.searchParams.toString() ? `?${url.searchParams.toString()}` : "");
+      window.history.replaceState(null, "", cleanPath);
+    }
+  }
+
   if (!active)
     return (
       <p role="status" className="text-muted-foreground text-sm">
@@ -74,7 +88,10 @@ export function TeacherGradebook({
     );
   return (
     <div className="min-w-0 space-y-6">
-      <h1 className="font-heading text-2xl font-semibold sm:text-3xl">Gradebook</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4 print:hidden">
+        <h1 className="font-heading text-2xl font-semibold sm:text-3xl">Gradebook</h1>
+      </div>
+
       {sections.isError ? (
         <QueryRecovery
           title="Sections could not be loaded"
@@ -100,14 +117,14 @@ export function TeacherGradebook({
       ) : (
         <>
           {activityId && (
-            <div className="flex flex-wrap items-center gap-3 text-sm">
+            <div className="flex flex-wrap items-center gap-3 text-sm print:hidden">
               <p className="text-muted-foreground">
                 Showing the linked activity. Choose a section to review its grades.
               </p>
               <Button
                 variant="outline"
-                className="min-h-11"
-                onClick={() => setActivityId(undefined)}
+                className="min-h-11 cursor-pointer"
+                onClick={handleClearActivityFilter}
               >
                 Show all activities
               </Button>
@@ -119,7 +136,7 @@ export function TeacherGradebook({
               </Link>
             </div>
           )}
-          <label className="flex flex-wrap items-center gap-3 text-sm font-medium">
+          <label className="flex flex-wrap items-center gap-3 text-sm font-medium print:hidden">
             Section
             <select
               className={selectClass}
@@ -176,6 +193,7 @@ function SectionGrid({
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState("");
   const [viewMode, setViewMode] = useState<"points" | "diagnostic">("points");
+  const [activeCell, setActiveCell] = useState<{ row: number; col: number }>({ row: 0, col: 0 });
 
   if (!query.isAccountActive)
     return (
@@ -294,7 +312,8 @@ function SectionGrid({
   }
 
   function handleNavigateDown(row: number, column: number) {
-    const nextRow = row + 1;
+    const nextRow = Math.min(row + 1, rows.length - 1);
+    setActiveCell({ row: nextRow, col: column });
     const nextCell = tableRef.current?.querySelector<HTMLElement>(
       `[data-gradecell][data-row="${nextRow}"][data-column="${column}"]`
     );
@@ -305,7 +324,7 @@ function SectionGrid({
   }
 
   function moveFocus(event: KeyboardEvent<HTMLDivElement>) {
-    if (!event.key.startsWith("Arrow")) return;
+    if (!event.key.startsWith("Arrow") && event.key !== "Home" && event.key !== "End") return;
     if (
       event.target instanceof HTMLInputElement ||
       event.target instanceof HTMLTextAreaElement
@@ -317,23 +336,34 @@ function SectionGrid({
         ? event.target.closest<HTMLElement>("[data-gradecell]")
         : null;
     if (!cellEl) return;
-    const row = Number(cellEl.dataset.row),
-      column = Number(cellEl.dataset.column);
-    const nextRow = row + (event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0);
-    const nextColumn =
-      column + (event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0);
-    const next = event.currentTarget.querySelector<HTMLElement>(
-      `[data-gradecell][data-row="${nextRow}"][data-column="${nextColumn}"]`
-    );
-    if (next) {
+    const row = Number(cellEl.dataset.row);
+    const column = Number(cellEl.dataset.column);
+
+    let nextRow = row;
+    let nextColumn = column;
+
+    if (event.key === "ArrowDown") nextRow = Math.min(row + 1, rows.length - 1);
+    else if (event.key === "ArrowUp") nextRow = Math.max(row - 1, 0);
+    else if (event.key === "ArrowRight") nextColumn = Math.min(column + 1, activities.length - 1);
+    else if (event.key === "ArrowLeft") nextColumn = Math.max(column - 1, 0);
+    else if (event.key === "Home") nextColumn = 0;
+    else if (event.key === "End") nextColumn = activities.length - 1;
+
+    if (nextRow !== row || nextColumn !== column) {
       event.preventDefault();
-      next.focus();
+      setActiveCell({ row: nextRow, col: nextColumn });
+      const next = event.currentTarget.querySelector<HTMLElement>(
+        `[data-gradecell][data-row="${nextRow}"][data-column="${nextColumn}"]`
+      );
+      if (next) {
+        next.focus();
+      }
     }
   }
 
   return (
     <div className="min-w-0 space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-3 print:hidden">
         <div className="flex flex-wrap items-center gap-3">
           <Input
             aria-label="Find student in gradebook"
@@ -410,20 +440,20 @@ function SectionGrid({
 
         <div className="flex items-center gap-2">
           {pendingDraftReleaseCount > 0 ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-800 dark:text-amber-300">
-              <span className="size-1.5 rounded-full bg-amber-500" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-band-2/15 border border-band-2/30 px-2.5 py-1 text-xs font-medium text-band-2-text dark:text-amber-300">
+              <span className="size-1.5 rounded-full bg-band-2" />
               <span>{pendingDraftReleaseCount} draft {pendingDraftReleaseCount === 1 ? "grade" : "grades"} pending release</span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-800 dark:text-emerald-300">
-              <CheckCircle2 className="size-3.5" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-band-4/15 border border-band-4/30 px-2.5 py-1 text-xs font-medium text-band-4-text dark:text-emerald-300">
+              <CheckCircle2 className="size-3.5 text-band-4-text dark:text-emerald-300" />
               <span>All current grades released</span>
             </span>
           )}
         </div>
       </div>
 
-      <p className="text-muted-foreground text-xs">
+      <p className="text-muted-foreground text-xs print:hidden">
         {selected.size ? `${selected.size} students selected` : `${rows.length} students shown`}.
         Filters change the display; totals and CSV include all activities, including archived work.
         Students without a section appear in the roster.
@@ -450,8 +480,8 @@ function SectionGrid({
       ) : (
         <div
           ref={tableRef}
-          className="bg-card max-h-[70vh] overflow-auto rounded-xl border transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          tabIndex={0}
+          className="bg-card max-h-[70vh] overflow-auto rounded-xl border transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring print:max-h-none print:overflow-visible print:border-none"
+          tabIndex={-1}
           aria-label={`${book.section_name} grades, scroll for more activities. Use arrow keys to navigate cells, Enter to edit, Space to inspect.`}
           onKeyDown={moveFocus}
         >
@@ -460,15 +490,16 @@ function SectionGrid({
               {book.section_name} coursework. Draft totals include all activities. Use arrow keys
               between grade cells, Enter to edit, Space to inspect.
             </caption>
-            <thead className="bg-card sticky top-0 z-20">
+            <thead className="bg-card sticky top-0 z-20 print:static">
               <tr className="border-b">
                 <th
                   scope="col"
-                  className="bg-card sticky left-0 z-30 min-w-48 border-r p-3 text-left"
+                  className="bg-card sticky left-0 z-30 min-w-48 border-r p-3 text-left print:static"
                 >
                   <label className="flex items-center gap-3 font-medium text-foreground">
                     <Checkbox
                       aria-label="Select shown students"
+                      className="print:hidden"
                       checked={rows.length > 0 && rows.every((row) => selected.has(row.student_id))}
                       onCheckedChange={(checked) =>
                         setSelected((old) => {
@@ -509,7 +540,7 @@ function SectionGrid({
                       <DropdownMenu>
                         <DropdownMenuTrigger
                           aria-label={`Actions for ${act.title}`}
-                          className="inline-flex min-h-10 min-w-10 size-10 sm:min-h-8 sm:min-w-8 sm:size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          className="inline-flex min-h-10 min-w-10 size-10 sm:min-h-8 sm:min-w-8 sm:size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer print:hidden"
                         >
                           <MoreHorizontal className="size-4" />
                         </DropdownMenuTrigger>
@@ -517,20 +548,21 @@ function SectionGrid({
                           <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
                             Activity Actions
                           </DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => beginBulk(act.id, "release")}>
+                          <DropdownMenuItem onClick={() => beginBulk(act.id, "release")} className="cursor-pointer">
                             <Send className="mr-2 size-4 text-primary" />
                             Release grades to parents
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => beginBulk(act.id, "zero")}
                             disabled={act.points_possible === null}
+                            className="cursor-pointer"
                           >
                             <FileX className="mr-2 size-4 text-muted-foreground" />
                             {selected.size
                               ? `Mark uncollected (0) for ${selected.size}`
                               : "Mark uncollected (0 pts)"}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => beginBulk(act.id, "excuse")}>
+                          <DropdownMenuItem onClick={() => beginBulk(act.id, "excuse")} className="cursor-pointer">
                             <CheckCircle2 className="mr-2 size-4 text-muted-foreground" />
                             {selected.size
                               ? `Excuse ${selected.size} selected`
@@ -541,6 +573,7 @@ function SectionGrid({
                             onClick={() => {
                               window.location.href = `/activities/${act.id}`;
                             }}
+                            className="cursor-pointer"
                           >
                             <ExternalLink className="mr-2 size-4" />
                             View activity details
@@ -563,13 +596,14 @@ function SectionGrid({
                 <tr key={row.student_id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                   <th
                     scope="row"
-                    className="bg-card sticky left-0 z-10 border-r p-3 text-left font-medium"
+                    className="bg-card sticky left-0 z-10 border-r p-3 text-left font-medium print:static"
                   >
                     <label className="flex items-center gap-3">
                       <Checkbox
                         checked={selected.has(row.student_id)}
                         onCheckedChange={(checked) => toggle(row.student_id, !!checked)}
                         aria-label={`Select ${row.student_name}`}
+                        className="print:hidden"
                       />
                       <span className="break-words text-foreground">{row.student_name}</span>
                     </label>
@@ -589,6 +623,8 @@ function SectionGrid({
                           onOpen={() => setCell(work)}
                           row={rowIndex}
                           column={column}
+                          isFocused={activeCell.row === rowIndex && activeCell.col === column}
+                          onFocusCell={() => setActiveCell({ row: rowIndex, col: column })}
                           onSaveScore={(score) =>
                             handleSaveScore(act.id, row.student_id, score)
                           }
@@ -632,7 +668,7 @@ function SectionGrid({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 text-xs bg-background/80"
+                    className="h-8 text-xs bg-background/80 cursor-pointer"
                     disabled={
                       !activities.some(
                         (a) => a.id === activityId && a.points_possible !== null
@@ -645,7 +681,7 @@ function SectionGrid({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 text-xs bg-background/80"
+                    className="h-8 text-xs bg-background/80 cursor-pointer"
                     onClick={() => beginBulk(activityId, "excuse")}
                   >
                     Excuse
@@ -653,38 +689,84 @@ function SectionGrid({
                 </>
               ) : (
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="inline-flex items-center gap-1.5 h-8 rounded-md border border-input bg-background/80 px-2.5 text-xs font-medium hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <DropdownMenuTrigger className="inline-flex items-center gap-1.5 h-8 rounded-md border border-input bg-background/80 px-2.5 text-xs font-medium hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer">
                     Batch actions <MoreHorizontal className="size-3.5" />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-64 max-h-60 overflow-y-auto">
+                  <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel className="text-xs text-muted-foreground">
-                      Apply to Activity:
+                      Batch Actions ({selected.size} selected)
                     </DropdownMenuLabel>
-                    {activities.map((act) => (
-                      <div key={act.id} className="p-1 border-b last:border-0">
-                        <p className="px-2 py-1 text-xs font-semibold truncate">{act.title}</p>
-                        <div className="flex gap-1 px-1">
-                          {act.points_possible !== null && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs flex-1 justify-start"
-                              onClick={() => beginBulk(act.id, "zero")}
-                            >
-                              Mark 0 pts
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs flex-1 justify-start"
+
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="text-xs cursor-pointer">
+                        <FileX className="mr-2 size-3.5 text-muted-foreground" />
+                        Mark uncollected (0 pts)
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="w-64 max-h-56 overflow-y-auto">
+                        <DropdownMenuLabel className="text-xs text-muted-foreground">
+                          Choose activity:
+                        </DropdownMenuLabel>
+                        {activities.filter((a) => a.points_possible !== null).length === 0 ? (
+                          <p className="px-3 py-2 text-xs text-muted-foreground italic">No scored activities</p>
+                        ) : (
+                          activities
+                            .filter((a) => a.points_possible !== null)
+                            .map((act) => (
+                              <DropdownMenuItem
+                                key={act.id}
+                                className="text-xs truncate cursor-pointer"
+                                onClick={() => beginBulk(act.id, "zero")}
+                              >
+                                <span className="truncate">{act.title}</span>
+                              </DropdownMenuItem>
+                            ))
+                        )}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="text-xs cursor-pointer">
+                        <CheckCircle2 className="mr-2 size-3.5 text-muted-foreground" />
+                        Excuse students
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="w-64 max-h-56 overflow-y-auto">
+                        <DropdownMenuLabel className="text-xs text-muted-foreground">
+                          Choose activity:
+                        </DropdownMenuLabel>
+                        {activities.map((act) => (
+                          <DropdownMenuItem
+                            key={act.id}
+                            className="text-xs truncate cursor-pointer"
                             onClick={() => beginBulk(act.id, "excuse")}
                           >
-                            Excuse
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                            <span className="truncate">{act.title}</span>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="text-xs cursor-pointer">
+                        <Send className="mr-2 size-3.5 text-primary" />
+                        Release grades to parents
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="w-64 max-h-56 overflow-y-auto">
+                        <DropdownMenuLabel className="text-xs text-muted-foreground">
+                          Choose activity:
+                        </DropdownMenuLabel>
+                        {activities.map((act) => (
+                          <DropdownMenuItem
+                            key={act.id}
+                            className="text-xs truncate cursor-pointer"
+                            onClick={() => beginBulk(act.id, "release")}
+                          >
+                            <span className="truncate">{act.title}</span>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}

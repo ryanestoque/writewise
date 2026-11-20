@@ -140,7 +140,7 @@ export function GradebookBulkDialog({
             {isMultiSectionRelease && (
               <label
                 htmlFor="ack-cross-section"
-                className="flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs leading-relaxed text-foreground cursor-pointer select-none"
+                className="flex items-start gap-2.5 rounded-lg border border-band-2/30 bg-band-2/10 p-3 text-xs leading-relaxed text-foreground cursor-pointer select-none"
               >
                 <Checkbox
                   id="ack-cross-section"
@@ -169,9 +169,9 @@ export function GradebookBulkDialog({
         {message && (
           <div
             role="status"
-            className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-800 dark:text-emerald-300"
+            className="flex items-center gap-2 rounded-lg border border-band-4/30 bg-band-4/10 p-3 text-sm text-band-4-text dark:text-emerald-300"
           >
-            <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <CheckCircle2 className="size-4 shrink-0 text-band-4-text dark:text-emerald-400" />
             <span>{message}</span>
           </div>
         )}

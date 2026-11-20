@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState, type ReactElement } from "react";
-import type { Submission } from "@/lib/hooks/use-submissions";
+import { toast } from "sonner";
+import { useDeleteSubmission, type Submission } from "@/lib/hooks/use-submissions";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -13,8 +14,18 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { getRejectionSummary, resolveSubmissionScore } from "@/lib/utils/submission-status";
-import { History, Eye, ArrowUpRight } from "lucide-react";
+import { History, Eye, ArrowUpRight, Trash2, Loader2 } from "lucide-react";
 
 const uploadDate = new Intl.DateTimeFormat("en-PH", {
   timeZone: "Asia/Manila",
@@ -44,6 +55,11 @@ export function WorksheetHistory({
   onSelectAttempt?: (sub: Submission) => void;
 }) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const [attemptToDelete, setAttemptToDelete] = useState<{
+    submission: Submission;
+    attemptNumber: number;
+  } | null>(null);
+  const deleteMutation = useDeleteSubmission();
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
 
@@ -56,6 +72,28 @@ export function WorksheetHistory({
 
   const handleClose = () => {
     setOpen(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!attemptToDelete) return;
+    const targetId = attemptToDelete.submission.id;
+    const attemptNumber = attemptToDelete.attemptNumber;
+    try {
+      await deleteMutation.mutateAsync(targetId);
+      toast.success(`Attempt ${attemptNumber} deleted.`);
+
+      const remaining = attempts.filter((s) => s.id !== targetId);
+      if (remaining.length === 0) {
+        handleClose();
+      } else if (onSelectAttempt && (attemptToDelete.submission.id === officialId || attempts[0]?.id === targetId)) {
+        onSelectAttempt(remaining[0]);
+      }
+      setAttemptToDelete(null);
+    } catch (err: unknown) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to delete attempt.";
+      toast.error(errorMsg);
+    }
   };
 
   return (
@@ -169,11 +207,75 @@ export function WorksheetHistory({
                       <span>Preview on card</span>
                     </Button>
                   )}
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={deleteMutation.isPending}
+                    onClick={() =>
+                      setAttemptToDelete({
+                        submission: attempt,
+                        attemptNumber: attempts.length - index,
+                      })
+                    }
+                    className="ml-auto min-h-9 gap-1 text-xs font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+                  >
+                    <Trash2 className="size-3" aria-hidden="true" />
+                    <span>Delete</span>
+                    <span className="sr-only">
+                      {" "}
+                      · Attempt {attempts.length - index} for {studentName}
+                    </span>
+                  </Button>
                 </div>
               </li>
             );
           })}
         </ol>
+
+        <AlertDialog
+          open={!!attemptToDelete}
+          onOpenChange={(isOpen) => {
+            if (!isOpen && !deleteMutation.isPending) {
+              setAttemptToDelete(null);
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Delete Attempt {attemptToDelete?.attemptNumber}?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete this worksheet attempt, computer vision analysis,
+                comments, and rubric scores for {studentName}. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                disabled={deleteMutation.isPending}
+                onClick={() => setAttemptToDelete(null)}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                disabled={deleteMutation.isPending}
+                onClick={handleConfirmDelete}
+              >
+                {deleteMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete Attempt"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </SheetContent>
     </Sheet>
   );

@@ -110,7 +110,7 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-md max-h-[min(90dvh,calc(100vh-2rem))] p-0 overflow-hidden flex flex-col shadow-warm">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-md max-h-[min(90dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
         <DialogHeader className="p-6 pb-4 border-b shrink-0">
           <DialogTitle className="text-base font-semibold">
             Keyboard Shortcuts
@@ -120,7 +120,7 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 space-y-5 flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        <div className="p-6 pt-4 space-y-5 flex-1 min-h-0 overflow-y-auto overscroll-contain">
           {categories.map((category) => (
             <div key={category} className="space-y-2.5">
               <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/90">

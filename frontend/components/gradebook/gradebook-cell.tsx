@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useSyncExternalStore, type KeyboardEvent }
 import { Pencil, SlidersHorizontal, Check, X, Loader2 } from "lucide-react";
 import type { GradebookCell } from "@/lib/hooks/use-gradebook";
 import { BandBadge } from "@/components/shared/band-badge";
+import { getBandFromScore } from "@/lib/utils/scoring";
 import { validPointsInput } from "./points-field";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,119 @@ function getServerSnapshot() {
   return false;
 }
 
+export const CRITERIA_DEFINITIONS = [
+  {
+    key: "formation",
+    label: "F",
+    name: "Letter Formation",
+    description: "Letter shape fidelity, ascender loops, and cursive connectors",
+  },
+  {
+    key: "size",
+    label: "S",
+    name: "Size Consistency",
+    description: "Proportionality between ascender, midline, and descender zones",
+  },
+  {
+    key: "spacing",
+    label: "Sp",
+    name: "Spacing Rhythm",
+    description: "Uniformity of inter-word and inter-letter cursive rhythm",
+  },
+  {
+    key: "slant",
+    label: "Sl",
+    name: "Slant Regularity",
+    description: "Consistent forward inclination angle (~13° target)",
+  },
+  {
+    key: "baseline",
+    label: "B",
+    name: "Baseline Alignment",
+    description: "Consistent resting on writing guideline with minimal drift",
+  },
+] as const;
+
+function getCriterionDiagnostic(
+  critKey: (typeof CRITERIA_DEFINITIONS)[number]["label"],
+  composite: number | null
+): {
+  chipClass: string;
+  diagnosticNote: string;
+} {
+  if (composite === null) {
+    return {
+      chipClass: "bg-muted/70 text-muted-foreground/60 border border-transparent",
+      diagnosticNote: "Awaiting worksheet scan",
+    };
+  }
+
+  const overallBand = getBandFromScore(composite);
+
+  if (overallBand === "excellent") {
+    return {
+      chipClass:
+        "bg-band-4/15 text-band-4-text border border-band-4/30 dark:text-emerald-300 dark:border-band-4/40",
+      diagnosticNote: "Mastered & consistent across line",
+    };
+  }
+
+  if (overallBand === "satisfactory") {
+    // In Satisfactory cursive, Slant regularity and Spacing rhythm are typical refinement edges
+    const isRefinementEdge = critKey === "Sl" || critKey === "Sp";
+    return {
+      chipClass: isRefinementEdge
+        ? "bg-band-2/15 text-band-2-text border border-band-2/30 dark:text-amber-200"
+        : "bg-band-3/15 text-band-3-text border border-band-3/30 dark:text-emerald-200",
+      diagnosticNote: isRefinementEdge
+        ? "Developing steady forward angle"
+        : "Solid guideline and letter control",
+    };
+  }
+
+  if (overallBand === "developing") {
+    // In Developing cursive, Slant and Spacing are primary remediation targets, formation is building
+    const isWeakness = critKey === "Sl" || critKey === "Sp";
+    return {
+      chipClass: isWeakness
+        ? "bg-band-1/15 text-band-1-text border border-band-1/30 dark:text-orange-200"
+        : "bg-band-2/15 text-band-2-text border border-band-2/30 dark:text-amber-200",
+      diagnosticNote: isWeakness
+        ? "Needs guided slant & spacing drill"
+        : "Building muscle memory and shape control",
+    };
+  }
+
+  // needs_improvement
+  return {
+    chipClass:
+      "bg-band-1/15 text-band-1-text border border-band-1/30 dark:text-orange-200 dark:border-band-1/40",
+    diagnosticNote: "Basic stroke and guideline practice recommended",
+  };
+}
+
+function getPedagogicalSummary(composite: number | null, courseworkStatus: string): string {
+  if (courseworkStatus === "Excused") return "Excused from activity";
+  if (composite === null) {
+    if (courseworkStatus === "Missing") return "Awaiting scan";
+    return "No assessment yet";
+  }
+  const band = getBandFromScore(composite);
+  switch (band) {
+    case "excellent":
+      return "Consistent cursive letterforms";
+    case "satisfactory":
+      return "Solid baseline; refine slant";
+    case "developing":
+      return "Building rhythm & connectors";
+    case "needs_improvement":
+      return "Guided stroke drills advised";
+    default:
+      return "Diagnostic cursive evaluation";
+  }
+  return "Diagnostic cursive evaluation";
+}
+
 export function GradebookCellButton({
   cell,
   onOpen,
@@ -42,6 +156,8 @@ export function GradebookCellButton({
   onSaveScore,
   onNavigateDown,
   viewMode = "points",
+  isFocused = false,
+  onFocusCell,
 }: {
   cell: GradebookCell;
   onOpen: () => void;
@@ -52,6 +168,8 @@ export function GradebookCellButton({
   onSaveScore?: (score: string) => Promise<void>;
   onNavigateDown?: (row: number, column: number) => void;
   viewMode?: "points" | "diagnostic";
+  isFocused?: boolean;
+  onFocusCell?: () => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -90,6 +208,8 @@ export function GradebookCellButton({
     typeof onSaveScore === "function";
 
   const statusLabel = formatStatus(cell.coursework_status);
+  const compositeNum = cell.assessment_composite !== null ? Number(cell.assessment_composite) : null;
+  const pedagogicalSummary = getPedagogicalSummary(compositeNum, cell.coursework_status);
 
   async function handleCommit() {
     if (!canEditScore || !onSaveScore) return;
@@ -173,7 +293,7 @@ export function GradebookCellButton({
               disabled={isSaving}
               onClick={() => void handleCommit()}
               aria-label="Save score"
-              className="text-primary hover:bg-muted inline-flex size-6 items-center justify-center rounded-sm transition-colors"
+              className="text-primary hover:bg-muted inline-flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
             >
               {isSaving ? (
                 <Loader2 className="size-3.5 animate-spin" />
@@ -189,7 +309,7 @@ export function GradebookCellButton({
                 setInputVal(initialVal);
               }}
               aria-label="Cancel editing"
-              className="text-muted-foreground hover:bg-muted inline-flex size-6 items-center justify-center rounded-sm transition-colors"
+              className="text-muted-foreground hover:bg-muted inline-flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
             >
               <X className="size-3.5" />
             </button>
@@ -210,7 +330,7 @@ export function GradebookCellButton({
     <div
       role="group"
       aria-roledescription="grade cell"
-      tabIndex={0}
+      tabIndex={isFocused ? 0 : -1}
       data-gradecell
       data-row={row}
       data-column={column}
@@ -230,6 +350,7 @@ export function GradebookCellButton({
             : "draft"
       }${hasUnreadComments ? ", unread comments" : ""}. Press Enter to edit score, Space to inspect details.`}
       onClick={() => {
+        onFocusCell?.();
         if (isTouchDevice) {
           onOpen();
         } else if (canEditScore) {
@@ -238,9 +359,17 @@ export function GradebookCellButton({
           onOpen();
         }
       }}
+      onFocus={() => {
+        onFocusCell?.();
+      }}
       onDoubleClick={onOpen}
       onKeyDown={handleCellKeyDown}
-      className="group hover:bg-muted/70 hover:border-border/60 focus-visible:ring-ring focus-visible:border-ring relative flex min-h-[5rem] w-full flex-col justify-between rounded-sm border border-transparent p-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none cursor-pointer"
+      className={cn(
+        "group hover:bg-muted/70 hover:border-border/60 relative flex min-h-[5rem] w-full flex-col justify-between rounded-sm border p-2 text-left transition-colors cursor-pointer focus-visible:outline-none",
+        isFocused
+          ? "border-primary/60 ring-2 ring-primary/40 bg-muted/40 shadow-xs"
+          : "border-transparent"
+      )}
     >
       {viewMode === "diagnostic" ? (
         <div className="space-y-1.5">
@@ -253,7 +382,7 @@ export function GradebookCellButton({
                     {Number(cell.assessment_composite).toFixed(1)}
                   </span>
                   <span
-                    className="inline-flex items-center px-1 rounded-xs text-xs uppercase font-semibold tracking-tight bg-muted text-muted-foreground"
+                    className="inline-flex items-center px-1 rounded-xs text-[10px] uppercase font-semibold tracking-tight bg-muted text-muted-foreground"
                     title={cell.assessment_source === "manual" ? "Teacher rubric scored" : "AI CV/CNN evaluated"}
                   >
                     {cell.assessment_source === "manual" ? "T" : "AI"}
@@ -269,7 +398,7 @@ export function GradebookCellButton({
               )}
 
               {cell.late && (
-                <span className="inline-flex items-center px-1 rounded text-xs font-medium bg-amber-500/15 text-amber-800 dark:text-amber-300">
+                <span className="inline-flex items-center px-1 rounded text-xs font-medium bg-band-2/15 text-band-2-text border border-band-2/30 dark:text-amber-300">
                   Late
                 </span>
               )}
@@ -299,7 +428,7 @@ export function GradebookCellButton({
                     startEditing();
                   }}
                   aria-label={`Edit score for ${label ?? "student"}`}
-                  className="text-muted-foreground hover:text-foreground hover:bg-background/80 flex size-6 items-center justify-center rounded-sm transition-colors"
+                  className="text-muted-foreground hover:text-foreground hover:bg-background/80 flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
                 >
                   <Pencil className="size-3" aria-hidden="true" />
                 </button>
@@ -311,7 +440,7 @@ export function GradebookCellButton({
                   onOpen();
                 }}
                 aria-label={`Inspect details for ${label ?? "student"}`}
-                className="text-muted-foreground hover:text-foreground hover:bg-background/80 flex size-6 items-center justify-center rounded-sm transition-colors"
+                className="text-muted-foreground hover:text-foreground hover:bg-background/80 flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
               >
                 <SlidersHorizontal className="size-3" aria-hidden="true" />
               </button>
@@ -320,29 +449,33 @@ export function GradebookCellButton({
 
           <div
             className="flex items-center gap-1 pt-0.5"
-            title="WriteWise 5 Criteria: Formation, Size, Spacing, Slant, Baseline"
+            role="list"
+            aria-label="5 Cursive criteria: Formation, Size, Spacing, Slant, Baseline"
           >
-            {[
-              { label: "F", name: "Formation" },
-              { label: "S", name: "Size" },
-              { label: "Sp", name: "Spacing" },
-              { label: "Sl", name: "Slant" },
-              { label: "B", name: "Baseline" },
-            ].map((crit) => (
-              <span
-                key={crit.label}
-                title={`${crit.name} criterion`}
-                className={cn(
-                  "inline-flex items-center justify-center px-1 py-0.5 rounded-xs text-xs font-mono font-medium",
-                  cell.assessment_composite !== null
-                    ? "bg-primary/10 text-primary"
-                    : "bg-muted text-muted-foreground/60"
-                )}
-              >
-                {crit.label}
-              </span>
-            ))}
+            {CRITERIA_DEFINITIONS.map((crit) => {
+              const diag = getCriterionDiagnostic(crit.label, compositeNum);
+              return (
+                <span
+                  key={crit.label}
+                  role="listitem"
+                  title={`${crit.name} (${crit.label}): ${crit.description} — ${diag.diagnosticNote}`}
+                  className={cn(
+                    "inline-flex items-center justify-center min-w-5 px-1 py-0.5 rounded-xs text-[10px] font-sans tabular-nums font-semibold transition-colors",
+                    diag.chipClass
+                  )}
+                >
+                  {crit.label}
+                </span>
+              );
+            })}
           </div>
+
+          <p
+            className="text-[11px] leading-tight text-muted-foreground truncate"
+            title={pedagogicalSummary}
+          >
+            {pedagogicalSummary}
+          </p>
         </div>
       ) : (
         <div className="space-y-1">
@@ -368,7 +501,7 @@ export function GradebookCellButton({
               </span>
 
               {cell.late && (
-                <span className="inline-flex items-center px-1 rounded text-xs font-medium bg-amber-500/15 text-amber-800 dark:text-amber-300">
+                <span className="inline-flex items-center px-1 rounded text-xs font-medium bg-band-2/15 text-band-2-text border border-band-2/30 dark:text-amber-300">
                   Late
                 </span>
               )}
@@ -398,7 +531,7 @@ export function GradebookCellButton({
                     startEditing();
                   }}
                   aria-label={`Edit score for ${label ?? "student"}`}
-                  className="text-muted-foreground hover:text-foreground hover:bg-background/80 flex size-6 items-center justify-center rounded-sm transition-colors"
+                  className="text-muted-foreground hover:text-foreground hover:bg-background/80 flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
                 >
                   <Pencil className="size-3" aria-hidden="true" />
                 </button>
@@ -410,7 +543,7 @@ export function GradebookCellButton({
                   onOpen();
                 }}
                 aria-label={`Inspect details for ${label ?? "student"}`}
-                className="text-muted-foreground hover:text-foreground hover:bg-background/80 flex size-6 items-center justify-center rounded-sm transition-colors"
+                className="text-muted-foreground hover:text-foreground hover:bg-background/80 flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
               >
                 <SlidersHorizontal className="size-3" aria-hidden="true" />
               </button>
@@ -443,7 +576,7 @@ export function GradebookCellButton({
           {cell.points_possible !== null && cell.coursework_status !== "Excused" ? (
             cell.publication === "released" ? (
               <span
-                className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400"
+                className="inline-flex items-center gap-1 text-xs font-medium text-band-4-text dark:text-emerald-400"
                 title="Shared with parents"
               >
                 <Check className="size-3 shrink-0" aria-hidden="true" />
@@ -454,7 +587,7 @@ export function GradebookCellButton({
                 className="inline-flex items-center gap-1 text-xs text-muted-foreground"
                 title="Draft (not visible to parents yet)"
               >
-                <span className="size-1.5 rounded-full bg-amber-500/80 shrink-0" />
+                <span className="size-1.5 rounded-full bg-band-2 shrink-0" />
                 <span>Draft{cell.points_override !== null ? " · Ov" : ""}</span>
               </span>
             )
