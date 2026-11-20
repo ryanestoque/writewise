@@ -357,7 +357,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                 className={cn(
                   "relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                   statusFilter === "released"
-                    ? "bg-band-4 text-white border-band-4 shadow-warm-sm font-semibold"
+                    ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
                     : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
                 )}
               >
@@ -367,7 +367,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                     className={cn(
                       "text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors tabular-nums",
                       statusFilter === "released"
-                        ? "bg-white/20 text-white"
+                        ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
                         : "bg-muted text-foreground"
                     )}
                   >
