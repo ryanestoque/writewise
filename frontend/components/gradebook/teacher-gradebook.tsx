@@ -28,6 +28,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -545,29 +546,31 @@ function SectionGrid({
                           <MoreHorizontal className="size-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56">
-                          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                            Activity Actions
-                          </DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => beginBulk(act.id, "release")} className="cursor-pointer">
-                            <Send className="mr-2 size-4 text-primary" />
-                            Release grades to parents
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => beginBulk(act.id, "zero")}
-                            disabled={act.points_possible === null}
-                            className="cursor-pointer"
-                          >
-                            <FileX className="mr-2 size-4 text-muted-foreground" />
-                            {selected.size
-                              ? `Mark uncollected (0) for ${selected.size}`
-                              : "Mark uncollected (0 pts)"}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => beginBulk(act.id, "excuse")} className="cursor-pointer">
-                            <CheckCircle2 className="mr-2 size-4 text-muted-foreground" />
-                            {selected.size
-                              ? `Excuse ${selected.size} selected`
-                              : "Excuse all in section"}
-                          </DropdownMenuItem>
+                          <DropdownMenuGroup>
+                            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                              Activity Actions
+                            </DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => beginBulk(act.id, "release")} className="cursor-pointer">
+                              <Send className="mr-2 size-4 text-primary" />
+                              Release grades to parents
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => beginBulk(act.id, "zero")}
+                              disabled={act.points_possible === null}
+                              className="cursor-pointer"
+                            >
+                              <FileX className="mr-2 size-4 text-muted-foreground" />
+                              {selected.size
+                                ? `Mark uncollected (0) for ${selected.size}`
+                                : "Mark uncollected (0 pts)"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => beginBulk(act.id, "excuse")} className="cursor-pointer">
+                              <CheckCircle2 className="mr-2 size-4 text-muted-foreground" />
+                              {selected.size
+                                ? `Excuse ${selected.size} selected`
+                                : "Excuse all in section"}
+                            </DropdownMenuItem>
+                          </DropdownMenuGroup>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => {
@@ -693,9 +696,11 @@ function SectionGrid({
                     Batch actions <MoreHorizontal className="size-3.5" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel className="text-xs text-muted-foreground">
-                      Batch Actions ({selected.size} selected)
-                    </DropdownMenuLabel>
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel className="text-xs text-muted-foreground">
+                        Batch Actions ({selected.size} selected)
+                      </DropdownMenuLabel>
+                    </DropdownMenuGroup>
 
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger className="text-xs cursor-pointer">
@@ -703,24 +708,26 @@ function SectionGrid({
                         Mark uncollected (0 pts)
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent className="w-64 max-h-56 overflow-y-auto">
-                        <DropdownMenuLabel className="text-xs text-muted-foreground">
-                          Choose activity:
-                        </DropdownMenuLabel>
-                        {activities.filter((a) => a.points_possible !== null).length === 0 ? (
-                          <p className="px-3 py-2 text-xs text-muted-foreground italic">No scored activities</p>
-                        ) : (
-                          activities
-                            .filter((a) => a.points_possible !== null)
-                            .map((act) => (
-                              <DropdownMenuItem
-                                key={act.id}
-                                className="text-xs truncate cursor-pointer"
-                                onClick={() => beginBulk(act.id, "zero")}
-                              >
-                                <span className="truncate">{act.title}</span>
-                              </DropdownMenuItem>
-                            ))
-                        )}
+                        <DropdownMenuGroup>
+                          <DropdownMenuLabel className="text-xs text-muted-foreground">
+                            Choose activity:
+                          </DropdownMenuLabel>
+                          {activities.filter((a) => a.points_possible !== null).length === 0 ? (
+                            <p className="px-3 py-2 text-xs text-muted-foreground italic">No scored activities</p>
+                          ) : (
+                            activities
+                              .filter((a) => a.points_possible !== null)
+                              .map((act) => (
+                                <DropdownMenuItem
+                                  key={act.id}
+                                  className="text-xs truncate cursor-pointer"
+                                  onClick={() => beginBulk(act.id, "zero")}
+                                >
+                                  <span className="truncate">{act.title}</span>
+                                </DropdownMenuItem>
+                              ))
+                          )}
+                        </DropdownMenuGroup>
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
 
@@ -730,18 +737,20 @@ function SectionGrid({
                         Excuse students
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent className="w-64 max-h-56 overflow-y-auto">
-                        <DropdownMenuLabel className="text-xs text-muted-foreground">
-                          Choose activity:
-                        </DropdownMenuLabel>
-                        {activities.map((act) => (
-                          <DropdownMenuItem
-                            key={act.id}
-                            className="text-xs truncate cursor-pointer"
-                            onClick={() => beginBulk(act.id, "excuse")}
-                          >
-                            <span className="truncate">{act.title}</span>
-                          </DropdownMenuItem>
-                        ))}
+                        <DropdownMenuGroup>
+                          <DropdownMenuLabel className="text-xs text-muted-foreground">
+                            Choose activity:
+                          </DropdownMenuLabel>
+                          {activities.map((act) => (
+                            <DropdownMenuItem
+                              key={act.id}
+                              className="text-xs truncate cursor-pointer"
+                              onClick={() => beginBulk(act.id, "excuse")}
+                            >
+                              <span className="truncate">{act.title}</span>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuGroup>
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
 
@@ -753,18 +762,20 @@ function SectionGrid({
                         Release grades to parents
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent className="w-64 max-h-56 overflow-y-auto">
-                        <DropdownMenuLabel className="text-xs text-muted-foreground">
-                          Choose activity:
-                        </DropdownMenuLabel>
-                        {activities.map((act) => (
-                          <DropdownMenuItem
-                            key={act.id}
-                            className="text-xs truncate cursor-pointer"
-                            onClick={() => beginBulk(act.id, "release")}
-                          >
-                            <span className="truncate">{act.title}</span>
-                          </DropdownMenuItem>
-                        ))}
+                        <DropdownMenuGroup>
+                          <DropdownMenuLabel className="text-xs text-muted-foreground">
+                            Choose activity:
+                          </DropdownMenuLabel>
+                          {activities.map((act) => (
+                            <DropdownMenuItem
+                              key={act.id}
+                              className="text-xs truncate cursor-pointer"
+                              onClick={() => beginBulk(act.id, "release")}
+                            >
+                              <span className="truncate">{act.title}</span>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuGroup>
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
                   </DropdownMenuContent>
