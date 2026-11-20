@@ -15,7 +15,15 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverDescription,
+} from "@/components/ui/popover";
+import { getCriterionBandStyle } from "@/components/activities/activity-detail-hero";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -120,33 +128,40 @@ export const SubmissionCard = memo(function SubmissionCard({
       { key: "formation", name: "Letter Formation", short: "Form", score: letterFormation },
       { key: "size", name: "Size Consistency", short: "Size", score: sizeConsistency },
       { key: "spacing", name: "Spacing", short: "Space", score: spacing },
-      { key: "slant", name: "Slant", short: "Slant", score: slant },
+      { key: "slant", name: "Slant Consistency", short: "Slant", score: slant },
       { key: "baseline", name: "Baseline Alignment", short: "Base", score: baselineAlignment },
     ];
     const hasAny = items.some((item) => item.score != null);
     if (!hasAny) return null;
     return items.map((item) => {
       const val = item.score;
-      let band = "Unrated";
-      let barClass = "bg-muted";
       if (val != null) {
-        if (val >= 80) {
-          band = "Excellent";
-          barClass = "bg-band-4";
-        } else if (val >= 60) {
-          band = "Satisfactory";
-          barClass = "bg-band-3";
-        } else if (val >= 40) {
-          band = "Developing";
-          barClass = "bg-band-2";
-        } else {
-          band = "Needs Improvement";
-          barClass = "bg-band-1";
-        }
+        const { band, barClass, textClass, dotClass } = getCriterionBandStyle(val);
+        return { ...item, band, barClass, textClass, dotClass };
       }
-      return { ...item, band, barClass };
+      return {
+        ...item,
+        band: "Unrated",
+        barClass: "bg-muted",
+        textClass: "text-muted-foreground",
+        dotClass: "bg-muted",
+      };
     });
   }, [resolvedScore]);
+
+  const { strongestCriterion, focusCriterion } = useMemo(() => {
+    if (!criteriaData) return { strongestCriterion: null, focusCriterion: null };
+    const valid = criteriaData.filter((c) => c.score != null);
+    if (valid.length === 0) return { strongestCriterion: null, focusCriterion: null };
+    const sorted = [...valid].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    const strongest = sorted[0];
+    const lowest = sorted.length > 1 ? sorted[sorted.length - 1] : null;
+    const focus =
+      lowest && ((lowest.score ?? 0) < 80 || (strongest.score ?? 0) - (lowest.score ?? 0) >= 10)
+        ? lowest
+        : null;
+    return { strongestCriterion: strongest, focusCriterion: focus };
+  }, [criteriaData]);
 
   const currentAttemptIndex = useMemo(() => {
     if (!hasMultipleAttempts) return 1;
@@ -378,31 +393,125 @@ export const SubmissionCard = memo(function SubmissionCard({
                     </>
                   )}
                 </PopoverTrigger>
-                <PopoverContent side="top" align="start" className="w-72 sm:w-80 p-3 text-xs shadow-md">
-                  <div className="flex items-center justify-between border-b pb-1.5 mb-1.5">
-                    <div>
-                      <p className="font-semibold text-foreground">5-Criteria Diagnostic</p>
-                      <p className="text-[11px] text-muted-foreground">{scoreBand.description}</p>
-                    </div>
-                    {resolvedScore.isScored && compositeScore !== null && (
-                      <span className={cn("text-xs font-bold px-1.5 py-0.5 rounded shrink-0 ml-2", scoreBand.className)}>
-                        {Math.round(compositeScore)}%
+                <PopoverContent
+                  align={compact ? "start" : "end"}
+                  className="z-50 w-[min(calc(100vw-2rem),21rem)] gap-2.5 p-3.5 text-xs"
+                >
+                  <PopoverHeader className="space-y-1">
+                    <PopoverTitle className="text-foreground flex items-center justify-between text-xs font-semibold">
+                      <span>5-Criteria Diagnostic</span>
+                      <span className="text-primary font-bold tabular-nums">
+                        {compositeScore !== null ? `${Math.round(compositeScore)}%` : "—"}
                       </span>
+                    </PopoverTitle>
+                    {scoreBand.description && (
+                      <p className="text-muted-foreground text-[11px] leading-relaxed">
+                        {scoreBand.description}
+                      </p>
                     )}
-                  </div>
+                    {resolvedScore.source === "manual" && (
+                      <p className="text-muted-foreground text-[11px]">
+                        Based on teacher rubric scores
+                      </p>
+                    )}
+                    <PopoverDescription className="sr-only">
+                      Diagnostic scores across Letter Formation, Size Consistency, Spacing, Slant Consistency, and Baseline Alignment for {studentName}.
+                    </PopoverDescription>
+                  </PopoverHeader>
+
                   {criteriaData && (
-                    <div className="space-y-1.5">
-                      {criteriaData.map((c) => (
-                        <div key={c.key} className="flex items-baseline justify-between gap-2.5 text-xs">
-                          <span className="text-muted-foreground flex items-center gap-1.5 shrink-0">
-                            <span className={cn("size-2 rounded-full shrink-0", c.barClass)} aria-hidden="true" />
-                            <span>{c.name}</span>
-                          </span>
-                          <span className="font-semibold tabular-nums text-foreground text-right ml-auto">
-                            {c.score != null ? `${Math.round(c.score)}% (${c.band})` : "Pending"}
+                    <div className="space-y-2">
+                      {criteriaData.map((c) => {
+                        const score = c.score ?? 0;
+                        return (
+                          <div key={c.key}>
+                            <div className="mb-1 flex items-baseline justify-between gap-2 text-xs">
+                              <span className="text-muted-foreground min-w-0 truncate">{c.name}</span>
+                              <div className="flex shrink-0 items-center gap-1.5">
+                                <span className={cn("text-[11px] font-medium", c.textClass)}>
+                                  {c.band}
+                                </span>
+                                <span className="text-foreground font-medium tabular-nums">
+                                  {c.score != null ? `${Math.round(c.score)}%` : "—"}
+                                </span>
+                              </div>
+                            </div>
+                            <div
+                              className="bg-muted/80 dark:bg-white/10 dark:ring-1 dark:ring-white/10 h-1.5 w-full overflow-hidden rounded-full"
+                              role="progressbar"
+                              aria-valuenow={score}
+                              aria-valuemin={0}
+                              aria-valuemax={100}
+                              aria-label={`${c.name}: ${score}% (${c.band})`}
+                            >
+                              <div
+                                className={cn(
+                                  "h-full w-full rounded-full transition-transform duration-300 ease-out origin-left motion-reduce:transition-none",
+                                  c.barClass
+                                )}
+                                style={{
+                                  transform: `scaleX(${Math.max(0, Math.min(100, score)) / 100})`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {(strongestCriterion || focusCriterion) && (
+                    <div className="border-border/60 text-muted-foreground space-y-1.5 border-t pt-2 text-xs">
+                      {strongestCriterion && (
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span
+                              className={cn(
+                                "size-1.5 shrink-0 rounded-full",
+                                strongestCriterion.dotClass
+                              )}
+                              aria-hidden="true"
+                            />
+                            <span
+                              className={cn(
+                                strongestCriterion.textClass,
+                                "font-semibold shrink-0"
+                              )}
+                            >
+                              Strength:
+                            </span>
+                            <span className="truncate">{strongestCriterion.name}</span>
+                          </div>
+                          <span className="text-foreground font-medium tabular-nums shrink-0">
+                            {strongestCriterion.score != null ? `${Math.round(strongestCriterion.score)}%` : "—"}
                           </span>
                         </div>
-                      ))}
+                      )}
+                      {focusCriterion && (
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span
+                              className={cn(
+                                "size-1.5 shrink-0 rounded-full",
+                                focusCriterion.dotClass
+                              )}
+                              aria-hidden="true"
+                            />
+                            <span
+                              className={cn(
+                                focusCriterion.textClass,
+                                "font-semibold shrink-0"
+                              )}
+                            >
+                              Practice Focus:
+                            </span>
+                            <span className="truncate">{focusCriterion.name}</span>
+                          </div>
+                          <span className="text-foreground font-medium tabular-nums shrink-0">
+                            {focusCriterion.score != null ? `${Math.round(focusCriterion.score)}%` : "—"}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </PopoverContent>

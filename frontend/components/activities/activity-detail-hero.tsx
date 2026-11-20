@@ -71,7 +71,7 @@ const CRITERIA_METRICS: Array<{
   { key: "baselineAlignment", label: "Baseline Alignment" },
 ];
 
-function getCriterionBandStyle(score: number) {
+export function getCriterionBandStyle(score: number) {
   if (score >= 80) {
     return {
       band: "Excellent",
