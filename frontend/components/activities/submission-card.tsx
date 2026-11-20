@@ -343,7 +343,7 @@ export const SubmissionCard = memo(function SubmissionCard({
                   className="group/crit flex flex-col gap-1.5 w-full rounded-lg p-2 min-h-[44px] hover:bg-muted/50 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden text-left cursor-pointer border border-border/60 hover:border-border"
                   aria-label={`Diagnostic score: ${compositeScore !== null ? Math.round(compositeScore) : 0}% (${scoreBand.band}). ${criteriaData ? criteriaData.map((c) => `${c.name}: ${c.score != null ? `${Math.round(c.score)}% (${c.band})` : "Unrated"}`).join(", ") : ""}. Tap to view full breakdown.`}
                 >
-                  <div className="flex items-baseline justify-between w-full">
+                  <div className="flex items-baseline justify-between gap-2 w-full">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-bold tabular-nums text-foreground">
                         {compositeScore !== null ? `${Math.round(compositeScore)}%` : "—"}
@@ -353,9 +353,11 @@ export const SubmissionCard = memo(function SubmissionCard({
                         <span className="text-foreground/90 font-medium">{scoreBand.band}</span>
                       </span>
                     </div>
-                    <span className="text-[11px] text-muted-foreground/75 font-normal">
-                      {resolvedScore.source === "manual" ? "Teacher rubric" : "Calibrated"}
-                    </span>
+                    {resolvedScore.source === "manual" && (
+                      <span className="text-[11px] text-muted-foreground/75 font-normal">
+                        Teacher rubric
+                      </span>
+                    )}
                   </div>
 
                   {criteriaData && (
