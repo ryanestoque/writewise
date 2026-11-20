@@ -47,6 +47,13 @@ const BatchReleaseDialog = dynamic(
     import("@/components/activities/batch-release-dialog").then((m) => m.BatchReleaseDialog),
   { ssr: false }
 );
+const AttemptDeletionDialogs = dynamic(
+  () =>
+    import("@/components/activities/attempt-deletion-dialogs").then(
+      (m) => m.AttemptDeletionDialogs
+    ),
+  { ssr: false }
+);
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { FloatingActionBar } from "@/components/ui/floating-action-bar";
@@ -68,15 +75,10 @@ import {
   Inbox,
   AlertCircle,
   RotateCcw,
-  SearchX,
   Trash2,
   ChevronDown,
   CheckCircle2,
-  CheckCheck,
   PenLine,
-  FileCheck,
-  ScanLine,
-  UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getWordCount } from "@/lib/utils/formatters";
@@ -93,7 +95,7 @@ import {
   type SubmissionSort,
   type ViewMode,
 } from "@/components/activities/activity-review-toolbar";
-import { AttemptDeletionDialogs } from "@/components/activities/attempt-deletion-dialogs";
+import { ActivityReviewEmptyStates } from "@/components/activities/activity-review-empty-states";
 import { useShortcutKeys } from "@/hooks/use-shortcut-keys";
 
 interface StudentSubmissionGroup {
@@ -1459,245 +1461,18 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
             </Empty>
           </div>
         ) : currentListLength === 0 ? (
-          /* Empty state: Filters or search returned 0 results */
-          <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">
-            {!searchQuery.trim() &&
-            (statusFilter === "needs_scoring" || statusFilter === "needs_action") ? (
-              (submissions?.length ?? 0) > 0 ? (
-                /* All pending worksheets graded */
-                <Empty className="border-0 py-10 sm:py-12 px-4">
-                  <EmptyMedia
-                    variant="icon"
-                    className="size-11 rounded-xl bg-muted text-muted-foreground border border-border/40"
-                  >
-                    <CheckCircle2 className="size-5" aria-hidden="true" />
-                  </EmptyMedia>
-                  <EmptyHeader className="max-w-md">
-                    <EmptyTitle className="text-base sm:text-lg font-medium tracking-tight text-foreground">
-                      No worksheets pending review
-                    </EmptyTitle>
-                    <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm text-muted-foreground">
-                      All submitted worksheets for this activity have been reviewed and scored.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                  <EmptyContent className="flex flex-row flex-wrap items-center justify-center gap-2 max-w-none">
-                    <Button
-                      variant="outline"
-                      onClick={() => setStatusFilter("all")}
-                      className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
-                    >
-                      {viewAllLabel}
-                    </Button>
-                    {studentsWithoutUploads.length > 0 && (
-                      <Button
-                        variant="ghost"
-                        onClick={() => setStatusFilter("missing")}
-                        className="text-muted-foreground hover:text-foreground h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
-                      >
-                        View missing ({studentsWithoutUploads.length})
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      onClick={() => setStatusFilter("released")}
-                      className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
-                    >
-                      View released results
-                    </Button>
-                  </EmptyContent>
-                </Empty>
-              ) : (
-                /* No worksheets submitted yet to score */
-                <Empty className="border-0 py-10 sm:py-12 px-4">
-                  <EmptyMedia
-                    variant="icon"
-                    className="size-11 rounded-xl bg-muted text-muted-foreground border border-border/40"
-                  >
-                    <Inbox className="size-5" aria-hidden="true" />
-                  </EmptyMedia>
-                  <EmptyHeader className="max-w-md">
-                    <EmptyTitle className="text-base sm:text-lg font-medium tracking-tight text-foreground">
-                      No worksheets to score yet
-                    </EmptyTitle>
-                    <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm text-muted-foreground">
-                      None of the assigned students have turned in a worksheet for this activity yet.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                  <EmptyContent className="flex flex-row flex-wrap items-center justify-center gap-2 max-w-none">
-                    <Button
-                      variant="outline"
-                      onClick={() => setStatusFilter("all")}
-                      className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
-                    >
-                      {viewAllLabel}
-                    </Button>
-                    {studentsWithoutUploads.length > 0 && (
-                      <Button
-                        variant="ghost"
-                        onClick={() => setStatusFilter("missing")}
-                        className="text-muted-foreground hover:text-foreground h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
-                      >
-                        View missing ({studentsWithoutUploads.length})
-                      </Button>
-                    )}
-                    <Button
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
-                      onClick={() => openUpload({ activityId: id })}
-                    >
-                      <Upload className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                      <span>Upload worksheet</span>
-                    </Button>
-                  </EmptyContent>
-                </Empty>
-              )
-            ) : !searchQuery.trim() && (statusFilter === "no_upload" || statusFilter === "missing") && assignedStudents.length > 0 ? (
-              /* All-Turned-In state */
-              <Empty className="border-0 py-10 sm:py-12 px-4">
-                <EmptyMedia
-                  variant="icon"
-                  className="size-11 rounded-xl bg-muted text-muted-foreground border border-border/40"
-                >
-                  <CheckCheck className="size-5" aria-hidden="true" />
-                </EmptyMedia>
-                <EmptyHeader className="max-w-md">
-                  <EmptyTitle className="text-base sm:text-lg font-medium tracking-tight text-foreground">
-                    No missing submissions
-                  </EmptyTitle>
-                  <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm text-muted-foreground">
-                    Every assigned student has turned in their cursive handwriting activity sheet.
-                  </EmptyDescription>
-                </EmptyHeader>
-                <EmptyContent className="flex flex-row flex-wrap items-center justify-center gap-2 max-w-none">
-                  <Button
-                    variant="outline"
-                    onClick={() => setStatusFilter("all")}
-                    className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
-                  >
-                    {viewAllLabel}
-                  </Button>
-                </EmptyContent>
-              </Empty>
-            ) : searchQuery.trim() ? (
-              /* Search with 0 results */
-              <Empty className="border-0 py-10 sm:py-12 px-4">
-                <EmptyMedia
-                  variant="icon"
-                  className="size-11 rounded-xl bg-muted text-muted-foreground border border-border/40"
-                >
-                  <SearchX className="size-5" aria-hidden="true" />
-                </EmptyMedia>
-                <EmptyHeader className="max-w-md">
-                  <EmptyTitle className="text-base sm:text-lg font-medium tracking-tight text-foreground">
-                    No {resultUnit}s matching &quot;{searchQuery.trim()}&quot;
-                  </EmptyTitle>
-                  <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm text-muted-foreground">
-                    We couldn&apos;t find any {resultUnit}s matching this query. Check for typos or reset your search.
-                  </EmptyDescription>
-                </EmptyHeader>
-                <EmptyContent className="flex flex-row flex-wrap items-center justify-center gap-2 max-w-none">
-                  <Button
-                    variant="outline"
-                    onClick={handleClearSearch}
-                    className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
-                  >
-                    Clear search
-                  </Button>
-                  {statusFilter !== "all" && (
-                    <Button
-                      variant="ghost"
-                      onClick={() => setStatusFilter("all")}
-                      className="text-muted-foreground hover:text-foreground h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
-                    >
-                      {viewAllLabel}
-                    </Button>
-                  )}
-                </EmptyContent>
-              </Empty>
-            ) : (() => {
-              const filterConfig: Record<
-                string,
-                {
-                  title: string;
-                  description: string;
-                  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
-                }
-              > = {
-                ready: {
-                  title: "No worksheets ready to release",
-                  description: "All scored worksheets have already been released to students and parents.",
-                  icon: FileCheck,
-                },
-                returned: {
-                  title: "No returned worksheets",
-                  description: "There are currently no worksheets flagged or returned for resubmission.",
-                  icon: RotateCcw,
-                },
-                processing: {
-                  title: "No worksheets processing",
-                  description: "No handwriting worksheets are currently undergoing AI analysis.",
-                  icon: ScanLine,
-                },
-                released: {
-                  title: "No released worksheets",
-                  description: "No student worksheet results have been published for this activity yet.",
-                  icon: CheckCheck,
-                },
-                excused: {
-                  title: "No excused students",
-                  description: "No students are currently marked as excused for this activity.",
-                  icon: UserCheck,
-                },
-                needs_upload: {
-                  title: "No pending uploads",
-                  description: "All students currently have valid submissions on file.",
-                  icon: ClipboardList,
-                },
-                no_upload: {
-                  title: "No unsubmitted worksheets",
-                  description: "Every student in this roster has at least one worksheet upload.",
-                  icon: ClipboardList,
-                },
-                missing: {
-                  title: "No missing submissions",
-                  description: "There are currently no missing student worksheets for this activity.",
-                  icon: ClipboardList,
-                },
-              };
-              const config = filterConfig[statusFilter];
-              const FilterIcon = config?.icon ?? Inbox;
-              const emptyTitle = config?.title ?? `No matching ${resultUnit}s`;
-              const emptyDescription = config?.description ?? "There are currently no student worksheets under this review status.";
-
-              return (
-                /* Specific status filter with 0 results */
-                <Empty className="border-0 py-10 sm:py-12 px-4">
-                  <EmptyMedia
-                    variant="icon"
-                    className="size-11 rounded-xl bg-muted text-muted-foreground border border-border/40"
-                  >
-                    <FilterIcon className="size-5" aria-hidden="true" />
-                  </EmptyMedia>
-                  <EmptyHeader className="max-w-md">
-                    <EmptyTitle className="text-base sm:text-lg font-medium tracking-tight text-foreground">
-                      {emptyTitle}
-                    </EmptyTitle>
-                    <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm text-muted-foreground">
-                      {emptyDescription}
-                    </EmptyDescription>
-                  </EmptyHeader>
-                  <EmptyContent className="flex flex-row flex-wrap items-center justify-center gap-2 max-w-none">
-                    <Button
-                      variant="outline"
-                      onClick={() => setStatusFilter("all")}
-                      className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
-                    >
-                      {viewAllLabel}
-                    </Button>
-                  </EmptyContent>
-                </Empty>
-              );
-            })()}
-          </div>
+          <ActivityReviewEmptyStates
+            statusFilter={statusFilter}
+            searchQuery={searchQuery}
+            hasSubmissions={(submissions?.length ?? 0) > 0}
+            assignedStudentsCount={assignedStudents.length}
+            studentsWithoutUploadsCount={studentsWithoutUploads.length}
+            resultUnit={resultUnit}
+            viewAllLabel={viewAllLabel}
+            onClearSearch={handleClearSearch}
+            onSetStatusFilter={setStatusFilter}
+            onOpenUpload={() => openUpload({ activityId: id })}
+          />
         ) : (
           /* Submissions Cards Grid */
           <div

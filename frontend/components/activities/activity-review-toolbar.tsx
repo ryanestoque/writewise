@@ -245,9 +245,9 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
               <button
                 type="button"
                 onClick={handleScrollLeft}
-                aria-label="Scroll filters left"
+                aria-hidden="true"
                 tabIndex={-1}
-                className="absolute left-0 z-10 flex size-7 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring cursor-pointer shrink-0"
+                className="absolute left-0 z-10 flex size-8 sm:size-7 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring cursor-pointer shrink-0"
               >
                 <ChevronLeft className="size-4" />
               </button>
@@ -268,7 +268,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                 }}
                 aria-pressed={statusFilter === "all"}
                 className={cn(
-                  "relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                  "relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                   statusFilter === "all"
                     ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
                     : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
@@ -297,7 +297,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                 }}
                 aria-pressed={statusFilter === "needs_scoring"}
                 className={cn(
-                  "relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                  "relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                   statusFilter === "needs_scoring"
                     ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
                     : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
@@ -326,7 +326,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                 }}
                 aria-pressed={statusFilter === "missing"}
                 className={cn(
-                  "relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                  "relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                   statusFilter === "missing"
                     ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
                     : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
@@ -355,7 +355,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                 }}
                 aria-pressed={statusFilter === "released"}
                 className={cn(
-                  "relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                  "relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                   statusFilter === "released"
                     ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
                     : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
@@ -385,7 +385,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                   }}
                   aria-pressed={statusFilter === "unread_comments"}
                   className={cn(
-                    "relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                    "relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                     statusFilter === "unread_comments"
                       ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
                       : "border-primary/30 text-primary bg-primary/5 hover:bg-primary/10"
@@ -414,7 +414,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                         type="button"
                         aria-pressed={isSecondaryActive}
                         className={cn(
-                          "relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                          "relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                           isSecondaryActive
                             ? "rounded-r-none bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
                             : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
@@ -467,7 +467,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                     type="button"
                     aria-label="Clear additional filter"
                     onClick={() => onStatusFilterChange("all")}
-                    className="size-[34px] min-h-[34px] min-w-[34px] sm:size-[32px] sm:min-h-[32px] sm:min-w-[32px] inline-flex items-center justify-center rounded-r-lg border border-l-0 border-brand-700 dark:border-primary bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground hover:bg-destructive hover:border-destructive hover:text-white transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                    className="size-[44px] min-h-[44px] min-w-[44px] sm:size-[32px] sm:min-h-[32px] sm:min-w-[32px] inline-flex items-center justify-center rounded-r-lg border border-l-0 border-brand-700 dark:border-primary bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground hover:bg-destructive hover:border-destructive hover:text-white transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <X className="size-3.5" aria-hidden="true" />
                   </button>
@@ -479,9 +479,9 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
               <button
                 type="button"
                 onClick={handleScrollRight}
-                aria-label="Scroll filters right"
+                aria-hidden="true"
                 tabIndex={-1}
-                className="absolute right-0 z-10 flex size-7 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring cursor-pointer shrink-0"
+                className="absolute right-0 z-10 flex size-8 sm:size-7 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring cursor-pointer shrink-0"
               >
                 <ChevronRight className="size-4" />
               </button>

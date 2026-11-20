@@ -537,13 +537,9 @@ function WorkSettingsForm({
         <Field>
           <div className="flex items-center justify-between gap-2">
             <FieldLabel htmlFor={`${id}-due`}>Individual deadline extension</FieldLabel>
-            {due ? (
+            {due && (
               <Badge variant="outline" className="border-primary/40 bg-primary/5 text-primary text-[11px] font-normal">
                 Extension active
-              </Badge>
-            ) : (
-              <Badge variant="secondary" className="text-[11px] font-normal">
-                Class deadline
               </Badge>
             )}
           </div>
@@ -639,18 +635,18 @@ function WorkSettingsForm({
                   </span>
                 ) : selectedAttempt ? (
                   <span className="flex items-center gap-2 truncate">
-                    <span className="font-medium text-foreground truncate">
+                    <span className="font-medium text-foreground truncate tabular-nums">
                       {formatActivityDueAt(selectedAttempt.created_at)}
                     </span>
                     {selectedScore.compositeScore != null ? (
-                      <Badge variant="secondary" className="text-xs px-1.5 py-0 font-normal">
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0 font-normal tabular-nums">
                         {Math.round(selectedScore.compositeScore)}% · {selectedScore.scoreBand.band}
                       </Badge>
                     ) : (
                       <span className="text-muted-foreground text-xs">Not scored yet</span>
                     )}
                     {selectedAttempt.id === state?.active_submission_id && (
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal border-primary/40 text-primary">
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal border-primary/40 text-primary bg-primary/5">
                         Current
                       </Badge>
                     )}
@@ -660,7 +656,13 @@ function WorkSettingsForm({
                 )}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="w-(--anchor-width) min-w-[320px]">
+            <SelectContent
+              alignItemWithTrigger={false}
+              side="bottom"
+              align="start"
+              sideOffset={4}
+              className="w-(--anchor-width) min-w-[320px]"
+            >
               <SelectItem value="auto" className="cursor-pointer py-2">
                 <div className="flex flex-col text-left gap-0.5">
                   <span className="font-medium text-foreground">Automatic: latest eligible completed attempt</span>
@@ -675,11 +677,11 @@ function WorkSettingsForm({
                   <SelectItem key={row.id} value={row.id} className="cursor-pointer py-2">
                     <div className="flex flex-col text-left gap-1 w-full">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-foreground">
+                        <span className="font-medium text-foreground tabular-nums">
                           {formatActivityDueAt(row.created_at)}
                         </span>
                         {isCurrent && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal border-primary/40 text-primary">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal border-primary/40 text-primary bg-primary/5 shrink-0">
                             Current
                           </Badge>
                         )}
@@ -688,7 +690,7 @@ function WorkSettingsForm({
                         {compositeScore == null ? (
                           <span>Not scored yet</span>
                         ) : (
-                          <Badge variant="secondary" className="text-[11px] px-1.5 py-0 font-normal">
+                          <Badge variant="secondary" className="text-[11px] px-1.5 py-0 font-normal tabular-nums">
                             {Math.round(compositeScore)}% · {scoreBand.band}
                           </Badge>
                         )}

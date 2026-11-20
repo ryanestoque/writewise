@@ -851,7 +851,7 @@ export const UnsubmittedCard = memo(function UnsubmittedCard({
           <Button
             variant="ghost"
             size="icon"
-            className="size-8 min-h-[32px] min-w-[32px] text-muted-foreground hover:text-foreground hover:bg-muted/60 cursor-pointer rounded-lg shrink-0"
+            className="size-11 min-h-[44px] min-w-[44px] md:size-8 md:min-h-[32px] md:min-w-[32px] text-muted-foreground hover:text-foreground hover:bg-muted/60 cursor-pointer rounded-lg shrink-0"
             aria-label={`More actions for ${student.full_name}`}
           />
         }
@@ -930,7 +930,7 @@ export const UnsubmittedCard = memo(function UnsubmittedCard({
           aria-label={`Upload worksheet for ${student.full_name}`}
         >
           <div className="bg-surface dark:bg-card border-border/80 text-muted-foreground group-hover/dropzone:border-primary group-hover/dropzone:text-primary flex size-10 items-center justify-center rounded-lg border border-dashed transition-colors shadow-2xs">
-            <Upload className="size-5 transition-transform group-hover/dropzone:-translate-y-0.5" aria-hidden="true" />
+            <Upload className="size-5 transition-transform group-hover/dropzone:-translate-y-0.5 motion-reduce:transform-none" aria-hidden="true" />
           </div>
           <div className="flex flex-col gap-0.5">
             <span className="text-foreground group-hover/dropzone:text-primary text-xs font-semibold transition-colors">

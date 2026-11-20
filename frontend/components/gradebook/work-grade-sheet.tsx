@@ -126,109 +126,138 @@ export function WorkGradeSheet({
                 <dd>{cell.publication === "released" ? "Shared with parents" : "Draft"}</dd>
               </dl>
               {cell.active_submission_id && (
-                <Link
-                  href={`/activities/${cell.activity_id}/submissions/${cell.active_submission_id}`}
-                  className="inline-flex min-h-10 items-center text-sm underline"
-                >
-                  Open worksheet and assessment
-                </Link>
+                <div>
+                  <Link
+                    href={`/activities/${cell.activity_id}/submissions/${cell.active_submission_id}`}
+                    className="inline-flex min-h-10 items-center text-sm font-medium text-primary hover:underline underline-offset-4"
+                  >
+                    Open worksheet and diagnostic feedback →
+                  </Link>
+                </div>
               )}
-              {cell.points_possible !== null ? (
-                <form
-                  className="space-y-3"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    if (!valid) {
-                      setError(
-                        `Enter points from 0 to ${cell.points_possible}, with up to two decimal places.`
-                      );
-                      return;
+
+              {/* Primary Grading Section */}
+              <section className="space-y-4 rounded-lg border bg-card p-4" aria-label="Coursework grading">
+                <h3 className="font-heading text-sm font-semibold text-foreground">Grade & Points</h3>
+                {cell.points_possible !== null ? (
+                  <form
+                    className="space-y-3"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      if (!valid) {
+                        setError(
+                          `Enter points from 0 to ${cell.points_possible}, with up to two decimal places.`
+                        );
+                        return;
+                      }
+                      void update({ points_override: override }, "Override saved as draft.");
+                    }}
+                  >
+                    <PointsField
+                      value={override}
+                      onChange={setOverride}
+                      label="Teacher point override"
+                      disabled={pending}
+                      hint={`Use 0 to ${cell.points_possible} points. An override persists across new attempts until cleared.`}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="submit" disabled={pending || !valid}>
+                        Save override
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={pending || cell.points_override === null}
+                        onClick={() =>
+                          void update(
+                            { points_override: null },
+                            "Override cleared. Review the automatic grade before release."
+                          )
+                        }
+                      >
+                        Clear override
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={pending}
+                        onClick={() => void update({ points_override: "0" }, "Zero saved as draft.")}
+                      >
+                        Mark uncollected (0 pts)
+                      </Button>
+                    </div>
+                  </form>
+                ) : (
+                  <p className="text-muted-foreground text-sm">
+                    This activity uses assessment bands only. Add points in Edit activity to grade
+                    coursework numerically.
+                  </p>
+                )}
+
+                <div className="pt-2 border-t border-border/40">
+                  <Button
+                    className="w-full"
+                    disabled={
+                      pending ||
+                      excused ||
+                      cell.final_points === null ||
+                      cell.grade_revision === null ||
+                      cell.publication === "released"
                     }
-                    void update({ points_override: override }, "Override saved as draft.");
-                  }}
-                >
-                  <PointsField
-                    value={override}
-                    onChange={setOverride}
-                    label="Teacher point override"
-                    disabled={pending}
-                    hint={`Use 0 to ${cell.points_possible} points. An override persists across new attempts until cleared.`}
-                  />
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="submit" disabled={pending || !valid}>
-                      Save override
-                    </Button>
+                    onClick={() =>
+                      void run(
+                        () =>
+                          actions.releaseGrade.mutateAsync({
+                            ...target,
+                            revision: cell.grade_revision!,
+                          }),
+                        "Grade released to parents."
+                      )
+                    }
+                  >
+                    {pending
+                      ? "Saving…"
+                      : cell.publication === "released"
+                        ? "Grade already released"
+                        : "Release grade to parents"}
+                  </Button>
+                </div>
+              </section>
+
+              {/* Submission Lifecycle & Administrative Exceptions (Progressive Disclosure) */}
+              <details className="group rounded-lg border border-border/80 bg-muted/20 p-4 text-sm transition-colors open:bg-muted/30">
+                <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground select-none">
+                  <span>Submission lifecycle & exceptions</span>
+                  <span className="text-xs text-muted-foreground group-open:hidden">
+                    Deadlines, attempts, excuse, return
+                  </span>
+                </summary>
+                <div className="mt-4 space-y-4 pt-3 border-t border-border/60">
+                  <div className="space-y-2">
                     <Button
-                      type="button"
                       variant="outline"
-                      disabled={pending || cell.points_override === null}
+                      size="sm"
+                      disabled={pending}
                       onClick={() =>
                         void update(
-                          { points_override: null },
-                          "Override cleared. Review the automatic grade before release."
+                          { excused: !excused },
+                          excused
+                            ? "Work unexcused. Review its draft grade."
+                            : "Work excused and excluded from totals."
                         )
                       }
                     >
-                      Clear override
+                      {excused ? "Unexcuse work" : "Excuse work"}
                     </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={pending}
-                      onClick={() => void update({ points_override: "0" }, "Zero saved as draft.")}
-                    >
-                      Mark uncollected (0 pts)
-                    </Button>
+                    <p className="text-muted-foreground text-xs">
+                      Excused work is removed from both earned and possible points, and reminders stop.
+                    </p>
                   </div>
-                </form>
-              ) : (
-                <p className="text-muted-foreground text-sm">
-                  This activity uses assessment bands only. Add points in Edit activity to grade
-                  coursework numerically.
-                </p>
-              )}
-              <div className="space-y-3 border-t pt-4">
-                <Button
-                  variant="outline"
-                  disabled={pending}
-                  onClick={() =>
-                    void update(
-                      { excused: !excused },
-                      excused
-                        ? "Work unexcused. Review its draft grade."
-                        : "Work excused and excluded from totals."
-                    )
-                  }
-                >
-                  {excused ? "Unexcuse work" : "Excuse work"}
-                </Button>
-                <p className="text-muted-foreground text-xs">
-                  Excused work is removed from both earned and possible points, and reminders stop.
-                </p>
-              </div>
-              {open && <WorkGradeDetails userId={userId} cell={cell} studentName={studentName} />}
-              <Button
-                className="w-full"
-                disabled={
-                  pending ||
-                  excused ||
-                  cell.final_points === null ||
-                  cell.grade_revision === null ||
-                  cell.publication === "released"
-                }
-                onClick={() =>
-                  void run(
-                    () =>
-                      actions.releaseGrade.mutateAsync({
-                        ...target,
-                        revision: cell.grade_revision!,
-                      }),
-                    "Grade released to parents."
-                  )
-                }
-              >
-                {pending ? "Saving…" : "Release grade"}
-              </Button>
+
+                  {open && <WorkGradeDetails userId={userId} cell={cell} studentName={studentName} />}
+                </div>
+              </details>
+
               {error && (
                 <p role="alert" className="text-destructive text-sm">
                   {error}

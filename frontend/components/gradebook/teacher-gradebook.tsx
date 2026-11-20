@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { FloatingActionBar } from "@/components/ui/floating-action-bar";
 import { QueryRecovery } from "@/components/shared/query-recovery";
+import { cn } from "@/lib/utils";
 import { GradebookCellButton } from "./gradebook-cell";
 import { WorkGradeSheet } from "./work-grade-sheet";
 import { GradebookBulkDialog } from "./gradebook-bulk-dialog";
@@ -174,6 +175,7 @@ function SectionGrid({
   } | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState("");
+  const [viewMode, setViewMode] = useState<"points" | "diagnostic">("points");
 
   if (!query.isAccountActive)
     return (
@@ -267,6 +269,7 @@ function SectionGrid({
     setExportError("");
     try {
       await downloadGradebookCsv(userId, sectionId);
+      toast.success("Class record CSV downloaded");
     } catch (failure) {
       if (!(failure instanceof Error && failure.name === "AbortError"))
         setExportError("CSV could not be downloaded. Try again.");
@@ -349,6 +352,41 @@ function SectionGrid({
             <option value="current">Current activities</option>
             <option value="archived">Archived activities</option>
           </select>
+
+          <div
+            role="radiogroup"
+            aria-label="Gradebook view mode"
+            className="inline-flex rounded-lg border bg-muted/40 p-0.5 text-xs font-medium"
+          >
+            <button
+              type="button"
+              role="radio"
+              aria-checked={viewMode === "points"}
+              onClick={() => setViewMode("points")}
+              className={cn(
+                "px-2.5 py-1.5 rounded-md transition-colors cursor-pointer",
+                viewMode === "points"
+                  ? "bg-background text-foreground shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Points View
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={viewMode === "diagnostic"}
+              onClick={() => setViewMode("diagnostic")}
+              className={cn(
+                "px-2.5 py-1.5 rounded-md transition-colors cursor-pointer",
+                viewMode === "diagnostic"
+                  ? "bg-background text-foreground shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Diagnostic View
+            </button>
+          </div>
         </div>
         <Button variant="outline" disabled={exporting} onClick={() => void download()}>
           <Download aria-hidden className="mr-1.5 size-4" />{" "}
@@ -471,7 +509,7 @@ function SectionGrid({
                       <DropdownMenu>
                         <DropdownMenuTrigger
                           aria-label={`Actions for ${act.title}`}
-                          className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          className="inline-flex min-h-10 min-w-10 size-10 sm:min-h-8 sm:min-w-8 sm:size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           <MoreHorizontal className="size-4" />
                         </DropdownMenuTrigger>
@@ -514,7 +552,9 @@ function SectionGrid({
                 ))}
                 <th scope="col" className="min-w-40 p-3 text-left font-medium text-foreground">
                   Overall
-                  <p className="text-muted-foreground mt-0.5 text-xs font-normal">Includes drafts</p>
+                  <p className="text-muted-foreground mt-0.5 text-xs font-normal">
+                    {viewMode === "diagnostic" ? "Includes drafts & bands" : "Includes drafts"}
+                  </p>
                 </th>
               </tr>
             </thead>
@@ -540,6 +580,7 @@ function SectionGrid({
                       <td key={act.id} className="border-r p-1 align-top">
                         <GradebookCellButton
                           cell={work}
+                          viewMode={viewMode}
                           hasUnreadComments={hasUnreadWorkComments(unread.data, {
                             activityId: work.activity_id,
                             studentId: work.student_id,

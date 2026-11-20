@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -165,7 +166,7 @@ export function GradebookBulkDialog({
           </p>
         )}
 
-        {message ? (
+        {message && (
           <div
             role="status"
             className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-800 dark:text-emerald-300"
@@ -173,21 +174,6 @@ export function GradebookBulkDialog({
             <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
             <span>{message}</span>
           </div>
-        ) : (
-          <Button disabled={isConfirmDisabled} onClick={() => void save()}>
-            {pending ? (
-              <>
-                <Loader2 className="mr-2 size-4 animate-spin motion-reduce:animate-none" />
-                Saving…
-              </>
-            ) : operation === "zero" ? (
-              "Mark uncollected (0 pts)"
-            ) : operation === "excuse" ? (
-              "Excuse work"
-            ) : (
-              "Release grades to parents"
-            )}
-          </Button>
         )}
 
         {error && (
@@ -196,9 +182,27 @@ export function GradebookBulkDialog({
           </p>
         )}
 
-        <Button variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>
-          {message ? "Done" : "Cancel"}
-        </Button>
+        <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-border/40">
+          <Button variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>
+            {message ? "Close" : "Cancel"}
+          </Button>
+          {!message && (
+            <Button disabled={isConfirmDisabled} onClick={() => void save()}>
+              {pending ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin motion-reduce:animate-none" />
+                  Saving…
+                </>
+              ) : operation === "zero" ? (
+                "Mark uncollected (0 pts)"
+              ) : operation === "excuse" ? (
+                "Excuse work"
+              ) : (
+                "Release grades to parents"
+              )}
+            </Button>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

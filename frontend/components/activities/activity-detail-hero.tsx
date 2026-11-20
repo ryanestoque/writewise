@@ -199,7 +199,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
         title={`Upload worksheets (${altKey}+U)`}
         aria-keyshortcuts="Alt+U"
       >
-        <Upload className="size-3.5" data-icon="inline-start" />
+        <Upload className="size-3.5" data-icon="inline-start" aria-hidden="true" />
         <span className={compact ? "inline" : "sm:hidden"}>Upload</span>
         {!compact && (
           <>
@@ -212,10 +212,10 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="border-border bg-background hover:bg-muted/60 text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex size-9 cursor-pointer items-center justify-center rounded-lg border transition-all focus-visible:ring-2 focus-visible:outline-hidden"
+          className="border-border bg-background hover:bg-muted/60 text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex size-11 min-h-[44px] min-w-[44px] sm:size-9 sm:min-h-0 sm:min-w-0 cursor-pointer items-center justify-center rounded-lg border transition-all focus-visible:ring-2 focus-visible:outline-hidden"
           aria-label="More activity options"
         >
-          <MoreVertical className="size-4" />
+          <MoreVertical className="size-4" aria-hidden="true" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="z-50 w-48">
           <DropdownMenuItem
@@ -319,9 +319,9 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
               title="Copy target text"
             >
               {hasCopiedPrompt ? (
-                <Check className="text-primary size-3.5" data-icon="inline-start" />
+                <Check className="text-primary size-3.5" data-icon="inline-start" aria-hidden="true" />
               ) : (
-                <Copy className="size-3.5" data-icon="inline-start" />
+                <Copy className="size-3.5" data-icon="inline-start" aria-hidden="true" />
               )}
               <span className="text-[11px] font-medium">
                 {hasCopiedPrompt ? "Copied" : "Copy target text"}
@@ -338,7 +338,10 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 title={isPromptExpanded ? "Collapse cursive preview" : "Expand cursive preview"}
               >
                 <ChevronDown
-                  className={cn("size-3.5 transition-transform duration-200", isPromptExpanded && "rotate-180")}
+                  className={cn(
+                    "size-3.5 transition-transform duration-200 motion-reduce:transition-none motion-reduce:transform-none",
+                    isPromptExpanded && "rotate-180"
+                  )}
                   aria-hidden="true"
                 />
                 <span className="text-[11px]">{isPromptExpanded ? "Collapse" : "Expand"}</span>
@@ -411,7 +414,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
               ) : (
                 <Button variant="link" onClick={onEdit} className="min-h-9 px-0 text-xs">
                   Edit assignments
-                  <ArrowRight data-icon="inline-end" />
+                  <ArrowRight data-icon="inline-end" aria-hidden="true" />
                 </Button>
               )}
             </>
@@ -533,7 +536,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                           </div>
                         </div>
                         <div
-                          className="bg-muted/80 dark:bg-white/10 dark:ring-1 dark:ring-white/10 h-1.5 w-full overflow-hidden rounded-full"
+                          className="bg-muted/80 dark:bg-muted dark:ring-1 dark:ring-border/60 h-1.5 w-full overflow-hidden rounded-full"
                           role="progressbar"
                           aria-valuenow={score}
                           aria-valuemin={0}
