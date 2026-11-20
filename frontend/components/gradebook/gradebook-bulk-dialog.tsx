@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
-import { useGradebookActions } from "@/lib/hooks/use-gradebook";
+import { useMemo, useState } from "react";
+import { useQueries, useQueryClient } from "@tanstack/react-query";
+import { AlertCircle, CheckCircle2, Info, Layers, Loader2 } from "lucide-react";
+import { useGradebookActions, type SectionGradebook } from "@/lib/hooks/use-gradebook";
 import { invalidateWorkQueries } from "@/lib/hooks/use-activity-work";
-import { gradebookMutation } from "@/lib/gradebook/transport";
+import { gradebookMutation, gradebookRequest } from "@/lib/gradebook/transport";
 import type { components } from "@/types/api";
 import {
   Dialog,
@@ -29,6 +29,7 @@ export function GradebookBulkDialog({
   activityTitle,
   sectionName,
   totalSectionsCount = 1,
+  sections,
 }: {
   userId: string;
   activityId: string;
@@ -40,6 +41,7 @@ export function GradebookBulkDialog({
   activityTitle?: string;
   sectionName?: string;
   totalSectionsCount?: number;
+  sections?: components["schemas"]["SectionResponse"][];
 }) {
   const actions = useGradebookActions(userId);
   const client = useQueryClient();
@@ -49,6 +51,109 @@ export function GradebookBulkDialog({
   const [crossSectionAcknowledged, setCrossSectionAcknowledged] = useState(false);
 
   const isMultiSectionRelease = operation === "release" && totalSectionsCount > 1;
+
+  // Query gradebooks of other sections when in multi-section release mode
+  const sectionQueries = useQueries({
+    queries: (sections ?? []).map((sec) => ({
+      queryKey: ["gradebook", userId, "section", sec.id],
+      queryFn: ({ signal }: { signal?: AbortSignal }) =>
+        gradebookRequest<SectionGradebook>(
+          userId,
+          `/api/sections/${encodeURIComponent(sec.id)}/gradebook`,
+          signal
+        ),
+      staleTime: 30_000,
+      enabled: open && operation === "release" && !!userId && !!sec.id && totalSectionsCount > 1,
+    })),
+  });
+
+  const sectionManifest = useMemo(() => {
+    if (!sections || sections.length === 0) {
+      return [
+        {
+          id: "current",
+          name: sectionName ?? "This section",
+          isCurrent: true,
+          isAssigned: true,
+          readyCount: eligibleCount,
+          totalStudents: eligibleCount,
+          isLoading: false,
+        },
+      ];
+    }
+
+    return sections.map((sec, index) => {
+      const isCurrent = sec.name === sectionName;
+      const query = sectionQueries[index];
+      const data = query?.data;
+
+      if (!data) {
+        return {
+          id: sec.id,
+          name: sec.name,
+          isCurrent,
+          isAssigned: true,
+          readyCount: isCurrent ? eligibleCount : 0,
+          totalStudents: sec.student_count,
+          isLoading: isCurrent ? false : (query?.isPending ?? false),
+        };
+      }
+
+      // Check if this activity is assigned to this section
+      const hasActivity = data.activities?.some((act) => act.id === activityId);
+      if (!hasActivity && !isCurrent) {
+        return {
+          id: sec.id,
+          name: sec.name,
+          isCurrent: false,
+          isAssigned: false,
+          readyCount: 0,
+          totalStudents: sec.student_count,
+          isLoading: false,
+        };
+      }
+
+      // Count ready grades for this activity in this section
+      const readyCount = isCurrent
+        ? eligibleCount
+        : data.rows.filter((row) => {
+            const cell = row.cells?.find((c) => c.activity_id === activityId);
+            if (!cell || !cell.applicable || cell.coursework_status === "Excused") return false;
+            return (
+              (cell.final_points !== null && cell.publication !== "released") ||
+              (cell.points_possible === null && cell.coursework_status === "Draft")
+            );
+          }).length;
+
+      return {
+        id: sec.id,
+        name: sec.name,
+        isCurrent,
+        isAssigned: true,
+        readyCount,
+        totalStudents: data.rows.length,
+        isLoading: false,
+      };
+    });
+  }, [sections, sectionName, eligibleCount, sectionQueries, activityId]);
+
+  const assignedSections = useMemo(
+    () => sectionManifest.filter((s) => s.isAssigned),
+    [sectionManifest]
+  );
+
+  const anySectionLoading = useMemo(
+    () => assignedSections.some((s) => s.isLoading),
+    [assignedSections]
+  );
+
+  const totalReadyAcrossSections = useMemo(() => {
+    if (!isMultiSectionRelease) return eligibleCount;
+    return assignedSections.reduce((acc, s) => acc + s.readyCount, 0);
+  }, [isMultiSectionRelease, eligibleCount, assignedSections]);
+
+  const isZeroReadyTotal =
+    operation === "release" && !anySectionLoading && totalReadyAcrossSections === 0;
 
   async function save() {
     setPending(true);
@@ -87,6 +192,7 @@ export function GradebookBulkDialog({
 
   const isConfirmDisabled =
     pending ||
+    isZeroReadyTotal ||
     (operation !== "release" && !studentIds.length) ||
     (isMultiSectionRelease && !crossSectionAcknowledged);
 
@@ -97,61 +203,145 @@ export function GradebookBulkDialog({
         if (!pending) onOpenChange(value);
       }}
     >
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="space-y-1.5">
+          <DialogTitle className="text-lg font-semibold tracking-tight">
             {operation === "zero"
-              ? "Mark uncollected work with draft zeros?"
+              ? "Mark uncollected work with draft zeros"
               : operation === "excuse"
-                ? "Excuse selected work?"
-                : "Release activity grades to parents?"}
+                ? "Excuse selected work"
+                : "Release grades to parents"}
           </DialogTitle>
-          <DialogDescription>
-            {operation === "release"
-              ? `Publish eligible grades and handwriting diagnostic feedback for ${activityTitle ? `"${activityTitle}"` : "this activity"} to parent portals.`
-              : `${studentIds.length} ${studentIds.length === 1 ? "student" : "students"} selected. ${
-                  operation === "zero"
-                    ? "Only worksheets currently awaiting scan without an existing score will receive a draft zero. Saved changes stay draft until released to parents."
-                    : "Their work will be excluded from both sides of the points total, and reminders will stop."
-                }`}
+          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+            {operation === "release" ? (
+              <>
+                Publish validated cursive diagnostic scores and per-criterion feedback for{" "}
+                <strong className="text-foreground">
+                  {activityTitle ? `"${activityTitle}"` : "this activity"}
+                </strong>{" "}
+                to parent portals.
+              </>
+            ) : (
+              `${studentIds.length} ${studentIds.length === 1 ? "student" : "students"} selected. ${
+                operation === "zero"
+                  ? "Only worksheets currently awaiting scan without an existing score will receive a draft zero. Saved changes stay draft until released to parents."
+                  : "Their work will be excluded from both sides of the points total, and reminders will stop."
+              }`
+            )}
           </DialogDescription>
         </DialogHeader>
 
         {operation === "release" && (
-          <div className="space-y-3">
-            <div className="rounded-lg border bg-muted/40 p-3.5 text-xs text-muted-foreground space-y-1.5">
-              <div className="flex items-center gap-1.5 font-medium text-foreground">
-                <AlertCircle className="size-4 shrink-0 text-primary" aria-hidden="true" />
-                <span>Activity-wide publication scope</span>
+          <div className="space-y-3.5">
+            {/* Section Publication Manifest */}
+            <div className="rounded-xl border border-border/80 bg-card overflow-hidden text-xs shadow-xs">
+              <div className="bg-muted/40 px-3.5 py-2.5 border-b border-border/60 flex items-center justify-between">
+                <div className="flex items-center gap-2 font-medium text-foreground">
+                  <Layers className="size-3.5 text-primary shrink-0" aria-hidden="true" />
+                  <span>Section Publication Manifest</span>
+                </div>
+                <span className="font-semibold tabular-nums text-foreground">
+                  {totalReadyAcrossSections}{" "}
+                  {totalReadyAcrossSections === 1 ? "grade ready" : "grades ready"}
+                </span>
               </div>
-              <p>
-                In WriteWise, releasing an activity publishes ready results across{" "}
-                <strong className="text-foreground">all assigned sections</strong>. Excused work is
-                skipped, and unscored work remains draft.
-              </p>
+
+              <div className="divide-y divide-border/40">
+                {assignedSections.map((sec) => (
+                  <div
+                    key={sec.id}
+                    className={`flex items-center justify-between px-3.5 py-2.5 transition-colors ${
+                      sec.isCurrent ? "bg-primary/5 dark:bg-primary/10" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-foreground">{sec.name}</span>
+                      {sec.isCurrent && (
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                          Viewing
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {sec.isLoading ? (
+                        <span className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
+                          <Loader2 className="size-3 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                          Checking…
+                        </span>
+                      ) : sec.readyCount > 0 ? (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 tabular-nums">
+                          <CheckCircle2 className="size-3 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                          {sec.readyCount} ready to publish
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-md bg-muted/60 border border-border/40 px-2 py-0.5 text-[11px] text-muted-foreground tabular-nums">
+                          0 ready · Skipped
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <p className="text-sm">
-              <span className="font-semibold tabular-nums text-foreground">{eligibleCount}</span>{" "}
-              {eligibleCount === 1 ? "grade is" : "grades are"} ready for release in{" "}
-              <strong>{sectionName ?? "this section"}</strong>.
-            </p>
+            {/* Zero Ready Alert (P1 Fix) */}
+            {isZeroReadyTotal ? (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 p-3 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+                <AlertCircle className="size-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" aria-hidden="true" />
+                <div className="space-y-0.5">
+                  <p className="font-medium">No draft grades are ready to release</p>
+                  <p className="text-muted-foreground text-[11px]">
+                    No completed draft grades were found for this activity. Score student worksheets in the gradebook first before publishing to parent portals.
+                  </p>
+                </div>
+              </div>
+            ) : eligibleCount === 0 && assignedSections.length > 1 ? (
+              <div className="rounded-lg border border-border/60 bg-muted/30 p-2.5 text-xs text-muted-foreground flex items-center justify-between">
+                <span>
+                  No draft grades are ready in <strong>{sectionName ?? "this section"}</strong> (skipped).
+                </span>
+                <span className="font-semibold text-foreground tabular-nums">
+                  {totalReadyAcrossSections} ready in other {assignedSections.length - 1 === 1 ? "section" : "sections"}
+                </span>
+              </div>
+            ) : null}
 
-            {isMultiSectionRelease && (
+            {/* What Happens Upon Release Checklist (P2 Fix) */}
+            <div className="rounded-lg border border-border/60 bg-muted/20 p-3 text-xs text-muted-foreground space-y-1.5">
+              <div className="flex items-center gap-1.5 font-medium text-foreground">
+                <Info className="size-3.5 text-primary shrink-0" aria-hidden="true" />
+                <span>What parents receive</span>
+              </div>
+              <ul className="space-y-1 pl-4 list-disc text-muted-foreground text-[11px] leading-relaxed">
+                <li>
+                  Criterion feedback across letter formation, slant, spacing, baseline, and size consistency.
+                </li>
+                <li>
+                  Unscored submissions and excused work remain private drafts in your teacher portal.
+                </li>
+                <li>
+                  Results synchronize immediately to student parent portals across assigned sections.
+                </li>
+              </ul>
+            </div>
+
+            {/* High-Contrast Acknowledgment Checkbox (P3 Fix) */}
+            {isMultiSectionRelease && totalReadyAcrossSections > 0 && (
               <label
                 htmlFor="ack-cross-section"
-                className="flex items-start gap-2.5 rounded-lg border border-band-2/30 bg-band-2/10 p-3 text-xs leading-relaxed text-foreground cursor-pointer select-none"
+                className="flex items-start gap-2.5 rounded-lg border border-border/80 bg-card hover:bg-muted/40 p-3 text-xs leading-relaxed text-foreground cursor-pointer select-none transition-colors"
               >
                 <Checkbox
                   id="ack-cross-section"
                   checked={crossSectionAcknowledged}
                   onCheckedChange={(val) => setCrossSectionAcknowledged(Boolean(val))}
-                  className="mt-0.5"
+                  className="mt-0.5 border-foreground/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  aria-describedby="ack-cross-section-desc"
                 />
-                <span>
-                  I understand that ready draft grades in my{" "}
-                  <strong>other {totalSectionsCount - 1} sections</strong> assigned to this activity
-                  will also be published to parents.
+                <span id="ack-cross-section-desc">
+                  I have verified the section manifest above and confirm releasing ready grades across{" "}
+                  <strong>all {assignedSections.length} assigned sections</strong>.
                 </span>
               </label>
             )}
@@ -159,7 +349,7 @@ export function GradebookBulkDialog({
         )}
 
         {operation !== "release" && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             <span className="font-semibold tabular-nums text-foreground">{eligibleCount}</span>{" "}
             eligible of {studentIds.length} selected. Eligibility is verified again when you
             confirm.
@@ -169,15 +359,15 @@ export function GradebookBulkDialog({
         {message && (
           <div
             role="status"
-            className="flex items-center gap-2 rounded-lg border border-band-4/30 bg-band-4/10 p-3 text-sm text-band-4-text dark:text-emerald-300"
+            className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 p-3 text-xs text-emerald-800 dark:text-emerald-300"
           >
-            <CheckCircle2 className="size-4 shrink-0 text-band-4-text dark:text-emerald-400" />
+            <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
             <span>{message}</span>
           </div>
         )}
 
         {error && (
-          <p role="alert" className="text-destructive text-sm">
+          <p role="alert" className="text-destructive text-xs">
             {error}
           </p>
         )}
@@ -190,13 +380,15 @@ export function GradebookBulkDialog({
             <Button disabled={isConfirmDisabled} onClick={() => void save()}>
               {pending ? (
                 <>
-                  <Loader2 className="mr-2 size-4 animate-spin motion-reduce:animate-none" />
-                  Saving…
+                  <Loader2 className="mr-2 size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                  Releasing…
                 </>
               ) : operation === "zero" ? (
                 "Mark uncollected (0 pts)"
               ) : operation === "excuse" ? (
                 "Excuse work"
+              ) : totalReadyAcrossSections > 0 ? (
+                `Release ${totalReadyAcrossSections} ${totalReadyAcrossSections === 1 ? "grade" : "grades"} to parents`
               ) : (
                 "Release grades to parents"
               )}

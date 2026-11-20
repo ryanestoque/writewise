@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useSyncExternalStore, type KeyboardEvent } from "react";
 import { Pencil, SlidersHorizontal, Check, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import type { GradebookCell } from "@/lib/hooks/use-gradebook";
 import { BandBadge } from "@/components/shared/band-badge";
 import { getBandFromScore } from "@/lib/utils/scoring";
@@ -66,7 +67,7 @@ export const CRITERIA_DEFINITIONS = [
   },
 ] as const;
 
-function getCriterionDiagnostic(
+export function getCriterionDiagnostic(
   critKey: (typeof CRITERIA_DEFINITIONS)[number]["label"],
   composite: number | null
 ): {
@@ -124,7 +125,7 @@ function getCriterionDiagnostic(
   };
 }
 
-function getPedagogicalSummary(composite: number | null, courseworkStatus: string): string {
+export function getPedagogicalSummary(composite: number | null, courseworkStatus: string): string {
   if (courseworkStatus === "Excused") return "Excused from activity";
   if (composite === null) {
     if (courseworkStatus === "Missing") return "Awaiting scan";
@@ -223,6 +224,11 @@ export function GradebookCellButton({
     try {
       await onSaveScore(trimmed);
       setIsEditing(false);
+      toast.success(
+        trimmed === ""
+          ? `Cleared score for ${label ?? "student"}`
+          : `Saved score (${trimmed} pts) for ${label ?? "student"}`
+      );
       if (typeof row === "number" && typeof column === "number" && onNavigateDown) {
         onNavigateDown(row, column);
       }
@@ -266,6 +272,10 @@ export function GradebookCellButton({
       <div
         className="bg-card ring-2 ring-primary relative min-h-[5rem] w-full rounded-sm p-2 shadow-xs"
         data-gradecell-active
+        role="gridcell"
+        aria-selected="true"
+        aria-rowindex={typeof row === "number" ? row + 2 : undefined}
+        aria-colindex={typeof column === "number" ? column + 2 : undefined}
       >
         <div className="flex items-center gap-1.5">
           <input
@@ -285,6 +295,7 @@ export function GradebookCellButton({
             )}
             placeholder="—"
             aria-label={`Score for ${label ?? "cell"}`}
+            aria-describedby={error ? "cell-edit-error" : "cell-edit-hint"}
           />
           <span className="text-muted-foreground text-xs font-normal">/ {cell.points_possible}</span>
           <div className="ml-auto flex items-center gap-1">
@@ -316,9 +327,11 @@ export function GradebookCellButton({
           </div>
         </div>
         {error ? (
-          <span className="text-destructive mt-1 block text-xs">{error}</span>
+          <span id="cell-edit-error" role="alert" className="text-destructive mt-1 block text-xs">
+            {error}
+          </span>
         ) : (
-          <span className="text-muted-foreground mt-1 block text-xs">
+          <span id="cell-edit-hint" className="text-muted-foreground mt-1 block text-xs">
             Enter to save & advance ↓
           </span>
         )}
@@ -328,8 +341,10 @@ export function GradebookCellButton({
 
   return (
     <div
-      role="group"
-      aria-roledescription="grade cell"
+      role="gridcell"
+      aria-selected={isFocused}
+      aria-rowindex={typeof row === "number" ? row + 2 : undefined}
+      aria-colindex={typeof column === "number" ? column + 2 : undefined}
       tabIndex={isFocused ? 0 : -1}
       data-gradecell
       data-row={row}

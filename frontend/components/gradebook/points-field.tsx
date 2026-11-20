@@ -43,7 +43,7 @@ export function PointsField({
       />
       <p
         id={`${id}-hint`}
-        className={error ? "text-destructive text-sm" : "text-muted-foreground text-xs"}
+        className={error ? "text-destructive text-sm" : "text-muted-foreground text-sm"}
         role={error ? "alert" : undefined}
       >
         {error ??

@@ -11,6 +11,7 @@ import {
   SubmissionLifecycleControls,
 } from "@/components/submissions/submission-lifecycle-controls";
 import { QueryRecovery } from "@/components/shared/query-recovery";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function WorkGradeDetails({
   userId,
@@ -81,15 +82,16 @@ export function WorkGradeDetails({
     );
   if (!query.data)
     return (
-      <p role="status" className="text-muted-foreground text-sm">
-        Loading work settings…
-      </p>
+      <div className="space-y-3 pt-2" role="status" aria-label="Loading work settings">
+        <Skeleton className="h-9 w-48" />
+        <Skeleton className="h-4 w-full" />
+      </div>
     );
   const source = query.data.attempts.find(
     (attempt) => attempt.id === query.data.work?.active_submission_id
   );
   return (
-    <section className="space-y-3 border-t pt-4" aria-label="Deadline, counted attempt and Return">
+    <section className="space-y-3 border-t border-border/40 pt-4" aria-label="Deadline, counted attempt and Return">
       <StudentWorkControls
         activityId={cell.activity_id}
         studentId={cell.student_id}
@@ -98,9 +100,9 @@ export function WorkGradeDetails({
         attempts={query.data.attempts}
       />
       {source && <SubmissionLifecycleControls submission={source} showRelease={false} />}
-      <p className="text-muted-foreground text-xs">
-        After changing the counted attempt or returning work, close this panel and review its
-        refreshed grade before release.
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        After changing the counted attempt or returning work, review the refreshed grade in this drawer
+        before releasing to parents.
       </p>
     </section>
   );

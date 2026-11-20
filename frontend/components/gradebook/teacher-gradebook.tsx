@@ -158,6 +158,7 @@ export function TeacherGradebook({
               sectionId={sectionId}
               activityId={activityId}
               totalSectionsCount={sections.data.length}
+              sections={sections.data}
             />
           )}
         </>
@@ -171,11 +172,13 @@ function SectionGrid({
   sectionId,
   activityId,
   totalSectionsCount = 1,
+  sections,
 }: {
   userId: string;
   sectionId: string;
   activityId?: string;
   totalSectionsCount?: number;
+  sections?: components["schemas"]["SectionResponse"][];
 }) {
   const query = useSectionGradebook(userId, sectionId);
   const unread = useUnreadCommentThreads(userId);
@@ -305,7 +308,6 @@ function SectionGrid({
         studentId: studId,
         body: { points_override: points },
       });
-      toast.success("Draft score saved");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update score");
       throw err;
@@ -481,23 +483,33 @@ function SectionGrid({
       ) : (
         <div
           ref={tableRef}
-          className="bg-card max-h-[70vh] overflow-auto rounded-xl border transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring print:max-h-none print:overflow-visible print:border-none"
+          className={cn(
+            "bg-card max-h-[70vh] overflow-auto rounded-xl border transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring print:max-h-none print:overflow-visible print:border-none",
+            selected.size > 0 && "pb-24 sm:pb-20"
+          )}
           tabIndex={-1}
           aria-label={`${book.section_name} grades, scroll for more activities. Use arrow keys to navigate cells, Enter to edit, Space to inspect.`}
           onKeyDown={moveFocus}
         >
-          <table className="w-full border-collapse text-sm">
+          <table
+            className="w-full border-collapse text-sm"
+            role="grid"
+            aria-colcount={activities.length + 2}
+            aria-rowcount={rows.length + 1}
+          >
             <caption className="sr-only">
               {book.section_name} coursework. Draft totals include all activities. Use arrow keys
               between grade cells, Enter to edit, Space to inspect.
             </caption>
             <thead className="bg-card sticky top-0 z-20 print:static">
-              <tr className="border-b">
+              <tr className="border-b" role="row" aria-rowindex={1}>
                 <th
                   scope="col"
-                  className="bg-card sticky left-0 z-30 min-w-48 border-r p-3 text-left print:static"
+                  role="columnheader"
+                  aria-colindex={1}
+                  className="bg-card sticky left-0 z-30 min-w-44 sm:min-w-48 border-r p-3 text-left print:static"
                 >
-                  <label className="flex items-center gap-3 font-medium text-foreground">
+                  <label className="flex items-center gap-2.5 sm:gap-3 font-medium text-foreground cursor-pointer select-none">
                     <Checkbox
                       aria-label="Select shown students"
                       className="print:hidden"
@@ -513,13 +525,15 @@ function SectionGrid({
                         })
                       }
                     />
-                    Student
+                    <span>Student</span>
                   </label>
                 </th>
-                {activities.map((act) => (
+                {activities.map((act, actIndex) => (
                   <th
                     key={act.id}
                     scope="col"
+                    role="columnheader"
+                    aria-colindex={actIndex + 2}
                     className="max-w-64 min-w-56 border-r p-3 text-left align-top"
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -541,7 +555,7 @@ function SectionGrid({
                       <DropdownMenu>
                         <DropdownMenuTrigger
                           aria-label={`Actions for ${act.title}`}
-                          className="inline-flex min-h-10 min-w-10 size-10 sm:min-h-8 sm:min-w-8 sm:size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer print:hidden"
+                          className="inline-flex min-h-11 min-w-11 size-11 sm:min-h-9 sm:min-w-9 sm:size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer print:hidden"
                         >
                           <MoreHorizontal className="size-4" />
                         </DropdownMenuTrigger>
@@ -586,7 +600,12 @@ function SectionGrid({
                     </div>
                   </th>
                 ))}
-                <th scope="col" className="min-w-40 p-3 text-left font-medium text-foreground">
+                <th
+                  scope="col"
+                  role="columnheader"
+                  aria-colindex={activities.length + 2}
+                  className="min-w-40 p-3 text-left font-medium text-foreground"
+                >
                   Overall
                   <p className="text-muted-foreground mt-0.5 text-xs font-normal">
                     {viewMode === "diagnostic" ? "Includes drafts & bands" : "Includes drafts"}
@@ -596,12 +615,19 @@ function SectionGrid({
             </thead>
             <tbody>
               {rows.map((row, rowIndex) => (
-                <tr key={row.student_id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                <tr
+                  key={row.student_id}
+                  role="row"
+                  aria-rowindex={rowIndex + 2}
+                  className="border-b last:border-0 hover:bg-muted/30 transition-colors"
+                >
                   <th
                     scope="row"
+                    role="rowheader"
+                    aria-colindex={1}
                     className="bg-card sticky left-0 z-10 border-r p-3 text-left font-medium print:static"
                   >
-                    <label className="flex items-center gap-3">
+                    <label className="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none">
                       <Checkbox
                         checked={selected.has(row.student_id)}
                         onCheckedChange={(checked) => toggle(row.student_id, !!checked)}
@@ -614,7 +640,12 @@ function SectionGrid({
                   {activities.map((act, column) => {
                     const work = row.cells.find((entry) => entry.activity_id === act.id)!;
                     return (
-                      <td key={act.id} className="border-r p-1 align-top">
+                      <td
+                        key={act.id}
+                        role="gridcell"
+                        aria-colindex={column + 2}
+                        className="border-r p-1 align-top"
+                      >
                         <GradebookCellButton
                           cell={work}
                           viewMode={viewMode}
@@ -636,7 +667,11 @@ function SectionGrid({
                       </td>
                     );
                   })}
-                  <td className="p-3 align-top tabular-nums">
+                  <td
+                    role="gridcell"
+                    aria-colindex={activities.length + 2}
+                    className="p-3 align-top tabular-nums"
+                  >
                     <p className="font-semibold text-foreground">
                       {row.totals.earned} / {row.totals.possible}
                     </p>
@@ -663,6 +698,7 @@ function SectionGrid({
           onSelectAll={() => setSelected(new Set(rows.map((r) => r.student_id)))}
           onClearSelection={() => setSelected(new Set())}
           ariaLabel="Gradebook batch student actions"
+          className="bottom-4 mb-[env(safe-area-inset-bottom,0px)]"
         >
           {activities.length > 0 && (
             <div className="flex items-center gap-2">
@@ -786,21 +822,41 @@ function SectionGrid({
         </FloatingActionBar>
       )}
 
-      {cell && (
-        <WorkGradeSheet
-          key={`${cell.student_id}:${cell.activity_id}:${cell.grade_revision}`}
-          userId={userId}
-          cell={cell}
-          studentName={book.rows.find((row) => row.student_id === cell.student_id)?.student_name}
-          activityTitle={
-            book.activities.find((activity) => activity.id === cell.activity_id)?.title
-          }
-          open
-          onOpenChange={(open) => {
-            if (!open) setCell(null);
-          }}
-        />
-      )}
+      {cell && (() => {
+        const studentIndex = book.rows.findIndex((row) => row.student_id === cell.student_id);
+        const activeCell =
+          (studentIndex >= 0 &&
+            book.rows[studentIndex]?.cells.find((c) => c.activity_id === cell.activity_id)) ||
+          cell;
+        const hasPrevStudent = studentIndex > 0;
+        const hasNextStudent = studentIndex >= 0 && studentIndex < book.rows.length - 1;
+
+        return (
+          <WorkGradeSheet
+            key={`${cell.student_id}:${cell.activity_id}`}
+            userId={userId}
+            cell={activeCell}
+            studentName={studentIndex >= 0 ? book.rows[studentIndex]?.student_name : undefined}
+            activityTitle={
+              book.activities.find((activity) => activity.id === cell.activity_id)?.title
+            }
+            open
+            onOpenChange={(open) => {
+              if (!open) setCell(null);
+            }}
+            hasPrevStudent={hasPrevStudent}
+            hasNextStudent={hasNextStudent}
+            onNavigateStudent={(direction) => {
+              const targetIndex = direction === "prev" ? studentIndex - 1 : studentIndex + 1;
+              if (targetIndex >= 0 && targetIndex < book.rows.length) {
+                const targetRow = book.rows[targetIndex];
+                const targetCell = targetRow.cells.find((c) => c.activity_id === cell.activity_id);
+                if (targetCell) setCell(targetCell);
+              }
+            }}
+          />
+        );
+      })()}
       {bulk && (
         <GradebookBulkDialog
           key={`${bulk.activityId}:${bulk.operation}`}
@@ -812,6 +868,7 @@ function SectionGrid({
           activityTitle={book.activities.find((activity) => activity.id === bulk.activityId)?.title}
           sectionName={book.section_name}
           totalSectionsCount={totalSectionsCount}
+          sections={sections}
           open
           onOpenChange={(open) => {
             if (!open) setBulk(null);
