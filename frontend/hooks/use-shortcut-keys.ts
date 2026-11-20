@@ -11,6 +11,6 @@ export function useShortcutKeys() {
 
   return {
     modifierKey: isMac ? "⌘" : "Ctrl",
-    altKey: isMac ? "⌥" : "Alt",
+    altKey: "Alt",
   };
 }

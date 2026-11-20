@@ -495,13 +495,15 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                       {classDiagnostics.avgCompositeScore}%
                     </span>
                   </PopoverTitle>
-                  <p className="text-muted-foreground text-[11px]">
-                    {classDiagnostics.manualCount > 0 && classDiagnostics.calibratedCount > 0
-                      ? `Mixed sources: ${classDiagnostics.manualCount} teacher rubric · ${classDiagnostics.calibratedCount} calibrated`
-                      : classDiagnostics.manualCount > 0
-                        ? "Based on teacher rubric scores"
-                        : "Based on calibrated scores"}
-                  </p>
+                  {classDiagnostics.manualCount > 0 && classDiagnostics.calibratedCount > 0 ? (
+                    <p className="text-muted-foreground text-[11px]">
+                      Mixed sources: {classDiagnostics.manualCount} teacher rubric · {classDiagnostics.calibratedCount} calibrated
+                    </p>
+                  ) : classDiagnostics.manualCount > 0 ? (
+                    <p className="text-muted-foreground text-[11px]">
+                      Based on teacher rubric scores
+                    </p>
+                  ) : null}
                   <PopoverDescription className="sr-only">
                     Aggregated class diagnostic scores across Letter Formation, Size Consistency,
                     Spacing, Slant, and Baseline Alignment.
