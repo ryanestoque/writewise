@@ -431,7 +431,7 @@ export default function ActivitiesPage() {
 
       {/* Filter & Search Bar — only when activities exist */}
       {activities && activities.length > 0 && (
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
           {/* Search Input */}
           <SearchInput
             ref={searchInputRef}
@@ -440,17 +440,17 @@ export default function ActivitiesPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onClear={() => setSearchQuery("")}
-            containerClassName="w-full xl:w-64 shrink-0"
+            containerClassName="w-full md:w-56 lg:w-64 shrink-0"
           />
 
           {/* Filter Pills & Sort Controls */}
-          <div className="relative min-w-0 flex-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-between xl:justify-end gap-2 w-full xl:w-auto">
+          <div className="relative min-w-0 flex-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-between md:justify-end gap-2 w-full md:w-auto">
             <FilterPills
               items={activityFilterItems}
               value={filterType}
               onChange={handleFilterChange}
               ariaLabel="Filter by activity type"
-              containerClassName="min-w-0 flex-1 xl:flex-initial xl:justify-end"
+              containerClassName="min-w-0 flex-1 md:flex-initial md:justify-end"
             />
 
             {/* Sort Selector */}

@@ -238,7 +238,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
     <div className="flex flex-col gap-2.5">
       {/* Contained Filter & Search Toolbar Card matching Activities directory style */}
       <div className="bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm flex flex-col gap-2.5 sm:gap-3">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 sm:gap-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3">
           {/* Status filter pills track with scroll indicators */}
           <div className="relative min-w-0 flex-1 flex items-center group/pills">
             {canScrollLeft && (
@@ -489,7 +489,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
           </div>
 
           {/* Search and View controls */}
-          <div className="flex items-center gap-2 w-full lg:w-auto shrink-0">
+          <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
             <SearchInput
               ref={searchInputRef}
               placeholder="Search student name…"
@@ -499,7 +499,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
               value={searchQuery}
               onChange={(e) => onSearchQueryChange(e.target.value)}
               onClear={onClearSearch}
-              containerClassName="w-auto flex-1 min-w-0 sm:flex-initial sm:w-64 lg:w-60 xl:w-72"
+              containerClassName="w-auto flex-1 min-w-0 sm:flex-initial sm:w-56 md:w-52 lg:w-60 xl:w-72"
             />
             <DropdownMenu>
               <DropdownMenuTrigger
