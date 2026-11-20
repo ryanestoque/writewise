@@ -1231,7 +1231,11 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
           </Button>
         </div>
       )}
-      <section aria-labelledby="submissions-heading" className="space-y-3 sm:space-y-4">
+      <section
+        id="student-work"
+        aria-labelledby="submissions-heading"
+        className="space-y-3 sm:space-y-4 pt-4 sm:pt-6 scroll-mt-20"
+      >
         {/* Section Header with Controls */}
         <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           <div>

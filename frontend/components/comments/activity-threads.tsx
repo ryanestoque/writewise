@@ -22,12 +22,7 @@ export function ActivityThreads({
   const unread = useUnreadCommentThreads(userId);
   return (
     <section className="bg-card space-y-3 rounded-xl border p-4" aria-label="Conversation history">
-      <div className="flex items-center justify-between">
-        <h2 className="font-heading text-lg font-semibold">Conversation history</h2>
-        <p className="text-muted-foreground text-xs">
-          Private notes between teacher and linked parents
-        </p>
-      </div>
+      <h2 className="font-heading text-lg font-semibold">Conversation history</h2>
       {query.isError ? (
         <div role="status" className="space-y-3 py-2">
           <Alert variant="destructive">
