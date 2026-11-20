@@ -8,10 +8,13 @@ import { useActivityReviewSession } from "@/components/activities/activity-revie
 import {
   reviewQueueQuery,
 } from "@/lib/utils/activity-review";
-import { StudentWorkSummary } from "@/components/activities/student-work-summary";
 import { commentThreadHref, parseTeacherCommentTarget } from "@/lib/comments/targets";
 import { type Activity, useActivity, useToggleArchive } from "@/lib/hooks/use-activities";
-import { useActivityWork, useReleaseSubmission, useUpdateStudentWork } from "@/lib/hooks/use-activity-work";
+import {
+  useActivityWork,
+  useBatchReleaseSubmissions,
+  useBatchUpdateStudentWork,
+} from "@/lib/hooks/use-activity-work";
 import { ReleaseActivityButton } from "@/components/submissions/submission-lifecycle-controls";
 import { activityAssignedTo } from "@/lib/utils/activity-work";
 import { useStudents } from "@/lib/hooks/use-students";
@@ -37,6 +40,11 @@ const DeleteActivityDialog = dynamic(
 const CreateActivityDialog = dynamic(
   () =>
     import("@/components/activities/create-activity-dialog").then((m) => m.CreateActivityDialog),
+  { ssr: false }
+);
+const BatchReleaseDialog = dynamic(
+  () =>
+    import("@/components/activities/batch-release-dialog").then((m) => m.BatchReleaseDialog),
   { ssr: false }
 );
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -66,6 +74,9 @@ import {
   CheckCircle2,
   CheckCheck,
   PenLine,
+  FileCheck,
+  ScanLine,
+  UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getWordCount } from "@/lib/utils/formatters";
@@ -74,7 +85,7 @@ import {
   ActivityDetailHero,
   type ClassDiagnosticSummary,
 } from "@/components/activities/activity-detail-hero";
-import { SubmissionCard } from "@/components/activities/submission-card";
+import { SubmissionCard, UnsubmittedCard } from "@/components/activities/submission-card";
 import { matchesReviewFilter, reviewFilterLabels } from "@/lib/utils/activity-attempt-review";
 import {
   ActivityReviewToolbar,
@@ -224,6 +235,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
   // Batch deletion selection state
   const [selectedSubmissionIds, setSelectedSubmissionIds] = useState<Set<string>>(new Set());
   const [isBatchDeleteDialogOpen, setIsBatchDeleteDialogOpen] = useState(false);
+  const [isBatchReleaseDialogOpen, setIsBatchReleaseDialogOpen] = useState(false);
   const [singleAttemptToDelete, setSingleAttemptToDelete] = useState<Submission | null>(null);
   const [studentBatchToDelete, setStudentBatchToDelete] = useState<{
     studentName: string;
@@ -232,8 +244,8 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
 
   const deleteSingleMutation = useDeleteSubmission();
   const batchDeleteMutation = useBatchDeleteSubmissions();
-  const releaseSubmissionMutation = useReleaseSubmission();
-  const updateWorkMutation = useUpdateStudentWork();
+  const batchReleaseMutation = useBatchReleaseSubmissions();
+  const batchUpdateWorkMutation = useBatchUpdateStudentWork();
   const [isBatchReleasing, setIsBatchReleasing] = useState(false);
   const [isBatchExcusing, setIsBatchExcusing] = useState(false);
 
@@ -870,19 +882,48 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
     });
   }, [selectedSubmissions]);
 
-  const handleBatchRelease = async () => {
+  const handleBatchReleaseConfirm = async () => {
     if (!releasableSelected.length) return;
     setIsBatchReleasing(true);
     try {
-      let count = 0;
-      for (const sub of releasableSelected) {
-        await releaseSubmissionMutation.mutateAsync(sub.id);
-        count++;
+      const results = await batchReleaseMutation.mutateAsync(
+        releasableSelected.map((sub) => sub.id)
+      );
+
+      const succeededIds: string[] = [];
+      let failedCount = 0;
+
+      results.forEach((res, index) => {
+        if (res.status === "fulfilled") {
+          succeededIds.push(releasableSelected[index].id);
+        } else {
+          failedCount++;
+        }
+      });
+
+      if (succeededIds.length > 0) {
+        setSelectedSubmissionIds((prev) => {
+          const next = new Set(prev);
+          succeededIds.forEach((sid) => next.delete(sid));
+          return next;
+        });
       }
-      toast.success(`Released ${count} ${count === 1 ? "worksheet" : "worksheets"} to parents.`);
-      clearSelection();
+
+      if (failedCount === 0) {
+        toast.success(
+          `Released ${succeededIds.length} ${succeededIds.length === 1 ? "worksheet" : "worksheets"} to parents.`
+        );
+        setIsBatchReleaseDialogOpen(false);
+      } else if (succeededIds.length > 0) {
+        toast.warning(
+          `Released ${succeededIds.length} worksheets, but ${failedCount} failed to release. The remaining items remain selected for retry.`
+        );
+        setIsBatchReleaseDialogOpen(false);
+      } else {
+        toast.error("Failed to release selected worksheets. Please check your network and try again.");
+      }
     } catch {
-      toast.error("Failed to release selected worksheets.");
+      toast.error("An unexpected error occurred while releasing worksheets.");
     } finally {
       setIsBatchReleasing(false);
     }
@@ -896,19 +937,48 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
     if (!selectedStudentIds.length) return;
     setIsBatchExcusing(true);
     try {
-      for (const studentId of selectedStudentIds) {
-        await updateWorkMutation.mutateAsync({
-          activityId: id,
-          studentId,
-          body: { excused: true },
+      const results = await batchUpdateWorkMutation.mutateAsync({
+        activityId: id,
+        studentIds: selectedStudentIds,
+        body: { excused: true },
+      });
+
+      const succeededStudentIds = new Set<string>();
+      let failedCount = 0;
+
+      results.forEach((res, index) => {
+        if (res.status === "fulfilled") {
+          succeededStudentIds.add(selectedStudentIds[index]);
+        } else {
+          failedCount++;
+        }
+      });
+
+      if (succeededStudentIds.size > 0) {
+        setSelectedSubmissionIds((prev) => {
+          const next = new Set(prev);
+          selectedSubmissions.forEach((sub) => {
+            if (succeededStudentIds.has(sub.student_id)) {
+              next.delete(sub.id);
+            }
+          });
+          return next;
         });
       }
-      toast.success(
-        `Marked ${selectedStudentIds.length} ${selectedStudentIds.length === 1 ? "student" : "students"} as excused.`
-      );
-      clearSelection();
+
+      if (failedCount === 0) {
+        toast.success(
+          `Marked ${succeededStudentIds.size} ${succeededStudentIds.size === 1 ? "student" : "students"} as excused.`
+        );
+      } else if (succeededStudentIds.size > 0) {
+        toast.warning(
+          `Excused ${succeededStudentIds.size} students, but ${failedCount} failed. The remaining items remain selected.`
+        );
+      } else {
+        toast.error("Failed to excuse selected students. Please try again.");
+      }
     } catch {
-      toast.error("Failed to excuse selected students.");
+      toast.error("An unexpected error occurred while updating students.");
     } finally {
       setIsBatchExcusing(false);
     }
@@ -1053,22 +1123,27 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
           </Link>
         </div>
         <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">
-          <Empty className="border-0 py-14">
-            <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
-              <ClipboardList className="h-6 w-6" aria-hidden="true" />
+          <Empty className="border-0 py-12 sm:py-14 px-4">
+            <EmptyMedia
+              variant="icon"
+              className="size-11 rounded-xl bg-muted text-muted-foreground border border-border/40"
+            >
+              <ClipboardList className="size-5 sm:size-6" aria-hidden="true" />
             </EmptyMedia>
-            <EmptyHeader>
-              <EmptyTitle>Activity not found</EmptyTitle>
-              <EmptyDescription>
+            <EmptyHeader className="max-w-md">
+              <EmptyTitle className="text-lg sm:text-xl font-medium tracking-tight text-foreground">
+                Activity not found
+              </EmptyTitle>
+              <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm text-muted-foreground">
                 This activity may have been removed or you don&apos;t have access.
               </EmptyDescription>
             </EmptyHeader>
-            <EmptyContent>
+            <EmptyContent className="flex w-full items-center justify-center px-4 sm:w-auto sm:px-0">
               <Link
                 href="/activities"
                 className={cn(
                   buttonVariants({ variant: "outline" }),
-                  "min-h-11 rounded-lg sm:rounded-xl md:min-h-9"
+                  "h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
                 )}
               >
                 <ArrowLeft className="mr-1.5 h-4 w-4" aria-hidden="true" />
@@ -1089,6 +1164,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
       ? filteredAndSortedGroups.length + filteredStudentsWithoutUploads.length
       : filteredAndSortedSubmissions.length;
   const resultUnit = viewMode === "grouped" ? "student" : "upload";
+  const viewAllLabel = viewMode === "grouped" ? "View all students" : "View all uploads";
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-3 pb-28 sm:gap-5 sm:pb-24">
@@ -1123,6 +1199,11 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
               ? "error"
               : "loading"
         }
+        onRetrySummary={() => {
+          if (studentsError) void refetchStudents();
+          if (workQuery.isError) void workQuery.refetch();
+          if (submissionsError) void refetchSubmissions();
+        }}
         hasCopiedPrompt={hasCopiedPrompt}
         onCopyPrompt={handleCopyPrompt}
         onUpload={handleOpenUpload}
@@ -1152,7 +1233,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
       )}
       <section aria-labelledby="submissions-heading" className="space-y-3 sm:space-y-4">
         {/* Section Header with Controls */}
-        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2
               id="submissions-heading"
@@ -1162,7 +1243,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
             </h2>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 empty:hidden">
             {allPendingScoringSubmissions.length > 0 && (
               <Button
                 type="button"
@@ -1171,6 +1252,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                 onClick={handleStartGradingSprint}
                 className="min-h-[44px] md:min-h-[36px] px-3.5 rounded-lg text-xs font-semibold cursor-pointer shadow-xs gap-1.5"
                 aria-label={`Start grading sprint. ${allPendingScoringSubmissions.length} worksheets pending scoring.`}
+                aria-keyshortcuts="Alt+G"
               >
                 <PenLine className="size-3.5 shrink-0" aria-hidden="true" />
                 <span>Start Grading ({allPendingScoringSubmissions.length} Pending)</span>
@@ -1292,7 +1374,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                 handleClearSearch();
                 setStatusFilter("all");
               }}
-              className="h-8 min-h-[36px] sm:min-h-[28px] px-2.5 text-xs text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
+              className="min-h-[44px] sm:min-h-[28px] px-2.5 text-xs text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
             >
               Reset filters
             </Button>
@@ -1345,23 +1427,28 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
         ) : submissions?.length === 0 && (viewMode === "all" || !assignedStudents.length) ? (
           /* Empty state: No submissions at all */
           <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">
-            <Empty className="border-0 py-14">
-              <EmptyMedia variant="icon" className="bg-primary/10 text-primary">
-                <Inbox className="h-6 w-6" aria-hidden="true" />
+            <Empty className="border-0 py-12 sm:py-14 px-4">
+              <EmptyMedia
+                variant="icon"
+                className="size-11 rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300"
+              >
+                <Inbox className="size-5 sm:size-6" aria-hidden="true" />
               </EmptyMedia>
-              <EmptyHeader>
-                <EmptyTitle className="text-lg sm:text-xl">No submissions yet</EmptyTitle>
-                <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm">
+              <EmptyHeader className="max-w-md">
+                <EmptyTitle className="text-lg sm:text-xl font-medium tracking-tight text-foreground">
+                  No submissions yet
+                </EmptyTitle>
+                <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm text-muted-foreground">
                   Upload a student&apos;s handwriting worksheet for this activity to begin AI
                   diagnostic assessment.
                 </EmptyDescription>
               </EmptyHeader>
               <EmptyContent className="flex w-full items-center justify-center px-4 sm:w-auto sm:px-0">
                 <Button
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 min-h-[44px] w-full cursor-pointer rounded-lg text-xs font-medium sm:w-auto sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 min-h-[44px] w-full cursor-pointer rounded-lg px-4 text-xs font-medium sm:w-auto sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
                   onClick={() => openUpload({ activityId: id })}
                 >
-                  <Upload className="mr-2 h-4 w-4" aria-hidden="true" />
+                  <Upload className="mr-1.5 h-4 w-4" aria-hidden="true" />
                   <span>Upload worksheet</span>
                 </Button>
               </EmptyContent>
@@ -1371,93 +1458,143 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
           /* Empty state: Filters or search returned 0 results */
           <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">
             {!searchQuery.trim() &&
-            (statusFilter === "needs_scoring" || statusFilter === "needs_action") &&
-            (submissions?.length ?? 0) > 0 ? (
-              /* Celebratory Inbox Zero: All pending worksheets graded */
-              <Empty className="border-0 py-12">
-                <EmptyMedia
-                  variant="icon"
-                  className="bg-band-4/10 text-band-4-text dark:bg-band-4/15"
-                >
-                  <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
-                </EmptyMedia>
-                <EmptyHeader>
-                  <EmptyTitle className="text-lg sm:text-xl">All caught up! No worksheets to grade</EmptyTitle>
-                  <EmptyDescription className="mx-auto max-w-md text-xs sm:text-sm">
-                    Every submitted cursive worksheet has been reviewed and scored. You can inspect all student
-                    diagnostics, check released grades, or return to the complete roster.
-                  </EmptyDescription>
-                </EmptyHeader>
-                <EmptyContent className="flex flex-wrap items-center justify-center gap-2">
-                  <Button
-                    variant="default"
-                    onClick={() => setStatusFilter("all")}
-                    className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+            (statusFilter === "needs_scoring" || statusFilter === "needs_action") ? (
+              (submissions?.length ?? 0) > 0 ? (
+                /* All pending worksheets graded */
+                <Empty className="border-0 py-10 sm:py-12 px-4">
+                  <EmptyMedia
+                    variant="icon"
+                    className="size-11 rounded-xl bg-muted text-muted-foreground border border-border/40"
                   >
-                    View all students
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setStatusFilter("released")}
-                    className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
-                  >
-                    View released results
-                  </Button>
-                  {studentsWithoutUploads.length > 0 && (
+                    <CheckCircle2 className="size-5" aria-hidden="true" />
+                  </EmptyMedia>
+                  <EmptyHeader className="max-w-md">
+                    <EmptyTitle className="text-base sm:text-lg font-medium tracking-tight text-foreground">
+                      No worksheets pending review
+                    </EmptyTitle>
+                    <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm text-muted-foreground">
+                      All submitted worksheets for this activity have been reviewed and scored.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  <EmptyContent className="flex flex-row flex-wrap items-center justify-center gap-2 max-w-none">
                     <Button
-                      variant="ghost"
-                      onClick={() => setStatusFilter("missing")}
-                      className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                      variant="outline"
+                      onClick={() => setStatusFilter("all")}
+                      className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
                     >
-                      View missing ({studentsWithoutUploads.length})
+                      {viewAllLabel}
                     </Button>
-                  )}
-                </EmptyContent>
-              </Empty>
+                    {studentsWithoutUploads.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        onClick={() => setStatusFilter("missing")}
+                        className="text-muted-foreground hover:text-foreground h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                      >
+                        View missing ({studentsWithoutUploads.length})
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      onClick={() => setStatusFilter("released")}
+                      className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                    >
+                      View released results
+                    </Button>
+                  </EmptyContent>
+                </Empty>
+              ) : (
+                /* No worksheets submitted yet to score */
+                <Empty className="border-0 py-10 sm:py-12 px-4">
+                  <EmptyMedia
+                    variant="icon"
+                    className="size-11 rounded-xl bg-muted text-muted-foreground border border-border/40"
+                  >
+                    <Inbox className="size-5" aria-hidden="true" />
+                  </EmptyMedia>
+                  <EmptyHeader className="max-w-md">
+                    <EmptyTitle className="text-base sm:text-lg font-medium tracking-tight text-foreground">
+                      No worksheets to score yet
+                    </EmptyTitle>
+                    <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm text-muted-foreground">
+                      None of the assigned students have turned in a worksheet for this activity yet.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  <EmptyContent className="flex flex-row flex-wrap items-center justify-center gap-2 max-w-none">
+                    <Button
+                      variant="outline"
+                      onClick={() => setStatusFilter("all")}
+                      className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                    >
+                      {viewAllLabel}
+                    </Button>
+                    {studentsWithoutUploads.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        onClick={() => setStatusFilter("missing")}
+                        className="text-muted-foreground hover:text-foreground h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                      >
+                        View missing ({studentsWithoutUploads.length})
+                      </Button>
+                    )}
+                    <Button
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                      onClick={() => openUpload({ activityId: id })}
+                    >
+                      <Upload className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                      <span>Upload worksheet</span>
+                    </Button>
+                  </EmptyContent>
+                </Empty>
+              )
             ) : !searchQuery.trim() && (statusFilter === "no_upload" || statusFilter === "missing") && assignedStudents.length > 0 ? (
-              /* Celebratory All-Turned-In state */
-              <Empty className="border-0 py-12">
+              /* All-Turned-In state */
+              <Empty className="border-0 py-10 sm:py-12 px-4">
                 <EmptyMedia
                   variant="icon"
-                  className="bg-band-4/10 text-band-4-text dark:bg-band-4/15"
+                  className="size-11 rounded-xl bg-muted text-muted-foreground border border-border/40"
                 >
-                  <CheckCheck className="h-6 w-6" aria-hidden="true" />
+                  <CheckCheck className="size-5" aria-hidden="true" />
                 </EmptyMedia>
-                <EmptyHeader>
-                  <EmptyTitle className="text-lg sm:text-xl">No missing submissions</EmptyTitle>
-                  <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm">
+                <EmptyHeader className="max-w-md">
+                  <EmptyTitle className="text-base sm:text-lg font-medium tracking-tight text-foreground">
+                    No missing submissions
+                  </EmptyTitle>
+                  <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm text-muted-foreground">
                     Every assigned student has turned in their cursive handwriting activity sheet.
                   </EmptyDescription>
                 </EmptyHeader>
-                <EmptyContent className="flex gap-2">
+                <EmptyContent className="flex flex-row flex-wrap items-center justify-center gap-2 max-w-none">
                   <Button
-                    variant="default"
+                    variant="outline"
                     onClick={() => setStatusFilter("all")}
-                    className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                    className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
                   >
-                    View all students
+                    {viewAllLabel}
                   </Button>
                 </EmptyContent>
               </Empty>
             ) : searchQuery.trim() ? (
               /* Search with 0 results */
-              <Empty className="border-0 py-12">
-                <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
-                  <SearchX className="h-6 w-6" aria-hidden="true" />
+              <Empty className="border-0 py-10 sm:py-12 px-4">
+                <EmptyMedia
+                  variant="icon"
+                  className="size-11 rounded-xl bg-muted text-muted-foreground border border-border/40"
+                >
+                  <SearchX className="size-5" aria-hidden="true" />
                 </EmptyMedia>
-                <EmptyHeader>
-                  <EmptyTitle className="text-lg sm:text-xl">
+                <EmptyHeader className="max-w-md">
+                  <EmptyTitle className="text-base sm:text-lg font-medium tracking-tight text-foreground">
                     No {resultUnit}s matching &quot;{searchQuery.trim()}&quot;
                   </EmptyTitle>
-                  <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm">
-                    We couldn&apos;t find any students matching this query. Check for typos or reset your search.
+                  <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm text-muted-foreground">
+                    We couldn&apos;t find any {resultUnit}s matching this query. Check for typos or reset your search.
                   </EmptyDescription>
                 </EmptyHeader>
-                <EmptyContent className="flex gap-2">
+                <EmptyContent className="flex flex-row flex-wrap items-center justify-center gap-2 max-w-none">
                   <Button
                     variant="outline"
                     onClick={handleClearSearch}
-                    className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                    className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
                   >
                     Clear search
                   </Button>
@@ -1465,42 +1602,97 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                     <Button
                       variant="ghost"
                       onClick={() => setStatusFilter("all")}
-                      className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                      className="text-muted-foreground hover:text-foreground h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
                     >
-                      View All
+                      {viewAllLabel}
                     </Button>
                   )}
                 </EmptyContent>
               </Empty>
-            ) : (
-              /* Specific status filter with 0 results */
-              <Empty className="border-0 py-12">
-                <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
-                  <Inbox className="h-6 w-6" aria-hidden="true" />
-                </EmptyMedia>
-                <EmptyHeader>
-                  <EmptyTitle className="text-lg sm:text-xl">
-                    {statusFilter === "missing" || statusFilter === "no_upload"
-                      ? "No missing submissions"
-                      : `No ${reviewFilterLabels[statusFilter] ?? "matching"} ${resultUnit}s`}
-                  </EmptyTitle>
-                  <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm">
-                    {statusFilter === "missing" || statusFilter === "no_upload"
-                      ? "There are currently no missing student worksheets for this activity."
-                      : "There are currently no student worksheets under this review status."}
-                  </EmptyDescription>
-                </EmptyHeader>
-                <EmptyContent className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setStatusFilter("all")}
-                    className="h-10 min-h-[44px] cursor-pointer rounded-lg text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+            ) : (() => {
+              const filterConfig: Record<
+                string,
+                {
+                  title: string;
+                  description: string;
+                  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
+                }
+              > = {
+                ready: {
+                  title: "No worksheets ready to release",
+                  description: "All scored worksheets have already been released to students and parents.",
+                  icon: FileCheck,
+                },
+                returned: {
+                  title: "No returned worksheets",
+                  description: "There are currently no worksheets flagged or returned for resubmission.",
+                  icon: RotateCcw,
+                },
+                processing: {
+                  title: "No worksheets processing",
+                  description: "No handwriting worksheets are currently undergoing AI analysis.",
+                  icon: ScanLine,
+                },
+                released: {
+                  title: "No released worksheets",
+                  description: "No student worksheet results have been published for this activity yet.",
+                  icon: CheckCheck,
+                },
+                excused: {
+                  title: "No excused students",
+                  description: "No students are currently marked as excused for this activity.",
+                  icon: UserCheck,
+                },
+                needs_upload: {
+                  title: "No pending uploads",
+                  description: "All students currently have valid submissions on file.",
+                  icon: ClipboardList,
+                },
+                no_upload: {
+                  title: "No unsubmitted worksheets",
+                  description: "Every student in this roster has at least one worksheet upload.",
+                  icon: ClipboardList,
+                },
+                missing: {
+                  title: "No missing submissions",
+                  description: "There are currently no missing student worksheets for this activity.",
+                  icon: ClipboardList,
+                },
+              };
+              const config = filterConfig[statusFilter];
+              const FilterIcon = config?.icon ?? Inbox;
+              const emptyTitle = config?.title ?? `No matching ${resultUnit}s`;
+              const emptyDescription = config?.description ?? "There are currently no student worksheets under this review status.";
+
+              return (
+                /* Specific status filter with 0 results */
+                <Empty className="border-0 py-10 sm:py-12 px-4">
+                  <EmptyMedia
+                    variant="icon"
+                    className="size-11 rounded-xl bg-muted text-muted-foreground border border-border/40"
                   >
-                    View all students
-                  </Button>
-                </EmptyContent>
-              </Empty>
-            )}
+                    <FilterIcon className="size-5" aria-hidden="true" />
+                  </EmptyMedia>
+                  <EmptyHeader className="max-w-md">
+                    <EmptyTitle className="text-base sm:text-lg font-medium tracking-tight text-foreground">
+                      {emptyTitle}
+                    </EmptyTitle>
+                    <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm text-muted-foreground">
+                      {emptyDescription}
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  <EmptyContent className="flex flex-row flex-wrap items-center justify-center gap-2 max-w-none">
+                    <Button
+                      variant="outline"
+                      onClick={() => setStatusFilter("all")}
+                      className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                    >
+                      {viewAllLabel}
+                    </Button>
+                  </EmptyContent>
+                </Empty>
+              );
+            })()}
           </div>
         ) : (
           /* Submissions Cards Grid */
@@ -1516,110 +1708,19 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
               ? studentReviewEntries.map((entry) => {
                 if (entry.kind === "no_upload") {
                   const { student } = entry;
-                  if (compact) {
-                    return (
-                      <article
-                        key={student.id}
-                        className="border-border bg-surface dark:bg-card flex flex-col gap-3 rounded-xl border p-3.5 text-left sm:p-4 lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.1fr)_minmax(0,0.9fr)_auto] lg:items-center lg:gap-4 transition-all hover:border-border/80"
-                      >
-                        <div className="flex flex-col gap-1 lg:col-span-2">
-                          <h3 className="text-sm font-semibold break-words">
-                            {student.full_name}
-                          </h3>
-                          <p className="text-muted-foreground text-xs sm:text-sm">
-                            No worksheet uploaded yet.
-                          </p>
-                        </div>
-                        <StudentWorkSummary
-                          activityId={id}
-                          studentId={student.id}
-                          studentName={student.full_name}
-                          state={
-                            workQuery.isError ? null : (workByStudent.get(student.id) ?? null)
-                          }
-                          attempts={[]}
-                          isLoading={workQuery.isPending}
-                          compact={compact}
-                        />
-                        <div className="flex items-center justify-end">
-                          <Button
-                            variant="outline"
-                            className="h-10 min-h-[44px] md:h-9 md:min-h-[36px]"
-                            onClick={() => handleReupload(student.id)}
-                            aria-label={`Upload worksheet for ${student.full_name}`}
-                          >
-                            <Upload data-icon="inline-start" /> Upload worksheet
-                          </Button>
-                        </div>
-                      </article>
-                    );
-                  }
-
+                  const workState = workQuery.isError
+                    ? null
+                    : (workByStudent.get(student.id) ?? null);
                   return (
-                    <article
+                    <UnsubmittedCard
                       key={student.id}
-                      className="group bg-surface dark:bg-card border-border relative flex h-full min-w-0 flex-col overflow-hidden rounded-xl border text-left"
-                    >
-                      <div className="bg-muted/20 relative flex aspect-4/3 items-center justify-center overflow-hidden border-b">
-                        <button
-                          type="button"
-                          onClick={() => handleReupload(student.id)}
-                          className="group/dropzone hover:bg-muted/40 focus-visible:ring-ring flex size-full flex-col items-center justify-center gap-2 p-4 text-center transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-hidden"
-                          aria-label={`Upload worksheet for ${student.full_name}`}
-                        >
-                          <div className="bg-surface dark:bg-card border-border/80 text-muted-foreground group-hover/dropzone:border-primary group-hover/dropzone:text-primary flex size-10 items-center justify-center rounded-lg border border-dashed transition-colors shadow-2xs">
-                            <Upload className="size-5 transition-transform group-hover/dropzone:-translate-y-0.5" aria-hidden="true" />
-                          </div>
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-foreground group-hover/dropzone:text-primary text-xs font-semibold transition-colors">
-                              Upload worksheet
-                            </span>
-                            <span className="text-muted-foreground text-xs opacity-80">
-                              No image uploaded yet
-                            </span>
-                          </div>
-                        </button>
-                      </div>
-
-                      <div className="flex flex-1 flex-col gap-3 p-4">
-                        <div>
-                          <h3 className="text-foreground text-sm font-semibold break-words" title={student.full_name}>
-                            {student.full_name}
-                          </h3>
-                          <p className="text-muted-foreground mt-1 text-xs">
-                            Awaiting submission
-                          </p>
-                        </div>
-
-                        <div className="mt-auto flex items-center justify-between gap-2 border-t pt-2">
-                          <span className="text-muted-foreground text-xs">Missing</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-primary hover:text-primary/90 hover:bg-primary/10 group/btn focus-visible:ring-ring h-10 min-h-[44px] cursor-pointer gap-1.5 rounded-lg px-3 text-xs font-semibold focus-visible:ring-2 focus-visible:outline-hidden md:h-9 md:px-2.5 md:min-h-[36px]"
-                            onClick={() => handleReupload(student.id)}
-                            aria-label={`Upload worksheet for ${student.full_name}`}
-                          >
-                            <Upload className="size-3.5" aria-hidden="true" />
-                            <span>Upload</span>
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="border-t p-4">
-                        <StudentWorkSummary
-                          activityId={id}
-                          studentId={student.id}
-                          studentName={student.full_name}
-                          state={
-                            workQuery.isError ? null : (workByStudent.get(student.id) ?? null)
-                          }
-                          attempts={[]}
-                          isLoading={workQuery.isPending}
-                          compact={false}
-                        />
-                      </div>
-                    </article>
+                      compact={compact}
+                      student={student}
+                      activityId={id}
+                      workState={workState}
+                      workLoading={workQuery.isPending}
+                      onUpload={handleReupload}
+                    />
                   );
                 }
                 const { group } = entry;
@@ -1637,6 +1738,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                   <SubmissionCard
                     key={group.studentId}
                     compact={compact}
+                    batchManaged={!compact}
                     submission={activeSub}
                     studentName={group.studentName}
                     imageUrl={signedUrlsMap?.get(activeSub.image_path)}
@@ -1665,6 +1767,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                 <SubmissionCard
                   key={sub.id}
                   compact={compact}
+                  batchManaged={!compact}
                   submission={sub}
                   studentName={sub.student?.full_name ?? "Unknown Student"}
                   imageUrl={signedUrlsMap?.get(sub.image_path)}
@@ -1772,12 +1875,17 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
             type="button"
             variant="default"
             size="sm"
-            onClick={handleBatchRelease}
+            onClick={() => setIsBatchReleaseDialogOpen(true)}
             disabled={isBatchReleasing || batchDeleteMutation.isPending}
-            className="min-h-11 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-semibold shadow-xs md:min-h-9"
+            className="min-h-11 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-semibold shadow-xs md:min-h-9 bg-brand-700 hover:bg-brand-800 dark:bg-primary dark:hover:bg-primary/90 text-white dark:text-primary-foreground"
           >
             <CheckCircle2 className="size-3.5" aria-hidden="true" />
-            <span>Release ({releasableSelected.length})</span>
+            <span>
+              Release {releasableSelected.length}{" "}
+              <span className="hidden sm:inline">
+                {releasableSelected.length === 1 ? "Worksheet" : "Worksheets"}
+              </span>
+            </span>
           </Button>
         )}
         {selectedStudentIds.length > 0 && (
@@ -1787,9 +1895,14 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
             size="sm"
             onClick={handleBatchExcuse}
             disabled={isBatchExcusing || batchDeleteMutation.isPending}
-            className="min-h-11 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-medium md:min-h-9"
+            className="min-h-11 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-medium md:min-h-9 border-border/80 hover:bg-muted/60"
           >
-            <span>Mark Excused ({selectedStudentIds.length})</span>
+            <span>
+              Excuse {selectedStudentIds.length}{" "}
+              <span className="hidden sm:inline">
+                {selectedStudentIds.length === 1 ? "Student" : "Students"}
+              </span>
+            </span>
           </Button>
         )}
         <Button
@@ -1801,9 +1914,25 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
           className="min-h-11 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-semibold shadow-xs md:min-h-9"
         >
           <Trash2 className="size-3.5" aria-hidden="true" />
-          <span>Delete Attempts</span>
+          <span>
+            Delete {selectedCount}{" "}
+            <span className="hidden sm:inline">
+              {selectedCount === 1 ? "Attempt" : "Attempts"}
+            </span>
+          </span>
         </Button>
       </FloatingActionBar>
+
+      {/* Batch Release Confirmation Dialog */}
+      <BatchReleaseDialog
+        open={isBatchReleaseDialogOpen}
+        onOpenChange={setIsBatchReleaseDialogOpen}
+        releasableSubmissions={releasableSelected}
+        totalSelectedCount={selectedCount}
+        students={students}
+        isReleasing={isBatchReleasing}
+        onConfirm={handleBatchReleaseConfirm}
+      />
 
       {/* Attempt Deletion Alert Dialogs */}
       <AttemptDeletionDialogs

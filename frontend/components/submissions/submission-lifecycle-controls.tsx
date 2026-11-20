@@ -5,7 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table2, Send } from "lucide-react";
+import { Table2, Send, RotateCcw, ExternalLink, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -19,6 +19,14 @@ import { Field, FieldGroup, FieldLabel, FieldDescription } from "@/components/ui
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   useActivityWork,
   useReturnSubmission,
@@ -158,9 +166,13 @@ function ReturnForm({ submission, onDone }: { submission: Submission; onDone: ()
 export function SubmissionLifecycleControls({
   submission,
   showRelease = true,
+  variant = "card",
+  className,
 }: {
   submission: Submission;
   showRelease?: boolean;
+  variant?: "card" | "header" | "actions";
+  className?: string;
 }) {
   const focusTarget = useRef<HTMLElement>(null);
   const { data: states, isError } = useActivityWork(submission.activity_id);
@@ -189,6 +201,132 @@ export function SubmissionLifecycleControls({
       setError(workActionError(error));
     }
   }
+
+  // Header badges variant: lightweight status strip embedded directly in student metadata row
+  if (variant === "header") {
+    return (
+      <div className={cn("inline-flex items-center gap-1.5 flex-wrap", className)}>
+        <Badge
+          variant="secondary"
+          className="text-[10px] sm:text-[11px] font-medium h-5 px-2 bg-muted/80 text-foreground"
+        >
+          {submission.status === "returned"
+            ? "Returned"
+            : !work
+              ? "Loading status…"
+              : active
+                ? work.work_status
+                : "Historical attempt"}
+        </Badge>
+        {active && (
+          <Badge
+            variant="outline"
+            className="text-[10px] sm:text-[11px] h-5 px-1.5 font-medium border-brand-300 text-brand-800 dark:border-brand-700 dark:text-brand-300 bg-brand-50/50 dark:bg-brand-950/40"
+          >
+            Counted attempt
+          </Badge>
+        )}
+        {work?.pinned_submission_id === submission.id && (
+          <Badge variant="outline" className="text-[10px] sm:text-[11px] h-5 px-1.5 font-medium">
+            Pinned
+          </Badge>
+        )}
+        {completed && active && submission.released_at && (
+          <Badge
+            variant="outline"
+            className="text-[10px] sm:text-[11px] h-5 px-1.5 font-medium border-emerald-300 text-emerald-800 dark:border-emerald-700 dark:text-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/40"
+          >
+            Result released
+          </Badge>
+        )}
+      </div>
+    );
+  }
+
+  // Footer actions variant: docked terminal actions for grading completion & return flows
+  if (variant === "actions") {
+    return (
+      <div className={cn("flex items-center gap-2 flex-wrap", className)}>
+        {completed && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setReturnOpen(true)}
+            disabled={pending}
+            className="h-8 px-2.5 text-xs font-medium cursor-pointer touch-manipulation gap-1.5"
+            title="Return worksheet to student/parent for another attempt"
+          >
+            <RotateCcw className="size-3.5" aria-hidden="true" />
+            <span>Return</span>
+          </Button>
+        )}
+        {showRelease &&
+          completed &&
+          active &&
+          !submission.released_at &&
+          resolveSubmissionScore(submission).isScored && (
+            <Button
+              size="sm"
+              onClick={() => act("release")}
+              disabled={pending}
+              className="h-8 px-3 text-xs font-medium cursor-pointer touch-manipulation gap-1.5 bg-brand-600 hover:bg-brand-700 text-white dark:bg-brand-500 dark:hover:bg-brand-600"
+              title="Release score and diagnostic feedback to parent"
+            >
+              <Send className="size-3.5" aria-hidden="true" />
+              <span>Release Result</span>
+            </Button>
+          )}
+        {completed && !active && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => act("pin")}
+            disabled={pending || !work}
+            className="h-8 px-2.5 text-xs font-medium cursor-pointer touch-manipulation"
+          >
+            Count this attempt
+          </Button>
+        )}
+        {work?.pinned_submission_id && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => act("unpin")}
+            disabled={pending}
+            className="h-8 px-2 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+          >
+            Use automatic selection
+          </Button>
+        )}
+
+        {(error || isError) && (
+          <span role="alert" className="text-destructive text-xs font-medium">
+            {error ?? "Error updating status"}
+          </span>
+        )}
+
+        <Dialog open={returnOpen} onOpenChange={(open) => setReturnOpen(open)}>
+          <DialogContent finalFocus={focusTarget}>
+            <DialogHeader>
+              <DialogTitle>Return worksheet</DialogTitle>
+              <DialogDescription>
+                Request another attempt from {submission.student.full_name}. The existing photo and
+                rubric are kept.
+              </DialogDescription>
+            </DialogHeader>
+            {returnOpen && (
+              <ReturnForm
+                key={submission.id}
+                submission={submission}
+                onDone={() => setReturnOpen(false)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
   return (
     <section
       aria-label="Worksheet return and release"
@@ -291,6 +429,36 @@ export function SubmissionLifecycleControls({
   );
 }
 
+export function SubmissionReturnedAlert({ submission }: { submission: Submission }) {
+  if (submission.status !== "returned") return null;
+  const reasonLabel =
+    REASONS.find((reason) => reason.value === submission.return_reason)?.label ??
+    submission.return_reason;
+
+  return (
+    <div
+      role="status"
+      className="rounded-xl border border-amber-300/80 bg-amber-50/70 p-3 text-xs text-amber-950 dark:border-amber-800/80 dark:bg-amber-950/30 dark:text-amber-200 space-y-1 shadow-2xs"
+    >
+      <div className="flex items-center gap-1.5 font-semibold text-amber-900 dark:text-amber-100">
+        <RotateCcw className="size-3.5 shrink-0" aria-hidden="true" />
+        <span>Worksheet Returned for Revision</span>
+      </div>
+      <p className="leading-relaxed">
+        <strong>Reason:</strong> {reasonLabel}
+      </p>
+      {submission.return_note && (
+        <p className="whitespace-pre-wrap text-foreground/80 leading-relaxed">
+          {submission.return_note}
+        </p>
+      )}
+      <p className="text-[11px] text-muted-foreground pt-0.5">
+        This attempt is preserved in history and does not count toward grading progress.
+      </p>
+    </div>
+  );
+}
+
 function WorkSettingsForm({
   activityId,
   studentId,
@@ -309,18 +477,42 @@ function WorkSettingsForm({
   const [pin, setPin] = useState(state?.pinned_submission_id ?? "");
   const [dueEdited, setDueEdited] = useState(false);
   const [pinEdited, setPinEdited] = useState(false);
-  const selectedAttempt = attempts.find(
-    (attempt) => attempt.id === pin && attempt.status === "completed",
-  );
+  const completedAttempts = attempts.filter((row) => row.status === "completed");
+  const selectedAttempt = completedAttempts.find((attempt) => attempt.id === pin);
   const selectedScore = resolveSubmissionScore(selectedAttempt);
   const now = useActivityNow();
   const [error, setError] = useState<string | null>(null);
   const update = useUpdateStudentWork();
+
+  function addDays(days: number) {
+    let baseTime = now;
+    if (due) {
+      try {
+        const parsed = toActivityDueAt(due);
+        if (parsed) baseTime = Date.parse(parsed);
+      } catch {
+        // fallback to now
+      }
+    } else if (state?.effective_due_at) {
+      baseTime = Date.parse(state.effective_due_at);
+    }
+    const newDate = new Date(baseTime + days * 24 * 60 * 60 * 1000);
+    setDue(toActivityDueInput(newDate.toISOString()));
+    setDueEdited(true);
+  }
+
+  function resetToClassDeadline() {
+    setDue("");
+    setDueEdited(true);
+  }
+
+  const isPast = due ? Date.parse(`${due}:00+08:00`) < now : false;
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError(null);
     if (!dueEdited && !pinEdited) {
-      setError("Change a deadline or official worksheet before saving.");
+      setError("Change a deadline or graded worksheet before saving.");
       return;
     }
     try {
@@ -338,11 +530,23 @@ function WorkSettingsForm({
       setError(workActionError(error));
     }
   }
+
   return (
     <form onSubmit={submit} className="flex flex-col gap-5">
       <FieldGroup>
         <Field>
-          <FieldLabel htmlFor={`${id}-due`}>Student deadline</FieldLabel>
+          <div className="flex items-center justify-between gap-2">
+            <FieldLabel htmlFor={`${id}-due`}>Individual deadline extension</FieldLabel>
+            {due ? (
+              <Badge variant="outline" className="border-primary/40 bg-primary/5 text-primary text-[11px] font-normal">
+                Extension active
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="text-[11px] font-normal">
+                Class deadline
+              </Badge>
+            )}
+          </div>
           <Input
             id={`${id}-due`}
             type="datetime-local"
@@ -353,77 +557,196 @@ function WorkSettingsForm({
             }}
             disabled={update.isPending}
           />
+          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+            <span className="text-xs text-muted-foreground mr-1">Quick extend:</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-xs rounded-md"
+              onClick={() => addDays(1)}
+              disabled={update.isPending}
+            >
+              +1 day
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-xs rounded-md"
+              onClick={() => addDays(3)}
+              disabled={update.isPending}
+            >
+              +3 days
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-xs rounded-md"
+              onClick={() => addDays(7)}
+              disabled={update.isPending}
+            >
+              +1 week
+            </Button>
+            {due && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1 ml-auto"
+                onClick={resetToClassDeadline}
+                disabled={update.isPending}
+              >
+                <RotateCcw className="size-3" aria-hidden="true" />
+                Reset
+              </Button>
+            )}
+          </div>
           <FieldDescription>
-            Clear this field to use the activity deadline.
+            Clear this field or click Reset to use the class deadline.
             {state?.effective_due_at &&
               ` Current effective deadline: ${formatActivityDueAt(state.effective_due_at)}.`}
           </FieldDescription>
-          {due && Date.parse(`${due}:00+08:00`) < now && (
+          {isPast && (
             <p className="text-muted-foreground text-sm">
-              This deadline has passed. Work without an official worksheet will be Missing.
+              This deadline has passed. Work without a counted worksheet will remain unsubmitted.
             </p>
           )}
         </Field>
+
         <Field>
-          <FieldLabel htmlFor={`${id}-pin`}>Official worksheet</FieldLabel>
-          <NativeSelect
-            id={`${id}-pin`}
-            className="w-full min-w-0 max-w-full"
-            value={pin}
-            onChange={(event) => {
-              setPin(event.target.value);
-              setPinEdited(true);
+          <FieldLabel htmlFor={`${id}-pin`}>Graded worksheet</FieldLabel>
+          <Select
+            value={pin ? pin : "auto"}
+            onValueChange={(val) => {
+              if (val) {
+                setPin(val === "auto" ? "" : val);
+                setPinEdited(true);
+              }
             }}
             disabled={update.isPending}
           >
-            <NativeSelectOption value="">
-              Automatic: latest eligible completed attempt
-            </NativeSelectOption>
-            {attempts
-              .filter((row) => row.status === "completed")
-              .map((row) => {
+            <SelectTrigger
+              id={`${id}-pin`}
+              className="w-full justify-between h-auto min-h-10 py-2 px-3 rounded-lg border-border/70 bg-input/40 text-left"
+            >
+              <SelectValue placeholder="Choose graded worksheet">
+                {!pin ? (
+                  <span className="flex items-center gap-2 truncate">
+                    <span className="font-medium text-foreground">Automatic</span>
+                    <span className="text-muted-foreground text-xs truncate">· Latest eligible completed attempt</span>
+                  </span>
+                ) : selectedAttempt ? (
+                  <span className="flex items-center gap-2 truncate">
+                    <span className="font-medium text-foreground truncate">
+                      {formatActivityDueAt(selectedAttempt.created_at)}
+                    </span>
+                    {selectedScore.compositeScore != null ? (
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0 font-normal">
+                        {Math.round(selectedScore.compositeScore)}% · {selectedScore.scoreBand.band}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">Not scored yet</span>
+                    )}
+                    {selectedAttempt.id === state?.active_submission_id && (
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal border-primary/40 text-primary">
+                        Current
+                      </Badge>
+                    )}
+                  </span>
+                ) : (
+                  "Choose graded worksheet"
+                )}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="w-(--anchor-width) min-w-[320px]">
+              <SelectItem value="auto" className="cursor-pointer py-2">
+                <div className="flex flex-col text-left gap-0.5">
+                  <span className="font-medium text-foreground">Automatic: latest eligible completed attempt</span>
+                  <span className="text-xs text-muted-foreground">Recommended · updates when a new attempt is submitted</span>
+                </div>
+              </SelectItem>
+              {completedAttempts.length > 0 && <SelectSeparator />}
+              {completedAttempts.map((row) => {
                 const { compositeScore, scoreBand } = resolveSubmissionScore(row);
-                const score = compositeScore == null
-                  ? "Not scored yet"
-                  : `${Math.round(compositeScore)}% · ${scoreBand.band}`;
+                const isCurrent = row.id === state?.active_submission_id;
                 return (
-                  <NativeSelectOption key={row.id} value={row.id}>
-                    {new Date(row.created_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" })}
-                    {` · ${score}${row.id === state?.active_submission_id ? " · Current official" : ""}`}
-                  </NativeSelectOption>
+                  <SelectItem key={row.id} value={row.id} className="cursor-pointer py-2">
+                    <div className="flex flex-col text-left gap-1 w-full">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-foreground">
+                          {formatActivityDueAt(row.created_at)}
+                        </span>
+                        {isCurrent && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal border-primary/40 text-primary">
+                            Current
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {compositeScore == null ? (
+                          <span>Not scored yet</span>
+                        ) : (
+                          <Badge variant="secondary" className="text-[11px] px-1.5 py-0 font-normal">
+                            {Math.round(compositeScore)}% · {scoreBand.band}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </SelectItem>
                 );
               })}
-          </NativeSelect>
+            </SelectContent>
+          </Select>
           <FieldDescription>
-            Pin an older completed attempt to keep it as the official worksheet after a return.
+            Choose an earlier completed attempt to keep it as the graded worksheet for this activity.
           </FieldDescription>
           {selectedAttempt && (
-            <div className="flex flex-col items-start gap-2 rounded-lg border p-3 text-sm">
-              <p className="font-medium">
-                Uploaded{" "}
-                <time dateTime={selectedAttempt.created_at}>
-                  {formatActivityDueAt(selectedAttempt.created_at)}
-                </time>
-              </p>
-              <p>
-                {selectedScore.compositeScore == null
-                  ? "Not scored yet"
-                  : `${Math.round(selectedScore.compositeScore)}% · ${selectedScore.scoreBand.band}`}
-                {selectedAttempt.id === state?.active_submission_id && " · Current official worksheet"}
-              </p>
-              <p>Inspect this worksheet before saving your choice.</p>
+            <div className="flex flex-col items-start gap-2.5 rounded-xl border border-border/70 bg-card p-3.5 text-sm shadow-xs mt-1">
+              <div className="flex items-center justify-between w-full">
+                <span className="font-medium text-foreground flex items-center gap-1.5">
+                  <FileText className="size-4 text-muted-foreground" aria-hidden="true" />
+                  Selected attempt details
+                </span>
+                {selectedAttempt.id === state?.active_submission_id && (
+                  <Badge variant="outline" className="text-xs font-normal border-primary/40 text-primary bg-primary/5">
+                    Active in gradebook
+                  </Badge>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 w-full text-xs text-muted-foreground bg-muted/30 rounded-lg p-2.5">
+                <div>
+                  <span className="block font-medium text-foreground">Uploaded</span>
+                  <time dateTime={selectedAttempt.created_at}>
+                    {formatActivityDueAt(selectedAttempt.created_at)}
+                  </time>
+                </div>
+                <div>
+                  <span className="block font-medium text-foreground">Diagnostic score</span>
+                  <span>
+                    {selectedScore.compositeScore == null
+                      ? "Not scored yet"
+                      : `${Math.round(selectedScore.compositeScore)}% (${selectedScore.scoreBand.band})`}
+                  </span>
+                </div>
+              </div>
               <Link
                 href={`/activities/${activityId}/submissions/${selectedAttempt.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={buttonVariants({
                   variant: "outline",
-                  className: "min-h-11 h-auto whitespace-normal",
+                  size: "sm",
+                  className: "h-8 text-xs gap-1.5",
                 })}
               >
-                Inspect selected worksheet (opens in new tab)
+                <span>Inspect worksheet</span>
+                <ExternalLink className="size-3 text-muted-foreground" aria-hidden="true" />
               </Link>
-              <p className="text-muted-foreground">Your selection is saved only when you choose Save work settings.</p>
+              <p className="text-muted-foreground text-xs">
+                Your selection takes effect after clicking Save changes.
+              </p>
             </div>
           )}
         </Field>
@@ -448,7 +771,7 @@ function WorkSettingsForm({
           type="submit"
           disabled={update.isPending || (!dueEdited && !pinEdited)}
         >
-          {update.isPending ? "Saving…" : "Save work settings"}
+          {update.isPending ? "Saving changes…" : "Save changes"}
         </Button>
       </DialogFooter>
     </form>
@@ -480,7 +803,7 @@ export function StudentWorkControls(props: {
           variant="outline"
           onClick={() => setOpen(true)}
           disabled={!props.state}
-          aria-label={`Deadline and counted attempt for ${props.studentName}`}
+          aria-label={`Deadline and graded worksheet for ${props.studentName}`}
           className="h-11 md:h-9"
         >
           Deadline & attempt
@@ -489,9 +812,10 @@ export function StudentWorkControls(props: {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent finalFocus={trigger}>
           <DialogHeader>
-            <DialogTitle>Deadline and counted attempt</DialogTitle>
-            <DialogDescription>
-              {props.studentName}: deadline and counted attempt.
+            <DialogTitle>Student Deadline & Graded Worksheet</DialogTitle>
+            <DialogDescription className="sr-only">
+              Set an individual deadline extension or choose which handwriting attempt is counted for{" "}
+              {props.studentName}.
             </DialogDescription>
           </DialogHeader>
           {open && <WorkSettingsForm {...props} onDone={() => setOpen(false)} />}
@@ -573,7 +897,7 @@ export function ReleaseActivityButton({
     !rosterReady || isPending || isError || count > 0 || hasPointGrades;
 
   return (
-    <span ref={focusTarget} tabIndex={-1} className="inline-flex flex-wrap items-center gap-2">
+    <span ref={focusTarget} tabIndex={-1} className="inline-flex flex-wrap items-center gap-2 empty:hidden">
       {hasPointGrades && (
         <Link
           href={`/gradebook?activity=${encodeURIComponent(activityId)}`}

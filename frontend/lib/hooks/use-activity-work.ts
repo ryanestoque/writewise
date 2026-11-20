@@ -98,6 +98,24 @@ export function useReleaseSubmission() {
   });
 }
 
+export function useBatchReleaseSubmissions() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (submissionIds: string[]) => {
+      const results = await Promise.allSettled(
+        submissionIds.map((id) =>
+          mutateWork<components["schemas"]["ReleaseSubmissionResponse"]>(
+            `/api/submissions/${id}/release`,
+            "POST"
+          )
+        )
+      );
+      return results;
+    },
+    onSettled: () => invalidateWorkQueries(client),
+  });
+}
+
 export function useReleaseActivity() {
   const client = useQueryClient();
   return useMutation({
@@ -128,5 +146,32 @@ export function useUpdateStudentWork() {
         body
       ),
     onSuccess: () => invalidateWorkQueries(client),
+  });
+}
+
+export function useBatchUpdateStudentWork() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      activityId,
+      studentIds,
+      body,
+    }: {
+      activityId: string;
+      studentIds: string[];
+      body: components["schemas"]["StudentWorkUpdate"];
+    }) => {
+      const results = await Promise.allSettled(
+        studentIds.map((studentId) =>
+          mutateWork<components["schemas"]["StudentWorkResponse"]>(
+            `/api/activities/${activityId}/students/${studentId}/work`,
+            "PUT",
+            body
+          )
+        )
+      );
+      return results;
+    },
+    onSettled: () => invalidateWorkQueries(client),
   });
 }

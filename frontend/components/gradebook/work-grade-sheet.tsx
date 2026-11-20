@@ -112,7 +112,7 @@ export function WorkGradeSheet({
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <dt className="text-muted-foreground">Coursework</dt>
                 <dd>
-                  {cell.coursework_status}
+                  {cell.coursework_status === "Missing" ? "Awaiting scan" : cell.coursework_status}
                   {cell.late ? " · Late" : ""}
                 </dd>
                 <dt className="text-muted-foreground">Automatic points</dt>
@@ -177,7 +177,7 @@ export function WorkGradeSheet({
                       disabled={pending}
                       onClick={() => void update({ points_override: "0" }, "Zero saved as draft.")}
                     >
-                      Assign 0
+                      Mark uncollected (0 pts)
                     </Button>
                   </div>
                 </form>

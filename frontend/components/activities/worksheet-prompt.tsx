@@ -11,10 +11,7 @@ export function WorksheetPrompt({
 
   return (
     <div
-      className={cn(
-        "from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border-brand-200/50 dark:border-border/60 shadow-warm-sm relative overflow-hidden rounded-xl border bg-linear-to-b p-3.5 pb-5 sm:p-4 sm:pb-6",
-        preview && "mb-3.5"
-      )}
+      className="from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border-brand-200/50 dark:border-border/60 shadow-warm-sm relative overflow-hidden rounded-xl border bg-linear-to-b p-3.5 pb-5 sm:p-4 sm:pb-6"
     >
       <div className={cn("relative", preview && "max-h-[148px] overflow-hidden sm:max-h-[156px]")}>
         <div
@@ -33,6 +30,12 @@ export function WorksheetPrompt({
         >
           {prompt || "No text specified"}
         </p>
+        {preview && (
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-linear-to-t from-surface via-surface/70 to-transparent dark:from-card dark:via-card/70"
+            aria-hidden="true"
+          />
+        )}
       </div>
     </div>
   );

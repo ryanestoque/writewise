@@ -133,8 +133,14 @@ export default function SubmissionDetailPage({
 
   const isLoading = activityLoading || submissionsLoading;
 
-  if (commentTarget.kind === "valid") return <SubmissionCommentDestination
-    activityId={commentTarget.target.activityId} submissionId={commentTarget.target.submissionId} />;
+  if (commentTarget.kind === "valid")
+    return (
+      <SubmissionCommentDestination
+        activityId={commentTarget.target.activityId}
+        submissionId={commentTarget.target.submissionId}
+        studentName={submission?.student?.full_name}
+      />
+    );
   if (commentTarget.kind === "invalid") return <p role="status" className="p-4">This conversation link is invalid. Choose a worksheet upload to view its comments.</p>;
 
   if (isLoading) {
@@ -216,13 +222,6 @@ export default function SubmissionDetailPage({
       </nav>
 
       {/* Main Content */}
-      <p role="status" className="text-sm text-muted-foreground">
-        {!navigationReady
-          ? "Student navigation is unavailable until the review queue loads. You can still review this worksheet."
-          : currentIndex < 0
-            ? "This worksheet is outside the current review view. Return to the activity to choose a student."
-            : `Review queue · Student ${currentIndex + 1} of ${navigation.length}. Open the official worksheet to review and share its result with parents.`}
-      </p>
       <SubmissionDetailContent
         key={submission.id}
         submission={submission}

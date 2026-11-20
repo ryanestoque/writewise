@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   type ScoreBand,
   type ManualScore,
+  type Submission,
   useSubmitManualScore,
 } from "@/lib/hooks/use-submissions";
 import {
@@ -243,6 +244,159 @@ export function getBandMeta(band?: ScoreBand | string | null) {
   );
 }
 
+export interface CriterionCVMetric {
+  value: string;
+  target: string;
+  status: string;
+  dotClass: string;
+  textClass: string;
+  badgeClass: string;
+}
+
+export function extractCriterionCVMetric(
+  criterionKey: string,
+  measurement?: Submission["measurement"]
+): CriterionCVMetric | null {
+  if (!measurement) return null;
+
+  switch (criterionKey) {
+    case "letter_formation_band": {
+      if (measurement.letter_formation_mean != null) {
+        const val = Number(measurement.letter_formation_mean);
+        const isOptimal = val >= 80;
+        const isBorderline = val >= 60;
+        return {
+          value: `${Math.round(val)}%`,
+          target: "Target: ≥80% (CNN)",
+          status: isOptimal ? "Optimal" : isBorderline ? "Developing" : "Needs Focus",
+          dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
+          textClass: isOptimal
+            ? "text-emerald-700 dark:text-emerald-300"
+            : isBorderline
+              ? "text-amber-700 dark:text-amber-300"
+              : "text-band-1-text dark:text-orange-200",
+          badgeClass: isOptimal
+            ? "bg-emerald-50 border-emerald-300/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+            : isBorderline
+              ? "bg-amber-50 border-amber-300/80 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
+              : "bg-band-1/15 border-band-1/40 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+        };
+      }
+      return null;
+    }
+    case "size_consistency_band": {
+      if (
+        measurement.size_consistency_mean != null &&
+        !Number.isNaN(Number(measurement.size_consistency_mean))
+      ) {
+        const val = Number(measurement.size_consistency_mean);
+        const isOptimal = val >= 0.85 && val <= 1.05;
+        const isBorderline = (val >= 0.7 && val < 0.85) || (val > 1.05 && val <= 1.2);
+        return {
+          value: `${val.toFixed(2)}x`,
+          target: "Target: 0.85–1.05x",
+          status: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "Deviating",
+          dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
+          textClass: isOptimal
+            ? "text-emerald-700 dark:text-emerald-300"
+            : isBorderline
+              ? "text-amber-700 dark:text-amber-300"
+              : "text-band-1-text dark:text-orange-200",
+          badgeClass: isOptimal
+            ? "bg-emerald-50 border-emerald-300/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+            : isBorderline
+              ? "bg-amber-50 border-amber-300/80 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
+              : "bg-band-1/15 border-band-1/40 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+        };
+      }
+      return null;
+    }
+    case "spacing_band": {
+      if (
+        measurement.word_spacing_mean != null &&
+        !Number.isNaN(Number(measurement.word_spacing_mean))
+      ) {
+        const val = Number(measurement.word_spacing_mean);
+        const isOptimal = val >= 1.5 && val <= 2.5;
+        const isBorderline = (val >= 1.1 && val < 1.5) || (val > 2.5 && val <= 2.9);
+        return {
+          value: `${val.toFixed(2)}x`,
+          target: "Target: 1.5–2.5x",
+          status: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "Deviating",
+          dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
+          textClass: isOptimal
+            ? "text-emerald-700 dark:text-emerald-300"
+            : isBorderline
+              ? "text-amber-700 dark:text-amber-300"
+              : "text-band-1-text dark:text-orange-200",
+          badgeClass: isOptimal
+            ? "bg-emerald-50 border-emerald-300/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+            : isBorderline
+              ? "bg-amber-50 border-amber-300/80 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
+              : "bg-band-1/15 border-band-1/40 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+        };
+      }
+      return null;
+    }
+    case "slant_band": {
+      if (
+        measurement.slant_mean != null &&
+        !Number.isNaN(Number(measurement.slant_mean))
+      ) {
+        const val = Number(measurement.slant_mean);
+        const isOptimal = val >= 6.0 && val <= 15.0;
+        const isBorderline = (val >= 3.0 && val < 6.0) || (val > 15.0 && val <= 19.0);
+        return {
+          value: `${val.toFixed(1)}°`,
+          target: "Target: 6°–15°",
+          status: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "Deviating",
+          dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
+          textClass: isOptimal
+            ? "text-emerald-700 dark:text-emerald-300"
+            : isBorderline
+              ? "text-amber-700 dark:text-amber-300"
+              : "text-band-1-text dark:text-orange-200",
+          badgeClass: isOptimal
+            ? "bg-emerald-50 border-emerald-300/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+            : isBorderline
+              ? "bg-amber-50 border-amber-300/80 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
+              : "bg-band-1/15 border-band-1/40 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+        };
+      }
+      return null;
+    }
+    case "baseline_alignment_band": {
+      if (
+        measurement.baseline_deviation_mean != null &&
+        !Number.isNaN(Number(measurement.baseline_deviation_mean))
+      ) {
+        const val = Number(measurement.baseline_deviation_mean);
+        const isOptimal = val <= 0.05;
+        const isBorderline = val > 0.05 && val <= 0.15;
+        return {
+          value: `${val.toFixed(3)}`,
+          target: "Target: ≤0.05",
+          status: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "High Drift",
+          dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
+          textClass: isOptimal
+            ? "text-emerald-700 dark:text-emerald-300"
+            : isBorderline
+              ? "text-amber-700 dark:text-amber-300"
+              : "text-band-1-text dark:text-orange-200",
+          badgeClass: isOptimal
+            ? "bg-emerald-50 border-emerald-300/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+            : isBorderline
+              ? "bg-amber-50 border-amber-300/80 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
+              : "bg-band-1/15 border-band-1/40 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+        };
+      }
+      return null;
+    }
+    default:
+      return null;
+  }
+}
+
 export interface ManualRubricEntryFormProps {
   submissionId: string;
   initialScores?: {
@@ -252,6 +406,7 @@ export interface ManualRubricEntryFormProps {
     slant_band?: ScoreBand | null;
     baseline_alignment_band?: ScoreBand | null;
   } | null;
+  measurement?: Submission["measurement"];
   onSuccess?: () => void;
   onCancel?: () => void;
   onFocusCriterion?: (criterionName: string | null) => void;
@@ -263,6 +418,7 @@ export interface ManualRubricEntryFormProps {
 export function ManualRubricEntryForm({
   submissionId,
   initialScores,
+  measurement,
   onSuccess,
   onCancel,
   onFocusCriterion,
@@ -288,7 +444,7 @@ export function ManualRubricEntryForm({
   });
 
   const [activeCriterionIndex, setActiveCriterionIndex] = useState<number>(0);
-  const [layoutMode, setLayoutMode] = useState<"stepper" | "list">("list");
+  const [layoutMode, setLayoutMode] = useState<"stepper" | "list">("stepper");
   const [autoAdvance, setAutoAdvance] = useState<boolean>(true);
   const [submitErrorMsg, setSubmitErrorMsg] = useState<string | null>(null);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
@@ -434,8 +590,20 @@ export function ManualRubricEntryForm({
         return;
       }
 
-      // Keys 1 - 4 for fast rubric rating
+      // Keys 1 - 4 for fast rubric rating (guard against canvas zooming, modal dialogs, outside typing)
       if (["1", "2", "3", "4"].includes(e.key)) {
+        if (e.altKey || e.ctrlKey || e.metaKey) return;
+
+        const target = e.target as HTMLElement | null;
+        if (
+          target?.closest?.('[data-inspector-container="true"]') ||
+          target?.closest?.('[role="dialog"]:not([data-rubric-dialog])') ||
+          target?.closest?.('[role="tablist"]') ||
+          target?.isContentEditable
+        ) {
+          return;
+        }
+
         const bandIndex = parseInt(e.key, 10) - 1;
         const targetOption = RUBRIC_BANDS[bandIndex];
         if (!targetOption) return;
@@ -547,6 +715,9 @@ export function ManualRubricEntryForm({
             <h3 className="text-xs font-heading font-semibold text-foreground truncate">
               Teacher Rubric Assessment
             </h3>
+            <span className="text-[10px] text-brand-700 dark:text-brand-300 bg-brand-50/70 dark:bg-brand-950/50 px-1.5 py-0.5 rounded border border-brand-200/60 dark:border-brand-800/60 hidden min-[440px]:inline-block font-sans font-medium">
+              Keys 1–4
+            </span>
             <button
               type="button"
               onClick={() => setShowKeyboardHelp((prev) => !prev)}
@@ -755,6 +926,7 @@ export function ManualRubricEntryForm({
             const currentCriterion = RUBRIC_CRITERIA[activeCriterionIndex];
             const selectedBand = rubricScores[currentCriterion.key];
             const guide = CRITERIA_GUIDE[currentCriterion.shortName];
+            const metric = extractCriterionCVMetric(currentCriterion.key, measurement);
 
             return (
               <fieldset
@@ -762,16 +934,26 @@ export function ManualRubricEntryForm({
                 aria-labelledby={`stepper-criterion-label-${currentCriterion.key}`}
                 className="space-y-2 p-3 sm:p-3.5 rounded-xl border bg-muted/20 border-brand-300/80 dark:border-brand-800/80 ring-1 ring-brand-400/30 shadow-xs"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="min-w-0 flex-1">
                     <legend
                       id={`stepper-criterion-label-${currentCriterion.key}`}
-                      className="text-xs font-semibold text-foreground flex items-center gap-1.5"
+                      className="text-xs font-semibold text-foreground flex items-center gap-1.5 flex-wrap"
                     >
                       <span>{currentCriterion.name}</span>
                       <span className="text-[10px] text-brand-600 dark:text-brand-400 font-medium font-sans">
                         ({activeCriterionIndex + 1} of 5)
                       </span>
+                      {metric && (
+                        <span
+                          className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-medium border tabular-nums ${metric.badgeClass}`}
+                          title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
+                        >
+                          <span className={`size-1.5 rounded-full ${metric.dotClass}`} aria-hidden="true" />
+                          <span className="font-semibold">{metric.value}</span>
+                          <span className="opacity-80 font-sans">· {metric.status}</span>
+                        </span>
+                      )}
                     </legend>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
                       {currentCriterion.hint}
@@ -922,6 +1104,7 @@ export function ManualRubricEntryForm({
           const selectedBand = rubricScores[criterion.key];
           const isFocused = activeCriterionIndex === idx;
           const guide = CRITERIA_GUIDE[criterion.shortName];
+          const metric = extractCriterionCVMetric(criterion.key, measurement);
 
           return (
             <fieldset
@@ -935,12 +1118,22 @@ export function ManualRubricEntryForm({
               }`}
               onClick={() => handleSelectCriterion(idx)}
             >
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <legend
                   id={`criterion-label-${criterion.key}`}
-                  className="text-xs font-semibold text-foreground flex items-center gap-1.5 cursor-pointer"
+                  className="text-xs font-semibold text-foreground flex items-center gap-1.5 cursor-pointer flex-wrap"
                 >
                   <span>{idx + 1}. {criterion.name}</span>
+                  {metric && (
+                    <span
+                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-medium border tabular-nums ${metric.badgeClass}`}
+                      title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
+                    >
+                      <span className={`size-1.5 rounded-full ${metric.dotClass}`} aria-hidden="true" />
+                      <span className="font-semibold">{metric.value}</span>
+                      <span className="opacity-80 font-sans">· {metric.status}</span>
+                    </span>
+                  )}
                   {isFocused && (
                     <span className="text-[11px] text-brand-600 dark:text-brand-400 font-medium font-sans">
                       (Active)

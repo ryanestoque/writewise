@@ -1,6 +1,14 @@
 "use client";
 
-import { memo, type RefObject } from "react";
+import {
+  memo,
+  type RefObject,
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import { SearchInput } from "@/components/ui/search-input";
 import {
   DropdownMenu,
@@ -15,7 +23,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { SlidersHorizontal, Trash2, Filter, X, ChevronDown, Check } from "lucide-react";
+import {
+  SlidersHorizontal,
+  Trash2,
+  Filter,
+  X,
+  ChevronDown,
+  Check,
+  MessageSquare,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { reviewFilterHelp, type LegacyReviewFilter } from "@/lib/utils/activity-attempt-review";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +48,7 @@ const secondaryFilters: { id: SubmissionFilter; label: string }[] = [
   { id: "excused", label: "Excused" },
   { id: "processing", label: "Analyzing strokes" },
   { id: "needs_action", label: "Needs action (any)" },
+  { id: "unread_comments", label: "Unread comments" },
 ];
 
 export interface ActivityReviewToolbarProps {
@@ -102,6 +121,8 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
     submissionFilterItems.find(({ id }) => id === "missing")?.count ?? 0;
   const releasedCount =
     submissionFilterItems.find(({ id }) => id === "released")?.count ?? 0;
+  const unreadCommentsItem = submissionFilterItems.find(({ id }) => id === "unread_comments");
+  const unreadCommentsCount = unreadCommentsItem?.count ?? 0;
 
   const isSecondaryActive = secondaryFilters.some((f) => f.id === statusFilter);
   const activeSecondaryItem = secondaryFilters.find((f) => f.id === statusFilter);
@@ -109,310 +130,463 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
     ? submissionFilterItems.find((f) => f.id === activeSecondaryItem.id)?.count
     : undefined;
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 4);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    checkScroll();
+
+    const handleScroll = () => checkScroll();
+    el.addEventListener("scroll", handleScroll, { passive: true });
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => checkScroll());
+      resizeObserver.observe(el);
+    } else {
+      window.addEventListener("resize", handleScroll);
+    }
+
+    return () => {
+      el.removeEventListener("scroll", handleScroll);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      } else {
+        window.removeEventListener("resize", handleScroll);
+      }
+    };
+  }, [checkScroll]);
+
+  // Scroll active filter pill into view smoothly when changed
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const activeEl = el.querySelector<HTMLElement>('[aria-pressed="true"]');
+    if (activeEl) {
+      activeEl.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+        block: "nearest",
+        inline: "nearest",
+      });
+    }
+  }, [statusFilter]);
+
+  const handleScrollLeft = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({
+        left: -180,
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
+      });
+    }
+  };
+
+  const handleScrollRight = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({
+        left: 180,
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
+      });
+    }
+  };
+
+  const maskStyle: React.CSSProperties = useMemo(() => {
+    if (canScrollLeft && canScrollRight) {
+      return {
+        WebkitMaskImage:
+          "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
+        maskImage:
+          "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
+      };
+    }
+    if (canScrollLeft) {
+      return {
+        WebkitMaskImage:
+          "linear-gradient(to right, transparent, black 24px, black 100%)",
+        maskImage:
+          "linear-gradient(to right, transparent, black 24px, black 100%)",
+      };
+    }
+    if (canScrollRight) {
+      return {
+        WebkitMaskImage:
+          "linear-gradient(to right, black 0%, black calc(100% - 24px), transparent)",
+        maskImage:
+          "linear-gradient(to right, black 0%, black calc(100% - 24px), transparent)",
+      };
+    }
+    return {};
+  }, [canScrollLeft, canScrollRight]);
+
   return (
     <div className="flex flex-col gap-2.5">
-      <div
-        role="group"
-        aria-label="Student work inbox filters"
-        className="border-border flex flex-wrap items-center gap-1.5 border-b pb-2.5"
-      >
-        <Button
-          type="button"
-          variant={statusFilter === "all" ? "secondary" : "ghost"}
-          aria-pressed={statusFilter === "all"}
-          onClick={() => {
-            if (viewMode !== "grouped") onViewModeChange("grouped");
-            onStatusFilterChange("all");
-          }}
-          className={cn(
-            "min-h-[44px] md:min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
-            statusFilter === "all"
-              ? "bg-primary/10 text-primary hover:bg-primary/15 font-semibold"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          )}
-        >
-          <span>All Students</span>
-          {allWorkFilter?.count != null && (
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
-                statusFilter === "all"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
-              )}
-            >
-              {allWorkFilter.count}
-            </span>
-          )}
-        </Button>
+      {/* Contained Filter & Search Toolbar Card matching Activities directory style */}
+      <div className="bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm flex flex-col gap-2.5 sm:gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 sm:gap-3">
+          {/* Status filter pills track with scroll indicators */}
+          <div className="relative min-w-0 flex-1 flex items-center group/pills">
+            {canScrollLeft && (
+              <button
+                type="button"
+                onClick={handleScrollLeft}
+                aria-label="Scroll filters left"
+                tabIndex={-1}
+                className="absolute left-0 z-10 flex size-7 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring cursor-pointer shrink-0"
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+            )}
 
-        <Button
-          type="button"
-          variant={statusFilter === "needs_scoring" ? "secondary" : "ghost"}
-          aria-pressed={statusFilter === "needs_scoring"}
-          onClick={() => {
-            if (viewMode !== "grouped") onViewModeChange("grouped");
-            onStatusFilterChange("needs_scoring");
-          }}
-          className={cn(
-            "min-h-[44px] md:min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
-            statusFilter === "needs_scoring"
-              ? "bg-primary/10 text-primary hover:bg-primary/15 font-semibold"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          )}
-        >
-          <span>To Grade</span>
-          {needsScoringCount > 0 && (
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
-                statusFilter === "needs_scoring"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-primary/15 text-primary"
-              )}
+            <div
+              ref={scrollRef}
+              role="group"
+              aria-label="Student work inbox filters"
+              style={maskStyle}
+              className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth max-w-full touch-pan-x overscroll-x-contain py-0.5"
             >
-              {needsScoringCount}
-            </span>
-          )}
-        </Button>
-
-        <Button
-          type="button"
-          variant={statusFilter === "missing" ? "secondary" : "ghost"}
-          aria-pressed={statusFilter === "missing"}
-          onClick={() => {
-            if (viewMode !== "grouped") onViewModeChange("grouped");
-            onStatusFilterChange("missing");
-          }}
-          className={cn(
-            "min-h-[44px] md:min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
-            statusFilter === "missing"
-              ? "bg-primary/10 text-primary hover:bg-primary/15 font-semibold"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          )}
-        >
-          <span>Missing</span>
-          {missingCount > 0 && (
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
-                statusFilter === "missing"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
-              )}
-            >
-              {missingCount}
-            </span>
-          )}
-        </Button>
-
-        <Button
-          type="button"
-          variant={statusFilter === "released" ? "secondary" : "ghost"}
-          aria-pressed={statusFilter === "released"}
-          onClick={() => {
-            if (viewMode !== "grouped") onViewModeChange("grouped");
-            onStatusFilterChange("released");
-          }}
-          className={cn(
-            "min-h-[44px] md:min-h-[36px] px-3 text-xs font-semibold rounded-lg gap-2 cursor-pointer transition-all",
-            statusFilter === "released"
-              ? "bg-band-4/15 text-band-4-text hover:bg-band-4/20 font-semibold"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          )}
-        >
-          <span>Done &amp; Released</span>
-          {releasedCount > 0 && (
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
-                statusFilter === "released"
-                  ? "bg-band-4 text-white"
-                  : "bg-muted text-muted-foreground"
-              )}
-            >
-              {releasedCount}
-            </span>
-          )}
-        </Button>
-
-        <div className="inline-flex items-center">
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  type="button"
-                  variant={isSecondaryActive ? "secondary" : "ghost"}
-                  className={cn(
-                    "min-h-[44px] md:min-h-[36px] px-3 text-xs font-medium rounded-lg gap-1.5 cursor-pointer transition-all",
-                    isSecondaryActive
-                      ? "rounded-r-none bg-primary/10 text-primary hover:bg-primary/15 font-semibold"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  )}
-                />
-              }
-            >
-              <Filter className="size-3.5" aria-hidden="true" />
-              <span>{isSecondaryActive ? activeSecondaryItem?.label : "More filters"}</span>
-              {isSecondaryActive && activeSecondaryCount != null && (
-                <span className="rounded-full bg-primary/20 text-primary px-1.5 py-0.5 text-xs font-bold tabular-nums">
-                  {activeSecondaryCount}
-                </span>
-              )}
-              <ChevronDown className="size-3 opacity-60" aria-hidden="true" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56 text-xs">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel className="text-muted-foreground px-2 py-1.5 text-xs font-semibold uppercase tracking-wider">
-                  Additional Statuses
-                </DropdownMenuLabel>
-                {secondaryFilters.map((sf) => {
-                  const item = submissionFilterItems.find((f) => f.id === sf.id);
-                  const isSelected = statusFilter === sf.id;
-                  return (
-                    <DropdownMenuItem
-                      key={sf.id}
-                      onClick={() => {
-                        if (viewMode !== "grouped") onViewModeChange("grouped");
-                        onStatusFilterChange(sf.id);
-                      }}
-                      className={cn(
-                        "min-h-9 cursor-pointer justify-between text-xs",
-                        isSelected && "bg-primary/10 text-primary font-medium"
-                      )}
-                    >
-                      <span>{sf.label}</span>
-                      <div className="text-muted-foreground flex items-center gap-1.5">
-                        {item?.count != null && <span className="tabular-nums">({item.count})</span>}
-                        {isSelected && <Check className="text-primary size-3 stroke-[2.5]" aria-hidden="true" />}
-                      </div>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {isSecondaryActive && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label="Clear additional filter"
-              onClick={() => onStatusFilterChange("all")}
-              className="size-11 min-h-[44px] min-w-[44px] md:size-9 md:min-h-[36px] md:min-w-[36px] rounded-l-none bg-primary/10 text-primary hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer active:translate-y-0 active:not-aria-[haspopup]:translate-y-0"
-            >
-              <X className="size-3.5" aria-hidden="true" />
-            </Button>
-          )}
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <SearchInput
-          ref={searchInputRef}
-          placeholder="Search student name…"
-          aria-label="Search by student name"
-          shortcutKey={`${altKey}+/`}
-          aria-keyshortcuts="Alt+/"
-          value={searchQuery}
-          onChange={(e) => onSearchQueryChange(e.target.value)}
-          onClear={onClearSearch}
-          containerClassName="w-full sm:w-64 sm:flex-1"
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={<Button variant="outline" className="h-11 md:h-9" />}
-          >
-            <SlidersHorizontal data-icon="inline-start" />
-            View
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-60">
-            {viewMode !== "review" && (
-              <>
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>Layout</DropdownMenuLabel>
-                  <DropdownMenuRadioGroup
-                    value={compact ? "compact" : "photos"}
-                    onValueChange={(value) => onLayoutChange(value as "compact" | "photos")}
+              <button
+                type="button"
+                onClick={() => {
+                  if (viewMode !== "grouped") onViewModeChange("grouped");
+                  onStatusFilterChange("all");
+                }}
+                aria-pressed={statusFilter === "all"}
+                className={cn(
+                  "relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                  statusFilter === "all"
+                    ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
+                    : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
+                )}
+              >
+                <span>All Students</span>
+                {allWorkFilter?.count != null && (
+                  <span
+                    className={cn(
+                      "text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors tabular-nums",
+                      statusFilter === "all"
+                        ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
+                        : "bg-muted text-foreground"
+                    )}
                   >
-                    <DropdownMenuRadioItem value="compact" className="min-h-11">
-                      Compact
+                    {allWorkFilter.count}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (viewMode !== "grouped") onViewModeChange("grouped");
+                  onStatusFilterChange("needs_scoring");
+                }}
+                aria-pressed={statusFilter === "needs_scoring"}
+                className={cn(
+                  "relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                  statusFilter === "needs_scoring"
+                    ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
+                    : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
+                )}
+              >
+                <span>To Grade</span>
+                {needsScoringCount > 0 && (
+                  <span
+                    className={cn(
+                      "text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors tabular-nums",
+                      statusFilter === "needs_scoring"
+                        ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
+                        : "bg-primary/10 text-primary font-bold"
+                    )}
+                  >
+                    {needsScoringCount}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (viewMode !== "grouped") onViewModeChange("grouped");
+                  onStatusFilterChange("missing");
+                }}
+                aria-pressed={statusFilter === "missing"}
+                className={cn(
+                  "relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                  statusFilter === "missing"
+                    ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
+                    : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
+                )}
+              >
+                <span>Missing</span>
+                {missingCount > 0 && (
+                  <span
+                    className={cn(
+                      "text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors tabular-nums",
+                      statusFilter === "missing"
+                        ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
+                        : "bg-muted text-foreground"
+                    )}
+                  >
+                    {missingCount}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (viewMode !== "grouped") onViewModeChange("grouped");
+                  onStatusFilterChange("released");
+                }}
+                aria-pressed={statusFilter === "released"}
+                className={cn(
+                  "relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                  statusFilter === "released"
+                    ? "bg-band-4 text-white border-band-4 shadow-warm-sm font-semibold"
+                    : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
+                )}
+              >
+                <span>Done &amp; Released</span>
+                {releasedCount > 0 && (
+                  <span
+                    className={cn(
+                      "text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors tabular-nums",
+                      statusFilter === "released"
+                        ? "bg-white/20 text-white"
+                        : "bg-muted text-foreground"
+                    )}
+                  >
+                    {releasedCount}
+                  </span>
+                )}
+              </button>
+
+              {unreadCommentsCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (viewMode !== "grouped") onViewModeChange("grouped");
+                    onStatusFilterChange("unread_comments");
+                  }}
+                  aria-pressed={statusFilter === "unread_comments"}
+                  className={cn(
+                    "relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                    statusFilter === "unread_comments"
+                      ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
+                      : "border-primary/30 text-primary bg-primary/5 hover:bg-primary/10"
+                  )}
+                >
+                  <MessageSquare className="size-3.5 shrink-0" aria-hidden="true" />
+                  <span>Unread Notes</span>
+                  <span
+                    className={cn(
+                      "text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors tabular-nums",
+                      statusFilter === "unread_comments"
+                        ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
+                        : "bg-primary/15 text-primary"
+                    )}
+                  >
+                    {unreadCommentsCount}
+                  </span>
+                </button>
+              )}
+
+              <div className="inline-flex items-center shrink-0">
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <button
+                        type="button"
+                        aria-pressed={isSecondaryActive}
+                        className={cn(
+                          "relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                          isSecondaryActive
+                            ? "rounded-r-none bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
+                            : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
+                        )}
+                      />
+                    }
+                  >
+                    <Filter className="size-3.5 shrink-0" aria-hidden="true" />
+                    <span>{isSecondaryActive ? activeSecondaryItem?.label : "More filters"}</span>
+                    {isSecondaryActive && activeSecondaryCount != null && (
+                      <span className="rounded-full bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground px-1.5 py-0.5 text-xs font-semibold tabular-nums">
+                        {activeSecondaryCount}
+                      </span>
+                    )}
+                    <ChevronDown className="size-3 opacity-70 shrink-0" aria-hidden="true" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56 text-xs">
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel className="text-muted-foreground px-2 py-1.5 text-xs font-semibold uppercase tracking-wider">
+                        Additional Statuses
+                      </DropdownMenuLabel>
+                      {secondaryFilters.map((sf) => {
+                        const item = submissionFilterItems.find((f) => f.id === sf.id);
+                        const isSelected = statusFilter === sf.id;
+                        return (
+                          <DropdownMenuItem
+                            key={sf.id}
+                            onClick={() => {
+                              if (viewMode !== "grouped") onViewModeChange("grouped");
+                              onStatusFilterChange(sf.id);
+                            }}
+                            className={cn(
+                              "min-h-9 cursor-pointer justify-between text-xs",
+                              isSelected && "bg-primary/10 text-primary font-medium"
+                            )}
+                          >
+                            <span>{sf.label}</span>
+                            <div className="text-muted-foreground flex items-center gap-1.5">
+                              {item?.count != null && <span className="tabular-nums">({item.count})</span>}
+                              {isSelected && <Check className="text-primary size-3 stroke-[2.5]" aria-hidden="true" />}
+                            </div>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {isSecondaryActive && (
+                  <button
+                    type="button"
+                    aria-label="Clear additional filter"
+                    onClick={() => onStatusFilterChange("all")}
+                    className="size-[34px] min-h-[34px] min-w-[34px] sm:size-[32px] sm:min-h-[32px] sm:min-w-[32px] inline-flex items-center justify-center rounded-r-lg border border-l-0 border-brand-700 dark:border-primary bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground hover:bg-destructive hover:border-destructive hover:text-white transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <X className="size-3.5" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {canScrollRight && (
+              <button
+                type="button"
+                onClick={handleScrollRight}
+                aria-label="Scroll filters right"
+                tabIndex={-1}
+                className="absolute right-0 z-10 flex size-7 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring cursor-pointer shrink-0"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Search and View controls */}
+          <div className="flex items-center gap-2 w-full lg:w-auto shrink-0">
+            <SearchInput
+              ref={searchInputRef}
+              placeholder="Search student name…"
+              aria-label="Search by student name"
+              shortcutKey={`${altKey}+/`}
+              aria-keyshortcuts="Alt+/"
+              value={searchQuery}
+              onChange={(e) => onSearchQueryChange(e.target.value)}
+              onClear={onClearSearch}
+              containerClassName="w-auto flex-1 min-w-0 sm:flex-initial sm:w-64 lg:w-60 xl:w-72"
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3 shrink-0 rounded-lg sm:rounded-xl gap-1.5 cursor-pointer font-medium text-xs sm:text-sm transition-colors border-border bg-background hover:bg-muted/60"
+                  />
+                }
+              >
+                <SlidersHorizontal className="size-3.5 sm:size-4 shrink-0" aria-hidden="true" />
+                <span>View</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-60">
+                {viewMode !== "review" && (
+                  <>
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel>Layout</DropdownMenuLabel>
+                      <DropdownMenuRadioGroup
+                        value={compact ? "compact" : "photos"}
+                        onValueChange={(value) => onLayoutChange(value as "compact" | "photos")}
+                      >
+                        <DropdownMenuRadioItem value="compact" className="min-h-11">
+                          Compact
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="photos" className="min-h-11">
+                          Photos
+                        </DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Sort work</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={sortBy}
+                    onValueChange={(value) => onSortByChange(value as SubmissionSort)}
+                  >
+                    {viewMode === "review" && (
+                      <DropdownMenuRadioItem value="attention" className="min-h-11">
+                        Review-ready first
+                      </DropdownMenuRadioItem>
+                    )}
+                    <DropdownMenuRadioItem value="newest" className="min-h-11">
+                      Newest first
                     </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="photos" className="min-h-11">
-                      Photos
+                    <DropdownMenuRadioItem value="oldest" className="min-h-11">
+                      Oldest first
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="name_asc" className="min-h-11">
+                      Student (A-Z)
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="name_desc" className="min-h-11">
+                      Student (Z-A)
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="score_desc" className="min-h-11">
+                      Highest score
                     </DropdownMenuRadioItem>
                   </DropdownMenuRadioGroup>
                 </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-              </>
-            )}
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Sort work</DropdownMenuLabel>
-              <DropdownMenuRadioGroup
-                value={sortBy}
-                onValueChange={(value) => onSortByChange(value as SubmissionSort)}
-              >
-                {viewMode === "review" && (
-                  <DropdownMenuRadioItem value="attention" className="min-h-11">
-                    Review-ready first
-                  </DropdownMenuRadioItem>
+                {viewMode !== "review" && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel>Batch actions</DropdownMenuLabel>
+                      <DropdownMenuItem
+                        onClick={onToggleManagingAttempts}
+                        className="min-h-11 cursor-pointer text-muted-foreground hover:text-foreground gap-2"
+                      >
+                        <Trash2 className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                        <span>{managingAttempts ? "Exit batch selection" : "Batch select attempts..."}</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </>
                 )}
-                <DropdownMenuRadioItem value="newest" className="min-h-11">
-                  Newest first
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="oldest" className="min-h-11">
-                  Oldest first
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="name_asc" className="min-h-11">
-                  Student (A-Z)
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="name_desc" className="min-h-11">
-                  Student (Z-A)
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="score_desc" className="min-h-11">
-                  Highest score
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuGroup>
-            {viewMode !== "review" && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>Batch actions</DropdownMenuLabel>
-                  <DropdownMenuItem
-                    onClick={onToggleManagingAttempts}
-                    className="min-h-11 cursor-pointer text-muted-foreground hover:text-foreground gap-2"
-                  >
-                    <Trash2 className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                    <span>{managingAttempts ? "Exit batch selection" : "Batch select attempts..."}</span>
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        {viewMode !== "review" && reviewFilterHelp[statusFilter] && (
+          <p id="review-filter-help" className="text-muted-foreground text-xs pt-1.5 border-t border-border/60">
+            {reviewFilterHelp[statusFilter]}
+          </p>
+        )}
       </div>
-
-      {viewMode !== "review" && reviewFilterHelp[statusFilter] && (
-        <p id="review-filter-help" className="text-muted-foreground text-sm">
-          {reviewFilterHelp[statusFilter]}
-        </p>
-      )}
-
-      {viewMode !== "review" && (
-        <p className="text-muted-foreground hidden text-xs sm:block">
-          {compact ? "Compact" : "Photos"} ·{" "}
-          {sortBy === "newest"
-            ? "Newest first"
-            : sortBy === "oldest"
-              ? "Oldest first"
-              : sortBy === "name_asc"
-                ? "Student (A-Z)"
-                : sortBy === "name_desc"
-                  ? "Student (Z-A)"
-                  : "Highest score"}
-        </p>
-      )}
 
       {managingAttempts && (
         <div className="bg-muted/40 flex flex-wrap items-center gap-2 rounded-lg border p-3">

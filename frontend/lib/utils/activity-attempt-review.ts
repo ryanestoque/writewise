@@ -14,6 +14,7 @@ export const reviewFilterLabels = {
   released: "Released",
   excused: "Excused",
   no_upload: "Never uploaded",
+  unread_comments: "Unread comments",
 } as const;
 
 export const reviewFilterHelp: Partial<Record<keyof typeof reviewFilterLabels, string>> = {
@@ -22,6 +23,7 @@ export const reviewFilterHelp: Partial<Record<keyof typeof reviewFilterLabels, s
   needs_upload:
     "Includes students who have never uploaded, need to replace a rejected or returned worksheet, or have missing work.",
   no_upload: "Students with no upload history for this activity, including excused work.",
+  unread_comments: "Students who have unread private comments from parents or teachers.",
 };
 
 export type LegacyReviewFilter = keyof typeof reviewFilterLabels;
@@ -29,16 +31,20 @@ export type LegacyReviewFilter = keyof typeof reviewFilterLabels;
 export function matchesReviewFilter(
   submission: Submission | null,
   state: ActivityWorkState | null,
-  filter: LegacyReviewFilter
+  filter: LegacyReviewFilter,
+  unreadSubmissionIds?: Set<string>
 ): boolean {
   if (filter === "all") return true;
+  if (filter === "unread_comments") {
+    return !!submission && !!unreadSubmissionIds?.has(submission.id);
+  }
   if (filter === "needs_action") {
     return (
-      matchesReviewFilter(submission, state, "needs_scoring") ||
-      matchesReviewFilter(submission, state, "ready") ||
-      matchesReviewFilter(submission, state, "needs_upload") ||
-      matchesReviewFilter(submission, state, "missing") ||
-      matchesReviewFilter(submission, state, "returned")
+      matchesReviewFilter(submission, state, "needs_scoring", unreadSubmissionIds) ||
+      matchesReviewFilter(submission, state, "ready", unreadSubmissionIds) ||
+      matchesReviewFilter(submission, state, "needs_upload", unreadSubmissionIds) ||
+      matchesReviewFilter(submission, state, "missing", unreadSubmissionIds) ||
+      matchesReviewFilter(submission, state, "returned", unreadSubmissionIds)
     );
   }
   if (filter === "no_upload") return !submission;

@@ -10,9 +10,9 @@ import { selectCommentAttempt } from "@/lib/comments/selection";
 import type { CommentAttempt, WorkCommentScope } from "@/lib/comments/types";
 import { SubmissionCommentThread } from "./submission-comment-thread";
 
-export function SubmissionCommentPicker({ userId, scope, activeSubmissionId, explicitSubmissionId, open }: {
+export function SubmissionCommentPicker({ userId, scope, activeSubmissionId, explicitSubmissionId, open, studentName }: {
   userId: string; scope: WorkCommentScope; activeSubmissionId: string | null;
-  explicitSubmissionId?: string; open: boolean;
+  explicitSubmissionId?: string; open: boolean; studentName?: string;
 }) {
   const query = useCommentAttempts(userId, scope, open);
   if (!open) return null;
@@ -23,11 +23,11 @@ export function SubmissionCommentPicker({ userId, scope, activeSubmissionId, exp
   </div>;
   if (!query.data) return <p role="status" className="p-4">Loading worksheet uploads…</p>;
   return <LoadedPicker key={`${userId}:${scope.activityId}:${scope.studentId}`} userId={userId}
-    rows={query.data} activeSubmissionId={activeSubmissionId} explicitSubmissionId={explicitSubmissionId} />;
+    rows={query.data} activeSubmissionId={activeSubmissionId} explicitSubmissionId={explicitSubmissionId} studentName={studentName} />;
 }
 
-function LoadedPicker({ userId, rows, activeSubmissionId, explicitSubmissionId }: {
-  userId: string; rows: CommentAttempt[]; activeSubmissionId: string | null; explicitSubmissionId?: string;
+function LoadedPicker({ userId, rows, activeSubmissionId, explicitSubmissionId, studentName }: {
+  userId: string; rows: CommentAttempt[]; activeSubmissionId: string | null; explicitSubmissionId?: string; studentName?: string;
 }) {
   const id = useId();
   const [selectedId, setSelectedId] = useState(() => selectCommentAttempt(rows, activeSubmissionId, explicitSubmissionId)?.submission_id ?? null);
@@ -53,7 +53,8 @@ function LoadedPicker({ userId, rows, activeSubmissionId, explicitSubmissionId }
     </Field>
     {selected ? <SubmissionCommentThread key={`${userId}:${selected.submission_id}`} userId={userId}
       target={{ submissionId: selected.submission_id }}
-      location={{ submissionId: selected.submission_id, activityId: selected.activity_id, studentId: selected.student_id }} open />
+      location={{ submissionId: selected.submission_id, activityId: selected.activity_id, studentId: selected.student_id }}
+      studentName={studentName} open />
       : <p role="status" className="p-4">Choose an upload to view its comments. The previous upload may no longer be available.</p>}
   </div>;
 }

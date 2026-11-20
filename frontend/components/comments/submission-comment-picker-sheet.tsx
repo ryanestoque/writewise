@@ -51,10 +51,10 @@ export function WorkCommentsButton({
       )}
       <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader className="shrink-0 border-b pr-14">
-          <SheetTitle>Private comments</SheetTitle>
+          <SheetTitle>Private comments{studentName ? ` · ${studentName}` : ""}</SheetTitle>
           <SheetDescription>Choose a worksheet upload to open its conversation.</SheetDescription>
         </SheetHeader>
-        {open && <PickerContent scope={scope} activeSubmissionId={activeSubmissionId} />}
+        {open && <PickerContent scope={scope} activeSubmissionId={activeSubmissionId} studentName={studentName} />}
       </SheetContent>
     </Sheet>
   );
@@ -63,9 +63,11 @@ export function WorkCommentsButton({
 function PickerContent({
   scope,
   activeSubmissionId,
+  studentName,
 }: {
   scope: WorkCommentScope;
   activeSubmissionId: string | null;
+  studentName?: string;
 }) {
   const userId = useCommentAccountId();
   return userId ? (
@@ -73,6 +75,7 @@ function PickerContent({
       userId={userId}
       scope={scope}
       activeSubmissionId={activeSubmissionId}
+      studentName={studentName}
       open
     />
   ) : (

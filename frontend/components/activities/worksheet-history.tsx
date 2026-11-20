@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import type { Submission } from "@/lib/hooks/use-submissions";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -29,8 +29,8 @@ export function WorksheetHistory({
   officialId,
   queueQuery = "",
   trigger,
-  open,
-  onOpenChange,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
   onSelectAttempt,
 }: {
   activityId: string;
@@ -43,8 +43,23 @@ export function WorksheetHistory({
   onOpenChange?: (open: boolean) => void;
   onSelectAttempt?: (sub: Submission) => void;
 }) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+
+  const setOpen = (nextOpen: boolean) => {
+    if (!isControlled) {
+      setUncontrolledOpen(nextOpen);
+    }
+    controlledOnOpenChange?.(nextOpen);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         render={
           trigger ?? (
@@ -132,6 +147,7 @@ export function WorksheetHistory({
                       className: "min-h-9 gap-1 text-xs font-semibold",
                     })}
                     href={`/activities/${activityId}/submissions/${attempt.id}${queueQuery}`}
+                    onClick={handleClose}
                   >
                     <span>Open worksheet</span>
                     <ArrowUpRight className="size-3" aria-hidden="true" />
@@ -143,7 +159,10 @@ export function WorksheetHistory({
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => onSelectAttempt(attempt)}
+                      onClick={() => {
+                        onSelectAttempt(attempt);
+                        handleClose();
+                      }}
                       className="min-h-9 gap-1 text-xs font-medium cursor-pointer"
                     >
                       <Eye className="size-3 text-muted-foreground" aria-hidden="true" />

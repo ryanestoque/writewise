@@ -36,6 +36,7 @@ export function SubmissionCommentThreadSheet({
             userId={userId}
             target={target}
             location={target}
+            studentName={studentName}
             open={open}
           />
         )}

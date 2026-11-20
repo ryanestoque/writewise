@@ -62,12 +62,16 @@ import {
   RUBRIC_CRITERIA,
   getBandMeta,
   CRITERIA_GUIDE,
+  extractCriterionCVMetric,
 } from "./manual-rubric-entry-form";
 import { SubmissionRejectionCard } from "./submission-rejection-card";
 import { RawMeasurementsTable } from "./raw-measurements-table";
 import { getScoreBandLabel } from "@/lib/utils/submission-status";
 import { useScoringEngine } from "@/lib/hooks/use-scoring-engine";
-import { SubmissionLifecycleControls } from "./submission-lifecycle-controls";
+import {
+  SubmissionLifecycleControls,
+  SubmissionReturnedAlert,
+} from "./submission-lifecycle-controls";
 import { SubmissionCommentTabs } from "@/components/comments/submission-comment-tabs";
 
 
@@ -612,6 +616,7 @@ export function SubmissionDetailContent({
                   {submission.student?.full_name ?? "Student"}
                 </h1>
               )}
+              <SubmissionLifecycleControls submission={submission} variant="header" />
             </div>
             {variant === "modal" ? (
               <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-x-2 sm:gap-x-3 gap-y-0.5 flex-wrap">
@@ -684,9 +689,14 @@ export function SubmissionDetailContent({
         </header>
       )}
 
-      <SubmissionCommentTabs key={submission.id} submissionId={submission.id} open={open} initialView={initialView}
-        location={{ submissionId: submission.id, activityId: submission.activity_id, studentId: submission.student_id }}>
-      <SubmissionLifecycleControls submission={submission} />
+      <SubmissionCommentTabs
+        key={submission.id}
+        submissionId={submission.id}
+        open={open}
+        initialView={initialView}
+        studentName={submission.student?.full_name}
+        location={{ submissionId: submission.id, activityId: submission.activity_id, studentId: submission.student_id }}
+      >
       {/* Body: Split view (Image + Diagnostic details) */}
       <div
         ref={variant === "modal" ? scrollContainerRef : undefined}
@@ -698,6 +708,8 @@ export function SubmissionDetailContent({
             : "py-2.5 sm:py-3.5"
         )}
       >
+        {/* Returned Worksheet Alert Banner (only visible when attempt is returned) */}
+        <SubmissionReturnedAlert submission={submission} />
         {/* Mobile Sticky Preview Pill (< lg screens, modal only) */}
         {variant === "modal" && isScrolledPastInspector && !isEditingRubric && (
           <div className="lg:hidden sticky -top-3 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-surface/95 dark:bg-card/95 backdrop-blur-md border-b border-border/80 flex items-center justify-between gap-2 shadow-xs animate-in fade-in slide-in-from-top-2 duration-150 motion-reduce:animate-none">
@@ -1069,7 +1081,7 @@ export function SubmissionDetailContent({
                           }`}
                       >
                         <Award className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                        <span>Rubric Rating</span>
+                        <span>Rubric Assessment</span>
                       </button>
 
                       <button
@@ -1097,7 +1109,7 @@ export function SubmissionDetailContent({
                           }`}
                       >
                         <SlidersHorizontal className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                        <span>CV Metrics</span>
+                        <span>Detailed CV Metrics</span>
                       </button>
                     </div>
 
@@ -1213,6 +1225,23 @@ export function SubmissionDetailContent({
                                           <span className="font-semibold text-foreground truncate block">
                                             {criterion.name}
                                           </span>
+                                          {(() => {
+                                            const metric = extractCriterionCVMetric(criterion.key, submission.measurement);
+                                            if (!metric) return null;
+                                            return (
+                                              <span
+                                                className={cn(
+                                                  "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-medium border tabular-nums",
+                                                  metric.badgeClass
+                                                )}
+                                                title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
+                                              >
+                                                <span className={cn("size-1.5 rounded-full", metric.dotClass)} aria-hidden="true" />
+                                                <span className="font-semibold">{metric.value}</span>
+                                                <span className="opacity-80 font-sans">· {metric.status}</span>
+                                              </span>
+                                            );
+                                          })()}
                                           {attentionCount > 0 && (
                                             <Badge
                                               variant="secondary"
@@ -1275,6 +1304,7 @@ export function SubmissionDetailContent({
                             key={submission.id}
                             submissionId={submission.id}
                             initialScores={submission.manual_score}
+                            measurement={submission.measurement}
                             onSuccess={handleSuccessEditingRubric}
                             onCancel={handleCancelEditingRubric}
                             onFocusCriterion={setSelectedCriterion}
@@ -1361,95 +1391,86 @@ export function SubmissionDetailContent({
       </SubmissionCommentTabs>
       {/* Footer */}
       {variant === "modal" ? (
-        <DialogFooter className="pt-3 sm:pt-3.5 border-t border-border/70 shrink-0 flex flex-row items-center justify-between">
-          <div className="text-[11px] text-muted-foreground hidden sm:inline-flex items-center gap-2.5 select-none">
-            {hasMultipleSubmissions && (
-              <>
-                <span className="inline-flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-muted border border-border rounded-md">
-                    ←
-                  </kbd>
-                  <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-muted border border-border rounded-md">
-                    →
-                  </kbd>
-                  <span>Navigate (or J / K)</span>
-                </span>
-                <span className="text-border">·</span>
-              </>
-            )}
-            <span className="inline-flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-muted border border-border rounded-md">
-                Esc
-              </kbd>
-              <span>Close</span>
-            </span>
+        <DialogFooter className="pt-3 sm:pt-3.5 border-t border-border/70 shrink-0 flex flex-row items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <SubmissionLifecycleControls submission={submission} showRelease variant="actions" />
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onClose?.()}
-            className="h-9 px-4 text-xs font-medium cursor-pointer ml-auto touch-manipulation"
-          >
-            Close
-          </Button>
+          <div className="flex items-center gap-2.5 ml-auto">
+            <div className="text-[11px] text-muted-foreground hidden sm:inline-flex items-center gap-2.5 select-none">
+              {hasMultipleSubmissions && (
+                <>
+                  <span className="inline-flex items-center gap-1">
+                    <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-muted border border-border rounded-md font-mono">
+                      ←
+                    </kbd>
+                    <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-muted border border-border rounded-md font-mono">
+                      →
+                    </kbd>
+                    <span>Navigate (or J / K)</span>
+                  </span>
+                  <span className="text-border">·</span>
+                </>
+              )}
+              <span className="inline-flex items-center gap-1">
+                <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-muted border border-border rounded-md font-mono">
+                  Esc
+                </kbd>
+                <span>Close</span>
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onClose?.()}
+              className="h-8 px-3.5 text-xs font-medium cursor-pointer touch-manipulation"
+            >
+              Close
+            </Button>
+          </div>
         </DialogFooter>
       ) : (
         <footer className="pt-3 sm:pt-3.5 border-t border-border/70 flex items-center justify-between text-xs text-muted-foreground flex-wrap gap-2">
-          {/* Desktop keyboard shortcuts (>= sm) */}
-          <div className="hidden sm:inline-flex items-center gap-1.5 flex-wrap">
-            <span className="font-medium text-foreground">Shortcuts:</span>
-            {hasMultipleSubmissions && (
-              <>
-                <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
-                  J
-                </kbd>
-                <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
-                  K
-                </kbd>
-                <span>student</span>
-                <span className="text-border">·</span>
-              </>
-            )}
-            <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
-              [
-            </kbd>
-            <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
-              ]
-            </kbd>
-            <span>practice area</span>
-            <span className="text-border">·</span>
-            <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
-              +
-            </kbd>
-            <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
-              -
-            </kbd>
-            <span>zoom</span>
-            <span className="text-border">·</span>
-            <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
-              Esc
-            </kbd>
-            <span>back</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <SubmissionLifecycleControls submission={submission} showRelease variant="actions" />
           </div>
 
-          {/* Mobile footer status (< sm) */}
-          <div className="sm:hidden flex items-center justify-between w-full text-xs text-muted-foreground">
-            {hasMultipleSubmissions && submissions && submissions.length > 0 ? (
-              <span className="tabular-nums font-medium">
+          <div className="flex items-center gap-2.5 ml-auto flex-wrap">
+            {/* Desktop keyboard shortcuts (>= sm) */}
+            <div className="hidden sm:inline-flex items-center gap-1.5 flex-wrap">
+              <span className="font-medium text-foreground">Shortcuts:</span>
+              {hasMultipleSubmissions && (
+                <>
+                  <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
+                    J
+                  </kbd>
+                  <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
+                    K
+                  </kbd>
+                  <span>student</span>
+                  <span className="text-border">·</span>
+                </>
+              )}
+              <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
+                +
+              </kbd>
+              <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
+                -
+              </kbd>
+              <span>zoom</span>
+              <span className="text-border">·</span>
+              <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
+                Esc
+              </kbd>
+              <span>back</span>
+            </div>
+
+            {hasMultipleSubmissions && submissions && submissions.length > 0 && (
+              <span className="text-xs text-muted-foreground tabular-nums">
                 Student {effectiveIndex + 1} of {submissions.length}
               </span>
-            ) : (
-              <span />
             )}
-            <span className="text-[11px]">Use top controls to navigate</span>
           </div>
-
-          {hasMultipleSubmissions && submissions && submissions.length > 0 && (
-            <span className="hidden sm:inline text-xs text-muted-foreground tabular-nums">
-              Student {effectiveIndex + 1} of {submissions.length}
-            </span>
-          )}
         </footer>
       )}
 

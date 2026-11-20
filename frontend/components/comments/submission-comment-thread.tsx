@@ -17,6 +17,11 @@ import { commentFeedback } from "@/lib/comments/presentation";
 import { ApiError } from "@/lib/utils/api-error";
 import type { CommentLocation, ThreadTarget } from "@/lib/comments/types";
 import { matchesCommentLocation } from "@/lib/comments/selection";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { formatDate, getRelativeTime } from "@/lib/utils/formatters";
+import { cn } from "@/lib/utils";
+import { AlertCircle } from "lucide-react";
 import { CommentComposer } from "./comment-composer";
 import { ThreadEntryView } from "./thread-entry";
 
@@ -31,11 +36,13 @@ export function SubmissionCommentThread({
   target,
   open,
   location,
+  studentName,
 }: {
   userId: string;
   target: ThreadTarget;
   open: boolean;
   location?: CommentLocation;
+  studentName?: string;
 }) {
   const query = useCommentThread(userId, target, open);
   const actions = useCommentActions(userId, target);
@@ -79,36 +86,74 @@ export function SubmissionCommentThread({
   if (!matchesLocation) return <p role="status" className="p-4">This conversation is unavailable.</p>;
   if (!query.isAccountActive)
     return (
-      <p className="p-4" role="status">
-        Sign in again to view this conversation.
-      </p>
+      <div className="p-4" role="status">
+        <Alert>
+          <AlertCircle className="size-4" />
+          <AlertTitle>Sign-in required</AlertTitle>
+          <AlertDescription>Sign in again to view this conversation.</AlertDescription>
+        </Alert>
+      </div>
     );
   if (query.isError)
     return (
       <div className="space-y-3 p-4" role="status">
-        <p>
-          {query.error instanceof ApiError && query.error.code === "NOT_FOUND"
-            ? "This conversation is no longer available."
-            : "Could not load the conversation."}
-        </p>
-        <Button variant="outline" onClick={() => void query.retry()}>
+        <Alert variant="destructive">
+          <AlertCircle className="size-4" />
+          <AlertTitle>Could not load conversation</AlertTitle>
+          <AlertDescription>
+            {query.error instanceof ApiError && query.error.code === "NOT_FOUND"
+              ? "This conversation is no longer available."
+              : "Unable to retrieve conversation history from the server."}
+          </AlertDescription>
+        </Alert>
+        <Button variant="outline" size="sm" onClick={() => void query.retry()}>
           Try again
         </Button>
       </div>
     );
   if (!thread)
     return (
-      <p className="text-muted-foreground p-4" role="status">
-        Loading conversation…
-      </p>
+      <div className="space-y-3 p-4" role="status" aria-label="Loading conversation">
+        <Skeleton className="h-6 w-48 rounded-md" />
+        <Skeleton className="h-4 w-64 rounded-md" />
+        <div className="space-y-2 pt-4">
+          <Skeleton className="h-16 w-3/4 rounded-xl" />
+          <Skeleton className="h-16 w-2/3 ml-auto rounded-xl" />
+        </div>
+      </div>
     );
   return (
     <section aria-label="Private conversation" className="flex min-h-0 flex-1 flex-col">
       <div className="space-y-2 border-b px-4 py-3">
-        <p className="font-medium">{thread.activity_title}</p>
+        <div className="flex flex-wrap items-baseline gap-2 min-w-0">
+          {studentName && (
+            <h2 className="font-heading text-base font-semibold text-foreground truncate">
+              {studentName}
+            </h2>
+          )}
+          <p
+            className={cn(
+              "text-xs sm:text-sm truncate",
+              studentName ? "text-muted-foreground" : "font-heading font-semibold text-foreground"
+            )}
+          >
+            {studentName ? `· ${thread.activity_title}` : thread.activity_title}
+          </p>
+        </div>
         <p className="text-muted-foreground text-xs">
-          Uploaded <time dateTime={thread.submitted_at}>{new Date(thread.submitted_at).toLocaleString()}</time>
-          {" · "}{{ processing: "Analyzing", rejected: "Needs a new photo", completed: "Uploaded", returned: "Returned" }[thread.submission_status]}
+          Uploaded{" "}
+          <time dateTime={thread.submitted_at} className="font-sans tabular-nums font-medium text-foreground/80">
+            {formatDate(thread.submitted_at)} ({getRelativeTime(thread.submitted_at)})
+          </time>
+          {" · "}
+          <span className="font-medium text-foreground/80">
+            {{
+              processing: "Analyzing strokes",
+              rejected: "Needs a new photo",
+              completed: "Uploaded",
+              returned: "Returned for redo",
+            }[thread.submission_status]}
+          </span>
         </p>
         <p className="text-muted-foreground text-xs">
           Visible to the teacher and all linked parents immediately, even before results are
