@@ -78,10 +78,11 @@ export function CriteriaDetails() {
           </h2>
         </div>
         <div className={styles.criteriaHeaderMeta}>
-          <div className={styles.criteriaBands} aria-label="Performance bands">
+          <div className={styles.criteriaBands} role="list" aria-label="Diagnostic score bands">
             {bands.map((b) => (
               <span
                 key={b.key}
+                role="listitem"
                 className={styles.band}
                 data-band={b.key}
                 title={b.desc}

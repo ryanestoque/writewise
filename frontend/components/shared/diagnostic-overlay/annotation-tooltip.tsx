@@ -326,7 +326,7 @@ function TooltipCard({
             className={cn(
               "text-popover/95",
               isAttention
-                ? "stroke-destructive/40 dark:stroke-destructive/50"
+                ? "stroke-band-1/40 dark:stroke-band-1/50"
                 : "stroke-brand-600/40 dark:stroke-brand-500/50"
             )}
             strokeWidth="1.2"
@@ -343,14 +343,14 @@ function TooltipCard({
           isPinned ? "pointer-events-auto select-text" : "pointer-events-none select-none",
           "bg-popover/95 text-popover-foreground",
           isAttention
-            ? "border-destructive/40 dark:border-destructive/50 ring-2 ring-destructive/10"
+            ? "border-band-1/40 dark:border-band-1/50 ring-2 ring-band-1/10"
             : "border-brand-600/40 dark:border-brand-500/50 ring-2 ring-brand-600/10"
         )}
       >
         <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-1.5 min-w-0">
           {isAttention ? (
             <AlertCircle
-              className="size-3.5 sm:size-4 shrink-0 text-destructive dark:text-destructive"
+              className="size-3.5 sm:size-4 shrink-0 text-band-1 dark:text-band-1"
               aria-hidden="true"
             />
           ) : (
@@ -370,7 +370,7 @@ function TooltipCard({
             className={cn(
               "ml-auto text-[10px] sm:text-xs px-1.5 py-0 sm:py-0.5 h-auto font-medium border shrink-0 whitespace-nowrap",
               isAttention
-                ? "border-destructive/30 text-destructive dark:text-destructive bg-destructive/10 dark:bg-destructive/20"
+                ? "border-band-1/30 text-band-1-text dark:text-band-1-text bg-band-1/10 dark:bg-band-1/20"
                 : "border-brand-300 dark:border-brand-800 text-brand-800 dark:text-brand-300 bg-brand-50/90 dark:bg-brand-950/60"
             )}
           >
@@ -400,8 +400,8 @@ function TooltipCard({
         </p>
 
         {criterion === "letter_formation" && isAttention && showMeasurementDetails && (
-          <p className="text-[10px] sm:text-[11px] font-medium text-destructive dark:text-rose-400 mt-1 sm:mt-1.5 hidden sm:flex items-center gap-1.5">
-            <span className="inline-block size-1.5 rounded-full bg-destructive animate-pulse shrink-0" />
+          <p className="text-[10px] sm:text-[11px] font-medium text-band-1-text dark:text-band-1-text mt-1 sm:mt-1.5 hidden sm:flex items-center gap-1.5">
+            <span className="inline-block size-1.5 rounded-full bg-band-1 animate-pulse shrink-0" />
             <span>Highlighted zones show stroke irregularities flagged by the CNN.</span>
           </p>
         )}

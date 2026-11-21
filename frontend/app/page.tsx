@@ -202,7 +202,7 @@ export default async function Home() {
               </div>
             </div>
 
-            <div className={styles.trustStrip} aria-label="Privacy and safety">
+            <div className={styles.trustStrip} role="region" aria-label="Privacy and safety">
               {trustPillars.map((pillar, i) => (
                 <div
                   key={pillar.title}
@@ -246,7 +246,7 @@ export default async function Home() {
             </div>
 
             {/* Platform Column */}
-            <div className={styles.footerCol}>
+            <nav aria-label="Platform" className={styles.footerCol}>
               <h3 className={styles.footerColTitle}>Platform</h3>
               <ul className={styles.footerLinkList}>
                 <li>
@@ -262,7 +262,7 @@ export default async function Home() {
                   <a href="#progress">Weekly progress strip</a>
                 </li>
               </ul>
-            </div>
+            </nav>
           </div>
 
           {/* Baseline Bar */}

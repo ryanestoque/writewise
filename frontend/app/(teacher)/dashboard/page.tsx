@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import {
   useDashboardScores,
@@ -8,17 +8,25 @@ import {
 } from "@/lib/hooks/use-dashboard";
 import { useSubmissions } from "@/lib/hooks/use-submissions";
 import { SummaryCards } from "@/components/dashboard/summary-cards";
-import { ClassTable } from "@/components/dashboard/class-table";
+import {
+  ClassTable,
+  type SortField,
+  type SortDirection,
+  type BandFilter,
+} from "@/components/dashboard/class-table";
 import { StudentDrillDownDrawer } from "@/components/dashboard/student-drill-down";
 import { SubmissionDetailDialog } from "@/components/submissions/submission-detail-dialog";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import { Button } from "@/components/ui/button";
+import { getBandFromScore } from "@/lib/utils/scoring";
 import {
   RotateCcw,
   AlertCircle,
   Download,
   UploadCloud,
 } from "lucide-react";
+
+const EMPTY_STUDENTS: StudentScoreSummary[] = [];
 
 export default function DashboardPage() {
   const { openUpload } = useTeacherModals();
@@ -50,35 +58,104 @@ export default function DashboardPage() {
     setIsSubmissionModalOpen(true);
   };
 
-  // Filtered table state so Export CSV reflects active filters
-  const [filteredStudents, setFilteredStudents] = useState<StudentScoreSummary[] | null>(null);
-  const [isTableFiltered, setIsTableFiltered] = useState(false);
+  // Filter & Sort state owned at page level — avoids useEffect child-to-parent sync cycles
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSection, setSelectedSection] = useState("all");
+  const [selectedBand, setSelectedBand] = useState<BandFilter>("all");
+  const [sortField, setSortField] = useState<SortField>("composite");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
-  const handleFilteredChange = useCallback(
-    (visible: StudentScoreSummary[], filtered: boolean) => {
-      setFilteredStudents(visible);
-      setIsTableFiltered(filtered);
+  const isTableFiltered =
+    searchQuery.trim() !== "" || selectedSection !== "all" || selectedBand !== "all";
+
+  const allStudents = data?.students ?? EMPTY_STUDENTS;
+
+  const filteredAndSortedStudents = useMemo(() => {
+    return allStudents
+      .filter((student) => {
+        const matchesSearch =
+          searchQuery === "" ||
+          student.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          student.section.toLowerCase().includes(searchQuery.toLowerCase());
+
+        const matchesSection =
+          selectedSection === "all" || student.section === selectedSection;
+
+        const score = student.scores.composite;
+        let matchesBand = true;
+        if (selectedBand === "unrated") {
+          matchesBand = score === null || score === undefined;
+        } else if (selectedBand !== "all") {
+          const band = getBandFromScore(score);
+          matchesBand = band === selectedBand;
+        }
+
+        return matchesSearch && matchesSection && matchesBand;
+      })
+      .sort((a, b) => {
+        let valA: string | number | null = null;
+        let valB: string | number | null = null;
+
+        if (sortField === "fullName") {
+          valA = a.fullName.toLowerCase();
+          valB = b.fullName.toLowerCase();
+        } else if (sortField === "section") {
+          valA = a.section.toLowerCase();
+          valB = b.section.toLowerCase();
+        } else if (sortField === "composite") {
+          valA = a.scores.composite;
+          valB = b.scores.composite;
+        } else {
+          valA = a.scores[sortField];
+          valB = b.scores[sortField];
+        }
+
+        if (valA === null && valB === null) return 0;
+        if (valA === null) return 1;
+        if (valB === null) return -1;
+
+        if (typeof valA === "string" && typeof valB === "string") {
+          return sortDirection === "asc"
+            ? valA.localeCompare(valB)
+            : valB.localeCompare(valA);
+        }
+
+        const numA = Number(valA);
+        const numB = Number(valB);
+        return sortDirection === "asc" ? numA - numB : numB - numA;
+      });
+  }, [allStudents, searchQuery, selectedSection, selectedBand, sortField, sortDirection]);
+
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery("");
+    setSelectedSection("all");
+    setSelectedBand("all");
+  }, []);
+
+  const handleSortChange = useCallback(
+    (field: SortField, direction?: SortDirection) => {
+      setSortField(field);
+      if (direction) {
+        setSortDirection(direction);
+      }
     },
     []
   );
 
-  const exportableStudents =
-    isTableFiltered && filteredStudents !== null
-      ? filteredStudents
-      : (data?.students ?? []);
+  const exportableStudents = isTableFiltered ? filteredAndSortedStudents : allStudents;
 
   const selectedStudentIndex = selectedStudent
-    ? exportableStudents.findIndex((s) => s.studentId === selectedStudent.studentId)
+    ? filteredAndSortedStudents.findIndex((s) => s.studentId === selectedStudent.studentId)
     : -1;
 
   const handlePreviousStudent =
     selectedStudentIndex > 0
-      ? () => setSelectedStudent(exportableStudents[selectedStudentIndex - 1])
+      ? () => setSelectedStudent(filteredAndSortedStudents[selectedStudentIndex - 1])
       : undefined;
 
   const handleNextStudent =
-    selectedStudentIndex >= 0 && selectedStudentIndex < exportableStudents.length - 1
-      ? () => setSelectedStudent(exportableStudents[selectedStudentIndex + 1])
+    selectedStudentIndex >= 0 && selectedStudentIndex < filteredAndSortedStudents.length - 1
+      ? () => setSelectedStudent(filteredAndSortedStudents[selectedStudentIndex + 1])
       : undefined;
 
   const needsSupportCount =
@@ -138,34 +215,10 @@ export default function DashboardPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <div className="space-y-1">
+        <div>
           <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
             Dashboard
           </h1>
-          {!isLoading && data?.classAverages && (
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-              <span className="tabular-nums">
-                {data.classAverages.scoredStudentsCount} of {data.classAverages.totalStudentsCount} students assessed
-              </span>
-              {data.classAverages.scoredStudentsCount > 0 && (
-                <>
-                  <span aria-hidden="true">•</span>
-                  <span
-                    className="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium"
-                    title={
-                      data.classAverages.scoreSource === "calibrated"
-                        ? "Scores generated by the calibrated CV/CNN assessment pipeline"
-                        : "Scores entered via teacher manual rubric assessment"
-                    }
-                  >
-                    {data.classAverages.scoreSource === "calibrated"
-                      ? "Calibrated CV/CNN Scores"
-                      : "Manual Rubric Scores"}
-                  </span>
-                </>
-              )}
-            </div>
-          )}
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
@@ -260,10 +313,20 @@ export default function DashboardPage() {
         </div>
 
         <ClassTable
-          students={data?.students}
+          students={allStudents}
+          filteredStudents={filteredAndSortedStudents}
           isLoading={isLoading}
           onSelectStudent={handleSelectStudent}
-          onFilteredChange={handleFilteredChange}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          selectedSection={selectedSection}
+          onSectionChange={setSelectedSection}
+          selectedBand={selectedBand}
+          onBandChange={setSelectedBand}
+          sortField={sortField}
+          onSortChange={handleSortChange}
+          sortDirection={sortDirection}
+          onClearFilters={handleClearFilters}
         />
       </section>
 

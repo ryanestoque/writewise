@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   Table,
@@ -57,16 +57,6 @@ export type SortField =
 
 export type SortDirection = "asc" | "desc";
 
-interface ClassTableProps {
-  students?: StudentScoreSummary[];
-  isLoading?: boolean;
-  onSelectStudent: (student: StudentScoreSummary) => void;
-  onFilteredChange?: (students: StudentScoreSummary[], isFiltered: boolean) => void;
-  className?: string;
-}
-
-
-
 export type BandFilter =
   | "all"
   | "needs_improvement"
@@ -74,6 +64,26 @@ export type BandFilter =
   | "satisfactory"
   | "excellent"
   | "unrated";
+
+export interface ClassTableProps {
+  students?: StudentScoreSummary[];
+  filteredStudents: StudentScoreSummary[];
+  isLoading?: boolean;
+  onSelectStudent: (student: StudentScoreSummary) => void;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
+  selectedSection: string;
+  onSectionChange: (value: string) => void;
+  selectedBand: BandFilter;
+  onBandChange: (value: BandFilter) => void;
+  sortField: SortField;
+  onSortChange: (field: SortField, direction?: SortDirection) => void;
+  sortDirection: SortDirection;
+  onClearFilters: () => void;
+  className?: string;
+}
+
+const EMPTY_STUDENTS: StudentScoreSummary[] = [];
 
 const COLUMNS: Array<{
   field: SortField;
@@ -139,17 +149,22 @@ const COLUMNS: Array<{
 ];
 
 export function ClassTable({
-  students = [],
+  students = EMPTY_STUDENTS,
+  filteredStudents,
   isLoading = false,
   onSelectStudent,
-  onFilteredChange,
+  searchQuery,
+  onSearchChange,
+  selectedSection,
+  onSectionChange,
+  selectedBand,
+  onBandChange,
+  sortField,
+  onSortChange,
+  sortDirection,
+  onClearFilters,
   className,
 }: ClassTableProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSection, setSelectedSection] = useState<string>("all");
-  const [selectedBand, setSelectedBand] = useState<BandFilter>("all");
-  const [sortField, setSortField] = useState<SortField>("composite");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Global keyboard shortcut: press '/' to focus search input (Cmd/Ctrl+K is reserved for Upload Worksheet)
@@ -236,84 +251,15 @@ export function ClassTable({
     ];
   }, [students]);
 
-  // Filtering & Sorting
-  const filteredAndSortedStudents = useMemo(() => {
-    return students
-      .filter((student) => {
-        const matchesSearch =
-          searchQuery === "" ||
-          student.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          student.section.toLowerCase().includes(searchQuery.toLowerCase());
-
-        const matchesSection =
-          selectedSection === "all" || student.section === selectedSection;
-
-        const score = student.scores.composite;
-        let matchesBand = true;
-        if (selectedBand === "unrated") {
-          matchesBand = score === null || score === undefined;
-        } else if (selectedBand !== "all") {
-          const band = getBandFromScore(score);
-          matchesBand = band === selectedBand;
-        }
-
-        return matchesSearch && matchesSection && matchesBand;
-      })
-      .sort((a, b) => {
-        let valA: string | number | null = null;
-        let valB: string | number | null = null;
-
-        if (sortField === "fullName") {
-          valA = a.fullName.toLowerCase();
-          valB = b.fullName.toLowerCase();
-        } else if (sortField === "section") {
-          valA = a.section.toLowerCase();
-          valB = b.section.toLowerCase();
-        } else if (sortField === "composite") {
-          valA = a.scores.composite;
-          valB = b.scores.composite;
-        } else {
-          valA = a.scores[sortField];
-          valB = b.scores[sortField];
-        }
-
-        // Handle nulls: unrated always placed at bottom regardless of direction
-        if (valA === null && valB === null) return 0;
-        if (valA === null) return 1;
-        if (valB === null) return -1;
-
-        if (typeof valA === "string" && typeof valB === "string") {
-          return sortDirection === "asc"
-            ? valA.localeCompare(valB)
-            : valB.localeCompare(valA);
-        }
-
-        const numA = Number(valA);
-        const numB = Number(valB);
-        return sortDirection === "asc" ? numA - numB : numB - numA;
-      });
-  }, [students, searchQuery, selectedSection, selectedBand, sortField, sortDirection]);
-
   const hasActiveFilters =
     searchQuery.trim() !== "" || selectedSection !== "all" || selectedBand !== "all";
 
-  useEffect(() => {
-    onFilteredChange?.(filteredAndSortedStudents, hasActiveFilters);
-  }, [filteredAndSortedStudents, hasActiveFilters, onFilteredChange]);
-
-  const handleClearFilters = () => {
-    setSearchQuery("");
-    setSelectedSection("all");
-    setSelectedBand("all");
-  };
-
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+      onSortChange(field, sortDirection === "asc" ? "desc" : "asc");
     } else {
-      setSortField(field);
       // Default to ascending for criterion scores so weakest students float to the top
-      setSortDirection("asc");
+      onSortChange(field, "asc");
     }
   };
 
@@ -369,8 +315,8 @@ export function ClassTable({
               ref={searchInputRef}
               placeholder="Search student or section..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onClear={() => setSearchQuery("")}
+              onChange={(e) => onSearchChange(e.target.value)}
+              onClear={() => onSearchChange("")}
               className="w-full"
             />
           </div>
@@ -380,7 +326,7 @@ export function ClassTable({
               <FilterPills
                 items={sectionPills}
                 value={selectedSection}
-                onChange={setSelectedSection}
+                onChange={onSectionChange}
               />
             </div>
           )}
@@ -396,13 +342,13 @@ export function ClassTable({
               ariaLabel="Filter by performance tier"
               items={bandPills}
               value={selectedBand}
-              onChange={(val) => setSelectedBand(val as BandFilter)}
+              onChange={(val) => onBandChange(val as BandFilter)}
             />
           </div>
           {hasActiveFilters && (
             <button
               type="button"
-              onClick={handleClearFilters}
+              onClick={onClearFilters}
               className="text-xs font-medium text-primary hover:underline shrink-0 px-2 min-h-[36px] inline-flex items-center rounded-md cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
             >
               Clear filters
@@ -423,8 +369,7 @@ export function ClassTable({
               id="mobile-student-sort"
               value={sortField}
               onChange={(e) => {
-                setSortField(e.target.value as SortField);
-                setSortDirection("asc");
+                onSortChange(e.target.value as SortField, "asc");
               }}
               className="flex-1 min-h-[40px] px-2.5 rounded-lg border border-border bg-card text-xs font-medium text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
             >
@@ -436,7 +381,7 @@ export function ClassTable({
             </select>
             <button
               type="button"
-              onClick={() => setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))}
+              onClick={() => onSortChange(sortField, sortDirection === "asc" ? "desc" : "asc")}
               aria-label={`Sort direction: ${sortDirection === "asc" ? "ascending" : "descending"}. Click to toggle.`}
               className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-lg border border-border bg-card text-foreground hover:bg-muted cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
             >
@@ -458,7 +403,7 @@ export function ClassTable({
               />
             ))}
           </div>
-        ) : filteredAndSortedStudents.length === 0 ? (
+        ) : filteredStudents.length === 0 ? (
           <div className="rounded-xl border border-border bg-card py-10 px-4 text-center">
             <div className="flex flex-col items-center justify-center space-y-2">
               <SearchX className="size-8 text-muted-foreground/60" aria-hidden="true" />
@@ -466,7 +411,7 @@ export function ClassTable({
               <p className="text-xs text-muted-foreground">Try clearing your search or filters.</p>
               <button
                 type="button"
-                onClick={handleClearFilters}
+                onClick={onClearFilters}
                 className={cn(
                   buttonVariants({ variant: "outline", size: "sm" }),
                   "mt-2 min-h-[44px] px-4 rounded-lg text-xs cursor-pointer touch-manipulation"
@@ -478,7 +423,7 @@ export function ClassTable({
           </div>
         ) : (
           <ul role="list" className="space-y-2">
-            {filteredAndSortedStudents.map((student) => {
+            {filteredStudents.map((student) => {
               const hasScores = student.scores.composite !== null;
               const lowestCriterion = hasScores
                 ? RUBRIC_CRITERIA.map((c) => ({
@@ -537,7 +482,7 @@ export function ClassTable({
         )}
 
         <p className="text-xs text-muted-foreground px-1">
-          Showing <strong className="text-foreground">{filteredAndSortedStudents.length}</strong> of{" "}
+          Showing <strong className="text-foreground">{filteredStudents.length}</strong> of{" "}
           {students.length} students
         </p>
       </div>
@@ -602,7 +547,7 @@ export function ClassTable({
                     </TableCell>
                   </TableRow>
                 ))
-              ) : filteredAndSortedStudents.length === 0 ? (
+              ) : filteredStudents.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="py-12 text-center">
                     <div className="flex flex-col items-center justify-center space-y-2">
@@ -611,7 +556,7 @@ export function ClassTable({
                       <p className="text-xs text-muted-foreground">Try clearing your search or filters.</p>
                       <button
                         type="button"
-                        onClick={handleClearFilters}
+                        onClick={onClearFilters}
                         className={cn(
                           buttonVariants({ variant: "outline", size: "sm" }),
                           "mt-2 min-h-[36px] rounded-lg text-xs cursor-pointer"
@@ -623,7 +568,7 @@ export function ClassTable({
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredAndSortedStudents.map((student) => {
+                filteredStudents.map((student) => {
                   const hasScores = student.scores.composite !== null;
 
                   return (
@@ -704,7 +649,7 @@ export function ClassTable({
         {/* Table Footer Count & Dual-Signal 4-Band Legend */}
         <div className="px-4 py-2.5 bg-muted/20 border-t border-border/60 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-xs text-muted-foreground">
           <span>
-            Showing <strong className="text-foreground">{filteredAndSortedStudents.length}</strong> of{" "}
+            Showing <strong className="text-foreground">{filteredStudents.length}</strong> of{" "}
             {students.length} students
           </span>
           <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1" aria-label="Score band legend">

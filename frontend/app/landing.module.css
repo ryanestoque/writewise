@@ -188,6 +188,9 @@
 }
 
 .textLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--teal-deep);
   font-weight: 600;
   font-size: 0.9375rem;
@@ -301,22 +304,6 @@
 
 /* ------------------------- Shared Typography ------------------------ */
 
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 12px;
-  margin-bottom: 14px;
-  border-radius: 999px;
-  background: var(--wash);
-  color: var(--teal-deep);
-  font-family: var(--font-sans), sans-serif;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
 .sectionHeader {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
@@ -338,14 +325,6 @@
   letter-spacing: -0.03em;
   text-wrap: balance;
   color: var(--ink);
-}
-
-.sectionLede {
-  margin: 0;
-  max-width: 50ch;
-  font-size: 1.0625rem;
-  line-height: 1.6;
-  color: var(--ink-soft);
 }
 
 /* ------------ Band Chips (color always paired with text) ------------ */
@@ -587,8 +566,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 28px;
-  padding: 0 6px 0 10px;
+  min-height: 44px;
+  padding: 0 10px 0 12px;
   border-radius: 999px;
   background: var(--paper);
   border: 1px solid #c8e2dc;
@@ -605,13 +584,13 @@
 }
 
 .viewerSwitchPill:hover {
-  background: #fff;
+  background: var(--paper);
   border-color: var(--teal);
   box-shadow: 0 3px 10px -2px rgb(20 80 73 / 0.22);
 }
 
 .viewerSwitchLabel {
-  font-family: var(--font-heading), sans-serif;
+  font-family: var(--font-sans), sans-serif;
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -639,7 +618,7 @@
 }
 
 .studioCriteriaLabel {
-  font-family: var(--font-heading), sans-serif;
+  font-family: var(--font-sans), sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--ink-soft);
@@ -743,60 +722,6 @@
   display: none;
 }
 
-.srOnlyRadio {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.studioCriterionPill {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  text-align: left;
-  font-family: inherit;
-  color: inherit;
-  gap: 8px;
-  padding: 8px 8px;
-  border-radius: 10px;
-  border: 1px solid var(--rule);
-  background: var(--canvas);
-  cursor: pointer;
-  font-variant-numeric: tabular-nums;
-  overflow: hidden;
-  transition:
-    border-color 150ms ease-out,
-    background-color 150ms ease-out,
-    box-shadow 150ms ease-out;
-}
-
-.studioCriterionPill:hover {
-  background: var(--wash-soft);
-  border-color: #b8ddd7;
-}
-
-.studioCriterionPill[data-selected="true"] {
-  background: #fff;
-  border-color: var(--teal);
-  box-shadow:
-    0 0 0 1px var(--teal),
-    0 6px 16px -8px rgb(20 80 73 / 0.35);
-}
-
-.studioCriterionPill:focus-visible,
-.studioCriterionPill:has(:focus-visible) {
-  outline: 3px solid var(--teal);
-  outline-offset: 2px;
-}
-
-.studioCoaching,
 .studioCoachingDesktop {
   margin-top: 14px;
   padding: 14px 16px;
@@ -1041,7 +966,6 @@
 .markWarmDash,
 .markCool,
 .markCoolDash,
-.markDrift,
 .markGood {
   fill: none;
   stroke-width: 1.75;
@@ -1053,8 +977,7 @@
   stroke: var(--warm);
 }
 
-.markWarmDash,
-.markDrift {
+.markWarmDash {
   stroke: var(--warm);
   stroke-dasharray: 5 5;
 }
@@ -1420,19 +1343,6 @@
   margin-bottom: 36px;
 }
 
-.closeEyebrow {
-  display: inline-block;
-  padding: 4px 12px;
-  margin-bottom: 12px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.14);
-  color: #e4f1ef;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
 .closeTitle {
   margin: 0;
   font-family: var(--font-heading), sans-serif;
@@ -1644,6 +1554,9 @@
 }
 
 .footerLinkList a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--ink-soft);
   font-size: 0.875rem;
   text-decoration: none;
@@ -1713,10 +1626,10 @@
   padding: 0 14px 0 10px;
   border-radius: 999px;
   border: 1px solid #b8ddd7;
-  background: rgb(255 255 255 / 0.95);
+  background: color-mix(in srgb, var(--paper) 95%, transparent);
   backdrop-filter: blur(8px);
   color: var(--teal-deep);
-  font-family: var(--font-heading), sans-serif;
+  font-family: var(--font-sans), sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -1791,6 +1704,7 @@
   .landing[data-scroll-ready="true"] [data-reveal][data-revealed="true"] {
     opacity: 1;
     transform: translateY(0);
+    will-change: auto;
   }
 
   /* Specific authored entrance for Hero section: runs immediately on initial paint without waiting for JS hydration */
@@ -2152,6 +2066,15 @@
   }
 }
 
+@media (forced-colors: active) {
+  .heroCursiveText {
+    opacity: 1 !important;
+  }
+  .heroWriting {
+    display: none !important;
+  }
+}
+
 /* ----------------------------- Responsive --------------------------- */
 
 @media (max-width: 1023px) {
@@ -2286,10 +2209,10 @@
     top: auto;
     right: auto;
     z-index: auto;
-    height: 28px;
-    padding: 0 8px 0 10px;
+    min-height: 44px;
+    padding: 0 10px 0 12px;
     gap: 8px;
-    background: #fff;
+    background: var(--paper);
     margin-left: auto;
   }
 
@@ -2396,16 +2319,6 @@
 
   .studioCoachingDesktop {
     display: none;
-  }
-
-  .studioCriterionPill {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 44px;
-    padding: 8px 12px;
-    gap: 12px;
-    touch-action: manipulation;
   }
 
   .studioCoachingGrid {

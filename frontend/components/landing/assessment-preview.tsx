@@ -128,6 +128,7 @@ export function AssessmentPreview() {
   return (
     <div
       id="assessment-preview"
+      role="region"
       className={styles.studioCard}
       aria-label="Interactive worksheet assessment studio"
     >
@@ -152,6 +153,7 @@ export function AssessmentPreview() {
         <WorksheetImageInspector
           imageUrl={EXAMPLE_WORKSHEET}
           imageDimensions={EXAMPLE_WORKSHEET_DIMENSIONS}
+          priority={true}
           headerLabel=""
           altText="Cursive worksheet showing 'kites fly high' with crowded then wide word spacing."
           showShortcutsLegend={false}
@@ -190,7 +192,7 @@ export function AssessmentPreview() {
         </div>
 
         <div
-          role="region"
+          role="tablist"
           aria-labelledby={`${criterionId}-heading`}
           className={styles.studioCriteriaGrid}
         >
@@ -215,6 +217,8 @@ export function AssessmentPreview() {
                   }}
                   id={buttonId}
                   type="button"
+                  role="tab"
+                  aria-selected={isSelected}
                   aria-expanded={isExpanded}
                   aria-controls={panelId}
                   aria-label={`${item.name}, ${item.score}%, ${band.band}`}
@@ -253,7 +257,7 @@ export function AssessmentPreview() {
 
                 <div
                   id={panelId}
-                  role="region"
+                  role="tabpanel"
                   aria-labelledby={buttonId}
                   className={styles.studioAccordionPanel}
                   data-expanded={isExpanded}
@@ -277,6 +281,9 @@ export function AssessmentPreview() {
 
         {/* Desktop-only dedicated feedback card (hidden on mobile via CSS) */}
         <div
+          id={`${criterionId}-desktop-coaching`}
+          role="region"
+          aria-label="Handwriting coaching feedback"
           className={styles.studioCoachingDesktop}
           aria-live="polite"
           aria-atomic="true"

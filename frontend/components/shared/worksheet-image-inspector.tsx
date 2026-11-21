@@ -52,6 +52,8 @@ export interface WorksheetImageInspectorProps {
   altText?: string;
   /** Whether the image is currently loading from storage */
   isLoading?: boolean;
+  /** Whether the image is high-priority above the fold (e.g. Hero preview). Sets loading="eager" and fetchPriority="high". Defaults to false. */
+  priority?: boolean;
   /** Header label for the inspector */
   headerLabel?: string;
   /** Header icon element */
@@ -89,6 +91,7 @@ export function WorksheetImageInspector({
   isLoading = false,
   isError = false,
   onRetry,
+  priority = false,
   headerLabel = "Handwritten Worksheet",
   headerIcon,
   diagnosticToolbar,
@@ -311,6 +314,7 @@ export function WorksheetImageInspector({
   // Keyboard shortcuts (global while inspector mounted or inside focused container)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (!showImageTools) return;
       const container = imageContainerRef.current;
       if (!container) return;
 
@@ -881,7 +885,8 @@ export function WorksheetImageInspector({
                 width={imageDimensions?.width}
                 height={imageDimensions?.height}
                 alt={altText}
-                loading="lazy"
+                loading={priority ? "eager" : "lazy"}
+                fetchPriority={priority ? "high" : "auto"}
                 decoding="async"
                 draggable={false}
                 onLoad={(e) => {

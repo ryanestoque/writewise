@@ -20,12 +20,12 @@ interface FormationLayerProps {
 }
 
 const LETTER_ZONE_PALETTE = [
-  { fill: "rgba(52, 211, 153, 0.18)", stroke: "#10b981", text: "#065f46" }, // Emerald
-  { fill: "rgba(56, 189, 248, 0.18)", stroke: "#0284c7", text: "#075985" }, // Sky
-  { fill: "rgba(168, 85, 247, 0.18)", stroke: "#9333ea", text: "#581c87" }, // Purple
-  { fill: "rgba(251, 191, 36, 0.18)", stroke: "#d97706", text: "#78350f" }, // Amber
-  { fill: "rgba(249, 115, 22, 0.18)", stroke: "#ea580c", text: "#7c2d12" }, // Orange
-  { fill: "rgba(244, 63, 94, 0.18)", stroke: "#e11d48", text: "#881337" },  // Rose
+  { fill: "rgba(16, 185, 129, 0.14)", stroke: "#047857", badgeBg: "#047857", text: "#064e3b" }, // Emerald 700 (4.67:1 vs #fff)
+  { fill: "rgba(2, 132, 199, 0.14)", stroke: "#0369a1", badgeBg: "#0369a1", text: "#0c4a6e" },   // Sky 700 (4.96:1 vs #fff)
+  { fill: "rgba(147, 51, 234, 0.14)", stroke: "#7e22ce", badgeBg: "#7e22ce", text: "#581c87" },  // Purple 700 (5.48:1 vs #fff)
+  { fill: "rgba(217, 119, 6, 0.14)", stroke: "#b45309", badgeBg: "#b45309", text: "#78350f" },   // Amber 700 (4.59:1 vs #fff)
+  { fill: "rgba(15, 118, 110, 0.14)", stroke: "#0f766e", badgeBg: "#0f766e", text: "#134e4a" },  // Teal 700 (5.09:1 vs #fff)
+  { fill: "rgba(79, 70, 229, 0.14)", stroke: "#4338ca", badgeBg: "#4338ca", text: "#312e81" },   // Indigo 700 (6.55:1 vs #fff)
 ];
 
 interface FormationWordItemProps {
@@ -186,7 +186,7 @@ const FormationWordItem = memo(function FormationWordItem({
                   width={letterBadgeSize}
                   height={letterBadgeSize}
                   rx={letterBadgeSize / 4}
-                  fill={styleMeta.stroke}
+                  fill={styleMeta.badgeBg || styleMeta.stroke}
                 />
                 <text
                   x={0}

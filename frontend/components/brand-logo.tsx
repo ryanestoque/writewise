@@ -73,6 +73,7 @@ export function BrandLogo({
           alt="WriteWise"
           width={280}
           height={109}
+          sizes="(max-width: 640px) 160px, 280px"
           priority={priority}
           className={cn("object-contain select-none", heightClasses[size], imageClassName)}
         />

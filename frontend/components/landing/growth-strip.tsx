@@ -151,8 +151,7 @@ function SlipDrawing({ slip }: { slip: Slip }) {
       <svg
         className={styles.slipSvg}
         viewBox="0 0 360 140"
-        role="img"
-        aria-label={slip.description}
+        aria-hidden="true"
       >
         <Guides />
         <Handwriting words={slip.words} />

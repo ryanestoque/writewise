@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import styles from "@/app/landing.module.css";
@@ -13,8 +13,8 @@ const NAV_LINKS = [
 
 export function LandingHeader() {
   const [scrolled, setScrolled] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [activeSection, setActiveSection] = useState<string | null>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let ticking = false;
@@ -23,12 +23,15 @@ export function LandingHeader() {
       if (!ticking) {
         window.requestAnimationFrame(() => {
           const scrollY = window.scrollY;
-          setScrolled(scrollY > 16);
+          const isScrolled = scrollY > 16;
+          setScrolled((prev) => (prev !== isScrolled ? isScrolled : prev));
 
-          // Calculate reading progress (0 to 1) along the landing page
+          // Calculate reading progress (0 to 1) along the landing page without triggering React re-renders
           const docHeight = document.documentElement.scrollHeight - window.innerHeight;
           const progress = docHeight > 0 ? Math.min(Math.max(scrollY / docHeight, 0), 1) : 0;
-          setScrollProgress(progress);
+          if (progressRef.current) {
+            progressRef.current.style.transform = `scaleX(${progress})`;
+          }
 
           // Track which section is in view
           const sectionIds = ["how-it-works", "criteria", "progress"];
@@ -42,7 +45,7 @@ export function LandingHeader() {
               }
             }
           }
-          setActiveSection(current);
+          setActiveSection((prev) => (prev !== current ? current : prev));
 
           ticking = false;
         });
@@ -60,8 +63,9 @@ export function LandingHeader() {
     <header className={styles.header} data-scrolled={scrolled}>
       {/* Subtle ink reading progress line along bottom edge of header */}
       <div
+        ref={progressRef}
         className={styles.headerProgressBar}
-        style={{ transform: `scaleX(${scrollProgress})` }}
+        style={{ transform: "scaleX(0)" }}
         aria-hidden="true"
       />
 
