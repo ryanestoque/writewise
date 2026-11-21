@@ -4,6 +4,23 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   type ScoreBand,
   type ManualScore,
   type Submission,
@@ -16,6 +33,7 @@ import {
   LayoutList,
   SlidersHorizontal,
   AlertCircle,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Info,
@@ -26,6 +44,29 @@ import {
   CheckCheck,
 } from "lucide-react";
 import { toast } from "sonner";
+
+const LAYOUT_MODE_STORAGE_KEY = "writewise.rubric.layoutMode";
+const AUTO_ADVANCE_STORAGE_KEY = "writewise.rubric.autoAdvance";
+
+function readStoredLayoutMode(): "stepper" | "list" {
+  if (typeof window === "undefined") return "stepper";
+  try {
+    const val = window.localStorage.getItem(LAYOUT_MODE_STORAGE_KEY);
+    return val === "list" ? "list" : "stepper";
+  } catch {
+    return "stepper";
+  }
+}
+
+function readStoredAutoAdvance(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const val = window.localStorage.getItem(AUTO_ADVANCE_STORAGE_KEY);
+    return val === null ? true : val === "true";
+  } catch {
+    return true;
+  }
+}
 
 export const CRITERIA_GUIDE: Record<
   string,
@@ -80,59 +121,59 @@ export const RUBRIC_BANDS: Array<{
   badgeClass: string;
   dotColor: string;
 }> = [
-  {
-    band: "needs_improvement",
-    label: "Needs Improvement",
-    shortLabel: "Needs Imp.",
-    shortcutKey: "1",
-    score: "12.5%",
-    points: 1,
-    activeClass:
-      "bg-band-1/15 dark:bg-band-1/30 text-band-1-text dark:text-orange-200 border-band-1 ring-2 ring-band-1/40 shadow-xs font-semibold",
-    badgeClass:
-      "bg-band-1/15 text-band-1-text dark:text-orange-200 border-band-1/40",
-    dotColor: "bg-band-1",
-  },
-  {
-    band: "developing",
-    label: "Developing",
-    shortLabel: "Developing",
-    shortcutKey: "2",
-    score: "37.5%",
-    points: 2,
-    activeClass:
-      "bg-band-2/15 dark:bg-band-2/30 text-amber-900 dark:text-amber-200 border-band-2 ring-2 ring-band-2/40 shadow-xs font-semibold",
-    badgeClass:
-      "bg-band-2/15 text-amber-900 dark:text-amber-200 border-band-2/40",
-    dotColor: "bg-band-2",
-  },
-  {
-    band: "satisfactory",
-    label: "Satisfactory",
-    shortLabel: "Satisfactory",
-    shortcutKey: "3",
-    score: "62.5%",
-    points: 3,
-    activeClass:
-      "bg-band-3/15 dark:bg-band-3/30 text-emerald-950 dark:text-emerald-200 border-band-3 ring-2 ring-band-3/40 shadow-xs font-semibold",
-    badgeClass:
-      "bg-band-3/15 text-emerald-950 dark:text-emerald-200 border-band-3/40",
-    dotColor: "bg-band-3",
-  },
-  {
-    band: "excellent",
-    label: "Excellent",
-    shortLabel: "Excellent",
-    shortcutKey: "4",
-    score: "87.5%",
-    points: 4,
-    activeClass:
-      "bg-brand-100 dark:bg-brand-950/80 text-brand-950 dark:text-brand-200 border-brand-500 dark:border-brand-400 ring-2 ring-brand-500/40 shadow-xs font-semibold",
-    badgeClass:
-      "bg-brand-50 text-brand-800 dark:bg-brand-950/80 dark:text-brand-300 border-brand-300/60",
-    dotColor: "bg-brand-600 dark:bg-brand-400",
-  },
-];
+    {
+      band: "needs_improvement",
+      label: "Needs Improvement",
+      shortLabel: "Needs Imp.",
+      shortcutKey: "1",
+      score: "12.5%",
+      points: 1,
+      activeClass:
+        "bg-band-1/15 dark:bg-band-1/30 text-band-1-text dark:text-orange-200 border-band-1 ring-2 ring-band-1/40 shadow-xs font-semibold",
+      badgeClass:
+        "bg-band-1/15 text-band-1-text dark:text-orange-200 border-band-1/40",
+      dotColor: "bg-band-1",
+    },
+    {
+      band: "developing",
+      label: "Developing",
+      shortLabel: "Developing",
+      shortcutKey: "2",
+      score: "37.5%",
+      points: 2,
+      activeClass:
+        "bg-band-2/15 dark:bg-band-2/30 text-amber-900 dark:text-amber-200 border-band-2 ring-2 ring-band-2/40 shadow-xs font-semibold",
+      badgeClass:
+        "bg-band-2/15 text-amber-900 dark:text-amber-200 border-band-2/40",
+      dotColor: "bg-band-2",
+    },
+    {
+      band: "satisfactory",
+      label: "Satisfactory",
+      shortLabel: "Satisfactory",
+      shortcutKey: "3",
+      score: "62.5%",
+      points: 3,
+      activeClass:
+        "bg-band-3/15 dark:bg-band-3/30 text-emerald-950 dark:text-emerald-200 border-band-3 ring-2 ring-band-3/40 shadow-xs font-semibold",
+      badgeClass:
+        "bg-band-3/15 text-emerald-950 dark:text-emerald-200 border-band-3/40",
+      dotColor: "bg-band-3",
+    },
+    {
+      band: "excellent",
+      label: "Excellent",
+      shortLabel: "Excellent",
+      shortcutKey: "4",
+      score: "87.5%",
+      points: 4,
+      activeClass:
+        "bg-brand-100 dark:bg-brand-950/80 text-brand-950 dark:text-brand-200 border-brand-500 dark:border-brand-400 ring-2 ring-brand-500/40 shadow-xs font-semibold",
+      badgeClass:
+        "bg-brand-50 text-brand-800 dark:bg-brand-950/80 dark:text-brand-300 border-brand-300/60",
+      dotColor: "bg-brand-600 dark:bg-brand-400",
+    },
+  ];
 
 export const BAND_NUMERIC_SCORES: Record<ScoreBand, number> = {
   needs_improvement: 12.5,
@@ -187,46 +228,46 @@ export function calculateCompositeRubric(
 
 export const RUBRIC_CRITERIA: Array<{
   key:
-    | "letter_formation_band"
-    | "size_consistency_band"
-    | "spacing_band"
-    | "slant_band"
-    | "baseline_alignment_band";
+  | "letter_formation_band"
+  | "size_consistency_band"
+  | "spacing_band"
+  | "slant_band"
+  | "baseline_alignment_band";
   name: string;
   shortName: string;
   hint: string;
 }> = [
-  {
-    key: "letter_formation_band",
-    name: "Letter Formation",
-    shortName: "Letter Formation",
-    hint: "Proper cursive loops and complete stroke closures",
-  },
-  {
-    key: "size_consistency_band",
-    name: "Size Consistency",
-    shortName: "Size Consistency",
-    hint: "Proportion and height across 3-line penmanship ruling",
-  },
-  {
-    key: "spacing_band",
-    name: "Spacing",
-    shortName: "Spacing",
-    hint: "Inter-word rhythm and character separation spacing",
-  },
-  {
-    key: "slant_band",
-    name: "Slant Angle",
-    shortName: "Slant Angle",
-    hint: "Typical stem lean and consistency within and between words",
-  },
-  {
-    key: "baseline_alignment_band",
-    name: "Baseline Alignment",
-    shortName: "Baseline Alignment",
-    hint: "Letters resting stably along bottom ruling baseline",
-  },
-];
+    {
+      key: "letter_formation_band",
+      name: "Letter Formation",
+      shortName: "Letter Formation",
+      hint: "Proper cursive loops and complete stroke closures",
+    },
+    {
+      key: "size_consistency_band",
+      name: "Size Consistency",
+      shortName: "Size Consistency",
+      hint: "Proportion and height across 3-line penmanship ruling",
+    },
+    {
+      key: "spacing_band",
+      name: "Spacing",
+      shortName: "Spacing",
+      hint: "Inter-word rhythm and character separation spacing",
+    },
+    {
+      key: "slant_band",
+      name: "Slant Angle",
+      shortName: "Slant Angle",
+      hint: "Typical stem lean and consistency within and between words",
+    },
+    {
+      key: "baseline_alignment_band",
+      name: "Baseline Alignment",
+      shortName: "Baseline Alignment",
+      hint: "Letters resting stably along bottom ruling baseline",
+    },
+  ];
 
 export function getBandMeta(band?: ScoreBand | string | null) {
   return (
@@ -409,6 +450,7 @@ export interface ManualRubricEntryFormProps {
   measurement?: Submission["measurement"];
   onSuccess?: () => void;
   onCancel?: () => void;
+  onDirtyChange?: (isDirty: boolean) => void;
   onFocusCriterion?: (criterionName: string | null) => void;
   canGoNext?: boolean;
   onAdvanceNext?: () => void;
@@ -421,6 +463,7 @@ export function ManualRubricEntryForm({
   measurement,
   onSuccess,
   onCancel,
+  onDirtyChange,
   onFocusCriterion,
   canGoNext,
   onAdvanceNext,
@@ -444,19 +487,73 @@ export function ManualRubricEntryForm({
   });
 
   const [activeCriterionIndex, setActiveCriterionIndex] = useState<number>(0);
-  const [layoutMode, setLayoutMode] = useState<"stepper" | "list">("stepper");
-  const [autoAdvance, setAutoAdvance] = useState<boolean>(true);
+  const [layoutMode, setLayoutModeState] = useState<"stepper" | "list">(() =>
+    readStoredLayoutMode()
+  );
+  const [autoAdvance, setAutoAdvanceState] = useState<boolean>(() =>
+    readStoredAutoAdvance()
+  );
   const [submitErrorMsg, setSubmitErrorMsg] = useState<string | null>(null);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
   const [accessibilityAnnouncement, setAccessibilityAnnouncement] = useState<string>("");
+
+  const setLayoutMode = useCallback((mode: "stepper" | "list") => {
+    setLayoutModeState(mode);
+    try {
+      window.localStorage.setItem(LAYOUT_MODE_STORAGE_KEY, mode);
+    } catch {
+      // ignore storage errors in private browsing
+    }
+  }, []);
+
+  const setAutoAdvance = useCallback((enabled: boolean) => {
+    setAutoAdvanceState(enabled);
+    try {
+      window.localStorage.setItem(AUTO_ADVANCE_STORAGE_KEY, String(enabled));
+    } catch {
+      // ignore storage errors in private browsing
+    }
+  }, []);
+
+  const isDirty = useMemo(() => {
+    return (
+      rubricScores.letter_formation_band !== (initialScores?.letter_formation_band ?? null) ||
+      rubricScores.size_consistency_band !== (initialScores?.size_consistency_band ?? null) ||
+      rubricScores.spacing_band !== (initialScores?.spacing_band ?? null) ||
+      rubricScores.slant_band !== (initialScores?.slant_band ?? null) ||
+      rubricScores.baseline_alignment_band !== (initialScores?.baseline_alignment_band ?? null)
+    );
+  }, [rubricScores, initialScores]);
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+    return () => {
+      onDirtyChange?.(false);
+    };
+  }, [isDirty, onDirtyChange]);
+
+  const requestCancel = useCallback(() => {
+    if (!onCancel) return;
+    if (isDirty) {
+      setDiscardDialogOpen(true);
+    } else {
+      onCancel();
+    }
+  }, [onCancel, isDirty]);
 
   const formRef = useRef<HTMLDivElement>(null);
   const activeCriterionIndexRef = useRef(activeCriterionIndex);
-  const handleSubmitRubricRef = useRef<() => void>(() => {});
+  const rubricScoresRef = useRef(rubricScores);
+  const handleSubmitRubricRef = useRef<() => void>(() => { });
 
   useEffect(() => {
     activeCriterionIndexRef.current = activeCriterionIndex;
   }, [activeCriterionIndex]);
+
+  useEffect(() => {
+    rubricScoresRef.current = rubricScores;
+  }, [rubricScores]);
 
   const allBandsSelected =
     rubricScores.letter_formation_band !== null &&
@@ -489,11 +586,11 @@ export function ManualRubricEntryForm({
             toast.success("Rubric recorded — advancing to next student", {
               action: onNavigateBack
                 ? {
-                    label: "Undo",
-                    onClick: () => {
-                      onNavigateBack();
-                    },
-                  }
+                  label: "Undo",
+                  onClick: () => {
+                    onNavigateBack();
+                  },
+                }
                 : undefined,
               duration: 6000,
             });
@@ -533,6 +630,7 @@ export function ManualRubricEntryForm({
   }, [rubricScores]);
 
   const handleApplyPreset = useCallback((band: ScoreBand) => {
+    const previousScores = { ...rubricScoresRef.current };
     setRubricScores({
       letter_formation_band: band,
       size_consistency_band: band,
@@ -543,7 +641,16 @@ export function ManualRubricEntryForm({
     setSubmitErrorMsg(null);
     const bandMeta = getBandMeta(band);
     setAccessibilityAnnouncement(`All 5 criteria set to ${bandMeta.label}.`);
-    toast.success(`Preset applied: All ${bandMeta.label} (${bandMeta.shortcutKey}s)`);
+    toast.success(`Preset applied: All ${bandMeta.label}`, {
+      action: {
+        label: "Undo",
+        onClick: () => {
+          setRubricScores(previousScores);
+          setAccessibilityAnnouncement("Previous rubric ratings restored.");
+        },
+      },
+      duration: 6000,
+    });
   }, []);
 
   const handleSelectCriterion = (index: number) => {
@@ -563,11 +670,11 @@ export function ManualRubricEntryForm({
         return;
       }
 
-      // Cancel edit shortcut: Escape key reverts to recorded state
+      // Cancel edit shortcut: Escape key guards unsaved ratings before reverting
       if (e.key === "Escape" && onCancel) {
         e.preventDefault();
         e.stopPropagation();
-        onCancel();
+        requestCancel();
         return;
       }
 
@@ -648,7 +755,7 @@ export function ManualRubricEntryForm({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onFocusCriterion, handleApplyPreset, onCancel]);
+  }, [onFocusCriterion, handleApplyPreset, onCancel, requestCancel]);
 
   // WAI-ARIA roving tabindex and arrow key navigation within criterion radio group
   const handleCriterionKeyDown = (
@@ -721,7 +828,7 @@ export function ManualRubricEntryForm({
             <button
               type="button"
               onClick={() => setShowKeyboardHelp((prev) => !prev)}
-              className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg cursor-pointer flex items-center justify-center min-h-7 min-w-7 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+              className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg cursor-pointer flex items-center justify-center min-h-10 min-w-10 sm:min-h-7 sm:min-w-7 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
               title="Toggle Keyboard Shortcuts"
               aria-label="Toggle Keyboard Shortcuts"
               aria-expanded={showKeyboardHelp}
@@ -732,11 +839,10 @@ export function ManualRubricEntryForm({
 
           <Badge
             variant="outline"
-            className={`text-[11px] font-semibold px-2 py-0.5 shrink-0 font-sans tabular-nums inline-flex items-center ${
-              allBandsSelected && compositeRubric
+            className={`text-[11px] font-semibold px-2 py-0.5 shrink-0 font-sans tabular-nums inline-flex items-center ${allBandsSelected && compositeRubric
                 ? compositeRubric.overallBandMeta.badgeClass
                 : "bg-band-2/15 text-amber-900 dark:bg-band-2/25 dark:text-amber-200 border-band-2/40"
-            }`}
+              }`}
           >
             {allBandsSelected && compositeRubric ? (
               <span>
@@ -748,22 +854,54 @@ export function ManualRubricEntryForm({
           </Badge>
         </div>
 
-        {/* Second Row: Layout Mode Switcher */}
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5 shrink-0">
-            <SlidersHorizontal className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-            <span>Presets:</span>
-          </span>
+        {/* Second Row: Quick Fill Menu + Layout Mode Switcher */}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isSubmittingScore}
+                  className="h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-2.5 text-xs sm:text-[11px] font-medium gap-1.5 rounded-lg cursor-pointer touch-manipulation text-muted-foreground hover:text-foreground"
+                />
+              }
+            >
+              <SlidersHorizontal className="size-3.5 sm:size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+              <span>Quick fill</span>
+              <ChevronDown className="size-3.5 sm:size-3 opacity-70" aria-hidden="true" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-52 rounded-xl p-1">
+              <DropdownMenuLabel className="px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground">
+                Set all 5 criteria at once
+              </DropdownMenuLabel>
+              {RUBRIC_BANDS.map((option) => (
+                <DropdownMenuItem
+                  key={option.band}
+                  onClick={() => handleApplyPreset(option.band)}
+                  className="rounded-lg px-2.5 py-2 text-xs justify-between cursor-pointer"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <span className={`size-2 rounded-full ${option.dotColor}`} aria-hidden="true" />
+                    <span>All {option.label}</span>
+                  </span>
+                  <kbd className="text-[10px] font-mono text-muted-foreground ml-3">
+                    Alt+{option.shortcutKey}
+                  </kbd>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <div className="flex items-center p-0.5 rounded-lg bg-muted/60 border border-border/80 shrink-0">
             <button
               type="button"
               onClick={() => setLayoutMode("stepper")}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer min-h-[30px] sm:min-h-[28px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
-                layoutMode === "stepper"
+              className={`px-2.5 py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-10 sm:min-h-[28px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${layoutMode === "stepper"
                   ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
               aria-pressed={layoutMode === "stepper"}
               title="Focus Mode (1 criterion at a time)"
             >
@@ -773,11 +911,10 @@ export function ManualRubricEntryForm({
             <button
               type="button"
               onClick={() => setLayoutMode("list")}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer min-h-[30px] sm:min-h-[28px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
-                layoutMode === "list"
+              className={`px-2.5 py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-10 sm:min-h-[28px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${layoutMode === "list"
                   ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
               aria-pressed={layoutMode === "list"}
               title="All Mode (show all 5 criteria)"
             >
@@ -788,76 +925,17 @@ export function ManualRubricEntryForm({
         </div>
       </div>
 
-      {/* Quick Batch Presets Row */}
-      <div className="space-y-1.5 pt-0.5 pb-0.5">
-        {compositeRubric && (
-          <div className="flex items-center justify-end gap-1.5 text-[11px] font-sans tabular-nums">
-            <span className="text-muted-foreground">Score:</span>
-            <span className="font-semibold text-foreground">
-              {compositeRubric.totalPoints}/{compositeRubric.maxPoints} pts ({compositeRubric.avgPercentage}%)
-            </span>
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 @[440px]:grid-cols-4 gap-1.5 w-full">
-          <button
-            type="button"
-            onClick={() => handleApplyPreset("needs_improvement")}
-            className="inline-flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-[11px] font-medium bg-band-1/15 text-band-1-text dark:text-orange-200 border border-band-1/35 hover:bg-band-1/25 transition-colors cursor-pointer min-h-[34px] sm:min-h-[28px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 text-center"
-            title="Rate all 5 criteria as Needs Improvement (Alt+1)"
-          >
-            <span className="size-1.5 rounded-full bg-band-1 shrink-0" aria-hidden="true" />
-            <span className="truncate">
-              <span className="hidden @[480px]:inline">All </span>Needs Imp.
-            </span>
-            <kbd className="text-[9.5px] font-mono opacity-75 ml-0.5 hidden @[520px]:inline">Alt+1</kbd>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleApplyPreset("developing")}
-            className="inline-flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-[11px] font-medium bg-band-2/15 text-amber-900 dark:text-amber-200 border border-band-2/35 hover:bg-band-2/25 transition-colors cursor-pointer min-h-[34px] sm:min-h-[28px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 text-center"
-            title="Rate all 5 criteria as Developing (Alt+2)"
-          >
-            <span className="size-1.5 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
-            <span className="truncate">
-              <span className="hidden @[480px]:inline">All </span>Developing
-            </span>
-            <kbd className="text-[9.5px] font-mono opacity-75 ml-0.5 hidden @[520px]:inline">Alt+2</kbd>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleApplyPreset("satisfactory")}
-            className="inline-flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-[11px] font-medium bg-band-3/15 text-emerald-950 dark:text-emerald-200 border border-band-3/35 hover:bg-band-3/25 transition-colors cursor-pointer min-h-[34px] sm:min-h-[28px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 text-center"
-            title="Rate all 5 criteria as Satisfactory (Alt+3)"
-          >
-            <span className="size-1.5 rounded-full bg-band-3 shrink-0" aria-hidden="true" />
-            <span className="truncate">
-              <span className="hidden @[480px]:inline">All </span>Satisfactory
-            </span>
-            <kbd className="text-[9.5px] font-mono opacity-75 ml-0.5 hidden @[520px]:inline">Alt+3</kbd>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleApplyPreset("excellent")}
-            className="inline-flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-[11px] font-medium bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border border-brand-300/70 hover:bg-brand-100 dark:hover:bg-brand-900/60 transition-colors cursor-pointer min-h-[34px] sm:min-h-[28px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 text-center"
-            title="Rate all 5 criteria as Excellent (Alt+4)"
-          >
-            <span className="size-1.5 rounded-full bg-brand-600 dark:bg-brand-400 shrink-0" aria-hidden="true" />
-            <span className="truncate">
-              <span className="hidden @[480px]:inline">All </span>Excellent
-            </span>
-            <kbd className="text-[9.5px] font-mono opacity-75 ml-0.5 hidden @[520px]:inline">Alt+4</kbd>
-          </button>
-        </div>
-      </div>
-
       {/* Keyboard Shortcuts Hint Bar */}
       {showKeyboardHelp && (
-        <div className="p-2 rounded-lg bg-muted/40 border border-border/70 text-[11px] text-muted-foreground flex items-center justify-between gap-2 flex-wrap animate-in fade-in-50 duration-150 motion-reduce:animate-none">
-          <div className="flex items-center gap-3">
+        <div className="p-2.5 rounded-lg bg-muted/40 border border-border/70 text-[11px] text-muted-foreground flex items-center justify-between gap-x-3 gap-y-1.5 flex-wrap animate-in fade-in-50 duration-150 motion-reduce:animate-none">
+          <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
             <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">1–4</kbd> Rate</span>
-            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Alt+1–4</kbd> Set all</span>
-            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">J/K</kbd> Prev/Next</span>
+            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Alt+1–4</kbd> Quick fill</span>
+            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">J/K</kbd> Student</span>
+            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">C</kbd> Ink</span>
+            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">L</kbd> Magnify</span>
+            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">+/-/0</kbd> Zoom</span>
+            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Alt+[/]</kbd> Focus area</span>
           </div>
           <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Ctrl+Enter</kbd> Submit</span>
         </div>
@@ -893,13 +971,12 @@ export function ManualRubricEntryForm({
                   key={criterion.key}
                   type="button"
                   onClick={() => handleSelectCriterion(idx)}
-                  className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg border text-center transition-all cursor-pointer min-h-[40px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
-                    isStepActive
+                  className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg border text-center transition-all cursor-pointer min-h-[40px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${isStepActive
                       ? "bg-brand-100 dark:bg-brand-950 text-brand-950 dark:text-brand-200 border-brand-500 ring-2 ring-brand-400/40 font-bold"
                       : isRated
                         ? "bg-surface dark:bg-card border-brand-200/80 dark:border-brand-900/80 text-foreground"
                         : "bg-muted/30 border-border/60 text-muted-foreground hover:border-border"
-                  }`}
+                    }`}
                   aria-label={`Step ${idx + 1}: ${criterion.shortName}${isRated ? ` (Rated: ${bandMeta.label})` : ""}`}
                   aria-current={isStepActive ? "step" : undefined}
                 >
@@ -1009,11 +1086,10 @@ export function ManualRubricEntryForm({
                             onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
                           }
                         }}
-                        className={`flex flex-row items-center justify-between px-3 py-2.5 @[480px]:flex-col @[480px]:items-center @[480px]:justify-center @[480px]:p-2.5 rounded-lg border text-center transition-all cursor-pointer min-h-[44px] @[480px]:min-h-[42px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${
-                          isChecked
+                        className={`flex flex-row items-center justify-between px-3 py-2.5 @[480px]:flex-col @[480px]:items-center @[480px]:justify-center @[480px]:p-2.5 rounded-lg border text-center transition-all cursor-pointer min-h-[44px] @[480px]:min-h-[42px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
                             ? option.activeClass
                             : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-1.5 min-w-0">
                           <span className="text-[11px] font-mono font-medium text-muted-foreground shrink-0">
@@ -1111,11 +1187,10 @@ export function ManualRubricEntryForm({
               key={criterion.key}
               role="radiogroup"
               aria-labelledby={`criterion-label-${criterion.key}`}
-              className={`space-y-1.5 p-2.5 rounded-xl border transition-all ${
-                isFocused
+              className={`space-y-1.5 p-2.5 rounded-xl border transition-all ${isFocused
                   ? "bg-muted/30 border-brand-300/80 dark:border-brand-800/80 ring-1 ring-brand-400/30 shadow-xs"
                   : "bg-muted/15 border-border/60 hover:border-border"
-              }`}
+                }`}
               onClick={() => handleSelectCriterion(idx)}
             >
               <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -1184,11 +1259,10 @@ export function ManualRubricEntryForm({
                           `${criterion.shortName} rated ${option.label} (${option.score}).`
                         );
                       }}
-                      className={`flex flex-row items-center justify-between px-2.5 py-2 @[480px]:flex-col @[480px]:items-center @[480px]:justify-center @[480px]:p-2 rounded-lg border text-center transition-all cursor-pointer min-h-[42px] @[480px]:min-h-[38px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${
-                        isChecked
+                      className={`flex flex-row items-center justify-between px-2.5 py-2 @[480px]:flex-col @[480px]:items-center @[480px]:justify-center @[480px]:p-2 rounded-lg border text-center transition-all cursor-pointer min-h-[42px] @[480px]:min-h-[38px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
                           ? option.activeClass
                           : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span className="text-[11px] font-mono font-medium text-muted-foreground shrink-0">
@@ -1241,7 +1315,7 @@ export function ManualRubricEntryForm({
           )}
 
           {canGoNext && (
-            <label className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none touch-manipulation px-2 py-1 rounded-md hover:bg-muted/40 transition-colors min-h-[36px] sm:min-h-0">
+            <label className="inline-flex items-center gap-1.5 text-xs sm:text-[11px] text-muted-foreground cursor-pointer select-none touch-manipulation px-2 py-1 rounded-md hover:bg-muted/40 transition-colors min-h-10 sm:min-h-0">
               <input
                 type="checkbox"
                 checked={autoAdvance}
@@ -1259,8 +1333,8 @@ export function ManualRubricEntryForm({
               type="button"
               variant="outline"
               size="sm"
-              onClick={onCancel}
-              className="flex-1 @[460px]:flex-initial h-9 sm:h-8 px-3.5 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+              onClick={requestCancel}
+              className="flex-1 @[460px]:flex-initial h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-3.5 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
             >
               Cancel
             </Button>
@@ -1271,7 +1345,7 @@ export function ManualRubricEntryForm({
             size="sm"
             disabled={!allBandsSelected || isSubmittingScore}
             onClick={handleSubmitRubric}
-            className="flex-1 @[460px]:flex-initial w-full @[460px]:w-auto h-9 sm:h-8 px-4 bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-semibold rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation"
+            className="flex-1 @[460px]:flex-initial w-full @[460px]:w-auto h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-4 bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-semibold rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation"
           >
             {isSubmittingScore ? (
               <>
@@ -1292,6 +1366,36 @@ export function ManualRubricEntryForm({
           </Button>
         </div>
       </div>
+
+      {/* Unsaved Ratings Discard Confirmation */}
+      <AlertDialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard unsaved rubric ratings?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved ratings on this worksheet. Canceling now will revert them.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => setDiscardDialogOpen(false)}
+              className="min-h-10 sm:min-h-9"
+            >
+              Keep editing
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setDiscardDialogOpen(false);
+                onCancel?.();
+              }}
+              variant="destructive"
+              className="min-h-10 sm:min-h-9 cursor-pointer"
+            >
+              Discard changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

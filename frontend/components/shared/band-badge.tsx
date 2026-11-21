@@ -23,8 +23,8 @@ export function BandBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 font-medium border rounded-md transition-colors shrink-0 select-none",
-        size === "sm" ? "px-1.5 py-0.5 text-xs leading-none" : "px-2 py-0.5 text-xs",
+        "inline-flex items-center gap-1.5 font-medium border rounded-full transition-colors shrink-0 select-none",
+        size === "sm" ? "px-2 py-0.5 text-xs leading-none" : "px-2.5 py-0.5 text-xs",
         meta.badgeClass,
         className
       )}

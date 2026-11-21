@@ -3,7 +3,13 @@
 import { useEffect, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ActivityAssignmentFields, activitySchema, type ActivityFormValues } from "./activity-assignment-fields";
+import {
+  ActivityTitleField,
+  ActivityRosterField,
+  ActivityOptionalSettings,
+  activitySchema,
+  type ActivityFormValues,
+} from "./activity-assignment-fields";
 import { toActivityDueAt } from "@/lib/utils/activity-deadlines";
 import { ApiError } from "@/lib/utils/api-error";
 import {
@@ -30,7 +36,6 @@ import {
   Home,
   AlertTriangle,
   Lightbulb,
-  Eye,
   Copy,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -115,9 +120,11 @@ export function CreateActivityDialog({
     }
     createActivity(
       {
-        title: data.title, instructions: data.instructions.trim() || null,
+        title: data.title,
+        instructions: data.instructions.trim() || null,
         assignments: data.assignments,
-        due_at: toActivityDueAt(data.due_input), close_after_due: data.close_after_due,
+        due_at: toActivityDueAt(data.due_input),
+        close_after_due: data.close_after_due,
         target_text: data.target_text,
         is_take_home: data.is_take_home,
         points_possible: data.points_input || null,
@@ -134,7 +141,9 @@ export function CreateActivityDialog({
         },
         onError: (error: Error) => {
           if (error instanceof ApiError && error.code === "INVALID_ASSIGNMENT_TARGET") {
-            form.setError("assignments", { message: "Choose sections or students from your current roster." });
+            form.setError("assignments", {
+              message: "Choose sections or students from your current roster.",
+            });
           }
           toast.error(error.message || "Failed to create activity.");
         },
@@ -143,11 +152,35 @@ export function CreateActivityDialog({
   };
 
   const handleApplySuggestion = (text: string) => {
+    const previous = form.getValues("target_text")?.trim() ?? "";
+    const isCustomText =
+      previous.length > 0 &&
+      previous !== text &&
+      !PROMPT_SUGGESTIONS.some((s) => s.text === previous);
+
     form.setValue("target_text", text, {
       shouldValidate: true,
       shouldDirty: true,
     });
+
+    if (isCustomText) {
+      toast("Replaced custom prompt text", {
+        action: {
+          label: "Undo",
+          onClick: () => {
+            form.setValue("target_text", previous, {
+              shouldValidate: true,
+              shouldDirty: true,
+            });
+          },
+        },
+      });
+    }
   };
+
+  const hasInitialOptional = Boolean(
+    initialValues?.instructions?.trim() || initialValues?.points_possible != null
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -169,7 +202,9 @@ export function CreateActivityDialog({
         >
           <div className="overflow-y-auto overflow-x-hidden overscroll-contain px-1 py-1 flex-1 min-h-0">
             <FieldGroup>
-              <ActivityAssignmentFields form={form} />
+              {/* Chunk 1: Activity Prompt */}
+              <ActivityTitleField form={form} autoFocus />
+
               {/* Target Text */}
               <Field data-invalid={!!form.formState.errors.target_text}>
                 <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -206,7 +241,6 @@ export function CreateActivityDialog({
                     aria-required="true"
                     placeholder="e.g., The quick brown fox jumps over the lazy dog."
                     className="min-h-24 text-base sm:text-sm rounded-lg sm:rounded-xl focus-visible:ring-brand-500"
-                    autoFocus
                   />
                 </FieldContent>
 
@@ -234,15 +268,9 @@ export function CreateActivityDialog({
                 {/* Live Cursive Script Preview */}
                 {targetText && targetText.trim().length > 0 && (
                   <div className="space-y-1.5 pt-2">
-                    <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-                      <span className="flex items-center gap-1.5">
-                        <Eye className="size-3.5 text-brand-600 dark:text-brand-400" />
-                        <span>Cursive Worksheet Preview</span>
-                      </span>
-                      <span className="text-xs text-muted-foreground font-medium">
-                        3-line ruling
-                      </span>
-                    </div>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Cursive Worksheet Preview
+                    </p>
                     <div className="relative p-3.5 sm:p-4 pb-5 sm:pb-6 rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-2xs">
                       <div className="relative overflow-hidden">
                         <div
@@ -308,8 +336,7 @@ export function CreateActivityDialog({
                         Take-home activity
                       </FieldLabel>
                       <p className="text-xs text-muted-foreground mt-0.5 leading-normal">
-                        Allow parents to upload completed handwriting photos
-                        from home.
+                        Allow parents to upload completed handwriting photos from home.
                       </p>
                     </div>
                   </div>
@@ -322,6 +349,10 @@ export function CreateActivityDialog({
                   />
                 </div>
               </Field>
+
+              {/* Chunk 2: Assignment & Optional Settings */}
+              <ActivityRosterField form={form} />
+              <ActivityOptionalSettings form={form} defaultOpen={hasInitialOptional} />
             </FieldGroup>
           </div>
 

@@ -31,6 +31,7 @@ export function FilterPills<T extends string = string>({
   containerClassName,
   pillClassName,
 }: FilterPillsProps<T>) {
+  const groupId = React.useId();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = React.useState(false);
   const [canScrollRight, setCanScrollRight] = React.useState(false);
@@ -172,12 +173,12 @@ export function FilterPills<T extends string = string>({
             <button
               key={item.id}
               type="button"
-              id={`filter-pill-${item.id}`}
+              id={`${groupId}-pill-${item.id}`}
               disabled={item.disabled}
               onClick={() => onChange(item.id)}
               aria-pressed={isSelected}
               className={cn(
-                "relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer",
+                "relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[40px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer touch-manipulation",
                 "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                 "after:absolute after:-inset-x-1 after:inset-y-0 after:content-['']",
                 "disabled:pointer-events-none disabled:opacity-50",

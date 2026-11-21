@@ -37,7 +37,6 @@ import {
   RUBRIC_CRITERIA,
   DIAGNOSTIC_NOTES,
   getBandFromScore,
-  getBandMeta,
   RUBRIC_BANDS,
 } from "@/lib/utils/scoring";
 import { BandBadge } from "@/components/shared/band-badge";
@@ -46,8 +45,8 @@ import { CriterionTrendChart } from "./criterion-trend-chart";
 import { Button } from "@/components/ui/button";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import {
+  ChevronLeft,
   ChevronRight,
-  Info,
   LayoutDashboard,
   LineChart,
   History,
@@ -62,6 +61,9 @@ interface StudentDrillDownProps {
   onOpenChange: (open: boolean) => void;
   onOpenSubmission: (submissionId: string, activityId: string) => void;
   onUpload?: (studentId: string) => void;
+  onPreviousStudent?: () => void;
+  onNextStudent?: () => void;
+  studentPosition?: { current: number; total: number } | null;
 }
 
 export function StudentDrillDownDrawer({
@@ -70,6 +72,9 @@ export function StudentDrillDownDrawer({
   onOpenChange,
   onOpenSubmission,
   onUpload,
+  onPreviousStudent,
+  onNextStudent,
+  studentPosition,
 }: StudentDrillDownProps) {
   const { openUpload } = useTeacherModals();
   const studentId = student?.studentId ?? null;
@@ -110,24 +115,11 @@ export function StudentDrillDownDrawer({
     return history[history.length - 2];
   }, [history]);
 
-  // First submission info for all-time baseline progress trajectory
-  const firstSubmission = useMemo(() => {
-    if (!history || history.length === 0) return null;
-    return history[0];
-  }, [history]);
-
   // Recent score velocity calculation (latest vs preceding submission)
   const recentVelocity = useMemo(() => {
     if (!latestSubmission?.compositeScore || !precedingSubmission?.compositeScore) return null;
     return latestSubmission.compositeScore - precedingSubmission.compositeScore;
   }, [latestSubmission, precedingSubmission]);
-
-  // Overall improvement trajectory from baseline (first submission)
-  const baselineDelta = useMemo(() => {
-    if (!firstSubmission?.compositeScore || !latestSubmission?.compositeScore) return null;
-    if (history.length < 2) return null;
-    return latestSubmission.compositeScore - firstSubmission.compositeScore;
-  }, [firstSubmission, latestSubmission, history]);
 
   // Compute top strength and priority focus area from latest scores
   const { topStrength, focusArea } = useMemo(() => {
@@ -184,9 +176,9 @@ export function StudentDrillDownDrawer({
 
   const hasSubmissions = !knownZeroSubmissions && history.length > 0;
 
-  // Keyboard navigation for tab cycling scoped exclusively to the drawer dialog
+  // Keyboard navigation for tab cycling and student stepping scoped to the drawer dialog
   useEffect(() => {
-    if (!open || !hasSubmissions) return;
+    if (!open) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ensure key event originated within or is targeted at the drawer dialog
@@ -205,22 +197,28 @@ export function StudentDrillDownDrawer({
         (activeEl instanceof HTMLElement && activeEl.isContentEditable);
       if (isInput) return;
 
-      // Require Alt/Meta modifier for numeric shortcuts (WCAG 2.1.4 compliance)
-      if (e.key === "1" && (e.altKey || e.metaKey)) {
+      // Require Alt/Meta modifier for numeric tab shortcuts (WCAG 2.1.4 compliance)
+      if (hasSubmissions && e.key === "1" && (e.altKey || e.metaKey)) {
         e.preventDefault();
         setActiveTab("overview");
-      } else if (e.key === "2" && (e.altKey || e.metaKey)) {
+      } else if (hasSubmissions && e.key === "2" && (e.altKey || e.metaKey)) {
         e.preventDefault();
         setActiveTab("trends");
-      } else if (e.key === "3" && (e.altKey || e.metaKey)) {
+      } else if (hasSubmissions && e.key === "3" && (e.altKey || e.metaKey)) {
         e.preventDefault();
         setActiveTab("history");
+      } else if (e.key === "ArrowLeft" && e.altKey && onPreviousStudent) {
+        e.preventDefault();
+        onPreviousStudent();
+      } else if (e.key === "ArrowRight" && e.altKey && onNextStudent) {
+        e.preventDefault();
+        onNextStudent();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, hasSubmissions]);
+  }, [open, hasSubmissions, onPreviousStudent, onNextStudent]);
 
   if (!student) return null;
 
@@ -247,7 +245,7 @@ export function StudentDrillDownDrawer({
                   <SheetDescription className="text-xs font-medium text-muted-foreground inline">
                     Section: <span className="font-semibold text-foreground">{student.section}</span>
                   </SheetDescription>
-                  <span>•</span>
+                  <span aria-hidden="true">•</span>
                   <span className="tabular-nums">
                     {knownZeroSubmissions
                       ? "0 submissions"
@@ -255,6 +253,34 @@ export function StudentDrillDownDrawer({
                   </span>
                 </div>
               </div>
+
+              {studentPosition && studentPosition.total > 1 && (onPreviousStudent || onNextStudent) && (
+                <div className="flex items-center gap-1 shrink-0" aria-label="Step between students">
+                  <button
+                    type="button"
+                    onClick={onPreviousStudent}
+                    disabled={!onPreviousStudent}
+                    title="Previous student (Alt + Left)"
+                    aria-label="Previous student"
+                    className="min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg border border-border bg-background text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <ChevronLeft className="size-4" aria-hidden="true" />
+                  </button>
+                  <span className="text-xs font-medium text-muted-foreground tabular-nums px-1">
+                    {studentPosition.current}/{studentPosition.total}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={onNextStudent}
+                    disabled={!onNextStudent}
+                    title="Next student (Alt + Right)"
+                    aria-label="Next student"
+                    className="min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg border border-border bg-background text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <ChevronRight className="size-4" aria-hidden="true" />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Accessible Segmented Tab Navigation Bar */}
@@ -295,7 +321,7 @@ export function StudentDrillDownDrawer({
                   >
                     <History className="size-3.5 shrink-0" aria-hidden="true" />
                     <span>History</span>
-                    <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] bg-muted text-muted-foreground font-bold tabular-nums">
+                    <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-xs leading-none bg-muted text-muted-foreground font-bold tabular-nums">
                       {history.length}
                     </span>
                   </TabsTrigger>
@@ -314,27 +340,31 @@ export function StudentDrillDownDrawer({
               </div>
             ) : error ? (
               /* Dedicated Error State */
-              <div className="p-8 sm:p-12 rounded-xl border border-destructive/20 bg-destructive/5 text-center flex flex-col items-center justify-center space-y-3.5 my-auto w-full">
+              <div
+                role="alert"
+                className="p-8 sm:p-12 rounded-xl border border-destructive/20 bg-destructive/5 text-center flex flex-col items-center justify-center space-y-3.5 my-auto w-full"
+              >
                 <div className="p-3.5 rounded-full bg-background border border-destructive/30 text-destructive shadow-warm-xs">
                   <AlertCircle className="size-6 text-destructive" aria-hidden="true" />
                 </div>
                 <div className="space-y-1.5 max-w-sm">
                   <h4 className="text-base font-semibold text-foreground">
-                    Failed to Load Student History
+                    Couldn&apos;t load worksheet history
                   </h4>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    {error.message || "An unexpected error occurred while fetching worksheet history."}
+                    We couldn&apos;t load {student.fullName}&apos;s worksheet history right now. Check your internet connection and try again.
                   </p>
                 </div>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="mt-2 text-xs font-semibold gap-1.5 cursor-pointer border-destructive/30 hover:bg-destructive/10 text-destructive"
+                  className="mt-2 min-h-[44px] sm:min-h-[36px] px-4 text-xs font-semibold gap-1.5 cursor-pointer border-destructive/30 hover:bg-destructive/10 text-destructive rounded-lg"
                   onClick={() => refetch()}
                   disabled={isRefetching}
                 >
-                  <RefreshCw className={cn("size-3.5", isRefetching && "animate-spin motion-reduce:animate-none")} aria-hidden="true" />
+                  <RefreshCw className={cn("size-3.5 shrink-0", isRefetching && "animate-spin motion-reduce:animate-none")} aria-hidden="true" />
+                  <span>{isRefetching ? "Retrying…" : "Try again"}</span>
                 </Button>
               </div>
             ) : !hasSubmissions ? (
@@ -373,7 +403,7 @@ export function StudentDrillDownDrawer({
                 {/* Inactive 5-Criteria Pedagogical Framework Scaffolding */}
                 <section aria-labelledby="diagnostic-framework-title" className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 id="diagnostic-framework-title" className="font-sans text-sm font-semibold text-foreground">
+                    <h3 id="diagnostic-framework-title" className="font-heading text-sm font-semibold text-foreground">
                       Diagnostic Criteria Framework
                     </h3>
                   </div>
@@ -420,39 +450,39 @@ export function StudentDrillDownDrawer({
                   {(topStrength || focusArea) && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3.5 border-t border-border/60">
                       {topStrength && (
-                        <div className="p-3 rounded-lg bg-muted/20 border border-border/60 space-y-1 min-w-0">
+                        <div className="p-3 rounded-lg bg-muted/20 border border-border/60 space-y-1.5 min-w-0">
                           <span className="text-xs font-medium text-muted-foreground block">
                             Top Strength
                           </span>
-                          <div className="flex items-center justify-between gap-2 pt-0.5">
+                          <div className="flex items-center justify-between gap-2">
                             <span className="text-sm font-semibold truncate text-foreground">
                               {topStrength.shortName}
                             </span>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <span className="font-sans text-sm font-bold tabular-nums text-foreground">
-                                {topStrength.score.toFixed(1)}%
-                              </span>
-                              <span className={cn("w-2 h-2 rounded-full shrink-0", getBandMeta(topStrength.band).dotColor)} />
-                            </div>
+                            <span className="font-sans text-sm font-bold tabular-nums text-foreground shrink-0">
+                              {topStrength.score.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div>
+                            <BandBadge score={topStrength.score} band={topStrength.band} size="sm" showDot />
                           </div>
                         </div>
                       )}
 
                       {focusArea && (
-                        <div className="p-3 rounded-lg bg-muted/20 border border-border/60 space-y-1 min-w-0">
+                        <div className="p-3 rounded-lg bg-muted/20 border border-border/60 space-y-1.5 min-w-0">
                           <span className="text-xs font-medium text-muted-foreground block">
                             Priority Focus
                           </span>
-                          <div className="flex items-center justify-between gap-2 pt-0.5">
+                          <div className="flex items-center justify-between gap-2">
                             <span className="text-sm font-semibold truncate text-foreground">
                               {focusArea.shortName}
                             </span>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <span className="font-sans text-sm font-bold tabular-nums text-foreground">
-                                {focusArea.score.toFixed(1)}%
-                              </span>
-                              <span className={cn("w-2 h-2 rounded-full shrink-0", getBandMeta(focusArea.band).dotColor)} />
-                            </div>
+                            <span className="font-sans text-sm font-bold tabular-nums text-foreground shrink-0">
+                              {focusArea.score.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div>
+                            <BandBadge score={focusArea.score} band={focusArea.band} size="sm" showDot />
                           </div>
                         </div>
                       )}
@@ -464,7 +494,7 @@ export function StudentDrillDownDrawer({
               {/* 5-Criteria Diagnostic Breakdown */}
               <section className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-sans text-sm font-semibold text-foreground">
+                  <h3 className="font-heading text-sm font-semibold text-foreground">
                     Diagnostic Breakdown
                   </h3>
                   <div className="flex items-center gap-2">
@@ -479,8 +509,8 @@ export function StudentDrillDownDrawer({
                     </button>
                     {latestSubmission && (
                       <>
-                        <span className="text-muted-foreground">•</span>
-                        <span className="text-[11px] font-medium text-muted-foreground tabular-nums">
+                        <span className="text-muted-foreground" aria-hidden="true">•</span>
+                        <span className="text-xs font-medium text-muted-foreground tabular-nums">
                           {new Date(latestSubmission.submissionDate).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
@@ -539,12 +569,11 @@ export function StudentDrillDownDrawer({
                           <AccordionContent className="px-3.5 sm:px-4 pb-4 space-y-3.5 border-0">
                             <BandPositionBar score={score} showLabel={false} height="sm" />
                             {diagnosticNote && (
-                              <div className="p-3 sm:p-3.5 rounded-lg bg-muted/40 text-xs text-muted-foreground leading-relaxed">
-                                <div className="flex items-center gap-1.5 font-semibold text-foreground/90 mb-1.5">
-                                  <Info className="size-3.5 text-primary shrink-0" aria-hidden="true" />
-                                  <span>Diagnostic Note</span>
-                                </div>
-                                <p className="text-muted-foreground/90 pl-5">{diagnosticNote}</p>
+                              <div className="p-3 sm:p-3.5 rounded-lg bg-muted/40 text-xs text-muted-foreground leading-relaxed space-y-1">
+                                <p className="font-semibold text-foreground/90">
+                                  Diagnostic Note
+                                </p>
+                                <p className="text-muted-foreground/90">{diagnosticNote}</p>
                               </div>
                             )}
                           </AccordionContent>
@@ -558,7 +587,7 @@ export function StudentDrillDownDrawer({
               {/* Recent Submissions Preview (Capped to 3 items with 'View All' affordance) */}
               <section className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-sans text-sm font-semibold text-foreground">
+                  <h3 className="font-heading text-sm font-semibold text-foreground">
                     Recent Worksheets
                   </h3>
                   {history.length > 3 && (
@@ -588,12 +617,12 @@ export function StudentDrillDownDrawer({
                               &quot;{item.targetText}&quot;
                             </span>
                             {item.isTakeHome && (
-                              <span className="text-[10px] px-2 py-0.5 rounded bg-secondary text-secondary-foreground border border-border/40 font-semibold tracking-wide uppercase shrink-0">
+                              <span className="text-xs leading-none px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground border border-border/40 font-medium shrink-0">
                                 Take-Home
                               </span>
                             )}
                           </div>
-                          <div className="text-[11px] font-medium text-muted-foreground tabular-nums">
+                          <div className="text-xs font-medium text-muted-foreground tabular-nums">
                             {new Date(item.submissionDate).toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",
@@ -605,7 +634,7 @@ export function StudentDrillDownDrawer({
                         <div className="flex items-center gap-3 shrink-0">
                           <div className="text-right space-y-0.5">
                             <span className="font-sans text-xs sm:text-sm font-bold tabular-nums text-foreground block">
-                              {item.compositeScore?.toFixed(1)}%
+                              {item.compositeScore != null ? `${item.compositeScore.toFixed(1)}%` : "—"}
                             </span>
                             <BandBadge score={item.compositeScore} size="sm" showDot={false} />
                           </div>
@@ -622,7 +651,7 @@ export function StudentDrillDownDrawer({
               {/* Tab 2: TRENDS PANEL */}
               <div className="flex items-center justify-between min-w-0">
                 <div>
-                  <h3 className="font-sans text-sm font-semibold text-foreground">
+                  <h3 className="font-heading text-sm font-semibold text-foreground">
                     Longitudinal Progress
                   </h3>
                   <p className="text-xs text-muted-foreground">
@@ -631,44 +660,38 @@ export function StudentDrillDownDrawer({
                   </p>
                 </div>
                 {recentVelocity !== null ? (
-                  <div className="flex items-center gap-3 sm:gap-4 shrink-0 text-right">
-                    <div
-                      title={
-                        precedingSubmission
-                          ? `Compared to "${precedingSubmission.targetText}" (${new Date(precedingSubmission.submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })})`
-                          : undefined
-                      }
-                    >
-                      <span className="text-[10px] sm:text-[11px] font-medium text-muted-foreground block">
-                        Recent Growth
-                      </span>
-                      <div className="flex items-center justify-end gap-1.5">
-                        <span className={cn(
+                  <div
+                    className="shrink-0 text-right"
+                    title={
+                      precedingSubmission
+                        ? `Compared to "${precedingSubmission.targetText}" (${new Date(precedingSubmission.submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })})`
+                        : undefined
+                    }
+                  >
+                    <span className="text-xs font-medium text-muted-foreground block">
+                      Recent Change
+                    </span>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span
+                        className={cn(
                           "text-xs font-bold tabular-nums",
-                          recentVelocity > 0 ? "text-band-4-text" : recentVelocity < 0 ? "text-band-2-text" : "text-muted-foreground"
-                        )}>
-                          {recentVelocity > 0 ? `+${recentVelocity.toFixed(1)}%` : `${recentVelocity.toFixed(1)}%`}
-                        </span>
-                        {precedingSubmission && (
-                          <span className="text-[10px] font-normal text-muted-foreground hidden sm:inline truncate max-w-[110px]">
-                            vs. &quot;{precedingSubmission.targetText}&quot;
-                          </span>
+                          recentVelocity > 0
+                            ? "text-band-4-text"
+                            : recentVelocity < 0
+                              ? "text-band-2-text"
+                              : "text-muted-foreground"
                         )}
-                      </div>
+                      >
+                        {recentVelocity > 0
+                          ? `+${recentVelocity.toFixed(1)}%`
+                          : `${recentVelocity.toFixed(1)}%`}
+                      </span>
+                      {precedingSubmission && (
+                        <span className="text-xs font-normal text-muted-foreground hidden sm:inline truncate max-w-[120px]">
+                          vs. &quot;{precedingSubmission.targetText}&quot;
+                        </span>
+                      )}
                     </div>
-                    {baselineDelta !== null && history.length > 2 && (
-                      <div className="border-l border-border pl-3 sm:pl-4">
-                        <span className="text-[10px] sm:text-[11px] font-medium text-muted-foreground block">
-                          Overall Growth
-                        </span>
-                        <span className={cn(
-                          "text-xs font-bold tabular-nums",
-                          baselineDelta > 0 ? "text-band-4-text" : baselineDelta < 0 ? "text-band-2-text" : "text-muted-foreground"
-                        )}>
-                          {baselineDelta > 0 ? `+${baselineDelta.toFixed(1)}%` : `${baselineDelta.toFixed(1)}%`}
-                        </span>
-                      </div>
-                    )}
                   </div>
                 ) : history.length === 1 ? (
                   <div className="text-right shrink-0">
@@ -696,14 +719,14 @@ export function StudentDrillDownDrawer({
                   <button
                     type="button"
                     onClick={() => setActiveTab("overview")}
-                    className="text-xs font-semibold text-primary hover:underline cursor-pointer pt-1"
+                    className="min-h-[40px] sm:min-h-[32px] px-3 inline-flex items-center rounded-md text-xs font-semibold text-primary hover:underline cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     View latest breakdown in Overview &rarr;
                   </button>
                 </div>
               ) : (
                 <div className="p-4 rounded-xl border border-border bg-card shadow-warm-xs">
-                  <CriterionTrendChart history={history} />
+                  <CriterionTrendChart history={history} showBandLegend={false} />
                 </div>
               )}
             </TabsContent>
@@ -711,7 +734,7 @@ export function StudentDrillDownDrawer({
             <TabsContent value="history" className="mt-0 focus-visible:outline-none space-y-3">
               {/* Tab 3: FULL HISTORY PANEL */}
               <div className="flex items-center justify-between">
-                <h3 className="font-sans text-sm font-semibold text-foreground">
+                <h3 className="font-heading text-sm font-semibold text-foreground">
                   All Graded Submissions ({history.length})
                 </h3>
               </div>
@@ -731,12 +754,12 @@ export function StudentDrillDownDrawer({
                             &quot;{item.targetText}&quot;
                           </span>
                           {item.isTakeHome && (
-                            <span className="text-[10px] px-2 py-0.5 rounded bg-secondary text-secondary-foreground border border-border/40 font-semibold tracking-wide uppercase shrink-0">
+                            <span className="text-xs leading-none px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground border border-border/40 font-medium shrink-0">
                               Take-Home
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] font-medium text-muted-foreground tabular-nums">
+                        <div className="text-xs font-medium text-muted-foreground tabular-nums">
                           {new Date(item.submissionDate).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
@@ -748,7 +771,7 @@ export function StudentDrillDownDrawer({
                       <div className="flex items-center gap-3 shrink-0">
                         <div className="text-right space-y-0.5">
                           <span className="font-sans text-xs sm:text-sm font-bold tabular-nums text-foreground block">
-                            {item.compositeScore?.toFixed(1)}%
+                            {item.compositeScore != null ? `${item.compositeScore.toFixed(1)}%` : "—"}
                           </span>
                           <BandBadge score={item.compositeScore} size="sm" showDot={false} />
                         </div>
@@ -766,7 +789,7 @@ export function StudentDrillDownDrawer({
       {/* Persistent Rubric Score Bands Footer */}
       <footer className="shrink-0 border-t border-border bg-card/95 backdrop-blur-xs px-4 sm:px-6 py-2.5 sm:py-3">
         <div className="flex flex-col gap-1.5 sm:gap-2">
-          <span className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider shrink-0">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider shrink-0">
             Rubrics
           </span>
           <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-1 sm:gap-y-1.5 text-xs max-w-max">
@@ -778,10 +801,10 @@ export function StudentDrillDownDrawer({
               else if (band.band === "excellent") range = "75–100%";
 
               return (
-                <div key={band.band} className="flex items-center gap-1 sm:gap-1.5 min-w-0">
-                  <span className={cn("size-2 rounded-full shrink-0", band.dotColor)} />
-                  <span className="font-medium text-foreground text-[10px] sm:text-[11px] truncate">{band.label}</span>
-                  <span className="text-muted-foreground text-[10px] sm:text-[11px] tabular-nums shrink-0">({range})</span>
+                <div key={band.band} className="flex items-center gap-1.5 min-w-0">
+                  <span className={cn("size-2 rounded-full shrink-0", band.dotColor)} aria-hidden="true" />
+                  <span className="font-medium text-foreground text-xs truncate">{band.label}</span>
+                  <span className="text-muted-foreground text-xs tabular-nums shrink-0">({range})</span>
                 </div>
               );
             })}

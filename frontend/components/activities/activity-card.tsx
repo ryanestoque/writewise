@@ -41,6 +41,7 @@ export interface ActivityCardProps {
   isSelected: boolean;
   isSelectMode: boolean;
   totalStudents: number;
+  assignedStudentIds?: string[];
   onToggleSelect: (id: string, shiftKey?: boolean) => void;
   onUpload: (activityId: string) => void;
   onDuplicate: (activity: Activity) => void;
@@ -82,6 +83,7 @@ export const ActivityCard = memo(function ActivityCard({
   isSelected,
   isSelectMode,
   totalStudents,
+  assignedStudentIds,
   onToggleSelect,
   onUpload,
   onDuplicate,
@@ -96,55 +98,66 @@ export const ActivityCard = memo(function ActivityCard({
   const wordCount = useMemo(() => getWordCount(activity.target_text ?? ""), [activity.target_text]);
   const relativeTime = useMemo(() => getRelativeTime(activity.created_at), [activity.created_at]);
 
-  // Derived submission stats
-  const { submissionCount, completedCount, processingCount, rejectedCount, isFullyCollected } =
-    useMemo(() => {
-      const submissions = activity.submissions ?? [];
-      const total = submissions.length;
-      let completed = 0;
-      let processing = 0;
-      let rejected = 0;
+  // Derived per-student submission stats (unique students, never inflated by retries)
+  const {
+    collectedStudents,
+    totalAttempts,
+    completedCount,
+    processingCount,
+    rejectedCount,
+    isFullyCollected,
+  } = useMemo(() => {
+    const submissions = activity.submissions ?? [];
+    const assignedSet =
+      assignedStudentIds && assignedStudentIds.length > 0
+        ? new Set(assignedStudentIds)
+        : null;
 
-      for (let i = 0; i < total; i++) {
-        const s = submissions[i];
-        if (s.status === "completed") completed++;
-        else if (s.status === "processing") processing++;
-        else if (s.status === "rejected") rejected++;
+    // Best status per unique student: completed > processing > rejected
+    const studentStatus = new Map<string, "completed" | "processing" | "rejected">();
+    const priority = { completed: 3, processing: 2, rejected: 1 } as const;
+
+    for (let i = 0; i < submissions.length; i++) {
+      const s = submissions[i];
+      if (assignedSet && !assignedSet.has(s.student_id)) continue;
+      const status = s.status;
+      if (status !== "completed" && status !== "processing" && status !== "rejected") continue;
+      const existing = studentStatus.get(s.student_id);
+      if (!existing || priority[status] > priority[existing]) {
+        studentStatus.set(s.student_id, status);
       }
+    }
 
-      return {
-        submissionCount: total,
-        completedCount: completed,
-        processingCount: processing,
-        rejectedCount: rejected,
-        isFullyCollected: totalStudents > 0 && total >= totalStudents,
-      };
-    }, [activity.submissions, totalStudents]);
+    let completed = 0;
+    let processing = 0;
+    let rejected = 0;
+    for (const status of studentStatus.values()) {
+      if (status === "completed") completed++;
+      else if (status === "processing") processing++;
+      else if (status === "rejected") rejected++;
+    }
+
+    const uniqueCollected = studentStatus.size;
+    return {
+      collectedStudents: uniqueCollected,
+      totalAttempts: submissions.length,
+      completedCount: completed,
+      processingCount: processing,
+      rejectedCount: rejected,
+      isFullyCollected: totalStudents > 0 && uniqueCollected >= totalStudents,
+    };
+  }, [activity.submissions, assignedStudentIds, totalStudents]);
 
   return (
     <div
-      role={isSelectMode ? "checkbox" : undefined}
-      aria-checked={isSelectMode ? isSelected : undefined}
-      tabIndex={isSelectMode ? 0 : undefined}
-      aria-label={isSelectMode ? `Select activity: ${displayTargetText.slice(0, 40)}` : undefined}
       onClick={
         isSelectMode
           ? (e) => onToggleSelect(activity.id, e.shiftKey)
           : undefined
       }
-      onKeyDown={
-        isSelectMode
-          ? (e) => {
-              if (e.key === " " || e.key === "Enter") {
-                e.preventDefault();
-                onToggleSelect(activity.id, e.shiftKey);
-              }
-            }
-          : undefined
-      }
       className={cn(
         "group relative flex flex-col justify-between bg-surface dark:bg-card border rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-warm hover:shadow-md transition-all duration-200",
-        isSelectMode && "cursor-pointer select-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+        isSelectMode && "cursor-pointer select-none",
         isSelected && "ring-2 ring-primary border-primary/60 bg-brand-50/20 dark:bg-brand-950/20",
         isArchived
           ? "border-dashed border-border/80 opacity-80 hover:opacity-100"
@@ -304,15 +317,14 @@ export const ActivityCard = memo(function ActivityCard({
             <span className="font-semibold text-foreground text-xs flex items-center gap-1.5 truncate">
               <Inbox className="size-3.5 text-muted-foreground shrink-0" />
               {totalStudents > 0 ? (
-                <span className="truncate">
-                  {submissionCount > totalStudents
-                    ? `${submissionCount} collected`
-                    : `${submissionCount} of ${totalStudents} collected`}
+                <span className="truncate tabular-nums">
+                  {collectedStudents} of {totalStudents}{" "}
+                  {totalStudents === 1 ? "student" : "students"}
                 </span>
               ) : (
-                <span className="truncate">
-                  {submissionCount}{" "}
-                  {submissionCount === 1 ? "submission" : "submissions"}
+                <span className="truncate tabular-nums">
+                  {totalAttempts}{" "}
+                  {totalAttempts === 1 ? "upload" : "uploads"}
                 </span>
               )}
             </span>
@@ -339,11 +351,11 @@ export const ActivityCard = memo(function ActivityCard({
                 <div
                   tabIndex={0}
                   role="progressbar"
-                  aria-valuenow={Math.min(submissionCount, totalStudents)}
+                  aria-valuenow={Math.min(collectedStudents, totalStudents)}
                   aria-valuemin={0}
                   aria-valuemax={totalStudents}
-                  aria-valuetext={`${completedCount} completed, ${processingCount} processing, ${rejectedCount} rejected of ${totalStudents} students`}
-                  aria-label={`Submission progress: ${completedCount} completed, ${processingCount} processing, ${rejectedCount} rejected out of ${totalStudents} students`}
+                  aria-valuetext={`${completedCount} completed, ${processingCount} processing, ${rejectedCount} needing re-scan out of ${totalStudents} assigned students`}
+                  aria-label={`Submission progress: ${completedCount} completed, ${processingCount} processing, ${rejectedCount} needing re-scan out of ${totalStudents} assigned students`}
                   onClick={(e) => e.stopPropagation()}
                   className="group/progress w-full py-2 -my-1.5 cursor-help focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-full touch-manipulation"
                 >
@@ -383,9 +395,9 @@ export const ActivityCard = memo(function ActivityCard({
               className="flex flex-col items-stretch bg-popover text-popover-foreground border border-border shadow-warm-md text-xs p-3 space-y-2 min-w-[220px] rounded-xl"
             >
               <div className="font-semibold text-foreground pb-2 border-b border-border flex items-center justify-between">
-                <span className="text-xs font-heading font-medium">Class Submissions</span>
+                <span className="text-xs font-heading font-medium">Assigned Students</span>
                 <span className="tabular-nums text-muted-foreground font-medium text-xs bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded-md">
-                  {submissionCount}/{totalStudents}
+                  {collectedStudents}/{totalStudents}
                 </span>
               </div>
               <div className="space-y-1.5 text-xs">
@@ -409,18 +421,20 @@ export const ActivityCard = memo(function ActivityCard({
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-1.5 text-destructive font-medium">
                       <span className="size-2 rounded-full bg-destructive inline-block shrink-0" />
-                      Rejected (Needs Re-scan)
+                      Needs Re-scan
                     </span>
                     <span className="font-semibold tabular-nums text-destructive">{rejectedCount}</span>
                   </div>
                 )}
-                {totalStudents - submissionCount > 0 && (
+                {Math.max(0, totalStudents - collectedStudents) > 0 && (
                   <div className="flex items-center justify-between text-muted-foreground pt-1.5 border-t border-border/50">
                     <span className="flex items-center gap-1.5">
                       <span className="size-2 rounded-full bg-muted-foreground/30 inline-block shrink-0" />
-                      Unsubmitted
+                      Not submitted
                     </span>
-                    <span className="font-medium tabular-nums">{totalStudents - submissionCount}</span>
+                    <span className="font-medium tabular-nums">
+                      {Math.max(0, totalStudents - collectedStudents)}
+                    </span>
                   </div>
                 )}
               </div>
@@ -428,27 +442,33 @@ export const ActivityCard = memo(function ActivityCard({
           </Tooltip>
         )}
 
-        {/* Assessment Status Subtext */}
+        {/* Triage-First Assessment Status Subtext */}
         <div className="flex items-center justify-between text-xs text-muted-foreground pt-0.5">
           <span className="flex items-center gap-1.5 truncate">
             <span
               className={cn(
                 "size-1.5 rounded-full shrink-0",
-                processingCount > 0
+                rejectedCount > 0
+                  ? "bg-destructive"
+                  : processingCount > 0
                   ? "bg-warning motion-safe:animate-pulse motion-reduce:animate-none"
                   : completedCount > 0
                   ? "bg-brand-500"
                   : "bg-muted-foreground/50"
               )}
             />
-            <span className="truncate">
-              {completedCount > 0
-                ? `${completedCount} ${completedCount === 1 ? "worksheet" : "worksheets"} scored`
+            <span className="truncate tabular-nums">
+              {rejectedCount > 0 && completedCount > 0
+                ? `${rejectedCount} ${rejectedCount === 1 ? "needs" : "need"} re-scan · ${completedCount} ready to review`
+                : rejectedCount > 0
+                ? `${rejectedCount} ${rejectedCount === 1 ? "worksheet needs" : "worksheets need"} re-scan`
                 : processingCount > 0
-                ? `${processingCount} ${processingCount === 1 ? "worksheet" : "worksheets"} processing analysis`
-                : submissionCount > 0
-                ? `${submissionCount} collected · Ready to evaluate`
-                : "Awaiting worksheet submissions"}
+                ? `${processingCount} ${processingCount === 1 ? "worksheet" : "worksheets"} analyzing`
+                : completedCount > 0
+                ? `${completedCount} ${completedCount === 1 ? "worksheet" : "worksheets"} ready to review`
+                : collectedStudents > 0
+                ? `${collectedStudents} collected · Ready to review`
+                : "Awaiting worksheet uploads"}
             </span>
           </span>
         </div>

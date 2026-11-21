@@ -298,7 +298,7 @@ export default function ActivitiesPage() {
     setLastSelectedId(null);
   }, []);
 
-  // Keyboard shortcut: "/" or Cmd/Ctrl+K to focus search, Escape to deselect
+  // Keyboard shortcut: "/" to focus search, Escape to deselect (Cmd/Ctrl+K is reserved globally for Upload Worksheet)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -330,11 +330,7 @@ export default function ActivitiesPage() {
         }
       }
 
-      if (
-        (e.key === "/" ||
-          ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k")) &&
-        !isTyping
-      ) {
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey && !isTyping) {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
@@ -642,21 +638,27 @@ export default function ActivitiesPage() {
           aria-label="Activities list"
           className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4"
         >
-          {filteredAndSortedActivities.map((activity) => (
-            <ActivityCard
-              key={activity.id}
-              activity={activity}
-              isSelected={selectedIds.has(activity.id)}
-              isSelectMode={isSelectMode}
-              totalStudents={(students ?? []).filter((s) => activityAssignedTo(activity, s)).length}
-              onToggleSelect={handleToggleSelect}
-              onUpload={handleUpload}
-              onDuplicate={handleDuplicate}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onToggleArchive={handleToggleArchiveActivity}
-            />
-          ))}
+          {filteredAndSortedActivities.map((activity) => {
+            const assignedStudents = (students ?? []).filter((s) =>
+              activityAssignedTo(activity, s)
+            );
+            return (
+              <ActivityCard
+                key={activity.id}
+                activity={activity}
+                isSelected={selectedIds.has(activity.id)}
+                isSelectMode={isSelectMode}
+                totalStudents={assignedStudents.length}
+                assignedStudentIds={assignedStudents.map((s) => s.id)}
+                onToggleSelect={handleToggleSelect}
+                onUpload={handleUpload}
+                onDuplicate={handleDuplicate}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onToggleArchive={handleToggleArchiveActivity}
+              />
+            );
+          })}
         </div>
       )}
 

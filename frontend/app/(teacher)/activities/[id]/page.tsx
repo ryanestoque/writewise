@@ -61,6 +61,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Empty,
   EmptyContent,
   EmptyDescription,
@@ -238,6 +248,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
   const [selectedSubmissionIds, setSelectedSubmissionIds] = useState<Set<string>>(new Set());
   const [isBatchDeleteDialogOpen, setIsBatchDeleteDialogOpen] = useState(false);
   const [isBatchReleaseDialogOpen, setIsBatchReleaseDialogOpen] = useState(false);
+  const [isBatchExcuseDialogOpen, setIsBatchExcuseDialogOpen] = useState(false);
   const [singleAttemptToDelete, setSingleAttemptToDelete] = useState<Submission | null>(null);
   const [studentBatchToDelete, setStudentBatchToDelete] = useState<{
     studentName: string;
@@ -969,13 +980,35 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
       }
 
       if (failedCount === 0) {
+        const excusedIds = Array.from(succeededStudentIds);
         toast.success(
-          `Marked ${succeededStudentIds.size} ${succeededStudentIds.size === 1 ? "student" : "students"} as excused.`
+          `Marked ${excusedIds.length} ${excusedIds.length === 1 ? "student" : "students"} as excused.`,
+          {
+            action: {
+              label: "Undo",
+              onClick: () => {
+                void batchUpdateWorkMutation
+                  .mutateAsync({
+                    activityId: id,
+                    studentIds: excusedIds,
+                    body: { excused: false },
+                  })
+                  .then(() => {
+                    toast.success("Excuse status reverted.");
+                  })
+                  .catch(() => {
+                    toast.error("Could not undo excuse status. Please update individually.");
+                  });
+              },
+            },
+          }
         );
+        setIsBatchExcuseDialogOpen(false);
       } else if (succeededStudentIds.size > 0) {
         toast.warning(
           `Excused ${succeededStudentIds.size} students, but ${failedCount} failed. The remaining items remain selected.`
         );
+        setIsBatchExcuseDialogOpen(false);
       } else {
         toast.error("Failed to excuse selected students. Please try again.");
       }
@@ -1672,7 +1705,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
             type="button"
             variant="outline"
             size="sm"
-            onClick={handleBatchExcuse}
+            onClick={() => setIsBatchExcuseDialogOpen(true)}
             disabled={isBatchExcusing || batchDeleteMutation.isPending}
             className="min-h-11 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-medium md:min-h-9 border-border/80 hover:bg-muted/60"
           >
@@ -1712,6 +1745,43 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
         isReleasing={isBatchReleasing}
         onConfirm={handleBatchReleaseConfirm}
       />
+
+      {/* Batch Excuse Confirmation Dialog */}
+      <AlertDialog open={isBatchExcuseDialogOpen} onOpenChange={setIsBatchExcuseDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Excuse {selectedStudentIds.length}{" "}
+              {selectedStudentIds.length === 1 ? "student" : "students"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedStudentIds.length === 1
+                ? "This student will be marked excused for this activity and excluded from missing-work counts."
+                : `These ${selectedStudentIds.length} students will be marked excused for this activity and excluded from missing-work counts.`}
+              {hiddenSelectedCount > 0 && (
+                <>
+                  {" "}
+                  Note: {hiddenSelectedCount}{" "}
+                  {hiddenSelectedCount === 1 ? "selected attempt is" : "selected attempts are"}{" "}
+                  currently hidden by your active filter.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBatchExcusing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isBatchExcusing}
+              onClick={(e) => {
+                e.preventDefault();
+                void handleBatchExcuse();
+              }}
+            >
+              {isBatchExcusing ? "Excusing…" : `Excuse ${selectedStudentIds.length}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Attempt Deletion Alert Dialogs */}
       <AttemptDeletionDialogs

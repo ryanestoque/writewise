@@ -43,6 +43,8 @@ import {
   Edit3,
   Trash2,
   Loader2,
+  MoreHorizontal,
+  MessageSquare,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -54,6 +56,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useDeleteSubmission } from "@/lib/hooks/use-submissions";
 import {
@@ -72,7 +81,31 @@ import {
   SubmissionLifecycleControls,
   SubmissionReturnedAlert,
 } from "./submission-lifecycle-controls";
-import { SubmissionCommentTabs } from "@/components/comments/submission-comment-tabs";
+import { useCommentAccountId, useUnreadCommentThreads } from "@/lib/hooks/use-comments";
+import { SubmissionCommentThread } from "@/components/comments/submission-comment-thread";
+
+const GUIDE_LINES_STORAGE_KEY = "writewise.inspector.showGuideLines";
+const ACTIVE_TAB_STORAGE_KEY = "writewise.rubric.activeTab";
+
+function readStoredGuideLines(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(GUIDE_LINES_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function readStoredAssessmentTab(): "rubric" | "metrics" {
+  if (typeof window === "undefined") return "rubric";
+  try {
+    return window.localStorage.getItem(ACTIVE_TAB_STORAGE_KEY) === "metrics"
+      ? "metrics"
+      : "rubric";
+  } catch {
+    return "rubric";
+  }
+}
 
 
 
@@ -140,6 +173,7 @@ export function SubmissionDetailContent({
     scoringEngine.data === "manual" && submission.status === "completed";
   const [isScrolledPastInspector, setIsScrolledPastInspector] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const worksheetColumnRef = useRef<HTMLDivElement>(null);
 
   const [selectedCriterion, setSelectedCriterion] = useState<string | null>(
     "Letter Formation"
@@ -147,14 +181,63 @@ export function SubmissionDetailContent({
   const [activeCriterionOverride, setActiveCriterionOverride] =
     useState<{ submissionId: string; criterion: CriterionFilter } | null>(null);
   const [showOverlay, setShowOverlay] = useState<boolean>(true);
-  const [phase1Tab, setPhase1Tab] = useState<"rubric" | "metrics">("rubric");
+  const [rightPaneTab, setRightPaneTabState] = useState<"rubric" | "metrics" | "comments">(() =>
+    initialView === "comments" ? "comments" : readStoredAssessmentTab()
+  );
   const [isEditingRubric, setIsEditingRubric] = useState(false);
-  const [showGuideLines, setShowGuideLines] = useState(false);
+  const [isRubricDirty, setIsRubricDirty] = useState(false);
+  const [pendingNavTarget, setPendingNavTarget] = useState<Submission | null>(null);
+  const [showGuideLines, setShowGuideLinesState] = useState<boolean>(() =>
+    readStoredGuideLines()
+  );
   const [criterionAnnouncement, setCriterionAnnouncement] = useState<string>("");
   const editButtonRef = useRef<HTMLButtonElement>(null);
 
+  const commentUserId = useCommentAccountId();
+  const unreadComments = useUnreadCommentThreads(
+    commentUserId ?? "",
+    open && Boolean(submission.id) && Boolean(commentUserId)
+  );
+  const hasUnreadComments = Boolean(unreadComments.data?.has(submission.id));
+
+  const setRightPaneTab = useCallback((tab: "rubric" | "metrics" | "comments") => {
+    setRightPaneTabState(tab);
+    if (tab === "rubric" || tab === "metrics") {
+      try {
+        window.localStorage.setItem(ACTIVE_TAB_STORAGE_KEY, tab);
+      } catch {
+        // ignore storage errors
+      }
+    }
+  }, []);
+
+  const toggleGuideLines = useCallback(() => {
+    setShowGuideLinesState((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(GUIDE_LINES_STORAGE_KEY, String(next));
+      } catch {
+        // ignore storage errors
+      }
+      return next;
+    });
+  }, []);
+
+  const requestNavigate = useCallback(
+    (target: Submission) => {
+      if (!onNavigate) return;
+      if (isRubricDirty) {
+        setPendingNavTarget(target);
+        return;
+      }
+      onNavigate(target);
+    },
+    [onNavigate, isRubricDirty]
+  );
+
   const handleCancelEditingRubric = useCallback(() => {
     setIsEditingRubric(false);
+    setIsRubricDirty(false);
     setTimeout(() => {
       editButtonRef.current?.focus();
     }, 50);
@@ -162,6 +245,7 @@ export function SubmissionDetailContent({
 
   const handleSuccessEditingRubric = useCallback(() => {
     setIsEditingRubric(false);
+    setIsRubricDirty(false);
     setTimeout(() => {
       editButtonRef.current?.focus();
     }, 50);
@@ -176,6 +260,20 @@ export function SubmissionDetailContent({
     const scrollTop = scrollContainerRef.current.scrollTop;
     setIsScrolledPastInspector(scrollTop > 140);
   }, []);
+
+  // Track window scroll on mobile page view so teachers get a sticky worksheet preview bar
+  useEffect(() => {
+    if (variant !== "page") return;
+    const handleWindowScroll = () => {
+      const el = worksheetColumnRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      setIsScrolledPastInspector(rect.bottom < 72);
+    };
+    window.addEventListener("scroll", handleWindowScroll, { passive: true });
+    handleWindowScroll();
+    return () => window.removeEventListener("scroll", handleWindowScroll);
+  }, [variant]);
 
   const {
     data: imageUrl,
@@ -253,18 +351,18 @@ export function SubmissionDetailContent({
         return;
       }
 
-      // Submission cycling
+      // Submission cycling (guarded when rubric has unsaved changes)
       if (isPrev) {
         if (canGoPrev && submissions && onNavigate) {
           e.preventDefault();
           e.stopPropagation();
-          onNavigate(submissions[effectiveIndex - 1]);
+          requestNavigate(submissions[effectiveIndex - 1]);
         }
       } else if (isNext) {
         if (canGoNext && submissions && onNavigate) {
           e.preventDefault();
           e.stopPropagation();
-          onNavigate(submissions[effectiveIndex + 1]);
+          requestNavigate(submissions[effectiveIndex + 1]);
         }
       }
     };
@@ -272,7 +370,7 @@ export function SubmissionDetailContent({
     // Use capture phase so Base UI's internal composite-key stopPropagation does not swallow arrow keys
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
-  }, [submissions, effectiveIndex, canGoPrev, canGoNext, onNavigate]);
+  }, [submissions, effectiveIndex, canGoPrev, canGoNext, onNavigate, requestNavigate]);
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const deleteMutation = useDeleteSubmission();
@@ -525,34 +623,21 @@ export function SubmissionDetailContent({
     : null;
 
   const isDesktopGuideRendered = Boolean(
+    rightPaneTab !== "comments" &&
     selectedCriterion &&
     activeCriterionInfo &&
     (hasCalibratedScores ||
-      phase1Tab === "metrics" ||
-      (phase1Tab === "rubric" &&
+      rightPaneTab === "metrics" ||
+      (rightPaneTab === "rubric" &&
         submission.manual_score &&
         (!isEditingRubric || !canEditRubric)))
   );
 
-  // Reusable actions toolbar (Delete attempt + student navigation carousel)
+  // Reusable actions toolbar (student navigation pager + overflow menu for destructive action)
   const actionsContent = (
-    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => setIsDeleteDialogOpen(true)}
-        disabled={deleteMutation.isPending}
-        className="h-9 px-2.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl border border-border/60 hover:border-destructive/30 transition-colors flex items-center gap-1.5 cursor-pointer touch-manipulation font-medium shrink-0"
-        title="Delete this attempt"
-        aria-label="Delete this attempt"
-      >
-        <Trash2 className="size-3.5" aria-hidden="true" />
-        <span className="hidden sm:inline">Delete Attempt</span>
-      </Button>
-
+    <div className="flex items-center gap-2 shrink-0">
       {hasMultipleSubmissions && submissions && onNavigate && (
-        <div className="flex items-center gap-0.5 sm:gap-1 bg-muted/50 p-0.5 sm:p-1 rounded-xl border border-border h-9 shrink-0">
+        <div className="flex items-center gap-0.5 sm:gap-1 bg-muted/50 p-0.5 sm:p-1 rounded-xl border border-border h-10 sm:h-9 shrink-0">
           <Button
             ref={prevButtonRef}
             variant="ghost"
@@ -560,10 +645,10 @@ export function SubmissionDetailContent({
             disabled={!canGoPrev}
             onClick={() => {
               if (canGoPrev && submissions) {
-                onNavigate(submissions[effectiveIndex - 1]);
+                requestNavigate(submissions[effectiveIndex - 1]);
               }
             }}
-            className="size-8 sm:size-7 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
+            className="size-9 sm:size-7 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
             aria-label="Previous student (Key: J or ←)"
             title="Previous student (← / J)"
           >
@@ -583,10 +668,10 @@ export function SubmissionDetailContent({
             disabled={!canGoNext}
             onClick={() => {
               if (canGoNext && submissions) {
-                onNavigate(submissions[effectiveIndex + 1]);
+                requestNavigate(submissions[effectiveIndex + 1]);
               }
             }}
-            className="size-8 sm:size-7 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
+            className="size-9 sm:size-7 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
             aria-label="Next student (Key: K or →)"
             title="Next student (→ / K)"
           >
@@ -594,6 +679,34 @@ export function SubmissionDetailContent({
           </Button>
         </div>
       )}
+
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={deleteMutation.isPending}
+              className="size-10 sm:size-9 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl border-border/70 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation shrink-0"
+              aria-label="More submission actions"
+              title="More submission actions"
+            />
+          }
+        >
+          <MoreHorizontal className="size-4" aria-hidden="true" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-44 rounded-xl p-1">
+          <DropdownMenuItem
+            variant="destructive"
+            onClick={() => setIsDeleteDialogOpen(true)}
+            className="rounded-lg px-2.5 py-2 text-xs gap-2 cursor-pointer"
+          >
+            <Trash2 className="size-3.5" aria-hidden="true" />
+            <span>Delete Attempt</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 
@@ -689,15 +802,7 @@ export function SubmissionDetailContent({
         </header>
       )}
 
-      <SubmissionCommentTabs
-        key={submission.id}
-        submissionId={submission.id}
-        open={open}
-        initialView={initialView}
-        studentName={submission.student?.full_name}
-        location={{ submissionId: submission.id, activityId: submission.activity_id, studentId: submission.student_id }}
-      >
-      {/* Body: Split view (Image + Diagnostic details) */}
+      {/* Body: Split view (Image + Diagnostic details & Comments) */}
       <div
         ref={variant === "modal" ? scrollContainerRef : undefined}
         onScroll={variant === "modal" ? handleScroll : undefined}
@@ -710,9 +815,17 @@ export function SubmissionDetailContent({
       >
         {/* Returned Worksheet Alert Banner (only visible when attempt is returned) */}
         <SubmissionReturnedAlert submission={submission} />
-        {/* Mobile Sticky Preview Pill (< lg screens, modal only) */}
-        {variant === "modal" && isScrolledPastInspector && !isEditingRubric && (
-          <div className="lg:hidden sticky -top-3 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-surface/95 dark:bg-card/95 backdrop-blur-md border-b border-border/80 flex items-center justify-between gap-2 shadow-xs animate-in fade-in slide-in-from-top-2 duration-150 motion-reduce:animate-none">
+
+        {/* Mobile Sticky Preview Bar (< lg screens, both modal and page views) */}
+        {isScrolledPastInspector && (
+          <div
+            className={cn(
+              "lg:hidden sticky z-20 px-3 sm:px-4 py-2 bg-surface/95 dark:bg-card/95 backdrop-blur-md border border-border/80 flex items-center justify-between gap-2 shadow-warm-sm animate-in fade-in slide-in-from-top-2 duration-150 motion-reduce:animate-none",
+              variant === "modal"
+                ? "-top-3 -mx-4 sm:-mx-6 rounded-none border-x-0 border-t-0"
+                : "top-14 rounded-xl"
+            )}
+          >
             <div className="flex items-center gap-2 min-w-0">
               <div className="size-7 rounded-md bg-muted overflow-hidden border border-border shrink-0">
                 {imageUrl ? (
@@ -754,11 +867,15 @@ export function SubmissionDetailContent({
               variant="outline"
               size="sm"
               onClick={() => {
-                scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+                if (variant === "modal") {
+                  scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+                } else {
+                  worksheetColumnRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
               }}
               className="min-h-[40px] h-10 sm:h-8 px-3 text-xs gap-1.5 cursor-pointer shrink-0 touch-manipulation font-medium text-brand-800 dark:text-brand-300 border-brand-300 dark:border-brand-800 hover:bg-brand-50 dark:hover:bg-brand-950/60"
             >
-              <Eye className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+              <Eye className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
               <span>View Image</span>
             </Button>
           </div>
@@ -767,6 +884,7 @@ export function SubmissionDetailContent({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 lg:items-start">
           {/* Left: Worksheet Image Preview with Interactive Stroke Inspector */}
           <div
+            ref={worksheetColumnRef}
             className={cn(
               "lg:col-span-6 flex flex-col justify-between gap-2.5 w-full min-h-0",
               variant === "page"
@@ -780,6 +898,7 @@ export function SubmissionDetailContent({
               altText={`Handwriting worksheet submitted for ${submission.student?.full_name ?? "student"}`}
               isLoading={isImageLoading}
               isError={isImageError}
+              collapsibleImageTools
               diagnosticToolbar={
                 diagnosticOverlay ? (
                   <OverlayToolbar
@@ -805,7 +924,7 @@ export function SubmissionDetailContent({
                     visible={showOverlay}
                     onToggleVisible={setShowOverlay}
                     showGuideLines={showGuideLines}
-                    onToggleGuideLines={() => setShowGuideLines((prev) => !prev)}
+                    onToggleGuideLines={toggleGuideLines}
                     hasGuideLines={Boolean(guideLines)}
                     className="border-none bg-transparent p-0 shadow-none backdrop-blur-none"
                   />
@@ -822,578 +941,641 @@ export function SubmissionDetailContent({
                   />
                 )
               }
-              showShortcutsLegend={false}
-              onRetry={() => {
-                refetchImage();
-              }}
-              className="flex-1 flex flex-col min-h-0"
-              aspectRatioClass={
-                variant === "page"
-                  ? "max-h-[min(640px,calc(100dvh-12rem))] min-h-[280px] sm:min-h-[320px]"
-                  : "max-h-[min(540px,calc(100dvh-14rem))] min-h-[260px] sm:min-h-[280px] lg:flex-1"
-              }
-            >
-              {diagnosticOverlay ? (
-                <DiagnosticOverlay
-                  overlay={diagnosticOverlay}
-                  imageUrl={imageUrl}
-                  visible={showOverlay}
-                  activeCriterion={activeOverlayCriterion}
-                  selectedAnnotation={selectedAttentionItem}
-                  onSelectAnnotation={setSelectedAttentionItem}
-                  showGuideLines={showGuideLines}
-                />
-              ) : (
-                <GuideLineOverlay
-                  guideLines={guideLines}
-                  imageUrl={imageUrl}
-                  visible={showGuideLines}
-                  lineBounds={fallbackLineBounds}
-                />
-              )}
-            </WorksheetImageInspector>
-
-            {/* Target prompt & recognized text card */}
-            <div className="shrink-0 space-y-2 p-2.5 sm:p-3 rounded-xl bg-card border border-border/70 text-xs text-muted-foreground shadow-2xs">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <span className="font-semibold text-foreground shrink-0 text-xs">Target prompt:</span>
-                  <span className="font-medium text-foreground bg-muted/60 px-2.5 py-1 rounded-lg border border-border/60 truncate max-w-full text-xs font-mono">
-                    {resolvedTargetText ? `"${resolvedTargetText}"` : "Cursive Penmanship Practice"}
-                  </span>
-                </div>
-              </div>
-
-              {casingMismatches.length > 0 && (
-                <div className="flex items-start gap-1.5 pt-2 border-t border-border/40 text-xs text-warning bg-warning/5 dark:bg-warning/10 p-2 rounded-lg border border-warning/20">
-                  <Info className="size-3.5 text-warning shrink-0 mt-0.5" aria-hidden="true" />
-                  <span className="font-medium leading-tight text-warning">
-                    <strong className="font-semibold">Capitalization Note:</strong>{" "}
-                    {casingMismatches.map((m, idx) => (
-                      <span key={idx}>
-                        {idx > 0 && ", "}
-                        expected &quot;{m.expected}&quot;, recognized &quot;{m.detected}&quot;
-                      </span>
-                    ))}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right: Diagnostic Assessment Details */}
-          <div className="lg:col-span-6 flex flex-col justify-between space-y-2.5">
-            <h2 className="sr-only">Diagnostic Assessment and Feedback</h2>
-            {/* REJECTED / QUALITY GATE FAILED STATE */}
-            {submission.status === "rejected" && (
-              <SubmissionRejectionCard
-                submission={submission}
-                onReupload={handleReupload}
-              />
-            )}
-
-            {/* PROCESSING STATE */}
-            {submission.status === "processing" && (
-              <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-warning/10 border border-warning/30 space-y-2.5 text-center">
-                <div className="flex size-11 items-center justify-center rounded-2xl bg-warning/20 text-warning-foreground mx-auto motion-safe:animate-pulse">
-                  <Clock className="size-5 sm:size-6" aria-hidden="true" />
-                </div>
-                <div className="space-y-1 max-w-sm mx-auto">
-                  <h3 className="text-sm font-heading font-semibold text-foreground">
-                    Analyzing Handwriting
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Evaluating letter formation, spacing, slant, and baseline alignment.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* COMPLETED STATE */}
-            {(submission.status === "completed" || submission.status === "returned") && (
-              <div className="space-y-2.5">
-                {hasCalibratedScores ? (
-                  <>
-                    {/* Phase 2: Overall Composite Score Card */}
-                    <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-surface dark:bg-card border border-border shadow-xs">
-                      <div className="space-y-0.5">
-                        <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                          Overall Score
-                        </h3>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl sm:text-2xl font-sans font-bold text-foreground tabular-nums">
-                            {compositeScore !== null && compositeScore !== undefined
-                              ? `${Math.round(compositeScore)}%`
-                              : "Scored"}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className={`text-xs font-semibold px-2.5 py-0.5 inline-flex items-center ${compositeBand.className}`}
-                          >
-                            {compositeBand.band}
-                          </Badge>
-                        </div>
-                      </div>
-
-                      <div className="flex size-8 sm:size-9 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
-                        <CheckCircle2 className="size-4.5 sm:size-5" aria-hidden="true" />
-                      </div>
-                    </div>
-
-                    {/* Phase 2: 5 Criteria breakdown */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                          Criteria Breakdown
-                        </h3>
-                      </div>
-
-                      <div className="space-y-1">
-                        {criteria.map((c) => {
-                          const band = getScoreBandLabel(c.score);
-                          const isSelected = selectedCriterion === c.name;
-                          const inlineId = `phase2-criterion-guide-inline-${c.name.toLowerCase().replace(/\s+/g, "-")}`;
-                          return (
-                            <div key={c.name} className="space-y-1">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedCriterion(c.name);
-                                  const mapped = CRITERION_NAME_TO_FILTER[c.name];
-                                  if (mapped) setActiveOverlayCriterion(mapped);
-                                  setCriterionAnnouncement(
-                                    `${c.name} selected. Diagnostic guide and coaching tips updated.`
-                                  );
-                                }}
-                                aria-expanded={isSelected}
-                                aria-controls={
-                                  isSelected
-                                    ? isDesktopGuideRendered
-                                      ? `${inlineId} criterion-diagnostic-guide`
-                                      : inlineId
-                                    : undefined
-                                }
-                                aria-label={`${c.name}: ${c.score !== null && c.score !== undefined
-                                    ? `${Math.round(c.score)}%`
-                                    : "Unrated"
-                                  } (${band.band}). Tap to focus coaching tip.`}
-                                className={`w-full flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[40px] sm:min-h-0 touch-manipulation ${isSelected
-                                    ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
-                                    : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
-                                  }`}
-                              >
-                                <div className="min-w-0 pr-2">
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="font-semibold text-foreground truncate block">
-                                      {c.name}
-                                    </span>
-                                    {(criterionAttentionCounts[c.name] ?? 0) > 0 && (
-                                      <Badge
-                                        variant="secondary"
-                                        className={cn(
-                                          "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
-                                          isSelected
-                                            ? "bg-brand-200 text-brand-900 dark:bg-brand-900 dark:text-brand-100"
-                                            : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
-                                        )}
-                                      >
-                                        <span>
-                                          {criterionAttentionCounts[c.name]}{" "}
-                                          {criterionAttentionCounts[c.name] === 1 ? "alert" : "alerts"}
-                                        </span>
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <span className="text-xs text-muted-foreground line-clamp-1 block">
-                                    {c.description}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2 shrink-0">
-                                  {c.score !== null && c.score !== undefined && (
-                                    <span className="font-semibold text-foreground tabular-nums">
-                                      {Math.round(c.score)}%
-                                    </span>
-                                  )}
-                                  <Badge
-                                    variant="outline"
-                                    className={`text-xs font-semibold px-2.5 py-0.5 ${band.className}`}
-                                  >
-                                    {band.band}
-                                  </Badge>
-                                </div>
-                              </button>
-
-                              {/* Inline Mobile & Tablet Coaching Tip when selected (lg:hidden) */}
-                              {isSelected && activeCriterionInfo && (
-                                <div
-                                  id={inlineId}
-                                  role="region"
-                                  aria-label={`${c.name} coaching tip`}
-                                  className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none"
-                                >
-                                  <p className="text-[11px] text-foreground/80 leading-relaxed">
-                                    {activeCriterionInfo.rubricGoal}
-                                  </p>
-                                  <div className="pt-1 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1 text-[11px] text-brand-800 dark:text-brand-300">
-                                    <Eye className="size-3 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
-                                    <span className="leading-normal">
-                                      <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </>
+                showShortcutsLegend={false}
+                onRetry={() => {
+                  refetchImage();
+                }}
+                className="flex-1 flex flex-col min-h-0"
+                aspectRatioClass={
+                  variant === "page"
+                    ? "max-h-[min(640px,calc(100dvh-12rem))] min-h-[280px] sm:min-h-[320px]"
+                    : "max-h-[min(540px,calc(100dvh-14rem))] min-h-[260px] sm:min-h-[280px] lg:flex-1"
+                }
+              >
+                {diagnosticOverlay ? (
+                  <DiagnosticOverlay
+                    overlay={diagnosticOverlay}
+                    imageUrl={imageUrl}
+                    visible={showOverlay}
+                    activeCriterion={activeOverlayCriterion}
+                    selectedAnnotation={selectedAttentionItem}
+                    onSelectAnnotation={setSelectedAttentionItem}
+                    showGuideLines={showGuideLines}
+                  />
                 ) : (
-                  <>
-                    {/* Phase 1 Segmented Tab Controls: Rubric vs. CV Metrics */}
-                    <div
-                      role="tablist"
-                      aria-label="Phase 1 assessment view"
-                      className="flex items-center p-1 rounded-xl bg-muted/60 border border-border/80 gap-1"
-                    >
-                      <button
-                        type="button"
-                        role="tab"
-                        id="phase1-tab-rubric"
-                        aria-selected={phase1Tab === "rubric"}
-                        aria-controls="phase1-tabpanel-rubric"
-                        tabIndex={phase1Tab === "rubric" ? 0 : -1}
-                        onClick={() => setPhase1Tab("rubric")}
-                        onKeyDown={(e) => {
-                          if (e.key === "ArrowRight" || e.key === "ArrowLeft" || e.key === "End") {
-                            e.preventDefault();
-                            setPhase1Tab("metrics");
-                            document.getElementById("phase1-tab-metrics")?.focus();
-                          } else if (e.key === "Home") {
-                            e.preventDefault();
-                            setPhase1Tab("rubric");
-                            document.getElementById("phase1-tab-rubric")?.focus();
-                          }
-                        }}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${phase1Tab === "rubric"
-                            ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
-                            : "text-muted-foreground hover:text-foreground"
-                          }`}
-                      >
-                        <Award className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                        <span>Rubric Assessment</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        role="tab"
-                        id="phase1-tab-metrics"
-                        aria-selected={phase1Tab === "metrics"}
-                        aria-controls="phase1-tabpanel-metrics"
-                        tabIndex={phase1Tab === "metrics" ? 0 : -1}
-                        onClick={() => setPhase1Tab("metrics")}
-                        onKeyDown={(e) => {
-                          if (e.key === "ArrowRight" || e.key === "ArrowLeft" || e.key === "Home") {
-                            e.preventDefault();
-                            setPhase1Tab("rubric");
-                            document.getElementById("phase1-tab-rubric")?.focus();
-                          } else if (e.key === "End") {
-                            e.preventDefault();
-                            setPhase1Tab("metrics");
-                            document.getElementById("phase1-tab-metrics")?.focus();
-                          }
-                        }}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${phase1Tab === "metrics"
-                            ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
-                            : "text-muted-foreground hover:text-foreground"
-                          }`}
-                      >
-                        <SlidersHorizontal className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                        <span>Detailed CV Metrics</span>
-                      </button>
-                    </div>
-
-                    {/* TAB 1: TEACHER RUBRIC ASSESSMENT */}
-                    {phase1Tab === "rubric" && (
-                      <div
-                        id="phase1-tabpanel-rubric"
-                        role="tabpanel"
-                        aria-labelledby="phase1-tab-rubric"
-                        className="space-y-2.5"
-                      >
-                        {submission.manual_score && (!isEditingRubric || !canEditRubric) ? (
-                          /* READ-ONLY / CONFIRMED RUBRIC STATE */
-                          <div className="p-2.5 sm:p-3 rounded-xl bg-surface dark:bg-card border border-border/80 shadow-xs space-y-2">
-                            <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/60">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <div className="flex size-6 sm:size-7 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 shrink-0">
-                                  <ShieldCheck className="size-3.5 sm:size-4" aria-hidden="true" />
-                                </div>
-                                <span className="text-xs font-semibold text-foreground truncate">
-                                  Teacher Benchmark
-                                </span>
-                                {recordedComposite && (
-                                  <Badge
-                                    variant="outline"
-                                    className={cn(
-                                      "text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 inline-flex items-center gap-1.5 font-sans tabular-nums",
-                                      recordedComposite.overallBandMeta.badgeClass
-                                    )}
-                                  >
-                                    <span
-                                      className={cn(
-                                        "size-1.5 rounded-full shrink-0",
-                                        recordedComposite.overallBandMeta.dotColor
-                                      )}
-                                      aria-hidden="true"
-                                    />
-                                    <span>
-                                      {recordedComposite.isComplete
-                                        ? `${recordedComposite.totalPoints}/20 pts (${recordedComposite.avgPercentage}%) • ${recordedComposite.overallBandMeta.label}`
-                                        : `${recordedComposite.totalPoints}/${recordedComposite.maxPoints} pts`}
-                                    </span>
-                                  </Badge>
-                                )}
-                              </div>
-                              {canEditRubric && (
-                                <Button
-                                  ref={editButtonRef}
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setIsEditingRubric(true)}
-                                  className="h-9 sm:h-7 min-h-[38px] sm:min-h-0 px-3 sm:px-2.5 text-xs text-brand-800 dark:text-brand-200 border-brand-300 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 gap-1.5 cursor-pointer touch-manipulation shrink-0 font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
-                                  aria-label="Edit recorded rubric scores"
-                                >
-                                  <Edit3 className="size-3" aria-hidden="true" />
-                                  <span>Edit</span>
-                                </Button>
-                              )}
-                            </div>
-
-                            <div className="space-y-1 pt-0.5" role="group" aria-label="Recorded criterion breakdown">
-                              {RUBRIC_CRITERIA.map((criterion) => {
-                                const bandValue =
-                                  submission.manual_score?.[criterion.key];
-                                const bandMeta = getBandMeta(bandValue);
-                                const isSelected =
-                                  selectedCriterion === criterion.shortName;
-                                const attentionCount =
-                                  criterionAttentionCounts[criterion.shortName] ??
-                                  criterionAttentionCounts[criterion.name] ??
-                                  0;
-                                const hasPoints =
-                                  typeof bandMeta.points === "number" && bandMeta.points > 0;
-                                const pointsText = hasPoints
-                                  ? `${bandMeta.points}/4 pts`
-                                  : null;
-                                const badgeLabel = pointsText
-                                  ? `${bandMeta.label} (${pointsText})`
-                                  : bandMeta.label;
-                                return (
-                                  <div key={criterion.key} className="space-y-1">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setSelectedCriterion(criterion.shortName);
-                                        const mapped =
-                                          CRITERION_NAME_TO_FILTER[criterion.shortName] ??
-                                          CRITERION_NAME_TO_FILTER[criterion.name];
-                                        if (mapped) setActiveOverlayCriterion(mapped);
-                                        setCriterionAnnouncement(
-                                          `${criterion.shortName} selected. Diagnostic guide and coaching tips updated.`
-                                        );
-                                      }}
-                                      aria-expanded={isSelected}
-                                      aria-controls={
-                                        isSelected
-                                          ? isDesktopGuideRendered
-                                            ? `criterion-guide-inline-${criterion.key} criterion-diagnostic-guide`
-                                            : `criterion-guide-inline-${criterion.key}`
-                                          : undefined
-                                      }
-                                      aria-label={`${criterion.shortName}: ${badgeLabel}. Tap to focus coaching tip.`}
-                                      className={cn(
-                                        "w-full flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-lg border text-xs text-left cursor-pointer transition-all min-h-[40px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
-                                        isSelected
-                                          ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
-                                          : "bg-surface dark:bg-card border-border/60 hover:bg-muted/30"
-                                      )}
-                                    >
-                                      <div className="min-w-0 pr-2">
-                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                          <span className="font-semibold text-foreground truncate block">
-                                            {criterion.name}
-                                          </span>
-                                          {(() => {
-                                            const metric = extractCriterionCVMetric(criterion.key, submission.measurement);
-                                            if (!metric) return null;
-                                            return (
-                                              <span
-                                                className={cn(
-                                                  "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-medium border tabular-nums",
-                                                  metric.badgeClass
-                                                )}
-                                                title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
-                                              >
-                                                <span className={cn("size-1.5 rounded-full", metric.dotClass)} aria-hidden="true" />
-                                                <span className="font-semibold">{metric.value}</span>
-                                                <span className="opacity-80 font-sans">· {metric.status}</span>
-                                              </span>
-                                            );
-                                          })()}
-                                          {attentionCount > 0 && (
-                                            <Badge
-                                              variant="secondary"
-                                              className={cn(
-                                                "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
-                                                isSelected
-                                                  ? "bg-brand-200 text-brand-900 dark:bg-brand-900 dark:text-brand-100"
-                                                  : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
-                                              )}
-                                            >
-                                              <span>
-                                                {attentionCount} {attentionCount === 1 ? "alert" : "alerts"}
-                                              </span>
-                                            </Badge>
-                                          )}
-                                        </div>
-                                        <span className="text-xs text-muted-foreground line-clamp-1 block">
-                                          {criterion.hint}
-                                        </span>
-                                      </div>
-                                      <Badge
-                                        variant="outline"
-                                        className={cn(
-                                          "text-xs font-semibold px-2.5 py-0.5 shrink-0 inline-flex items-center gap-1.5",
-                                          bandMeta.badgeClass
-                                        )}
-                                      >
-                                        <span className={cn("size-1.5 rounded-full shrink-0", bandMeta.dotColor)} aria-hidden="true" />
-                                        <span>{badgeLabel}</span>
-                                      </Badge>
-                                    </button>
-
-                                    {/* Inline Mobile & Tablet Coaching Tip for read-only rubric mode (lg:hidden) */}
-                                    {isSelected && activeCriterionInfo && (
-                                      <div
-                                        id={`criterion-guide-inline-${criterion.key}`}
-                                        role="region"
-                                        aria-label={`${criterion.shortName} coaching tip`}
-                                        className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none"
-                                      >
-                                        <p className="text-[11px] text-foreground/80 leading-relaxed">
-                                          {activeCriterionInfo.rubricGoal}
-                                        </p>
-                                        <div className="pt-1 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1 text-[11px] text-brand-800 dark:text-brand-300">
-                                          <Eye className="size-3 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
-                                          <span className="leading-normal">
-                                            <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ) : canEditRubric ? (
-                          /* INTERACTIVE RUBRIC ENTRY FORM */
-                          <ManualRubricEntryForm
-                            key={submission.id}
-                            submissionId={submission.id}
-                            initialScores={submission.manual_score}
-                            measurement={submission.measurement}
-                            onSuccess={handleSuccessEditingRubric}
-                            onCancel={handleCancelEditingRubric}
-                            onFocusCriterion={setSelectedCriterion}
-                            canGoNext={canGoNext}
-                            onAdvanceNext={() => {
-                              if (
-                                canGoNext &&
-                                submissions &&
-                                onNavigate
-                              ) {
-                                onNavigate(submissions[effectiveIndex + 1]);
-                              }
-                            }}
-                            onNavigateBack={() => {
-                              if (onNavigate) {
-                                onNavigate(submission);
-                                setIsEditingRubric(true);
-                              }
-                            }}
-                          />
-                        ) : (
-                          <p className="rounded-xl border border-border/80 bg-surface p-3 text-xs text-muted-foreground dark:bg-card">
-                            {scoringEngine.isPending || scoringEngine.isFetching
-                              ? "Checking the active scoring mode…"
-                              : scoringEngine.isError
-                              ? "Rubric editing is unavailable because the scoring mode could not be confirmed."
-                              : "Manual rubric scoring is unavailable while calibrated scoring is active."}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* TAB 2: PHYSICAL RAW CV MEASUREMENTS */}
-                    {phase1Tab === "metrics" && (
-                      <div
-                        id="phase1-tabpanel-metrics"
-                        role="tabpanel"
-                        aria-labelledby="phase1-tab-metrics"
-                      >
-                        <RawMeasurementsTable
-                          measurement={measurement}
-                          selectedCriterion={selectedCriterion}
-                          onSelectCriterion={(criterionName) => {
-                            setSelectedCriterion(criterionName);
-                            setCriterionAnnouncement(
-                              `${criterionName} selected. Diagnostic guide and coaching tips updated.`
-                            );
-                          }}
-                        />
-                      </div>
-                    )}
-                  </>
+                  <GuideLineOverlay
+                    guideLines={guideLines}
+                    imageUrl={imageUrl}
+                    visible={showGuideLines}
+                    lineBounds={fallbackLineBounds}
+                  />
                 )}
+              </WorksheetImageInspector>
 
-                {/* Focused Criterion Diagnostic Insight Card (Desktop view >=lg; mobile/tablet handled inline) */}
-                {isDesktopGuideRendered && activeCriterionInfo && (
-                  <div
-                    id="criterion-diagnostic-guide"
-                    className="hidden lg:block p-2.5 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1 animate-in fade-in-50 duration-200 motion-reduce:animate-none"
-                  >
-                    <div className="flex items-center justify-between text-xs font-semibold text-brand-900 dark:text-brand-200">
-                      <h3 className="flex items-center gap-1.5 font-semibold text-brand-900 dark:text-brand-200">
-                        <Info className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                        <span>{selectedCriterion} Guide</span>
-                      </h3>
-                    </div>
-                    <p className="text-[11px] sm:text-xs text-foreground/85 leading-snug">
-                      {activeCriterionInfo.rubricGoal}
-                    </p>
-                    <div className="pt-1 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1.5 text-[11px] sm:text-xs text-brand-800 dark:text-brand-300">
-                      <Eye className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
-                      <span className="leading-normal">
-                        <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
-                      </span>
-                    </div>
+              {/* Target prompt & recognized text card */}
+              <div className="shrink-0 space-y-2 p-2.5 sm:p-3 rounded-xl bg-card border border-border/70 text-xs text-muted-foreground shadow-2xs">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span className="font-semibold text-foreground shrink-0 text-xs">Target prompt:</span>
+                    <span className="font-medium text-foreground bg-muted/60 px-2.5 py-1 rounded-lg border border-border/60 truncate max-w-full text-xs font-mono">
+                      {resolvedTargetText ? `"${resolvedTargetText}"` : "Cursive Penmanship Practice"}
+                    </span>
+                  </div>
+                </div>
+
+                {casingMismatches.length > 0 && (
+                  <div className="flex items-start gap-1.5 pt-2 border-t border-border/40 text-xs text-warning bg-warning/5 dark:bg-warning/10 p-2 rounded-lg border border-warning/20">
+                    <Info className="size-3.5 text-warning shrink-0 mt-0.5" aria-hidden="true" />
+                    <span className="font-medium leading-tight text-warning">
+                      <strong className="font-semibold">Capitalization Note:</strong>{" "}
+                      {casingMismatches.map((m, idx) => (
+                        <span key={idx}>
+                          {idx > 0 && ", "}
+                          expected &quot;{m.expected}&quot;, recognized &quot;{m.detected}&quot;
+                        </span>
+                      ))}
+                    </span>
                   </div>
                 )}
               </div>
-            )}
+            </div>
+
+            {/* Right: Diagnostic Assessment Details & Comments */}
+            <div className="lg:col-span-6 flex flex-col justify-between space-y-2.5">
+              <h2 className="sr-only">Diagnostic Assessment and Comments</h2>
+
+              {/* Unified Right-Pane Tab Bar (keeps worksheet visible on the left while replying to comments) */}
+              {(() => {
+                const showMetricsTab =
+                  !hasCalibratedScores &&
+                  (submission.status === "completed" || submission.status === "returned");
+                const tabs: Array<{ id: "rubric" | "metrics" | "comments"; label: string }> = showMetricsTab
+                  ? [
+                      { id: "rubric", label: "Rubric" },
+                      { id: "metrics", label: "CV Metrics" },
+                      { id: "comments", label: "Comments" },
+                    ]
+                  : [
+                      { id: "rubric", label: "Assessment" },
+                      { id: "comments", label: "Comments" },
+                    ];
+                const effectiveTab: "rubric" | "metrics" | "comments" =
+                  !showMetricsTab && rightPaneTab === "metrics" ? "rubric" : rightPaneTab;
+
+                return (
+                  <>
+                    <div
+                      role="tablist"
+                      aria-label="Submission review panels"
+                      className="flex items-center p-1 rounded-xl bg-muted/60 border border-border/80 gap-1"
+                    >
+                      {tabs.map((tab, tabIdx) => {
+                        const isActive = effectiveTab === tab.id;
+                        return (
+                          <button
+                            key={tab.id}
+                            type="button"
+                            role="tab"
+                            id={`submission-tab-${tab.id}`}
+                            aria-selected={isActive}
+                            aria-controls={`submission-tabpanel-${tab.id}`}
+                            tabIndex={isActive ? 0 : -1}
+                            onClick={() => setRightPaneTab(tab.id)}
+                            onKeyDown={(e) => {
+                              let nextIdx: number | null = null;
+                              if (e.key === "ArrowRight") nextIdx = (tabIdx + 1) % tabs.length;
+                              else if (e.key === "ArrowLeft") nextIdx = (tabIdx - 1 + tabs.length) % tabs.length;
+                              else if (e.key === "Home") nextIdx = 0;
+                              else if (e.key === "End") nextIdx = tabs.length - 1;
+                              if (nextIdx !== null) {
+                                e.preventDefault();
+                                const targetTab = tabs[nextIdx];
+                                setRightPaneTab(targetTab.id);
+                                document.getElementById(`submission-tab-${targetTab.id}`)?.focus();
+                              }
+                            }}
+                            className={cn(
+                              "flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-2.5 sm:px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-10 sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                              isActive
+                                ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
+                                : "text-muted-foreground hover:text-foreground"
+                            )}
+                          >
+                            {tab.id === "rubric" && (
+                              <Award className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+                            )}
+                            {tab.id === "metrics" && (
+                              <SlidersHorizontal className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+                            )}
+                            {tab.id === "comments" && (
+                              <MessageSquare className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+                            )}
+                            <span className="truncate">{tab.label}</span>
+                            {tab.id === "comments" && hasUnreadComments && (
+                              <span className="inline-flex items-center rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary shrink-0">
+                                Unread
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* COMMENTS TAB PANEL (Worksheet remains pinned on left!) */}
+                    {effectiveTab === "comments" && (
+                      <div
+                        id="submission-tabpanel-comments"
+                        role="tabpanel"
+                        aria-labelledby="submission-tab-comments"
+                        className="rounded-xl border border-border/80 bg-surface dark:bg-card shadow-xs overflow-hidden flex flex-col min-h-80"
+                      >
+                        {open && (commentUserId ? (
+                          <SubmissionCommentThread
+                            key={`${commentUserId}:${submission.id}`}
+                            userId={commentUserId}
+                            target={{ submissionId: submission.id }}
+                            location={{
+                              submissionId: submission.id,
+                              activityId: submission.activity_id,
+                              studentId: submission.student_id,
+                            }}
+                            studentName={submission.student?.full_name}
+                            open
+                          />
+                        ) : (
+                          <div className="p-4 space-y-3" role="status" aria-label="Loading conversation">
+                            <Skeleton className="h-6 w-48 rounded-md" />
+                            <Skeleton className="h-16 w-full rounded-xl" />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* ASSESSMENT / RUBRIC / METRICS PANELS */}
+                    {effectiveTab !== "comments" && (
+                      <div
+                        id={`submission-tabpanel-${effectiveTab}`}
+                        role="tabpanel"
+                        aria-labelledby={`submission-tab-${effectiveTab}`}
+                        className="space-y-2.5"
+                      >
+                        {/* REJECTED / QUALITY GATE FAILED STATE */}
+                        {submission.status === "rejected" && (
+                          <SubmissionRejectionCard
+                            submission={submission}
+                            onReupload={handleReupload}
+                          />
+                        )}
+
+                        {/* PROCESSING STATE */}
+                        {submission.status === "processing" && (
+                          <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-warning/10 border border-warning/30 space-y-2.5 text-center">
+                            <div className="flex size-11 items-center justify-center rounded-2xl bg-warning/20 text-warning-foreground mx-auto motion-safe:animate-pulse">
+                              <Clock className="size-5 sm:size-6" aria-hidden="true" />
+                            </div>
+                            <div className="space-y-1 max-w-sm mx-auto">
+                              <h3 className="text-sm font-heading font-semibold text-foreground">
+                                Analyzing Handwriting
+                              </h3>
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                Evaluating letter formation, spacing, slant, and baseline alignment.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* COMPLETED STATE */}
+                        {(submission.status === "completed" || submission.status === "returned") && (
+                          <div className="space-y-2.5">
+                            {hasCalibratedScores ? (
+                              <>
+                                {/* Phase 2: Overall Composite Score Card */}
+                                <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-surface dark:bg-card border border-border shadow-xs">
+                                  <div className="space-y-0.5">
+                                    <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                      Overall Score
+                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xl sm:text-2xl font-sans font-bold text-foreground tabular-nums">
+                                        {compositeScore !== null && compositeScore !== undefined
+                                          ? `${Math.round(compositeScore)}%`
+                                          : "Scored"}
+                                      </span>
+                                      <Badge
+                                        variant="outline"
+                                        className={`text-xs font-semibold px-2.5 py-0.5 inline-flex items-center ${compositeBand.className}`}
+                                      >
+                                        {compositeBand.band}
+                                      </Badge>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex size-8 sm:size-9 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
+                                    <CheckCircle2 className="size-4.5 sm:size-5" aria-hidden="true" />
+                                  </div>
+                                </div>
+
+                                {/* Phase 2: 5 Criteria breakdown */}
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                      Criteria Breakdown
+                                    </h3>
+                                  </div>
+
+                                  <div className="space-y-1">
+                                    {criteria.map((c) => {
+                                      const band = getScoreBandLabel(c.score);
+                                      const isSelected = selectedCriterion === c.name;
+                                      const inlineId = `phase2-criterion-guide-inline-${c.name.toLowerCase().replace(/\s+/g, "-")}`;
+                                      return (
+                                        <div key={c.name} className="space-y-1">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setSelectedCriterion(c.name);
+                                              const mapped = CRITERION_NAME_TO_FILTER[c.name];
+                                              if (mapped) setActiveOverlayCriterion(mapped);
+                                              setCriterionAnnouncement(
+                                                `${c.name} selected. Diagnostic guide and coaching tips updated.`
+                                              );
+                                            }}
+                                            aria-expanded={isSelected}
+                                            aria-controls={
+                                              isSelected
+                                                ? isDesktopGuideRendered
+                                                  ? `${inlineId} criterion-diagnostic-guide`
+                                                  : inlineId
+                                                : undefined
+                                            }
+                                            aria-label={`${c.name}: ${c.score !== null && c.score !== undefined
+                                              ? `${Math.round(c.score)}%`
+                                              : "Unrated"
+                                              } (${band.band}). Tap to focus coaching tip.`}
+                                            className={`w-full flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[40px] sm:min-h-0 touch-manipulation ${isSelected
+                                              ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
+                                              : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
+                                              }`}
+                                          >
+                                            <div className="min-w-0 pr-2">
+                                              <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="font-semibold text-foreground truncate block">
+                                                  {c.name}
+                                                </span>
+                                                {(criterionAttentionCounts[c.name] ?? 0) > 0 && (
+                                                  <Badge
+                                                    variant="secondary"
+                                                    className={cn(
+                                                      "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
+                                                      isSelected
+                                                        ? "bg-brand-200 text-brand-900 dark:bg-brand-900 dark:text-brand-100"
+                                                        : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
+                                                    )}
+                                                  >
+                                                    <span>
+                                                      {criterionAttentionCounts[c.name]}{" "}
+                                                      {criterionAttentionCounts[c.name] === 1 ? "alert" : "alerts"}
+                                                    </span>
+                                                  </Badge>
+                                                )}
+                                              </div>
+                                              <span className="text-xs text-muted-foreground line-clamp-1 block">
+                                                {c.description}
+                                              </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                              {c.score !== null && c.score !== undefined && (
+                                                <span className="font-semibold text-foreground tabular-nums">
+                                                  {Math.round(c.score)}%
+                                                </span>
+                                              )}
+                                              <Badge
+                                                variant="outline"
+                                                className={`text-xs font-semibold px-2.5 py-0.5 ${band.className}`}
+                                              >
+                                                {band.band}
+                                              </Badge>
+                                            </div>
+                                          </button>
+
+                                          {/* Inline Mobile & Tablet Coaching Tip when selected (lg:hidden) */}
+                                          {isSelected && activeCriterionInfo && (
+                                            <div
+                                              id={inlineId}
+                                              role="region"
+                                              aria-label={`${c.name} coaching tip`}
+                                              className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none"
+                                            >
+                                              <p className="text-[11px] text-foreground/80 leading-relaxed">
+                                                {activeCriterionInfo.rubricGoal}
+                                              </p>
+                                              <div className="pt-1 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1 text-[11px] text-brand-800 dark:text-brand-300">
+                                                <Eye className="size-3 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
+                                                <span className="leading-normal">
+                                                  <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
+                                                </span>
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+
+                                {/* Promoted Release Completion Strip */}
+                                <SubmissionLifecycleControls
+                                  submission={submission}
+                                  showRelease
+                                  variant="completion"
+                                />
+                              </>
+                            ) : (
+                              <>
+                                {/* TAB 1: TEACHER RUBRIC ASSESSMENT */}
+                                {effectiveTab === "rubric" && (
+                                  <div className="space-y-2.5">
+                                    {submission.manual_score && (!isEditingRubric || !canEditRubric) ? (
+                                      <>
+                                        {/* READ-ONLY / CONFIRMED RUBRIC STATE */}
+                                        <div className="p-2.5 sm:p-3 rounded-xl bg-surface dark:bg-card border border-border/80 shadow-xs space-y-2">
+                                          <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/60">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                              <div className="flex size-6 sm:size-7 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 shrink-0">
+                                                <ShieldCheck className="size-3.5 sm:size-4" aria-hidden="true" />
+                                              </div>
+                                              <span className="text-xs font-semibold text-foreground truncate">
+                                                Teacher Benchmark
+                                              </span>
+                                              {recordedComposite && (
+                                                <Badge
+                                                  variant="outline"
+                                                  className={cn(
+                                                    "text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 inline-flex items-center gap-1.5 font-sans tabular-nums",
+                                                    recordedComposite.overallBandMeta.badgeClass
+                                                  )}
+                                                >
+                                                  <span
+                                                    className={cn(
+                                                      "size-1.5 rounded-full shrink-0",
+                                                      recordedComposite.overallBandMeta.dotColor
+                                                    )}
+                                                    aria-hidden="true"
+                                                  />
+                                                  <span>
+                                                    {recordedComposite.isComplete
+                                                      ? `${recordedComposite.totalPoints}/20 pts (${recordedComposite.avgPercentage}%) • ${recordedComposite.overallBandMeta.label}`
+                                                      : `${recordedComposite.totalPoints}/${recordedComposite.maxPoints} pts`}
+                                                  </span>
+                                                </Badge>
+                                              )}
+                                            </div>
+                                            {canEditRubric && (
+                                              <Button
+                                                ref={editButtonRef}
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setIsEditingRubric(true)}
+                                                className="h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-3 sm:px-2.5 text-xs text-brand-800 dark:text-brand-200 border-brand-300 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 gap-1.5 cursor-pointer touch-manipulation shrink-0 font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                                                aria-label="Edit recorded rubric scores"
+                                              >
+                                                <Edit3 className="size-3" aria-hidden="true" />
+                                                <span>Edit</span>
+                                              </Button>
+                                            )}
+                                          </div>
+
+                                          <div className="space-y-1 pt-0.5" role="group" aria-label="Recorded criterion breakdown">
+                                            {RUBRIC_CRITERIA.map((criterion) => {
+                                              const bandValue =
+                                                submission.manual_score?.[criterion.key];
+                                              const bandMeta = getBandMeta(bandValue);
+                                              const isSelected =
+                                                selectedCriterion === criterion.shortName;
+                                              const attentionCount =
+                                                criterionAttentionCounts[criterion.shortName] ??
+                                                criterionAttentionCounts[criterion.name] ??
+                                                0;
+                                              const hasPoints =
+                                                typeof bandMeta.points === "number" && bandMeta.points > 0;
+                                              const pointsText = hasPoints
+                                                ? `${bandMeta.points}/4 pts`
+                                                : null;
+                                              const badgeLabel = pointsText
+                                                ? `${bandMeta.label} (${pointsText})`
+                                                : bandMeta.label;
+                                              return (
+                                                <div key={criterion.key} className="space-y-1">
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                      setSelectedCriterion(criterion.shortName);
+                                                      const mapped =
+                                                        CRITERION_NAME_TO_FILTER[criterion.shortName] ??
+                                                        CRITERION_NAME_TO_FILTER[criterion.name];
+                                                      if (mapped) setActiveOverlayCriterion(mapped);
+                                                      setCriterionAnnouncement(
+                                                        `${criterion.shortName} selected. Diagnostic guide and coaching tips updated.`
+                                                      );
+                                                    }}
+                                                    aria-expanded={isSelected}
+                                                    aria-controls={
+                                                      isSelected
+                                                        ? isDesktopGuideRendered
+                                                          ? `criterion-guide-inline-${criterion.key} criterion-diagnostic-guide`
+                                                          : `criterion-guide-inline-${criterion.key}`
+                                                        : undefined
+                                                    }
+                                                    aria-label={`${criterion.shortName}: ${badgeLabel}. Tap to focus coaching tip.`}
+                                                    className={cn(
+                                                      "w-full flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-lg border text-xs text-left cursor-pointer transition-all min-h-[40px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                                                      isSelected
+                                                        ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
+                                                        : "bg-surface dark:bg-card border-border/60 hover:bg-muted/30"
+                                                    )}
+                                                  >
+                                                    <div className="min-w-0 pr-2">
+                                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <span className="font-semibold text-foreground truncate block">
+                                                          {criterion.name}
+                                                        </span>
+                                                        {(() => {
+                                                          const metric = extractCriterionCVMetric(criterion.key, submission.measurement);
+                                                          if (!metric) return null;
+                                                          return (
+                                                            <span
+                                                              className={cn(
+                                                                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-medium border tabular-nums",
+                                                                metric.badgeClass
+                                                              )}
+                                                              title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
+                                                            >
+                                                              <span className={cn("size-1.5 rounded-full", metric.dotClass)} aria-hidden="true" />
+                                                              <span className="font-semibold">{metric.value}</span>
+                                                              <span className="opacity-80 font-sans">· {metric.status}</span>
+                                                            </span>
+                                                          );
+                                                        })()}
+                                                        {attentionCount > 0 && (
+                                                          <Badge
+                                                            variant="secondary"
+                                                            className={cn(
+                                                              "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
+                                                              isSelected
+                                                                ? "bg-brand-200 text-brand-900 dark:bg-brand-900 dark:text-brand-100"
+                                                                : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
+                                                            )}
+                                                          >
+                                                            <span>
+                                                              {attentionCount} {attentionCount === 1 ? "alert" : "alerts"}
+                                                            </span>
+                                                          </Badge>
+                                                        )}
+                                                      </div>
+                                                      <span className="text-xs text-muted-foreground line-clamp-1 block">
+                                                        {criterion.hint}
+                                                      </span>
+                                                    </div>
+                                                    <Badge
+                                                      variant="outline"
+                                                      className={cn(
+                                                        "text-xs font-semibold px-2.5 py-0.5 shrink-0 inline-flex items-center gap-1.5",
+                                                        bandMeta.badgeClass
+                                                      )}
+                                                    >
+                                                      <span className={cn("size-1.5 rounded-full shrink-0", bandMeta.dotColor)} aria-hidden="true" />
+                                                      <span>{badgeLabel}</span>
+                                                    </Badge>
+                                                  </button>
+
+                                                  {/* Inline Mobile & Tablet Coaching Tip for read-only rubric mode (lg:hidden) */}
+                                                  {isSelected && activeCriterionInfo && (
+                                                    <div
+                                                      id={`criterion-guide-inline-${criterion.key}`}
+                                                      role="region"
+                                                      aria-label={`${criterion.shortName} coaching tip`}
+                                                      className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none"
+                                                    >
+                                                      <p className="text-[11px] text-foreground/80 leading-relaxed">
+                                                        {activeCriterionInfo.rubricGoal}
+                                                      </p>
+                                                      <div className="pt-1 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1 text-[11px] text-brand-800 dark:text-brand-300">
+                                                        <Eye className="size-3 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
+                                                        <span className="leading-normal">
+                                                          <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
+                                                        </span>
+                                                      </div>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
+
+                                        {/* Promoted Release Completion Strip directly below recorded rubric */}
+                                        <SubmissionLifecycleControls
+                                          submission={submission}
+                                          showRelease
+                                          variant="completion"
+                                        />
+                                      </>
+                                    ) : canEditRubric ? (
+                                      /* INTERACTIVE RUBRIC ENTRY FORM */
+                                      <ManualRubricEntryForm
+                                        key={submission.id}
+                                        submissionId={submission.id}
+                                        initialScores={submission.manual_score}
+                                        measurement={submission.measurement}
+                                        onSuccess={handleSuccessEditingRubric}
+                                        onCancel={handleCancelEditingRubric}
+                                        onDirtyChange={setIsRubricDirty}
+                                        onFocusCriterion={setSelectedCriterion}
+                                        canGoNext={canGoNext}
+                                        onAdvanceNext={() => {
+                                          if (
+                                            canGoNext &&
+                                            submissions &&
+                                            onNavigate
+                                          ) {
+                                            setIsRubricDirty(false);
+                                            onNavigate(submissions[effectiveIndex + 1]);
+                                          }
+                                        }}
+                                        onNavigateBack={() => {
+                                          if (onNavigate) {
+                                            onNavigate(submission);
+                                            setIsEditingRubric(true);
+                                          }
+                                        }}
+                                      />
+                                    ) : (
+                                      <p className="rounded-xl border border-border/80 bg-surface p-3 text-xs text-muted-foreground dark:bg-card">
+                                        {scoringEngine.isPending || scoringEngine.isFetching
+                                          ? "Checking the active scoring mode…"
+                                          : scoringEngine.isError
+                                            ? "Rubric editing is unavailable because the scoring mode could not be confirmed."
+                                            : "Manual rubric scoring is unavailable while calibrated scoring is active."}
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* TAB 2: PHYSICAL RAW CV MEASUREMENTS */}
+                                {effectiveTab === "metrics" && (
+                                  <RawMeasurementsTable
+                                    measurement={measurement}
+                                    selectedCriterion={selectedCriterion}
+                                    onSelectCriterion={(criterionName) => {
+                                      setSelectedCriterion(criterionName);
+                                      setCriterionAnnouncement(
+                                        `${criterionName} selected. Diagnostic guide and coaching tips updated.`
+                                      );
+                                    }}
+                                  />
+                                )}
+                              </>
+                            )}
+
+                            {/* Focused Criterion Diagnostic Insight Card (Desktop view >=lg; mobile/tablet handled inline) */}
+                            {isDesktopGuideRendered && activeCriterionInfo && (
+                              <div
+                                id="criterion-diagnostic-guide"
+                                className="hidden lg:block p-2.5 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1 animate-in fade-in-50 duration-200 motion-reduce:animate-none"
+                              >
+                                <div className="flex items-center justify-between text-xs font-semibold text-brand-900 dark:text-brand-200">
+                                  <h3 className="flex items-center gap-1.5 font-semibold text-brand-900 dark:text-brand-200">
+                                    <Info className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                                    <span>{selectedCriterion} Guide</span>
+                                  </h3>
+                                </div>
+                                <p className="text-[11px] sm:text-xs text-foreground/85 leading-snug">
+                                  {activeCriterionInfo.rubricGoal}
+                                </p>
+                                <div className="pt-1 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1.5 text-[11px] sm:text-xs text-brand-800 dark:text-brand-300">
+                                  <Eye className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
+                                  <span className="leading-normal">
+                                    <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
           </div>
         </div>
-      </div>
-
-      </SubmissionCommentTabs>
       {/* Footer */}
       {variant === "modal" ? (
         <DialogFooter className="pt-3 sm:pt-3.5 border-t border-border/70 shrink-0 flex flex-row items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
-            <SubmissionLifecycleControls submission={submission} showRelease variant="actions" />
+            <SubmissionLifecycleControls submission={submission} showRelease={false} variant="actions" />
           </div>
           <div className="flex items-center gap-2.5 ml-auto">
             <div className="text-[11px] text-muted-foreground hidden sm:inline-flex items-center gap-2.5 select-none">
@@ -1423,7 +1605,7 @@ export function SubmissionDetailContent({
               variant="outline"
               size="sm"
               onClick={() => onClose?.()}
-              className="h-8 px-3.5 text-xs font-medium cursor-pointer touch-manipulation"
+              className="h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-3.5 text-xs font-medium cursor-pointer touch-manipulation"
             >
               Close
             </Button>
@@ -1432,7 +1614,7 @@ export function SubmissionDetailContent({
       ) : (
         <footer className="pt-3 sm:pt-3.5 border-t border-border/70 flex items-center justify-between text-xs text-muted-foreground flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <SubmissionLifecycleControls submission={submission} showRelease variant="actions" />
+            <SubmissionLifecycleControls submission={submission} showRelease={false} variant="actions" />
           </div>
 
           <div className="flex items-center gap-2.5 ml-auto flex-wrap">
@@ -1451,6 +1633,16 @@ export function SubmissionDetailContent({
                   <span className="text-border">·</span>
                 </>
               )}
+              <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
+                C
+              </kbd>
+              <span>ink</span>
+              <span className="text-border">·</span>
+              <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
+                L
+              </kbd>
+              <span>magnify</span>
+              <span className="text-border">·</span>
               <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
                 +
               </kbd>
@@ -1473,6 +1665,47 @@ export function SubmissionDetailContent({
           </div>
         </footer>
       )}
+
+      {/* Unsaved Rubric Navigation Guard Dialog */}
+      <AlertDialog
+        open={Boolean(pendingNavTarget)}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setPendingNavTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard unsaved rubric ratings?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved ratings for{" "}
+              <strong className="font-semibold text-foreground">
+                {submission.student?.full_name ?? "this student"}
+              </strong>
+              . Navigating to another student will discard them.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => setPendingNavTarget(null)}
+              className="min-h-10 sm:min-h-9"
+            >
+              Stay here
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                const target = pendingNavTarget;
+                setPendingNavTarget(null);
+                setIsRubricDirty(false);
+                if (target) onNavigate?.(target);
+              }}
+              className="min-h-10 sm:min-h-9 cursor-pointer"
+            >
+              Discard &amp; continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation Alert Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

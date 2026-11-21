@@ -572,7 +572,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   size="sm"
                   onClick={onToggleGuideLines}
                   className={cn(
-                    "h-8 @min-[540px]:h-7 px-2.5 @min-[540px]:px-2 text-[11px] font-medium rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+                    "h-10 @min-[540px]:h-7 min-h-[40px] @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
                     showGuideLines
                       ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200 font-semibold"
                       : "text-muted-foreground hover:text-foreground"
@@ -596,7 +596,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   size="sm"
                   onClick={() => setShowLegend((prev) => !prev)}
                   className={cn(
-                    "relative h-8 @min-[540px]:h-7 px-2 text-[11px] font-medium rounded-lg gap-1 cursor-pointer transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1",
+                    "relative h-10 @min-[540px]:h-7 min-h-[40px] @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium rounded-lg gap-1 cursor-pointer transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1",
                     showLegend
                       ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200 font-semibold"
                       : "text-muted-foreground hover:text-foreground"

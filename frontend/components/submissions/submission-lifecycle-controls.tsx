@@ -5,8 +5,18 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table2, Send, RotateCcw, ExternalLink, FileText } from "lucide-react";
+import { Table2, Send, RotateCcw, ExternalLink, FileText, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -171,7 +181,7 @@ export function SubmissionLifecycleControls({
 }: {
   submission: Submission;
   showRelease?: boolean;
-  variant?: "card" | "header" | "actions";
+  variant?: "card" | "header" | "actions" | "completion";
   className?: string;
 }) {
   const focusTarget = useRef<HTMLElement>(null);
@@ -180,20 +190,32 @@ export function SubmissionLifecycleControls({
   const release = useReleaseSubmission();
   const update = useUpdateStudentWork();
   const [returnOpen, setReturnOpen] = useState(false);
+  const [releaseConfirmOpen, setReleaseConfirmOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const active = work?.active_submission_id === submission.id;
   const completed = submission.status === "completed";
   const pending = release.isPending || update.isPending;
+  const resolvedScore = resolveSubmissionScore(submission);
+  const canRelease = Boolean(
+    showRelease &&
+      completed &&
+      active &&
+      !submission.released_at &&
+      resolvedScore.isScored
+  );
   async function act(action: "release" | "pin" | "unpin") {
     setError(null);
     try {
-      if (action === "release") await release.mutateAsync(submission.id);
-      else
+      if (action === "release") {
+        await release.mutateAsync(submission.id);
+        setReleaseConfirmOpen(false);
+      } else {
         await update.mutateAsync({
           activityId: submission.activity_id,
           studentId: submission.student_id,
           body: { pinned_submission_id: action === "pin" ? submission.id : null },
         });
+      }
       toast.success(
         action === "release" ? "Result released to the parent." : "Counted attempt updated."
       );
@@ -201,6 +223,58 @@ export function SubmissionLifecycleControls({
       setError(workActionError(error));
     }
   }
+
+  const releaseConfirmDialog = (
+    <AlertDialog open={releaseConfirmOpen} onOpenChange={setReleaseConfirmOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Release result to parent?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {submission.student.full_name}&apos;s assessment
+            {resolvedScore.compositeScore != null
+              ? ` (${Math.round(resolvedScore.compositeScore)}% · ${resolvedScore.scoreBand.band})`
+              : ""}{" "}
+            and diagnostic feedback will become immediately visible in the parent portal. This
+            cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        {error && (
+          <p role="alert" className="text-destructive text-xs font-medium">
+            {error}
+          </p>
+        )}
+        <AlertDialogFooter>
+          <AlertDialogCancel
+            disabled={release.isPending}
+            onClick={() => setReleaseConfirmOpen(false)}
+            className="min-h-10 sm:min-h-9"
+          >
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction
+            disabled={release.isPending}
+            onClick={(e) => {
+              e.preventDefault();
+              void act("release");
+            }}
+            className="min-h-10 sm:min-h-9 gap-1.5 bg-brand-600 hover:bg-brand-700 text-white dark:bg-brand-500 dark:hover:bg-brand-600 cursor-pointer"
+          >
+            {release.isPending ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                <span>Releasing…</span>
+              </>
+            ) : (
+              <>
+                <Send className="size-3.5" aria-hidden="true" />
+                <span>Release Result</span>
+              </>
+            )}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 
   // Header badges variant: lightweight status strip embedded directly in student metadata row
   if (variant === "header") {
@@ -213,7 +287,9 @@ export function SubmissionLifecycleControls({
           {submission.status === "returned"
             ? "Returned"
             : !work
-              ? "Loading status…"
+              ? isError
+                ? "Status unavailable"
+                : "Loading status…"
               : active
                 ? work.work_status
                 : "Historical attempt"}
@@ -243,6 +319,57 @@ export function SubmissionLifecycleControls({
     );
   }
 
+  // Completion strip variant: prominent, reassuring release CTA directly beneath recorded rubric
+  if (variant === "completion") {
+    if (!canRelease) return null;
+    return (
+      <div
+        className={cn(
+          "flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl border border-brand-300/80 dark:border-brand-800/80 bg-brand-50/60 dark:bg-brand-950/40 shadow-warm-sm",
+          className
+        )}
+      >
+        <div className="min-w-0 space-y-0.5">
+          <p className="text-xs font-semibold text-foreground">
+            Ready to share with parent
+          </p>
+          <p className="text-xs text-muted-foreground leading-snug">
+            Scores and diagnostic feedback stay private until you release this result.
+          </p>
+          {error && (
+            <p role="alert" className="text-destructive text-xs font-medium pt-0.5">
+              {error}
+            </p>
+          )}
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => {
+            setError(null);
+            setReleaseConfirmOpen(true);
+          }}
+          disabled={pending}
+          aria-busy={release.isPending}
+          className="h-10 sm:h-9 min-h-[40px] sm:min-h-0 px-4 text-xs font-semibold cursor-pointer touch-manipulation gap-1.5 bg-brand-600 hover:bg-brand-700 text-white dark:bg-brand-500 dark:hover:bg-brand-600 shrink-0 rounded-lg shadow-xs"
+        >
+          {release.isPending ? (
+            <>
+              <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+              <span>Releasing…</span>
+            </>
+          ) : (
+            <>
+              <Send className="size-3.5" aria-hidden="true" />
+              <span>Release Result</span>
+            </>
+          )}
+        </Button>
+        {releaseConfirmDialog}
+      </div>
+    );
+  }
+
   // Footer actions variant: docked terminal actions for grading completion & return flows
   if (variant === "actions") {
     return (
@@ -253,36 +380,45 @@ export function SubmissionLifecycleControls({
             variant="outline"
             onClick={() => setReturnOpen(true)}
             disabled={pending}
-            className="h-8 px-2.5 text-xs font-medium cursor-pointer touch-manipulation gap-1.5"
+            className="h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-3 sm:px-2.5 text-xs font-medium cursor-pointer touch-manipulation gap-1.5"
             title="Return worksheet to student/parent for another attempt"
           >
             <RotateCcw className="size-3.5" aria-hidden="true" />
             <span>Return</span>
           </Button>
         )}
-        {showRelease &&
-          completed &&
-          active &&
-          !submission.released_at &&
-          resolveSubmissionScore(submission).isScored && (
-            <Button
-              size="sm"
-              onClick={() => act("release")}
-              disabled={pending}
-              className="h-8 px-3 text-xs font-medium cursor-pointer touch-manipulation gap-1.5 bg-brand-600 hover:bg-brand-700 text-white dark:bg-brand-500 dark:hover:bg-brand-600"
-              title="Release score and diagnostic feedback to parent"
-            >
-              <Send className="size-3.5" aria-hidden="true" />
-              <span>Release Result</span>
-            </Button>
-          )}
+        {canRelease && (
+          <Button
+            size="sm"
+            onClick={() => {
+              setError(null);
+              setReleaseConfirmOpen(true);
+            }}
+            disabled={pending}
+            aria-busy={release.isPending}
+            className="h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-3.5 sm:px-3 text-xs font-medium cursor-pointer touch-manipulation gap-1.5 bg-brand-600 hover:bg-brand-700 text-white dark:bg-brand-500 dark:hover:bg-brand-600"
+            title="Release score and diagnostic feedback to parent"
+          >
+            {release.isPending ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                <span>Releasing…</span>
+              </>
+            ) : (
+              <>
+                <Send className="size-3.5" aria-hidden="true" />
+                <span>Release Result</span>
+              </>
+            )}
+          </Button>
+        )}
         {completed && !active && (
           <Button
             size="sm"
             variant="outline"
             onClick={() => act("pin")}
             disabled={pending || !work}
-            className="h-8 px-2.5 text-xs font-medium cursor-pointer touch-manipulation"
+            className="h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-3 sm:px-2.5 text-xs font-medium cursor-pointer touch-manipulation"
           >
             Count this attempt
           </Button>
@@ -293,7 +429,7 @@ export function SubmissionLifecycleControls({
             variant="ghost"
             onClick={() => act("unpin")}
             disabled={pending}
-            className="h-8 px-2 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+            className="h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-2.5 sm:px-2 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
           >
             Use automatic selection
           </Button>
@@ -301,9 +437,11 @@ export function SubmissionLifecycleControls({
 
         {(error || isError) && (
           <span role="alert" className="text-destructive text-xs font-medium">
-            {error ?? "Error updating status"}
+            {error ?? "Could not load status"}
           </span>
         )}
+
+        {releaseConfirmDialog}
 
         <Dialog open={returnOpen} onOpenChange={(open) => setReturnOpen(open)}>
           <DialogContent finalFocus={focusTarget}>
@@ -339,7 +477,9 @@ export function SubmissionLifecycleControls({
           {submission.status === "returned"
             ? "Returned"
             : !work
-              ? "Loading work status…"
+              ? isError
+                ? "Status unavailable"
+                : "Loading work status…"
               : active
                 ? work.work_status
                 : "Historical attempt"}
@@ -356,15 +496,19 @@ export function SubmissionLifecycleControls({
             Return
           </Button>
         )}
-        {showRelease &&
-          completed &&
-          active &&
-          !submission.released_at &&
-          resolveSubmissionScore(submission).isScored && (
-            <Button size="sm" onClick={() => act("release")} disabled={pending}>
-              Release result
-            </Button>
-          )}
+        {canRelease && (
+          <Button
+            size="sm"
+            onClick={() => {
+              setError(null);
+              setReleaseConfirmOpen(true);
+            }}
+            disabled={pending}
+            aria-busy={release.isPending}
+          >
+            {release.isPending ? "Releasing…" : "Release result"}
+          </Button>
+        )}
         {completed && !active && (
           <Button
             size="sm"
@@ -407,6 +551,7 @@ export function SubmissionLifecycleControls({
           {error ?? "Could not load the current work status. Refresh to try again."}
         </p>
       )}
+      {releaseConfirmDialog}
       <Dialog open={returnOpen} onOpenChange={(open) => setReturnOpen(open)}>
         <DialogContent finalFocus={focusTarget}>
           <DialogHeader>

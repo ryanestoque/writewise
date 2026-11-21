@@ -124,6 +124,7 @@ interface CriterionTrendChartProps {
   showScoreDetails?: boolean;
   onToggleScoreDetails?: () => void;
   practiceFocusKey?: string | null;
+  showBandLegend?: boolean;
 }
 
 export function CriterionTrendChart({
@@ -133,6 +134,7 @@ export function CriterionTrendChart({
   showScoreDetails: controlledShowDetails,
   onToggleScoreDetails,
   practiceFocusKey,
+  showBandLegend = true,
 }: CriterionTrendChartProps) {
   const isParent = variant === "parent";
   const showScoreDetails =
@@ -648,7 +650,7 @@ export function CriterionTrendChart({
               <button
                 type="button"
                 onClick={resetCriteria}
-                className={cn("px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors cursor-pointer", isParent && "min-h-10 sm:min-h-9")}
+                className="min-h-[40px] sm:min-h-[32px] px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Show overall progress
               </button>
@@ -756,32 +758,34 @@ export function CriterionTrendChart({
           )}
 
           {/* Band Zones Legend */}
-          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 max-w-fit mx-auto pt-3 text-xs text-muted-foreground border-t border-border/50">
-            <span className="flex items-center gap-1.5">
-              <span className="size-3 rounded-xs bg-band-4/60 border border-band-4/80" />
-              <span className="font-medium text-foreground/90">
-                Excellent{showScoreDetails ? " (75–100%)" : ""}
+          {showBandLegend && (
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 max-w-fit mx-auto pt-3 text-xs text-muted-foreground border-t border-border/50">
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-xs bg-band-4/60 border border-band-4/80" />
+                <span className="font-medium text-foreground/90">
+                  Excellent{showScoreDetails ? " (75–100%)" : ""}
+                </span>
               </span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="size-3 rounded-xs bg-band-3/60 border border-band-3/80" />
-              <span className="font-medium text-foreground/90">
-                Satisfactory{showScoreDetails ? " (50–74%)" : ""}
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-xs bg-band-3/60 border border-band-3/80" />
+                <span className="font-medium text-foreground/90">
+                  Satisfactory{showScoreDetails ? " (50–74%)" : ""}
+                </span>
               </span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="size-3 rounded-xs bg-band-2/60 border border-band-2/80" />
-              <span className="font-medium text-foreground/90">
-                Developing{showScoreDetails ? " (25–49%)" : ""}
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-xs bg-band-2/60 border border-band-2/80" />
+                <span className="font-medium text-foreground/90">
+                  Developing{showScoreDetails ? " (25–49%)" : ""}
+                </span>
               </span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="size-3 rounded-xs bg-band-1/60 border border-band-1/80" />
-              <span className="font-medium text-foreground/90">
-                Needs Improvement{showScoreDetails ? " (0–24%)" : ""}
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-xs bg-band-1/60 border border-band-1/80" />
+                <span className="font-medium text-foreground/90">
+                  Needs Improvement{showScoreDetails ? " (0–24%)" : ""}
+                </span>
               </span>
-            </span>
-          </div>
+            </div>
+          )}
         </div>
       ) : (
         <div

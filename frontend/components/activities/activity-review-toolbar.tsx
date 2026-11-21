@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   SlidersHorizontal,
-  Trash2,
+  CheckSquare,
   Filter,
   X,
   ChevronDown,
@@ -570,8 +570,8 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                         onClick={onToggleManagingAttempts}
                         className="min-h-11 cursor-pointer text-muted-foreground hover:text-foreground gap-2"
                       >
-                        <Trash2 className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                        <span>{managingAttempts ? "Exit batch selection" : "Batch select attempts..."}</span>
+                        <CheckSquare className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                        <span>{managingAttempts ? "Exit selection" : "Select multiple…"}</span>
                       </DropdownMenuItem>
                     </DropdownMenuGroup>
                   </>
@@ -596,17 +596,17 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
               checked={allVisibleSelected}
               indeterminate={someVisibleSelected}
               onCheckedChange={onToggleSelectAll}
-              aria-label="Select all visible attempts to delete"
+              aria-label="Select all displayed attempts"
             />
             <label
               htmlFor="select-all-displayed-attempts"
               className="cursor-pointer text-sm select-none"
             >
-              Select displayed attempts to delete
+              Select displayed attempts
             </label>
           </div>
           <span className="text-muted-foreground text-xs">
-            {selectedCount} selected. Selection does not limit release.
+            {selectedCount} selected. Use the bar below to release, excuse, or delete.
           </span>
           {hiddenSelectedCount > 0 && (
             <div className="flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-xs text-amber-900 dark:text-amber-200">

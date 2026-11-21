@@ -36,7 +36,13 @@ import {
   ChevronRight,
 } from "lucide-react";
 import type { StudentScoreSummary } from "@/lib/hooks/use-dashboard";
-import { getBandFromScore, getBandMeta } from "@/lib/utils/scoring";
+import {
+  RUBRIC_CRITERIA,
+  RUBRIC_BANDS,
+  getBandFromScore,
+  getBandMeta,
+} from "@/lib/utils/scoring";
+import { BandBadge } from "@/components/shared/band-badge";
 import { cn } from "@/lib/utils";
 
 export type SortField =
@@ -55,6 +61,7 @@ interface ClassTableProps {
   students?: StudentScoreSummary[];
   isLoading?: boolean;
   onSelectStudent: (student: StudentScoreSummary) => void;
+  onFilteredChange?: (students: StudentScoreSummary[], isFiltered: boolean) => void;
   className?: string;
 }
 
@@ -135,6 +142,7 @@ export function ClassTable({
   students = [],
   isLoading = false,
   onSelectStudent,
+  onFilteredChange,
   className,
 }: ClassTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -144,7 +152,7 @@ export function ClassTable({
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Global keyboard shortcut: press '/' or 'Cmd/Ctrl+K' to focus search input (disabled when modal is open)
+  // Global keyboard shortcut: press '/' to focus search input (Cmd/Ctrl+K is reserved for Upload Worksheet)
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       // Do not intercept shortcuts if any modal dialog is currently active
@@ -163,11 +171,7 @@ export function ClassTable({
           target.isContentEditable ||
           target.tagName === "SELECT");
 
-      if (
-        !isInput &&
-        (e.key === "/" ||
-          ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k"))
-      ) {
+      if (!isInput && e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
@@ -290,6 +294,19 @@ export function ClassTable({
       });
   }, [students, searchQuery, selectedSection, selectedBand, sortField, sortDirection]);
 
+  const hasActiveFilters =
+    searchQuery.trim() !== "" || selectedSection !== "all" || selectedBand !== "all";
+
+  useEffect(() => {
+    onFilteredChange?.(filteredAndSortedStudents, hasActiveFilters);
+  }, [filteredAndSortedStudents, hasActiveFilters, onFilteredChange]);
+
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setSelectedSection("all");
+    setSelectedBand("all");
+  };
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -370,26 +387,163 @@ export function ClassTable({
         </div>
 
         {/* Diagnostic Performance Tier Filter Pills */}
-        <div className="flex items-center gap-2 min-w-0 overflow-y-hidden">
-          <span className="text-[11px] font-semibold text-muted-foreground shrink-0 uppercase tracking-wider hidden sm:inline">
-            Tier:
-          </span>
-          <FilterPills
-            items={bandPills}
-            value={selectedBand}
-            onChange={(val) => setSelectedBand(val as BandFilter)}
-          />
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 overflow-y-hidden flex-1">
+            <span className="text-[11px] font-semibold text-muted-foreground shrink-0 uppercase tracking-wider hidden sm:inline">
+              Tier:
+            </span>
+            <FilterPills
+              ariaLabel="Filter by performance tier"
+              items={bandPills}
+              value={selectedBand}
+              onChange={(val) => setSelectedBand(val as BandFilter)}
+            />
+          </div>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="text-xs font-medium text-primary hover:underline shrink-0 px-2 min-h-[36px] inline-flex items-center rounded-md cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Main Table (Desktop & Tablet) */}
-      <div className="relative rounded-xl border border-border bg-card shadow-warm overflow-hidden">
-        {/* Mobile horizontal scroll hint gradient */}
-        <div
-          className="pointer-events-none absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-card/80 to-transparent sm:hidden z-10"
-          aria-hidden="true"
-        />
+      {/* Mobile Student Cards (<640px) — avoids horizontal scrolling a 9-column table on phones */}
+      <div className="sm:hidden space-y-2.5">
+        {/* Compact mobile sort bar */}
+        <div className="flex items-center justify-between gap-2">
+          <label htmlFor="mobile-student-sort" className="text-xs font-medium text-muted-foreground shrink-0">
+            Sort by
+          </label>
+          <div className="flex items-center gap-1.5 flex-1 max-w-[240px]">
+            <select
+              id="mobile-student-sort"
+              value={sortField}
+              onChange={(e) => {
+                setSortField(e.target.value as SortField);
+                setSortDirection("asc");
+              }}
+              className="flex-1 min-h-[40px] px-2.5 rounded-lg border border-border bg-card text-xs font-medium text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {COLUMNS.map((col) => (
+                <option key={col.field} value={col.field}>
+                  {col.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))}
+              aria-label={`Sort direction: ${sortDirection === "asc" ? "ascending" : "descending"}. Click to toggle.`}
+              className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-lg border border-border bg-card text-foreground hover:bg-muted cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {sortDirection === "asc" ? (
+                <ArrowUp className="size-4 text-primary" aria-hidden="true" />
+              ) : (
+                <ArrowDown className="size-4 text-primary" aria-hidden="true" />
+              )}
+            </button>
+          </div>
+        </div>
 
+        {isLoading ? (
+          <div className="space-y-2.5">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-20 rounded-xl border border-border bg-card p-3.5 animate-pulse"
+              />
+            ))}
+          </div>
+        ) : filteredAndSortedStudents.length === 0 ? (
+          <div className="rounded-xl border border-border bg-card py-10 px-4 text-center">
+            <div className="flex flex-col items-center justify-center space-y-2">
+              <SearchX className="size-8 text-muted-foreground/60" aria-hidden="true" />
+              <p className="text-sm font-semibold text-foreground">No students match your filter</p>
+              <p className="text-xs text-muted-foreground">Try clearing your search or filters.</p>
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "mt-2 min-h-[44px] px-4 rounded-lg text-xs cursor-pointer touch-manipulation"
+                )}
+              >
+                Reset filters
+              </button>
+            </div>
+          </div>
+        ) : (
+          <ul role="list" className="space-y-2">
+            {filteredAndSortedStudents.map((student) => {
+              const hasScores = student.scores.composite !== null;
+              const lowestCriterion = hasScores
+                ? RUBRIC_CRITERIA.map((c) => ({
+                    shortName: c.shortName,
+                    score: student.scores[c.criterionKey],
+                  }))
+                    .filter((c): c is { shortName: string; score: number } => c.score !== null)
+                    .sort((a, b) => a.score - b.score)[0] ?? null
+                : null;
+
+              return (
+                <li key={student.studentId}>
+                  <button
+                    type="button"
+                    onClick={() => onSelectStudent(student)}
+                    className="w-full text-left p-3.5 rounded-xl border border-border bg-card active:bg-muted/40 transition-colors flex items-center justify-between gap-3 cursor-pointer touch-manipulation min-h-[68px] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-sm font-semibold text-foreground truncate">
+                          {student.fullName}
+                        </span>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {student.section}
+                        </span>
+                      </div>
+                      {lowestCriterion ? (
+                        <p className="text-xs text-muted-foreground truncate tabular-nums">
+                          Focus: <span className="font-medium text-foreground">{lowestCriterion.shortName}</span> ({lowestCriterion.score.toFixed(1)}%)
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground/70 italic">
+                          Not yet graded
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      {hasScores && student.scores.composite !== null ? (
+                        <div className="text-right space-y-1">
+                          <span className="font-sans text-sm font-bold tabular-nums text-foreground block">
+                            {student.scores.composite.toFixed(1)}%
+                          </span>
+                          <BandBadge score={student.scores.composite} size="sm" showDot={false} />
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/70">Unrated</span>
+                      )}
+                      <ChevronRight className="size-4 text-muted-foreground/60 shrink-0" aria-hidden="true" />
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        <p className="text-xs text-muted-foreground px-1">
+          Showing <strong className="text-foreground">{filteredAndSortedStudents.length}</strong> of{" "}
+          {students.length} students
+        </p>
+      </div>
+
+      {/* Main Table (Tablet & Desktop >=640px) — flat 1px border per DESIGN.md elevation rule */}
+      <div className="hidden sm:block relative rounded-xl border border-border bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <TooltipProvider delay={200}>
             <Table>
@@ -406,27 +560,26 @@ export function ClassTable({
                             : "descending"
                           : "none"
                       }
-                      onClick={() => handleSort(col.field)}
                       className={cn(
-                        "text-xs font-semibold text-foreground py-3 cursor-pointer select-none transition-colors hover:text-brand-700 dark:hover:text-brand-300",
+                        "text-xs font-semibold text-foreground py-3 select-none",
                         col.isNumeric ? "text-right" : "text-left"
                       )}
                     >
                       <Tooltip>
                         <TooltipTrigger
+                          onClick={() => handleSort(col.field)}
                           className={cn(
-                            "w-full h-full inline-flex items-center gap-0.5 cursor-pointer bg-transparent border-0 p-0 text-inherit font-inherit",
+                            "w-full h-full inline-flex items-center gap-0.5 cursor-pointer bg-transparent border-0 p-0 text-inherit font-inherit transition-colors hover:text-brand-700 dark:hover:text-brand-300 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
                             col.isNumeric ? "justify-end" : "justify-start"
                           )}
                         >
-                          <span className="hidden sm:inline">{col.label}</span>
-                          <span className="sm:hidden">{col.shortLabel}</span>
+                          <span>{col.label}</span>
                           {getSortIcon(col.field)}
                         </TooltipTrigger>
                         {col.description && (
                           <TooltipContent
                             side="top"
-                            className="text-[11px] max-w-[200px] text-center font-normal"
+                            className="text-xs max-w-[200px] text-center font-normal"
                           >
                             {col.description}
                           </TooltipContent>
@@ -453,19 +606,15 @@ export function ClassTable({
                 <TableRow>
                   <TableCell colSpan={9} className="py-12 text-center">
                     <div className="flex flex-col items-center justify-center space-y-2">
-                      <SearchX className="size-8 text-muted-foreground/60" />
+                      <SearchX className="size-8 text-muted-foreground/60" aria-hidden="true" />
                       <p className="text-sm font-semibold text-foreground">No students match your filter</p>
                       <p className="text-xs text-muted-foreground">Try clearing your search or filters.</p>
                       <button
                         type="button"
-                        onClick={() => {
-                          setSearchQuery("");
-                          setSelectedSection("all");
-                          setSelectedBand("all");
-                        }}
+                        onClick={handleClearFilters}
                         className={cn(
                           buttonVariants({ variant: "outline", size: "sm" }),
-                          "mt-2 rounded-lg text-xs cursor-pointer"
+                          "mt-2 min-h-[36px] rounded-lg text-xs cursor-pointer"
                         )}
                       >
                         Reset filters
@@ -481,26 +630,22 @@ export function ClassTable({
                     <TableRow
                       key={student.studentId}
                       onClick={() => onSelectStudent(student)}
-                      className="group cursor-pointer hover:bg-muted/30 transition-colors border-b border-border/60 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-                      tabIndex={0}
-                      role="button"
-                      aria-label={`View handwriting drill-down diagnostics for ${student.fullName}`}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          onSelectStudent(student);
-                        }
-                      }}
+                      className="group cursor-pointer hover:bg-muted/30 transition-colors border-b border-border/60"
                     >
-                      {/* Student Name */}
+                      {/* Student Name — semantic <button> keeps <tr> as a native table row for screen readers */}
                       <TableCell className="py-3 px-4 font-medium">
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold text-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors truncate">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSelectStudent(student);
+                            }}
+                            aria-label={`View handwriting diagnostics for ${student.fullName}`}
+                            className="text-left text-xs font-semibold text-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors truncate max-w-full block cursor-pointer rounded-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                          >
                             {student.fullName}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground sm:hidden truncate">
-                            {student.section}
-                          </p>
+                          </button>
                         </div>
                       </TableCell>
 
@@ -545,7 +690,7 @@ export function ClassTable({
 
                       {/* Action Chevron */}
                       <TableCell className="py-3 pr-4 pl-0 text-right">
-                        <ChevronRight className="size-4 text-muted-foreground/40 group-hover:text-foreground group-hover:translate-x-0.5 transition-all inline-block" />
+                        <ChevronRight className="size-4 text-muted-foreground/40 group-hover:text-foreground group-hover:translate-x-0.5 transition-all inline-block" aria-hidden="true" />
                       </TableCell>
                     </TableRow>
                   );
@@ -556,15 +701,31 @@ export function ClassTable({
           </TooltipProvider>
         </div>
 
-        {/* Table Footer Count */}
-        <div className="px-4 py-2.5 bg-muted/20 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground">
+        {/* Table Footer Count & Dual-Signal 4-Band Legend */}
+        <div className="px-4 py-2.5 bg-muted/20 border-t border-border/60 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-xs text-muted-foreground">
           <span>
             Showing <strong className="text-foreground">{filteredAndSortedStudents.length}</strong> of{" "}
             {students.length} students
           </span>
-          <span className="hidden sm:inline text-[11px]">
-            Click any row to open detailed student diagnostic trends
-          </span>
+          <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1" aria-label="Score band legend">
+            {RUBRIC_BANDS.map((band) => {
+              const range =
+                band.band === "needs_improvement"
+                  ? "0–24%"
+                  : band.band === "developing"
+                    ? "25–49%"
+                    : band.band === "satisfactory"
+                      ? "50–74%"
+                      : "75–100%";
+              return (
+                <span key={band.band} className="inline-flex items-center gap-1.5">
+                  <span className={cn("size-2 rounded-full shrink-0", band.dotColor)} aria-hidden="true" />
+                  <span className="font-medium text-foreground">{band.label}</span>
+                  <span className="tabular-nums">({range})</span>
+                </span>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
@@ -576,15 +737,7 @@ function ScoreCell({ score }: { score: number | null | undefined }) {
     return <span className="text-xs text-muted-foreground/50 tabular-nums">—</span>;
   }
 
-  const meta = getBandMeta(
-    score >= 75
-      ? "excellent"
-      : score >= 50
-        ? "satisfactory"
-        : score >= 25
-          ? "developing"
-          : "needs_improvement"
-  );
+  const meta = getBandMeta(getBandFromScore(score));
 
   return (
     <div className="inline-flex items-center gap-1.5 justify-end">

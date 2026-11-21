@@ -20,6 +20,8 @@ import {
   Contrast,
   Search,
   FileText,
+  SlidersHorizontal,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -68,6 +70,8 @@ export interface WorksheetImageInspectorProps {
   keyboardScope?: "global" | "focused";
   /** Public demos can progressively disclose secondary image controls. */
   imageToolsDisclosure?: boolean;
+  /** Keep diagnosticToolbar visible while collapsing secondary image tools (Contrast, Magnify, Zoom) behind a toggle. */
+  collapsibleImageTools?: boolean;
   /** Whether to show secondary image tools (zoom, contrast, loupe). Defaults to true. */
   showImageTools?: boolean;
   /** Additional container classes */
@@ -91,12 +95,14 @@ export function WorksheetImageInspector({
   showShortcutsLegend = true,
   keyboardScope = "global",
   imageToolsDisclosure = false,
+  collapsibleImageTools = false,
   showImageTools = true,
   children,
   className,
   aspectRatioClass,
   autoAspectRatio = true,
 }: WorksheetImageInspectorProps) {
+  const [imageToolsExpanded, setImageToolsExpanded] = useState(false);
   const [loadedDimensions, setNaturalDimensions] = useState<{
     width: number;
     height: number;
@@ -591,13 +597,58 @@ export function WorksheetImageInspector({
           <div className="p-1 sm:p-1.5">
             {diagnosticToolbar}
           </div>
-          {showImageTools && (
+          {showImageTools && collapsibleImageTools && !imageToolsExpanded && (
+            <div className="w-full flex items-center justify-between gap-2 px-2 py-1 text-xs">
+              <button
+                type="button"
+                onClick={() => setImageToolsExpanded(true)}
+                className="inline-flex items-center gap-1.5 h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                aria-expanded={false}
+              >
+                <SlidersHorizontal className="size-3.5" aria-hidden="true" />
+                <span>Image tools</span>
+                {(isHighContrast || isLoupeActive || zoomScale > 1) && (
+                  <span className="inline-flex items-center rounded-full bg-brand-100 dark:bg-brand-900 px-1.5 py-0.5 text-[10px] font-semibold text-brand-800 dark:text-brand-200 tabular-nums">
+                    {[
+                      isHighContrast ? "Contrast" : null,
+                      isLoupeActive ? "Magnify" : null,
+                      zoomScale > 1 ? `${Math.round(zoomScale * 100)}%` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                )}
+                <ChevronDown className="size-3.5 opacity-70" aria-hidden="true" />
+              </button>
+              <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                <kbd className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border">C</kbd> ink ·{" "}
+                <kbd className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border">L</kbd> magnify ·{" "}
+                <kbd className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border">+/-</kbd> zoom
+              </span>
+            </div>
+          )}
+          {showImageTools && (!collapsibleImageTools || imageToolsExpanded) && (
             <div className={cn(
             "w-full flex items-center justify-between gap-1 p-1 sm:p-1.5 text-xs",
             imageToolsDisclosure && "flex-wrap gap-y-2"
           )}>
             {/* Left tools: Contrast & Loupe */}
             <div className="flex items-center gap-1">
+              {collapsibleImageTools && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setImageToolsExpanded(false)}
+                  className="h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-2 text-xs rounded-lg gap-1 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+                  aria-expanded={true}
+                  aria-label="Hide image tools"
+                  title="Hide image tools"
+                >
+                  <ChevronDown className="size-3.5 rotate-180" aria-hidden="true" />
+                  <span className="hidden sm:inline">Hide</span>
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="ghost"

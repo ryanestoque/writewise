@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ActivityAssignmentFields, activitySchema, type ActivityFormValues } from "./activity-assignment-fields";
+import {
+  ActivityTitleField,
+  ActivityRosterField,
+  ActivityOptionalSettings,
+  activitySchema,
+  type ActivityFormValues,
+} from "./activity-assignment-fields";
 import { toActivityDueAt, toActivityDueInput } from "@/lib/utils/activity-deadlines";
 import { ApiError } from "@/lib/utils/api-error";
 import {
@@ -16,7 +22,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import {
   Field,
   FieldLabel,
@@ -54,12 +69,15 @@ export function EditActivityDialog({
   const form = useForm<ActivityFormValues>({
     resolver: zodResolver(activitySchema),
     defaultValues: {
-      title: activity?.title ?? "", instructions: activity?.instructions ?? "",
+      title: activity?.title ?? "",
+      instructions: activity?.instructions ?? "",
       assignments: activity?.assignments ?? [],
-      due_input: toActivityDueInput(activity?.due_at ?? null), close_after_due: activity?.close_after_due ?? false,
+      due_input: toActivityDueInput(activity?.due_at ?? null),
+      close_after_due: activity?.close_after_due ?? false,
       target_text: activity?.target_text ?? "",
       is_take_home: activity?.is_take_home ?? false,
-      points_input: activity?.points_possible?.toString() ?? "", confirm_remove_points: false,
+      points_input: activity?.points_possible?.toString() ?? "",
+      confirm_remove_points: false,
     },
   });
 
@@ -71,11 +89,15 @@ export function EditActivityDialog({
   useEffect(() => {
     if (activity && open) {
       form.reset({
-        title: activity.title, instructions: activity.instructions ?? "", assignments: activity.assignments,
-        due_input: toActivityDueInput(activity.due_at), close_after_due: activity.close_after_due,
+        title: activity.title,
+        instructions: activity.instructions ?? "",
+        assignments: activity.assignments,
+        due_input: toActivityDueInput(activity.due_at),
+        close_after_due: activity.close_after_due,
         target_text: activity.target_text,
         is_take_home: activity.is_take_home,
-        points_input: activity.points_possible?.toString() ?? "", confirm_remove_points: false,
+        points_input: activity.points_possible?.toString() ?? "",
+        confirm_remove_points: false,
       });
     }
   }, [activity, open, form]);
@@ -95,12 +117,18 @@ export function EditActivityDialog({
       {
         id: activity.id,
         data: {
-          title: data.title, instructions: data.instructions.trim() || null,
-          ...(form.formState.dirtyFields.assignments && data.assignments.length ? { assignments: data.assignments } : {}),
-          due_at: toActivityDueAt(data.due_input), close_after_due: data.close_after_due,
+          title: data.title,
+          instructions: data.instructions.trim() || null,
+          ...(form.formState.dirtyFields.assignments && data.assignments.length
+            ? { assignments: data.assignments }
+            : {}),
+          due_at: toActivityDueAt(data.due_input),
+          close_after_due: data.close_after_due,
           target_text: data.target_text,
           is_take_home: data.is_take_home,
-          ...(form.formState.dirtyFields.points_input || data.confirm_remove_points ? { points_possible: data.points_input || null } : {}),
+          ...(form.formState.dirtyFields.points_input || data.confirm_remove_points
+            ? { points_possible: data.points_input || null }
+            : {}),
           confirm_remove_points: data.confirm_remove_points,
         },
       },
@@ -111,13 +139,19 @@ export function EditActivityDialog({
         },
         onError: (error: Error) => {
           if (error instanceof ApiError && error.code === "POINTS_OVERRIDE_CONFLICT") {
-            form.setError("points_input", { message: "An existing override exceeds this maximum. Adjust the override first." });
+            form.setError("points_input", {
+              message: "An existing override exceeds this maximum. Adjust the override first.",
+            });
           }
           if (error instanceof ApiError && error.code === "POINTS_REMOVAL_CONFIRMATION_REQUIRED") {
-            form.setError("points_input", { message: "Confirm removal of points and existing grade publication." });
+            form.setError("points_input", {
+              message: "Confirm removal of points and existing grade publication.",
+            });
           }
           if (error instanceof ApiError && error.code === "INVALID_ASSIGNMENT_TARGET") {
-            form.setError("assignments", { message: "Choose sections or students from your current roster." });
+            form.setError("assignments", {
+              message: "Choose sections or students from your current roster.",
+            });
           }
           toast.error(error.message || "Failed to update activity.");
         },
@@ -125,15 +159,38 @@ export function EditActivityDialog({
     );
   };
 
+  const hasExistingOptional = Boolean(
+    activity?.instructions?.trim() ||
+      activity?.points_possible != null ||
+      activity?.due_at != null
+  );
+
+  const pointsNotice = (
+    <>
+      {activity?.points_possible != null && !points && (
+        <p className="rounded-lg border border-amber-200/80 dark:border-amber-900 bg-amber-50/70 dark:bg-amber-950/30 p-2.5 text-xs text-amber-900 dark:text-amber-200">
+          Saving will ask you to confirm removal of existing point grades.
+        </p>
+      )}
+      {activity?.points_possible != null &&
+        points &&
+        Number(points) !== activity.points_possible && (
+          <p className="text-xs text-muted-foreground">
+            Changing the maximum returns point grades to draft. Release them again after review.
+          </p>
+        )}
+    </>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[520px] max-h-[min(92dvh,calc(100vh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm border border-border/80 bg-surface dark:bg-card">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[540px] max-h-[min(92dvh,calc(100vh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm border border-border/80 bg-surface dark:bg-card">
         <DialogHeader className="pb-3 sm:pb-4 shrink-0 text-left">
           <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">
             Edit Activity
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Update the title, instructions, target text, assignments, due date, or take-home setting.
+            Update the title, target text, assignments, instructions, due date, or take-home setting.
           </DialogDescription>
         </DialogHeader>
 
@@ -143,24 +200,31 @@ export function EditActivityDialog({
         >
           <div className="overflow-y-auto overflow-x-hidden overscroll-contain px-1 py-1 flex-1 min-h-0">
             <FieldGroup>
-              <ActivityAssignmentFields form={form} />
-              {activity?.points_possible != null && !points && (
-                <p className="rounded-lg border p-3 text-sm">Saving will ask you to confirm removal of existing point grades.</p>
-              )}
-              {activity?.points_possible != null && points && Number(points) !== activity.points_possible && (
-                <p className="text-sm text-muted-foreground">Changing the maximum returns point grades to draft. Release them again after review.</p>
-              )}
+              {/* Chunk 1: Activity Prompt */}
+              <ActivityTitleField form={form} />
+
               {/* Target Text */}
               <Field data-invalid={!!form.formState.errors.target_text}>
-                <FieldLabel
-                  htmlFor="edit_target_text"
-                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                >
-                  Target Text{" "}
-                  <span className="text-destructive" aria-hidden="true">
-                    *
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <FieldLabel
+                    htmlFor="edit_target_text"
+                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
+                    Target Text{" "}
+                    <span className="text-destructive" aria-hidden="true">
+                      *
+                    </span>
+                  </FieldLabel>
+
+                  <span
+                    className="text-xs font-medium text-muted-foreground tabular-nums"
+                    aria-live="polite"
+                    aria-label={`${wordCount} ${wordCount === 1 ? "word" : "words"}`}
+                  >
+                    {wordCount} {wordCount === 1 ? "word" : "words"}
                   </span>
-                </FieldLabel>
+                </div>
+
                 <FieldContent>
                   <Textarea
                     id="edit_target_text"
@@ -172,20 +236,17 @@ export function EditActivityDialog({
                         : "edit_target_text_hint"
                     }
                     aria-required="true"
-                    placeholder="e.g., the quick brown fox jumps over the lazy dog"
-                    className="min-h-24 text-base sm:text-sm rounded-lg sm:rounded-xl"
+                    placeholder="e.g., The quick brown fox jumps over the lazy dog."
+                    className="min-h-24 text-base sm:text-sm rounded-lg sm:rounded-xl focus-visible:ring-brand-500"
                   />
                 </FieldContent>
 
                 {/* Live Cursive Script Preview */}
                 {targetText && targetText.trim().length > 0 && (
                   <div className="space-y-1.5 pt-2">
-                    <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-                      <span>Cursive Worksheet Preview</span>
-                      <span className="text-xs text-muted-foreground font-medium">
-                        3-line ruling
-                      </span>
-                    </div>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Cursive Worksheet Preview
+                    </p>
                     <div className="relative p-3.5 sm:p-4 pb-5 sm:pb-6 rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-2xs">
                       <div className="relative overflow-hidden">
                         <div
@@ -204,20 +265,13 @@ export function EditActivityDialog({
                   </div>
                 )}
 
-                <div className="flex items-center justify-between mt-1.5">
+                <div className="flex items-center justify-between mt-2">
                   <p
                     id="edit_target_text_hint"
                     className="text-xs text-muted-foreground leading-normal"
                   >
-                    Recommended: 5–25 words for standard 3-line worksheet.
+                    Recommended: 5–25 words for standard 3-line ruled cursive worksheets.
                   </p>
-                  <span
-                    className="text-xs font-medium text-muted-foreground tabular-nums shrink-0 ml-2"
-                    aria-live="polite"
-                    aria-label={`${wordCount} ${wordCount === 1 ? "word" : "words"}`}
-                  >
-                    {wordCount} {wordCount === 1 ? "word" : "words"}
-                  </span>
                 </div>
 
                 {wordCount > 0 && wordCount < 3 && (
@@ -245,7 +299,7 @@ export function EditActivityDialog({
 
               {/* Take-Home Toggle */}
               <Field>
-                <div className="flex items-center justify-between gap-4 p-3 rounded-xl bg-muted/40 border border-border/60">
+                <div className="flex items-center justify-between gap-4 p-3.5 rounded-xl bg-muted/40 border border-border/60">
                   <div className="flex items-start gap-3 min-w-0">
                     <div className="flex size-8 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0 mt-0.5">
                       <Home className="size-4" />
@@ -258,7 +312,7 @@ export function EditActivityDialog({
                         Take-home activity
                       </FieldLabel>
                       <p className="text-xs text-muted-foreground mt-0.5 leading-normal">
-                        Allow parents to upload submissions for this activity.
+                        Allow parents to upload completed handwriting photos from home.
                       </p>
                     </div>
                   </div>
@@ -271,6 +325,15 @@ export function EditActivityDialog({
                   />
                 </div>
               </Field>
+
+              {/* Chunk 2: Assignment & Optional Settings */}
+              <ActivityRosterField form={form} />
+              <ActivityOptionalSettings
+                key={activity?.id ?? "edit-options"}
+                form={form}
+                defaultOpen={hasExistingOptional}
+                pointsNotice={pointsNotice}
+              />
             </FieldGroup>
           </div>
 
@@ -301,14 +364,23 @@ export function EditActivityDialog({
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Remove points from this activity?</AlertDialogTitle>
-              <AlertDialogDescription>All teacher point overrides will be cleared, and published point grades withdrawn. Handwriting assessments remain available. Restoring points later requires releasing grades again.</AlertDialogDescription>
+              <AlertDialogDescription>
+                All teacher point overrides will be cleared, and published point grades withdrawn.
+                Handwriting assessments remain available. Restoring points later requires releasing
+                grades again.
+              </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Keep editing</AlertDialogCancel>
-              <AlertDialogAction variant="destructive" onClick={() => {
-                setRemoveConfirmation(false);
-                onSubmit({ ...form.getValues(), confirm_remove_points: true });
-              }}>Remove points and save</AlertDialogAction>
+              <AlertDialogAction
+                variant="destructive"
+                onClick={() => {
+                  setRemoveConfirmation(false);
+                  onSubmit({ ...form.getValues(), confirm_remove_points: true });
+                }}
+              >
+                Remove points and save
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

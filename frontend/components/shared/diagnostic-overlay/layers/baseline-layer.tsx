@@ -215,9 +215,8 @@ export const BaselineLayer = memo(function BaselineLayer({
               strokeWidth={5}
               vectorEffect="non-scaling-stroke"
               strokeLinecap="round"
-              className={`transition-opacity stroke-brand-700 dark:stroke-brand-400 pointer-events-none ${
-                isActive ? "opacity-100" : "opacity-0 group-hover:opacity-75 group-focus-visible:opacity-100"
-              }`}
+              className={`transition-opacity stroke-brand-700 dark:stroke-brand-400 pointer-events-none ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-75 group-focus-visible:opacity-100"
+                }`}
             />
 
             {/* Word Baseline Anchor Bar */}
