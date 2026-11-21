@@ -1,6 +1,15 @@
 "use client";
 
-import { useState, useRef, useEffect, useSyncExternalStore, type KeyboardEvent } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useSyncExternalStore,
+  createContext,
+  useContext,
+  memo,
+  type KeyboardEvent,
+} from "react";
 import { Pencil, SlidersHorizontal, Check, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { GradebookCell } from "@/lib/hooks/use-gradebook";
@@ -33,6 +42,12 @@ function getTouchSnapshot() {
 function getServerSnapshot() {
   return false;
 }
+
+export function useIsTouchDevice() {
+  return useSyncExternalStore(subscribeTouchDevice, getTouchSnapshot, getServerSnapshot);
+}
+
+export const TouchDeviceContext = createContext<boolean>(false);
 
 export const CRITERIA_DEFINITIONS = [
   {
@@ -76,7 +91,7 @@ export function getCriterionDiagnostic(
 } {
   if (composite === null) {
     return {
-      chipClass: "bg-muted/70 text-muted-foreground/60 border border-transparent",
+      chipClass: "bg-muted text-muted-foreground border border-border/50",
       diagnosticNote: "Awaiting worksheet scan",
     };
   }
@@ -147,7 +162,7 @@ export function getPedagogicalSummary(composite: number | null, courseworkStatus
   return "Diagnostic cursive evaluation";
 }
 
-export function GradebookCellButton({
+export const GradebookCellButton = memo(function GradebookCellButton({
   cell,
   onOpen,
   row,
@@ -159,6 +174,7 @@ export function GradebookCellButton({
   viewMode = "points",
   isFocused = false,
   onFocusCell,
+  isTouchDevice: propIsTouchDevice,
 }: {
   cell: GradebookCell;
   onOpen: () => void;
@@ -171,12 +187,14 @@ export function GradebookCellButton({
   viewMode?: "points" | "diagnostic";
   isFocused?: boolean;
   onFocusCell?: () => void;
+  isTouchDevice?: boolean;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [inputVal, setInputVal] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const isTouchDevice = useSyncExternalStore(subscribeTouchDevice, getTouchSnapshot, getServerSnapshot);
+  const contextTouch = useContext(TouchDeviceContext);
+  const isTouchDevice = propIsTouchDevice ?? contextTouch;
   const inputRef = useRef<HTMLInputElement>(null);
 
   const initialVal =
@@ -272,10 +290,6 @@ export function GradebookCellButton({
       <div
         className="bg-card ring-2 ring-primary relative min-h-[5rem] w-full rounded-sm p-2 shadow-xs"
         data-gradecell-active
-        role="gridcell"
-        aria-selected="true"
-        aria-rowindex={typeof row === "number" ? row + 2 : undefined}
-        aria-colindex={typeof column === "number" ? column + 2 : undefined}
       >
         <div className="flex items-center gap-1.5">
           <input
@@ -304,10 +318,10 @@ export function GradebookCellButton({
               disabled={isSaving}
               onClick={() => void handleCommit()}
               aria-label="Save score"
-              className="text-primary hover:bg-muted inline-flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
+              className="text-primary hover:bg-muted relative after:absolute after:-inset-1.5 inline-flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
             >
               {isSaving ? (
-                <Loader2 className="size-3.5 animate-spin" />
+                <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" />
               ) : (
                 <Check className="size-3.5" />
               )}
@@ -320,7 +334,7 @@ export function GradebookCellButton({
                 setInputVal(initialVal);
               }}
               aria-label="Cancel editing"
-              className="text-muted-foreground hover:bg-muted inline-flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
+              className="text-muted-foreground hover:bg-muted relative after:absolute after:-inset-1.5 inline-flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
             >
               <X className="size-3.5" />
             </button>
@@ -341,10 +355,7 @@ export function GradebookCellButton({
 
   return (
     <div
-      role="gridcell"
-      aria-selected={isFocused}
-      aria-rowindex={typeof row === "number" ? row + 2 : undefined}
-      aria-colindex={typeof column === "number" ? column + 2 : undefined}
+      role="button"
       tabIndex={isFocused ? 0 : -1}
       data-gradecell
       data-row={row}
@@ -397,7 +408,7 @@ export function GradebookCellButton({
                     {Number(cell.assessment_composite).toFixed(1)}
                   </span>
                   <span
-                    className="inline-flex items-center px-1 rounded-xs text-[10px] uppercase font-semibold tracking-tight bg-muted text-muted-foreground"
+                    className="inline-flex items-center px-1.5 py-0.5 rounded-xs text-[11px] uppercase font-semibold tracking-tight bg-muted/80 text-foreground/80 border border-border/50"
                     title={cell.assessment_source === "manual" ? "Teacher rubric scored" : "AI CV/CNN evaluated"}
                   >
                     {cell.assessment_source === "manual" ? "T" : "AI"}
@@ -443,7 +454,7 @@ export function GradebookCellButton({
                     startEditing();
                   }}
                   aria-label={`Edit score for ${label ?? "student"}`}
-                  className="text-muted-foreground hover:text-foreground hover:bg-background/80 flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
+                  className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
                 >
                   <Pencil className="size-3" aria-hidden="true" />
                 </button>
@@ -455,7 +466,7 @@ export function GradebookCellButton({
                   onOpen();
                 }}
                 aria-label={`Inspect details for ${label ?? "student"}`}
-                className="text-muted-foreground hover:text-foreground hover:bg-background/80 flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
+                className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
               >
                 <SlidersHorizontal className="size-3" aria-hidden="true" />
               </button>
@@ -504,7 +515,12 @@ export function GradebookCellButton({
                 ) : cell.points_possible === null ? (
                   <span className="text-xs text-muted-foreground font-normal">Diagnostic</span>
                 ) : cell.final_points === null ? (
-                  <span className="text-xs text-muted-foreground font-medium italic">No grade</span>
+                  <>
+                    <span className="text-muted-foreground font-semibold">—</span>{" "}
+                    <span className="text-xs font-normal text-muted-foreground">
+                      / {cell.points_possible}
+                    </span>
+                  </>
                 ) : (
                   <>
                     {cell.final_points}{" "}
@@ -546,7 +562,7 @@ export function GradebookCellButton({
                     startEditing();
                   }}
                   aria-label={`Edit score for ${label ?? "student"}`}
-                  className="text-muted-foreground hover:text-foreground hover:bg-background/80 flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
+                  className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
                 >
                   <Pencil className="size-3" aria-hidden="true" />
                 </button>
@@ -558,7 +574,7 @@ export function GradebookCellButton({
                   onOpen();
                 }}
                 aria-label={`Inspect details for ${label ?? "student"}`}
-                className="text-muted-foreground hover:text-foreground hover:bg-background/80 flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
+                className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
               >
                 <SlidersHorizontal className="size-3" aria-hidden="true" />
               </button>
@@ -611,4 +627,4 @@ export function GradebookCellButton({
       </div>
     </div>
   );
-}
+});

@@ -12,10 +12,14 @@ import {
   CheckCircle2,
   AlertCircle,
   Check,
+  Camera,
+  UploadCloud,
 } from "lucide-react";
 import { useGradebookActions, type GradebookCell } from "@/lib/hooks/use-gradebook";
 import { ApiError } from "@/lib/utils/api-error";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useTeacherModals } from "@/components/teacher-modals-provider";
 import {
   Sheet,
   SheetContent,
@@ -59,6 +63,7 @@ export function WorkGradeSheet({
   onNavigateStudent?: (direction: "prev" | "next") => void;
 }) {
   const actions = useGradebookActions(userId);
+  const { openUpload } = useTeacherModals();
   const currentKey = `${cell?.student_id}:${cell?.activity_id}:${cell?.points_override}`;
   const [prevKey, setPrevKey] = useState(currentKey);
   const [override, setOverride] = useState(cell?.points_override ?? "");
@@ -66,6 +71,7 @@ export function WorkGradeSheet({
   const [view, setView] = useState<"work" | "comments">(initialView);
   const [confirmZero, setConfirmZero] = useState(false);
   const [savedDraft, setSavedDraft] = useState(false);
+  const [showLifecycleDetails, setShowLifecycleDetails] = useState(false);
 
   if (prevKey !== currentKey) {
     setPrevKey(currentKey);
@@ -80,7 +86,11 @@ export function WorkGradeSheet({
     function handleKeyDown(event: KeyboardEvent) {
       if (
         event.target instanceof HTMLInputElement ||
-        event.target instanceof HTMLTextAreaElement
+        event.target instanceof HTMLTextAreaElement ||
+        (event.target instanceof HTMLElement &&
+          (event.target.closest('[role="tablist"]') ||
+            event.target.closest('[role="tab"]') ||
+            event.target.closest('[role="tabpanel"]')))
       )
         return;
       if (event.key === "ArrowLeft" || event.key === "j" || event.key === "J") {
@@ -150,11 +160,18 @@ export function WorkGradeSheet({
               <SheetTitle className="text-lg font-heading truncate">
                 {studentName ?? "Work grade"}
               </SheetTitle>
-              {activityTitle && (
-                <p className="text-xs font-medium text-muted-foreground line-clamp-2">
-                  Activity: <span className="text-foreground italic">“{activityTitle}”</span>
-                </p>
-              )}
+              <div className="flex items-center gap-2 flex-wrap">
+                {activityTitle && (
+                  <p className="text-xs font-medium text-muted-foreground line-clamp-1">
+                    Activity: <span className="text-foreground italic">“{activityTitle}”</span>
+                  </p>
+                )}
+                {cell.points_possible === null && (
+                  <Badge variant="secondary" className="text-[11px] font-normal py-0">
+                    Developmental Bands Only
+                  </Badge>
+                )}
+              </div>
             </div>
             {onNavigateStudent && (hasPrevStudent || hasNextStudent) && (
               <div className="flex items-center gap-1 shrink-0 pt-0.5" aria-label="Student navigation">
@@ -184,7 +201,7 @@ export function WorkGradeSheet({
           <SheetDescription className="text-xs text-muted-foreground leading-relaxed pt-1">
             {cell.points_possible !== null
               ? "Saved point overrides stay in draft until released to parents. Handwriting assessment is managed separately."
-              : "This activity evaluates cursive handwriting quality via developmental bands. Diagnostic feedback is shared with parents."}
+              : "Evaluates cursive penmanship quality across 5 developmental criteria. Diagnostic feedback is shared with parents."}
           </SheetDescription>
         </SheetHeader>
 
@@ -234,7 +251,7 @@ export function WorkGradeSheet({
                       )}
                     </div>
                   </div>
-                  {cell.active_submission_id && (
+                  {cell.active_submission_id ? (
                     <Link
                       href={`/activities/${cell.activity_id}/submissions/${cell.active_submission_id}`}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
@@ -243,6 +260,21 @@ export function WorkGradeSheet({
                       <span>View worksheet</span>
                       <ExternalLink className="size-3 opacity-70" />
                     </Link>
+                  ) : (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-8 gap-1.5 text-xs"
+                      onClick={() =>
+                        openUpload({
+                          activityId: cell.activity_id,
+                          studentId: cell.student_id,
+                        })
+                      }
+                    >
+                      <Camera className="size-3.5" />
+                      <span>Scan / Upload</span>
+                    </Button>
                   )}
                 </div>
 
@@ -262,13 +294,13 @@ export function WorkGradeSheet({
                         <div
                           key={crit.key}
                           className={cn(
-                            "rounded-md px-1 py-1 text-xs font-medium transition-colors border",
+                            "rounded-md px-1.5 py-1.5 text-xs font-medium transition-colors border flex flex-col justify-between items-center min-h-[46px]",
                             diag.chipClass
                           )}
                           title={`${crit.name}: ${diag.diagnosticNote}`}
                         >
-                          <span className="block font-bold">{crit.label}</span>
-                          <span className="block text-[10px] opacity-80 truncate">
+                          <span className="block font-bold leading-none">{crit.label}</span>
+                          <span className="block text-[10px] opacity-80 truncate max-w-full leading-tight">
                             {crit.name.split(" ")[0]}
                           </span>
                         </div>
@@ -278,18 +310,12 @@ export function WorkGradeSheet({
                 </div>
               </div>
 
-              {/* Status & Visibility Overview */}
-              <div className="space-y-2">
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Status & Visibility
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  {/* Worksheet Submission */}
-                  <div className="rounded-lg border border-border/50 bg-muted/20 p-2.5 space-y-1">
-                    <span className="text-muted-foreground block font-medium">
-                      Worksheet Submission
-                    </span>
-                    <div className="flex items-center gap-1.5 font-semibold text-foreground">
+              {/* Status & Quick Action Card */}
+              <div className="rounded-xl border border-border/60 bg-muted/15 p-3.5 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-muted-foreground">Worksheet Status:</span>
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
                       {cell.coursework_status === "Released" ? (
                         <>
                           <CheckCircle2 className="size-3.5 text-band-4-text shrink-0" />
@@ -306,34 +332,44 @@ export function WorkGradeSheet({
                           <span>{cell.coursework_status}</span>
                         </>
                       )}
-                      {cell.late && <span className="text-destructive font-normal">· Late</span>}
-                    </div>
-                  </div>
-
-                  {/* Coursework Grade Visibility */}
-                  <div className="rounded-lg border border-border/50 bg-muted/20 p-2.5 space-y-1">
-                    <span className="text-muted-foreground block font-medium">
-                      {cell.points_possible !== null ? "Coursework Grade" : "Grading Mode"}
-                    </span>
-                    <div className="flex items-center gap-1.5 font-semibold text-foreground">
-                      {cell.points_possible === null ? (
-                        <span className="text-muted-foreground font-normal">
-                          Assessment bands only
+                      {cell.late && (
+                        <span className="inline-flex items-center px-1 rounded text-[11px] font-medium bg-band-2/15 text-band-2-text border border-band-2/30 dark:text-amber-300">
+                          Late
                         </span>
-                      ) : cell.publication === "released" ? (
-                        <>
-                          <CheckCircle2 className="size-3.5 text-band-4-text shrink-0" />
-                          <span>Released to parents</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="size-2 rounded-full bg-amber-500 shrink-0" />
-                          <span>Draft (Teacher only)</span>
-                        </>
                       )}
                     </div>
                   </div>
+
+                  {cell.points_possible !== null && (
+                    <div className="text-xs text-muted-foreground flex items-center gap-1">
+                      <span>Grade:</span>
+                      <span className="font-semibold text-foreground">
+                        {cell.publication === "released" ? "Released" : "Draft"}
+                      </span>
+                    </div>
+                  )}
                 </div>
+
+                {!cell.active_submission_id && (
+                  <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-border/40 text-xs text-muted-foreground">
+                    <span>Ready to evaluate {studentName ? studentName.split(" ")[0] : "this student"}&apos;s handwriting?</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs gap-1.5 shrink-0"
+                      onClick={() =>
+                        openUpload({
+                          activityId: cell.activity_id,
+                          studentId: cell.student_id,
+                        })
+                      }
+                    >
+                      <UploadCloud className="size-3.5" />
+                      <span>Upload page</span>
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Coursework Points Section (Only when points_possible !== null) */}
@@ -349,7 +385,7 @@ export function WorkGradeSheet({
                     <div className="flex items-center gap-2 text-xs">
                       <span className="text-muted-foreground">Current:</span>
                       <span className="font-bold tabular-nums text-foreground">
-                        {cell.final_points ?? "No grade"} / {cell.points_possible} pts
+                        {cell.final_points ?? "—"} / {cell.points_possible} pts
                       </span>
                     </div>
                   </div>
@@ -384,7 +420,7 @@ export function WorkGradeSheet({
                       <Button type="submit" size="sm" disabled={pending || !valid}>
                         {savedDraft ? (
                           <>
-                            <Check className="size-3.5 mr-1 text-emerald-400" />
+                            <Check className="size-3.5 mr-1 text-band-4-text dark:text-emerald-400" />
                             Saved
                           </>
                         ) : (
@@ -481,20 +517,15 @@ export function WorkGradeSheet({
                     )}
                   </div>
                 </section>
-              ) : (
-                <div className="pt-4 border-t border-border/40 space-y-2">
-                  <div className="rounded-lg border border-border/50 bg-muted/15 p-3.5 text-sm text-muted-foreground space-y-1">
-                    <p className="font-medium text-foreground">Assessment Bands Only</p>
-                    <p className="text-xs leading-relaxed">
-                      This activity evaluates handwriting quality without numerical scores. To grade
-                      coursework numerically, assign points in Activity Settings.
-                    </p>
-                  </div>
-                </div>
-              )}
+              ) : null}
 
               {/* Submission Lifecycle & Exceptions */}
-              <details className="group rounded-xl border border-border/60 bg-muted/15 p-4 text-sm transition-colors open:bg-muted/25">
+              <details
+                className="group rounded-xl border border-border/60 bg-muted/15 p-4 text-sm transition-colors open:bg-muted/25"
+                onToggle={(e) => {
+                  setShowLifecycleDetails(e.currentTarget.open);
+                }}
+              >
                 <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground select-none">
                   <div className="flex items-center gap-2">
                     <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
@@ -526,7 +557,9 @@ export function WorkGradeSheet({
                     </p>
                   </div>
 
-                  {open && <WorkGradeDetails userId={userId} cell={cell} studentName={studentName} />}
+                  {open && showLifecycleDetails && (
+                    <WorkGradeDetails userId={userId} cell={cell} studentName={studentName} />
+                  )}
                 </div>
               </details>
 

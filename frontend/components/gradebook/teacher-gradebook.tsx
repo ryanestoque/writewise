@@ -38,15 +38,31 @@ import {
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { FloatingActionBar } from "@/components/ui/floating-action-bar";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { QueryRecovery } from "@/components/shared/query-recovery";
 import { cn } from "@/lib/utils";
-import { GradebookCellButton } from "./gradebook-cell";
+import {
+  GradebookCellButton,
+  TouchDeviceContext,
+  useIsTouchDevice,
+} from "./gradebook-cell";
 import { WorkGradeSheet } from "./work-grade-sheet";
 import { GradebookBulkDialog } from "./gradebook-bulk-dialog";
 import { useUnreadCommentThreads } from "@/lib/hooks/use-comments";
 
-const selectClass =
-  "min-h-10 rounded-lg border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer transition-colors hover:bg-muted/30";
+const ACTIVITY_FILTER_ITEMS = [
+  { label: "All activities", value: "all" },
+  { label: "Current activities", value: "current" },
+  { label: "Archived activities", value: "archived" },
+] as const;
 
 export function TeacherGradebook({
   userId,
@@ -70,6 +86,11 @@ export function TeacherGradebook({
   const sectionId = sections.data?.some((section) => section.id === chosenSection)
     ? chosenSection
     : sections.data?.[0]?.id;
+
+  const sectionItems = (sections.data ?? []).map((section) => ({
+    label: section.name,
+    value: section.id,
+  }));
 
   function handleClearActivityFilter() {
     setActivityId(undefined);
@@ -137,20 +158,35 @@ export function TeacherGradebook({
               </Link>
             </div>
           )}
-          <label className="flex flex-wrap items-center gap-3 text-sm font-medium print:hidden">
-            Section
-            <select
-              className={selectClass}
-              value={sectionId ?? ""}
-              onChange={(event) => setSection(event.target.value)}
+          <div className="flex flex-wrap items-center gap-3 print:hidden">
+            <Label htmlFor="gradebook-section-select" className="text-sm font-medium text-foreground">
+              Section
+            </Label>
+            <Select
+              items={sectionItems}
+              value={sectionId ?? null}
+              onValueChange={(val) => {
+                if (val) setSection(val);
+              }}
             >
-              {sections.data.map((section) => (
-                <option key={section.id} value={section.id}>
-                  {section.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              <SelectTrigger
+                id="gradebook-section-select"
+                className="w-[180px] cursor-pointer"
+                aria-label="Select section"
+              >
+                <SelectValue placeholder="Select section" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {sectionItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value} className="cursor-pointer">
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
           {sectionId && (
             <SectionGrid
               key={`${userId}:${sectionId}`}
@@ -183,6 +219,7 @@ function SectionGrid({
   const query = useSectionGradebook(userId, sectionId);
   const unread = useUnreadCommentThreads(userId);
   const actions = useGradebookActions(userId);
+  const isTouchDevice = useIsTouchDevice();
   const tableRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
@@ -344,13 +381,14 @@ function SectionGrid({
 
     let nextRow = row;
     let nextColumn = column;
+    const maxColumn = activities.length;
 
     if (event.key === "ArrowDown") nextRow = Math.min(row + 1, rows.length - 1);
     else if (event.key === "ArrowUp") nextRow = Math.max(row - 1, 0);
-    else if (event.key === "ArrowRight") nextColumn = Math.min(column + 1, activities.length - 1);
+    else if (event.key === "ArrowRight") nextColumn = Math.min(column + 1, maxColumn);
     else if (event.key === "ArrowLeft") nextColumn = Math.max(column - 1, 0);
     else if (event.key === "Home") nextColumn = 0;
-    else if (event.key === "End") nextColumn = activities.length - 1;
+    else if (event.key === "End") nextColumn = maxColumn;
 
     if (nextRow !== row || nextColumn !== column) {
       event.preventDefault();
@@ -375,16 +413,29 @@ function SectionGrid({
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
-          <select
-            aria-label="Show activities"
-            className={selectClass}
+          <Select
+            items={ACTIVITY_FILTER_ITEMS}
             value={filter}
-            onChange={(event) => setFilter(event.target.value)}
+            onValueChange={(val) => {
+              if (val) setFilter(val);
+            }}
           >
-            <option value="all">All activities</option>
-            <option value="current">Current activities</option>
-            <option value="archived">Archived activities</option>
-          </select>
+            <SelectTrigger
+              className="w-[170px] cursor-pointer"
+              aria-label="Show activities"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {ACTIVITY_FILTER_ITEMS.map((item) => (
+                  <SelectItem key={item.value} value={item.value} className="cursor-pointer">
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
 
           <div
             role="radiogroup"
@@ -481,16 +532,17 @@ function SectionGrid({
               : "No coursework yet. Assign an activity to this section or its students to begin."}
         </p>
       ) : (
-        <div
-          ref={tableRef}
-          className={cn(
-            "bg-card max-h-[70vh] overflow-auto rounded-xl border transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring print:max-h-none print:overflow-visible print:border-none",
-            selected.size > 0 && "pb-24 sm:pb-20"
-          )}
-          tabIndex={-1}
-          aria-label={`${book.section_name} grades, scroll for more activities. Use arrow keys to navigate cells, Enter to edit, Space to inspect.`}
-          onKeyDown={moveFocus}
-        >
+        <TouchDeviceContext.Provider value={isTouchDevice}>
+          <div
+            ref={tableRef}
+            className={cn(
+              "bg-card max-h-[70vh] overflow-auto rounded-xl border transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring print:max-h-none print:overflow-visible print:border-none",
+              selected.size > 0 && "pb-24 sm:pb-20"
+            )}
+            tabIndex={-1}
+            aria-label={`${book.section_name} grades, scroll for more activities. Use arrow keys to navigate cells, Enter to edit, Space to inspect.`}
+            onKeyDown={moveFocus}
+          >
           <table
             className="w-full border-collapse text-sm"
             role="grid"
@@ -639,11 +691,13 @@ function SectionGrid({
                   </th>
                   {activities.map((act, column) => {
                     const work = row.cells.find((entry) => entry.activity_id === act.id)!;
+                    const isCellFocused = activeCell.row === rowIndex && activeCell.col === column;
                     return (
                       <td
                         key={act.id}
                         role="gridcell"
                         aria-colindex={column + 2}
+                        aria-selected={isCellFocused}
                         className="border-r p-1 align-top"
                       >
                         <GradebookCellButton
@@ -657,7 +711,7 @@ function SectionGrid({
                           onOpen={() => setCell(work)}
                           row={rowIndex}
                           column={column}
-                          isFocused={activeCell.row === rowIndex && activeCell.col === column}
+                          isFocused={isCellFocused}
                           onFocusCell={() => setActiveCell({ row: rowIndex, col: column })}
                           onSaveScore={(score) =>
                             handleSaveScore(act.id, row.student_id, score)
@@ -670,7 +724,21 @@ function SectionGrid({
                   <td
                     role="gridcell"
                     aria-colindex={activities.length + 2}
-                    className="p-3 align-top tabular-nums"
+                    aria-selected={activeCell.row === rowIndex && activeCell.col === activities.length}
+                    data-gradecell
+                    data-row={rowIndex}
+                    data-column={activities.length}
+                    tabIndex={activeCell.row === rowIndex && activeCell.col === activities.length ? 0 : -1}
+                    onFocus={() => setActiveCell({ row: rowIndex, col: activities.length })}
+                    aria-label={`${row.student_name} overall grade: ${row.totals.earned} of ${row.totals.possible} points, ${
+                      row.totals.percentage === null ? "no included grades" : `${row.totals.percentage}%`
+                    }`}
+                    className={cn(
+                      "p-3 align-top tabular-nums rounded-sm transition-colors focus-visible:outline-none",
+                      activeCell.row === rowIndex && activeCell.col === activities.length
+                        ? "border-primary/60 ring-2 ring-primary/40 bg-muted/40 shadow-xs"
+                        : ""
+                    )}
                   >
                     <p className="font-semibold text-foreground">
                       {row.totals.earned} / {row.totals.possible}
@@ -687,6 +755,7 @@ function SectionGrid({
           </table>
           {!rows.length && <p className="p-6 text-sm">No students match this search.</p>}
         </div>
+        </TouchDeviceContext.Provider>
       )}
 
       {selected.size > 0 && (
