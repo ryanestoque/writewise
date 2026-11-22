@@ -28,12 +28,6 @@ import { Switch } from "@/components/ui/switch";
 import { BandBadge } from "@/components/shared/band-badge";
 import { cn } from "@/lib/utils";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -49,15 +43,10 @@ import {
 import {
   Loader2,
   UserX,
-  BookOpen,
   PenTool,
   CheckCircle2,
   Clock3,
   Camera,
-  LayoutDashboard,
-  ClipboardList,
-  TrendingUp,
-  ChevronDown,
 } from "lucide-react";
 
 type ParentProgressTab = "overview" | "to-write" | "progress";
@@ -274,6 +263,13 @@ export function ProgressPageContent() {
     ? "progress"
     : selectedTab ?? (requestedGrades ? "progress" : isZeroState ? "to-write" : "overview");
 
+  const scoreControls = (
+    <label className="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
+      <Switch aria-label="Show percentages" size="sm" checked={showScoreDetails} onCheckedChange={setPersistedScoreDetails} />
+      Show percentages
+    </label>
+  );
+
   return (
     <div className="w-full space-y-6 pb-12">
       {/* Notification Deep-Link Modal */}
@@ -316,7 +312,7 @@ export function ProgressPageContent() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="space-y-0.5 min-w-0">
           <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
-            {firstName}&apos;s Progress
+            {firstName}&apos;s handwriting
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
             Section {selectedChild.section}
@@ -326,47 +322,6 @@ export function ProgressPageContent() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-          <label
-            htmlFor="show-percentages-switch"
-            className="inline-flex items-center justify-between sm:justify-start gap-2.5 h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] flex-1 sm:flex-initial px-3 rounded-lg border border-border bg-background text-xs sm:text-sm font-medium text-foreground cursor-pointer select-none shadow-2xs touch-manipulation"
-          >
-            <span>Show percentages</span>
-            <Switch
-              id="show-percentages-switch"
-              size="sm"
-              checked={showScoreDetails}
-              onCheckedChange={setPersistedScoreDetails}
-            />
-          </label>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              aria-label="Open penmanship and scoring guides"
-              className="inline-flex items-center justify-center gap-2 h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] flex-1 sm:flex-initial px-3 text-xs sm:text-sm font-medium rounded-lg border border-border bg-background hover:bg-muted/60 text-foreground transition-colors cursor-pointer shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation"
-            >
-              <BookOpen className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-              <span>Penmanship Guides</span>
-              <ChevronDown className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-              <DropdownMenuItem onClick={handleOpenRubric} className="gap-2.5 cursor-pointer py-2">
-                <BookOpen className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-                <div className="flex flex-col">
-                  <span className="font-medium text-xs sm:text-sm">How Scores Work</span>
-                  <span className="text-xs text-muted-foreground">Rubric standards &amp; 5 skill criteria</span>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={openCursiveGuide} className="gap-2.5 cursor-pointer py-2">
-                <PenTool className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-                <div className="flex flex-col">
-                  <span className="font-medium text-xs sm:text-sm">Interactive Cursive Guide</span>
-                  <span className="text-xs text-muted-foreground">Letter mechanics, guidelines &amp; practice</span>
-                </div>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
       </div>
 
       {childrenError && (
@@ -483,13 +438,12 @@ export function ProgressPageContent() {
           <TabsList
             variant="line"
             aria-label={`${firstName}'s portal sections`}
-            className="w-full sm:w-auto flex overflow-x-auto h-auto gap-1 sm:gap-2 rounded-none bg-transparent p-0"
+            className="w-full sm:w-fit flex h-auto gap-1 sm:gap-2 rounded-none bg-transparent p-0"
           >
             <TabsTrigger
               value="overview"
               className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] translate-y-[1px] data-active:text-primary data-active:after:bg-primary"
             >
-              <LayoutDashboard className="size-4 shrink-0" aria-hidden="true" />
               <span>Latest Feedback</span>
             </TabsTrigger>
 
@@ -497,7 +451,6 @@ export function ProgressPageContent() {
               value="to-write"
               className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] translate-y-[1px] data-active:text-primary data-active:after:bg-primary"
             >
-              <ClipboardList className="size-4 shrink-0" aria-hidden="true" />
               <span>Practice</span>
               {pendingActivitiesCount > 0 && (
                 <span className="inline-flex items-center justify-center px-1.5 py-0 rounded-full text-xs font-bold tabular-nums bg-brand-100/90 dark:bg-brand-950/90 text-brand-800 dark:text-brand-200 border border-brand-200/70 dark:border-brand-800/70">
@@ -513,49 +466,25 @@ export function ProgressPageContent() {
               value="progress"
               className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] translate-y-[1px] data-active:text-primary data-active:after:bg-primary"
             >
-              <TrendingUp className="size-4 shrink-0" aria-hidden="true" />
               <span>Progress</span>
-              {scoredCount > 0 && (
-                <span className="inline-flex items-center justify-center px-1.5 py-0 rounded-full text-xs font-bold tabular-nums bg-muted/80 text-foreground/80 border border-border/70">
-                  <span aria-hidden="true">{scoredCount}</span>
-                  <span className="sr-only">
-                    {`, ${scoredCount} checked`}
-                  </span>
-                </span>
-              )}
             </TabsTrigger>
           </TabsList>
         </div>
 
         {/* Tab 1: Overview (Coaching Hero + Latest Worksheet) */}
         <TabsContent value="overview" className="space-y-6">
-          {isZeroState ? (
-            <div className="space-y-6">
-              <LatestSubmissionCard
-                childId={selectedChildId}
-                childName={selectedChild.fullName}
-                showScoreDetails={showScoreDetails}
-                onNavigateToWrite={handleNavigateToWrite}
-              />
-              <SampleReportPreview
-                onOpenRubric={handleOpenRubric}
-                defaultCollapsed={false}
-                showScoreDetails={showScoreDetails}
-                onToggleScoreDetails={toggleScoreDetails}
-              />
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <LatestSubmissionCard
-                childId={selectedChildId}
-                childName={selectedChild.fullName}
-                section={selectedChild.section}
-                history={history ?? []}
-                showScoreDetails={showScoreDetails}
-                onNavigateToWrite={handleNavigateToWrite}
-              />
-            </div>
-          )}
+          <LatestSubmissionCard
+            key={selectedChildId}
+            childId={selectedChildId}
+            childName={selectedChild.fullName}
+            history={history}
+            showScoreDetails={showScoreDetails}
+            scoreControls={scoreControls}
+            onOpenRubric={handleOpenRubric}
+            onNavigateToWrite={handleNavigateToWrite}
+          />
+          {isZeroState && <SampleReportPreview onOpenRubric={handleOpenRubric} defaultCollapsed
+            showScoreDetails={showScoreDetails} onToggleScoreDetails={toggleScoreDetails} />}
         </TabsContent>
 
         {/* Tab 2: To-Write (Assigned Take-Home Practice) */}
@@ -572,6 +501,7 @@ export function ProgressPageContent() {
               >
                 Practice Worksheets
               </h2>
+              <Button variant="ghost" size="sm" onClick={openCursiveGuide}><PenTool aria-hidden="true" />Cursive guide</Button>
             </div>
 
             <TakeHomeActivities
@@ -604,12 +534,15 @@ export function ProgressPageContent() {
             aria-labelledby="progress-trends-heading"
             className="space-y-3"
           >
+            <div className="flex flex-wrap items-center justify-between gap-2">
             <h2
               id="progress-trends-heading"
               className="font-heading text-base sm:text-lg font-semibold text-foreground"
             >
               Progress Over Time
             </h2>
+              {scoreControls}
+            </div>
 
             {historyLoading ? (
               <div
