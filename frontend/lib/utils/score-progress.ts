@@ -17,3 +17,10 @@ export function getScoreProgressLabel(
 export function formatScoreDifference(delta: number) {
   return `${delta >= 0 ? "+" : ""}${delta.toFixed(1)} percentage points`;
 }
+
+export function getScoreProgressSupportNote(delta: number): string | null {
+  if (getScoreProgressDirection(delta) === "lower") {
+    return "Longer words or new sentences can dip scores briefly — steady practice builds consistency.";
+  }
+  return null;
+}

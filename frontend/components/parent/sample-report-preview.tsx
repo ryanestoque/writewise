@@ -6,7 +6,10 @@ import { BandPositionBar } from "@/components/shared/band-position-bar";
 import { Button } from "@/components/ui/button";
 import {
   PARENT_CRITERIA_LIST,
+  PARENT_BAND_EXPLANATIONS,
   DIAGNOSTIC_NOTES,
+  getBandFromScore,
+  getBandMeta,
   type CriterionKey,
 } from "@/lib/utils/scoring";
 import {
@@ -31,31 +34,35 @@ const SAMPLE_CRITERION_DATA: Record<
   }
 > = {
   letter_formation: {
-    score: 88,
+    score: 70,
     band: "satisfactory",
     bandLabel: "Satisfactory",
   },
   size_consistency: {
-    score: 85,
+    score: 68,
     band: "satisfactory",
     bandLabel: "Satisfactory",
   },
   spacing: {
-    score: 92,
+    score: 84,
     band: "excellent",
     bandLabel: "Excellent",
   },
   slant: {
-    score: 82,
+    score: 64,
     band: "satisfactory",
     bandLabel: "Satisfactory",
   },
   baseline_alignment: {
-    score: 89,
+    score: 72,
     band: "satisfactory",
     bandLabel: "Satisfactory",
   },
 };
+
+const SAMPLE_COMPOSITE_SCORE = 71.6;
+const SAMPLE_COMPOSITE_BAND = getBandFromScore(SAMPLE_COMPOSITE_SCORE) ?? "satisfactory";
+const SAMPLE_COMPOSITE_META = getBandMeta(SAMPLE_COMPOSITE_BAND);
 
 export function SampleReportPreview({
   onOpenRubric,
@@ -338,15 +345,30 @@ export function SampleReportPreview({
                   </h3>
                   {showScoreDetails && (
                     <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground">
-                      87%
+                      {Math.round(SAMPLE_COMPOSITE_SCORE)}%
                     </span>
                   )}
                 </div>
-                <BandBadge score={87.2} size="default" />
+                <BandBadge band={SAMPLE_COMPOSITE_BAND} score={SAMPLE_COMPOSITE_SCORE} size="default" />
               </div>
-              <BandPositionBar score={87.2} height="default" showThresholds={showScoreDetails} />
+              <BandPositionBar
+                score={SAMPLE_COMPOSITE_SCORE}
+                height="default"
+                showThresholds={showScoreDetails}
+                ariaLabel={
+                  showScoreDetails
+                    ? `Example overall score: ${Math.round(SAMPLE_COMPOSITE_SCORE)}%`
+                    : `Example overall level: ${SAMPLE_COMPOSITE_META.label}`
+                }
+                ariaValueText={
+                  showScoreDetails
+                    ? `${Math.round(SAMPLE_COMPOSITE_SCORE)}% overall`
+                    : SAMPLE_COMPOSITE_META.label
+                }
+              />
               <p className="text-sm text-muted-foreground leading-relaxed">
-                <span className="font-semibold text-foreground">Satisfactory:</span> Solid cursive foundation with small areas to refine.
+                <span className="font-semibold text-foreground">{SAMPLE_COMPOSITE_META.label}:</span>{" "}
+                {PARENT_BAND_EXPLANATIONS[SAMPLE_COMPOSITE_BAND]}
               </p>
             </div>
 
@@ -387,7 +409,7 @@ export function SampleReportPreview({
                 variant="link"
                 size="sm"
                 onClick={onOpenRubric}
-                className="px-0 h-auto text-sm font-medium cursor-pointer"
+                className="px-0 min-h-[40px] sm:min-h-[36px] text-sm font-medium cursor-pointer touch-manipulation"
               >
                 How scores work
               </Button>

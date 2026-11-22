@@ -43,6 +43,7 @@ interface OverlayToolbarProps {
   onToggleGuideLines?: () => void;
   hasGuideLines?: boolean;
   hideCriterionSelectorOnMobile?: boolean;
+  isParentView?: boolean;
 }
 
 interface FilterItem {
@@ -105,6 +106,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
   onToggleGuideLines,
   hasGuideLines,
   hideCriterionSelectorOnMobile = false,
+  isParentView = false,
 }: OverlayToolbarProps) {
   const [showLegend, setShowLegend] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -328,7 +330,13 @@ export const OverlayToolbar = memo(function OverlayToolbar({
             <>
               {hideCriterionSelectorOnMobile && (
                 <span className="lg:hidden text-xs font-semibold text-foreground truncate">
-                  {visible ? "Diagnostic lines on" : "Diagnostic lines off"}
+                  {isParentView
+                    ? visible
+                      ? "Writing marks on"
+                      : "Writing marks off"
+                    : visible
+                      ? "Diagnostic lines on"
+                      : "Diagnostic lines off"}
                 </span>
               )}
               <div
@@ -357,7 +365,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   {attentionCounts[activeCriterion] > 0 && (
                     <Badge
                       variant="secondary"
-                      className="px-1.5 py-0 h-4 text-[10px] font-bold rounded-full bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-band-1-text border border-band-1/30 ml-0.5 shrink-0"
+                      className="px-1.5 py-0 h-4 text-[10px] font-bold tabular-nums rounded-full bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-band-1-text border border-band-1/30 ml-0.5 shrink-0"
                     >
                       <span className="sr-only">({attentionCounts[activeCriterion]} attention items)</span>
                       <span aria-hidden="true">{attentionCounts[activeCriterion]}</span>
@@ -408,7 +416,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   variant="ghost"
                   size="sm"
                   onClick={() => onChangeCriterion("all")}
-                  className="h-8 @min-[540px]:h-7 px-2 text-xs @min-[540px]:text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors touch-manipulation shrink-0 flex items-center justify-center gap-1"
+                  className="h-10 @min-[540px]:h-7 min-h-[40px] @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors touch-manipulation shrink-0 flex items-center justify-center gap-1"
                   title="Reset to show all guides"
                   aria-label="Reset to show all guides"
                 >
@@ -522,10 +530,10 @@ export const OverlayToolbar = memo(function OverlayToolbar({
           <div className="flex @min-[540px]:hidden items-center justify-center gap-1.5 shrink-0 pl-1 min-h-[40px] min-w-[40px]">
             <Switch
               id="toggle-diagnostic-overlay-mobile"
-              aria-label="Toggle handwriting diagnostic overlay"
+              aria-label={isParentView ? "Toggle writing marks on worksheet" : "Toggle handwriting diagnostic overlay"}
               checked={visible}
               onCheckedChange={onToggleVisible}
-              className="cursor-pointer scale-85 touch-manipulation"
+              className="cursor-pointer touch-manipulation"
             />
           </div>
         </div>
@@ -628,7 +636,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
               <div className="hidden @min-[540px]:flex items-center gap-1.5 pl-2 border-l border-border/60 shrink-0">
                 <Switch
                   id="toggle-diagnostic-overlay-desktop"
-                  aria-label="Toggle handwriting diagnostic overlay"
+                  aria-label={isParentView ? "Toggle writing marks on worksheet" : "Toggle handwriting diagnostic overlay"}
                   checked={visible}
                   onCheckedChange={onToggleVisible}
                   className="cursor-pointer scale-90 @min-[540px]:scale-75 touch-manipulation"
@@ -637,7 +645,13 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   htmlFor="toggle-diagnostic-overlay-desktop"
                   className="text-xs @min-[540px]:text-[11px] font-medium text-muted-foreground cursor-pointer select-none whitespace-nowrap hidden @min-[460px]:inline"
                 >
-                  {visible ? "Overlay on" : "Overlay off"}
+                  {isParentView
+                    ? visible
+                      ? "Writing marks on"
+                      : "Writing marks off"
+                    : visible
+                      ? "Overlay on"
+                      : "Overlay off"}
                 </Label>
               </div>
             </div>
@@ -649,12 +663,14 @@ export const OverlayToolbar = memo(function OverlayToolbar({
       {showLegend && visible && (
         <div
           role="region"
-          aria-label="Diagnostic guide legend"
+          aria-label={isParentView ? "Writing marks guide" : "Diagnostic guide legend"}
           className="p-3 rounded-xl bg-card border border-border/80 shadow-warm text-xs flex flex-col gap-2 transition-all animate-in fade-in duration-150 motion-reduce:animate-none"
         >
           <div className="flex items-center justify-between pb-1 border-b border-border/50">
             <span className="font-semibold text-foreground text-xs">
-              How to Interpret Handwriting Diagnostic Guides
+              {isParentView
+                ? "What the marks on the worksheet mean"
+                : "How to Interpret Handwriting Diagnostic Guides"}
             </span>
             <Button
               type="button"
@@ -678,9 +694,13 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 </svg>
               </div>
               <div>
-                <p className="font-semibold text-foreground">3-Line Penmanship Ruling</p>
+                <p className="font-semibold text-foreground">
+                  {isParentView ? "3-Line Paper Guide" : "3-Line Penmanship Ruling"}
+                </p>
                 <p className="text-muted-foreground leading-snug">
-                  Gray topline (headline limit), teal dotted midline (x-height limit), and solid teal baseline.
+                  {isParentView
+                    ? "Top line for tall letters, dotted middle line for small letters, and bottom line where letters rest."
+                    : "Gray topline (headline limit), teal dotted midline (x-height limit), and solid teal baseline."}
                 </p>
               </div>
             </div>
@@ -691,9 +711,13 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 style={{ backgroundColor: OVERLAY_COLORS.consistent.stroke }}
               />
               <div>
-                <p className="font-semibold text-foreground">Consistent Strokes (Green / Teal)</p>
+                <p className="font-semibold text-foreground">
+                  {isParentView ? "Steady Strokes" : "Consistent Strokes (Green / Teal)"}
+                </p>
                 <p className="text-muted-foreground leading-snug">
-                  Proficient formation, aligned baselines, proportional size, and uniform slant angles.
+                  {isParentView
+                    ? "Clear letter shapes, even spacing, and letters resting smoothly on the bottom line."
+                    : "Proficient formation, aligned baselines, proportional size, and uniform slant angles."}
                 </p>
               </div>
             </div>
@@ -704,9 +728,13 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 style={{ backgroundColor: OVERLAY_COLORS.needs_attention.stroke }}
               />
               <div>
-                <p className="font-semibold text-foreground">Practice Areas (Terracotta)</p>
+                <p className="font-semibold text-foreground">
+                  {isParentView ? "Spots to Practice" : "Practice Areas (Terracotta)"}
+                </p>
                 <p className="text-muted-foreground leading-snug">
-                  Identified irregularities in stroke closure, baseline drift, spacing gaps, or slant tilt.
+                  {isParentView
+                    ? "Places where a letter loop, spacing gap, lean, or bottom-line alignment can improve with practice."
+                    : "Identified irregularities in stroke closure, baseline drift, spacing gaps, or slant tilt."}
                 </p>
               </div>
             </div>
@@ -719,9 +747,13 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 </svg>
               </div>
               <div>
-                <p className="font-semibold text-foreground">Cursive Slant (6°–15° Tilt)</p>
+                <p className="font-semibold text-foreground">
+                  {isParentView ? "Forward Lean (Slant)" : "Cursive Slant (6°–15° Tilt)"}
+                </p>
                 <p className="text-muted-foreground leading-snug">
-                  Provisional forward slant target is 6.0°–15.0° from vertical. Extreme tilts are flagged.
+                  {isParentView
+                    ? "Cursive letters gently lean forward together at a steady angle."
+                    : "Provisional forward slant target is 6.0°–15.0° from vertical. Extreme tilts are flagged."}
                 </p>
               </div>
             </div>

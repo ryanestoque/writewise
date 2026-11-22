@@ -705,11 +705,12 @@ export function QualityErrorCard({
           return;
         }
       } else {
-        // Scoped execution for card: only fire if focus is within card, or active element is body
+        // Scoped execution for card: only fire if focus is within card (WCAG 2.1.4)
         if (e.key === "r" || e.key === "R") {
           if (
             cardRef.current &&
-            (cardRef.current.contains(target) || document.activeElement === document.body)
+            cardRef.current.contains(target) &&
+            document.activeElement !== document.body
           ) {
             e.preventDefault();
             handleRetakeClick();

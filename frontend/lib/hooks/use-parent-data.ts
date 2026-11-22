@@ -52,6 +52,7 @@ export interface TakeHomeActivitySubmission {
   submissionId: string;
   status: string;
   rejectionCode: string | null;
+  imagePath?: string | null;
   compositeScore: number | null;
   compositeBand: ScoreBand | null;
   canDelete?: boolean;
@@ -499,8 +500,10 @@ export function useTakeHomeActivities(childId: string | null) {
             activity_id,
             status,
             rejection_code,
+            image_path,
             created_at,
             uploader_role,
+            released_at,
             manual_score(id),
             measurement(
               composite_score,
@@ -521,10 +524,12 @@ export function useTakeHomeActivities(childId: string | null) {
             (attemptsMap[sub.activity_id] ??= []).push({ id: sub.id, status: sub.status, created_at: sub.created_at });
             // Since sorted created_at desc, the first time we see an activity_id is the latest
             {
+              const isReleased = Boolean(sub.released_at) || workByActivity.get(sub.activity_id)?.work_status === "Released";
               const m = Array.isArray(sub.measurement) ? sub.measurement[0] : sub.measurement;
-              const compositeScore = m?.composite_score != null
+              const rawScore = m?.composite_score != null
                 ? Number(m.composite_score)
                 : computeCompositeFromCriteria(m);
+              const compositeScore = isReleased ? rawScore : null;
               const hasManualScore = Array.isArray(sub.manual_score)
                 ? sub.manual_score.length > 0
                 : !!sub.manual_score;
@@ -532,8 +537,9 @@ export function useTakeHomeActivities(childId: string | null) {
                 submissionId: sub.id,
                 status: sub.status,
                 rejectionCode: sub.rejection_code,
+                imagePath: sub.image_path,
                 compositeScore,
-                compositeBand: getBandFromScore(compositeScore),
+                compositeBand: compositeScore != null ? getBandFromScore(compositeScore) : null,
                 canDelete: sub.uploader_role === "parent" && !hasManualScore,
               };
               submissionsById.set(sub.id, model);

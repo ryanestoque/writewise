@@ -18,6 +18,8 @@ export function WorkCommentsButton({
   scope,
   activeSubmissionId,
   studentName,
+  activityTitle,
+  hasUnread = false,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   showTrigger = true,
@@ -25,6 +27,8 @@ export function WorkCommentsButton({
   scope: WorkCommentScope;
   activeSubmissionId: string | null;
   studentName?: string;
+  activityTitle?: string;
+  hasUnread?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   showTrigger?: boolean;
@@ -32,6 +36,12 @@ export function WorkCommentsButton({
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = controlledOnOpenChange ?? setInternalOpen;
+
+  const accessibleLabel = activityTitle
+    ? `Teacher comments for ${activityTitle}${hasUnread ? ", unread comments" : ""}`
+    : studentName
+      ? `Comments for ${studentName}${hasUnread ? ", unread comments" : ""}`
+      : `Teacher comments${hasUnread ? ", unread comments" : ""}`;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -41,18 +51,27 @@ export function WorkCommentsButton({
             <Button
               variant="outline"
               size="sm"
-              className="min-h-11 md:min-h-9"
-              aria-label={studentName ? `Comments for ${studentName}` : "Comments"}
+              className="min-h-11 sm:min-h-9 h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50"
+              aria-label={accessibleLabel}
             />
           }
         >
-          Comments
+          <span>Comments</span>
+          {hasUnread && (
+            <span
+              className="size-2 rounded-full bg-brand-600 dark:bg-brand-400 shrink-0"
+              aria-hidden="true"
+            />
+          )}
         </SheetTrigger>
       )}
       <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader className="shrink-0 border-b pr-14">
-          <SheetTitle>Private comments{studentName ? ` · ${studentName}` : ""}</SheetTitle>
-          <SheetDescription>Choose a worksheet upload to open its conversation.</SheetDescription>
+          <SheetTitle>
+            Teacher comments
+            {activityTitle ? ` · ${activityTitle}` : studentName ? ` · ${studentName}` : ""}
+          </SheetTitle>
+          <SheetDescription>View and send private teacher feedback for this worksheet.</SheetDescription>
         </SheetHeader>
         {open && <PickerContent scope={scope} activeSubmissionId={activeSubmissionId} studentName={studentName} />}
       </SheetContent>

@@ -99,7 +99,8 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
     toast.error(
       error instanceof ApiError && error.code === "UNAUTHORIZED"
         ? "Sign in again to update notifications."
-        : "Could not mark notifications read. Try again."
+        : "Could not mark notifications read. Try again.",
+      { id: "notification-read-error" }
     );
   }, []);
 
@@ -128,6 +129,9 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
 
   const handleMarkAllRead = useCallback(() => {
     readAll.mutate(undefined, {
+      onSuccess: () => {
+        toast.success("All notifications marked as read");
+      },
       onError: feedback,
       onSettled: () => {
         listContainerRef.current?.focus();
