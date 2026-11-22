@@ -81,6 +81,13 @@ export function RawMeasurementsTable({
       && typeof slantAnalysis?.total_words === "number"
       ? `${slantAnalysis.measured_words} / ${slantAnalysis.total_words}`
       : "Not recorded";
+    const optimalBadgeClass =
+      "bg-band-4/15 text-band-4-text border-band-4/40 dark:bg-band-4/25 dark:text-emerald-200 dark:border-band-4/50";
+    const borderlineBadgeClass =
+      "bg-band-2/15 text-band-2-text border-band-2/40 dark:bg-band-2/25 dark:text-amber-200 dark:border-band-2/50";
+    const deviatingBadgeClass =
+      "bg-band-1/15 text-band-1-text border-band-1/40 dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50";
+
     // 1. Letter formation benchmark
     let formationBenchmark: BenchmarkIndicator;
     if (measurement?.letter_formation_mean != null) {
@@ -89,21 +96,21 @@ export function RawMeasurementsTable({
         formationBenchmark = {
           status: "within_target",
           label: "Optimal (CNN)",
-          badgeClass: "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800",
-          dotClass: "bg-emerald-500",
+          badgeClass: optimalBadgeClass,
+          dotClass: "bg-band-4",
         };
       } else if (val >= 60) {
         formationBenchmark = {
           status: "borderline",
           label: "Developing",
-          badgeClass: "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800",
-          dotClass: "bg-amber-500",
+          badgeClass: borderlineBadgeClass,
+          dotClass: "bg-band-2",
         };
       } else {
         formationBenchmark = {
           status: "deviating",
           label: "Needs Focus",
-          badgeClass: "bg-band-1/15 text-band-1-text border-band-1/40 dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+          badgeClass: deviatingBadgeClass,
           dotClass: "bg-band-1",
         };
       }
@@ -126,11 +133,11 @@ export function RawMeasurementsTable({
         status: isOptimal ? "within_target" : isBorderline ? "borderline" : "deviating",
         label: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "Deviating",
         badgeClass: isOptimal
-          ? "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+          ? optimalBadgeClass
           : isBorderline
-            ? "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-            : "bg-band-1/15 text-band-1-text border-band-1/40 dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
-        dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
+            ? borderlineBadgeClass
+            : deviatingBadgeClass,
+        dotClass: isOptimal ? "bg-band-4" : isBorderline ? "bg-band-2" : "bg-band-1",
         meter: { min: 0.5, max: 1.3, targetMin: 0.85, targetMax: 1.0, current: val },
       };
     }
@@ -145,11 +152,11 @@ export function RawMeasurementsTable({
         status: isOptimal ? "within_target" : isBorderline ? "borderline" : "deviating",
         label: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "Deviating",
         badgeClass: isOptimal
-          ? "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+          ? optimalBadgeClass
           : isBorderline
-            ? "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-            : "bg-band-1/15 text-band-1-text border-band-1/40 dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
-        dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
+            ? borderlineBadgeClass
+            : deviatingBadgeClass,
+        dotClass: isOptimal ? "bg-band-4" : isBorderline ? "bg-band-2" : "bg-band-1",
         meter: { min: 0.8, max: 3.2, targetMin: 1.5, targetMax: 2.5, current: val },
       };
     }
@@ -164,11 +171,11 @@ export function RawMeasurementsTable({
         status: isOptimal ? "within_target" : isBorderline ? "borderline" : "deviating",
         label: isOptimal ? "Mean within target" : isBorderline ? "Mean borderline" : "Mean deviating",
         badgeClass: isOptimal
-          ? "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+          ? optimalBadgeClass
           : isBorderline
-            ? "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-            : "bg-band-1/15 text-band-1-text border-band-1/40 dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
-        dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
+            ? borderlineBadgeClass
+            : deviatingBadgeClass,
+        dotClass: isOptimal ? "bg-band-4" : isBorderline ? "bg-band-2" : "bg-band-1",
         meter: { min: 0, max: 24, targetMin: 6.0, targetMax: 15.0, current: val },
       };
     }
@@ -183,11 +190,11 @@ export function RawMeasurementsTable({
         status: isOptimal ? "within_target" : isBorderline ? "borderline" : "deviating",
         label: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "High Drift",
         badgeClass: isOptimal
-          ? "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+          ? optimalBadgeClass
           : isBorderline
-            ? "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-            : "bg-band-1/15 text-band-1-text border-band-1/40 dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
-        dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
+            ? borderlineBadgeClass
+            : deviatingBadgeClass,
+        dotClass: isOptimal ? "bg-band-4" : isBorderline ? "bg-band-2" : "bg-band-1",
         meter: { min: 0, max: 0.8, targetMin: 0, targetMax: 0.05, current: val },
       };
     }
@@ -441,7 +448,7 @@ export function RawMeasurementsTable({
                     >
                       {/* Target Window Highlight */}
                       <div
-                        className="absolute top-0 bottom-0 bg-emerald-500/20 dark:bg-emerald-500/30 border-x border-emerald-500/40"
+                        className="absolute top-0 bottom-0 bg-band-4/25 dark:bg-band-4/35 border-x border-band-4/50"
                         style={{
                           left: `${Math.max(0, Math.min(100, ((c.benchmark.meter.targetMin - c.benchmark.meter.min) / (c.benchmark.meter.max - c.benchmark.meter.min)) * 100))}%`,
                           width: `${Math.max(4, Math.min(100, ((c.benchmark.meter.targetMax - c.benchmark.meter.targetMin) / (c.benchmark.meter.max - c.benchmark.meter.min)) * 100))}%`,
@@ -452,9 +459,9 @@ export function RawMeasurementsTable({
                       <div
                         className={`absolute top-0 bottom-0 w-2 -ml-1 rounded-full shadow-xs transition-all ${
                           c.benchmark.status === "within_target"
-                            ? "bg-emerald-600 dark:bg-emerald-400"
+                            ? "bg-band-4"
                             : c.benchmark.status === "borderline"
-                              ? "bg-amber-600 dark:bg-amber-400"
+                              ? "bg-band-2"
                               : "bg-band-1"
                         }`}
                         style={{

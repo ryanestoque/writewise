@@ -75,20 +75,6 @@ const STEPS = [
   { step: 3, label: "Review" },
 ] as const;
 
-const PROCESSING_STAGES = [
-  {
-    title: "Checking image quality…",
-    detail: "Verifying lighting, focus, and guideline alignment.",
-  },
-  {
-    title: "Analyzing cursive handwriting…",
-    detail: "Segmenting words and measuring letter stroke geometry.",
-  },
-  {
-    title: "Calculating diagnostic scores…",
-    detail: "Evaluating consistency, slant, spacing, and baseline.",
-  },
-] as const;
 
 
 
@@ -101,11 +87,9 @@ function subscribeTouch(callback: () => void) {
 
 function getTouchSnapshot() {
   if (typeof window === "undefined") return false;
-  return (
-    "ontouchstart" in window ||
-    navigator.maxTouchPoints > 0 ||
-    window.matchMedia("(pointer: coarse)").matches
-  );
+  // Primary pointer only: touch-capable laptops (primary pointer = mouse/trackpad)
+  // should get the desktop "Browse Files" flow, not the phone camera flow.
+  return window.matchMedia("(pointer: coarse)").matches;
 }
 
 export function ParentUploadDialog({
@@ -180,7 +164,6 @@ function ParentUploadFlow({
   const [lastRetakeTip, setLastRetakeTip] = useState<{ tip: string; badgeLabel?: string } | null>(
     null
   );
-  const [processingStageIndex, setProcessingStageIndex] = useState(0);
 
   const {
     data: assignedActivities,
@@ -210,20 +193,6 @@ function ParentUploadFlow({
   useEffect(() => {
     onUploadingChange?.(isUploading);
   }, [isUploading, onUploadingChange]);
-
-  // Calibrated staged progress sequence while uploading (DESIGN.md §7.2)
-  useEffect(() => {
-    if (!isUploading) return;
-    const interval = setInterval(() => {
-      setProcessingStageIndex((prev) =>
-        prev < PROCESSING_STAGES.length - 1 ? prev + 1 : prev
-      );
-    }, 2000);
-    return () => {
-      clearInterval(interval);
-      setProcessingStageIndex(0);
-    };
-  }, [isUploading]);
 
   // Programmatic focus steering upon step transitions
   useEffect(() => {
@@ -349,7 +318,7 @@ function ParentUploadFlow({
       },
       {
         onSuccess: () => {
-          toast.success("Worksheet sent — typically reviewed within 1–2 school days.");
+          toast.success("Photo received — your teacher reviews every result before you see it.");
           // Invalidate parent queries so progress page immediately updates
           queryClient.invalidateQueries({
             queryKey: ["parent-child-latest-scores"],
@@ -543,26 +512,13 @@ function ParentUploadFlow({
               className="size-8 animate-spin text-primary motion-reduce:animate-none"
               aria-hidden="true"
             />
-            <div className="space-y-1 transition-all duration-200">
+            <div className="space-y-1">
               <p className="text-sm font-semibold text-foreground tracking-tight">
-                {PROCESSING_STAGES[processingStageIndex].title}
+                Checking your photo…
               </p>
               <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                {PROCESSING_STAGES[processingStageIndex].detail}
+                We&apos;re making sure the page is clear and fully in view. This usually takes a few seconds.
               </p>
-            </div>
-            <div className="flex items-center gap-1.5 pt-2" aria-hidden="true">
-              {PROCESSING_STAGES.map((_, idx) => (
-                <span
-                  key={idx}
-                  className={`size-1.5 rounded-full transition-all duration-300 ${idx === processingStageIndex
-                    ? "bg-primary w-4"
-                    : idx < processingStageIndex
-                      ? "bg-primary/50"
-                      : "bg-muted-foreground/30"
-                    }`}
-                />
-              ))}
             </div>
           </div>
         ) : activitiesError && !assignedActivities && step !== 5 ? null : (
@@ -717,6 +673,12 @@ function ParentUploadFlow({
                   aria-hidden="true"
                   onChange={(e) => handleFileChange(e.target.files?.[0])}
                 />
+
+                {/* Always-visible capture checklist (prevents the most common rejections) */}
+                <p className="flex items-center justify-center gap-1.5 text-xs sm:text-sm font-medium text-foreground text-center">
+                  <LightbulbIcon className="size-4 text-primary shrink-0" aria-hidden="true" />
+                  <span>Flat paper · Even light · All 4 corners in view</span>
+                </p>
 
                 {/* Dropzone Container (Clean Non-Interactive Wrapper, WCAG 4.1.2) */}
                 <div
@@ -1031,12 +993,12 @@ function ParentUploadFlow({
 
                 <div className="space-y-1.5 max-w-sm">
                   <h3 className="text-base sm:text-lg font-semibold text-foreground tracking-tight font-heading">
-                    Photo sent—waiting for teacher review
+                    Photo received—waiting for teacher review
                   </h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     The cursive sample for{" "}
                     <strong className="text-foreground font-medium">{childName}</strong>{" "}
-                    has been sent. The teacher will share the handwriting feedback after review (typically within 1–2 school days).
+                    has been received. Your teacher reviews every result before you see it, so feedback appears here once it&apos;s released.
                   </p>
                 </div>
 

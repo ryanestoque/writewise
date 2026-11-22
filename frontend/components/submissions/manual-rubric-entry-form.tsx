@@ -142,9 +142,9 @@ export const RUBRIC_BANDS: Array<{
       score: "37.5%",
       points: 2,
       activeClass:
-        "bg-band-2/15 dark:bg-band-2/30 text-amber-900 dark:text-amber-200 border-band-2 ring-2 ring-band-2/40 shadow-xs font-semibold",
+        "bg-band-2/15 dark:bg-band-2/30 text-band-2-text dark:text-amber-200 border-band-2 ring-2 ring-band-2/40 shadow-xs font-semibold",
       badgeClass:
-        "bg-band-2/15 text-amber-900 dark:text-amber-200 border-band-2/40",
+        "bg-band-2/15 text-band-2-text dark:text-amber-200 border-band-2/40",
       dotColor: "bg-band-2",
     },
     {
@@ -155,9 +155,9 @@ export const RUBRIC_BANDS: Array<{
       score: "62.5%",
       points: 3,
       activeClass:
-        "bg-band-3/15 dark:bg-band-3/30 text-emerald-950 dark:text-emerald-200 border-band-3 ring-2 ring-band-3/40 shadow-xs font-semibold",
+        "bg-band-3/15 dark:bg-band-3/30 text-band-3-text dark:text-emerald-200 border-band-3 ring-2 ring-band-3/40 shadow-xs font-semibold",
       badgeClass:
-        "bg-band-3/15 text-emerald-950 dark:text-emerald-200 border-band-3/40",
+        "bg-band-3/15 text-band-3-text dark:text-emerald-200 border-band-3/40",
       dotColor: "bg-band-3",
     },
     {
@@ -168,10 +168,10 @@ export const RUBRIC_BANDS: Array<{
       score: "87.5%",
       points: 4,
       activeClass:
-        "bg-brand-100 dark:bg-brand-950/80 text-brand-950 dark:text-brand-200 border-brand-500 dark:border-brand-400 ring-2 ring-brand-500/40 shadow-xs font-semibold",
+        "bg-band-4/15 dark:bg-band-4/30 text-band-4-text dark:text-emerald-200 border-band-4 ring-2 ring-band-4/40 shadow-xs font-semibold",
       badgeClass:
-        "bg-brand-50 text-brand-800 dark:bg-brand-950/80 dark:text-brand-300 border-brand-300/60",
-      dotColor: "bg-brand-600 dark:bg-brand-400",
+        "bg-band-4/15 text-band-4-text dark:text-emerald-200 border-band-4/40",
+      dotColor: "bg-band-4",
     },
   ];
 
@@ -227,36 +227,42 @@ export const RUBRIC_CRITERIA: Array<{
   | "baseline_alignment_band";
   name: string;
   shortName: string;
+  stepLabel: string;
   hint: string;
 }> = [
     {
       key: "letter_formation_band",
       name: "Letter Formation",
       shortName: "Letter Formation",
+      stepLabel: "Formation",
       hint: "Proper cursive loops and complete stroke closures",
     },
     {
       key: "size_consistency_band",
       name: "Size Consistency",
       shortName: "Size Consistency",
+      stepLabel: "Size",
       hint: "Proportion and height across 3-line penmanship ruling",
     },
     {
       key: "spacing_band",
       name: "Spacing",
       shortName: "Spacing",
+      stepLabel: "Spacing",
       hint: "Inter-word rhythm and character separation spacing",
     },
     {
       key: "slant_band",
       name: "Slant Angle",
       shortName: "Slant Angle",
+      stepLabel: "Slant",
       hint: "Typical stem lean and consistency within and between words",
     },
     {
       key: "baseline_alignment_band",
       name: "Baseline Alignment",
       shortName: "Baseline Alignment",
+      stepLabel: "Baseline",
       hint: "Letters resting stably along bottom ruling baseline",
     },
   ];
@@ -292,6 +298,20 @@ export function extractCriterionCVMetric(
 ): CriterionCVMetric | null {
   if (!measurement) return null;
 
+  const buildMetricStyle = (isOptimal: boolean, isBorderline: boolean) => ({
+    dotClass: isOptimal ? "bg-band-4" : isBorderline ? "bg-band-2" : "bg-band-1",
+    textClass: isOptimal
+      ? "text-band-4-text dark:text-emerald-200"
+      : isBorderline
+        ? "text-band-2-text dark:text-amber-200"
+        : "text-band-1-text dark:text-orange-200",
+    badgeClass: isOptimal
+      ? "bg-band-4/15 border-band-4/40 text-band-4-text dark:bg-band-4/25 dark:text-emerald-200 dark:border-band-4/50"
+      : isBorderline
+        ? "bg-band-2/15 border-band-2/40 text-band-2-text dark:bg-band-2/25 dark:text-amber-200 dark:border-band-2/50"
+        : "bg-band-1/15 border-band-1/40 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+  });
+
   switch (criterionKey) {
     case "letter_formation_band": {
       if (measurement.letter_formation_mean != null) {
@@ -302,17 +322,7 @@ export function extractCriterionCVMetric(
           value: `${Math.round(val)}%`,
           target: "Target: ≥80% (CNN)",
           status: isOptimal ? "Optimal" : isBorderline ? "Developing" : "Needs Focus",
-          dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
-          textClass: isOptimal
-            ? "text-emerald-700 dark:text-emerald-300"
-            : isBorderline
-              ? "text-amber-700 dark:text-amber-300"
-              : "text-band-1-text dark:text-orange-200",
-          badgeClass: isOptimal
-            ? "bg-emerald-50 border-emerald-300/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-            : isBorderline
-              ? "bg-amber-50 border-amber-300/80 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-              : "bg-band-1/15 border-band-1/40 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+          ...buildMetricStyle(isOptimal, isBorderline),
         };
       }
       return null;
@@ -329,17 +339,7 @@ export function extractCriterionCVMetric(
           value: `${val.toFixed(2)}x`,
           target: "Target: 0.85–1.05x",
           status: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "Deviating",
-          dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
-          textClass: isOptimal
-            ? "text-emerald-700 dark:text-emerald-300"
-            : isBorderline
-              ? "text-amber-700 dark:text-amber-300"
-              : "text-band-1-text dark:text-orange-200",
-          badgeClass: isOptimal
-            ? "bg-emerald-50 border-emerald-300/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-            : isBorderline
-              ? "bg-amber-50 border-amber-300/80 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-              : "bg-band-1/15 border-band-1/40 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+          ...buildMetricStyle(isOptimal, isBorderline),
         };
       }
       return null;
@@ -356,17 +356,7 @@ export function extractCriterionCVMetric(
           value: `${val.toFixed(2)}x`,
           target: "Target: 1.5–2.5x",
           status: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "Deviating",
-          dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
-          textClass: isOptimal
-            ? "text-emerald-700 dark:text-emerald-300"
-            : isBorderline
-              ? "text-amber-700 dark:text-amber-300"
-              : "text-band-1-text dark:text-orange-200",
-          badgeClass: isOptimal
-            ? "bg-emerald-50 border-emerald-300/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-            : isBorderline
-              ? "bg-amber-50 border-amber-300/80 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-              : "bg-band-1/15 border-band-1/40 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+          ...buildMetricStyle(isOptimal, isBorderline),
         };
       }
       return null;
@@ -383,17 +373,7 @@ export function extractCriterionCVMetric(
           value: `${val.toFixed(1)}°`,
           target: "Target: 6°–15°",
           status: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "Deviating",
-          dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
-          textClass: isOptimal
-            ? "text-emerald-700 dark:text-emerald-300"
-            : isBorderline
-              ? "text-amber-700 dark:text-amber-300"
-              : "text-band-1-text dark:text-orange-200",
-          badgeClass: isOptimal
-            ? "bg-emerald-50 border-emerald-300/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-            : isBorderline
-              ? "bg-amber-50 border-amber-300/80 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-              : "bg-band-1/15 border-band-1/40 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+          ...buildMetricStyle(isOptimal, isBorderline),
         };
       }
       return null;
@@ -410,17 +390,7 @@ export function extractCriterionCVMetric(
           value: `${val.toFixed(3)}`,
           target: "Target: ≤0.05",
           status: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "High Drift",
-          dotClass: isOptimal ? "bg-emerald-500" : isBorderline ? "bg-amber-500" : "bg-band-1",
-          textClass: isOptimal
-            ? "text-emerald-700 dark:text-emerald-300"
-            : isBorderline
-              ? "text-amber-700 dark:text-amber-300"
-              : "text-band-1-text dark:text-orange-200",
-          badgeClass: isOptimal
-            ? "bg-emerald-50 border-emerald-300/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-            : isBorderline
-              ? "bg-amber-50 border-amber-300/80 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-              : "bg-band-1/15 border-band-1/40 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+          ...buildMetricStyle(isOptimal, isBorderline),
         };
       }
       return null;
@@ -771,18 +741,22 @@ export function ManualRubricEntryForm({
         }));
         setSubmitErrorMsg(null);
 
-        // Auto-advance to the next criterion
-        const nextIndex =
-          (activeCriterionIndexRef.current + 1) % RUBRIC_CRITERIA.length;
-        setActiveCriterionIndex(nextIndex);
-        onFocusCriterion?.(RUBRIC_CRITERIA[nextIndex].shortName);
+        // Auto-advance to the next criterion without wrapping around from 5 -> 1
+        const currentIndex = activeCriterionIndexRef.current;
+        const nextIndex = Math.min(currentIndex + 1, RUBRIC_CRITERIA.length - 1);
+        if (nextIndex !== currentIndex) {
+          setActiveCriterionIndex(nextIndex);
+          onFocusCriterion?.(RUBRIC_CRITERIA[nextIndex].shortName);
+        }
 
         // Screen reader announcement for keyboard grading
         setAccessibilityAnnouncement(
-          `${currentCriterion.shortName} rated ${targetOption.label} (${targetOption.score}). Active criterion: ${RUBRIC_CRITERIA[nextIndex].shortName}.`
+          nextIndex !== currentIndex
+            ? `${currentCriterion.shortName} rated ${targetOption.label} (${targetOption.score}). Active criterion: ${RUBRIC_CRITERIA[nextIndex].shortName}.`
+            : `${currentCriterion.shortName} rated ${targetOption.label} (${targetOption.score}). Final criterion reached.`
         );
 
-        // Programmatically shift focus to the next criterion's radio group
+        // Programmatically shift focus to the active/next criterion's radio group
         setTimeout(() => {
           const nextBtn =
             formRef.current?.querySelector<HTMLButtonElement>(
@@ -988,7 +962,7 @@ export function ManualRubricEntryForm({
       {/* ---------------- FOCUS STEPPER MODE (Unified across all viewports) ---------------- */}
       {layoutMode === "stepper" && (
         <div className="space-y-2.5">
-          {/* 5-Step Navigation Pills */}
+          {/* 5-Step Navigation Pills (with criterion names + dual-signal score indicators) */}
           <div className="grid grid-cols-5 gap-1 pt-0.5">
             {RUBRIC_CRITERIA.map((criterion, idx) => {
               const isStepActive = activeCriterionIndex === idx;
@@ -1001,26 +975,32 @@ export function ManualRubricEntryForm({
                   key={criterion.key}
                   type="button"
                   onClick={() => handleSelectCriterion(idx)}
-                  className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg border text-center transition-all cursor-pointer min-h-[40px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${isStepActive
+                  className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-center transition-all cursor-pointer min-h-[42px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${isStepActive
                       ? "bg-brand-100 dark:bg-brand-950 text-brand-950 dark:text-brand-200 border-brand-500 ring-2 ring-brand-400/40 font-bold"
                       : isRated
                         ? "bg-surface dark:bg-card border-brand-200/80 dark:border-brand-900/80 text-foreground"
                         : "bg-muted/30 border-border/60 text-muted-foreground hover:border-border"
                     }`}
-                  aria-label={`Step ${idx + 1}: ${criterion.shortName}${isRated ? ` (Rated: ${bandMeta.label})` : ""}`}
+                  aria-label={`Step ${idx + 1}: ${criterion.shortName}${isRated ? ` (Rated: ${bandMeta.label}, ${bandMeta.points} of 4 points)` : " (Unrated)"}`}
                   aria-current={isStepActive ? "step" : undefined}
                 >
-                  <span className="text-[11px] font-mono leading-none font-semibold">
-                    {idx + 1}
+                  <span className="text-[11px] font-sans tabular-nums leading-tight font-semibold truncate max-w-full">
+                    {idx + 1}. {criterion.stepLabel}
                   </span>
-                  <div className="flex items-center gap-0.5 mt-1">
+                  <div className="flex items-center gap-1 mt-0.5 text-[10px] font-sans tabular-nums leading-none">
                     {isRated ? (
-                      <span
-                        className={`size-1.5 rounded-full ${bandMeta.dotColor}`}
-                        title={bandMeta.label}
-                      />
+                      <>
+                        <span
+                          className={`size-1.5 rounded-full shrink-0 ${bandMeta.dotColor}`}
+                          aria-hidden="true"
+                        />
+                        <span className="font-semibold">{bandMeta.points}/4</span>
+                      </>
                     ) : (
-                      <span className="size-1.5 rounded-full bg-muted-foreground/30" />
+                      <>
+                        <span className="size-1.5 rounded-full bg-muted-foreground/30 shrink-0" aria-hidden="true" />
+                        <span className="text-muted-foreground/80">—</span>
+                      </>
                     )}
                   </div>
                 </button>
@@ -1096,7 +1076,7 @@ export function ManualRubricEntryForm({
                           setAccessibilityAnnouncement(
                             `${currentCriterion.shortName} rated ${option.label} (${option.score}).`
                           );
-                          if (autoAdvance && activeCriterionIndex < RUBRIC_CRITERIA.length - 1) {
+                          if (activeCriterionIndex < RUBRIC_CRITERIA.length - 1) {
                             const nextIdx = activeCriterionIndex + 1;
                             setActiveCriterionIndex(nextIdx);
                             onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
@@ -1286,7 +1266,7 @@ export function ManualRubricEntryForm({
                 onChange={(e) => setAutoAdvance(e.target.checked)}
                 className="size-3.5 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary"
               />
-              <span>Auto-advance</span>
+              <span>Next student on save</span>
             </label>
           )}
         </div>

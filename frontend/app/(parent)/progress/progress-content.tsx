@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 import { useParentPortal } from "@/components/parent-portal-provider";
 import { LatestSubmissionCard } from "@/components/parent/latest-submission-card";
@@ -24,6 +24,7 @@ import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
 import { compareParentActivityUrgency, getParentActivityStatus } from "@/lib/utils/parent-activity-status";
 import { useActivityNow } from "@/components/activities/activity-work-status";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { BandBadge } from "@/components/shared/band-badge";
 import { cn } from "@/lib/utils";
 import {
@@ -59,13 +60,28 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-type ParentProgressTab = "overview" | "to-write" | "progress" | "grades";
+type ParentProgressTab = "overview" | "to-write" | "progress";
+
+function getScoreDetailsStorageKey(userId: string) {
+  return `writewise:parent:show-score-details:${userId}`;
+}
+
+const SCORE_DETAILS_EVENT = "writewise:parent-score-details";
+
+function subscribeScoreDetails(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", callback);
+  window.addEventListener(SCORE_DETAILS_EVENT, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(SCORE_DETAILS_EVENT, callback);
+  };
+}
 
 export function ProgressPageContent() {
   const searchParams = useSearchParams();
   const [rubricOpen, setRubricOpen] = useState(false);
   const [activitiesExpanded, setActivitiesExpanded] = useState(false);
-  const [showScoreDetails, setShowScoreDetails] = useState(false);
   const [selectedTab, setSelectedTab] = useState<ParentProgressTab | null>(null);
 
   const {
@@ -90,9 +106,35 @@ export function ProgressPageContent() {
     // Retain selectedTab when switching children so parents stay on Practice or Progress
   }
 
+  const showScoreDetails = useSyncExternalStore(
+    subscribeScoreDetails,
+    () => {
+      if (!userId || typeof window === "undefined") return false;
+      try {
+        return window.localStorage.getItem(getScoreDetailsStorageKey(userId)) === "true";
+      } catch {
+        return false;
+      }
+    },
+    () => false
+  );
+
+  const setPersistedScoreDetails = useCallback(
+    (next: boolean) => {
+      if (!userId || typeof window === "undefined") return;
+      try {
+        window.localStorage.setItem(getScoreDetailsStorageKey(userId), String(next));
+        window.dispatchEvent(new Event(SCORE_DETAILS_EVENT));
+      } catch {
+        // Ignore storage access errors
+      }
+    },
+    [userId]
+  );
+
   const toggleScoreDetails = useCallback(() => {
-    setShowScoreDetails((prev) => !prev);
-  }, []);
+    setPersistedScoreDetails(!showScoreDetails);
+  }, [setPersistedScoreDetails, showScoreDetails]);
 
   const handleOpenRubric = useCallback(() => setRubricOpen(true), []);
 
@@ -228,7 +270,9 @@ export function ProgressPageContent() {
   const scoredCount = history?.length ?? 0;
   const isZeroState = !historyLoading && allHistory !== undefined && scoredCount === 0;
   const requestedGrades = searchParams.getAll("tab").length === 1 && searchParams.get("tab") === "grades";
-  const activeTab: ParentProgressTab = gradeDestination ? "grades" : selectedTab ?? (requestedGrades ? "grades" : isZeroState ? "to-write" : "overview");
+  const activeTab: ParentProgressTab = gradeDestination
+    ? "progress"
+    : selectedTab ?? (requestedGrades ? "progress" : isZeroState ? "to-write" : "overview");
 
   return (
     <div className="w-full space-y-6 pb-12">
@@ -252,14 +296,14 @@ export function ProgressPageContent() {
                 aria-checked={isSelected}
                 onClick={() => setSelectedChildId(child.id)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 cursor-pointer transition-all min-h-[36px] touch-manipulation",
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 cursor-pointer transition-all min-h-11 touch-manipulation",
                   isSelected
                     ? "bg-brand-700 text-white dark:bg-brand-600 shadow-2xs"
                     : "bg-muted/70 text-muted-foreground hover:text-foreground hover:bg-muted border border-border/70"
                 )}
               >
                 <span className="truncate max-w-[130px]">{child.fullName}</span>
-                <span className={cn("text-[10px]", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                <span className={cn("text-xs", isSelected ? "text-white/80" : "text-muted-foreground")}>
                   ({child.section})
                 </span>
               </button>
@@ -282,11 +326,24 @@ export function ProgressPageContent() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+          <label
+            htmlFor="show-percentages-switch"
+            className="inline-flex items-center justify-between sm:justify-start gap-2.5 h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] flex-1 sm:flex-initial px-3 rounded-lg border border-border bg-background text-xs sm:text-sm font-medium text-foreground cursor-pointer select-none shadow-2xs touch-manipulation"
+          >
+            <span>Show percentages</span>
+            <Switch
+              id="show-percentages-switch"
+              size="sm"
+              checked={showScoreDetails}
+              onCheckedChange={setPersistedScoreDetails}
+            />
+          </label>
+
           <DropdownMenu>
             <DropdownMenuTrigger
               aria-label="Open penmanship and scoring guides"
-              className="inline-flex items-center justify-center gap-2 h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] w-full sm:w-auto px-3 text-xs sm:text-sm font-medium rounded-lg border border-border bg-background hover:bg-muted/60 text-foreground transition-colors cursor-pointer shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation"
+              className="inline-flex items-center justify-center gap-2 h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] flex-1 sm:flex-initial px-3 text-xs sm:text-sm font-medium rounded-lg border border-border bg-background hover:bg-muted/60 text-foreground transition-colors cursor-pointer shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation"
             >
               <BookOpen className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
               <span>Penmanship Guides</span>
@@ -416,7 +473,7 @@ export function ProgressPageContent() {
         value={activeTab}
         onValueChange={(val) => {
           if (gradeDestination || requestedGrades) {
-            dismissNotificationTarget(val === "grades" ? "grades" : null);
+            dismissNotificationTarget(null);
           }
           setSelectedTab(val as ParentProgressTab);
         }}
@@ -444,7 +501,10 @@ export function ProgressPageContent() {
               <span>Practice</span>
               {pendingActivitiesCount > 0 && (
                 <span className="inline-flex items-center justify-center px-1.5 py-0 rounded-full text-xs font-bold tabular-nums bg-brand-100/90 dark:bg-brand-950/90 text-brand-800 dark:text-brand-200 border border-brand-200/70 dark:border-brand-800/70">
-                  {pendingActivitiesCount}
+                  <span aria-hidden="true">{pendingActivitiesCount}</span>
+                  <span className="sr-only">
+                    {`, ${pendingActivitiesCount} to send`}
+                  </span>
                 </span>
               )}
             </TabsTrigger>
@@ -455,25 +515,17 @@ export function ProgressPageContent() {
             >
               <TrendingUp className="size-4 shrink-0" aria-hidden="true" />
               <span>Progress</span>
-              {allHistory && allHistory.length > 0 && (
+              {scoredCount > 0 && (
                 <span className="inline-flex items-center justify-center px-1.5 py-0 rounded-full text-xs font-bold tabular-nums bg-muted/80 text-foreground/80 border border-border/70">
-                  {allHistory.length}
+                  <span aria-hidden="true">{scoredCount}</span>
+                  <span className="sr-only">
+                    {`, ${scoredCount} checked`}
+                  </span>
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="grades" className="min-h-11 px-3 sm:px-4 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap">
-              Grades
-            </TabsTrigger>
           </TabsList>
         </div>
-
-        <TabsContent value="grades">
-          {activeTab === "grades" && selectedChildId && (
-            <ParentGrades key={`${userId}:${selectedChildId}`} userId={userId} childId={selectedChildId}
-              highlightActivityId={gradeDestination ? notificationTargetData?.activityId : undefined}
-              onDismissTarget={() => { setSelectedTab("grades"); dismissNotificationTarget(); }} />
-          )}
-        </TabsContent>
 
         {/* Tab 1: Overview (Coaching Hero + Latest Worksheet) */}
         <TabsContent value="overview" className="space-y-6">
@@ -668,6 +720,20 @@ export function ProgressPageContent() {
               childName={selectedChild.fullName}
               showScoreDetails={showScoreDetails}
               onUploadActivity={handleUploadActivity}
+            />
+          )}
+
+          {activeTab === "progress" && selectedChildId && (
+            <ParentGrades
+              key={`${userId}:${selectedChildId}`}
+              userId={userId}
+              childId={selectedChildId}
+              showScoreDetails={showScoreDetails}
+              highlightActivityId={gradeDestination ? notificationTargetData?.activityId : undefined}
+              onDismissTarget={() => {
+                setSelectedTab("progress");
+                dismissNotificationTarget(null);
+              }}
             />
           )}
         </TabsContent>

@@ -37,12 +37,14 @@ export function SubmissionCommentThread({
   open,
   location,
   studentName,
+  compactHeader = false,
 }: {
   userId: string;
   target: ThreadTarget;
   open: boolean;
   location?: CommentLocation;
   studentName?: string;
+  compactHeader?: boolean;
 }) {
   const query = useCommentThread(userId, target, open);
   const actions = useCommentActions(userId, target);
@@ -125,36 +127,40 @@ export function SubmissionCommentThread({
   return (
     <section aria-label="Private conversation" className="flex min-h-0 flex-1 flex-col">
       <div className="space-y-2 border-b px-4 py-3">
-        <div className="flex flex-wrap items-baseline gap-2 min-w-0">
-          {studentName && (
-            <h2 className="font-heading text-base font-semibold text-foreground truncate">
-              {studentName}
-            </h2>
-          )}
-          <p
-            className={cn(
-              "text-xs sm:text-sm truncate",
-              studentName ? "text-muted-foreground" : "font-heading font-semibold text-foreground"
-            )}
-          >
-            {studentName ? `· ${thread.activity_title}` : thread.activity_title}
-          </p>
-        </div>
-        <p className="text-muted-foreground text-xs">
-          Uploaded{" "}
-          <time dateTime={thread.submitted_at} className="font-sans tabular-nums font-medium text-foreground/80">
-            {formatDate(thread.submitted_at)} ({getRelativeTime(thread.submitted_at)})
-          </time>
-          {" · "}
-          <span className="font-medium text-foreground/80">
-            {{
-              processing: "Analyzing strokes",
-              rejected: "Needs a new photo",
-              completed: "Uploaded",
-              returned: "Returned for redo",
-            }[thread.submission_status]}
-          </span>
-        </p>
+        {!compactHeader && (
+          <>
+            <div className="flex flex-wrap items-baseline gap-2 min-w-0">
+              {studentName && (
+                <h2 className="font-heading text-base font-semibold text-foreground truncate">
+                  {studentName}
+                </h2>
+              )}
+              <p
+                className={cn(
+                  "text-xs sm:text-sm truncate",
+                  studentName ? "text-muted-foreground" : "font-heading font-semibold text-foreground"
+                )}
+              >
+                {studentName ? `· ${thread.activity_title}` : thread.activity_title}
+              </p>
+            </div>
+            <p className="text-muted-foreground text-xs">
+              Uploaded{" "}
+              <time dateTime={thread.submitted_at} className="font-sans tabular-nums font-medium text-foreground/80">
+                {formatDate(thread.submitted_at)} ({getRelativeTime(thread.submitted_at)})
+              </time>
+              {" · "}
+              <span className="font-medium text-foreground/80">
+                {{
+                  processing: "Analyzing strokes",
+                  rejected: "Needs a new photo",
+                  completed: "Uploaded",
+                  returned: "Returned for redo",
+                }[thread.submission_status]}
+              </span>
+            </p>
+          </>
+        )}
         <p className="text-muted-foreground text-xs">
           Visible to the teacher and all linked parents immediately, even before results are
           released.

@@ -47,13 +47,13 @@ export const DiagnosticFallbackBanner = memo(function DiagnosticFallbackBanner({
               variant="outline"
               className="text-[10px] px-1.5 py-0 h-4 font-medium border-border/80 text-muted-foreground bg-muted/40"
             >
-              {isManual ? "Phase 1 Rubric" : "CV Processing"}
+              {isManual ? "Teacher Rubric" : "CV Processing"}
             </Badge>
           </div>
           <p className="text-[11px] text-muted-foreground leading-relaxed">
             {isParentView
               ? "Your child's teacher evaluated this worksheet using standard classroom penmanship criteria. Interactive stroke guides (formation, slant, alignment) are enabled for computer-vision analyzed worksheets."
-              : "Automated geometric stroke guidelines (formation, baseline drift, slant vectors, inter-word spacing) are generated for Phase 2 computer vision analyses."}
+              : "Automated geometric stroke guidelines (formation, baseline drift, slant vectors, inter-word spacing) appear when computer-vision guideline analysis is available."}
           </p>
         </div>
       </div>

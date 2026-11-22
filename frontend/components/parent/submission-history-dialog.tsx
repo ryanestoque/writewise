@@ -1,5 +1,7 @@
 "use client";
 
+import { humanizeReason } from "@/lib/utils/humanize-reason";
+
 import { useState, useMemo, useRef, useEffect } from "react";
 import {
   Dialog,
@@ -138,7 +140,7 @@ function HistoryItemRow({
             ? " · Awaiting teacher review"
             : ""}
           {item.returnedAt
-            ? ` · Teacher requested another photo${item.returnReason ? ` (${item.returnReason.replaceAll("_", " ")})` : ""
+            ? ` · Teacher requested another photo${item.returnReason ? ` (${humanizeReason(item.returnReason)})` : ""
             }`
             : ""}
         </p>

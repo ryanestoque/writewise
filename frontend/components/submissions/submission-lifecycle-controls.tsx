@@ -5,7 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table2, Send, RotateCcw, ExternalLink, FileText, Loader2, CheckCircle2, ArrowRight } from "lucide-react";
+import { Table2, Send, RotateCcw, ExternalLink, Loader2, CheckCircle2, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -284,8 +284,8 @@ export function SubmissionLifecycleControls({
       <div className={cn("inline-flex items-center gap-1.5 flex-wrap", className)}>
         {submission.status === "returned" ? (
           <Badge
-            variant="destructive"
-            className="text-[10px] sm:text-[11px] font-medium h-5 px-2"
+            variant="outline"
+            className="text-[10px] sm:text-[11px] font-semibold h-5 px-2 bg-band-2/15 text-band-2-text dark:bg-band-2/25 dark:text-amber-200 border-band-2/40"
           >
             Returned
           </Badge>
@@ -885,8 +885,7 @@ function WorkSettingsForm({
           {selectedAttempt && (
             <div className="flex flex-col items-start gap-2.5 rounded-xl border border-border/70 bg-card p-3.5 text-sm shadow-xs mt-1">
               <div className="flex items-center justify-between w-full">
-                <span className="font-medium text-foreground flex items-center gap-1.5">
-                  <FileText className="size-4 text-muted-foreground" aria-hidden="true" />
+                <span className="font-medium text-foreground">
                   Selected attempt details
                 </span>
                 {selectedAttempt.id === state?.active_submission_id && (

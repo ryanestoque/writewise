@@ -40,7 +40,7 @@ import {
   ArrowLeft,
   Eye,
   Info,
-  Award,
+  Layers,
   SlidersHorizontal,
   Edit3,
   Trash2,
@@ -145,6 +145,7 @@ export interface SubmissionDetailContentProps {
   submissions?: Submission[];
   currentIndex?: number;
   onNavigate?: (submission: Submission) => void;
+  activityTitle?: string;
   activityTargetText?: string;
   /** Called when the user triggers "close" — modal sets open=false, page navigates back */
   onClose?: () => void;
@@ -159,6 +160,7 @@ export function SubmissionDetailContent({
   submissions,
   currentIndex,
   onNavigate,
+  activityTitle,
   activityTargetText,
   onClose,
   variant,
@@ -559,6 +561,22 @@ export function SubmissionDetailContent({
     [submission.id]
   );
 
+  const handleSelectCriterion = useCallback(
+    (criterionName: string | null) => {
+      setSelectedCriterion(criterionName);
+      if (criterionName) {
+        const mapped = CRITERION_NAME_TO_FILTER[criterionName];
+        if (mapped) {
+          setActiveOverlayCriterion(mapped);
+        }
+        setCriterionAnnouncement(
+          `${criterionName} selected. Diagnostic guide and coaching tips updated.`
+        );
+      }
+    },
+    [setActiveOverlayCriterion]
+  );
+
   // Attention alert counts for embedding in rubric and criterion lists
   const criterionAttentionCounts = useMemo<Record<string, number>>(() => {
     const emptyCounts: Record<string, number> = {};
@@ -590,6 +608,13 @@ export function SubmissionDetailContent({
         ).length ?? 0,
     };
   }, [diagnosticOverlay]);
+
+  const resolvedActivityTitle = useMemo(() => {
+    if (activityTitle && !isUuid(activityTitle)) {
+      return activityTitle.trim();
+    }
+    return null;
+  }, [activityTitle]);
 
   const resolvedTargetText = useMemo(() => {
     if (activityTargetText && !isUuid(activityTargetText)) {
@@ -840,6 +865,7 @@ export function SubmissionDetailContent({
 
   return (
     <div
+      data-page-studio={variant === "page" ? "true" : undefined}
       data-rubric-editing={isEditingRubric ? "true" : undefined}
       className={cn("w-full flex flex-col gap-0", variant === "modal" ? "flex-1 min-h-0" : "")}
     >
@@ -860,7 +886,9 @@ export function SubmissionDetailContent({
               className="size-3.5 transition-transform group-hover:-translate-x-0.5"
               aria-hidden="true"
             />
-            <span>Back to Activity</span>
+            <span className="truncate max-w-xs sm:max-w-md">
+              {resolvedActivityTitle ? `Back to ${resolvedActivityTitle}` : "Back to Activity"}
+            </span>
           </button>
         </nav>
       )}
@@ -1022,7 +1050,7 @@ export function SubmissionDetailContent({
                 className="flex-1 flex flex-col min-h-0"
                 aspectRatioClass={
                   variant === "page"
-                    ? "max-h-[min(640px,calc(100dvh-12rem))] min-h-[280px] sm:min-h-[320px]"
+                    ? "max-h-[min(760px,calc(100dvh-10rem))] min-h-[300px] sm:min-h-[340px] lg:min-h-[460px]"
                     : "max-h-[min(540px,calc(100dvh-14rem))] min-h-[260px] sm:min-h-[280px] lg:flex-1"
                 }
               >
@@ -1073,7 +1101,7 @@ export function SubmissionDetailContent({
             </div>
 
             {/* Right: Diagnostic Assessment Details & Comments */}
-            <div className="lg:col-span-6 flex flex-col justify-between space-y-2.5">
+            <div className="lg:col-span-6 flex flex-col justify-between space-y-3">
               <h2 className="sr-only">Diagnostic Assessment and Comments</h2>
 
               {/* Unified Right-Pane Tab Bar (keeps worksheet visible on the left while replying to comments) */}
@@ -1099,7 +1127,7 @@ export function SubmissionDetailContent({
                     <div
                       role="tablist"
                       aria-label="Submission review panels"
-                      className="flex items-center p-1 rounded-xl bg-muted/60 border border-border/80 gap-1"
+                      className="flex items-center p-1 sm:p-1.5 rounded-xl bg-muted/60 border border-border/80 gap-1 sm:gap-1.5"
                     >
                       {tabs.map((tab, tabIdx) => {
                         const isActive = effectiveTab === tab.id;
@@ -1127,24 +1155,24 @@ export function SubmissionDetailContent({
                               }
                             }}
                             className={cn(
-                              "flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-2.5 sm:px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer min-h-10 sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                              "flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer min-h-10 sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                               isActive
                                 ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                                 : "text-muted-foreground hover:text-foreground"
                             )}
                           >
                             {tab.id === "rubric" && (
-                              <Award className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+                              <Layers className="size-3.5 sm:size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
                             )}
                             {tab.id === "metrics" && (
-                              <SlidersHorizontal className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+                              <SlidersHorizontal className="size-3.5 sm:size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
                             )}
                             {tab.id === "comments" && (
-                              <MessageSquare className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+                              <MessageSquare className="size-3.5 sm:size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
                             )}
                             <span className="truncate">{tab.label}</span>
                             {tab.id === "comments" && hasUnreadComments && (
-                              <span className="inline-flex items-center rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary shrink-0">
+                              <span className="inline-flex items-center rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] sm:text-xs font-bold text-primary shrink-0">
                                 Unread
                               </span>
                             )}
@@ -1172,6 +1200,7 @@ export function SubmissionDetailContent({
                               studentId: submission.student_id,
                             }}
                             studentName={submission.student?.full_name}
+                            compactHeader
                             open
                           />
                         ) : (
@@ -1222,19 +1251,19 @@ export function SubmissionDetailContent({
                             {hasCalibratedScores ? (
                               <>
                                 {/* Phase 2: Overall Composite Score Bar */}
-                                <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-surface dark:bg-card border border-border shadow-xs">
-                                  <span className="text-xs font-semibold text-foreground">
+                                <div className="flex items-center justify-between px-3.5 py-3 sm:px-4.5 sm:py-3.5 rounded-xl bg-surface dark:bg-card border border-border shadow-xs">
+                                  <span className="text-xs sm:text-sm font-semibold text-foreground">
                                     Overall Score
                                   </span>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-lg sm:text-xl font-sans font-bold text-foreground tabular-nums">
+                                  <div className="flex items-center gap-2.5">
+                                    <span className="text-xl sm:text-2xl font-sans font-bold text-foreground tabular-nums">
                                       {compositeScore !== null && compositeScore !== undefined
                                         ? `${Math.round(compositeScore)}%`
                                         : "Scored"}
                                     </span>
                                     <Badge
                                       variant="outline"
-                                      className={`text-xs font-semibold px-2.5 py-0.5 inline-flex items-center ${compositeBand.className}`}
+                                      className={`text-xs sm:text-sm font-semibold px-2.5 py-1 inline-flex items-center ${compositeBand.className}`}
                                     >
                                       {compositeBand.band}
                                     </Badge>
@@ -1242,23 +1271,16 @@ export function SubmissionDetailContent({
                                 </div>
 
                                 {/* Phase 2: 5 Criteria breakdown */}
-                                <div className="space-y-1">
+                                <div className="space-y-1.5 sm:space-y-2">
                                   {criteria.map((c) => {
                                     const band = getScoreBandLabel(c.score);
                                     const isSelected = selectedCriterion === c.name;
                                     const inlineId = `phase2-criterion-guide-inline-${c.name.toLowerCase().replace(/\s+/g, "-")}`;
                                     return (
-                                      <div key={c.name} className="space-y-1">
+                                      <div key={c.name} className="space-y-1.5">
                                         <button
                                           type="button"
-                                          onClick={() => {
-                                            setSelectedCriterion(c.name);
-                                            const mapped = CRITERION_NAME_TO_FILTER[c.name];
-                                            if (mapped) setActiveOverlayCriterion(mapped);
-                                            setCriterionAnnouncement(
-                                              `${c.name} selected. Diagnostic guide and coaching tips updated.`
-                                            );
-                                          }}
+                                          onClick={() => handleSelectCriterion(c.name)}
                                           aria-expanded={isSelected}
                                           aria-controls={
                                             isSelected
@@ -1271,20 +1293,20 @@ export function SubmissionDetailContent({
                                             ? `${Math.round(c.score)}%`
                                             : "Unrated"
                                             } (${band.band}). Tap to focus coaching tip.`}
-                                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[40px] sm:min-h-0 touch-manipulation ${isSelected
+                                          className={`w-full flex items-center justify-between px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border transition-all text-xs sm:text-sm text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 touch-manipulation ${isSelected
                                             ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
                                             : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
                                             }`}
                                         >
-                                          <div className="flex items-center gap-1.5 flex-wrap min-w-0 pr-2">
-                                            <span className="font-semibold text-foreground truncate block">
+                                          <div className="flex items-center gap-2 flex-wrap min-w-0 pr-2">
+                                            <span className="font-semibold text-foreground truncate block text-xs sm:text-sm">
                                               {c.name}
                                             </span>
                                             {(criterionAttentionCounts[c.name] ?? 0) > 0 && (
                                               <Badge
                                                 variant="secondary"
                                                 className={cn(
-                                                  "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
+                                                  "px-2 py-0.5 h-4.5 sm:h-5 text-[10px] sm:text-[11px] font-bold rounded-full",
                                                   isSelected
                                                     ? "bg-brand-200 text-brand-900 dark:bg-brand-900 dark:text-brand-100"
                                                     : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
@@ -1297,15 +1319,15 @@ export function SubmissionDetailContent({
                                               </Badge>
                                             )}
                                           </div>
-                                          <div className="flex items-center gap-2 shrink-0">
+                                          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
                                             {c.score !== null && c.score !== undefined && (
-                                              <span className="font-semibold text-foreground tabular-nums">
+                                              <span className="font-bold text-foreground tabular-nums text-xs sm:text-sm">
                                                 {Math.round(c.score)}%
                                               </span>
                                             )}
                                             <Badge
                                               variant="outline"
-                                              className={`text-xs font-semibold px-2 py-0.5 ${band.className}`}
+                                              className={`text-xs sm:text-xs font-semibold px-2.5 py-0.5 sm:py-1 ${band.className}`}
                                             >
                                               {band.band}
                                             </Badge>
@@ -1402,16 +1424,7 @@ export function SubmissionDetailContent({
                                                 <div key={criterion.key} className="space-y-1">
                                                   <button
                                                     type="button"
-                                                    onClick={() => {
-                                                      setSelectedCriterion(criterion.shortName);
-                                                      const mapped =
-                                                        CRITERION_NAME_TO_FILTER[criterion.shortName] ??
-                                                        CRITERION_NAME_TO_FILTER[criterion.name];
-                                                      if (mapped) setActiveOverlayCriterion(mapped);
-                                                      setCriterionAnnouncement(
-                                                        `${criterion.shortName} selected. Diagnostic guide and coaching tips updated.`
-                                                      );
-                                                    }}
+                                                    onClick={() => handleSelectCriterion(criterion.shortName)}
                                                     aria-expanded={isSelected}
                                                     aria-controls={
                                                       isSelected
@@ -1422,14 +1435,14 @@ export function SubmissionDetailContent({
                                                     }
                                                     aria-label={`${criterion.shortName}: ${bandMeta.label}. Tap to focus coaching tip.`}
                                                     className={cn(
-                                                      "w-full flex items-center justify-between px-3 py-2 rounded-lg border text-xs text-left cursor-pointer transition-all min-h-[40px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                                                      "w-full flex items-center justify-between px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border text-xs sm:text-sm text-left cursor-pointer transition-all min-h-[44px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                                                       isSelected
                                                         ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
                                                         : "bg-surface dark:bg-card border-border/60 hover:bg-muted/30"
                                                     )}
                                                   >
-                                                    <div className="flex items-center gap-1.5 flex-wrap min-w-0 pr-2">
-                                                      <span className="font-semibold text-foreground truncate block">
+                                                    <div className="flex items-center gap-2 flex-wrap min-w-0 pr-2">
+                                                      <span className="font-semibold text-foreground truncate block text-xs sm:text-sm">
                                                         {criterion.name}
                                                       </span>
                                                       {(() => {
@@ -1438,7 +1451,7 @@ export function SubmissionDetailContent({
                                                         return (
                                                           <span
                                                             className={cn(
-                                                              "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-sans font-medium border tabular-nums",
+                                                              "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-sans font-medium border tabular-nums",
                                                               metric.badgeClass
                                                             )}
                                                             title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
@@ -1452,7 +1465,7 @@ export function SubmissionDetailContent({
                                                         <Badge
                                                           variant="secondary"
                                                           className={cn(
-                                                            "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
+                                                            "px-2 py-0.5 h-4.5 sm:h-5 text-[10px] sm:text-[11px] font-bold rounded-full",
                                                             isSelected
                                                               ? "bg-brand-200 text-brand-900 dark:bg-brand-900 dark:text-brand-100"
                                                               : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
@@ -1467,7 +1480,7 @@ export function SubmissionDetailContent({
                                                     <Badge
                                                       variant="outline"
                                                       className={cn(
-                                                        "text-xs font-semibold px-2 py-0.5 shrink-0 inline-flex items-center gap-1.5",
+                                                        "text-xs sm:text-xs font-semibold px-2.5 py-0.5 sm:py-1 shrink-0 inline-flex items-center gap-1.5",
                                                         bandMeta.badgeClass
                                                       )}
                                                     >
@@ -1509,7 +1522,7 @@ export function SubmissionDetailContent({
                                         onSuccess={handleSuccessEditingRubric}
                                         onCancel={handleCancelEditingRubric}
                                         onDirtyChange={setIsRubricDirty}
-                                        onFocusCriterion={setSelectedCriterion}
+                                        onFocusCriterion={handleSelectCriterion}
                                         canGoNext={canGoNext}
                                         canRelease={canReleaseSubmission}
                                         onSaveAndRelease={handleSaveAndReleaseRubric}
@@ -1547,12 +1560,7 @@ export function SubmissionDetailContent({
                                   <RawMeasurementsTable
                                     measurement={measurement}
                                     selectedCriterion={selectedCriterion}
-                                    onSelectCriterion={(criterionName) => {
-                                      setSelectedCriterion(criterionName);
-                                      setCriterionAnnouncement(
-                                        `${criterionName} selected. Diagnostic guide and coaching tips updated.`
-                                      );
-                                    }}
+                                    onSelectCriterion={handleSelectCriterion}
                                   />
                                 )}
                               </>
@@ -1562,15 +1570,15 @@ export function SubmissionDetailContent({
                             {isDesktopGuideRendered && activeCriterionInfo && (
                               <div
                                 id="criterion-diagnostic-guide"
-                                className="hidden lg:block p-2.5 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1 text-xs animate-in fade-in-50 duration-200 motion-reduce:animate-none"
+                                className="hidden lg:block p-3 sm:p-3.5 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1.5 text-xs sm:text-sm animate-in fade-in-50 duration-200 motion-reduce:animate-none"
                               >
-                                <p className="text-foreground/85 leading-snug">
+                                <p className="text-foreground/85 leading-relaxed">
                                   <strong className="font-semibold text-brand-900 dark:text-brand-200">
                                     {selectedCriterion}:
                                   </strong>{" "}
                                   {activeCriterionInfo.rubricGoal}
                                 </p>
-                                <p className="text-brand-800 dark:text-brand-300 leading-snug">
+                                <p className="text-brand-800 dark:text-brand-300 leading-relaxed">
                                   <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
                                 </p>
                               </div>
@@ -1583,17 +1591,40 @@ export function SubmissionDetailContent({
                 );
               })()}
 
-              {/* Persistent Workspace Release & Next Action Bar */}
-              <SubmissionLifecycleControls
-                submission={submission}
-                showRelease
-                variant="completion"
-                onNavigateNext={canGoNext && submissions ? handleNavigateNextStudent : undefined}
-              />
+              {/* Unified Right-Column Lifecycle Dock (suppressed during active rubric entry/edit to prevent releasing stale scores) */}
+              {(() => {
+                const isRubricFormOpen =
+                  rightPaneTab !== "comments" &&
+                  !hasCalibratedScores &&
+                  canEditRubric &&
+                  (!submission.manual_score || isEditingRubric);
+
+                return (
+                  <div className="space-y-2.5 pt-1">
+                    {!isRubricFormOpen && (
+                      <SubmissionLifecycleControls
+                        submission={submission}
+                        showRelease
+                        variant="completion"
+                        onNavigateNext={canGoNext && submissions ? handleNavigateNextStudent : undefined}
+                      />
+                    )}
+                    {variant === "page" && isSubmissionCompleted && (
+                      <div className="pt-2.5 border-t border-border/70 flex items-center justify-between text-xs text-muted-foreground flex-wrap gap-2">
+                        <SubmissionLifecycleControls
+                          submission={submission}
+                          showRelease={false}
+                          variant="actions"
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
-      {/* Footer */}
+      {/* Footer (Modal Only) */}
       {variant === "modal" ? (
         <DialogFooter className="pt-3 sm:pt-3.5 border-t border-border/70 shrink-0 flex flex-row items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
@@ -1609,10 +1640,6 @@ export function SubmissionDetailContent({
             Close
           </Button>
         </DialogFooter>
-      ) : isSubmissionCompleted ? (
-        <footer className="pt-3 sm:pt-3.5 border-t border-border/70 flex items-center justify-between text-xs text-muted-foreground flex-wrap gap-2">
-          <SubmissionLifecycleControls submission={submission} showRelease={false} variant="actions" />
-        </footer>
       ) : null}
 
       {/* Unsaved Rubric Navigation Guard Dialog */}

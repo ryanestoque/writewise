@@ -11,11 +11,13 @@ import { WorkCommentsButton } from "@/components/comments/submission-comment-pic
 export function ParentGrades({
   userId,
   childId,
+  showScoreDetails = false,
   highlightActivityId,
   onDismissTarget,
 }: {
   userId: string;
   childId: string;
+  showScoreDetails?: boolean;
   highlightActivityId?: string;
   onDismissTarget?: () => void;
 }) {
@@ -62,57 +64,64 @@ export function ParentGrades({
           The activity may have been removed or access may have changed.
         </p>
         <Button variant="outline" onClick={onDismissTarget}>
-          Back to grades
+          Back to progress
         </Button>
       </div>
     );
-  if (query.data.groups.length === 0)
-    return (
-      <div className="bg-card space-y-2 rounded-xl border p-6">
-        <h2 className="font-heading font-semibold">Grades will appear here</h2>
-        <p className="text-muted-foreground text-sm">
-          Your child’s assigned worksheets and released grades will appear once their teacher adds
-          coursework.
-        </p>
-      </div>
-    );
+  if (query.data.groups.length === 0) return null;
   return (
-    <div className="space-y-6">
-      <p className="text-muted-foreground text-sm">
-        Totals include released point grades. Excused work is excluded. Handwriting feedback uses
-        the same assessment bands as Latest Feedback.
-      </p>
+    <section
+      id="coursework-section"
+      aria-labelledby="coursework-heading"
+      className="space-y-3"
+    >
+      <div className="space-y-1">
+        <h2
+          id="coursework-heading"
+          className="font-heading text-base sm:text-lg font-semibold text-foreground"
+        >
+          Coursework &amp; released status
+        </h2>
+        {showScoreDetails && (
+          <p className="text-muted-foreground text-xs sm:text-sm">
+            Point totals include released coursework only. Excused work is excluded.
+          </p>
+        )}
+      </div>
+      <div className="space-y-4">
       {query.data.groups.map((group) => {
         const totals = group.row.totals;
         return (
           <section
             key={group.teacher_id}
-            className="bg-card overflow-hidden rounded-xl border"
+            className="bg-card overflow-hidden rounded-xl border border-border"
             aria-labelledby={`grades-teacher-${group.teacher_id}`}
           >
-            <div className="flex flex-wrap items-start justify-between gap-4 border-b px-4 py-4 sm:px-5">
+            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border/80 px-4 py-3.5 sm:px-5">
               <div>
-                <h2
+                <h3
                   id={`grades-teacher-${group.teacher_id}`}
-                  className="font-heading font-semibold"
+                  className="font-heading text-sm sm:text-base font-semibold text-foreground"
                 >
                   {group.teacher_name}
-                </h2>
-                <p className="text-muted-foreground mt-1 text-xs">Released coursework</p>
+                </h3>
+                <p className="text-muted-foreground mt-0.5 text-xs">Assigned coursework</p>
               </div>
-              <div className="text-right tabular-nums">
-                <p className="font-semibold">
-                  {totals.earned} / {totals.possible}{" "}
-                  <span className="text-muted-foreground text-xs font-normal">points</span>
-                </p>
-                <p className="text-muted-foreground mt-1 text-xs">
-                  {totals.percentage === null
-                    ? "No released point grades"
-                    : `${totals.percentage}% overall`}
-                </p>
-              </div>
+              {showScoreDetails && (
+                <div className="text-right tabular-nums">
+                  <p className="text-sm font-semibold text-foreground">
+                    {totals.earned} / {totals.possible}{" "}
+                    <span className="text-muted-foreground text-xs font-normal">points</span>
+                  </p>
+                  <p className="text-muted-foreground mt-0.5 text-xs">
+                    {totals.percentage === null
+                      ? "No released points yet"
+                      : `${totals.percentage}% overall`}
+                  </p>
+                </div>
+              )}
             </div>
-            <ul className="divide-y">
+            <ul className="divide-y divide-border/70">
               {group.activities.map((activity) => {
                 const cell = group.row.cells.find((item) => item.activity_id === activity.id);
                 if (!cell?.applicable) return null;
@@ -120,39 +129,51 @@ export function ParentGrades({
                   <li
                     key={activity.id}
                     id={`parent-grade-${activity.id}`}
-                    className={`flex scroll-mt-24 flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-5 ${highlightActivityId === activity.id ? "bg-primary/5 ring-primary ring-2 ring-inset" : ""}`}
+                    className={`flex scroll-mt-24 flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-5 ${highlightActivityId === activity.id ? "bg-primary/5 ring-primary ring-2 ring-inset" : ""}`}
                   >
                     <div className="min-w-0 flex-1 basis-40 space-y-1">
-                      <h3 className="text-sm font-medium break-words">{activity.title}</h3>
+                      <h4 className="text-sm font-medium text-foreground break-words">
+                        {activity.title}
+                      </h4>
                       <p className="text-muted-foreground text-xs">
                         {cell.coursework_status}
                         {cell.late ? " · Late" : ""}
                         {activity.is_archived ? " · Archived" : ""}
                       </p>
                     </div>
-                    <div className="space-y-1.5 text-right">
-                      <WorkCommentsButton scope={{ activityId: activity.id, studentId: childId }} activeSubmissionId={cell.active_submission_id} />
-                      <p className="text-sm font-medium tabular-nums">
-                        {cell.coursework_status === "Excused"
-                          ? "Excused"
-                          : cell.points_possible === null
-                            ? "Assessment only"
-                            : cell.final_points === null
-                              ? "Not yet released"
-                              : `${cell.final_points} / ${cell.points_possible} points`}
-                      </p>
-                      {cell.final_points === null &&
-                        cell.points_possible !== null &&
-                        cell.coursework_status !== "Excused" && (
-                          <p className="text-muted-foreground text-xs tabular-nums">
-                            {cell.points_possible} points possible
-                          </p>
+                    <div className="flex flex-col items-end gap-1.5 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {cell.assessment_composite !== null && (
+                          <BandBadge
+                            score={Number(cell.assessment_composite)}
+                            size="sm"
+                            showDot
+                          />
                         )}
-                      {cell.assessment_composite !== null && (
-                        <div className="flex items-center justify-end gap-2">
-                          <span className="text-muted-foreground text-xs">Assessment</span>
-                          <BandBadge score={Number(cell.assessment_composite)} size="sm" />
-                        </div>
+                        <WorkCommentsButton
+                          scope={{ activityId: activity.id, studentId: childId }}
+                          activeSubmissionId={cell.active_submission_id}
+                        />
+                      </div>
+                      {showScoreDetails && (
+                        <>
+                          <p className="text-xs sm:text-sm font-medium tabular-nums text-foreground">
+                            {cell.coursework_status === "Excused"
+                              ? "Excused"
+                              : cell.points_possible === null
+                                ? "Feedback only"
+                                : cell.final_points === null
+                                  ? "Points not yet released"
+                                  : `${cell.final_points} / ${cell.points_possible} points`}
+                          </p>
+                          {cell.final_points === null &&
+                            cell.points_possible !== null &&
+                            cell.coursework_status !== "Excused" && (
+                              <p className="text-muted-foreground text-xs tabular-nums">
+                                {cell.points_possible} points possible
+                              </p>
+                            )}
+                        </>
                       )}
                     </div>
                   </li>
@@ -162,6 +183,7 @@ export function ParentGrades({
           </section>
         );
       })}
-    </div>
+      </div>
+    </section>
   );
 }

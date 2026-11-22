@@ -144,19 +144,11 @@ export default function SubmissionDetailPage({
 
   const isLoading = activityLoading || submissionsLoading;
 
-  if (commentTarget.kind === "valid")
-    return (
-      <SubmissionCommentDestination
-        activityId={commentTarget.target.activityId}
-        submissionId={commentTarget.target.submissionId}
-        studentName={submission?.student?.full_name}
-      />
-    );
-  if (commentTarget.kind === "invalid") return <p role="status" className="p-4">This conversation link is invalid. Choose a worksheet upload to view its comments.</p>;
+  if (commentTarget.kind === "invalid") return <p role="status" className="p-4" data-page-studio="true">This conversation link is invalid. Choose a worksheet upload to view its comments.</p>;
 
   if (isLoading) {
     return (
-      <div className="w-full space-y-4 animate-pulse" role="status" aria-label="Loading handwriting submission details">
+      <div className="w-full space-y-4 animate-pulse" role="status" aria-label="Loading handwriting submission details" data-page-studio="true">
         {/* Top Back Navigation Trail Skeleton */}
         <div className="py-2 -ml-1 sm:-ml-2">
           <Skeleton className="h-4 w-28 rounded-md" />
@@ -180,7 +172,7 @@ export default function SubmissionDetailPage({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 lg:items-start py-2.5 sm:py-3.5">
           <div className="lg:col-span-6 space-y-2.5">
             <Skeleton className="h-9 w-full rounded-xl" />
-            <Skeleton className="aspect-4/3 sm:aspect-3/2 lg:aspect-4/3 w-full rounded-2xl min-h-[320px]" />
+            <Skeleton className="aspect-4/3 sm:aspect-3/2 lg:aspect-4/3 w-full rounded-2xl min-h-[340px] sm:min-h-[440px]" />
             <Skeleton className="h-9 w-full rounded-xl" />
           </div>
           <div className="lg:col-span-6 space-y-3">
@@ -197,7 +189,7 @@ export default function SubmissionDetailPage({
 
   if (isQueryError) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-4 text-center space-y-4 bg-surface/50 dark:bg-card/50 rounded-2xl border border-destructive/30">
+      <div className="flex flex-col items-center justify-center py-16 px-4 text-center space-y-4 bg-surface/50 dark:bg-card/50 rounded-2xl border border-destructive/30" data-page-studio="true">
         <div className="space-y-1.5 max-w-md">
           <h3 className="font-heading text-lg font-semibold text-foreground">
             Unable to Load Submission
@@ -231,8 +223,18 @@ export default function SubmissionDetailPage({
   }
 
   if (!submission) {
+    if (commentTarget.kind === "valid") {
+      return (
+        <div data-page-studio="true">
+          <SubmissionCommentDestination
+            activityId={commentTarget.target.activityId}
+            submissionId={commentTarget.target.submissionId}
+          />
+        </div>
+      );
+    }
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 text-center space-y-4 bg-surface/50 dark:bg-card/50 rounded-2xl border border-dashed border-border/80">
+      <div className="flex flex-col items-center justify-center py-20 px-4 text-center space-y-4 bg-surface/50 dark:bg-card/50 rounded-2xl border border-dashed border-border/80" data-page-studio="true">
         <div className="space-y-1.5 max-w-md">
           <h3 className="font-heading text-lg font-semibold text-foreground">
             Submission Not Found
@@ -253,16 +255,18 @@ export default function SubmissionDetailPage({
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full" data-page-studio="true">
       <SubmissionDetailContent
-        key={submission.id}
+        key={`${submission.id}:${commentTarget.kind === "valid" ? "comments" : "details"}`}
         submission={submission}
         submissions={navigation}
         currentIndex={currentIndex >= 0 ? currentIndex : undefined}
         onNavigate={handleNavigate}
+        activityTitle={activity?.title}
         activityTargetText={activity?.target_text}
         onClose={handleClose}
         variant="page"
+        initialView={commentTarget.kind === "valid" ? "comments" : "details"}
       />
     </div>
   );

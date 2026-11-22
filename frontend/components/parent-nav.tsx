@@ -68,9 +68,7 @@ export function ParentNav({
     } catch (err: unknown) {
       console.error("Sign out error:", err);
       const message =
-        err instanceof Error
-          ? err.message
-          : "Failed to sign out. Please check your connection and try again.";
+        "We couldn't sign you out. Please check your connection and try again.";
       toast.error(message);
       setIsSigningOut(false);
     }

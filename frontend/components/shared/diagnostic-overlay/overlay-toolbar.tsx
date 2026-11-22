@@ -639,9 +639,8 @@ export const OverlayToolbar = memo(function OverlayToolbar({
           className="p-3 rounded-xl bg-card border border-border/80 shadow-warm text-xs flex flex-col gap-2 transition-all animate-in fade-in duration-150 motion-reduce:animate-none"
         >
           <div className="flex items-center justify-between pb-1 border-b border-border/50">
-            <span className="font-semibold text-foreground text-xs flex items-center gap-1.5">
-              <HelpCircle className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-              <span>How to Interpret Handwriting Diagnostic Guides</span>
+            <span className="font-semibold text-foreground text-xs">
+              How to Interpret Handwriting Diagnostic Guides
             </span>
             <Button
               type="button"

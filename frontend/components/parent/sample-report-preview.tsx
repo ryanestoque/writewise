@@ -157,6 +157,19 @@ export function SampleReportPreview({
             role="tablist"
             aria-label="Example handwriting skills"
             className="flex flex-wrap gap-1.5 sm:gap-2 pt-2 border-t border-border/60"
+            onKeyDown={(e) => {
+              const keys = PARENT_CRITERIA_LIST.map((c) => c.key);
+              const i = keys.indexOf(activeCriterion);
+              let next = -1;
+              if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (i + 1) % keys.length;
+              else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = (i - 1 + keys.length) % keys.length;
+              else if (e.key === "Home") next = 0;
+              else if (e.key === "End") next = keys.length - 1;
+              if (next < 0) return;
+              e.preventDefault();
+              setActiveCriterion(keys[next]);
+              document.getElementById(`tab-${keys[next]}`)?.focus();
+            }}
           >
             {PARENT_CRITERIA_LIST.map((criterion) => {
               const isSelected = activeCriterion === criterion.key;
@@ -169,6 +182,7 @@ export function SampleReportPreview({
                   role="tab"
                   type="button"
                   aria-selected={isSelected}
+                  tabIndex={isSelected ? 0 : -1}
                   aria-controls="sample-diagnostic-details"
                   id={`tab-${criterion.key}`}
                   onClick={() => setActiveCriterion(criterion.key)}

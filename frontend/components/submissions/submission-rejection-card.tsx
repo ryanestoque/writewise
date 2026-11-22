@@ -6,11 +6,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   AlertCircle,
-  RotateCcw,
   Camera,
-  Info,
-  SunMedium,
-  ScanLine,
 } from "lucide-react";
 
 export interface RejectionDetail {
@@ -237,7 +233,7 @@ export function SubmissionRejectionCard({
         <AlertDescription className="!text-foreground/90 text-xs sm:text-sm leading-relaxed font-sans space-y-2">
           <p>{rejectionInfo.description}</p>
           {detailMessage && detailMessage !== rejectionInfo.description && (
-            <p className="font-mono text-xs text-muted-foreground bg-background/60 p-2 rounded-md border border-destructive/20 italic">
+            <p className="font-sans text-xs text-muted-foreground bg-background/60 p-2 rounded-md border border-destructive/20">
               {detailMessage}
             </p>
           )}
@@ -246,7 +242,7 @@ export function SubmissionRejectionCard({
             <div className="space-y-1.5 pt-0.5">
               {typeof structuredDetails.detectedWords === "number" &&
                 typeof structuredDetails.expectedWords === "number" && (
-                  <div className="inline-flex items-center gap-2 text-xs font-mono text-muted-foreground bg-background/60 px-2.5 py-1 rounded-md border border-destructive/20">
+                  <div className="inline-flex items-center gap-2 text-xs font-sans tabular-nums text-muted-foreground bg-background/60 px-2.5 py-1 rounded-md border border-destructive/20">
                     <span>
                       Detected: <strong className="text-foreground">{structuredDetails.detectedWords}</strong> words
                     </span>
@@ -265,7 +261,7 @@ export function SubmissionRejectionCard({
                       <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
                         Recognized Text
                       </span>
-                      <p className="font-mono text-xs text-foreground font-medium italic break-words">
+                      <p className="font-sans text-xs text-foreground font-medium break-words">
                         &quot;{structuredDetails.detectedText || "<no text recognized>"}&quot;
                       </p>
                     </div>
@@ -275,7 +271,7 @@ export function SubmissionRejectionCard({
                       <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
                         Assigned Prompt
                       </span>
-                      <p className="font-mono text-xs text-foreground font-medium italic break-words">
+                      <p className="font-sans text-xs text-foreground font-medium break-words">
                         &quot;{structuredDetails.expectedText}&quot;
                       </p>
                     </div>
@@ -287,11 +283,7 @@ export function SubmissionRejectionCard({
         </AlertDescription>
 
         <div className="rounded-lg sm:rounded-xl bg-background/95 dark:bg-card/90 border border-destructive/20 p-3 space-y-1.5 shadow-2xs">
-          <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-            <RotateCcw
-              className="size-3.5 !text-brand-600 dark:!text-brand-400 shrink-0"
-              aria-hidden="true"
-            />
+          <h4 className="text-xs font-semibold text-foreground">
             {rejectionInfo.actionLabel}
           </h4>
           <p
@@ -316,18 +308,14 @@ export function SubmissionRejectionCard({
 
       {/* Photo Quality Guidelines for Reliable Scoring */}
       <div className="p-3.5 sm:p-4 rounded-xl border border-border/80 bg-muted/30 dark:bg-muted/15 space-y-3">
-        <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-          <Info
-            className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0"
-            aria-hidden="true"
-          />
+        <h4 className="text-xs font-semibold text-foreground">
           Photo Quality Guidelines for Reliable Scoring
         </h4>
-        <ul className="space-y-2.5 text-xs text-muted-foreground">
+        <ol className="space-y-2.5 text-xs text-muted-foreground">
           <li className="flex items-start gap-2.5">
-            <div className="size-6 rounded-md bg-brand-100 dark:bg-brand-950/80 text-brand-700 dark:text-brand-300 flex items-center justify-center shrink-0 mt-0.5 border border-brand-200/50 dark:border-brand-900/50">
-              <SunMedium className="size-3.5" aria-hidden="true" />
-            </div>
+            <span className="size-5 rounded-md bg-brand-100 dark:bg-brand-950/80 text-brand-800 dark:text-brand-200 flex items-center justify-center shrink-0 mt-0.5 border border-brand-200/60 dark:border-brand-900/60 font-sans tabular-nums text-[11px] font-semibold">
+              1
+            </span>
             <span className="leading-relaxed">
               <strong className="text-foreground font-medium">
                 Bright, Indirect Lighting:
@@ -337,9 +325,9 @@ export function SubmissionRejectionCard({
             </span>
           </li>
           <li className="flex items-start gap-2.5">
-            <div className="size-6 rounded-md bg-brand-100 dark:bg-brand-950/80 text-brand-700 dark:text-brand-300 flex items-center justify-center shrink-0 mt-0.5 border border-brand-200/50 dark:border-brand-900/50">
-              <ScanLine className="size-3.5" aria-hidden="true" />
-            </div>
+            <span className="size-5 rounded-md bg-brand-100 dark:bg-brand-950/80 text-brand-800 dark:text-brand-200 flex items-center justify-center shrink-0 mt-0.5 border border-brand-200/60 dark:border-brand-900/60 font-sans tabular-nums text-[11px] font-semibold">
+              2
+            </span>
             <span className="leading-relaxed">
               <strong className="text-foreground font-medium">
                 Flat Top-Down Framing:
@@ -349,9 +337,9 @@ export function SubmissionRejectionCard({
             </span>
           </li>
           <li className="flex items-start gap-2.5">
-            <div className="size-6 rounded-md bg-brand-100 dark:bg-brand-950/80 text-brand-700 dark:text-brand-300 flex items-center justify-center shrink-0 mt-0.5 border border-brand-200/50 dark:border-brand-900/50">
-              <Camera className="size-3.5" aria-hidden="true" />
-            </div>
+            <span className="size-5 rounded-md bg-brand-100 dark:bg-brand-950/80 text-brand-800 dark:text-brand-200 flex items-center justify-center shrink-0 mt-0.5 border border-brand-200/60 dark:border-brand-900/60 font-sans tabular-nums text-[11px] font-semibold">
+              3
+            </span>
             <span className="leading-relaxed">
               <strong className="text-foreground font-medium">
                 Tap to Focus:
@@ -360,7 +348,7 @@ export function SubmissionRejectionCard({
               pressing capture.
             </span>
           </li>
-        </ul>
+        </ol>
       </div>
     </div>
   );

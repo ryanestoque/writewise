@@ -146,10 +146,8 @@ export function WorksheetViewDialog({
       toast.success("Photo removed. You can send a new photo anytime.");
       setIsDeleteDialogOpen(false);
       onOpenChange(false);
-    } catch (err: unknown) {
-      const errorMsg =
-        err instanceof Error ? err.message : "Failed to delete submission";
-      toast.error(errorMsg);
+    } catch {
+      toast.error("We couldn't remove the photo. Please check your connection and try again.");
     }
   };
 

@@ -48,30 +48,15 @@ export function CriterionFeedbackRow({
   const hasNestedButton = Boolean(isActive && onSeeOnWorksheetMobile);
 
   return (
+    // The row itself is NOT a button: a role=button + aria-label would replace
+    // the diagnostic note and home tip for screen readers. Row click is a
+    // pointer-only convenience; the "inspect" control below is the real button.
     <div
-      role={onInspect && !hasNestedButton ? "button" : undefined}
-      tabIndex={onInspect && !hasNestedButton ? 0 : undefined}
-      aria-pressed={onInspect && !hasNestedButton ? isActive : undefined}
       onClick={hasNestedButton ? undefined : onInspect}
-      onKeyDown={
-        onInspect && !hasNestedButton
-          ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onInspect();
-              }
-            }
-          : undefined
-      }
-      aria-label={
-        onInspect
-          ? `See ${displayLabel} on worksheet. Rating: ${band ? band.replace("_", " ") : "Pending"}`
-          : undefined
-      }
       className={cn(
         "px-3.5 py-3 transition-colors space-y-2",
         onInspect &&
-          "cursor-pointer hover:bg-muted/30 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500 group",
+          "cursor-pointer hover:bg-muted/30 focus-within:bg-muted/30 group",
         isActive && "bg-brand-50/70 dark:bg-brand-950/40"
       )}
     >
@@ -106,11 +91,25 @@ export function CriterionFeedbackRow({
             </span>
           )}
           <BandBadge band={band} score={score} size="sm" showDot />
-          {onInspect && inspectLabel && (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors bg-muted/40 group-hover:bg-brand-50 dark:group-hover:bg-brand-950/40 px-2 py-0.5 rounded-md border border-border/60">
+          {onInspect && (
+            <button
+              type="button"
+              aria-pressed={isActive}
+              aria-label={`See ${displayLabel} on worksheet`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onInspect();
+              }}
+              className={cn(
+                "cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
+                inspectLabel
+                  ? "inline-flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors bg-muted/40 group-hover:bg-brand-50 dark:group-hover:bg-brand-950/40 px-2 py-0.5 rounded-md border border-border/60"
+                  : "sr-only focus-visible:not-sr-only focus-visible:rounded-md focus-visible:px-2 focus-visible:py-0.5 focus-visible:text-xs"
+              )}
+            >
               <Eye className="size-3 shrink-0" aria-hidden="true" />
-              <span>{inspectLabel}</span>
-            </span>
+              <span aria-hidden="true">{inspectLabel ?? "See on worksheet"}</span>
+            </button>
           )}
         </div>
       </div>

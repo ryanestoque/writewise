@@ -1,5 +1,7 @@
 "use client";
 
+import { humanizeReason } from "@/lib/utils/humanize-reason";
+
 import { useActivityNow } from "@/components/activities/activity-work-status";
 import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
 import { compareParentActivityUrgency, getParentActivityStatus } from "@/lib/utils/parent-activity-status";
@@ -303,10 +305,8 @@ function ActivityCard({
       await deleteMutation.mutateAsync(submission.submissionId);
       toast.success("Photo removed. You can send a new photo anytime.");
       setIsDeleteDialogOpen(false);
-    } catch (err: unknown) {
-      const errorMsg =
-        err instanceof Error ? err.message : "Failed to delete submission";
-      toast.error(errorMsg);
+    } catch {
+      toast.error("We couldn't remove the photo. Please check your connection and try again.");
     }
   };
 
@@ -376,7 +376,7 @@ function ActivityCard({
             <p className="font-semibold text-foreground">Teacher asked for a new photo</p>
             {work.workState?.return_reason && (
               <p className="text-muted-foreground">
-                Reason: {work.workState.return_reason.replaceAll("_", " ")}
+                Reason: {humanizeReason(work.workState.return_reason)}
               </p>
             )}
             {work.workState?.return_note && (
@@ -496,8 +496,8 @@ function ActivityCard({
             <span>Send new photo</span>
           </Button>
         ) : (
-          <div className="flex items-center justify-between w-full gap-2">
-            <span className="text-xs text-muted-foreground truncate hidden sm:inline">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-2">
+            <span className="text-xs text-muted-foreground sm:truncate">
               Flat paper · Good light · All 4 corners
             </span>
             <Button
