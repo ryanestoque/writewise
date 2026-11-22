@@ -23,7 +23,7 @@ Parent Progress includes Grades, grouped by teacher with released-only totals. P
 - **Document type:** Internal design guide (companion to PRD.md, ARCHITECTURE.md, CV_PIPELINE.md, ML_PIPELINE.md, DATABASE.md, API_SPEC.md, TECH_STACK.md, SECURITY.md, TESTING.md, DEPLOYMENT.md)
 - **Design Tokens & Theme Tokens Source:** see [DESIGN.md (root)](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/DESIGN.md) for the active YAML tokens, CSS variables, and Impeccable specifications.
 - **Team:** Ryan Christopher B. Estoque, John Lawrence V. Monleon, James David B. Asoy, Saara Eliana G. Ibag
-- **Status:** Draft v1 — reflects decisions locked as of this document's creation. Update this file whenever a design decision changes; it should stay the single source of truth for "how the product looks and behaves," the way ARCHITECTURE.md is the source of truth for "how the system is built" and PRD.md is the source of truth for "what the system does."
+- **Status:** Draft v1 — reflects decisions locked as of this document's creation. Update this file whenever a UX, flow, screen, or copy decision changes; it is the single source of truth for **product UX, screen inventory, interaction patterns, and copy**, while [DESIGN.md (root)](../DESIGN.md) is the single source of truth for **visual tokens and component styling**.
 - **Secondary use:** this document is written to be readable both as a build spec (concrete tokens/values a developer implements directly) and as source material for an AI UI-generation prompt (Figma AI / Google Stitch), if one is drafted later from it.
 
 ---
@@ -50,88 +50,15 @@ Three principles run through the whole system:
 
 ## 2. Design Tokens
 
-### 2.1 Color System
+> **Single source of truth for visual tokens:** All active color hex values, typography scale, spacing steps, radii, shadows, and iconography rules live in [DESIGN.md (root)](../DESIGN.md) (paired with `.impeccable/design.json` and implemented in `frontend/app/globals.css`). Do not duplicate token tables here.
 
-**Brand accent — deep teal.** Kept deliberately far from the band gradient (§2.1.2) on the color wheel so a button or link can never be mistaken for a diagnostic signal.
+### 2.1–2.5 Visual System Rationale
 
-| Token | Hex | Use |
-|---|---|---|
-| `brand-700` | `#145049` | Hover/active states, high-emphasis text on light bg |
-| `brand-600` | `#1B6B63` | Primary buttons, links, active nav state |
-| `brand-100` | `#E4F1EF` | Subtle backgrounds, selected-state fills |
-
-**Diagnostic bands — warm-neutral gradient, no red.** Four ordered stops, amber → gold → sage → forest. Chosen specifically to avoid traffic-light red on a parent-facing screen showing their own child's developing skill.
-
-| Band | Token | Hex | Reads as |
-|---|---|---|---|
-| Needs Improvement | `band-1` | `#B6754A` (clay) | Early stage, not "failing" |
-| Developing | `band-2` | `#C9A227` (gold) | In progress |
-| Satisfactory | `band-3` | `#7C9B6E` (sage) | On track |
-| Excellent | `band-4` | `#4A8B5C` (forest) | Strong |
-
-> **Why not red-to-green:** the classic traffic-light gradient is the most familiar pattern, but it also reads as pass/fail — and this tool assesses a skill a student is still developing, not a test they passed or failed. A parent checking this repeatedly over a school term shouldn't see red on their kid's work. **Color is never the only signal** — every band indicator anywhere in the product pairs its color with the band's text label (see §10, Accessibility).
-
-**Neutrals.** A cool-leaning warm-gray, not the cream-and-terracotta combination common in generic "warm brand" defaults — chosen to pair cleanly with the teal accent instead of competing with it.
-
-| Token | Hex | Use |
-|---|---|---|
-| `bg` | `#F7F8F7` | Page background |
-| `surface` | `#FFFFFF` | Cards, panels, table rows |
-| `border` | `#E3E6E4` | Dividers, input borders, table gridlines |
-| `text-primary` | `#1E2422` | Body copy, headings (`text-foreground`) |
-| `text-secondary` | `#5B6663` | Labels, captions, secondary info (`text-muted-foreground`) |
-
-**System status & destructive actions.** Diagnostic cursive scoring intentionally avoids red in favor of the developmental band gradient above. However, system-level critical events (network query failures, form errors, student deletion actions) use high-contrast WCAG 2.1 AA compliant tokens:
-
-| Token | Light Hex | Dark Hex | Contrast | Use |
-|---|---|---|---|---|
-| `--destructive` | `#9C4A2F` | `#E69875` | 6.03:1 (Light) / 6.3:1 (Dark) | Error alerts, form validation warnings, destructive dialog actions |
-| `--destructive-foreground` | `#FFFFFF` | `#1A1D1C` | >10:1 | Text/icon within solid destructive buttons |
-
-### 2.2 Typography
-
-Two-font pairing: a warm display face for headers/branding, a highly legible sans for body text and dense data.
-
-| Role | Typeface | Tailwind Token Class | Notes |
-|---|---|---|---|
-| Display / headings | **Poppins** | `font-heading` | Geometric, rounded terminals — carries the Warm Educational personality on headers, the wordmark, and section titles. Used with restraint (headings only, not body copy). |
-| Body / data | **Inter** | `font-sans` | Optimized for legibility at small sizes with tabular figures — used for all body copy, table cells, and score numbers, where misreading a digit has real consequences. |
-
-Both are free, widely supported Google Fonts with no licensing overhead for an academic project a panel may review.
-
-### 2.3 Spacing Scale
-
-A constrained subset of Tailwind's default spacing scale, documented as the team's only allowed values — not new tooling, just a shared convention across 4 developers building different screens.
-
-| Token | Value | Tailwind class |
-|---|---|---|
-| `space-1` | 4px | `1` |
-| `space-2` | 8px | `2` |
-| `space-3` | 12px | `3` |
-| `space-4` | 16px | `4` |
-| `space-6` | 24px | `6` |
-| `space-8` | 32px | `8` |
-| `space-12` | 48px | `12` |
-| `space-16` | 64px | `16` |
-
-> **Why constrain it:** with 4 people building UI in parallel, an unconstrained spacing scale drifts fast — one dev's `p-5`, another's `p-6` for the "same" gap. A documented subset costs nothing to adopt and keeps every screen feeling like the same product.
-
-### 2.4 Shape & Elevation
-
-Radius and shadow follow the same precision/warmth split described in §1.
-
-| Element class | Radius | Shadow |
-|---|---|---|
-| Data-dense (tables, roster rows, score cells, raw measurement displays) | `rounded-none` – `rounded-sm` (0–4px) | None — 1px `border` only |
-| Buttons, inputs, interactive controls | `rounded-lg` (8px) | None (default state) |
-| Cards, feedback UI, panel containers | `rounded-xl` (12px) | `shadow-warm` (`rgba(30,40,35,0.06)` via `--shadow-warm`) |
-| Modals, alert dialogs | `rounded-2xl` (16px) | `shadow-warm` + `border border-border` |
-
-> **Why split it:** shape and elevation do real communicative work here, not just decoration. Sharp, flat surfaces on data signal "this is precise, trust the number." Rounded, soft-shadowed surfaces on feedback/cards signal "this is a supportive tool, not a report card." The split is free to implement — it's a per-component Tailwind class choice, not a separate system.
-
-### 2.5 Iconography
-
-**Lucide** — outline style, default shadcn/ui pairing (no extra theming work needed to match), already available in the broader toolchain. Standard sizes: 16px (inline/labels), 20px (buttons/nav), 24px (empty states/section headers). Default 2px stroke weight.
+- **Color System (§2.1 — see root `DESIGN.md` > Colors):** Brand accent is deep pine-teal, kept deliberately far from the 4-band warm developmental gradient (`Needs Improvement → Developing → Satisfactory → Excellent`) so interactive controls are never mistaken for diagnostic signals. Traffic-light red is never used on student scores because this tool assesses a developing skill, not pass/fail. **Color is never the only signal** — every band indicator pairs color with its text label (see §9, Accessibility). High-contrast `--destructive` (`#9C4A2F` light / `#E69875` dark, >6:1 WCAG AA) is reserved strictly for system errors and irreversible deletes.
+- **Typography (§2.2 — see root `DESIGN.md` > Typography):** Poppins for headings, Inter with `tabular-nums` for body copy and dense data/scores, and Learning Curve for cursive specimens and penmanship accents.
+- **Spacing Scale (§2.3 — see root `DESIGN.md` > Layout):** Constrained 4px-based Tailwind subset so 4 developers building screens in parallel keep consistent rhythm.
+- **Shape & Elevation (§2.4 — see root `DESIGN.md` > Elevation & Depth, Shapes):** Sharp, flat surfaces (`0–4px` radius, 1px border, no shadow) on data tables signal precision; rounded, soft-shadowed surfaces (`12–16px` radius, `shadow-warm`) on cards, feedback panels, and dialogs signal warmth.
+- **Iconography (§2.5 — see root `DESIGN.md` > Iconography & Visual Semantics):** Lucide outline icons paired with grounded domain semantics (no generic AI sparkle/magic icons, and no decorative icons on non-interactable headers, pill badges, or stat cards).
 
 ### 2.6 Motion
 
@@ -167,6 +94,8 @@ Two primary contexts, not one generic responsive layout:
 | Dashboard, roster, review, diagnostics | **Desktop-first** | PRD §9 explicitly names desktop/laptop as the review context |
 
 Both remain functional (not broken) at the non-primary size — this is about which breakpoint gets primary design attention, not about excluding either device.
+
+**Full-Width Portal Canvas (No Maximum-Width Caps):** Both the Teacher Portal and Parent Portal use the full available viewport width (`w-full min-w-0`) with consistent horizontal page gutters (`px-4 sm:px-6`). Never apply centered maximum-width constraints (`max-w-7xl`, `max-w-5xl`, `max-w-4xl`, `container`, etc.) to layout shells or individual page containers. Every route must occupy the same edge-to-edge fluid canvas without width jumps between pages.
 
 **Touch Target Standard (WCAG 2.5.5 / 2.5.8):** All interactive controls (buttons, form inputs, dialog triggers/actions, and sidebar nav links) must maintain a minimum touch target height of 40px (`h-10`) on mobile viewports (<640px/768px), scaling to desktop `h-9` (`h-10 sm:h-9` or `h-10 md:h-9`).
 

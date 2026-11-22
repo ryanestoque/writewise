@@ -136,7 +136,7 @@ export function TeacherGradebook({
     );
 
   return (
-    <div className="min-w-0 space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       {/* Top Header Row with integrated Section Selector & Export */}
       <div className="flex flex-wrap items-center justify-between gap-4 print:hidden">
         <div className="flex items-center gap-3 flex-wrap">
@@ -484,7 +484,7 @@ function SectionGrid({
   }
 
   return (
-    <div className="min-w-0 space-y-4">
+    <div className="w-full min-w-0 space-y-4">
       {/* Action Toolbar */}
       <div className="flex flex-wrap items-end justify-between gap-3 print:hidden">
         <div className="flex flex-wrap items-center gap-3">

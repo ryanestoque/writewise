@@ -53,6 +53,7 @@ rounded:
 spacing:
   xs: "4px"
   sm: "8px"
+  compact: "12px"
   md: "16px"
   lg: "24px"
   xl: "32px"
@@ -85,10 +86,10 @@ components:
     padding: "8px 12px"
     height: "36px"
   chip-band-1:
-    backgroundColor: "{colors.secondary}"
+    backgroundColor: "rgba(182, 117, 74, 0.12)"
     textColor: "{colors.band-1}"
     rounded: "{rounded.full}"
-    padding: "2px 8px"
+    padding: "2px 10px"
 ---
 
 # Design System: WriteWise
@@ -173,8 +174,11 @@ WriteWise enforces a responsive dual-modality layout strategy:
 **Grid & Spacing Rhythm:**
 - Base grid unit: `4px` (`space-1`).
 - Common spacing steps: `4px`, `8px`, `12px`, `16px`, `24px`, `32px`, `48px`, `64px`.
-- Standard desktop shell: 240px persistent collapsible sidebar with a fluid main container (`max-w-7xl` centered).
-- Mobile touch targets: Minimum interactive element height of 40px (`h-10`) on viewports under 768px, transitioning to compact 36px (`h-9`) on desktop viewports.
+- Standard desktop shell: 240px persistent collapsible sidebar (Teacher Portal) or top navigation bar (Parent Portal) paired with an unconstrained, full-width fluid main canvas (`w-full min-w-0`, standard horizontal page gutters `px-4 sm:px-6`, and **no** `max-w-*` container caps).
+- Mobile touch targets: Minimum interactive element height of 40px (`h-10`) on viewports under 768px (44px / `min-h-11` preferred for primary public CTAs and phone toolbars), transitioning to compact 36px (`h-9`) on desktop viewports.
+
+### Named Rules
+**The Full-Width Canvas Rule (No Page Width Limits).** Every page across the Teacher Portal (`/dashboard`, `/roster`, `/activities`, `/activities/[id]`, `/activities/[id]/submissions/[submissionId]`, `/gradebook`, `/settings`) and Parent Portal (`/progress`, `/parent-settings`) must render at full available viewport width (`w-full min-w-0`) with standard horizontal gutters (`px-4 sm:px-6`). Never wrap layouts or page roots in centered maximum-width containers (`max-w-7xl`, `max-w-6xl`, `max-w-5xl`, `max-w-4xl`, `container`, etc.) or introduce per-page width caps that cause horizontal width shifts when navigating between routes.
 
 ## Elevation & Depth
 
@@ -183,7 +187,7 @@ Surfaces emphasize structural clarity through subtle 1px border strokes (`#e3e6e
 ### Shadow Vocabulary
 - **Warm Subtle** (`shadow-warm-sm` / `box-shadow: 0 2px 10px rgba(30, 40, 35, 0.04)`): Interactive buttons on hover, floating badge chips, dropdown menu surfaces.
 - **Warm Medium** (`shadow-warm` / `box-shadow: 0 4px 20px rgba(30, 40, 35, 0.06)`): Elevated cards, diagnostic report panels, popovers, sheet sidebars.
-- **Standard Overlay** (`shadow-xl`): Modal dialogs, submission preview overlays, confirmation prompts.
+- **Modal & Dialog Overlay** (`shadow-warm` + `1px #e3e6e4` border): Modal dialogs, alert dialogs, submission preview overlays, confirmation prompts.
 
 ### Named Rules
 **The Precision vs Warmth Elevation Rule.** Data tables, raw measurement feeds, and system logs remain strictly flat with 1px border lines and zero shadow. Cards, feedback containers, and floating control bars employ `shadow-warm` to invite human touch.
@@ -204,7 +208,7 @@ Form geometry communicates interaction depth and intent:
 - **Primary Button:** Background `#1b6b63`, text `#ffffff`, hover `#145049`. Transition `all 150ms ease-out`.
 - **Secondary Button:** Background `#e4f1ef`, text `#145049`, hover `rgba(20, 80, 73, 0.1)`.
 - **Outline Button:** Border 1px `#e3e6e4`, background `#ffffff`, hover `#e4f1ef`.
-- **Destructive Button:** Background `rgba(156, 74, 47, 0.1)`, text `#9c4a2f`, hover `rgba(156, 74, 47, 0.2)`.
+- **Destructive Button:** Soft tinted default (`bg-destructive/10`, text `#9c4a2f`, hover `bg-destructive/20`); solid `--destructive` (`#9c4a2f`) with `--destructive-foreground` (`#ffffff`) is reserved for critical alert banners and high-emphasis irreversible confirmations.
 
 ### Chips & Badges
 - **Shape:** Fully rounded (`rounded-full`), height 22px–26px, padding `2px 10px`, text `0.75rem` font-medium.
@@ -255,13 +259,15 @@ WriteWise avoids generic "AI magic" motifs in favor of grounded, domain-specific
 - **Do** use tabular figures (`font-sans tabular-nums`) for all score tables and statistical metrics.
 - **Do** keep data tables flat with crisp 1px borders, reserving shadows for cards and modals.
 - **Do** use domain-grounded icons (`Cpu`, `ScanLine`, `Layers`, `BarChart3`, `Ruler`) representing technical and pedagogical concepts.
+- **Do** render all portal shells and page canvases at full available width (`w-full min-w-0`) with consistent page gutters (`px-4 sm:px-6`) and zero maximum-width container caps.
 
 ### Don't:
 - **Don't** use standard red (`#EF4444`) on student scores, progress charts, or handwriting feedback.
 - **Don't** use Poppins for body copy, diagnostic descriptions, or table rows.
 - **Don't** clutter handwriting photos with heavy, opaque annotations that obscure the original handwriting.
-- **Don't** invent random spacing values outside the 4px scale steps.
+- **Don't** invent random spacing values outside the 4px scale steps (only `6px` / `gap-1.5` is excepted for tight label-to-input proximity).
 - **Don't** build custom camera viewports when native mobile capture inputs are more reliable.
 - **Don't** use generic AI "sparkle" or "magic" icons (`Sparkles`, `Wand2`, `Sparkle`). Use grounded domain icons representing real measurements and pedagogy.
 - **Don't** use Lucide icons for non-interactable elements like headers, pill badges, and stat cards.
+- **Don't** apply `max-w-*` or `container` width limits to portal layout wrappers or page roots—pages must never clamp or shift width across routes.
 
