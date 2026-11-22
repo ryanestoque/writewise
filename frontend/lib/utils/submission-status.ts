@@ -7,7 +7,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { Submission, ScoreBand } from "@/lib/hooks/use-submissions";
-import { computeCompositeFromCriteria } from "@/lib/utils/scoring";
+import { computeCompositeFromCriteria, getBandFromScore } from "@/lib/utils/scoring";
 
 export type ScoreSource = "calibrated" | "manual" | "none";
 
@@ -72,10 +72,11 @@ export function getScoreBandLabel(
     };
   }
 
-  const rounded = Math.round(score);
+  const band = getBandFromScore(score);
+  const rounded = Math.round(Number(score));
   const isManual = options?.source === "manual";
 
-  if (score >= 80) {
+  if (band === "excellent") {
     return {
       label: `${rounded}% • Excellent`,
       band: "Excellent",
@@ -88,7 +89,7 @@ export function getScoreBandLabel(
       source: options?.source ?? "calibrated",
     };
   }
-  if (score >= 60) {
+  if (band === "satisfactory") {
     return {
       label: `${rounded}% • Satisfactory`,
       band: "Satisfactory",
@@ -101,7 +102,7 @@ export function getScoreBandLabel(
       source: options?.source ?? "calibrated",
     };
   }
-  if (score >= 40) {
+  if (band === "developing") {
     return {
       label: `${rounded}% • Developing`,
       band: "Developing",

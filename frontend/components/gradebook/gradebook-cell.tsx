@@ -4,17 +4,18 @@ import {
   useState,
   useRef,
   useEffect,
+  useId,
   useSyncExternalStore,
   createContext,
   useContext,
   memo,
   type KeyboardEvent,
 } from "react";
-import { Pencil, SlidersHorizontal, Check, X, Loader2 } from "lucide-react";
+import { Pencil, SlidersHorizontal, Check, X, Loader2, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import type { GradebookCell } from "@/lib/hooks/use-gradebook";
 import { BandBadge } from "@/components/shared/band-badge";
-import { getBandFromScore } from "@/lib/utils/scoring";
+import { getBandFromScore, PARENT_BAND_EXPLANATIONS } from "@/lib/utils/scoring";
 import { validPointsInput } from "./points-field";
 import { cn } from "@/lib/utils";
 
@@ -82,86 +83,6 @@ export const CRITERIA_DEFINITIONS = [
   },
 ] as const;
 
-export function getCriterionDiagnostic(
-  critKey: (typeof CRITERIA_DEFINITIONS)[number]["label"],
-  composite: number | null
-): {
-  chipClass: string;
-  diagnosticNote: string;
-} {
-  if (composite === null) {
-    return {
-      chipClass: "bg-muted text-muted-foreground border border-border/50",
-      diagnosticNote: "Awaiting worksheet scan",
-    };
-  }
-
-  const overallBand = getBandFromScore(composite);
-
-  if (overallBand === "excellent") {
-    return {
-      chipClass:
-        "bg-band-4/15 text-band-4-text border border-band-4/30 dark:text-emerald-300 dark:border-band-4/40",
-      diagnosticNote: "Mastered & consistent across line",
-    };
-  }
-
-  if (overallBand === "satisfactory") {
-    // In Satisfactory cursive, Slant regularity and Spacing rhythm are typical refinement edges
-    const isRefinementEdge = critKey === "Sl" || critKey === "Sp";
-    return {
-      chipClass: isRefinementEdge
-        ? "bg-band-2/15 text-band-2-text border border-band-2/30 dark:text-amber-200"
-        : "bg-band-3/15 text-band-3-text border border-band-3/30 dark:text-emerald-200",
-      diagnosticNote: isRefinementEdge
-        ? "Developing steady forward angle"
-        : "Solid guideline and letter control",
-    };
-  }
-
-  if (overallBand === "developing") {
-    // In Developing cursive, Slant and Spacing are primary remediation targets, formation is building
-    const isWeakness = critKey === "Sl" || critKey === "Sp";
-    return {
-      chipClass: isWeakness
-        ? "bg-band-1/15 text-band-1-text border border-band-1/30 dark:text-orange-200"
-        : "bg-band-2/15 text-band-2-text border border-band-2/30 dark:text-amber-200",
-      diagnosticNote: isWeakness
-        ? "Needs guided slant & spacing drill"
-        : "Building muscle memory and shape control",
-    };
-  }
-
-  // needs_improvement
-  return {
-    chipClass:
-      "bg-band-1/15 text-band-1-text border border-band-1/30 dark:text-orange-200 dark:border-band-1/40",
-    diagnosticNote: "Basic stroke and guideline practice recommended",
-  };
-}
-
-export function getPedagogicalSummary(composite: number | null, courseworkStatus: string): string {
-  if (courseworkStatus === "Excused") return "Excused from activity";
-  if (composite === null) {
-    if (courseworkStatus === "Missing") return "Awaiting scan";
-    return "No assessment yet";
-  }
-  const band = getBandFromScore(composite);
-  switch (band) {
-    case "excellent":
-      return "Consistent cursive letterforms";
-    case "satisfactory":
-      return "Solid baseline; refine slant";
-    case "developing":
-      return "Building rhythm & connectors";
-    case "needs_improvement":
-      return "Guided stroke drills advised";
-    default:
-      return "Diagnostic cursive evaluation";
-  }
-  return "Diagnostic cursive evaluation";
-}
-
 export const GradebookCellButton = memo(function GradebookCellButton({
   cell,
   onOpen,
@@ -196,6 +117,8 @@ export const GradebookCellButton = memo(function GradebookCellButton({
   const contextTouch = useContext(TouchDeviceContext);
   const isTouchDevice = propIsTouchDevice ?? contextTouch;
   const inputRef = useRef<HTMLInputElement>(null);
+  const cellRef = useRef<HTMLDivElement>(null);
+  const cellId = useId();
 
   const initialVal =
     cell.points_override !== null
@@ -204,8 +127,8 @@ export const GradebookCellButton = memo(function GradebookCellButton({
         ? String(cell.final_points)
         : "";
 
-  function startEditing() {
-    setInputVal(initialVal);
+  function startEditing(initialChar?: string) {
+    setInputVal(initialChar ?? initialVal);
     setError(null);
     setIsEditing(true);
   }
@@ -218,7 +141,18 @@ export const GradebookCellButton = memo(function GradebookCellButton({
   }, [isEditing]);
 
   if (!cell.applicable) {
-    return <span className="text-muted-foreground block p-2 text-xs">Not assigned</span>;
+    return (
+      <div
+        data-gradecell
+        data-row={row}
+        data-column={column}
+        tabIndex={isFocused ? 0 : -1}
+        onFocus={onFocusCell}
+        className="text-muted-foreground block p-2 text-xs select-none min-h-[5rem]"
+      >
+        Not assigned
+      </div>
+    );
   }
 
   const canEditScore =
@@ -228,7 +162,13 @@ export const GradebookCellButton = memo(function GradebookCellButton({
 
   const statusLabel = formatStatus(cell.coursework_status);
   const compositeNum = cell.assessment_composite !== null ? Number(cell.assessment_composite) : null;
-  const pedagogicalSummary = getPedagogicalSummary(compositeNum, cell.coursework_status);
+  const compositeBand = compositeNum !== null ? getBandFromScore(compositeNum) : null;
+  const developmentalNote =
+    compositeBand !== null
+      ? PARENT_BAND_EXPLANATIONS[compositeBand]
+      : statusLabel === "Awaiting scan"
+        ? "Awaiting worksheet upload"
+        : "No assessment recorded";
 
   async function handleCommit() {
     if (!canEditScore || !onSaveScore) return;
@@ -251,7 +191,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
         onNavigateDown(row, column);
       }
     } catch {
-      setError("Failed");
+      setError("Failed to save");
     } finally {
       setIsSaving(false);
     }
@@ -266,6 +206,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
       setIsEditing(false);
       setInputVal(initialVal);
       setError(null);
+      cellRef.current?.focus();
     }
   }
 
@@ -282,13 +223,17 @@ export const GradebookCellButton = memo(function GradebookCellButton({
     } else if (e.key === " ") {
       e.preventDefault();
       onOpen();
+    } else if (canEditScore && /^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+      startEditing(e.key);
     }
   }
 
   if (isEditing) {
     return (
       <div
-        className="bg-card ring-2 ring-primary relative min-h-[5rem] w-full rounded-sm p-2 shadow-xs"
+        ref={cellRef}
+        className="bg-card ring-2 ring-primary relative min-h-[5rem] w-full rounded-sm p-2"
         data-gradecell-active
       >
         <div className="flex items-center gap-1.5">
@@ -309,7 +254,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
             )}
             placeholder="—"
             aria-label={`Score for ${label ?? "cell"}`}
-            aria-describedby={error ? "cell-edit-error" : "cell-edit-hint"}
+            aria-describedby={error ? `${cellId}-error` : `${cellId}-hint`}
           />
           <span className="text-muted-foreground text-xs font-normal">/ {cell.points_possible}</span>
           <div className="ml-auto flex items-center gap-1">
@@ -318,7 +263,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
               disabled={isSaving}
               onClick={() => void handleCommit()}
               aria-label="Save score"
-              className="text-primary hover:bg-muted relative after:absolute after:-inset-1.5 inline-flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
+              className="text-primary hover:bg-muted relative after:absolute after:-inset-1.5 inline-flex size-7 items-center justify-center rounded-sm transition-colors cursor-pointer"
             >
               {isSaving ? (
                 <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" />
@@ -332,20 +277,22 @@ export const GradebookCellButton = memo(function GradebookCellButton({
               onClick={() => {
                 setIsEditing(false);
                 setInputVal(initialVal);
+                setError(null);
+                cellRef.current?.focus();
               }}
               aria-label="Cancel editing"
-              className="text-muted-foreground hover:bg-muted relative after:absolute after:-inset-1.5 inline-flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
+              className="text-muted-foreground hover:bg-muted relative after:absolute after:-inset-1.5 inline-flex size-7 items-center justify-center rounded-sm transition-colors cursor-pointer"
             >
               <X className="size-3.5" />
             </button>
           </div>
         </div>
         {error ? (
-          <span id="cell-edit-error" role="alert" className="text-destructive mt-1 block text-xs">
+          <span id={`${cellId}-error`} role="alert" className="text-destructive mt-1 block text-xs">
             {error}
           </span>
         ) : (
-          <span id="cell-edit-hint" className="text-muted-foreground mt-1 block text-xs">
+          <span id={`${cellId}-hint`} className="text-muted-foreground mt-1 block text-xs">
             Enter to save & advance ↓
           </span>
         )}
@@ -355,7 +302,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
 
   return (
     <div
-      role="button"
+      ref={cellRef}
       tabIndex={isFocused ? 0 : -1}
       data-gradecell
       data-row={row}
@@ -366,57 +313,47 @@ export const GradebookCellButton = memo(function GradebookCellButton({
           : `${cell.final_points} of ${cell.points_possible} points`
       }, ${
         cell.assessment_composite !== null
-          ? `composite score ${Number(cell.assessment_composite).toFixed(1)}`
+          ? `composite score ${Math.round(Number(cell.assessment_composite))}%`
           : "no assessment"
       }, ${
         cell.points_possible === null
-          ? "assessment only"
+          ? "bands only"
           : cell.publication === "released"
-            ? "shared with parents"
+            ? "released to parents"
             : "draft"
-      }${hasUnreadComments ? ", unread comments" : ""}. Press Enter to edit score, Space to inspect details.`}
+      }${hasUnreadComments ? ", unread comments" : ""}. Click or Space to inspect, Enter to edit score.`}
       onClick={() => {
         onFocusCell?.();
-        if (isTouchDevice) {
-          onOpen();
-        } else if (canEditScore) {
-          startEditing();
-        } else {
-          onOpen();
-        }
+        onOpen();
       }}
       onFocus={() => {
         onFocusCell?.();
       }}
-      onDoubleClick={onOpen}
       onKeyDown={handleCellKeyDown}
       className={cn(
         "group hover:bg-muted/70 hover:border-border/60 relative flex min-h-[5rem] w-full flex-col justify-between rounded-sm border p-2 text-left transition-colors cursor-pointer focus-visible:outline-none",
         isFocused
-          ? "border-primary/60 ring-2 ring-primary/40 bg-muted/40 shadow-xs"
+          ? "border-primary/60 ring-2 ring-primary/40 bg-muted/40"
           : "border-transparent"
       )}
     >
       {viewMode === "diagnostic" ? (
         <div className="space-y-1.5">
           <div className="flex items-center justify-between gap-1.5 min-w-0">
-            <div className="flex items-center gap-1.5 min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
               {cell.assessment_composite !== null ? (
                 <div className="flex items-center gap-1 min-w-0">
                   <BandBadge score={Number(cell.assessment_composite)} size="sm" />
                   <span className="text-xs font-semibold tabular-nums text-foreground">
-                    {Number(cell.assessment_composite).toFixed(1)}
+                    {Math.round(Number(cell.assessment_composite))}%
                   </span>
-                  <span
-                    className="inline-flex items-center px-1.5 py-0.5 rounded-xs text-[11px] uppercase font-semibold tracking-tight bg-muted/80 text-foreground/80 border border-border/50"
-                    title={cell.assessment_source === "manual" ? "Teacher rubric scored" : "AI CV/CNN evaluated"}
-                  >
-                    {cell.assessment_source === "manual" ? "T" : "AI"}
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium tracking-tight bg-muted text-foreground border border-border/50">
+                    {cell.assessment_source === "manual" ? "Teacher rubric" : "Calibrated"}
                   </span>
                 </div>
               ) : statusLabel === "Awaiting scan" ? (
                 <span className="text-xs text-muted-foreground italic flex items-center gap-1">
-                  <span className="size-1 rounded-full bg-muted-foreground/60" />
+                  <span className="size-1.5 rounded-full bg-muted-foreground/60 shrink-0" />
                   Awaiting scan
                 </span>
               ) : (
@@ -424,17 +361,19 @@ export const GradebookCellButton = memo(function GradebookCellButton({
               )}
 
               {cell.late && (
-                <span className="inline-flex items-center px-1 rounded text-xs font-medium bg-band-2/15 text-band-2-text border border-band-2/30 dark:text-amber-300">
+                <span className="inline-flex items-center px-1 rounded text-xs font-medium bg-band-2/15 text-band-2-text border border-band-2/30">
                   Late
                 </span>
               )}
 
               {hasUnreadComments && (
                 <span
-                  className="size-2 rounded-full bg-primary shrink-0"
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-primary shrink-0"
                   title="Unread parent/teacher comments"
-                  aria-label="Unread comments"
-                />
+                >
+                  <MessageSquare className="size-3" aria-hidden="true" />
+                  <span>Unread</span>
+                </span>
               )}
             </div>
 
@@ -473,47 +412,24 @@ export const GradebookCellButton = memo(function GradebookCellButton({
             </div>
           </div>
 
-          <div
-            className="flex items-center gap-1 pt-0.5"
-            role="list"
-            aria-label="5 Cursive criteria: Formation, Size, Spacing, Slant, Baseline"
-          >
-            {CRITERIA_DEFINITIONS.map((crit) => {
-              const diag = getCriterionDiagnostic(crit.label, compositeNum);
-              return (
-                <span
-                  key={crit.label}
-                  role="listitem"
-                  title={`${crit.name} (${crit.label}): ${crit.description} — ${diag.diagnosticNote}`}
-                  className={cn(
-                    "inline-flex items-center justify-center min-w-5 px-1 py-0.5 rounded-xs text-[10px] font-sans tabular-nums font-semibold transition-colors",
-                    diag.chipClass
-                  )}
-                >
-                  {crit.label}
-                </span>
-              );
-            })}
-          </div>
-
           <p
-            className="text-[11px] leading-tight text-muted-foreground truncate"
-            title={pedagogicalSummary}
+            className="text-[11px] leading-tight text-muted-foreground line-clamp-2"
+            title={developmentalNote}
           >
-            {pedagogicalSummary}
+            {developmentalNote}
           </p>
         </div>
       ) : (
         <div className="space-y-1">
           <div className="flex items-center justify-between gap-1.5 min-w-0">
-            <div className="flex items-center gap-1.5 min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
               <span className="block text-sm font-semibold tabular-nums text-foreground truncate">
                 {cell.coursework_status === "Excused" ? (
                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground">
                     Excused
                   </span>
                 ) : cell.points_possible === null ? (
-                  <span className="text-xs text-muted-foreground font-normal">Diagnostic</span>
+                  <span className="text-xs text-muted-foreground font-normal">Bands only</span>
                 ) : cell.final_points === null ? (
                   <>
                     <span className="text-muted-foreground font-semibold">—</span>{" "}
@@ -532,17 +448,19 @@ export const GradebookCellButton = memo(function GradebookCellButton({
               </span>
 
               {cell.late && (
-                <span className="inline-flex items-center px-1 rounded text-xs font-medium bg-band-2/15 text-band-2-text border border-band-2/30 dark:text-amber-300">
+                <span className="inline-flex items-center px-1 rounded text-xs font-medium bg-band-2/15 text-band-2-text border border-band-2/30">
                   Late
                 </span>
               )}
 
               {hasUnreadComments && (
                 <span
-                  className="size-2 rounded-full bg-primary shrink-0"
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-primary shrink-0"
                   title="Unread parent/teacher comments"
-                  aria-label="Unread comments"
-                />
+                >
+                  <MessageSquare className="size-3" aria-hidden="true" />
+                  <span>Unread</span>
+                </span>
               )}
             </div>
 
@@ -581,12 +499,20 @@ export const GradebookCellButton = memo(function GradebookCellButton({
             </div>
           </div>
 
-          {statusLabel === "Awaiting scan" && (
-            <span className="text-muted-foreground flex items-center gap-1 text-xs">
-              <span className="size-1 rounded-full bg-muted-foreground/60" />
-              <span>Awaiting scan</span>
-            </span>
-          )}
+          <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+            {statusLabel === "Awaiting scan" ? (
+              <span className="flex items-center gap-1">
+                <span className="size-1.5 rounded-full bg-muted-foreground/60 shrink-0" />
+                <span>Awaiting scan</span>
+              </span>
+            ) : statusLabel === "Returned" ? (
+              <span className="font-medium text-muted-foreground">Returned for revision</span>
+            ) : statusLabel === "Turned in" ? (
+              <span className="font-medium text-primary">Turned in</span>
+            ) : cell.coursework_status !== "Excused" ? (
+              <span className="text-muted-foreground/80">{statusLabel}</span>
+            ) : null}
+          </div>
         </div>
       )}
 
@@ -594,7 +520,11 @@ export const GradebookCellButton = memo(function GradebookCellButton({
         <div className="shrink-0">
           {viewMode === "diagnostic" ? (
             <span className="text-xs text-muted-foreground tabular-nums">
-              {cell.final_points !== null ? `${cell.final_points}/${cell.points_possible} pts` : "No pts"}
+              {cell.points_possible === null
+                ? "Bands only"
+                : cell.final_points !== null
+                  ? `${cell.final_points}/${cell.points_possible} pts`
+                  : "No pts"}
             </span>
           ) : cell.assessment_composite !== null ? (
             <BandBadge score={Number(cell.assessment_composite)} size="sm" />
@@ -607,11 +537,11 @@ export const GradebookCellButton = memo(function GradebookCellButton({
           {cell.points_possible !== null && cell.coursework_status !== "Excused" ? (
             cell.publication === "released" ? (
               <span
-                className="inline-flex items-center gap-1 text-xs font-medium text-band-4-text dark:text-emerald-400"
-                title="Shared with parents"
+                className="inline-flex items-center gap-1 text-xs font-medium text-band-4-text"
+                title="Released to parent portal"
               >
                 <Check className="size-3 shrink-0" aria-hidden="true" />
-                <span>Shared{cell.points_override !== null ? " (Ov)" : ""}</span>
+                <span>Released{cell.points_override !== null ? " (Overridden)" : ""}</span>
               </span>
             ) : (
               <span
@@ -619,7 +549,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
                 title="Draft (not visible to parents yet)"
               >
                 <span className="size-1.5 rounded-full bg-band-2 shrink-0" />
-                <span>Draft{cell.points_override !== null ? " · Ov" : ""}</span>
+                <span>Draft{cell.points_override !== null ? " · Overridden" : ""}</span>
               </span>
             )
           ) : null}

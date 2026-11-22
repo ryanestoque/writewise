@@ -385,6 +385,7 @@ export function WorksheetImageInspector({
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [
+    showImageTools,
     keyboardScope,
     zoomScale,
     handleZoomIn,
@@ -624,11 +625,13 @@ export function WorksheetImageInspector({
                 )}
                 <ChevronDown className="size-3.5 opacity-70" aria-hidden="true" />
               </button>
-              <span className="text-[11px] text-muted-foreground hidden sm:inline">
-                <kbd className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border">C</kbd> ink ·{" "}
-                <kbd className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border">L</kbd> magnify ·{" "}
-                <kbd className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border">+/-</kbd> zoom
-              </span>
+              {showShortcutsLegend && (
+                <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                  <kbd className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border">C</kbd> ink ·{" "}
+                  <kbd className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border">L</kbd> magnify ·{" "}
+                  <kbd className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border">+/-</kbd> zoom
+                </span>
+              )}
             </div>
           )}
           {showImageTools && (!collapsibleImageTools || imageToolsExpanded) && (

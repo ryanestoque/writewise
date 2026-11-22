@@ -27,7 +27,6 @@ import {
   useSubmitManualScore,
 } from "@/lib/hooks/use-submissions";
 import {
-  Award,
   Keyboard,
   Layers,
   LayoutList,
@@ -36,14 +35,15 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Info,
-  Eye,
   Check,
   HelpCircle,
   Loader2,
   CheckCheck,
+  Send,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/utils/api-error";
+import { getBandFromScore } from "@/lib/utils/scoring";
 
 const LAYOUT_MODE_STORAGE_KEY = "writewise.rubric.layoutMode";
 const AUTO_ADVANCE_STORAGE_KEY = "writewise.rubric.autoAdvance";
@@ -59,12 +59,12 @@ function readStoredLayoutMode(): "stepper" | "list" {
 }
 
 function readStoredAutoAdvance(): boolean {
-  if (typeof window === "undefined") return true;
+  if (typeof window === "undefined") return false;
   try {
     const val = window.localStorage.getItem(AUTO_ADVANCE_STORAGE_KEY);
-    return val === null ? true : val === "true";
+    return val === null ? false : val === "true";
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -205,16 +205,8 @@ export function calculateCompositeRubric(
     validBands.reduce((acc, b) => acc + BAND_NUMERIC_SCORES[b], 0) / validBands.length
   );
 
-  let overallBandMeta = RUBRIC_BANDS[0];
-  if (avgPercentage >= 75) {
-    overallBandMeta = RUBRIC_BANDS[3]; // Excellent
-  } else if (avgPercentage >= 55) {
-    overallBandMeta = RUBRIC_BANDS[2]; // Satisfactory
-  } else if (avgPercentage >= 30) {
-    overallBandMeta = RUBRIC_BANDS[1]; // Developing
-  } else {
-    overallBandMeta = RUBRIC_BANDS[0]; // Needs Improvement
-  }
+  const overallBand = getBandFromScore(avgPercentage) ?? "needs_improvement";
+  const overallBandMeta = getBandMeta(overallBand);
 
   return {
     totalPoints,
@@ -455,6 +447,14 @@ export interface ManualRubricEntryFormProps {
   canGoNext?: boolean;
   onAdvanceNext?: () => void;
   onNavigateBack?: () => void;
+  canRelease?: boolean;
+  onSaveAndRelease?: (scores: {
+    letter_formation_band: ScoreBand;
+    size_consistency_band: ScoreBand;
+    spacing_band: ScoreBand;
+    slant_band: ScoreBand;
+    baseline_alignment_band: ScoreBand;
+  }) => Promise<void>;
 }
 
 export function ManualRubricEntryForm({
@@ -468,6 +468,8 @@ export function ManualRubricEntryForm({
   canGoNext,
   onAdvanceNext,
   onNavigateBack,
+  canRelease,
+  onSaveAndRelease,
 }: ManualRubricEntryFormProps) {
   const { mutate: submitManualScore, isPending: isSubmittingScore } =
     useSubmitManualScore();
@@ -600,11 +602,19 @@ export function ManualRubricEntryForm({
           }
         },
         onError: (err: unknown) => {
-          const errorObj = err as { message?: string };
-          setSubmitErrorMsg(
-            errorObj?.message ||
-            "Failed to submit manual rubric score. Please try again."
-          );
+          if (err instanceof ApiError) {
+            if (err.code === "SUBMISSION_NOT_FOUND") {
+              setSubmitErrorMsg("This submission is no longer available.");
+            } else if (err.code === "CALIBRATED_SCORING_ACTIVE") {
+              setSubmitErrorMsg("Manual rubric scoring is disabled while calibrated scoring is active.");
+            } else if (err.code === "INVALID_RUBRIC_SCORE") {
+              setSubmitErrorMsg("All 5 criteria must be scored with a valid rubric band.");
+            } else {
+              setSubmitErrorMsg(err.message || "Failed to submit manual rubric score.");
+            }
+          } else {
+            setSubmitErrorMsg("Failed to submit manual rubric score. Please try again.");
+          }
         },
       }
     );
@@ -619,6 +629,39 @@ export function ManualRubricEntryForm({
     canGoNext,
     onAdvanceNext,
     onNavigateBack,
+  ]);
+
+  const [isSavingAndReleasing, setIsSavingAndReleasing] = useState(false);
+
+  const handleSaveAndRelease = useCallback(async () => {
+    if (!allBandsSelected || isSubmittingScore || isSavingAndReleasing || !onSaveAndRelease) return;
+    setSubmitErrorMsg(null);
+    setIsSavingAndReleasing(true);
+    try {
+      await onSaveAndRelease({
+        letter_formation_band: rubricScores.letter_formation_band!,
+        size_consistency_band: rubricScores.size_consistency_band!,
+        spacing_band: rubricScores.spacing_band!,
+        slant_band: rubricScores.slant_band!,
+        baseline_alignment_band: rubricScores.baseline_alignment_band!,
+      });
+      onSuccess?.();
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        setSubmitErrorMsg(err.message || "Failed to save and release rubric score.");
+      } else {
+        setSubmitErrorMsg("Failed to save and release. Please try again.");
+      }
+    } finally {
+      setIsSavingAndReleasing(false);
+    }
+  }, [
+    allBandsSelected,
+    isSubmittingScore,
+    isSavingAndReleasing,
+    onSaveAndRelease,
+    rubricScores,
+    onSuccess,
   ]);
 
   useEffect(() => {
@@ -813,49 +856,25 @@ export function ManualRubricEntryForm({
         {accessibilityAnnouncement}
       </div>
 
-      {/* Header with status counter, view toggle, & keyboard hint toggle */}
-      <div className="flex flex-col gap-2 pb-2.5 border-b border-border/60">
-        {/* Top Row: Title + Keyboard Help on Left, Badge Status on Right */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <Award className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-            <h3 className="text-xs font-heading font-semibold text-foreground truncate">
-              Teacher Rubric Assessment
-            </h3>
-            <span className="text-[10px] text-brand-700 dark:text-brand-300 bg-brand-50/70 dark:bg-brand-950/50 px-1.5 py-0.5 rounded border border-brand-200/60 dark:border-brand-800/60 hidden min-[440px]:inline-block font-sans font-medium">
-              Keys 1–4
+      {/* Single-row toolbar: status badge on left, quick fill + layout mode + keyboard help on right */}
+      <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/60 flex-wrap">
+        <Badge
+          variant="outline"
+          className={`text-[11px] font-semibold px-2 py-0.5 shrink-0 font-sans tabular-nums inline-flex items-center ${allBandsSelected && compositeRubric
+              ? compositeRubric.overallBandMeta.badgeClass
+              : "bg-band-2/15 text-amber-900 dark:bg-band-2/25 dark:text-amber-200 border-band-2/40"
+            }`}
+        >
+          {allBandsSelected && compositeRubric ? (
+            <span>
+              {compositeRubric.totalPoints}/20 pts ({compositeRubric.avgPercentage}%) • {compositeRubric.overallBandMeta.label}
             </span>
-            <button
-              type="button"
-              onClick={() => setShowKeyboardHelp((prev) => !prev)}
-              className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg cursor-pointer flex items-center justify-center min-h-10 min-w-10 sm:min-h-7 sm:min-w-7 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-              title="Toggle Keyboard Shortcuts"
-              aria-label="Toggle Keyboard Shortcuts"
-              aria-expanded={showKeyboardHelp}
-            >
-              <Keyboard className="size-3.5" aria-hidden="true" />
-            </button>
-          </div>
+          ) : (
+            <span>{selectedCount}/5 rated</span>
+          )}
+        </Badge>
 
-          <Badge
-            variant="outline"
-            className={`text-[11px] font-semibold px-2 py-0.5 shrink-0 font-sans tabular-nums inline-flex items-center ${allBandsSelected && compositeRubric
-                ? compositeRubric.overallBandMeta.badgeClass
-                : "bg-band-2/15 text-amber-900 dark:bg-band-2/25 dark:text-amber-200 border-band-2/40"
-              }`}
-          >
-            {allBandsSelected && compositeRubric ? (
-              <span>
-                {compositeRubric.totalPoints}/20 pts ({compositeRubric.avgPercentage}%) • {compositeRubric.overallBandMeta.label}
-              </span>
-            ) : (
-              <span>{selectedCount}/5 rated</span>
-            )}
-          </Badge>
-        </div>
-
-        {/* Second Row: Quick Fill Menu + Layout Mode Switcher */}
-        <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap ml-auto">
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
@@ -872,7 +891,7 @@ export function ManualRubricEntryForm({
               <span>Quick fill</span>
               <ChevronDown className="size-3.5 sm:size-3 opacity-70" aria-hidden="true" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-52 rounded-xl p-1">
+            <DropdownMenuContent align="end" className="min-w-52 rounded-xl p-1">
               <DropdownMenuLabel className="px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground">
                 Set all 5 criteria at once
               </DropdownMenuLabel>
@@ -898,7 +917,7 @@ export function ManualRubricEntryForm({
             <button
               type="button"
               onClick={() => setLayoutMode("stepper")}
-              className={`px-2.5 py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-10 sm:min-h-[28px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${layoutMode === "stepper"
+              className={`px-2 py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-10 sm:min-h-[26px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${layoutMode === "stepper"
                   ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                   : "text-muted-foreground hover:text-foreground"
                 }`}
@@ -911,7 +930,7 @@ export function ManualRubricEntryForm({
             <button
               type="button"
               onClick={() => setLayoutMode("list")}
-              className={`px-2.5 py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-10 sm:min-h-[28px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${layoutMode === "list"
+              className={`px-2 py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-10 sm:min-h-[26px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${layoutMode === "list"
                   ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                   : "text-muted-foreground hover:text-foreground"
                 }`}
@@ -922,6 +941,17 @@ export function ManualRubricEntryForm({
               <span>All (5)</span>
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setShowKeyboardHelp((prev) => !prev)}
+            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg cursor-pointer flex items-center justify-center min-h-10 min-w-10 sm:min-h-7 sm:min-w-7 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+            title="Toggle Keyboard Shortcuts (Keys 1–4)"
+            aria-label="Toggle Keyboard Shortcuts"
+            aria-expanded={showKeyboardHelp}
+          >
+            <Keyboard className="size-3.5" aria-hidden="true" />
+          </button>
         </div>
       </div>
 
@@ -1011,39 +1041,25 @@ export function ManualRubricEntryForm({
                 aria-labelledby={`stepper-criterion-label-${currentCriterion.key}`}
                 className="space-y-2 p-3 sm:p-3.5 rounded-xl border bg-muted/20 border-brand-300/80 dark:border-brand-800/80 ring-1 ring-brand-400/30 shadow-xs"
               >
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="min-w-0 flex-1">
-                    <legend
-                      id={`stepper-criterion-label-${currentCriterion.key}`}
-                      className="text-xs font-semibold text-foreground flex items-center gap-1.5 flex-wrap"
-                    >
-                      <span>{currentCriterion.name}</span>
-                      <span className="text-[10px] text-brand-600 dark:text-brand-400 font-medium font-sans">
-                        ({activeCriterionIndex + 1} of 5)
+                <div className="min-w-0">
+                  <legend
+                    id={`stepper-criterion-label-${currentCriterion.key}`}
+                    className="text-xs font-semibold text-foreground flex items-center gap-1.5 flex-wrap"
+                  >
+                    <span>{currentCriterion.name}</span>
+                    {metric && (
+                      <span
+                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-sans font-medium border tabular-nums ${metric.badgeClass}`}
+                        title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
+                      >
+                        <span className={`size-1.5 rounded-full ${metric.dotClass}`} aria-hidden="true" />
+                        <span className="font-semibold">{metric.value}</span>
                       </span>
-                      {metric && (
-                        <span
-                          className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-medium border tabular-nums ${metric.badgeClass}`}
-                          title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
-                        >
-                          <span className={`size-1.5 rounded-full ${metric.dotClass}`} aria-hidden="true" />
-                          <span className="font-semibold">{metric.value}</span>
-                          <span className="opacity-80 font-sans">· {metric.status}</span>
-                        </span>
-                      )}
-                    </legend>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {currentCriterion.hint}
-                    </p>
-                  </div>
-                  {selectedBand && (
-                    <Badge
-                      variant="outline"
-                      className={`text-[10px] font-semibold px-2 py-0.5 shrink-0 ${getBandMeta(selectedBand).badgeClass}`}
-                    >
-                      {getBandMeta(selectedBand).label} ({getBandMeta(selectedBand).score})
-                    </Badge>
-                  )}
+                    )}
+                  </legend>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+                    {guide?.rubricGoal ?? currentCriterion.hint}
+                  </p>
                 </div>
 
                 {/* Segmented 4-Radio Buttons with Responsive Grid */}
@@ -1086,41 +1102,21 @@ export function ManualRubricEntryForm({
                             onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
                           }
                         }}
-                        className={`flex flex-row items-center justify-between px-3 py-2.5 @[480px]:flex-col @[480px]:items-center @[480px]:justify-center @[480px]:p-2.5 rounded-lg border text-center transition-all cursor-pointer min-h-[44px] @[480px]:min-h-[42px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
+                        className={`flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border text-center transition-all cursor-pointer min-h-[42px] @[480px]:min-h-[38px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
                             ? option.activeClass
                             : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
                           }`}
                       >
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="text-[11px] font-mono font-medium text-muted-foreground shrink-0">
-                            [{option.shortcutKey}]
-                          </span>
-                          <span className="text-xs leading-tight font-semibold truncate">
-                            {option.label}
-                          </span>
-                        </div>
-                        <span className="text-[11px] font-semibold text-muted-foreground shrink-0 @[480px]:mt-0.5">
-                          {option.score}
+                        <span className="text-[11px] font-sans tabular-nums font-medium text-muted-foreground shrink-0">
+                          [{option.shortcutKey}]
+                        </span>
+                        <span className="text-xs leading-tight font-semibold truncate">
+                          {option.shortLabel}
                         </span>
                       </button>
                     );
                   })}
                 </div>
-
-                {/* Inline Pedagogical Coaching Guidance */}
-                {guide && (
-                  <div className="mt-2 p-2.5 rounded-lg bg-brand-50/50 dark:bg-brand-950/30 border border-brand-200/70 dark:border-brand-900 text-xs space-y-1">
-                    <p className="text-[11px] text-foreground/85 leading-relaxed">
-                      {guide.rubricGoal}
-                    </p>
-                    <div className="pt-1 border-t border-brand-200/50 dark:border-brand-900/50 flex items-start gap-1 text-[11px] text-muted-foreground">
-                      <Eye className="size-3 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
-                      <span className="leading-normal">
-                        <strong className="text-foreground">Tip:</strong> {guide.coachingTip}
-                      </span>
-                    </div>
-                  </div>
-                )}
 
                 {/* Stepper Navigation: Previous / Next Criterion */}
                 <div className="flex items-center justify-between pt-1 border-t border-border/50">
@@ -1136,14 +1132,14 @@ export function ManualRubricEntryForm({
                         onFocusCriterion?.(RUBRIC_CRITERIA[prevIdx].shortName);
                       }
                     }}
-                    className="h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-2.5 sm:px-2 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-30 touch-manipulation"
+                    className="h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-30 touch-manipulation"
                   >
                     <ChevronLeft className="size-3.5" aria-hidden="true" />
                     <span>Prev</span>
                   </Button>
 
-                  <span className="text-[11px] text-muted-foreground font-medium">
-                    Criterion {activeCriterionIndex + 1} of {RUBRIC_CRITERIA.length}
+                  <span className="text-[11px] text-muted-foreground font-medium tabular-nums">
+                    {activeCriterionIndex + 1} / {RUBRIC_CRITERIA.length}
                   </span>
 
                   <Button
@@ -1158,7 +1154,7 @@ export function ManualRubricEntryForm({
                         onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
                       }
                     }}
-                    className="h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-2.5 sm:px-2 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-30 touch-manipulation"
+                    className="h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-30 touch-manipulation"
                   >
                     <span>Next</span>
                     <ChevronRight className="size-3.5" aria-hidden="true" />
@@ -1172,14 +1168,13 @@ export function ManualRubricEntryForm({
 
       {/* ---------------- 5 CRITERIA LIST (All Mode) ---------------- */}
       <div
-        className={`space-y-2.5 ${layoutMode === "stepper" ? "hidden" : "block"}`}
+        className={`space-y-2 ${layoutMode === "stepper" ? "hidden" : "block"}`}
         role="group"
         aria-label="5-Criterion Handwriting Rubric"
       >
         {RUBRIC_CRITERIA.map((criterion, idx) => {
           const selectedBand = rubricScores[criterion.key];
           const isFocused = activeCriterionIndex === idx;
-          const guide = CRITERIA_GUIDE[criterion.shortName];
           const metric = extractCriterionCVMetric(criterion.key, measurement);
 
           return (
@@ -1201,25 +1196,14 @@ export function ManualRubricEntryForm({
                   <span>{idx + 1}. {criterion.name}</span>
                   {metric && (
                     <span
-                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-medium border tabular-nums ${metric.badgeClass}`}
+                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-sans font-medium border tabular-nums ${metric.badgeClass}`}
                       title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
                     >
                       <span className={`size-1.5 rounded-full ${metric.dotClass}`} aria-hidden="true" />
                       <span className="font-semibold">{metric.value}</span>
-                      <span className="opacity-80 font-sans">· {metric.status}</span>
-                    </span>
-                  )}
-                  {isFocused && (
-                    <span className="text-[11px] text-brand-600 dark:text-brand-400 font-medium font-sans">
-                      (Active)
                     </span>
                   )}
                 </legend>
-                {selectedBand && (
-                  <span className="text-[11px] font-mono font-semibold text-muted-foreground">
-                    {getBandMeta(selectedBand).score}
-                  </span>
-                )}
               </div>
 
               {/* Segmented 4-Radio Buttons with WAI-ARIA Roving Tabindex & Mobile Touch Sizing */}
@@ -1259,41 +1243,21 @@ export function ManualRubricEntryForm({
                           `${criterion.shortName} rated ${option.label} (${option.score}).`
                         );
                       }}
-                      className={`flex flex-row items-center justify-between px-2.5 py-2 @[480px]:flex-col @[480px]:items-center @[480px]:justify-center @[480px]:p-2 rounded-lg border text-center transition-all cursor-pointer min-h-[42px] @[480px]:min-h-[38px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
+                      className={`flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border text-center transition-all cursor-pointer min-h-[40px] @[480px]:min-h-[34px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
                           ? option.activeClass
                           : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
                         }`}
                     >
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-[11px] font-mono font-medium text-muted-foreground shrink-0">
-                          [{option.shortcutKey}]
-                        </span>
-                        <span className="text-[11px] leading-tight font-medium truncate">
-                          {option.shortLabel}
-                        </span>
-                      </div>
-                      <span className="text-[11px] font-semibold text-muted-foreground shrink-0 @[480px]:mt-0.5">
-                        {option.score}
+                      <span className="text-[11px] font-sans tabular-nums font-medium text-muted-foreground shrink-0">
+                        [{option.shortcutKey}]
+                      </span>
+                      <span className="text-[11px] leading-tight font-medium truncate">
+                        {option.shortLabel}
                       </span>
                     </button>
                   );
                 })}
               </div>
-
-              {/* Inline Coaching Tip when criterion is focused in List mode */}
-              {isFocused && guide && (
-                <div className="mt-2 p-2 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-[11px] text-brand-900 dark:text-brand-200 flex items-start gap-1.5 animate-in fade-in-50 duration-150 motion-reduce:animate-none">
-                  <Info className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
-                  <div className="space-y-0.5 min-w-0">
-                    <span className="font-semibold block text-brand-800 dark:text-brand-300">
-                      {guide.rubricGoal}
-                    </span>
-                    <span className="text-foreground/80 block">
-                      <strong>Tip:</strong> {guide.coachingTip}
-                    </span>
-                  </div>
-                </div>
-              )}
             </fieldset>
           );
         })}
@@ -1340,12 +1304,40 @@ export function ManualRubricEntryForm({
             </Button>
           )}
 
+          {canRelease && onSaveAndRelease && (
+            <Button
+              type="button"
+              size="sm"
+              disabled={!allBandsSelected || isSubmittingScore || isSavingAndReleasing}
+              onClick={() => void handleSaveAndRelease()}
+              className="flex-1 @[460px]:flex-initial h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-3.5 bg-brand-600 hover:bg-brand-700 text-white dark:bg-brand-500 dark:hover:bg-brand-600 text-xs font-semibold rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation"
+              title="Save rubric score and immediately release to parent portal"
+            >
+              {isSavingAndReleasing ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                  <span>Releasing...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="size-3.5" aria-hidden="true" />
+                  <span>Save & Release</span>
+                </>
+              )}
+            </Button>
+          )}
+
           <Button
             type="button"
             size="sm"
-            disabled={!allBandsSelected || isSubmittingScore}
+            variant={canRelease && onSaveAndRelease ? "outline" : "default"}
+            disabled={!allBandsSelected || isSubmittingScore || isSavingAndReleasing}
             onClick={handleSubmitRubric}
-            className="flex-1 @[460px]:flex-initial w-full @[460px]:w-auto h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-4 bg-primary hover:bg-brand-700 text-primary-foreground text-xs font-semibold rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation"
+            className={`flex-1 @[460px]:flex-initial w-full @[460px]:w-auto h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-4 text-xs font-semibold rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation ${
+              canRelease && onSaveAndRelease
+                ? "border-border/80 hover:bg-muted/60"
+                : "bg-primary hover:bg-brand-700 text-primary-foreground"
+            }`}
           >
             {isSubmittingScore ? (
               <>
@@ -1360,7 +1352,7 @@ export function ManualRubricEntryForm({
             ) : (
               <>
                 <CheckCheck className="size-3.5" aria-hidden="true" />
-                <span>Submit Rubric</span>
+                <span>Save Privately</span>
               </>
             )}
           </Button>

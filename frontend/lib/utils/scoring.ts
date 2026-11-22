@@ -2,6 +2,45 @@ import type { ScoreBand } from "@/lib/hooks/use-submissions";
 
 export type { ScoreBand };
 
+export const SCORE_BAND_THRESHOLDS = {
+  EXCELLENT: 75,
+  SATISFACTORY: 50,
+  DEVELOPING: 25,
+} as const;
+
+export const CV_BENCHMARK_RANGES = {
+  slant: {
+    minDeg: 6.0,
+    maxDeg: 15.0,
+    label: "6.0° – 15.0° (provisional)",
+    shortLabel: "6°–15°",
+    description: "Provisional forward stem lean from vertical.",
+  },
+  wordSpacing: {
+    minRatio: 1.5,
+    maxRatio: 2.5,
+    label: "1.5 – 2.5× guideline",
+    shortLabel: "1.5–2.5×",
+    description: "Word-to-word gap (~finger space).",
+  },
+  letterSpacing: {
+    minRatio: 0.3,
+    maxRatio: 0.5,
+    label: "0.3 – 0.5× guideline",
+    shortLabel: "0.3–0.5×",
+    description: "Inter-letter connector gap (~1 letter 'o').",
+  },
+  sizeConsistency: {
+    minRatio: 0.85,
+    maxRatio: 1.0,
+    label: "0.85 – 1.00 (at midline)",
+  },
+  baselineDeviation: {
+    maxRatio: 0.1,
+    label: "< 0.10 drift ratio",
+  },
+} as const;
+
 export const PARENT_BAND_EXPLANATIONS: Record<ScoreBand, string> = {
   excellent: "Consistent letter shapes, spacing, and alignment on this worksheet.",
   satisfactory: "Solid cursive foundation with small areas to refine during practice.",
@@ -231,10 +270,11 @@ export function computeCompositeFromCriteria(
 }
 
 export function getBandFromScore(score: number | null | undefined): ScoreBand | null {
-  if (score === null || score === undefined) return null;
-  if (score >= 75) return "excellent";
-  if (score >= 50) return "satisfactory";
-  if (score >= 25) return "developing";
+  if (score === null || score === undefined || Number.isNaN(Number(score))) return null;
+  const num = Number(score);
+  if (num >= SCORE_BAND_THRESHOLDS.EXCELLENT) return "excellent";
+  if (num >= SCORE_BAND_THRESHOLDS.SATISFACTORY) return "satisfactory";
+  if (num >= SCORE_BAND_THRESHOLDS.DEVELOPING) return "developing";
   return "needs_improvement";
 }
 

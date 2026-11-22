@@ -3,17 +3,16 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import {
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
   FileText,
   CheckCircle2,
-  AlertCircle,
   Check,
   Camera,
-  UploadCloud,
+  RotateCcw,
 } from "lucide-react";
 import { useGradebookActions, type GradebookCell } from "@/lib/hooks/use-gradebook";
 import { ApiError } from "@/lib/utils/api-error";
@@ -32,12 +31,8 @@ import { WorkGradeDetails } from "./work-grade-details";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SubmissionCommentPicker } from "@/components/comments/submission-comment-picker";
 import { BandBadge } from "@/components/shared/band-badge";
-import {
-  CRITERIA_DEFINITIONS,
-  getCriterionDiagnostic,
-  getPedagogicalSummary,
-} from "./gradebook-cell";
-import { cn } from "@/lib/utils";
+import { getBandFromScore, PARENT_BAND_EXPLANATIONS } from "@/lib/utils/scoring";
+import { CRITERIA_DEFINITIONS } from "./gradebook-cell";
 
 export function WorkGradeSheet({
   userId,
@@ -63,21 +58,32 @@ export function WorkGradeSheet({
   onNavigateStudent?: (direction: "prev" | "next") => void;
 }) {
   const actions = useGradebookActions(userId);
+  const client = useQueryClient();
   const { openUpload } = useTeacherModals();
-  const currentKey = `${cell?.student_id}:${cell?.activity_id}:${cell?.points_override}`;
+  const currentKey = `${cell?.student_id}:${cell?.activity_id}`;
   const [prevKey, setPrevKey] = useState(currentKey);
-  const [override, setOverride] = useState(cell?.points_override ?? "");
+  const [override, setOverride] = useState(
+    cell?.points_override !== null && cell?.points_override !== undefined
+      ? String(cell.points_override)
+      : ""
+  );
   const [error, setError] = useState<string | undefined>();
   const [view, setView] = useState<"work" | "comments">(initialView);
   const [confirmZero, setConfirmZero] = useState(false);
+  const [confirmRelease, setConfirmRelease] = useState(false);
   const [savedDraft, setSavedDraft] = useState(false);
   const [showLifecycleDetails, setShowLifecycleDetails] = useState(false);
 
   if (prevKey !== currentKey) {
     setPrevKey(currentKey);
-    setOverride(cell?.points_override ?? "");
+    setOverride(
+      cell?.points_override !== null && cell?.points_override !== undefined
+        ? String(cell.points_override)
+        : ""
+    );
     setError(undefined);
     setConfirmZero(false);
+    setConfirmRelease(false);
     setSavedDraft(false);
   }
 
@@ -87,18 +93,16 @@ export function WorkGradeSheet({
       if (
         event.target instanceof HTMLInputElement ||
         event.target instanceof HTMLTextAreaElement ||
-        (event.target instanceof HTMLElement &&
-          (event.target.closest('[role="tablist"]') ||
-            event.target.closest('[role="tab"]') ||
-            event.target.closest('[role="tabpanel"]')))
+        event.target instanceof HTMLSelectElement
       )
         return;
-      if (event.key === "ArrowLeft" || event.key === "j" || event.key === "J") {
+
+      if (event.key === "ArrowLeft" || event.key === "k" || event.key === "K") {
         if (hasPrevStudent) {
           event.preventDefault();
           onNavigateStudent?.("prev");
         }
-      } else if (event.key === "ArrowRight" || event.key === "k" || event.key === "K") {
+      } else if (event.key === "ArrowRight" || event.key === "j" || event.key === "J") {
         if (hasNextStudent) {
           event.preventDefault();
           onNavigateStudent?.("next");
@@ -117,7 +121,19 @@ export function WorkGradeSheet({
 
   const compositeScore =
     cell.assessment_composite !== null ? Number(cell.assessment_composite) : null;
-  const pedagogicalSummary = getPedagogicalSummary(compositeScore, cell.coursework_status);
+  const compositeBand = compositeScore !== null ? getBandFromScore(compositeScore) : null;
+  const developmentalNote =
+    compositeBand !== null
+      ? PARENT_BAND_EXPLANATIONS[compositeBand]
+      : cell.coursework_status === "Missing"
+        ? "Awaiting worksheet upload and scan."
+        : "No assessment recorded for this attempt.";
+
+  const savedOverrideStr =
+    cell.points_override !== null && cell.points_override !== undefined
+      ? String(cell.points_override)
+      : "";
+  const isOverrideDirty = override.trim() !== savedOverrideStr;
 
   async function run(task: () => Promise<unknown>, message: string, shouldClose = false) {
     setError(undefined);
@@ -133,7 +149,7 @@ export function WorkGradeSheet({
       if (failure instanceof Error && failure.name === "AbortError") return;
       setError(
         failure instanceof ApiError && failure.code === "GRADE_REVISION_CONFLICT"
-          ? "This grade changed in another session. Close this panel and reopen to refresh."
+          ? "This grade changed in another session. Please refresh grade data to continue."
           : failure instanceof ApiError
             ? failure.message
             : "Could not save this work. Try again."
@@ -146,6 +162,26 @@ export function WorkGradeSheet({
     message: string
   ) => run(() => actions.updateWork.mutateAsync({ ...target, body }), message, false);
 
+  async function handleRefreshGrade() {
+    setError(undefined);
+    await client.invalidateQueries({ queryKey: ["gradebook", userId] });
+    toast.success("Grade data refreshed");
+  }
+
+  async function handleReleaseGrade() {
+    if (!cell || cell.grade_revision === null) return;
+    setConfirmRelease(false);
+    await run(
+      () =>
+        actions.releaseGrade.mutateAsync({
+          ...target,
+          revision: cell.grade_revision!,
+        }),
+      "Grade released to parents.",
+      true
+    );
+  }
+
   return (
     <Sheet
       open={open}
@@ -155,7 +191,7 @@ export function WorkGradeSheet({
     >
       <SheetContent className="w-full overflow-hidden sm:max-w-lg">
         <SheetHeader className="pb-3 border-b border-border/40">
-          <div className="flex items-start justify-between gap-2 pr-6">
+          <div className="flex items-start justify-between gap-2 pr-14">
             <div className="space-y-1 min-w-0">
               <SheetTitle className="text-lg font-heading truncate">
                 {studentName ?? "Work grade"}
@@ -168,7 +204,7 @@ export function WorkGradeSheet({
                 )}
                 {cell.points_possible === null && (
                   <Badge variant="secondary" className="text-[11px] font-normal py-0">
-                    Developmental Bands Only
+                    Bands only
                   </Badge>
                 )}
               </div>
@@ -177,23 +213,25 @@ export function WorkGradeSheet({
               <div className="flex items-center gap-1 shrink-0 pt-0.5" aria-label="Student navigation">
                 <Button
                   variant="ghost"
-                  size="icon-xs"
+                  size="icon-sm"
                   disabled={!hasPrevStudent || pending}
                   onClick={() => onNavigateStudent("prev")}
-                  title="Previous student (Left arrow or J)"
+                  title="Previous student (Left arrow or K)"
                   aria-label="Previous student"
+                  className="size-9"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="size-4" />
                 </Button>
                 <Button
                   variant="ghost"
-                  size="icon-xs"
+                  size="icon-sm"
                   disabled={!hasNextStudent || pending}
                   onClick={() => onNavigateStudent("next")}
-                  title="Next student (Right arrow or K)"
+                  title="Next student (Right arrow or J)"
                   aria-label="Next student"
+                  className="size-9"
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="size-4" />
                 </Button>
               </div>
             )}
@@ -213,10 +251,10 @@ export function WorkGradeSheet({
           className="flex min-h-0 flex-1 flex-col"
         >
           <TabsList className="mx-4 mt-3 shrink-0">
-            <TabsTrigger value="work" disabled={pending}>
+            <TabsTrigger value="work" disabled={pending} className="min-h-9">
               Work
             </TabsTrigger>
-            <TabsTrigger value="comments" disabled={pending}>
+            <TabsTrigger value="comments" disabled={pending} className="min-h-9">
               Comments
             </TabsTrigger>
           </TabsList>
@@ -234,9 +272,9 @@ export function WorkGradeSheet({
           </TabsContent>
 
           <TabsContent value="work" className="overflow-y-auto">
-            <div className="space-y-5 px-4 py-4">
+            <div className="space-y-4 px-4 py-4">
               {/* Handwriting Diagnostic Overview Card */}
-              <div className="rounded-xl border border-border/70 bg-gradient-to-br from-card to-muted/20 p-4 space-y-3.5">
+              <div className="rounded-xl border border-border/70 bg-card p-4 space-y-3 shadow-warm">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
                     <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
@@ -249,12 +287,17 @@ export function WorkGradeSheet({
                           {Math.round(compositeScore)}%
                         </span>
                       )}
+                      {cell.assessment_source && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-muted text-foreground border border-border/50">
+                          {cell.assessment_source === "manual" ? "Teacher rubric" : "Calibrated"}
+                        </span>
+                      )}
                     </div>
                   </div>
                   {cell.active_submission_id ? (
                     <Link
                       href={`/activities/${cell.activity_id}/submissions/${cell.active_submission_id}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/10 transition-colors min-h-8"
                     >
                       <FileText className="size-3.5" />
                       <span>View worksheet</span>
@@ -264,7 +307,7 @@ export function WorkGradeSheet({
                     <Button
                       type="button"
                       size="sm"
-                      className="h-8 gap-1.5 text-xs"
+                      className="h-9 gap-1.5 text-xs cursor-pointer"
                       onClick={() =>
                         openUpload({
                           activityId: cell.activity_id,
@@ -279,47 +322,33 @@ export function WorkGradeSheet({
                 </div>
 
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  {pedagogicalSummary}
+                  {developmentalNote}
                 </p>
 
-                {/* 5-Criteria Quick Rhythm Breakdown */}
-                <div className="pt-2 border-t border-border/40">
-                  <p className="text-[11px] font-medium text-muted-foreground mb-1.5">
-                    5 Core Cursive Criteria
-                  </p>
-                  <div className="grid grid-cols-5 gap-1.5 text-center">
-                    {CRITERIA_DEFINITIONS.map((crit) => {
-                      const diag = getCriterionDiagnostic(crit.label, compositeScore);
-                      return (
-                        <div
-                          key={crit.key}
-                          className={cn(
-                            "rounded-md px-1.5 py-1.5 text-xs font-medium transition-colors border flex flex-col justify-between items-center min-h-[46px]",
-                            diag.chipClass
-                          )}
-                          title={`${crit.name}: ${diag.diagnosticNote}`}
-                        >
-                          <span className="block font-bold leading-none">{crit.label}</span>
-                          <span className="block text-[10px] opacity-80 truncate max-w-full leading-tight">
-                            {crit.name.split(" ")[0]}
-                          </span>
-                        </div>
-                      );
-                    })}
+                {/* 5-Criteria Authentic Breakdown Note */}
+                <div className="pt-2 border-t border-border/40 space-y-1">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">5 Diagnostic Criteria:</span>
+                    <span className="text-[11px]">
+                      {CRITERIA_DEFINITIONS.map((c) => c.name.split(" ")[0]).join(" · ")}
+                    </span>
                   </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Per-criterion stroke measurements, baseline drift, and visual overlays are calibrated and inspected in the worksheet viewer.
+                  </p>
                 </div>
               </div>
 
               {/* Status & Quick Action Card */}
-              <div className="rounded-xl border border-border/60 bg-muted/15 p-3.5 space-y-3">
+              <div className="rounded-xl border border-border/60 bg-muted/15 p-3.5 space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-muted-foreground">Worksheet Status:</span>
+                    <span className="text-xs font-medium text-muted-foreground">Worksheet:</span>
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
                       {cell.coursework_status === "Released" ? (
                         <>
                           <CheckCircle2 className="size-3.5 text-band-4-text shrink-0" />
-                          <span>Shared with parents</span>
+                          <span>Released to parents</span>
                         </>
                       ) : cell.coursework_status === "Missing" ? (
                         <>
@@ -333,7 +362,7 @@ export function WorkGradeSheet({
                         </>
                       )}
                       {cell.late && (
-                        <span className="inline-flex items-center px-1 rounded text-[11px] font-medium bg-band-2/15 text-band-2-text border border-band-2/30 dark:text-amber-300">
+                        <span className="inline-flex items-center px-1 rounded text-[11px] font-medium bg-band-2/15 text-band-2-text border border-band-2/30">
                           Late
                         </span>
                       )}
@@ -349,43 +378,38 @@ export function WorkGradeSheet({
                     </div>
                   )}
                 </div>
-
-                {!cell.active_submission_id && (
-                  <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-border/40 text-xs text-muted-foreground">
-                    <span>Ready to evaluate {studentName ? studentName.split(" ")[0] : "this student"}&apos;s handwriting?</span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs gap-1.5 shrink-0"
-                      onClick={() =>
-                        openUpload({
-                          activityId: cell.activity_id,
-                          studentId: cell.student_id,
-                        })
-                      }
-                    >
-                      <UploadCloud className="size-3.5" />
-                      <span>Upload page</span>
-                    </Button>
-                  </div>
-                )}
               </div>
 
               {/* Coursework Points Section (Only when points_possible !== null) */}
               {cell.points_possible !== null ? (
                 <section
-                  className="space-y-4 pt-4 border-t border-border/40"
+                  className="space-y-4 pt-3 border-t border-border/40"
                   aria-label="Coursework grading"
                 >
                   <div className="flex items-center justify-between">
-                    <h3 className="font-heading text-sm font-semibold text-foreground">
-                      Coursework Points
-                    </h3>
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-muted-foreground">Current:</span>
-                      <span className="font-bold tabular-nums text-foreground">
-                        {cell.final_points ?? "—"} / {cell.points_possible} pts
+                    <div>
+                      <h3 className="font-heading text-sm font-semibold text-foreground">
+                        Coursework Points
+                      </h3>
+                      {cell.grade_revision !== null && (
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          Revision #{cell.grade_revision}
+                          {cell.points_override !== null ? " · Overridden by teacher" : " · From rubric"}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="text-muted-foreground">
+                        Automatic:{" "}
+                        <strong className="font-semibold text-foreground tabular-nums">
+                          {cell.automatic_points !== null ? `${cell.automatic_points} pts` : "—"}
+                        </strong>
+                      </span>
+                      <span className="text-muted-foreground">
+                        Current:{" "}
+                        <strong className="font-semibold tabular-nums text-foreground">
+                          {cell.final_points ?? "—"} / {cell.points_possible} pts
+                        </strong>
                       </span>
                     </div>
                   </div>
@@ -417,10 +441,10 @@ export function WorkGradeSheet({
                     />
 
                     <div className="flex flex-wrap items-center gap-2 pt-1">
-                      <Button type="submit" size="sm" disabled={pending || !valid}>
+                      <Button type="submit" size="sm" className="min-h-9" disabled={pending || !valid}>
                         {savedDraft ? (
                           <>
-                            <Check className="size-3.5 mr-1 text-band-4-text dark:text-emerald-400" />
+                            <Check className="size-3.5 mr-1 text-primary-foreground" />
                             Saved
                           </>
                         ) : (
@@ -431,6 +455,7 @@ export function WorkGradeSheet({
                         type="button"
                         variant="outline"
                         size="sm"
+                        className="min-h-9"
                         disabled={pending || cell.points_override === null}
                         onClick={() => {
                           setOverride("");
@@ -444,11 +469,11 @@ export function WorkGradeSheet({
                       </Button>
 
                       {confirmZero ? (
-                        <div className="inline-flex items-center gap-1.5 p-1 rounded-md bg-destructive/10 border border-destructive/20 text-xs">
-                          <span className="text-destructive font-medium">Set 0 pts?</span>
+                        <div className="inline-flex items-center gap-1.5 p-1 rounded-md bg-muted/60 border border-border text-xs">
+                          <span className="text-foreground font-medium">Set 0 pts?</span>
                           <Button
                             type="button"
-                            variant="destructive"
+                            variant="secondary"
                             size="xs"
                             disabled={pending}
                             onClick={() => {
@@ -473,6 +498,7 @@ export function WorkGradeSheet({
                           type="button"
                           variant="outline"
                           size="sm"
+                          className="min-h-9"
                           disabled={pending}
                           onClick={() => setConfirmZero(true)}
                         >
@@ -482,38 +508,83 @@ export function WorkGradeSheet({
                     </div>
                   </form>
 
+                  {/* Conflict Recovery */}
+                  {error && error.includes("refresh grade data") && (
+                    <div className="pt-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 text-xs min-h-9"
+                        onClick={() => void handleRefreshGrade()}
+                      >
+                        <RotateCcw className="size-3.5" />
+                        <span>Refresh grade data</span>
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Release to Parents Confirmation & Trigger */}
                   <div className="pt-2">
-                    <Button
-                      className="w-full"
-                      disabled={
-                        pending ||
-                        excused ||
-                        cell.final_points === null ||
-                        cell.grade_revision === null ||
-                        cell.publication === "released"
-                      }
-                      onClick={() =>
-                        void run(
-                          () =>
-                            actions.releaseGrade.mutateAsync({
-                              ...target,
-                              revision: cell.grade_revision!,
-                            }),
-                          "Grade released to parents.",
-                          true
-                        )
-                      }
-                    >
-                      {pending
-                        ? "Releasing…"
-                        : cell.publication === "released"
-                          ? "Grade already released to parents"
-                          : "Release grade to parents"}
-                    </Button>
-                    {cell.publication !== "released" && cell.final_points !== null && (
-                      <p className="text-xs text-muted-foreground text-center mt-1.5">
-                        Publishes this numerical grade to the parent portal.
+                    {isOverrideDirty && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 pb-1.5">
+                        Save or discard your pending point override before releasing to parents.
                       </p>
+                    )}
+
+                    {confirmRelease ? (
+                      <div className="rounded-lg border border-primary/30 bg-primary/5 p-3.5 space-y-2.5">
+                        <p className="text-xs font-medium text-foreground">
+                          Confirm releasing <strong>{cell.final_points} / {cell.points_possible} pts</strong> (Revision #{cell.grade_revision}) to parents?
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          This publishes the final point score directly to the parent portal.
+                        </p>
+                        <div className="flex items-center gap-2 pt-1">
+                          <Button
+                            size="sm"
+                            className="min-h-9"
+                            disabled={pending}
+                            onClick={() => void handleReleaseGrade()}
+                          >
+                            {pending ? "Releasing…" : "Confirm Release"}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="min-h-9"
+                            disabled={pending}
+                            onClick={() => setConfirmRelease(false)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <Button
+                          className="w-full min-h-10 sm:min-h-9"
+                          disabled={
+                            pending ||
+                            excused ||
+                            cell.final_points === null ||
+                            cell.grade_revision === null ||
+                            cell.publication === "released" ||
+                            isOverrideDirty
+                          }
+                          onClick={() => setConfirmRelease(true)}
+                        >
+                          {pending
+                            ? "Releasing…"
+                            : cell.publication === "released"
+                              ? "Grade already released to parents"
+                              : "Release grade to parents"}
+                        </Button>
+                        {cell.publication !== "released" && cell.final_points !== null && !isOverrideDirty && (
+                          <p className="text-xs text-muted-foreground text-center mt-1.5">
+                            Publishes this numerical grade to the parent portal.
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 </section>
@@ -523,55 +594,26 @@ export function WorkGradeSheet({
               <details
                 className="group rounded-xl border border-border/60 bg-muted/15 p-4 text-sm transition-colors open:bg-muted/25"
                 onToggle={(e) => {
-                  setShowLifecycleDetails(e.currentTarget.open);
+                  setShowLifecycleDetails((e.target as HTMLDetailsElement).open);
                 }}
               >
-                <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground select-none">
-                  <div className="flex items-center gap-2">
-                    <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
-                    <span>Submission lifecycle & exceptions</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground group-open:hidden">
-                    Deadlines, attempts, excuse
+                <summary className="flex cursor-pointer list-none items-center justify-between font-medium text-foreground min-h-9 select-none">
+                  <span>Submission lifecycle &amp; exceptions</span>
+                  <span className="text-xs text-muted-foreground transition-transform group-open:rotate-180">
+                    ▼
                   </span>
                 </summary>
-                <div className="mt-3.5 space-y-4 pt-3 border-t border-border/50">
-                  <div className="space-y-1.5">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={pending}
-                      onClick={() =>
-                        void update(
-                          { excused: !excused },
-                          excused
-                            ? "Work unexcused. Review its draft grade."
-                            : "Work excused and excluded from class totals."
-                        )
-                      }
-                    >
-                      {excused ? "Unexcuse work" : "Excuse work"}
-                    </Button>
-                    <p className="text-muted-foreground text-xs leading-relaxed">
-                      Excused work is removed from both earned and possible points, and reminders stop.
-                    </p>
-                  </div>
-
-                  {open && showLifecycleDetails && (
-                    <WorkGradeDetails userId={userId} cell={cell} studentName={studentName} />
+                <div className="pt-3">
+                  {showLifecycleDetails && (
+                    <WorkGradeDetails
+                      key={`${userId}:${cell.activity_id}:${cell.student_id}`}
+                      userId={userId}
+                      cell={cell}
+                      studentName={studentName}
+                    />
                   )}
                 </div>
               </details>
-
-              {error && (
-                <div
-                  role="alert"
-                  className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive flex items-start gap-2"
-                >
-                  <AlertCircle className="size-4 shrink-0 mt-0.5" />
-                  <span className="leading-snug">{error}</span>
-                </div>
-              )}
             </div>
           </TabsContent>
         </Tabs>

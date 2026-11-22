@@ -65,7 +65,12 @@ export function ThreadEntryView({
         <MessageFooter className="flex-wrap gap-2">
           {time}
           {entry.is_mine && !entry.deleted_at && !confirm && (
-            <Button size="xs" variant="ghost" onClick={() => setConfirm(true)}>
+            <Button
+              size="xs"
+              variant="ghost"
+              className="min-h-[40px] sm:min-h-[28px] px-2.5 touch-manipulation"
+              onClick={() => setConfirm(true)}
+            >
               Delete
             </Button>
           )}

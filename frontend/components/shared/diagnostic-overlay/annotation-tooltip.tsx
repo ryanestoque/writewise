@@ -401,15 +401,15 @@ function TooltipCard({
 
         {criterion === "letter_formation" && isAttention && showMeasurementDetails && (
           <p className="text-[10px] sm:text-[11px] font-medium text-band-1-text dark:text-band-1-text mt-1 sm:mt-1.5 hidden sm:flex items-center gap-1.5">
-            <span className="inline-block size-1.5 rounded-full bg-band-1 animate-pulse shrink-0" />
+            <span className="inline-block size-1.5 rounded-full bg-band-1 animate-pulse motion-reduce:animate-none shrink-0" />
             <span>Highlighted zones show stroke irregularities flagged by the CNN.</span>
           </p>
         )}
 
         {criterion === "spacing" && showMeasurementDetails && (
           <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground mt-1 sm:mt-1.5 hidden sm:flex items-center gap-1.5">
-            <span className="inline-block size-1.5 rounded-full bg-violet-500 shrink-0" />
-            <span>Measured relative to midline ruling (x-height). Normal range: 1.2× – 3.0×.</span>
+            <span className="inline-block size-1.5 rounded-full bg-primary shrink-0" />
+            <span>Measured relative to midline ruling (x-height). Target range: 1.5× – 2.5× guideline for words, 0.3× – 0.5× for letters.</span>
           </p>
         )}
 

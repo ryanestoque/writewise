@@ -11,9 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   type Submission,
+  type ScoreBand,
   useSubmissionImageUrl,
   useSubmissions,
+  useSubmitManualScore,
 } from "@/lib/hooks/use-submissions";
+import { useReleaseSubmission, useActivityWork } from "@/lib/hooks/use-activity-work";
+import { ApiError } from "@/lib/utils/api-error";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
 import { GuideLineOverlay, type GuideLines } from "@/components/shared/guide-line-overlay";
@@ -29,17 +33,15 @@ import {
 } from "@/components/shared/diagnostic-overlay";
 import { cn } from "@/lib/utils";
 import {
-  CheckCircle2,
   Clock,
-  User,
   FileText,
   ChevronLeft,
   ChevronRight,
+  ArrowLeft,
   Eye,
   Info,
   Award,
   SlidersHorizontal,
-  ShieldCheck,
   Edit3,
   Trash2,
   Loader2,
@@ -187,11 +189,62 @@ export function SubmissionDetailContent({
   const [isEditingRubric, setIsEditingRubric] = useState(false);
   const [isRubricDirty, setIsRubricDirty] = useState(false);
   const [pendingNavTarget, setPendingNavTarget] = useState<Submission | null>(null);
+  const [isConfirmingClose, setIsConfirmingClose] = useState(false);
   const [showGuideLines, setShowGuideLinesState] = useState<boolean>(() =>
     readStoredGuideLines()
   );
   const [criterionAnnouncement, setCriterionAnnouncement] = useState<string>("");
   const editButtonRef = useRef<HTMLButtonElement>(null);
+
+  const releaseMutation = useReleaseSubmission();
+  const { mutateAsync: submitManualScoreAsync } = useSubmitManualScore();
+  const { data: activityWorkStates } = useActivityWork(submission.activity_id);
+  const currentWork = activityWorkStates?.find((row) => row.student_id === submission.student_id);
+  const isSubmissionActive = currentWork?.active_submission_id === submission.id;
+  const isSubmissionCompleted = submission.status === "completed";
+  const canReleaseSubmission = Boolean(
+    isSubmissionCompleted &&
+      isSubmissionActive &&
+      !submission.released_at
+  );
+
+  const handleSaveAndReleaseRubric = useCallback(
+    async (scores: {
+      letter_formation_band: ScoreBand;
+      size_consistency_band: ScoreBand;
+      spacing_band: ScoreBand;
+      slant_band: ScoreBand;
+      baseline_alignment_band: ScoreBand;
+    }) => {
+      await submitManualScoreAsync({
+        submissionId: submission.id,
+        scores,
+      });
+      await releaseMutation.mutateAsync(submission.id);
+      setIsEditingRubric(false);
+      setIsRubricDirty(false);
+      toast.success("Assessment recorded and released to parent.");
+    },
+    [submission.id, submitManualScoreAsync, releaseMutation]
+  );
+
+  useEffect(() => {
+    if (!isRubricDirty) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isRubricDirty]);
+
+  const handleProtectedClose = useCallback(() => {
+    if (isRubricDirty) {
+      setIsConfirmingClose(true);
+      return;
+    }
+    onClose?.();
+  }, [isRubricDirty, onClose]);
 
   const commentUserId = useCommentAccountId();
   const unreadComments = useUnreadCommentThreads(
@@ -394,11 +447,23 @@ export function SubmissionDetailContent({
         onClose();
       }
     } catch (err: unknown) {
-      const errorMsg =
-        err instanceof Error ? err.message : "Failed to delete submission";
-      toast.error(errorMsg);
+      if (err instanceof ApiError) {
+        if (err.code === "SUBMISSION_NOT_FOUND") {
+          toast.error("This submission is no longer available.");
+        } else {
+          toast.error(err.message || "Could not delete this attempt.");
+        }
+      } else {
+        toast.error("Could not delete this attempt. Please try again.");
+      }
     }
   };
+
+  const handleNavigateNextStudent = useCallback(() => {
+    if (canGoNext && submissions) {
+      requestNavigate(submissions[effectiveIndex + 1]);
+    }
+  }, [canGoNext, submissions, effectiveIndex, requestNavigate]);
 
   const measurement = submission.measurement;
   const compositeScore = measurement?.composite_score;
@@ -648,7 +713,7 @@ export function SubmissionDetailContent({
                 requestNavigate(submissions[effectiveIndex - 1]);
               }
             }}
-            className="size-9 sm:size-7 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
+            className="size-10 sm:size-7 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
             aria-label="Previous student (Key: J or ←)"
             title="Previous student (← / J)"
           >
@@ -671,7 +736,7 @@ export function SubmissionDetailContent({
                 requestNavigate(submissions[effectiveIndex + 1]);
               }
             }}
-            className="size-9 sm:size-7 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
+            className="size-10 sm:size-7 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
             aria-label="Next student (Key: K or →)"
             title="Next student (→ / K)"
           >
@@ -732,42 +797,34 @@ export function SubmissionDetailContent({
               <SubmissionLifecycleControls submission={submission} variant="header" />
             </div>
             {variant === "modal" ? (
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-x-2 sm:gap-x-3 gap-y-0.5 flex-wrap">
-                <span className="inline-flex items-center gap-1 shrink-0">
-                  <User className="size-3" aria-hidden="true" />
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-x-2 gap-y-0.5 flex-wrap">
+                <span className="shrink-0">
                   Uploaded by{" "}
                   {submission.uploader_role === "parent" ? "Parent" : "Teacher"}
                 </span>
                 <span className="text-border hidden min-[400px]:inline">·</span>
-                <span className="inline-flex items-center gap-1 shrink-0">
-                  <Clock className="size-3" aria-hidden="true" />
-                  <time
-                    dateTime={submission.created_at}
-                    title={formatDateFull(submission.created_at)}
-                    className="tabular-nums"
-                  >
-                    {formatDateFull(submission.created_at)}
-                  </time>
-                </span>
+                <time
+                  dateTime={submission.created_at}
+                  title={formatDateFull(submission.created_at)}
+                  className="tabular-nums shrink-0"
+                >
+                  {formatDateFull(submission.created_at)}
+                </time>
               </DialogDescription>
             ) : (
-              <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-x-2 sm:gap-x-3 gap-y-0.5 flex-wrap">
-                <span className="inline-flex items-center gap-1 shrink-0">
-                  <User className="size-3" aria-hidden="true" />
+              <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-x-2 gap-y-0.5 flex-wrap">
+                <span className="shrink-0">
                   Uploaded by{" "}
                   {submission.uploader_role === "parent" ? "Parent" : "Teacher"}
                 </span>
                 <span className="text-border hidden min-[400px]:inline">·</span>
-                <span className="inline-flex items-center gap-1 shrink-0">
-                  <Clock className="size-3" aria-hidden="true" />
-                  <time
-                    dateTime={submission.created_at}
-                    title={formatDateFull(submission.created_at)}
-                    className="tabular-nums"
-                  >
-                    {formatDateFull(submission.created_at)}
-                  </time>
-                </span>
+                <time
+                  dateTime={submission.created_at}
+                  title={formatDateFull(submission.created_at)}
+                  className="tabular-nums shrink-0"
+                >
+                  {formatDateFull(submission.created_at)}
+                </time>
               </div>
             )}
           </div>
@@ -790,6 +847,23 @@ export function SubmissionDetailContent({
       <div className="sr-only" role="status" aria-live="polite">
         {criterionAnnouncement}
       </div>
+
+      {/* Top Back Navigation Trail for Page View */}
+      {variant === "page" && onClose && (
+        <nav aria-label="Breadcrumb navigation" className="print:hidden pb-1 -ml-1 sm:-ml-2">
+          <button
+            type="button"
+            onClick={handleProtectedClose}
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-2.5 py-1.5 min-h-10 sm:min-h-9 hover:bg-muted/50 cursor-pointer"
+          >
+            <ArrowLeft
+              className="size-3.5 transition-transform group-hover:-translate-x-0.5"
+              aria-hidden="true"
+            />
+            <span>Back to Activity</span>
+          </button>
+        </nav>
+      )}
 
       {/* Header */}
       {variant === "modal" ? (
@@ -973,20 +1047,18 @@ export function SubmissionDetailContent({
               </WorksheetImageInspector>
 
               {/* Target prompt & recognized text card */}
-              <div className="shrink-0 space-y-2 p-2.5 sm:p-3 rounded-xl bg-card border border-border/70 text-xs text-muted-foreground shadow-2xs">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="font-semibold text-foreground shrink-0 text-xs">Target prompt:</span>
-                    <span className="font-medium text-foreground bg-muted/60 px-2.5 py-1 rounded-lg border border-border/60 truncate max-w-full text-xs font-mono">
-                      {resolvedTargetText ? `"${resolvedTargetText}"` : "Cursive Penmanship Practice"}
-                    </span>
-                  </div>
+              <div className="shrink-0 space-y-2 px-3 py-2 rounded-xl bg-card border border-border/70 text-xs text-muted-foreground shadow-2xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="font-semibold text-foreground shrink-0">Target prompt:</span>
+                  <span className="font-medium text-foreground truncate">
+                    {resolvedTargetText ? `"${resolvedTargetText}"` : "Cursive Penmanship Practice"}
+                  </span>
                 </div>
 
                 {casingMismatches.length > 0 && (
-                  <div className="flex items-start gap-1.5 pt-2 border-t border-border/40 text-xs text-warning bg-warning/5 dark:bg-warning/10 p-2 rounded-lg border border-warning/20">
-                    <Info className="size-3.5 text-warning shrink-0 mt-0.5" aria-hidden="true" />
-                    <span className="font-medium leading-tight text-warning">
+                  <div className="flex items-start gap-1.5 pt-2 border-t border-border/40 text-xs text-warning-foreground bg-warning/10 dark:bg-warning/15 p-2 rounded-lg border border-warning/30">
+                    <Info className="size-3.5 text-warning-foreground shrink-0 mt-0.5" aria-hidden="true" />
+                    <span className="font-medium leading-tight text-warning-foreground">
                       <strong className="font-semibold">Capitalization Note:</strong>{" "}
                       {casingMismatches.map((m, idx) => (
                         <span key={idx}>
@@ -1149,146 +1221,118 @@ export function SubmissionDetailContent({
                           <div className="space-y-2.5">
                             {hasCalibratedScores ? (
                               <>
-                                {/* Phase 2: Overall Composite Score Card */}
-                                <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-surface dark:bg-card border border-border shadow-xs">
-                                  <div className="space-y-0.5">
-                                    <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                                      Overall Score
-                                    </h3>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-xl sm:text-2xl font-sans font-bold text-foreground tabular-nums">
-                                        {compositeScore !== null && compositeScore !== undefined
-                                          ? `${Math.round(compositeScore)}%`
-                                          : "Scored"}
-                                      </span>
-                                      <Badge
-                                        variant="outline"
-                                        className={`text-xs font-semibold px-2.5 py-0.5 inline-flex items-center ${compositeBand.className}`}
-                                      >
-                                        {compositeBand.band}
-                                      </Badge>
-                                    </div>
-                                  </div>
-
-                                  <div className="flex size-8 sm:size-9 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
-                                    <CheckCircle2 className="size-4.5 sm:size-5" aria-hidden="true" />
+                                {/* Phase 2: Overall Composite Score Bar */}
+                                <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-surface dark:bg-card border border-border shadow-xs">
+                                  <span className="text-xs font-semibold text-foreground">
+                                    Overall Score
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-lg sm:text-xl font-sans font-bold text-foreground tabular-nums">
+                                      {compositeScore !== null && compositeScore !== undefined
+                                        ? `${Math.round(compositeScore)}%`
+                                        : "Scored"}
+                                    </span>
+                                    <Badge
+                                      variant="outline"
+                                      className={`text-xs font-semibold px-2.5 py-0.5 inline-flex items-center ${compositeBand.className}`}
+                                    >
+                                      {compositeBand.band}
+                                    </Badge>
                                   </div>
                                 </div>
 
                                 {/* Phase 2: 5 Criteria breakdown */}
-                                <div className="space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                      Criteria Breakdown
-                                    </h3>
-                                  </div>
-
-                                  <div className="space-y-1">
-                                    {criteria.map((c) => {
-                                      const band = getScoreBandLabel(c.score);
-                                      const isSelected = selectedCriterion === c.name;
-                                      const inlineId = `phase2-criterion-guide-inline-${c.name.toLowerCase().replace(/\s+/g, "-")}`;
-                                      return (
-                                        <div key={c.name} className="space-y-1">
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              setSelectedCriterion(c.name);
-                                              const mapped = CRITERION_NAME_TO_FILTER[c.name];
-                                              if (mapped) setActiveOverlayCriterion(mapped);
-                                              setCriterionAnnouncement(
-                                                `${c.name} selected. Diagnostic guide and coaching tips updated.`
-                                              );
-                                            }}
-                                            aria-expanded={isSelected}
-                                            aria-controls={
-                                              isSelected
-                                                ? isDesktopGuideRendered
-                                                  ? `${inlineId} criterion-diagnostic-guide`
-                                                  : inlineId
-                                                : undefined
-                                            }
-                                            aria-label={`${c.name}: ${c.score !== null && c.score !== undefined
-                                              ? `${Math.round(c.score)}%`
-                                              : "Unrated"
-                                              } (${band.band}). Tap to focus coaching tip.`}
-                                            className={`w-full flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[40px] sm:min-h-0 touch-manipulation ${isSelected
-                                              ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
-                                              : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
-                                              }`}
-                                          >
-                                            <div className="min-w-0 pr-2">
-                                              <div className="flex items-center gap-1.5 flex-wrap">
-                                                <span className="font-semibold text-foreground truncate block">
-                                                  {c.name}
-                                                </span>
-                                                {(criterionAttentionCounts[c.name] ?? 0) > 0 && (
-                                                  <Badge
-                                                    variant="secondary"
-                                                    className={cn(
-                                                      "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
-                                                      isSelected
-                                                        ? "bg-brand-200 text-brand-900 dark:bg-brand-900 dark:text-brand-100"
-                                                        : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
-                                                    )}
-                                                  >
-                                                    <span>
-                                                      {criterionAttentionCounts[c.name]}{" "}
-                                                      {criterionAttentionCounts[c.name] === 1 ? "alert" : "alerts"}
-                                                    </span>
-                                                  </Badge>
-                                                )}
-                                              </div>
-                                              <span className="text-xs text-muted-foreground line-clamp-1 block">
-                                                {c.description}
-                                              </span>
-                                            </div>
-                                            <div className="flex items-center gap-2 shrink-0">
-                                              {c.score !== null && c.score !== undefined && (
-                                                <span className="font-semibold text-foreground tabular-nums">
-                                                  {Math.round(c.score)}%
-                                                </span>
-                                              )}
+                                <div className="space-y-1">
+                                  {criteria.map((c) => {
+                                    const band = getScoreBandLabel(c.score);
+                                    const isSelected = selectedCriterion === c.name;
+                                    const inlineId = `phase2-criterion-guide-inline-${c.name.toLowerCase().replace(/\s+/g, "-")}`;
+                                    return (
+                                      <div key={c.name} className="space-y-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setSelectedCriterion(c.name);
+                                            const mapped = CRITERION_NAME_TO_FILTER[c.name];
+                                            if (mapped) setActiveOverlayCriterion(mapped);
+                                            setCriterionAnnouncement(
+                                              `${c.name} selected. Diagnostic guide and coaching tips updated.`
+                                            );
+                                          }}
+                                          aria-expanded={isSelected}
+                                          aria-controls={
+                                            isSelected
+                                              ? isDesktopGuideRendered
+                                                ? `${inlineId} criterion-diagnostic-guide`
+                                                : inlineId
+                                              : undefined
+                                          }
+                                          aria-label={`${c.name}: ${c.score !== null && c.score !== undefined
+                                            ? `${Math.round(c.score)}%`
+                                            : "Unrated"
+                                            } (${band.band}). Tap to focus coaching tip.`}
+                                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border transition-all text-xs text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[40px] sm:min-h-0 touch-manipulation ${isSelected
+                                            ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
+                                            : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
+                                            }`}
+                                        >
+                                          <div className="flex items-center gap-1.5 flex-wrap min-w-0 pr-2">
+                                            <span className="font-semibold text-foreground truncate block">
+                                              {c.name}
+                                            </span>
+                                            {(criterionAttentionCounts[c.name] ?? 0) > 0 && (
                                               <Badge
-                                                variant="outline"
-                                                className={`text-xs font-semibold px-2.5 py-0.5 ${band.className}`}
+                                                variant="secondary"
+                                                className={cn(
+                                                  "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
+                                                  isSelected
+                                                    ? "bg-brand-200 text-brand-900 dark:bg-brand-900 dark:text-brand-100"
+                                                    : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
+                                                )}
                                               >
-                                                {band.band}
-                                              </Badge>
-                                            </div>
-                                          </button>
-
-                                          {/* Inline Mobile & Tablet Coaching Tip when selected (lg:hidden) */}
-                                          {isSelected && activeCriterionInfo && (
-                                            <div
-                                              id={inlineId}
-                                              role="region"
-                                              aria-label={`${c.name} coaching tip`}
-                                              className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none"
-                                            >
-                                              <p className="text-[11px] text-foreground/80 leading-relaxed">
-                                                {activeCriterionInfo.rubricGoal}
-                                              </p>
-                                              <div className="pt-1 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1 text-[11px] text-brand-800 dark:text-brand-300">
-                                                <Eye className="size-3 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
-                                                <span className="leading-normal">
-                                                  <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
+                                                <span>
+                                                  {criterionAttentionCounts[c.name]}{" "}
+                                                  {criterionAttentionCounts[c.name] === 1 ? "alert" : "alerts"}
                                                 </span>
-                                              </div>
-                                            </div>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
+                                              </Badge>
+                                            )}
+                                          </div>
+                                          <div className="flex items-center gap-2 shrink-0">
+                                            {c.score !== null && c.score !== undefined && (
+                                              <span className="font-semibold text-foreground tabular-nums">
+                                                {Math.round(c.score)}%
+                                              </span>
+                                            )}
+                                            <Badge
+                                              variant="outline"
+                                              className={`text-xs font-semibold px-2 py-0.5 ${band.className}`}
+                                            >
+                                              {band.band}
+                                            </Badge>
+                                          </div>
+                                        </button>
 
-                                {/* Promoted Release Completion Strip */}
-                                <SubmissionLifecycleControls
-                                  submission={submission}
-                                  showRelease
-                                  variant="completion"
-                                />
+                                        {/* Inline Mobile & Tablet Coaching Tip when selected (lg:hidden) */}
+                                        {isSelected && activeCriterionInfo && (
+                                          <div
+                                            id={inlineId}
+                                            role="region"
+                                            aria-label={`${c.name} coaching tip`}
+                                            className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-[11px] space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none"
+                                          >
+                                            <p className="text-foreground/85 leading-snug">
+                                              <strong className="font-semibold text-brand-900 dark:text-brand-200">{c.name}:</strong>{" "}
+                                              {activeCriterionInfo.rubricGoal}
+                                            </p>
+                                            <p className="text-brand-800 dark:text-brand-300 leading-snug">
+                                              <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </>
                             ) : (
                               <>
@@ -1300,10 +1344,7 @@ export function SubmissionDetailContent({
                                         {/* READ-ONLY / CONFIRMED RUBRIC STATE */}
                                         <div className="p-2.5 sm:p-3 rounded-xl bg-surface dark:bg-card border border-border/80 shadow-xs space-y-2">
                                           <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/60">
-                                            <div className="flex items-center gap-2 min-w-0">
-                                              <div className="flex size-6 sm:size-7 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 shrink-0">
-                                                <ShieldCheck className="size-3.5 sm:size-4" aria-hidden="true" />
-                                              </div>
+                                            <div className="flex items-center gap-2 min-w-0 flex-wrap">
                                               <span className="text-xs font-semibold text-foreground truncate">
                                                 Teacher Benchmark
                                               </span>
@@ -1357,14 +1398,6 @@ export function SubmissionDetailContent({
                                                 criterionAttentionCounts[criterion.shortName] ??
                                                 criterionAttentionCounts[criterion.name] ??
                                                 0;
-                                              const hasPoints =
-                                                typeof bandMeta.points === "number" && bandMeta.points > 0;
-                                              const pointsText = hasPoints
-                                                ? `${bandMeta.points}/4 pts`
-                                                : null;
-                                              const badgeLabel = pointsText
-                                                ? `${bandMeta.label} (${pointsText})`
-                                                : bandMeta.label;
                                               return (
                                                 <div key={criterion.key} className="space-y-1">
                                                   <button
@@ -1387,65 +1420,59 @@ export function SubmissionDetailContent({
                                                           : `criterion-guide-inline-${criterion.key}`
                                                         : undefined
                                                     }
-                                                    aria-label={`${criterion.shortName}: ${badgeLabel}. Tap to focus coaching tip.`}
+                                                    aria-label={`${criterion.shortName}: ${bandMeta.label}. Tap to focus coaching tip.`}
                                                     className={cn(
-                                                      "w-full flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-lg border text-xs text-left cursor-pointer transition-all min-h-[40px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                                                      "w-full flex items-center justify-between px-3 py-2 rounded-lg border text-xs text-left cursor-pointer transition-all min-h-[40px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                                                       isSelected
                                                         ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
                                                         : "bg-surface dark:bg-card border-border/60 hover:bg-muted/30"
                                                     )}
                                                   >
-                                                    <div className="min-w-0 pr-2">
-                                                      <div className="flex items-center gap-1.5 flex-wrap">
-                                                        <span className="font-semibold text-foreground truncate block">
-                                                          {criterion.name}
-                                                        </span>
-                                                        {(() => {
-                                                          const metric = extractCriterionCVMetric(criterion.key, submission.measurement);
-                                                          if (!metric) return null;
-                                                          return (
-                                                            <span
-                                                              className={cn(
-                                                                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-medium border tabular-nums",
-                                                                metric.badgeClass
-                                                              )}
-                                                              title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
-                                                            >
-                                                              <span className={cn("size-1.5 rounded-full", metric.dotClass)} aria-hidden="true" />
-                                                              <span className="font-semibold">{metric.value}</span>
-                                                              <span className="opacity-80 font-sans">· {metric.status}</span>
-                                                            </span>
-                                                          );
-                                                        })()}
-                                                        {attentionCount > 0 && (
-                                                          <Badge
-                                                            variant="secondary"
-                                                            className={cn(
-                                                              "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
-                                                              isSelected
-                                                                ? "bg-brand-200 text-brand-900 dark:bg-brand-900 dark:text-brand-100"
-                                                                : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
-                                                            )}
-                                                          >
-                                                            <span>
-                                                              {attentionCount} {attentionCount === 1 ? "alert" : "alerts"}
-                                                            </span>
-                                                          </Badge>
-                                                        )}
-                                                      </div>
-                                                      <span className="text-xs text-muted-foreground line-clamp-1 block">
-                                                        {criterion.hint}
+                                                    <div className="flex items-center gap-1.5 flex-wrap min-w-0 pr-2">
+                                                      <span className="font-semibold text-foreground truncate block">
+                                                        {criterion.name}
                                                       </span>
+                                                      {(() => {
+                                                        const metric = extractCriterionCVMetric(criterion.key, submission.measurement);
+                                                        if (!metric) return null;
+                                                        return (
+                                                          <span
+                                                            className={cn(
+                                                              "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-sans font-medium border tabular-nums",
+                                                              metric.badgeClass
+                                                            )}
+                                                            title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
+                                                          >
+                                                            <span className={cn("size-1.5 rounded-full", metric.dotClass)} aria-hidden="true" />
+                                                            <span className="font-semibold">{metric.value}</span>
+                                                          </span>
+                                                        );
+                                                      })()}
+                                                      {attentionCount > 0 && (
+                                                        <Badge
+                                                          variant="secondary"
+                                                          className={cn(
+                                                            "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
+                                                            isSelected
+                                                              ? "bg-brand-200 text-brand-900 dark:bg-brand-900 dark:text-brand-100"
+                                                              : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
+                                                          )}
+                                                        >
+                                                          <span>
+                                                            {attentionCount} {attentionCount === 1 ? "alert" : "alerts"}
+                                                          </span>
+                                                        </Badge>
+                                                      )}
                                                     </div>
                                                     <Badge
                                                       variant="outline"
                                                       className={cn(
-                                                        "text-xs font-semibold px-2.5 py-0.5 shrink-0 inline-flex items-center gap-1.5",
+                                                        "text-xs font-semibold px-2 py-0.5 shrink-0 inline-flex items-center gap-1.5",
                                                         bandMeta.badgeClass
                                                       )}
                                                     >
                                                       <span className={cn("size-1.5 rounded-full shrink-0", bandMeta.dotColor)} aria-hidden="true" />
-                                                      <span>{badgeLabel}</span>
+                                                      <span>{bandMeta.label}</span>
                                                     </Badge>
                                                   </button>
 
@@ -1455,17 +1482,15 @@ export function SubmissionDetailContent({
                                                       id={`criterion-guide-inline-${criterion.key}`}
                                                       role="region"
                                                       aria-label={`${criterion.shortName} coaching tip`}
-                                                      className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-xs space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none"
+                                                      className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-[11px] space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none"
                                                     >
-                                                      <p className="text-[11px] text-foreground/80 leading-relaxed">
+                                                      <p className="text-foreground/85 leading-snug">
+                                                        <strong className="font-semibold text-brand-900 dark:text-brand-200">{criterion.shortName}:</strong>{" "}
                                                         {activeCriterionInfo.rubricGoal}
                                                       </p>
-                                                      <div className="pt-1 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1 text-[11px] text-brand-800 dark:text-brand-300">
-                                                        <Eye className="size-3 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
-                                                        <span className="leading-normal">
-                                                          <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
-                                                        </span>
-                                                      </div>
+                                                      <p className="text-brand-800 dark:text-brand-300 leading-snug">
+                                                        <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
+                                                      </p>
                                                     </div>
                                                   )}
                                                 </div>
@@ -1473,13 +1498,6 @@ export function SubmissionDetailContent({
                                             })}
                                           </div>
                                         </div>
-
-                                        {/* Promoted Release Completion Strip directly below recorded rubric */}
-                                        <SubmissionLifecycleControls
-                                          submission={submission}
-                                          showRelease
-                                          variant="completion"
-                                        />
                                       </>
                                     ) : canEditRubric ? (
                                       /* INTERACTIVE RUBRIC ENTRY FORM */
@@ -1493,6 +1511,8 @@ export function SubmissionDetailContent({
                                         onDirtyChange={setIsRubricDirty}
                                         onFocusCriterion={setSelectedCriterion}
                                         canGoNext={canGoNext}
+                                        canRelease={canReleaseSubmission}
+                                        onSaveAndRelease={handleSaveAndReleaseRubric}
                                         onAdvanceNext={() => {
                                           if (
                                             canGoNext &&
@@ -1542,23 +1562,17 @@ export function SubmissionDetailContent({
                             {isDesktopGuideRendered && activeCriterionInfo && (
                               <div
                                 id="criterion-diagnostic-guide"
-                                className="hidden lg:block p-2.5 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1 animate-in fade-in-50 duration-200 motion-reduce:animate-none"
+                                className="hidden lg:block p-2.5 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1 text-xs animate-in fade-in-50 duration-200 motion-reduce:animate-none"
                               >
-                                <div className="flex items-center justify-between text-xs font-semibold text-brand-900 dark:text-brand-200">
-                                  <h3 className="flex items-center gap-1.5 font-semibold text-brand-900 dark:text-brand-200">
-                                    <Info className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                                    <span>{selectedCriterion} Guide</span>
-                                  </h3>
-                                </div>
-                                <p className="text-[11px] sm:text-xs text-foreground/85 leading-snug">
+                                <p className="text-foreground/85 leading-snug">
+                                  <strong className="font-semibold text-brand-900 dark:text-brand-200">
+                                    {selectedCriterion}:
+                                  </strong>{" "}
                                   {activeCriterionInfo.rubricGoal}
                                 </p>
-                                <div className="pt-1 border-t border-brand-200/60 dark:border-brand-900/60 flex items-start gap-1.5 text-[11px] sm:text-xs text-brand-800 dark:text-brand-300">
-                                  <Eye className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" aria-hidden="true" />
-                                  <span className="leading-normal">
-                                    <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
-                                  </span>
-                                </div>
+                                <p className="text-brand-800 dark:text-brand-300 leading-snug">
+                                  <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
+                                </p>
                               </div>
                             )}
                           </div>
@@ -1568,6 +1582,14 @@ export function SubmissionDetailContent({
                   </>
                 );
               })()}
+
+              {/* Persistent Workspace Release & Next Action Bar */}
+              <SubmissionLifecycleControls
+                submission={submission}
+                showRelease
+                variant="completion"
+                onNavigateNext={canGoNext && submissions ? handleNavigateNextStudent : undefined}
+              />
             </div>
           </div>
         </div>
@@ -1577,94 +1599,21 @@ export function SubmissionDetailContent({
           <div className="flex items-center gap-2 flex-wrap">
             <SubmissionLifecycleControls submission={submission} showRelease={false} variant="actions" />
           </div>
-          <div className="flex items-center gap-2.5 ml-auto">
-            <div className="text-[11px] text-muted-foreground hidden sm:inline-flex items-center gap-2.5 select-none">
-              {hasMultipleSubmissions && (
-                <>
-                  <span className="inline-flex items-center gap-1">
-                    <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-muted border border-border rounded-md font-mono">
-                      ←
-                    </kbd>
-                    <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-muted border border-border rounded-md font-mono">
-                      →
-                    </kbd>
-                    <span>Navigate (or J / K)</span>
-                  </span>
-                  <span className="text-border">·</span>
-                </>
-              )}
-              <span className="inline-flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-muted border border-border rounded-md font-mono">
-                  Esc
-                </kbd>
-                <span>Close</span>
-              </span>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onClose?.()}
-              className="h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-3.5 text-xs font-medium cursor-pointer touch-manipulation"
-            >
-              Close
-            </Button>
-          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleProtectedClose}
+            className="h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-3.5 text-xs font-medium cursor-pointer touch-manipulation ml-auto"
+          >
+            Close
+          </Button>
         </DialogFooter>
-      ) : (
+      ) : isSubmissionCompleted ? (
         <footer className="pt-3 sm:pt-3.5 border-t border-border/70 flex items-center justify-between text-xs text-muted-foreground flex-wrap gap-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <SubmissionLifecycleControls submission={submission} showRelease={false} variant="actions" />
-          </div>
-
-          <div className="flex items-center gap-2.5 ml-auto flex-wrap">
-            {/* Desktop keyboard shortcuts (>= sm) */}
-            <div className="hidden sm:inline-flex items-center gap-1.5 flex-wrap">
-              <span className="font-medium text-foreground">Shortcuts:</span>
-              {hasMultipleSubmissions && (
-                <>
-                  <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
-                    J
-                  </kbd>
-                  <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
-                    K
-                  </kbd>
-                  <span>student</span>
-                  <span className="text-border">·</span>
-                </>
-              )}
-              <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
-                C
-              </kbd>
-              <span>ink</span>
-              <span className="text-border">·</span>
-              <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
-                L
-              </kbd>
-              <span>magnify</span>
-              <span className="text-border">·</span>
-              <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
-                +
-              </kbd>
-              <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
-                -
-              </kbd>
-              <span>zoom</span>
-              <span className="text-border">·</span>
-              <kbd className="px-1.5 py-0.5 text-[11px] font-semibold bg-muted border border-border rounded-md font-mono">
-                Esc
-              </kbd>
-              <span>back</span>
-            </div>
-
-            {hasMultipleSubmissions && submissions && submissions.length > 0 && (
-              <span className="text-xs text-muted-foreground tabular-nums">
-                Student {effectiveIndex + 1} of {submissions.length}
-              </span>
-            )}
-          </div>
+          <SubmissionLifecycleControls submission={submission} showRelease={false} variant="actions" />
         </footer>
-      )}
+      ) : null}
 
       {/* Unsaved Rubric Navigation Guard Dialog */}
       <AlertDialog
@@ -1745,6 +1694,46 @@ export function SubmissionDetailContent({
               ) : (
                 "Delete Attempt"
               )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Unsaved Rubric Close/Back Guard Dialog */}
+      <AlertDialog
+        open={isConfirmingClose}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setIsConfirmingClose(false);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard unsaved rubric ratings?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved ratings for{" "}
+              <strong className="font-semibold text-foreground">
+                {submission.student?.full_name ?? "this student"}
+              </strong>
+              . Leaving this worksheet will discard your changes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => setIsConfirmingClose(false)}
+              className="min-h-10 sm:min-h-9"
+            >
+              Stay here
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                setIsConfirmingClose(false);
+                setIsRubricDirty(false);
+                onClose?.();
+              }}
+              className="min-h-10 sm:min-h-9 cursor-pointer"
+            >
+              Discard &amp; leave
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

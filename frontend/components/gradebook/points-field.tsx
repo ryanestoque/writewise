@@ -40,6 +40,7 @@ export function PointsField({
         aria-invalid={!!error}
         aria-describedby={`${id}-hint`}
         placeholder="e.g., 20"
+        className="h-10 sm:h-9 tabular-nums font-semibold"
       />
       <p
         id={`${id}-hint`}
@@ -48,7 +49,7 @@ export function PointsField({
       >
         {error ??
           hint ??
-          "Leave blank for assessment bands only. Use up to two decimal places, from 0.01 to 9,999.99."}
+          "Leave blank for bands only. Use up to two decimal places, from 0.01 to 9,999.99."}
       </p>
     </Field>
   );

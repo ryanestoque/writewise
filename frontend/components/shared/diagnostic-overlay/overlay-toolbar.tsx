@@ -328,7 +328,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 <DropdownMenuTrigger
                   disabled={!visible}
                   className={cn(
-                    "inline-flex items-center gap-1.5 bg-surface dark:bg-card px-2.5 py-1.5 @min-[540px]:py-1 rounded-lg border border-border/70 text-xs shadow-2xs min-w-0 shrink-0 overflow-hidden cursor-pointer hover:bg-muted/70 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation",
+                    "inline-flex items-center gap-1.5 bg-surface dark:bg-card px-2.5 py-1.5 @min-[540px]:py-1 rounded-lg border border-border/70 text-xs shadow-2xs min-w-0 shrink-0 overflow-hidden cursor-pointer hover:bg-muted/70 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation min-h-[40px] @min-[540px]:min-h-0",
                     !visible && "opacity-50 cursor-not-allowed"
                   )}
                   aria-label={`Current guide: ${activeCriterion === "all" ? "All Guides" : activeFilterMeta.label}. Click to select a diagnostic criterion.`}
@@ -344,7 +344,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   {attentionCounts[activeCriterion] > 0 && (
                     <Badge
                       variant="secondary"
-                      className="px-1.5 py-0 h-4 text-[10px] font-bold rounded-full bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-destructive border border-band-1/30 ml-0.5 shrink-0"
+                      className="px-1.5 py-0 h-4 text-[10px] font-bold rounded-full bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-band-1-text border border-band-1/30 ml-0.5 shrink-0"
                     >
                       <span className="sr-only">({attentionCounts[activeCriterion]} attention items)</span>
                       <span aria-hidden="true">{attentionCounts[activeCriterion]}</span>
@@ -377,7 +377,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                               "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
                               isSelected
                                 ? "bg-brand-200/60 text-brand-900 dark:bg-brand-900 dark:text-brand-200"
-                                : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-destructive border border-band-1/30"
+                                : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-band-1-text border border-band-1/30"
                             )}
                           >
                             {count}
@@ -477,7 +477,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                             "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
                             isSelected
                               ? "bg-white/25 text-white"
-                              : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-destructive border border-band-1/30"
+                              : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-band-1-text border border-band-1/30"
                           )}
                         >
                           <span className="sr-only">({count} attention items)</span>
@@ -505,7 +505,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
           )}
 
           {/* Master Switch on Compact / Row-1 layout (aligned to the right on Row 1) */}
-          <div className="flex @min-[540px]:hidden items-center gap-1.5 shrink-0 pl-1">
+          <div className="flex @min-[540px]:hidden items-center justify-center gap-1.5 shrink-0 pl-1 min-h-[40px] min-w-[40px]">
             <Switch
               id="toggle-diagnostic-overlay-mobile"
               aria-label="Toggle handwriting diagnostic overlay"
@@ -706,9 +706,9 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 </svg>
               </div>
               <div>
-                <p className="font-semibold text-foreground">Cursive Slant (8°–16° Tilt)</p>
+                <p className="font-semibold text-foreground">Cursive Slant (6°–15° Tilt)</p>
                 <p className="text-muted-foreground leading-snug">
-                  Zaner-Bloser standard recommends an 8°–16° forward slant. Extreme tilts are flagged.
+                  Provisional forward slant target is 6.0°–15.0° from vertical. Extreme tilts are flagged.
                 </p>
               </div>
             </div>

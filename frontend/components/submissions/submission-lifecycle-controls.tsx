@@ -5,7 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table2, Send, RotateCcw, ExternalLink, FileText, Loader2 } from "lucide-react";
+import { Table2, Send, RotateCcw, ExternalLink, FileText, Loader2, CheckCircle2, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -178,11 +178,13 @@ export function SubmissionLifecycleControls({
   showRelease = true,
   variant = "card",
   className,
+  onNavigateNext,
 }: {
   submission: Submission;
   showRelease?: boolean;
   variant?: "card" | "header" | "actions" | "completion";
   className?: string;
+  onNavigateNext?: () => void;
 }) {
   const focusTarget = useRef<HTMLElement>(null);
   const { data: states, isError } = useActivityWork(submission.activity_id);
@@ -276,43 +278,42 @@ export function SubmissionLifecycleControls({
     </AlertDialog>
   );
 
-  // Header badges variant: lightweight status strip embedded directly in student metadata row
+  // Header badges variant: lightweight, consolidated status strip embedded directly in student metadata row
   if (variant === "header") {
     return (
       <div className={cn("inline-flex items-center gap-1.5 flex-wrap", className)}>
-        <Badge
-          variant="secondary"
-          className="text-[10px] sm:text-[11px] font-medium h-5 px-2 bg-muted/80 text-foreground"
-        >
-          {submission.status === "returned"
-            ? "Returned"
-            : !work
-              ? isError
-                ? "Status unavailable"
-                : "Loading status…"
-              : active
-                ? work.work_status
-                : "Historical attempt"}
-        </Badge>
-        {active && (
+        {submission.status === "returned" ? (
+          <Badge
+            variant="destructive"
+            className="text-[10px] sm:text-[11px] font-medium h-5 px-2"
+          >
+            Returned
+          </Badge>
+        ) : completed && active && submission.released_at ? (
           <Badge
             variant="outline"
-            className="text-[10px] sm:text-[11px] h-5 px-1.5 font-medium border-brand-300 text-brand-800 dark:border-brand-700 dark:text-brand-300 bg-brand-50/50 dark:bg-brand-950/40"
+            className="text-[10px] sm:text-[11px] h-5 px-2 font-medium border-emerald-300 text-emerald-800 dark:border-emerald-700 dark:text-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/40"
           >
-            Counted attempt
+            Result released
+          </Badge>
+        ) : active ? (
+          <Badge
+            variant="secondary"
+            className="text-[10px] sm:text-[11px] font-medium h-5 px-2 bg-muted/80 text-foreground"
+          >
+            {work?.work_status ?? "Counted attempt"}
+          </Badge>
+        ) : (
+          <Badge
+            variant="outline"
+            className="text-[10px] sm:text-[11px] font-medium h-5 px-2 text-muted-foreground border-border/80"
+          >
+            Historical attempt
           </Badge>
         )}
         {work?.pinned_submission_id === submission.id && (
-          <Badge variant="outline" className="text-[10px] sm:text-[11px] h-5 px-1.5 font-medium">
+          <Badge variant="outline" className="text-[10px] sm:text-[11px] h-5 px-1.5 font-medium border-border/70 text-muted-foreground">
             Pinned
-          </Badge>
-        )}
-        {completed && active && submission.released_at && (
-          <Badge
-            variant="outline"
-            className="text-[10px] sm:text-[11px] h-5 px-1.5 font-medium border-emerald-300 text-emerald-800 dark:border-emerald-700 dark:text-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/40"
-          >
-            Result released
           </Badge>
         )}
       </div>
@@ -321,6 +322,38 @@ export function SubmissionLifecycleControls({
 
   // Completion strip variant: prominent, reassuring release CTA directly beneath recorded rubric
   if (variant === "completion") {
+    if (completed && active && submission.released_at) {
+      return (
+        <div
+          className={cn(
+            "flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl border border-emerald-300/80 dark:border-emerald-800/80 bg-emerald-50/60 dark:bg-emerald-950/40 shadow-warm-sm",
+            className
+          )}
+        >
+          <div className="min-w-0 space-y-0.5">
+            <p className="text-xs font-semibold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
+              <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+              <span>Result released to parent</span>
+            </p>
+            <p className="text-xs text-muted-foreground leading-snug">
+              Scores and diagnostic feedback are visible to the student&apos;s family in the parent portal.
+            </p>
+          </div>
+          {onNavigateNext && (
+            <Button
+              type="button"
+              size="sm"
+              onClick={onNavigateNext}
+              className="h-10 sm:h-9 min-h-[40px] sm:min-h-0 px-4 text-xs font-semibold cursor-pointer touch-manipulation gap-1.5 bg-brand-600 hover:bg-brand-700 text-white dark:bg-brand-500 dark:hover:bg-brand-600 shrink-0 rounded-lg shadow-xs"
+            >
+              <span>Next student</span>
+              <ArrowRight className="size-3.5" aria-hidden="true" />
+            </Button>
+          )}
+        </div>
+      );
+    }
+
     if (!canRelease) return null;
     return (
       <div

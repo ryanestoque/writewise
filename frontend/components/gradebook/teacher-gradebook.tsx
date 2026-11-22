@@ -1,68 +1,81 @@
 "use client";
 
-import { hasUnreadWorkComments } from "@/lib/comments/selection";
-import { useState, useRef, type KeyboardEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
+import {
+  useState,
+  useRef,
+  useMemo,
+  useEffect,
+  type KeyboardEvent,
+} from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Download,
-  Loader2,
-  MoreHorizontal,
   Send,
-  FileX,
+  MoreHorizontal,
   CheckCircle2,
+  FileX,
   ExternalLink,
+  Users,
+  FileText,
 } from "lucide-react";
-import Link from "next/link";
 import { toast } from "sonner";
-import { gradebookRequest, downloadGradebookCsv } from "@/lib/gradebook/transport";
 import {
   useSectionGradebook,
-  useActiveGradebookAccount,
   useGradebookActions,
   type GradebookCell,
+  useActiveGradebookAccount,
 } from "@/lib/hooks/use-gradebook";
-import type { components } from "@/types/api";
-import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { useUnreadCommentThreads } from "@/lib/hooks/use-comments";
+import { hasUnreadWorkComments } from "@/lib/comments/selection";
+import { gradebookRequest, downloadGradebookCsv } from "@/lib/gradebook/transport";
+import { GradebookCellButton, TouchDeviceContext, useIsTouchDevice } from "./gradebook-cell";
+import { WorkGradeSheet } from "./work-grade-sheet";
+import { GradebookBulkDialog } from "./gradebook-bulk-dialog";
+import { QueryRecovery } from "@/components/shared/query-recovery";
+import { FloatingActionBar } from "@/components/ui/floating-action-bar";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+  EmptyMedia,
+} from "@/components/ui/empty";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+} from "@/components/ui/select";
 import {
   DropdownMenu,
+  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
-import { FloatingActionBar } from "@/components/ui/floating-action-bar";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { QueryRecovery } from "@/components/shared/query-recovery";
+import type { components } from "@/types/api";
 import { cn } from "@/lib/utils";
-import {
-  GradebookCellButton,
-  TouchDeviceContext,
-  useIsTouchDevice,
-} from "./gradebook-cell";
-import { WorkGradeSheet } from "./work-grade-sheet";
-import { GradebookBulkDialog } from "./gradebook-bulk-dialog";
-import { useUnreadCommentThreads } from "@/lib/hooks/use-comments";
 
 const ACTIVITY_FILTER_ITEMS = [
-  { label: "All activities", value: "all" },
-  { label: "Current activities", value: "current" },
-  { label: "Archived activities", value: "archived" },
-] as const;
+  { value: "all", label: "All activities" },
+  { value: "active", label: "Current activities" },
+  { value: "archived", label: "Archived activities" },
+];
 
 export function TeacherGradebook({
   userId,
@@ -81,16 +94,29 @@ export function TeacherGradebook({
     staleTime: 30_000,
     enabled: active,
   });
-  const [chosenSection, setSection] = useState<string | null>(initialSectionId ?? null);
+  const [chosenSection, setChosenSection] = useState<string | null>(initialSectionId ?? null);
   const [activityId, setActivityId] = useState(initialActivityId);
   const sectionId = sections.data?.some((section) => section.id === chosenSection)
-    ? chosenSection
+    ? (chosenSection ?? undefined)
     : sections.data?.[0]?.id;
 
-  const sectionItems = (sections.data ?? []).map((section) => ({
-    label: section.name,
-    value: section.id,
-  }));
+  const sectionItems = useMemo(
+    () =>
+      (sections.data ?? []).map((sec) => ({
+        value: sec.id,
+        label: sec.name,
+      })),
+    [sections.data]
+  );
+
+  function setSection(id: string) {
+    setChosenSection(id);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("section", id);
+      window.history.replaceState(null, "", url.toString());
+    }
+  }
 
   function handleClearActivityFilter() {
     setActivityId(undefined);
@@ -108,10 +134,45 @@ export function TeacherGradebook({
         Sign in again to view grades.
       </p>
     );
+
   return (
     <div className="min-w-0 space-y-6">
+      {/* Top Header Row with integrated Section Selector & Export */}
       <div className="flex flex-wrap items-center justify-between gap-4 print:hidden">
-        <h1 className="font-heading text-2xl font-semibold sm:text-3xl">Gradebook</h1>
+        <div className="flex items-center gap-3 flex-wrap">
+          <h1 className="font-heading text-2xl font-semibold text-foreground">Gradebook</h1>
+          {sections.data && sections.data.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Label htmlFor="gradebook-section-select" className="sr-only">
+                Section
+              </Label>
+              <Select
+                items={sectionItems}
+                value={sectionId ?? null}
+                onValueChange={(val) => {
+                  if (val) setSection(val);
+                }}
+              >
+                <SelectTrigger
+                  id="gradebook-section-select"
+                  className="w-[180px] h-10 sm:h-9 cursor-pointer"
+                  aria-label="Select section"
+                >
+                  <SelectValue placeholder="Select section" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {sectionItems.map((item) => (
+                      <SelectItem key={item.value} value={item.value} className="cursor-pointer">
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
       </div>
 
       {sections.isError ? (
@@ -122,20 +183,34 @@ export function TeacherGradebook({
           isRetrying={sections.isFetching}
         />
       ) : sections.isPending ? (
-        <p role="status" className="flex items-center gap-2 text-sm">
-          <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden /> Loading
-          sections…
-        </p>
-      ) : !sections.data.length ? (
-        <div className="bg-card space-y-2 rounded-xl border p-6">
-          <h2 className="font-heading font-semibold">Choose a class to start</h2>
-          <p className="text-muted-foreground text-sm">
-            Add a section and its students in your roster to use the class gradebook.
-          </p>
-          <Link href="/roster" className="inline-flex min-h-10 items-center text-sm underline">
-            Open class roster
-          </Link>
+        <div className="space-y-4">
+          <div className="flex gap-3">
+            <Skeleton className="h-10 w-56 rounded-md" />
+            <Skeleton className="h-10 w-40 rounded-md" />
+          </div>
+          <div className="rounded-md border p-6 space-y-3">
+            <Skeleton className="h-8 w-full rounded-md" />
+            <Skeleton className="h-12 w-full rounded-md" />
+            <Skeleton className="h-12 w-full rounded-md" />
+          </div>
         </div>
+      ) : !sections.data.length ? (
+        <Empty className="rounded-md border bg-card p-8">
+          <EmptyMedia variant="icon">
+            <Users className="size-5" />
+          </EmptyMedia>
+          <EmptyHeader>
+            <EmptyTitle>Choose a class to start</EmptyTitle>
+            <EmptyDescription>
+              Add a section and its students in your roster to use the class gradebook.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Link href="/roster" className={buttonVariants({ variant: "outline", size: "sm" })}>
+              Open class roster
+            </Link>
+          </EmptyContent>
+        </Empty>
       ) : (
         <>
           {activityId && (
@@ -145,48 +220,19 @@ export function TeacherGradebook({
               </p>
               <Button
                 variant="outline"
-                className="min-h-11 cursor-pointer"
+                className="h-10 sm:h-9 cursor-pointer"
                 onClick={handleClearActivityFilter}
               >
                 Show all activities
               </Button>
               <Link
                 href={`/activities/${encodeURIComponent(activityId)}`}
-                className="focus-visible:ring-ring inline-flex min-h-11 items-center rounded underline underline-offset-4 focus-visible:ring-2"
+                className="focus-visible:ring-ring inline-flex h-10 sm:h-9 items-center rounded underline underline-offset-4 focus-visible:ring-2"
               >
                 Back to activity
               </Link>
             </div>
           )}
-          <div className="flex flex-wrap items-center gap-3 print:hidden">
-            <Label htmlFor="gradebook-section-select" className="text-sm font-medium text-foreground">
-              Section
-            </Label>
-            <Select
-              items={sectionItems}
-              value={sectionId ?? null}
-              onValueChange={(val) => {
-                if (val) setSection(val);
-              }}
-            >
-              <SelectTrigger
-                id="gradebook-section-select"
-                className="w-[180px] cursor-pointer"
-                aria-label="Select section"
-              >
-                <SelectValue placeholder="Select section" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {sectionItems.map((item) => (
-                    <SelectItem key={item.value} value={item.value} className="cursor-pointer">
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
           {sectionId && (
             <SectionGrid
               key={`${userId}:${sectionId}`}
@@ -195,6 +241,7 @@ export function TeacherGradebook({
               activityId={activityId}
               totalSectionsCount={sections.data.length}
               sections={sections.data}
+              onClearActivityFilter={handleClearActivityFilter}
             />
           )}
         </>
@@ -209,13 +256,16 @@ function SectionGrid({
   activityId,
   totalSectionsCount = 1,
   sections,
+  onClearActivityFilter,
 }: {
   userId: string;
   sectionId: string;
   activityId?: string;
   totalSectionsCount?: number;
   sections?: components["schemas"]["SectionResponse"][];
+  onClearActivityFilter?: () => void;
 }) {
+  const router = useRouter();
   const query = useSectionGradebook(userId, sectionId);
   const unread = useUnreadCommentThreads(userId);
   const actions = useGradebookActions(userId);
@@ -236,6 +286,17 @@ function SectionGrid({
   const [viewMode, setViewMode] = useState<"points" | "diagnostic">("points");
   const [activeCell, setActiveCell] = useState<{ row: number; col: number }>({ row: 0, col: 0 });
 
+  // Escape key handler to clear bulk student selection
+  useEffect(() => {
+    function handleKeyDown(e: globalThis.KeyboardEvent) {
+      if (e.key === "Escape" && selected.size > 0 && !cell && !bulk) {
+        setSelected(new Set());
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selected.size, cell, bulk]);
+
   if (!query.isAccountActive)
     return (
       <p role="status" className="text-muted-foreground text-sm">
@@ -253,11 +314,21 @@ function SectionGrid({
     );
   if (!query.data || query.data.section_id !== sectionId)
     return (
-      <p role="status" className="flex items-center gap-2 py-8 text-sm">
-        <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden /> Loading
-        gradebook…
-      </p>
+      <div className="space-y-4">
+        <div className="flex gap-3">
+          <Skeleton className="h-10 w-56 rounded-md" />
+          <Skeleton className="h-10 w-40 rounded-md" />
+          <Skeleton className="h-10 w-44 rounded-md" />
+        </div>
+        <div className="rounded-md border p-6 space-y-3">
+          <Skeleton className="h-8 w-full rounded-md" />
+          <Skeleton className="h-12 w-full rounded-md" />
+          <Skeleton className="h-12 w-full rounded-md" />
+          <Skeleton className="h-12 w-full rounded-md" />
+        </div>
+      </div>
     );
+
   const book = query.data;
   const rows = book.rows.filter((row) =>
     row.student_name.toLocaleLowerCase().includes(search.toLocaleLowerCase())
@@ -352,14 +423,17 @@ function SectionGrid({
   }
 
   function handleNavigateDown(row: number, column: number) {
-    const nextRow = Math.min(row + 1, rows.length - 1);
+    if (row >= rows.length - 1) {
+      // Reached the end of the roster: do not loop into edit mode!
+      return;
+    }
+    const nextRow = row + 1;
     setActiveCell({ row: nextRow, col: column });
     const nextCell = tableRef.current?.querySelector<HTMLElement>(
       `[data-gradecell][data-row="${nextRow}"][data-column="${column}"]`
     );
     if (nextCell) {
       nextCell.focus();
-      nextCell.click();
     }
   }
 
@@ -402,14 +476,22 @@ function SectionGrid({
     }
   }
 
+  function handleViewModeKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      e.preventDefault();
+      setViewMode((prev) => (prev === "points" ? "diagnostic" : "points"));
+    }
+  }
+
   return (
     <div className="min-w-0 space-y-4">
+      {/* Action Toolbar */}
       <div className="flex flex-wrap items-end justify-between gap-3 print:hidden">
         <div className="flex flex-wrap items-center gap-3">
           <Input
             aria-label="Find student in gradebook"
             placeholder="Find student…"
-            className="w-full sm:w-56"
+            className="w-full sm:w-56 h-10 sm:h-9"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -421,7 +503,7 @@ function SectionGrid({
             }}
           >
             <SelectTrigger
-              className="w-[170px] cursor-pointer"
+              className="w-[170px] h-10 sm:h-9 cursor-pointer"
               aria-label="Show activities"
             >
               <SelectValue />
@@ -440,15 +522,17 @@ function SectionGrid({
           <div
             role="radiogroup"
             aria-label="Gradebook view mode"
-            className="inline-flex rounded-lg border bg-muted/40 p-0.5 text-xs font-medium"
+            onKeyDown={handleViewModeKeyDown}
+            className="inline-flex rounded-lg border bg-muted/40 p-0.5 text-xs font-medium h-10 sm:h-9 items-center"
           >
             <button
               type="button"
               role="radio"
               aria-checked={viewMode === "points"}
+              tabIndex={viewMode === "points" ? 0 : -1}
               onClick={() => setViewMode("points")}
               className={cn(
-                "px-2.5 py-1.5 rounded-md transition-colors cursor-pointer",
+                "px-2.5 py-1.5 rounded-md transition-colors cursor-pointer min-h-8",
                 viewMode === "points"
                   ? "bg-background text-foreground shadow-xs font-semibold"
                   : "text-muted-foreground hover:text-foreground"
@@ -460,9 +544,10 @@ function SectionGrid({
               type="button"
               role="radio"
               aria-checked={viewMode === "diagnostic"}
+              tabIndex={viewMode === "diagnostic" ? 0 : -1}
               onClick={() => setViewMode("diagnostic")}
               className={cn(
-                "px-2.5 py-1.5 rounded-md transition-colors cursor-pointer",
+                "px-2.5 py-1.5 rounded-md transition-colors cursor-pointer min-h-8",
                 viewMode === "diagnostic"
                   ? "bg-background text-foreground shadow-xs font-semibold"
                   : "text-muted-foreground hover:text-foreground"
@@ -472,14 +557,20 @@ function SectionGrid({
             </button>
           </div>
         </div>
-        <Button variant="outline" disabled={exporting} onClick={() => void download()}>
+
+        <Button
+          variant="outline"
+          className="h-10 sm:h-9"
+          disabled={exporting}
+          onClick={() => void download()}
+        >
           <Download aria-hidden className="mr-1.5 size-4" />{" "}
           {exporting ? "Downloading…" : "Export class record"}
         </Button>
       </div>
 
       {/* Section Readiness Summary Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/30 px-4 py-3 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 px-4 py-2.5 text-xs">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <span className="text-foreground font-medium">
             Class: <strong className="font-semibold">{book.section_name}</strong> ({book.rows.length} students)
@@ -494,13 +585,13 @@ function SectionGrid({
 
         <div className="flex items-center gap-2">
           {pendingDraftReleaseCount > 0 ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-band-2/15 border border-band-2/30 px-2.5 py-1 text-xs font-medium text-band-2-text dark:text-amber-300">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-band-2/15 border border-band-2/30 px-2.5 py-1 text-xs font-medium text-band-2-text">
               <span className="size-1.5 rounded-full bg-band-2" />
               <span>{pendingDraftReleaseCount} draft {pendingDraftReleaseCount === 1 ? "grade" : "grades"} pending release</span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-band-4/15 border border-band-4/30 px-2.5 py-1 text-xs font-medium text-band-4-text dark:text-emerald-300">
-              <CheckCircle2 className="size-3.5 text-band-4-text dark:text-emerald-300" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-band-4/15 border border-band-4/30 px-2.5 py-1 text-xs font-medium text-band-4-text">
+              <CheckCircle2 className="size-3.5 text-band-4-text" />
               <span>All current grades released</span>
             </span>
           )}
@@ -508,9 +599,8 @@ function SectionGrid({
       </div>
 
       <p className="text-muted-foreground text-xs print:hidden">
-        {selected.size ? `${selected.size} students selected` : `${rows.length} students shown`}.
-        Filters change the display; totals and CSV include all activities, including archived work.
-        Students without a section appear in the roster.
+        {selected.size ? `${selected.size} students selected. ` : `${rows.length} students shown. `}
+        Totals include drafts across all activities. Students without a section appear in the roster.
       </p>
 
       {exportError && (
@@ -520,241 +610,292 @@ function SectionGrid({
       )}
 
       {!book.rows.length ? (
-        <p className="bg-card rounded-xl border p-6 text-sm">
-          This section has no students. Add students from the class roster.
-        </p>
+        <Empty className="rounded-md border bg-card p-8">
+          <EmptyMedia variant="icon">
+            <Users className="size-5" />
+          </EmptyMedia>
+          <EmptyHeader>
+            <EmptyTitle>No students in this section</EmptyTitle>
+            <EmptyDescription>
+              Add students to this section from the class roster to begin tracking cursive handwriting progress.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Link href="/roster" className={buttonVariants({ variant: "outline", size: "sm" })}>
+              Open class roster
+            </Link>
+          </EmptyContent>
+        </Empty>
       ) : !activities.length ? (
-        <p className="bg-card rounded-xl border p-6 text-sm">
-          {activityId
-            ? "The linked activity is not available in this section with the current activity filter. Choose another section or show all activities."
-            : book.activities.length
-              ? "No activities match this filter. Choose All activities to see the class record."
-              : "No coursework yet. Assign an activity to this section or its students to begin."}
-        </p>
+        <Empty className="rounded-md border bg-card p-8">
+          <EmptyMedia variant="icon">
+            <FileText className="size-5" />
+          </EmptyMedia>
+          <EmptyHeader>
+            <EmptyTitle>No coursework matches this filter</EmptyTitle>
+            <EmptyDescription>
+              {activityId
+                ? "The linked activity is not available in this section with the current activity filter."
+                : book.activities.length
+                  ? "No activities match your current filter. Choose All activities to see the full class record."
+                  : "No coursework assigned yet. Assign an activity to this section or its students to begin."}
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            {onClearActivityFilter ? (
+              <Button variant="outline" size="sm" onClick={onClearActivityFilter}>
+                Show all activities
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" onClick={() => setFilter("all")}>
+                Show all activities
+              </Button>
+            )}
+          </EmptyContent>
+        </Empty>
       ) : (
         <TouchDeviceContext.Provider value={isTouchDevice}>
           <div
             ref={tableRef}
             className={cn(
-              "bg-card max-h-[70vh] overflow-auto rounded-xl border transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring print:max-h-none print:overflow-visible print:border-none",
+              "bg-card max-h-[70vh] overflow-auto rounded-md border transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring print:max-h-none print:overflow-visible print:border-none",
               selected.size > 0 && "pb-24 sm:pb-20"
             )}
             tabIndex={-1}
             aria-label={`${book.section_name} grades, scroll for more activities. Use arrow keys to navigate cells, Enter to edit, Space to inspect.`}
             onKeyDown={moveFocus}
           >
-          <table
-            className="w-full border-collapse text-sm"
-            role="grid"
-            aria-colcount={activities.length + 2}
-            aria-rowcount={rows.length + 1}
-          >
-            <caption className="sr-only">
-              {book.section_name} coursework. Draft totals include all activities. Use arrow keys
-              between grade cells, Enter to edit, Space to inspect.
-            </caption>
-            <thead className="bg-card sticky top-0 z-20 print:static">
-              <tr className="border-b" role="row" aria-rowindex={1}>
-                <th
-                  scope="col"
-                  role="columnheader"
-                  aria-colindex={1}
-                  className="bg-card sticky left-0 z-30 min-w-44 sm:min-w-48 border-r p-3 text-left print:static"
-                >
-                  <label className="flex items-center gap-2.5 sm:gap-3 font-medium text-foreground cursor-pointer select-none">
-                    <Checkbox
-                      aria-label="Select shown students"
-                      className="print:hidden"
-                      checked={rows.length > 0 && rows.every((row) => selected.has(row.student_id))}
-                      onCheckedChange={(checked) =>
-                        setSelected((old) => {
-                          const next = new Set(old);
-                          rows.forEach((row) => {
-                            if (checked) next.add(row.student_id);
-                            else next.delete(row.student_id);
-                          });
-                          return next;
-                        })
-                      }
-                    />
-                    <span>Student</span>
-                  </label>
-                </th>
-                {activities.map((act, actIndex) => (
+            <table
+              className="w-full border-collapse text-sm"
+              role="grid"
+              aria-colcount={activities.length + 2}
+              aria-rowcount={rows.length + 1}
+            >
+              <caption className="sr-only">
+                {book.section_name} coursework. Draft totals include all activities. Use arrow keys
+                between grade cells, Enter to edit, Space to inspect.
+              </caption>
+              <thead className="bg-card sticky top-0 z-20 print:static">
+                <tr className="border-b" role="row" aria-rowindex={1}>
                   <th
-                    key={act.id}
                     scope="col"
                     role="columnheader"
-                    aria-colindex={actIndex + 2}
-                    className="max-w-64 min-w-56 border-r p-3 text-left align-top"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <Link
-                          className="font-medium text-foreground hover:underline underline-offset-4 decoration-primary/40 break-words"
-                          href={`/activities/${act.id}`}
-                        >
-                          {act.title}
-                        </Link>
-                        <p className="text-muted-foreground mt-0.5 text-xs font-normal">
-                          {act.points_possible
-                            ? `${act.points_possible} points`
-                            : "Assessment only"}
-                          {act.is_archived ? " · Archived" : ""}
-                        </p>
-                      </div>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger
-                          aria-label={`Actions for ${act.title}`}
-                          className="inline-flex min-h-11 min-w-11 size-11 sm:min-h-9 sm:min-w-9 sm:size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer print:hidden"
-                        >
-                          <MoreHorizontal className="size-4" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                          <DropdownMenuGroup>
-                            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                              Activity Actions
-                            </DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => beginBulk(act.id, "release")} className="cursor-pointer">
-                              <Send className="mr-2 size-4 text-primary" />
-                              Release grades to parents
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => beginBulk(act.id, "zero")}
-                              disabled={act.points_possible === null}
-                              className="cursor-pointer"
-                            >
-                              <FileX className="mr-2 size-4 text-muted-foreground" />
-                              {selected.size
-                                ? `Mark uncollected (0) for ${selected.size}`
-                                : "Mark uncollected (0 pts)"}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => beginBulk(act.id, "excuse")} className="cursor-pointer">
-                              <CheckCircle2 className="mr-2 size-4 text-muted-foreground" />
-                              {selected.size
-                                ? `Excuse ${selected.size} selected`
-                                : "Excuse all in section"}
-                            </DropdownMenuItem>
-                          </DropdownMenuGroup>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => {
-                              window.location.href = `/activities/${act.id}`;
-                            }}
-                            className="cursor-pointer"
-                          >
-                            <ExternalLink className="mr-2 size-4" />
-                            View activity details
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </th>
-                ))}
-                <th
-                  scope="col"
-                  role="columnheader"
-                  aria-colindex={activities.length + 2}
-                  className="min-w-40 p-3 text-left font-medium text-foreground"
-                >
-                  Overall
-                  <p className="text-muted-foreground mt-0.5 text-xs font-normal">
-                    {viewMode === "diagnostic" ? "Includes drafts & bands" : "Includes drafts"}
-                  </p>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, rowIndex) => (
-                <tr
-                  key={row.student_id}
-                  role="row"
-                  aria-rowindex={rowIndex + 2}
-                  className="border-b last:border-0 hover:bg-muted/30 transition-colors"
-                >
-                  <th
-                    scope="row"
-                    role="rowheader"
                     aria-colindex={1}
-                    className="bg-card sticky left-0 z-10 border-r p-3 text-left font-medium print:static"
+                    className="bg-card sticky left-0 z-30 min-w-32 max-w-36 sm:min-w-48 border-r p-3 text-left print:static"
                   >
-                    <label className="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none">
+                    <label className="flex items-center gap-2.5 sm:gap-3 font-medium text-foreground cursor-pointer select-none">
                       <Checkbox
-                        checked={selected.has(row.student_id)}
-                        onCheckedChange={(checked) => toggle(row.student_id, !!checked)}
-                        aria-label={`Select ${row.student_name}`}
+                        aria-label="Select shown students"
                         className="print:hidden"
+                        checked={rows.length > 0 && rows.every((row) => selected.has(row.student_id))}
+                        onCheckedChange={(checked) =>
+                          setSelected((old) => {
+                            const next = new Set(old);
+                            rows.forEach((row) => {
+                              if (checked) next.add(row.student_id);
+                              else next.delete(row.student_id);
+                            });
+                            return next;
+                          })
+                        }
                       />
-                      <span className="break-words text-foreground">{row.student_name}</span>
+                      <span>Student</span>
                     </label>
                   </th>
-                  {activities.map((act, column) => {
-                    const work = row.cells.find((entry) => entry.activity_id === act.id)!;
-                    const isCellFocused = activeCell.row === rowIndex && activeCell.col === column;
-                    return (
-                      <td
-                        key={act.id}
-                        role="gridcell"
-                        aria-colindex={column + 2}
-                        aria-selected={isCellFocused}
-                        className="border-r p-1 align-top"
-                      >
-                        <GradebookCellButton
-                          cell={work}
-                          viewMode={viewMode}
-                          hasUnreadComments={hasUnreadWorkComments(unread.data, {
-                            activityId: work.activity_id,
-                            studentId: work.student_id,
-                          })}
-                          label={`${row.student_name}, ${act.title}`}
-                          onOpen={() => setCell(work)}
-                          row={rowIndex}
-                          column={column}
-                          isFocused={isCellFocused}
-                          onFocusCell={() => setActiveCell({ row: rowIndex, col: column })}
-                          onSaveScore={(score) =>
-                            handleSaveScore(act.id, row.student_id, score)
-                          }
-                          onNavigateDown={handleNavigateDown}
-                        />
-                      </td>
-                    );
-                  })}
-                  <td
-                    role="gridcell"
+                  {activities.map((act, actIndex) => (
+                    <th
+                      key={act.id}
+                      scope="col"
+                      role="columnheader"
+                      aria-colindex={actIndex + 2}
+                      className="max-w-64 min-w-44 sm:min-w-56 border-r p-3 text-left align-top"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <Link
+                            className="font-medium text-foreground hover:underline underline-offset-4 decoration-primary/40 break-words"
+                            href={`/activities/${act.id}`}
+                          >
+                            {act.title}
+                          </Link>
+                          <p className="text-muted-foreground mt-0.5 text-xs font-normal">
+                            {act.points_possible
+                              ? `${act.points_possible} points`
+                              : "Bands only"}
+                            {act.is_archived ? " · Archived" : ""}
+                          </p>
+                        </div>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            aria-label={`Actions for ${act.title}`}
+                            className="inline-flex min-h-9 min-w-9 size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer print:hidden"
+                          >
+                            <MoreHorizontal className="size-4" />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuGroup>
+                              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                                Activity Actions
+                              </DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => beginBulk(act.id, "release")} className="cursor-pointer">
+                                <Send className="mr-2 size-4 text-primary" />
+                                Release grades to parents
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => beginBulk(act.id, "zero")}
+                                disabled={act.points_possible === null}
+                                className="cursor-pointer"
+                              >
+                                <FileX className="mr-2 size-4 text-muted-foreground" />
+                                {selected.size
+                                  ? `Mark uncollected (0) for ${selected.size}`
+                                  : "Mark uncollected (0 pts)"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => beginBulk(act.id, "excuse")} className="cursor-pointer">
+                                <CheckCircle2 className="mr-2 size-4 text-muted-foreground" />
+                                {selected.size
+                                  ? `Excuse ${selected.size} selected`
+                                  : "Excuse all in section"}
+                              </DropdownMenuItem>
+                            </DropdownMenuGroup>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => {
+                                router.push(`/activities/${act.id}`);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <ExternalLink className="mr-2 size-4" />
+                              View activity details
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </th>
+                  ))}
+                  <th
+                    scope="col"
+                    role="columnheader"
                     aria-colindex={activities.length + 2}
-                    aria-selected={activeCell.row === rowIndex && activeCell.col === activities.length}
-                    data-gradecell
-                    data-row={rowIndex}
-                    data-column={activities.length}
-                    tabIndex={activeCell.row === rowIndex && activeCell.col === activities.length ? 0 : -1}
-                    onFocus={() => setActiveCell({ row: rowIndex, col: activities.length })}
-                    aria-label={`${row.student_name} overall grade: ${row.totals.earned} of ${row.totals.possible} points, ${
-                      row.totals.percentage === null ? "no included grades" : `${row.totals.percentage}%`
-                    }`}
-                    className={cn(
-                      "p-3 align-top tabular-nums rounded-sm transition-colors focus-visible:outline-none",
-                      activeCell.row === rowIndex && activeCell.col === activities.length
-                        ? "border-primary/60 ring-2 ring-primary/40 bg-muted/40 shadow-xs"
-                        : ""
-                    )}
+                    className="min-w-32 sm:min-w-40 p-3 text-left font-medium text-foreground"
                   >
-                    <p className="font-semibold text-foreground">
-                      {row.totals.earned} / {row.totals.possible}
+                    Overall
+                    <p className="text-muted-foreground mt-0.5 text-xs font-normal">
+                      Includes drafts
                     </p>
-                    <p className="text-muted-foreground mt-0.5 text-xs">
-                      {row.totals.percentage === null
-                        ? "No included grades"
-                        : `${row.totals.percentage}%`}
-                    </p>
-                  </td>
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {!rows.length && <p className="p-6 text-sm">No students match this search.</p>}
-        </div>
+              </thead>
+              <tbody>
+                {rows.map((row, rowIndex) => (
+                  <tr
+                    key={row.student_id}
+                    role="row"
+                    aria-rowindex={rowIndex + 2}
+                    className="border-b last:border-0 hover:bg-muted/30 transition-colors group/row"
+                  >
+                    <th
+                      scope="row"
+                      role="rowheader"
+                      aria-colindex={1}
+                      className="bg-card sticky left-0 z-10 border-r p-3 text-left font-medium print:static group-hover/row:bg-muted/30 transition-colors"
+                    >
+                      <label className="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none">
+                        <Checkbox
+                          checked={selected.has(row.student_id)}
+                          onCheckedChange={(checked) => toggle(row.student_id, !!checked)}
+                          aria-label={`Select ${row.student_name}`}
+                          className="print:hidden"
+                        />
+                        <span className="break-words text-foreground line-clamp-2">{row.student_name}</span>
+                      </label>
+                    </th>
+                    {activities.map((act, column) => {
+                      const work = row.cells.find((entry) => entry.activity_id === act.id);
+                      const isCellFocused = activeCell.row === rowIndex && activeCell.col === column;
+                      if (!work) {
+                        return (
+                          <td
+                            key={act.id}
+                            role="gridcell"
+                            aria-colindex={column + 2}
+                            className="border-r p-1 align-top text-muted-foreground text-xs"
+                          >
+                            Not assigned
+                          </td>
+                        );
+                      }
+                      return (
+                        <td
+                          key={act.id}
+                          role="gridcell"
+                          aria-colindex={column + 2}
+                          aria-selected={isCellFocused}
+                          className="border-r p-1 align-top"
+                        >
+                          <GradebookCellButton
+                            cell={work}
+                            viewMode={viewMode}
+                            hasUnreadComments={hasUnreadWorkComments(unread.data, {
+                              activityId: work.activity_id,
+                              studentId: work.student_id,
+                            })}
+                            label={`${row.student_name}, ${act.title}`}
+                            onOpen={() => setCell(work)}
+                            row={rowIndex}
+                            column={column}
+                            isFocused={isCellFocused}
+                            onFocusCell={() => setActiveCell({ row: rowIndex, col: column })}
+                            onSaveScore={(score) =>
+                              handleSaveScore(act.id, row.student_id, score)
+                            }
+                            onNavigateDown={handleNavigateDown}
+                          />
+                        </td>
+                      );
+                    })}
+                    <td
+                      role="gridcell"
+                      aria-colindex={activities.length + 2}
+                      aria-selected={activeCell.row === rowIndex && activeCell.col === activities.length}
+                      data-gradecell
+                      data-row={rowIndex}
+                      data-column={activities.length}
+                      tabIndex={activeCell.row === rowIndex && activeCell.col === activities.length ? 0 : -1}
+                      onFocus={() => setActiveCell({ row: rowIndex, col: activities.length })}
+                      aria-label={`${row.student_name} overall grade: ${row.totals.earned} of ${row.totals.possible} points, ${
+                        row.totals.percentage === null ? "no included grades" : `${row.totals.percentage}%`
+                      }`}
+                      className={cn(
+                        "p-3 align-top tabular-nums transition-colors focus-visible:outline-none",
+                        activeCell.row === rowIndex && activeCell.col === activities.length
+                          ? "border-primary/60 ring-2 ring-primary/40 bg-muted/40"
+                          : ""
+                      )}
+                    >
+                      <p className="font-semibold text-foreground">
+                        {row.totals.earned} / {row.totals.possible}
+                      </p>
+                      <p className="text-muted-foreground mt-0.5 text-xs">
+                        {row.totals.percentage === null
+                          ? "No included grades"
+                          : `${row.totals.percentage}%`}
+                      </p>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!rows.length && (
+              <div className="p-8 text-center space-y-2">
+                <p className="text-sm text-muted-foreground">No students match “{search}”.</p>
+                <Button variant="ghost" size="sm" onClick={() => setSearch("")} className="min-h-9">
+                  Clear search
+                </Button>
+              </div>
+            )}
+          </div>
         </TouchDeviceContext.Provider>
       )}
 
@@ -776,7 +917,7 @@ function SectionGrid({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 text-xs bg-background/80 cursor-pointer"
+                    className="h-9 text-xs bg-background/80 cursor-pointer"
                     disabled={
                       !activities.some(
                         (a) => a.id === activityId && a.points_possible !== null
@@ -789,7 +930,7 @@ function SectionGrid({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 text-xs bg-background/80 cursor-pointer"
+                    className="h-9 text-xs bg-background/80 cursor-pointer"
                     onClick={() => beginBulk(activityId, "excuse")}
                   >
                     Excuse
@@ -797,7 +938,7 @@ function SectionGrid({
                 </>
               ) : (
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="inline-flex items-center gap-1.5 h-8 rounded-md border border-input bg-background/80 px-2.5 text-xs font-medium hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer">
+                  <DropdownMenuTrigger className="inline-flex items-center gap-1.5 h-9 rounded-md border border-input bg-background/80 px-2.5 text-xs font-medium hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer">
                     Batch actions <MoreHorizontal className="size-3.5" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -808,7 +949,7 @@ function SectionGrid({
                     </DropdownMenuGroup>
 
                     <DropdownMenuSub>
-                      <DropdownMenuSubTrigger className="text-xs cursor-pointer">
+                      <DropdownMenuSubTrigger className="text-xs cursor-pointer min-h-9">
                         <FileX className="mr-2 size-3.5 text-muted-foreground" />
                         Mark uncollected (0 pts)
                       </DropdownMenuSubTrigger>
@@ -825,7 +966,7 @@ function SectionGrid({
                               .map((act) => (
                                 <DropdownMenuItem
                                   key={act.id}
-                                  className="text-xs truncate cursor-pointer"
+                                  className="text-xs truncate cursor-pointer min-h-9"
                                   onClick={() => beginBulk(act.id, "zero")}
                                 >
                                   <span className="truncate">{act.title}</span>
@@ -837,7 +978,7 @@ function SectionGrid({
                     </DropdownMenuSub>
 
                     <DropdownMenuSub>
-                      <DropdownMenuSubTrigger className="text-xs cursor-pointer">
+                      <DropdownMenuSubTrigger className="text-xs cursor-pointer min-h-9">
                         <CheckCircle2 className="mr-2 size-3.5 text-muted-foreground" />
                         Excuse students
                       </DropdownMenuSubTrigger>
@@ -849,33 +990,8 @@ function SectionGrid({
                           {activities.map((act) => (
                             <DropdownMenuItem
                               key={act.id}
-                              className="text-xs truncate cursor-pointer"
+                              className="text-xs truncate cursor-pointer min-h-9"
                               onClick={() => beginBulk(act.id, "excuse")}
-                            >
-                              <span className="truncate">{act.title}</span>
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuGroup>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-
-                    <DropdownMenuSeparator />
-
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger className="text-xs cursor-pointer">
-                        <Send className="mr-2 size-3.5 text-primary" />
-                        Release grades to parents
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="w-64 max-h-56 overflow-y-auto">
-                        <DropdownMenuGroup>
-                          <DropdownMenuLabel className="text-xs text-muted-foreground">
-                            Choose activity:
-                          </DropdownMenuLabel>
-                          {activities.map((act) => (
-                            <DropdownMenuItem
-                              key={act.id}
-                              className="text-xs truncate cursor-pointer"
-                              onClick={() => beginBulk(act.id, "release")}
                             >
                               <span className="truncate">{act.title}</span>
                             </DropdownMenuItem>
@@ -892,20 +1008,21 @@ function SectionGrid({
       )}
 
       {cell && (() => {
-        const studentIndex = book.rows.findIndex((row) => row.student_id === cell.student_id);
+        // Navigate through the actively shown/filtered rows
+        const studentIndex = rows.findIndex((row) => row.student_id === cell.student_id);
         const activeCell =
           (studentIndex >= 0 &&
-            book.rows[studentIndex]?.cells.find((c) => c.activity_id === cell.activity_id)) ||
+            rows[studentIndex]?.cells.find((c) => c.activity_id === cell.activity_id)) ||
           cell;
         const hasPrevStudent = studentIndex > 0;
-        const hasNextStudent = studentIndex >= 0 && studentIndex < book.rows.length - 1;
+        const hasNextStudent = studentIndex >= 0 && studentIndex < rows.length - 1;
 
         return (
           <WorkGradeSheet
             key={`${cell.student_id}:${cell.activity_id}`}
             userId={userId}
             cell={activeCell}
-            studentName={studentIndex >= 0 ? book.rows[studentIndex]?.student_name : undefined}
+            studentName={studentIndex >= 0 ? rows[studentIndex]?.student_name : undefined}
             activityTitle={
               book.activities.find((activity) => activity.id === cell.activity_id)?.title
             }
@@ -917,8 +1034,8 @@ function SectionGrid({
             hasNextStudent={hasNextStudent}
             onNavigateStudent={(direction) => {
               const targetIndex = direction === "prev" ? studentIndex - 1 : studentIndex + 1;
-              if (targetIndex >= 0 && targetIndex < book.rows.length) {
-                const targetRow = book.rows[targetIndex];
+              if (targetIndex >= 0 && targetIndex < rows.length) {
+                const targetRow = rows[targetIndex];
                 const targetCell = targetRow.cells.find((c) => c.activity_id === cell.activity_id);
                 if (targetCell) setCell(targetCell);
               }
@@ -926,6 +1043,7 @@ function SectionGrid({
           />
         );
       })()}
+
       {bulk && (
         <GradebookBulkDialog
           key={`${bulk.activityId}:${bulk.operation}`}
@@ -935,6 +1053,7 @@ function SectionGrid({
           eligibleCount={bulk.eligibleCount}
           operation={bulk.operation}
           activityTitle={book.activities.find((activity) => activity.id === bulk.activityId)?.title}
+          sectionId={sectionId}
           sectionName={book.section_name}
           totalSectionsCount={totalSectionsCount}
           sections={sections}

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, CheckCircle2, Info, Layers, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useGradebookActions, type SectionGradebook } from "@/lib/hooks/use-gradebook";
 import { invalidateWorkQueries } from "@/lib/hooks/use-activity-work";
 import { gradebookMutation, gradebookRequest } from "@/lib/gradebook/transport";
@@ -27,6 +27,7 @@ export function GradebookBulkDialog({
   onOpenChange,
   eligibleCount,
   activityTitle,
+  sectionId,
   sectionName,
   totalSectionsCount = 1,
   sections,
@@ -39,6 +40,7 @@ export function GradebookBulkDialog({
   onOpenChange: (open: boolean) => void;
   eligibleCount: number;
   activityTitle?: string;
+  sectionId?: string;
   sectionName?: string;
   totalSectionsCount?: number;
   sections?: components["schemas"]["SectionResponse"][];
@@ -71,7 +73,7 @@ export function GradebookBulkDialog({
     if (!sections || sections.length === 0) {
       return [
         {
-          id: "current",
+          id: sectionId ?? "current",
           name: sectionName ?? "This section",
           isCurrent: true,
           isAssigned: true,
@@ -83,7 +85,7 @@ export function GradebookBulkDialog({
     }
 
     return sections.map((sec, index) => {
-      const isCurrent = sec.name === sectionName;
+      const isCurrent = sectionId ? sec.id === sectionId : sec.name === sectionName;
       const query = sectionQueries[index];
       const data = query?.data;
 
@@ -135,7 +137,7 @@ export function GradebookBulkDialog({
         isLoading: false,
       };
     });
-  }, [sections, sectionName, eligibleCount, sectionQueries, activityId]);
+  }, [sections, sectionId, sectionName, eligibleCount, sectionQueries, activityId]);
 
   const assignedSections = useMemo(
     () => sectionManifest.filter((s) => s.isAssigned),
@@ -193,6 +195,7 @@ export function GradebookBulkDialog({
   const isConfirmDisabled =
     pending ||
     isZeroReadyTotal ||
+    anySectionLoading ||
     (operation !== "release" && !studentIds.length) ||
     (isMultiSectionRelease && !crossSectionAcknowledged);
 
@@ -205,7 +208,7 @@ export function GradebookBulkDialog({
     >
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader className="space-y-1.5">
-          <DialogTitle className="text-lg font-semibold tracking-tight">
+          <DialogTitle className="text-lg font-semibold tracking-tight font-heading">
             {operation === "zero"
               ? "Mark uncollected work with draft zeros"
               : operation === "excuse"
@@ -234,12 +237,9 @@ export function GradebookBulkDialog({
         {operation === "release" && (
           <div className="space-y-3.5">
             {/* Section Publication Overview */}
-            <div className="rounded-xl border border-border/80 bg-card overflow-hidden text-xs shadow-xs">
+            <div className="rounded-lg border border-border/80 bg-card overflow-hidden text-xs">
               <div className="bg-muted/40 px-3.5 py-2.5 border-b border-border/60 flex items-center justify-between">
-                <div className="flex items-center gap-2 font-medium text-foreground">
-                  <Layers className="size-3.5 text-primary shrink-0" aria-hidden="true" />
-                  <span>Assigned Sections</span>
-                </div>
+                <span className="font-medium text-foreground">Assigned Sections</span>
                 <span className="font-semibold tabular-nums text-foreground">
                   {totalReadyAcrossSections}{" "}
                   {totalReadyAcrossSections === 1 ? "grade ready" : "grades ready"}
@@ -270,8 +270,8 @@ export function GradebookBulkDialog({
                           Checking…
                         </span>
                       ) : sec.readyCount > 0 ? (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-band-4/15 dark:bg-band-4/20 border border-band-4/30 dark:border-band-4/40 px-2 py-0.5 text-xs font-medium text-band-4-text dark:text-emerald-300 tabular-nums">
-                          <CheckCircle2 className="size-3 text-band-4-text dark:text-emerald-400" aria-hidden="true" />
+                        <span className="inline-flex items-center gap-1 rounded-md bg-band-4/15 border border-band-4/30 px-2 py-0.5 text-xs font-medium text-band-4-text tabular-nums">
+                          <CheckCircle2 className="size-3 text-band-4-text shrink-0" aria-hidden="true" />
                           {sec.readyCount} ready to publish
                         </span>
                       ) : (
@@ -290,12 +290,12 @@ export function GradebookBulkDialog({
               <div
                 role="alert"
                 aria-live="polite"
-                className="rounded-lg border border-band-2/30 bg-band-2/10 dark:bg-band-2/20 p-3.5 text-xs text-band-2-text dark:text-amber-200 flex items-start gap-2.5"
+                className="rounded-lg border border-band-2/30 bg-band-2/10 p-3.5 text-xs text-band-2-text flex items-start gap-2.5"
               >
-                <AlertCircle className="size-4 shrink-0 text-band-2-text dark:text-amber-300 mt-0.5" aria-hidden="true" />
+                <AlertCircle className="size-4 shrink-0 text-band-2-text mt-0.5" aria-hidden="true" />
                 <div className="space-y-1">
-                  <p className="font-semibold text-amber-950 dark:text-amber-100">No draft grades are ready to release</p>
-                  <p className="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
+                  <p className="font-semibold text-band-2-text">No draft grades are ready to release</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
                     No completed draft grades were found for this activity. Score student worksheets in the gradebook first before publishing to parent portals.
                   </p>
                 </div>
@@ -313,10 +313,7 @@ export function GradebookBulkDialog({
 
             {/* What Happens Upon Release Checklist */}
             <div className="rounded-lg border border-border/60 bg-muted/20 p-3 text-xs text-muted-foreground space-y-1.5">
-              <div className="flex items-center gap-1.5 font-medium text-foreground">
-                <Info className="size-3.5 text-primary shrink-0" aria-hidden="true" />
-                <span>What parents receive</span>
-              </div>
+              <span className="font-medium text-foreground block">What parents receive</span>
               <ul className="space-y-1 pl-4 list-disc text-muted-foreground text-xs leading-relaxed">
                 <li>
                   Criterion feedback across letter formation, slant, spacing, baseline, and size consistency.
@@ -363,9 +360,9 @@ export function GradebookBulkDialog({
         {message && (
           <div
             role="status"
-            className="flex items-center gap-2 rounded-lg border border-band-4/30 bg-band-4/10 dark:bg-band-4/20 p-3 text-xs text-band-4-text dark:text-emerald-300"
+            className="flex items-center gap-2 rounded-lg border border-band-4/30 bg-band-4/10 p-3 text-xs text-band-4-text"
           >
-            <CheckCircle2 className="size-4 shrink-0 text-band-4-text dark:text-emerald-400" aria-hidden="true" />
+            <CheckCircle2 className="size-4 shrink-0 text-band-4-text" aria-hidden="true" />
             <span>{message}</span>
           </div>
         )}
@@ -378,20 +375,24 @@ export function GradebookBulkDialog({
 
         <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-border/40">
           {isZeroReadyTotal ? (
-            <Button onClick={() => onOpenChange(false)}>
+            <Button onClick={() => onOpenChange(false)} className="min-h-9">
               Back to gradebook
             </Button>
           ) : (
             <>
-              <Button variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>
+              <Button variant="outline" disabled={pending} onClick={() => onOpenChange(false)} className="min-h-9">
                 {message ? "Close" : "Cancel"}
               </Button>
               {!message && (
-                <Button disabled={isConfirmDisabled} onClick={() => void save()}>
+                <Button disabled={isConfirmDisabled} onClick={() => void save()} className="min-h-9">
                   {pending ? (
                     <>
                       <Loader2 className="mr-2 size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-                      Releasing…
+                      {operation === "zero"
+                        ? "Marking uncollected…"
+                        : operation === "excuse"
+                          ? "Excusing work…"
+                          : "Releasing…"}
                     </>
                   ) : operation === "zero" ? (
                     "Mark uncollected (0 pts)"

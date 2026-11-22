@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useActivity } from "@/lib/hooks/use-activities";
 import { useSubmissions, type Submission } from "@/lib/hooks/use-submissions";
 import { SubmissionDetailContent } from "@/components/submissions/submission-detail-content";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { parseTeacherCommentTarget } from "@/lib/comments/targets";
 import { SubmissionCommentDestination } from "@/components/comments/submission-comment-destination";
@@ -30,8 +31,18 @@ export default function SubmissionDetailPage({
   const queueQuery = reviewQueueQuery(searchParams);
   const activityHref = `/activities/${activityId}${queueQuery}`;
 
-  const { data: activity, isLoading: activityLoading } = useActivity(activityId);
-  const { data: submissions, isLoading: submissionsLoading } = useSubmissions(activityId);
+  const {
+    data: activity,
+    isLoading: activityLoading,
+    isError: activityError,
+    refetch: refetchActivity,
+  } = useActivity(activityId);
+  const {
+    data: submissions,
+    isLoading: submissionsLoading,
+    isError: submissionsError,
+    refetch: refetchSubmissions,
+  } = useSubmissions(activityId);
   const roster = useStudents();
   const work = useActivityWork(activityId);
   const { session: reviewSession, setSession: setReviewSession } = useActivityReviewSession();
@@ -182,6 +193,43 @@ export default function SubmissionDetailPage({
     );
   }
 
+  const isQueryError = activityError || submissionsError;
+
+  if (isQueryError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4 text-center space-y-4 bg-surface/50 dark:bg-card/50 rounded-2xl border border-destructive/30">
+        <div className="space-y-1.5 max-w-md">
+          <h3 className="font-heading text-lg font-semibold text-foreground">
+            Unable to Load Submission
+          </h3>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            There was a problem loading this handwriting assessment. Please check your connection and try again.
+          </p>
+        </div>
+        <div className="flex items-center gap-2.5 flex-wrap justify-center">
+          <Button
+            type="button"
+            onClick={() => {
+              void refetchActivity();
+              void refetchSubmissions();
+            }}
+            className="min-h-10 sm:min-h-9 px-4 text-xs font-semibold gap-1.5 cursor-pointer"
+          >
+            <RotateCcw className="size-3.5" aria-hidden="true" />
+            <span>Retry</span>
+          </Button>
+          <Link
+            href={activityHref}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium border border-border/80 hover:bg-muted transition-colors min-h-10 sm:min-h-9"
+          >
+            <ArrowLeft className="size-3.5" aria-hidden="true" />
+            <span>Return to Activity</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (!submission) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center space-y-4 bg-surface/50 dark:bg-card/50 rounded-2xl border border-dashed border-border/80">
@@ -204,24 +252,8 @@ export default function SubmissionDetailPage({
     );
   }
 
-
   return (
-    <div className="w-full space-y-3 sm:space-y-4">
-      {/* Top Back Navigation Trail */}
-      <nav aria-label="Breadcrumb navigation" className="print:hidden">
-        <Link
-          href={activityHref}
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-2.5 py-2 min-h-[44px] sm:min-h-[36px] hover:bg-muted/50 -ml-1 sm:-ml-2"
-        >
-          <ArrowLeft
-            className="size-3.5 transition-transform group-hover:-translate-x-0.5"
-            aria-hidden="true"
-          />
-          <span>Back to Activity</span>
-        </Link>
-      </nav>
-
-      {/* Main Content */}
+    <div className="w-full">
       <SubmissionDetailContent
         key={submission.id}
         submission={submission}
