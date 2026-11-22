@@ -9,6 +9,7 @@ import {
 import { ParentNav } from "@/components/parent-nav";
 import { ParentUploadDialog } from "@/components/parent/parent-upload-dialog";
 import { CursiveGuideDialog } from "@/components/cursive-guide-dialog";
+import { RubricReferenceDialog } from "@/components/rubric-reference-dialog";
 import { useLinkedChildren, type LinkedChild } from "@/lib/hooks/use-parent-data";
 
 interface ParentPortalContextValue {
@@ -29,7 +30,10 @@ interface ParentPortalContextValue {
   openUploadDialog: (activityId?: string) => void;
   cursiveGuideOpen: boolean;
   setCursiveGuideOpen: (open: boolean) => void;
-  openCursiveGuide: () => void;
+  openCursiveGuide: (initialLetterOrQuery?: string) => void;
+  rubricOpen: boolean;
+  setRubricOpen: (open: boolean) => void;
+  openRubric: () => void;
 }
 
 const ParentPortalContext = createContext<ParentPortalContextValue | null>(null);
@@ -71,6 +75,8 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
     notificationTarget.kind === "valid" ? notificationTarget.target.childId : null;
   const [uploadOpen, setUploadOpen] = useState(false);
   const [cursiveGuideOpen, setCursiveGuideOpen] = useState(false);
+  const [rubricOpen, setRubricOpen] = useState(false);
+  const [cursiveGuideInitialLetter, setCursiveGuideInitialLetter] = useState<string | undefined>();
   const [prefilledActivityId, setPrefilledActivityId] = useState<string | undefined>();
 
   // Derive the active selected child without cascading effect renders
@@ -114,8 +120,13 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
     setUploadOpen(true);
   }, []);
 
-  const openCursiveGuide = useCallback(() => {
+  const openCursiveGuide = useCallback((initialLetterOrQuery?: string) => {
+    setCursiveGuideInitialLetter(initialLetterOrQuery);
     setCursiveGuideOpen(true);
+  }, []);
+
+  const openRubric = useCallback(() => {
+    setRubricOpen(true);
   }, []);
 
   const contextValue: ParentPortalContextValue = useMemo(
@@ -138,6 +149,9 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
       cursiveGuideOpen,
       setCursiveGuideOpen,
       openCursiveGuide,
+      rubricOpen,
+      setRubricOpen,
+      openRubric,
     }),
     [
       user.id,
@@ -156,6 +170,8 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
       openUploadDialog,
       cursiveGuideOpen,
       openCursiveGuide,
+      rubricOpen,
+      openRubric,
     ]
   );
 
@@ -167,11 +183,13 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
           selectedChildId={selectedChildId}
           linkedChildren={linkedChildren ?? []}
           onChildChange={setSelectedChildId}
+          onOpenRubric={openRubric}
+          onOpenCursiveGuide={openCursiveGuide}
         />
         <main className="w-full min-w-0 flex-1 space-y-6 px-4 py-6 sm:px-6">{pageChildren}</main>
       </div>
 
-      {/* Global Parent Modals: Upload & Cursive Guide */}
+      {/* Global Parent Modals: Upload, Cursive Guide, & How Scores Work */}
       {selectedChildId && selectedChild && (
         <ParentUploadDialog
           open={uploadOpen}
@@ -185,7 +203,21 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
         />
       )}
 
-      <CursiveGuideDialog open={cursiveGuideOpen} onOpenChange={setCursiveGuideOpen} />
+      <CursiveGuideDialog
+        key={`${cursiveGuideInitialLetter ?? "all"}:${cursiveGuideOpen ? "open" : "closed"}`}
+        open={cursiveGuideOpen}
+        onOpenChange={(open) => {
+          setCursiveGuideOpen(open);
+          if (!open) setCursiveGuideInitialLetter(undefined);
+        }}
+        initialLetterId={cursiveGuideInitialLetter}
+      />
+
+      <RubricReferenceDialog
+        open={rubricOpen}
+        onOpenChange={setRubricOpen}
+        variant="parent"
+      />
     </ParentPortalContext.Provider>
   );
 }

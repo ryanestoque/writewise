@@ -95,7 +95,7 @@ export function CriterionFeedbackRow({
             <button
               type="button"
               aria-pressed={isActive}
-              aria-label={`See ${displayLabel} on worksheet`}
+              aria-label={inspectLabel ? `${inspectLabel} for ${displayLabel}` : `View ${displayLabel} feedback`}
               onClick={(e) => {
                 e.stopPropagation();
                 onInspect();
@@ -103,12 +103,12 @@ export function CriterionFeedbackRow({
               className={cn(
                 "cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
                 inspectLabel
-                  ? "inline-flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors bg-muted/40 group-hover:bg-brand-50 dark:group-hover:bg-brand-950/40 px-2 py-0.5 rounded-md border border-border/60"
-                  : "sr-only focus-visible:not-sr-only focus-visible:rounded-md focus-visible:px-2 focus-visible:py-0.5 focus-visible:text-xs"
+                  ? "inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors bg-muted/40 group-hover:bg-brand-50 dark:group-hover:bg-brand-950/40 px-2.5 py-1.5 min-h-10 sm:min-h-9 rounded-md border border-border/60"
+                  : "size-10 sm:size-9 rounded-md inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent hover:border-border/60"
               )}
             >
-              <Eye className="size-3 shrink-0" aria-hidden="true" />
-              <span aria-hidden="true">{inspectLabel ?? "See on worksheet"}</span>
+              <Eye className="size-3.5 shrink-0" aria-hidden="true" />
+              {inspectLabel && <span>{inspectLabel}</span>}
             </button>
           )}
         </div>

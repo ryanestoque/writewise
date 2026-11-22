@@ -35,14 +35,29 @@ export type { LetterGuideItem, LetterZone };
 interface CursiveGuideDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialLetterId?: string | null;
+  initialQuery?: string;
 }
 
-export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+export function CursiveGuideDialog({
+  open,
+  onOpenChange,
+  initialLetterId,
+  initialQuery,
+}: CursiveGuideDialogProps) {
+  const [searchQuery, setSearchQuery] = useState(() => initialQuery ?? "");
   const [caseFilter, setCaseFilter] = useState<"pairs" | "upper" | "lower">("pairs");
   const [zoneFilter, setZoneFilter] = useState<"all" | "ascender" | "midline" | "descender" | "highJoiner">("all");
-  const [selectedLetterId, setSelectedLetterId] = useState<string | null>("A");
-  const [mobileView, setMobileView] = useState<"grid" | "detail">("grid");
+  const [selectedLetterId, setSelectedLetterId] = useState<string | null>(() => {
+    if (initialLetterId) {
+      const found = CURSIVE_ALPHABET.find((l) => l.id.toUpperCase() === initialLetterId.toUpperCase());
+      if (found) return found.id;
+    }
+    return "A";
+  });
+  const [mobileView, setMobileView] = useState<"grid" | "detail">(() => {
+    return initialLetterId ? "detail" : "grid";
+  });
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [activeStepTab, setActiveStepTab] = useState<"lower" | "upper">("lower");
   const isMobile = useIsMobile();
@@ -301,7 +316,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
             {(activeStepTab === "lower" ? activeLetter.lowerSteps : activeLetter.upperSteps).map(
               (step, idx) => (
                 <li key={idx} className="flex items-start gap-2">
-                  <span className="size-4.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="size-5 rounded-full bg-primary/15 text-primary text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                     {idx + 1}
                   </span>
                   <span className="leading-relaxed text-foreground/90">{step}</span>
@@ -346,7 +361,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border/80 bg-muted/40 font-medium text-foreground"
               >
                 <span className="font-cursive text-sm text-primary">{word}</span>
-                <span className="text-[10px] text-muted-foreground font-sans">({word})</span>
+                <span className="text-xs text-muted-foreground font-sans">({word})</span>
               </span>
             ))}
           </div>
@@ -538,7 +553,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                   aria-label={zoneFilter !== "all" ? `Toggle filters (${zoneFilter} active)` : "Toggle filters"}
                   aria-expanded={isFiltersOpen}
                 >
-                  <FilterIcon className="size-4.5" aria-hidden="true" />
+                  <FilterIcon className="size-4" aria-hidden="true" />
                   {zoneFilter !== "all" && (
                     <span
                       className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary ring-2 ring-background"
@@ -551,7 +566,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
               {/* Active Filter Reminder Tag (Mobile collapsed state, with generous 40px touch dismissal hit area) */}
               {!isFiltersOpen && zoneFilter !== "all" && (
                 <div className="sm:hidden flex items-center gap-1.5 text-xs animate-in fade-in slide-in-from-top-1">
-                  <span className="text-[11px] text-muted-foreground">Active filter:</span>
+                  <span className="text-xs text-muted-foreground">Active filter:</span>
                   <span className="inline-flex items-center gap-1 pl-2.5 pr-1 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-medium">
                     {zoneFilter === "ascender"
                       ? "Ascenders"
@@ -563,7 +578,7 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                     <button
                       type="button"
                       onClick={() => setZoneFilter("all")}
-                      className="inline-flex items-center justify-center size-9 min-h-[36px] min-w-[36px] rounded-full text-primary hover:text-foreground hover:bg-primary/20 transition-colors cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                      className="inline-flex items-center justify-center size-10 min-h-[40px] min-w-[40px] rounded-full text-primary hover:text-foreground hover:bg-primary/20 transition-colors cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                       aria-label="Clear active filter"
                     >
                       <span className="text-sm font-bold leading-none" aria-hidden="true">×</span>
@@ -650,14 +665,14 @@ export function CursiveGuideDialog({ open, onOpenChange }: CursiveGuideDialogPro
                       title={chip.description}
                       onClick={() => setZoneFilter(chip.id as typeof zoneFilter)}
                       className={cn(
-                        "px-3.5 py-2 sm:py-1 min-h-10 sm:min-h-7 rounded-full text-xs font-medium shrink-0 transition-all cursor-pointer border flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95",
+                        "px-3 py-2 sm:py-1 min-h-10 sm:min-h-8 rounded-full text-xs font-medium shrink-0 transition-all cursor-pointer border flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95",
                         isActive
                           ? "bg-primary text-primary-foreground border-primary shadow-2xs font-semibold"
                           : "bg-background/80 text-muted-foreground border-border/70 hover:text-foreground hover:bg-muted/60"
                       )}
                     >
                       {chip.label}
-                      <span className="ml-1 text-[10px] opacity-80 tabular-nums">({chip.count})</span>
+                      <span className="ml-1 text-xs opacity-80 tabular-nums">({chip.count})</span>
                     </button>
                   );
                 })}

@@ -167,7 +167,7 @@ export const NotificationRowItem = memo(function NotificationRowItem({
         <Button
           variant="ghost"
           size="icon"
-          className="relative size-8 md:size-7 shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 active:bg-muted rounded-md touch-manipulation cursor-pointer after:absolute after:-inset-y-2 after:-inset-e-3 after:-inset-s-0 focus-visible:ring-2 focus-visible:ring-ring"
+          className="relative size-8 md:size-7 shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 active:bg-muted rounded-md touch-manipulation cursor-pointer after:absolute after:-inset-y-2 after:-end-3 after:start-0 focus-visible:ring-2 focus-visible:ring-ring"
           disabled={pending}
           aria-label={`Mark as read: ${notificationCopy(row.type)} for ${labels.students[row.student_id] ?? "Student"}`}
           onClick={(e) => {

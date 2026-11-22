@@ -39,15 +39,10 @@ import {
   CheckCircle2Icon,
   Loader2Icon,
   RotateCwIcon,
-  ShieldCheckIcon,
   ChevronDownIcon,
   LightbulbIcon,
   BookOpen,
   CheckIcon,
-  Scan,
-  SunMedium,
-  AlignJustify,
-  Focus,
   XIcon,
   ArrowRightIcon,
   ArrowLeftIcon,
@@ -176,6 +171,7 @@ function ParentUploadFlow({
   const [isDragging, setIsDragging] = useState(false);
   const [showTips, setShowTips] = useState(false);
   const [uploadError, setUploadError] = useState<UploadError | null>(null);
+  const [dropError, setDropError] = useState<string | null>(null);
   const [uploadStage, setUploadStage] = useState(0);
   const [lastRetakeTip, setLastRetakeTip] = useState<{ tip: string; badgeLabel?: string } | null>(
     null
@@ -248,6 +244,7 @@ function ParentUploadFlow({
   }, [activities, selectedActivityId]);
 
   const handleClearFile = () => {
+    setDropError(null);
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
       previewUrlRef.current = null;
@@ -282,14 +279,20 @@ function ParentUploadFlow({
     setLastRetakeTip(null);
 
     if (!ACCEPTED_MIME_TYPES.includes(file.type)) {
-      toast.error("Please select a JPEG or PNG image.");
+      const msg = "Please select a JPEG or PNG photo. If you are using an iPhone/iPad, photos in HEIC format should be exported as JPEG.";
+      setDropError(msg);
+      toast.error(msg);
       return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      toast.error("Image file size must be less than 15MB.");
+      const msg = "Image file size must be less than 15MB.";
+      setDropError(msg);
+      toast.error(msg);
       return;
     }
+
+    setDropError(null);
 
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
@@ -402,6 +405,10 @@ function ParentUploadFlow({
   };
 
   const stepAnnouncement = useMemo(() => {
+    if (prefilledActivityId) {
+      if (step === 2) return "Step 1 of 2: Capture or Choose Photo";
+      if (step === 3) return "Step 2 of 2: Review and Confirm Submission";
+    }
     switch (step) {
       case 1:
         return "Step 1 of 3: Select Take-Home Activity";
@@ -418,7 +425,7 @@ function ParentUploadFlow({
       default:
         return "";
     }
-  }, [step, uploadError]);
+  }, [step, uploadError, prefilledActivityId]);
 
   return (
     <>
@@ -458,82 +465,90 @@ function ParentUploadFlow({
           <p className="sr-only" aria-live="polite" aria-atomic="true">
             {stepAnnouncement}
           </p>
-          <ol className="flex items-center justify-between gap-1.5 sm:gap-2 w-full">
-            {STEPS.map((s) => {
-              const isCurrent = step === s.step;
-              const isCompleted = step > s.step || step === 5;
-              const canJump = isStepNavigable(s.step as Step) && !isUploading && step !== 5;
+          {(() => {
+            const activeSteps = prefilledActivityId
+              ? STEPS.filter((s) => s.step !== 1)
+              : STEPS;
+            return (
+              <ol className="flex items-center justify-between gap-1.5 sm:gap-2 w-full">
+                {activeSteps.map((s, idx) => {
+                  const isCurrent = step === s.step;
+                  const isCompleted = step > s.step || step === 5;
+                  const canJump = isStepNavigable(s.step as Step) && !isUploading && step !== 5;
+                  const stepNumber = prefilledActivityId ? idx + 1 : s.step;
 
-              return (
-                <li
-                  key={s.step}
-                  className={`flex items-center gap-1.5 sm:gap-2 min-w-0 ${s.step < STEPS.length ? "flex-1" : ""
-                    }`}
-                  aria-current={isCurrent ? "step" : undefined}
-                >
-                  {canJump && !isCurrent ? (
-                    <button
-                      type="button"
-                      onClick={() => setStep(s.step as Step)}
-                      aria-label={`${s.label} — Step ${s.step}, completed`}
-                      className="group flex items-center gap-1.5 sm:gap-2 min-w-0 min-h-10 sm:min-h-9 p-1 -m-1 rounded-lg transition-colors hover:bg-muted/80 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary text-left cursor-pointer"
-                    >
-                      <div
-                        className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-all ${isCompleted
-                          ? "bg-primary text-primary-foreground group-hover:bg-primary/90 group-hover:scale-105"
-                          : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"
-                          }`}
-                      >
-                        {isCompleted ? (
-                          <CheckIcon className="size-3.5" aria-hidden="true" />
-                        ) : (
-                          s.step
-                        )}
-                      </div>
-                      <span className="text-xs sm:text-sm truncate font-medium text-foreground group-hover:text-primary transition-colors">
-                        {s.label}
-                      </span>
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                      <div
-                        className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors ${isCompleted
-                          ? "bg-primary text-primary-foreground"
-                          : isCurrent
-                            ? "bg-primary/15 text-primary ring-2 ring-primary ring-offset-2 ring-offset-background"
-                            : "bg-muted text-muted-foreground"
-                          }`}
-                      >
-                        {isCompleted ? (
-                          <CheckIcon className="size-3.5" aria-hidden="true" />
-                        ) : (
-                          s.step
-                        )}
-                      </div>
-                      <span
-                        className={`text-xs sm:text-sm truncate font-medium ${isCurrent
-                          ? "text-foreground font-semibold"
-                          : isCompleted
-                            ? "text-foreground"
-                            : "text-muted-foreground"
-                          }`}
-                      >
-                        {s.label}
-                      </span>
-                    </div>
-                  )}
-
-                  {s.step < STEPS.length && (
-                    <div
-                      className={`h-0.5 flex-1 rounded-full transition-colors ${step > s.step || step === 5 ? "bg-primary" : "bg-muted"
+                  return (
+                    <li
+                      key={s.step}
+                      className={`flex items-center gap-1.5 sm:gap-2 min-w-0 ${idx < activeSteps.length - 1 ? "flex-1" : ""
                         }`}
-                      aria-hidden="true"
-                    />
-                  )}
-                </li>
-              );
-            })}
-          </ol>
+                      aria-current={isCurrent ? "step" : undefined}
+                    >
+                      {canJump && !isCurrent ? (
+                        <button
+                          type="button"
+                          onClick={() => setStep(s.step as Step)}
+                          aria-label={`${s.label} — Step ${stepNumber}, completed`}
+                          className="group flex items-center gap-1.5 sm:gap-2 min-w-0 min-h-10 sm:min-h-9 p-1 -m-1 rounded-lg transition-colors hover:bg-muted/80 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary text-left cursor-pointer"
+                        >
+                          <div
+                            className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-all ${isCompleted
+                              ? "bg-primary text-primary-foreground group-hover:bg-primary/90 group-hover:scale-105"
+                              : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"
+                              }`}
+                          >
+                            {isCompleted ? (
+                              <CheckIcon className="size-3.5" aria-hidden="true" />
+                            ) : (
+                              stepNumber
+                            )}
+                          </div>
+                          <span className="text-xs sm:text-sm truncate font-medium text-foreground group-hover:text-primary transition-colors">
+                            {s.label}
+                          </span>
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                          <div
+                            className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors ${isCompleted
+                              ? "bg-primary text-primary-foreground"
+                              : isCurrent
+                                ? "bg-primary/15 text-primary ring-2 ring-primary ring-offset-2 ring-offset-background"
+                                : "bg-muted text-muted-foreground"
+                              }`}
+                          >
+                            {isCompleted ? (
+                              <CheckIcon className="size-3.5" aria-hidden="true" />
+                            ) : (
+                              stepNumber
+                            )}
+                          </div>
+                          <span
+                            className={`text-xs sm:text-sm truncate font-medium ${isCurrent
+                              ? "text-foreground font-semibold"
+                              : isCompleted
+                                ? "text-foreground"
+                                : "text-muted-foreground"
+                              }`}
+                          >
+                            {s.label}
+                          </span>
+                        </div>
+                      )}
+
+                      {idx < activeSteps.length - 1 && (
+                        <div
+                          className={`h-0.5 flex-1 rounded-full transition-colors ${step > s.step || step === 5 ? "bg-primary" : "bg-muted"
+                            }`}
+                          aria-hidden="true"
+                        />
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+            );
+          })()}
         </nav>
       </DialogHeader>
 
@@ -651,23 +666,26 @@ function ParentUploadFlow({
             {step === 2 && (
               <>
                 {/* Context Header: Active Child & Activity */}
-                <div className="flex items-center justify-between gap-2 p-2.5 px-3 rounded-xl bg-muted/40 border border-border/80 text-xs">
-                  <div className="flex items-center gap-1.5 min-w-0 truncate">
+                <div className="p-3 rounded-xl bg-muted/40 border border-border/80 text-xs space-y-1">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="font-semibold text-foreground truncate">
-                      {childName}
+                      {childName} · {selectedActivity?.title ?? "Take-Home Activity"}
                     </span>
-                    <span className="text-muted-foreground shrink-0">&middot;</span>
-                    <span className="text-muted-foreground truncate font-medium">
-                      {selectedActivity?.targetText ?? "Take-Home Activity"}
-                    </span>
+                    {!prefilledActivityId && (
+                      <button
+                        type="button"
+                        onClick={() => setStep(1)}
+                        className="inline-flex min-h-10 items-center px-2 text-xs text-primary font-medium hover:underline shrink-0 cursor-pointer rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        Change activity
+                      </button>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setStep(1)}
-                    className="inline-flex min-h-10 items-center px-2 text-xs text-primary font-medium hover:underline shrink-0 cursor-pointer rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                  >
-                    Change activity
-                  </button>
+                  {selectedActivity?.targetText && (
+                    <p className="text-muted-foreground italic font-sans break-words leading-relaxed">
+                      &ldquo;{selectedActivity.targetText}&rdquo;
+                    </p>
+                  )}
                 </div>
 
                 {/* Reassurance banner for re-attempts */}
@@ -706,8 +724,7 @@ function ParentUploadFlow({
 
                 {/* Always-visible capture checklist (prevents the most common rejections) */}
                 <p className="flex items-center justify-center gap-1.5 text-xs sm:text-sm font-medium text-foreground text-center">
-                  <LightbulbIcon className="size-4 text-primary shrink-0" aria-hidden="true" />
-                  <span>Flat paper · Even light · All 4 corners in view</span>
+                  <span>3-line paper · Connected cursive · All 4 corners in view</span>
                 </p>
 
                 {/* Dropzone Container (Clean Non-Interactive Wrapper, WCAG 4.1.2) */}
@@ -788,16 +805,27 @@ function ParentUploadFlow({
                   )}
                 </div>
 
-                {/* Subtle Privacy Notice Footnote */}
-                <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground pt-0.5">
-                  <ShieldCheckIcon
-                    className="size-4 text-primary/70 shrink-0"
-                    aria-hidden="true"
-                  />
-                  <span>
-                    Location &amp; device metadata stripped automatically for student privacy
-                  </span>
-                </div>
+                {/* Inline Dropzone Error Alert */}
+                {dropError && (
+                  <div
+                    role="alert"
+                    className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-center justify-between gap-2"
+                  >
+                    <span>{dropError}</span>
+                    <button
+                      type="button"
+                      onClick={() => setDropError(null)}
+                      className="font-semibold underline shrink-0 cursor-pointer"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+
+                {/* Subtle Privacy Notice Footnote (Clean Typography, No Decorative Icon) */}
+                <p className="text-center text-xs text-muted-foreground pt-0.5">
+                  Location &amp; device metadata stripped automatically for student privacy
+                </p>
 
                 {/* Streamlined Photo Quality Guide (2x2 Micro-card Grid) */}
                 <div className="rounded-xl bg-muted/30 overflow-hidden text-xs">
@@ -808,15 +836,9 @@ function ParentUploadFlow({
                     aria-expanded={showTips}
                     aria-controls={photoTipsId}
                   >
-                    <div className="flex items-center gap-2">
-                      <LightbulbIcon
-                        className="size-4 text-primary shrink-0"
-                        aria-hidden="true"
-                      />
-                      <span className="text-xs sm:text-sm font-semibold">
-                        Photo quality tips
-                      </span>
-                    </div>
+                    <span className="text-xs sm:text-sm font-semibold">
+                      Photo quality tips
+                    </span>
                     <div className="flex items-center gap-1 text-muted-foreground text-xs font-medium">
                       <span>{showTips ? "Hide tips" : "Show tips"}</span>
                       <ChevronDownIcon
@@ -831,61 +853,37 @@ function ParentUploadFlow({
                       id={photoTipsId}
                       className="px-3.5 pb-3.5 pt-1.5 border-t border-border/40 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs animate-in fade-in-50 duration-150 motion-reduce:animate-none"
                     >
-                      <div className="flex items-start gap-2.5 p-2 rounded-lg bg-background/60 dark:bg-muted/30">
-                        <Scan
-                          className="size-4 text-primary shrink-0 mt-0.5"
-                          aria-hidden="true"
-                        />
-                        <div>
-                          <p className="font-semibold text-foreground text-xs sm:text-sm">
-                            Hold Flat Above Paper
-                          </p>
-                          <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                            Hold your phone straight above the page, not at an angle.
-                          </p>
-                        </div>
+                      <div className="p-2.5 rounded-lg bg-background/60 dark:bg-muted/30 space-y-0.5">
+                        <p className="font-semibold text-foreground text-xs sm:text-sm">
+                          1. 3-line penmanship paper
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Use standard 3-line paper with top line, midline, and baseline clearly visible.
+                        </p>
                       </div>
-                      <div className="flex items-start gap-2.5 p-2 rounded-lg bg-background/60 dark:bg-muted/30">
-                        <SunMedium
-                          className="size-4 text-primary shrink-0 mt-0.5"
-                          aria-hidden="true"
-                        />
-                        <div>
-                          <p className="font-semibold text-foreground text-xs sm:text-sm">
-                            Even Light
-                          </p>
-                          <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                            Avoid shadows and strong glare on words.
-                          </p>
-                        </div>
+                      <div className="p-2.5 rounded-lg bg-background/60 dark:bg-muted/30 space-y-0.5">
+                        <p className="font-semibold text-foreground text-xs sm:text-sm">
+                          2. Connected cursive
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Words must be written in connected cursive strokes, not separated print letters.
+                        </p>
                       </div>
-                      <div className="flex items-start gap-2.5 p-2 rounded-lg bg-background/60 dark:bg-muted/30">
-                        <AlignJustify
-                          className="size-4 text-primary shrink-0 mt-0.5"
-                          aria-hidden="true"
-                        />
-                        <div>
-                          <p className="font-semibold text-foreground text-xs sm:text-sm">
-                            Visible Writing Lines
-                          </p>
-                          <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                            Keep the top, middle, and bottom writing lines clear.
-                          </p>
-                        </div>
+                      <div className="p-2.5 rounded-lg bg-background/60 dark:bg-muted/30 space-y-0.5">
+                        <p className="font-semibold text-foreground text-xs sm:text-sm">
+                          3. Flat paper &amp; even light
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Hold your phone straight above the page. Avoid strong glare, shadows, or camera angles.
+                        </p>
                       </div>
-                      <div className="flex items-start gap-2.5 p-2 rounded-lg bg-background/60 dark:bg-muted/30">
-                        <Focus
-                          className="size-4 text-primary shrink-0 mt-0.5"
-                          aria-hidden="true"
-                        />
-                        <div>
-                          <p className="font-semibold text-foreground text-xs sm:text-sm">
-                            Sharp Focus
-                          </p>
-                          <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                            Tap screen on cursive ink before snapping.
-                          </p>
-                        </div>
+                      <div className="p-2.5 rounded-lg bg-background/60 dark:bg-muted/30 space-y-0.5">
+                        <p className="font-semibold text-foreground text-xs sm:text-sm">
+                          4. Sharp focus
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Tap your phone screen on the ink before snapping so writing lines stay crisp.
+                        </p>
                       </div>
                     </div>
                   )}
@@ -897,16 +895,15 @@ function ParentUploadFlow({
             {step === 3 && selectedFile && (
               <>
                 {/* Context Header: Active Child & Activity */}
-                <div className="flex items-center justify-between gap-2 p-2.5 px-3 rounded-xl bg-muted/40 border border-border/80 text-xs">
-                  <div className="flex items-center gap-1.5 min-w-0 truncate">
-                    <span className="font-semibold text-foreground truncate">
-                      {childName}
-                    </span>
-                    <span className="text-muted-foreground shrink-0">&middot;</span>
-                    <span className="text-muted-foreground truncate font-medium">
-                      {selectedActivity?.targetText ?? "Take-Home Activity"}
-                    </span>
-                  </div>
+                <div className="p-3 rounded-xl bg-muted/40 border border-border/80 text-xs space-y-1">
+                  <p className="font-semibold text-foreground truncate">
+                    {childName} · {selectedActivity?.title ?? "Take-Home Activity"}
+                  </p>
+                  {selectedActivity?.targetText && (
+                    <p className="text-muted-foreground italic font-sans break-words leading-relaxed">
+                      &ldquo;{selectedActivity.targetText}&rdquo;
+                    </p>
+                  )}
                 </div>
 
                 {/* Reassurance banner for re-attempts */}
@@ -924,56 +921,51 @@ function ParentUploadFlow({
 
                 {/* File Inspection Card */}
                 <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <FileImageIcon
-                        className="size-5 text-primary shrink-0"
-                        aria-hidden="true"
-                      />
-                      <div className="truncate">
-                        <p className="text-sm font-semibold truncate text-foreground">
-                          {selectedFile.name}
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="truncate min-w-0">
+                      <p className="text-sm font-semibold truncate text-foreground">
+                        {selectedFile.name}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <p className="text-xs text-muted-foreground font-sans tabular-nums">
+                          {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
                         </p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <p className="text-xs text-muted-foreground font-sans tabular-nums">
-                            {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
-                          </p>
-                          {rotationDegrees > 0 && (
-                            <Badge
-                              variant="outline"
-                              className="text-xs h-5 px-1.5 font-medium font-sans tabular-nums border-primary/30 text-primary bg-primary/5"
-                            >
-                              Rotated {rotationDegrees}°
-                            </Badge>
-                          )}
-                        </div>
+                        {rotationDegrees > 0 && (
+                          <Badge
+                            variant="outline"
+                            className="text-xs h-5 px-1.5 font-medium font-sans tabular-nums border-primary/30 text-primary bg-primary/5"
+                          >
+                            Rotated {rotationDegrees}°
+                          </Badge>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
                       <Button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-10 sm:size-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                        variant="outline"
+                        size="sm"
+                        className="h-10 sm:h-9 text-xs font-medium cursor-pointer gap-1.5 px-3"
                         onClick={handleRotateClockwise}
                         disabled={isRotating}
-                        title="Rotate 90° clockwise"
                         aria-label="Rotate photo 90 degrees clockwise"
                       >
                         <RotateCwIcon
-                          className={`size-4 ${isRotating ? "animate-spin" : ""}`}
+                          className={`size-3.5 ${isRotating ? "animate-spin" : ""}`}
                           aria-hidden="true"
                         />
+                        <span>Rotate</span>
                       </Button>
                       <Button
                         type="button"
                         variant="ghost"
-                        size="icon"
-                        className="size-10 sm:size-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                        size="sm"
+                        className="h-10 sm:h-9 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer gap-1.5 px-2.5"
                         onClick={handleClearFile}
-                        aria-label="Remove selected image and select another"
+                        aria-label="Remove photo and take another"
                       >
-                        <XIcon className="size-4" aria-hidden="true" />
+                        <XIcon className="size-3.5" aria-hidden="true" />
+                        <span>Retake</span>
                       </Button>
                     </div>
                   </div>
@@ -1038,9 +1030,9 @@ function ParentUploadFlow({
                     type="button"
                     variant="default"
                     onClick={onClose}
-                    className="h-10 sm:h-9 text-xs sm:text-sm font-medium w-full shadow-warm cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="min-h-11 sm:min-h-9 h-10 sm:h-9 text-xs sm:text-sm font-medium w-full shadow-warm cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
-                    View Progress
+                    Done
                   </Button>
                 </div>
               </div>
@@ -1049,9 +1041,18 @@ function ParentUploadFlow({
         )}
       </div>
 
-      {/* Standardized Sticky Footer for Steps 1–3 */}
-      {!isUploading && step <= 3 && (
+      {/* Standardized Sticky Footer for Steps 1–3 and Step 4 Error */}
+      {!isUploading && (step <= 3 || (step === 4 && uploadError)) && (
         <div className="flex items-center justify-between p-3 sm:p-3.5 px-4 sm:px-6 border-t border-border bg-muted/20">
+          {step === 4 && uploadError && (
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
+            >
+              Cancel
+            </Button>
+          )}
           {step === 1 && (
             <Button
               variant="outline"
@@ -1064,17 +1065,29 @@ function ParentUploadFlow({
           {step === 2 && (
             <Button
               variant="outline"
-              onClick={() => setStep(1)}
+              onClick={() => {
+                if (prefilledActivityId) {
+                  onClose();
+                } else {
+                  setStep(1);
+                }
+              }}
               className="gap-1.5 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
             >
-              <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
-              Back
+              {prefilledActivityId ? (
+                "Cancel"
+              ) : (
+                <>
+                  <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
+                  Back
+                </>
+              )}
             </Button>
           )}
           {step === 3 && (
             <Button
               variant="outline"
-              onClick={handleClearFile}
+              onClick={() => setStep(2)}
               className="gap-1.5 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
             >
               <ArrowLeftIcon className="size-3.5" aria-hidden="true" />

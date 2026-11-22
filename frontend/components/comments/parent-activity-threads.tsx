@@ -27,13 +27,16 @@ export function ParentActivityThreads({
   return (
     <section
       className="bg-card space-y-3 rounded-xl border p-4 sm:p-5"
-      aria-label="Activity conversation history"
+      aria-labelledby="teacher-comments-heading"
     >
-      <h2 className="font-heading text-base sm:text-lg font-semibold text-foreground">
+      <h2
+        id="teacher-comments-heading"
+        className="font-heading text-base sm:text-lg font-semibold text-foreground"
+      >
         Teacher comments
       </h2>
       {query.isError ? (
-        <div role="status" className="space-y-3 py-2">
+        <div role="alert" className="space-y-3 py-2">
           <Alert variant="destructive">
             <AlertCircle className="size-4" />
             <AlertTitle>Could not load conversations</AlertTitle>
@@ -41,7 +44,7 @@ export function ParentActivityThreads({
               Unable to retrieve teacher feedback threads. Check your connection and try again.
             </AlertDescription>
           </Alert>
-          <Button size="sm" variant="outline" onClick={() => void query.refetch()}>
+          <Button size="sm" variant="outline" className="min-h-11 sm:min-h-9 h-10 sm:h-9 text-xs sm:text-sm font-medium cursor-pointer" onClick={() => void query.refetch()}>
             Try again
           </Button>
         </div>

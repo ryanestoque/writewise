@@ -19,7 +19,7 @@ export function SubmissionCommentPicker({ userId, scope, activeSubmissionId, exp
   if (!query.isAccountActive) return <p role="status" className="p-4">Sign in again to view comments.</p>;
   if (query.isError) return <div role="status" className="flex flex-col gap-3 p-4">
     <p>Could not load worksheet uploads.</p>
-    <Button variant="outline" onClick={() => void query.refetch()}>Try again</Button>
+    <Button variant="outline" size="sm" className="min-h-11 sm:min-h-9 h-10 sm:h-9 text-xs sm:text-sm font-medium w-fit cursor-pointer" onClick={() => void query.refetch()}>Try again</Button>
   </div>;
   if (!query.data) return <p role="status" className="p-4">Loading worksheet uploads…</p>;
   return <LoadedPicker key={`${userId}:${scope.activityId}:${scope.studentId}`} userId={userId}
@@ -43,11 +43,28 @@ function LoadedPicker({ userId, rows, activeSubmissionId, explicitSubmissionId, 
         onChange={event => setSelectedId(event.target.value)}>
         <NativeSelectOption value="" disabled>Choose an upload</NativeSelectOption>
         <NativeSelectOptGroup label="Worksheet uploads">
-          {rows.map((row, index) => <NativeSelectOption key={row.submission_id} value={row.submission_id}>
-            Upload {rows.length - index} · {new Date(row.submitted_at).toLocaleString()}
-            {" · "}{{ processing: "Analyzing", rejected: "Needs a new photo", completed: "Uploaded", returned: "Returned" }[row.submission_status]}
-            {unread.data?.has(row.submission_id) ? " · Unread comments" : ""}
-          </NativeSelectOption>)}
+          {rows.map((row, index) => {
+            const dateStr = new Date(row.submitted_at).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            });
+            const timeStr = new Date(row.submitted_at).toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+            });
+            const statusLabel = {
+              processing: "Analyzing",
+              rejected: "Needs a new photo",
+              completed: "Uploaded",
+              returned: "Returned",
+            }[row.submission_status];
+            const unreadLabel = unread.data?.has(row.submission_id) ? " · Unread comments" : "";
+            return (
+              <NativeSelectOption key={row.submission_id} value={row.submission_id}>
+                {`Upload ${rows.length - index} · ${dateStr} at ${timeStr} · ${statusLabel}${unreadLabel}`}
+              </NativeSelectOption>
+            );
+          })}
         </NativeSelectOptGroup>
       </NativeSelect>
     </Field>

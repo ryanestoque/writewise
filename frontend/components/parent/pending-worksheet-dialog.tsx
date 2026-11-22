@@ -115,8 +115,8 @@ export function PendingWorksheetDialog({
                         Revision requested
                       </span>
                     ) : item.status === "rejected" ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-destructive/15 text-destructive border border-destructive/30">
-                        Retake needed
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-band-2/15 text-band-2-text dark:text-amber-200 border border-band-2/30">
+                        Clearer photo needed
                       </span>
                     ) : (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
@@ -129,7 +129,7 @@ export function PendingWorksheetDialog({
                     {item.status === "returned"
                       ? "Teacher requested another attempt"
                       : item.status === "rejected"
-                        ? "Photo needs to be retaken"
+                        ? "Clearer photo needed"
                         : "Turned in — waiting for teacher review"}
                   </h3>
 

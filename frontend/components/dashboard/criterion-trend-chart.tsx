@@ -449,14 +449,23 @@ export function CriterionTrendChart({
                         : "bg-muted/20 text-muted-foreground border-dashed border-border/60 hover:bg-muted/40 hover:text-foreground"
                     )}
                   >
-                    <span
-                      className={cn(
-                        "size-2.5 rounded-full shrink-0 transition-opacity",
-                        !isSelected && "opacity-35"
-                      )}
-                      style={{ backgroundColor: color }}
+                    <svg
+                      width="18"
+                      height="6"
+                      viewBox="0 0 18 6"
+                      className={cn("shrink-0 transition-opacity", !isSelected && "opacity-35")}
                       aria-hidden="true"
-                    />
+                    >
+                      <line
+                        x1="0"
+                        y1="3"
+                        x2="18"
+                        y2="3"
+                        stroke={color}
+                        strokeWidth={c.key === "overall" ? 2.5 : 2}
+                        strokeDasharray={c.strokeDasharray}
+                      />
+                    </svg>
                     <span>{c.label}</span>
                   </button>
                 );
@@ -557,14 +566,23 @@ export function CriterionTrendChart({
                         : "bg-muted/20 text-muted-foreground border-dashed border-border/60 hover:bg-muted/40 hover:text-foreground hover:border-border/90"
                     )}
                   >
-                    <span
-                      className={cn(
-                        "size-2.5 rounded-full shrink-0 transition-opacity",
-                        !isSelected && "opacity-35"
-                      )}
-                      style={{ backgroundColor: color }}
+                    <svg
+                      width="18"
+                      height="6"
+                      viewBox="0 0 18 6"
+                      className={cn("shrink-0 transition-opacity", !isSelected && "opacity-35")}
                       aria-hidden="true"
-                    />
+                    >
+                      <line
+                        x1="0"
+                        y1="3"
+                        x2="18"
+                        y2="3"
+                        stroke={color}
+                        strokeWidth={c.key === "overall" ? 2.5 : 2}
+                        strokeDasharray={c.strokeDasharray}
+                      />
+                    </svg>
                     <span>{c.label}</span>
                   </button>
                 );
@@ -630,6 +648,11 @@ export function CriterionTrendChart({
                   </span>
                   <span className="text-xs text-muted-foreground font-sans tabular-nums">({trajectoryStats.totalCount} worksheets)</span>
                 </div>
+                {trajectoryStats.direction === "lower" && variant === "parent" && (
+                  <p className="text-xs text-muted-foreground/90 max-w-prose leading-relaxed pt-0.5">
+                    Longer words or new sentences can dip scores briefly — steady practice builds consistency.
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -714,10 +737,10 @@ export function CriterionTrendChart({
                             if (val >= 75) return "Excellent";
                             if (val >= 50) return "Satisfactory";
                             if (val >= 25) return "Developing";
-                            return "Needs Imp.";
+                            return "Needs Improvement";
                           }
                     }
-                    width={showScoreDetails ? 48 : 74}
+                    width={showScoreDetails ? 48 : 96}
                     tickLine={false}
                     axisLine={false}
                     tick={{ fontSize: 10, fill: "currentColor" }}

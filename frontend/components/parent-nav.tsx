@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { createClient } from "@/lib/supabase/client";
 import type { LinkedChild } from "@/lib/hooks/use-parent-data";
-import { Loader2, LogOut, Settings, Users } from "lucide-react";
+import { Loader2, LogOut, Settings, Users, BookOpen, PenTool } from "lucide-react";
 import { toast } from "sonner";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 
@@ -41,6 +41,8 @@ interface ParentNavProps {
   selectedChildId: string | null;
   linkedChildren: LinkedChild[];
   onChildChange: (childId: string) => void;
+  onOpenRubric?: () => void;
+  onOpenCursiveGuide?: () => void;
 }
 
 export function ParentNav({
@@ -48,6 +50,8 @@ export function ParentNav({
   selectedChildId,
   linkedChildren,
   onChildChange,
+  onOpenRubric,
+  onOpenCursiveGuide,
 }: ParentNavProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -104,7 +108,7 @@ export function ParentNav({
             <BrandLogo size="sm" priority className="hidden sm:inline-flex" />
           </Link>
 
-          {/* Center: Child Switcher (shown only when multiple children are linked) */}
+          {/* Center: Child Switcher (Select when multiple, subtle profile indicator when single) */}
           <div className="hidden sm:flex flex-1 justify-center min-w-0 px-2">
             {pathname === "/progress" && linkedChildren.length > 1 ? (
               <Select
@@ -138,6 +142,12 @@ export function ParentNav({
                   ))}
                 </SelectContent>
               </Select>
+            ) : pathname === "/progress" && linkedChildren.length === 1 && activeChild ? (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/40 border border-border/60 text-xs text-foreground max-w-[280px]">
+                <Users className="size-3 text-muted-foreground shrink-0" aria-hidden="true" />
+                <span className="truncate font-semibold">{activeChild.fullName}</span>
+                <span className="text-muted-foreground text-xs shrink-0">({activeChild.section})</span>
+              </div>
             ) : null}
           </div>
 
@@ -154,7 +164,7 @@ export function ParentNav({
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-64 rounded-2xl p-1.5 shadow-xl border border-border/80 bg-popover"
+                className="w-64 rounded-2xl p-1.5 shadow-warm border border-border/80 bg-popover"
               >
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className="font-normal p-2">
@@ -171,6 +181,24 @@ export function ParentNav({
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
+                  {onOpenRubric && (
+                    <DropdownMenuItem
+                      onClick={onOpenRubric}
+                      className="cursor-pointer gap-2 py-2 text-sm"
+                    >
+                      <BookOpen className="size-4 text-muted-foreground" aria-hidden="true" />
+                      <span>How scores work</span>
+                    </DropdownMenuItem>
+                  )}
+                  {onOpenCursiveGuide && (
+                    <DropdownMenuItem
+                      onClick={onOpenCursiveGuide}
+                      className="cursor-pointer gap-2 py-2 text-sm"
+                    >
+                      <PenTool className="size-4 text-muted-foreground" aria-hidden="true" />
+                      <span>Cursive guide</span>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
                     render={<Link href="/parent-settings" />}
                     className="cursor-pointer gap-2 py-2 text-sm"

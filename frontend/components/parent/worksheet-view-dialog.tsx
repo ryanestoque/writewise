@@ -41,7 +41,6 @@ import {
   ArrowLeft,
   Trash2,
   Loader2,
-  Lightbulb,
   PenLine,
 } from "lucide-react";
 import {
@@ -70,6 +69,7 @@ interface WorksheetViewDialogProps {
   compositeScore: number | null;
   scoreSource?: "manual" | "calibrated" | "none";
   initialCriterion?: CriterionFilter;
+  initialView?: "details" | "comments";
   initialShowScoreDetails?: boolean;
   showScoreDetails?: boolean;
   onToggleScoreDetails?: () => void;
@@ -107,6 +107,7 @@ export function WorksheetViewDialog({
   compositeScore,
   scoreSource = "none",
   initialCriterion = "all",
+  initialView = "details",
   initialShowScoreDetails = false,
   showScoreDetails: controlledShowScoreDetails,
   onToggleScoreDetails,
@@ -198,7 +199,14 @@ export function WorksheetViewDialog({
     return items.length > 0 ? items[0] : null;
   }, [selectedAttentionItem, overlay, activeCriterion]);
 
-  const { data: imageUrl, isLoading: isImageLoading } = useSubmissionImageUrl(imagePath);
+  const {
+    data: imageUrl,
+    isLoading: isImageLoading,
+    isError: isImageError,
+    refetch: refetchImage,
+  } = useSubmissionImageUrl(imagePath);
+
+  const hasWritingMarks = Boolean(overlay);
 
   const formattedDate = new Date(submissionDate).toLocaleDateString("en-US", {
     month: "short",
@@ -217,7 +225,7 @@ export function WorksheetViewDialog({
     return (
       <div
         className={cn(
-          "rounded-xl border border-border/80 bg-card shadow-2xs",
+          "rounded-xl border border-border/80 bg-card",
           isMobile ? "p-3.5 space-y-2.5" : "hidden lg:block p-4 space-y-3"
         )}
       >
@@ -297,7 +305,7 @@ export function WorksheetViewDialog({
                 </button>
               )}
               <DialogTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
-                Worksheet Photo &amp; Guide Lines
+                {hasWritingMarks ? "Worksheet Photo & Writing Marks" : "Worksheet Photo & Feedback"}
               </DialogTitle>
               <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
                 <span className="font-medium text-foreground">
@@ -320,7 +328,13 @@ export function WorksheetViewDialog({
         </DialogHeader>
 
         {/* Content Body: Unified Multimodal View */}
-        <SubmissionCommentTabs key={submissionId} submissionId={submissionId} open={open}>
+        <SubmissionCommentTabs
+          key={`${submissionId ?? "none"}:${initialView}`}
+          submissionId={submissionId}
+          open={open}
+          initialView={initialView}
+          studentName={childName}
+        >
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             {/* Left (Desktop) / Top (Mobile): High-Resolution Worksheet Photo Inspector */}
@@ -329,13 +343,20 @@ export function WorksheetViewDialog({
                 imageUrl={imageUrl}
                 altText={`Handwriting worksheet submitted for ${childName}`}
                 isLoading={isImageLoading}
+                isError={isImageError}
+                onRetry={() => {
+                  void refetchImage();
+                }}
                 headerLabel="Handwritten Worksheet"
+                showShortcutsLegend={false}
+                keyboardScope="focused"
                 collapsibleImageTools={true}
-                aspectRatioClass="h-[230px] sm:h-[320px] lg:h-auto lg:min-h-[420px] lg:max-h-[min(640px,calc(100dvh-14rem))]"
+                aspectRatioClass="h-[320px] sm:h-[380px] lg:h-auto lg:min-h-[440px] lg:max-h-[min(640px,calc(100dvh-14rem))]"
                 diagnosticToolbar={
                   overlay ? (
                     <OverlayToolbar
                       variant="compact"
+                      isParentView
                       hideCriterionSelectorOnMobile
                       overlay={overlay}
                       activeCriterion={activeCriterion}
@@ -428,20 +449,17 @@ export function WorksheetViewDialog({
                     className={cn(
                       "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer border min-h-[40px] flex items-center gap-1.5 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
                       activeCriterion === "all"
-                        ? "bg-brand-600 text-white border-brand-600 shadow-2xs dark:bg-brand-500 dark:border-brand-500"
+                        ? "bg-brand-600 text-white border-brand-600 dark:bg-brand-500 dark:border-brand-500"
                         : "bg-muted/50 text-muted-foreground border-border/80 hover:bg-muted hover:text-foreground"
                     )}
                   >
-                    <span>All Lines</span>
+                    <span>{hasWritingMarks ? "All Marks" : "All Skills"}</span>
                   </button>
 
                   {PARENT_CRITERIA_LIST.map((c) => {
                     const band = bands?.[c.key];
                     const bandMeta = band ? getBandMeta(band) : null;
-                    const shortBandLabel =
-                      band === "needs_improvement"
-                        ? "Needs Imp."
-                        : bandMeta?.label ?? null;
+                    const bandLabel = bandMeta?.label ?? null;
                     const isSelected = activeCriterion === c.key;
 
                     return (
@@ -453,7 +471,7 @@ export function WorksheetViewDialog({
                         className={cn(
                           "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer border min-h-[40px] flex items-center gap-1.5 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
                           isSelected
-                            ? "bg-brand-100 text-brand-900 border-brand-400 dark:bg-brand-950 dark:text-brand-100 dark:border-brand-600 shadow-2xs"
+                            ? "bg-brand-100 text-brand-900 border-brand-400 dark:bg-brand-950 dark:text-brand-100 dark:border-brand-600"
                             : "bg-card text-foreground border-border/80 hover:bg-muted/50"
                         )}
                       >
@@ -464,7 +482,7 @@ export function WorksheetViewDialog({
                           />
                         )}
                         <span>{c.label}</span>
-                        {shortBandLabel && (
+                        {bandLabel && (
                           <span
                             className={cn(
                               "text-[11px] font-medium",
@@ -473,7 +491,7 @@ export function WorksheetViewDialog({
                                 : "text-muted-foreground"
                             )}
                           >
-                            &middot; {shortBandLabel}
+                            &middot; {bandLabel}
                           </span>
                         )}
                       </button>
@@ -482,12 +500,14 @@ export function WorksheetViewDialog({
                 </div>
 
                 {/* Active Skill Feedback Card */}
-                <div className="p-4 rounded-xl border border-border/80 bg-card space-y-2.5 text-sm shadow-2xs">
+                <div className="p-4 rounded-xl border border-border/80 bg-card space-y-2.5 text-sm">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="font-heading font-semibold text-foreground text-sm truncate">
                         {activeCriterion === "all"
-                          ? "All Writing Lines & Guides"
+                          ? hasWritingMarks
+                            ? "All Writing Marks"
+                            : "All 5 Handwriting Skills"
                           : PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.label ?? activeCriterion}
                       </span>
                       {activeCriterion !== "all" && bands && bands[activeCriterion as CriterionKey] && (
@@ -503,7 +523,9 @@ export function WorksheetViewDialog({
 
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     {activeCriterion === "all"
-                      ? "Showing ruled writing lines, slant guides, and letter spacing on your child's paper. Tap any skill pill above to inspect specific strokes."
+                      ? hasWritingMarks
+                        ? "Showing writing marks on your child's paper. Tap any skill above to focus on it."
+                        : "Tap any skill above to read its feedback and home practice tip."
                       : (bands && bands[activeCriterion as CriterionKey] && DIAGNOSTIC_NOTES[activeCriterion as CriterionKey]?.[bands[activeCriterion as CriterionKey]!]) ||
                       PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.shortDescription}
                   </p>
@@ -517,10 +539,9 @@ export function WorksheetViewDialog({
                           : PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.homeTip;
                     if (!tip) return null;
                     return (
-                      <div className="pt-2 border-t border-border/70 flex items-start gap-2 text-band-2-text">
-                        <Lightbulb className="size-4 shrink-0 mt-0.5 text-band-2-text" aria-hidden="true" />
+                      <div className="pt-2 border-t border-border/70 text-foreground">
                         <p className="leading-relaxed text-xs sm:text-sm">
-                          <span className="font-semibold">Home tip: </span>
+                          <span className="font-semibold text-primary">Home tip: </span>
                           {tip}
                         </p>
                       </div>
@@ -542,11 +563,13 @@ export function WorksheetViewDialog({
                       5 Handwriting Skills
                     </h4>
                     <span className="text-xs text-muted-foreground">
-                      Tap to highlight on worksheet
+                      {hasWritingMarks
+                        ? "Select a skill to see its feedback and any marks"
+                        : "Tap a skill for its home tip"}
                     </span>
                   </div>
 
-                  <div className="rounded-xl border border-border/80 bg-card overflow-hidden divide-y divide-border/60 shadow-2xs">
+                  <div className="rounded-xl border border-border/80 bg-card overflow-hidden divide-y divide-border/60">
                     {PARENT_CRITERIA_LIST.map((criterion) => {
                       const isTop = topStrength?.key === criterion.key;
                       const isFocus = practiceFocus?.key === criterion.key;

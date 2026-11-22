@@ -6,6 +6,7 @@ interface BandPositionBarProps {
   band?: ScoreBand | null;
   showLabel?: boolean;
   showThresholds?: boolean;
+  showBandLabels?: boolean;
   height?: "sm" | "default";
   className?: string;
   ariaLabel?: string;
@@ -16,6 +17,7 @@ export function BandPositionBar({
   score,
   showLabel = false,
   showThresholds = false,
+  showBandLabels = true,
   height = "default",
   className,
   ariaLabel,
@@ -74,6 +76,19 @@ export function BandPositionBar({
           </span>
         )}
       </div>
+
+      {/* Explicit Band Names — Dual-Signal Accessibility Rule */}
+      {showBandLabels && (
+        <div
+          aria-hidden="true"
+          className="grid grid-cols-4 text-[10px] sm:text-[11px] font-medium text-muted-foreground px-0.5 select-none pt-0.5"
+        >
+          <span className="truncate text-left sm:text-center text-band-1-text">Needs Imp.</span>
+          <span className="truncate text-center text-band-2-text">Developing</span>
+          <span className="truncate text-center text-band-3-text">Satisfactory</span>
+          <span className="truncate text-right sm:text-center text-band-4-text">Excellent</span>
+        </div>
+      )}
 
       {showThresholds && (
         <div

@@ -90,7 +90,7 @@ function HistoryItemRow({
       <div className="space-y-1 min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <h3
-            className="text-sm sm:text-base font-semibold text-foreground truncate"
+            className="text-sm sm:text-base font-sans font-semibold text-foreground truncate"
             title={item.targetText}
           >
             &ldquo;{item.targetText}&rdquo;

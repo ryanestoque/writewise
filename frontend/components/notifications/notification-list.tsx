@@ -12,6 +12,7 @@ import {
   EmptyMedia,
   EmptyTitle,
   EmptyDescription,
+  EmptyContent,
 } from "@/components/ui/empty";
 import { NotificationRowItem } from "./notification-row";
 import type { NotificationLabels, NotificationRow } from "@/lib/notifications/data";
@@ -201,7 +202,9 @@ export function NotificationList({
           ? "Loading notifications…"
           : filter === "all"
             ? `Showing all ${rows.length} notifications (${unreadCount} unread).`
-            : `Showing ${unreadCount} unread notification${unreadCount === 1 ? "" : "s"}.`}
+            : displayedRows.length === 0 && totalUnreadCount && totalUnreadCount > 0 && hasMore
+              ? `No unread in recent updates. You have ${totalUnreadCount} older unread notification${totalUnreadCount === 1 ? "" : "s"}.`
+              : `Showing ${unreadCount} unread notification${unreadCount === 1 ? "" : "s"}.`}
       </div>
 
       {loading && rows.length === 0 ? (
@@ -234,10 +237,64 @@ export function NotificationList({
             </EmptyTitle>
             <EmptyDescription className="text-xs text-muted-foreground">
               {totalUnreadCount && totalUnreadCount > 0 && hasMore
-                ? `You have ${totalUnreadCount} older unread notification${totalUnreadCount === 1 ? "" : "s"}. Load more updates below to view them.`
+                ? `You have ${totalUnreadCount} older unread notification${totalUnreadCount === 1 ? "" : "s"}. Load older updates to view them.`
                 : "No unread notifications right now."}
             </EmptyDescription>
           </EmptyHeader>
+          <EmptyContent className="max-w-xs gap-2 pt-1">
+            {totalUnreadCount && totalUnreadCount > 0 && hasMore ? (
+              <>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="min-h-[44px] md:min-h-[36px] touch-manipulation cursor-pointer w-full text-xs font-medium"
+                  disabled={loadingMore}
+                  onClick={() => {
+                    wasLoadingMoreRef.current = true;
+                    loadMore();
+                  }}
+                >
+                  {loadingMore ? "Loading older updates…" : "Load older updates"}
+                </Button>
+                {Boolean(loadMoreError) && (
+                  <div
+                    role="alert"
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-xs text-foreground w-full"
+                  >
+                    <span className="text-destructive font-medium">Failed to load more.</span>
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={() => {
+                        wasLoadingMoreRef.current = true;
+                        loadMore();
+                      }}
+                      className="h-9 min-h-[44px] md:h-7 md:min-h-0 px-3 md:px-2 border-destructive/30 hover:bg-destructive/15 text-xs touch-manipulation cursor-pointer shrink-0"
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                )}
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  onClick={() => setFilter("all")}
+                  className="h-8 text-xs text-muted-foreground hover:text-foreground touch-manipulation cursor-pointer"
+                >
+                  Show all notifications
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={() => setFilter("all")}
+                className="h-8 px-3 text-xs text-muted-foreground hover:text-foreground touch-manipulation cursor-pointer"
+              >
+                Show all notifications
+              </Button>
+            )}
+          </EmptyContent>
         </Empty>
       ) : (
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col gap-3 pr-1 pb-2 [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/60 hover:[&::-webkit-scrollbar-thumb]:bg-border">

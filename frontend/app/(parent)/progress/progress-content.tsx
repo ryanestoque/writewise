@@ -45,6 +45,7 @@ import {
   UserX,
   PenTool,
   Camera,
+  Clock,
 } from "lucide-react";
 
 type ParentProgressTab = "overview" | "to-write" | "progress";
@@ -149,8 +150,8 @@ export function ProgressPageContent() {
       ),
     [allHistory]
   );
-  const { data: activities } = useTakeHomeActivities(selectedChildId);
-  const { data: latestScores } = useChildLatestScores(selectedChildId);
+  const { data: activities, isSuccess: practiceLoaded } = useTakeHomeActivities(selectedChildId);
+  const { data: latestScores, isSuccess: latestFeedbackLoaded } = useChildLatestScores(selectedChildId);
 
   const now = useActivityNow();
 
@@ -251,11 +252,20 @@ export function ProgressPageContent() {
 
   const firstName = selectedChild.fullName.trim().split(/\s+/)[0] || selectedChild.fullName;
   const scoredCount = history?.length ?? 0;
-  const isZeroState = !historyLoading && allHistory !== undefined && scoredCount === 0;
+  const hasPendingSubmission = Boolean(
+    allHistory?.some(
+      (row) =>
+        row.isActiveAttempt &&
+        (row.status === "processing" || (row.status === "completed" && !row.releasedAt))
+    )
+  );
+  const showExampleFeedback = latestFeedbackLoaded && latestScores === null;
   const requestedGrades = searchParams.getAll("tab").length === 1 && searchParams.get("tab") === "grades";
+  const isResolvingInitialTab =
+    selectedTab === null && !gradeDestination && !requestedGrades && historyLoading;
   const activeTab: ParentProgressTab = gradeDestination
     ? "progress"
-    : selectedTab ?? (requestedGrades ? "progress" : isZeroState ? "to-write" : "overview");
+    : selectedTab ?? (requestedGrades ? "progress" : "overview");
 
   const scoreControls = (
     <label className="inline-flex min-h-11 cursor-pointer select-none items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -284,7 +294,9 @@ export function ProgressPageContent() {
                 type="button"
                 role="radio"
                 aria-checked={isSelected}
-                onClick={() => setSelectedChildId(child.id)}
+                onClick={() => {
+                  setSelectedChildId(child.id);
+                }}
                 className={cn(
                   "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 cursor-pointer transition-all min-h-11 touch-manipulation",
                   isSelected
@@ -310,12 +322,32 @@ export function ProgressPageContent() {
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
             Section {selectedChild.section}
-            {isZeroState
-              ? " · Classroom and take-home worksheets will appear here once checked"
-              : ""}
           </p>
         </div>
 
+        <div className="flex items-center gap-3 shrink-0">
+          {pendingActivitiesCount > 0 && !urgentActivity && (
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                const firstOpen = takeHomeActivities.find((a) => {
+                  const status = getParentActivityStatus(a, now);
+                  return status.canSend && !status.excused;
+                });
+                if (firstOpen) {
+                  handleUploadActivity(firstOpen.id);
+                } else {
+                  handleNavigateToWrite();
+                }
+              }}
+              className="h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] font-medium text-xs sm:text-sm gap-1.5 cursor-pointer touch-manipulation"
+            >
+              <Camera className="size-4" aria-hidden="true" />
+              <span>Send photo</span>
+            </Button>
+          )}
+        </div>
       </div>
 
       {childrenError && (
@@ -338,12 +370,12 @@ export function ProgressPageContent() {
         />
       )}
 
-      {urgentActivity && urgentStatus && (
+      {urgentActivity && urgentStatus && activeTab !== "to-write" && (
         <div
           role="region"
           aria-label="Practice worksheet needing attention"
           className={cn(
-            "rounded-xl px-4 py-3.5 text-foreground border transition-colors",
+            "rounded-xl px-4 py-3 text-foreground border transition-colors",
             urgentStatus.urgency === "new_photo"
               ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
               : "border-band-2/40 bg-band-2/10 dark:bg-band-2/15"
@@ -378,7 +410,7 @@ export function ProgressPageContent() {
                   <button
                     type="button"
                     onClick={handleNavigateToWrite}
-                    className="text-brand-700 dark:text-brand-300 font-medium hover:underline cursor-pointer"
+                    className="text-brand-700 dark:text-brand-300 font-medium hover:underline cursor-pointer min-h-[40px] px-2 -my-2 touch-manipulation inline-flex items-center text-xs"
                   >
                     +{urgentActivities.length - 1} more
                   </button>
@@ -451,19 +483,73 @@ export function ProgressPageContent() {
 
         {/* Tab 1: Overview (Coaching Hero + Latest Worksheet) */}
         <TabsContent value="overview" className="space-y-6">
-          <LatestSubmissionCard
-            key={selectedChildId}
-            childId={selectedChildId}
-            childName={selectedChild.fullName}
-            history={history}
-            showScoreDetails={showScoreDetails}
-            onToggleScoreDetails={toggleScoreDetails}
-            scoreControls={scoreControls}
-            onOpenRubric={handleOpenRubric}
-            onNavigateToWrite={handleNavigateToWrite}
-          />
-          {isZeroState && <SampleReportPreview onOpenRubric={handleOpenRubric} defaultCollapsed
-            showScoreDetails={showScoreDetails} onToggleScoreDetails={toggleScoreDetails} />}
+          {isResolvingInitialTab ? (
+            <div
+              role="status"
+              aria-live="polite"
+              className="rounded-xl border border-border bg-card shadow-warm p-8 flex flex-col items-center justify-center min-h-[220px] gap-3"
+            >
+              <Loader2 className="size-6 animate-spin motion-reduce:animate-none text-brand-600 dark:text-brand-400" aria-hidden="true" />
+              <span className="text-sm text-muted-foreground">Loading {firstName}&apos;s latest feedback...</span>
+            </div>
+          ) : (
+            <>
+              {hasPendingSubmission && latestScores && (
+                <div
+                  role="status"
+                  className="rounded-xl border border-brand-200/80 bg-brand-50/80 dark:border-brand-800/60 dark:bg-brand-950/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-foreground"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex size-9 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300 shrink-0">
+                      <Clock className="size-4 text-primary" aria-hidden="true" />
+                    </div>
+                    <div className="space-y-0.5 min-w-0">
+                      <p className="text-sm font-semibold text-foreground">
+                        Worksheet received · Feedback pending
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {firstName}&apos;s teacher hasn&apos;t shared feedback for that worksheet yet. You can still see their latest released feedback below.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedTab("progress");
+                    }}
+                    className="min-h-10 sm:min-h-9 text-xs font-medium shrink-0 cursor-pointer bg-card"
+                  >
+                    View history
+                  </Button>
+                </div>
+              )}
+              <LatestSubmissionCard
+                key={selectedChildId}
+                userId={userId}
+                childId={selectedChildId}
+                childName={selectedChild.fullName}
+                history={history}
+                showScoreDetails={showScoreDetails}
+                onToggleScoreDetails={toggleScoreDetails}
+                scoreControls={scoreControls}
+                onOpenRubric={handleOpenRubric}
+                onOpenCursiveGuide={openCursiveGuide}
+                hasPendingSubmission={hasPendingSubmission}
+                hasNoAssignedPractice={practiceLoaded && takeHomeActivities.length === 0}
+                onNavigateToWrite={handleNavigateToWrite}
+              />
+              {showExampleFeedback && (
+                <SampleReportPreview
+                  onOpenRubric={handleOpenRubric}
+                  defaultCollapsed={false}
+                  showScoreDetails={showScoreDetails}
+                  onToggleScoreDetails={toggleScoreDetails}
+                />
+              )}
+            </>
+          )}
         </TabsContent>
 
         {/* Tab 2: To-Write (Assigned Take-Home Practice) */}
@@ -480,9 +566,14 @@ export function ProgressPageContent() {
               >
                 Practice worksheets
               </h2>
-              <Button variant="ghost" size="sm" onClick={openCursiveGuide} className="cursor-pointer">
-                <PenTool aria-hidden="true" />
-                Cursive guide
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => openCursiveGuide()}
+                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80"
+              >
+                <PenTool className="size-3.5" aria-hidden="true" />
+                <span>Cursive guide</span>
               </Button>
             </div>
 
@@ -493,143 +584,160 @@ export function ProgressPageContent() {
               expanded={activitiesExpanded}
               onToggleExpanded={() => setActivitiesExpanded((prev) => !prev)}
               showExpandButton={true}
-              gridClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4"
+              gridClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
               practiceFocusKey={practiceFocus?.key}
+              onOpenCursiveGuide={openCursiveGuide}
             />
           </section>
 
           {selectedChildId && <ParentActivityThreads key={`${userId}:${selectedChildId}`} userId={userId} studentId={selectedChildId} />}
         </TabsContent>
 
-        {/* Tab 3: Progress (Trend Chart + Past Worksheets History) */}
+        {/* Tab 3: Progress (Trend Chart, Past Worksheets, Coursework & Comments) */}
         <TabsContent value="progress" className="space-y-6">
-          <section
-            id="progress-trends-section"
-            aria-labelledby="progress-trends-heading"
-            className="space-y-3"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2
-                id="progress-trends-heading"
-                className="font-heading text-base sm:text-lg font-semibold text-foreground"
+          <div className="xl:grid xl:grid-cols-12 xl:gap-6 space-y-6 xl:space-y-0 items-start">
+            {/* Left 7 Columns on Desktop: Longitudinal Trends + Past Worksheets Archive */}
+            <div className="xl:col-span-7 space-y-6 min-w-0">
+              <section
+                id="progress-trends-section"
+                aria-labelledby="progress-trends-heading"
+                className="space-y-3"
               >
-                Progress over time
-              </h2>
-              {scoreControls}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2
+                    id="progress-trends-heading"
+                    className="font-heading text-base sm:text-lg font-semibold text-foreground"
+                  >
+                    Progress over time
+                  </h2>
+                  {scoreControls}
+                </div>
+
+                {historyLoading ? (
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    className="rounded-xl border border-border bg-card p-8 flex flex-col items-center justify-center min-h-[240px] gap-2.5"
+                  >
+                    <Loader2
+                      className="size-6 animate-spin motion-reduce:animate-none text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                    <span className="text-sm text-muted-foreground">Loading progress chart...</span>
+                  </div>
+                ) : history && history.length >= 2 ? (
+                  <div className="rounded-xl border border-border bg-card p-4 sm:p-5 min-w-0">
+                    <CriterionTrendChart
+                      history={history}
+                      variant="parent"
+                      showScoreDetails={showScoreDetails}
+                      practiceFocusKey={practiceFocus?.key}
+                    />
+                  </div>
+                ) : scoredCount === 1 && history?.[0] ? (
+                  <div className="rounded-xl border border-border bg-card p-5 sm:p-6 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <h3 className="font-heading text-base sm:text-lg font-semibold text-foreground">
+                          1 of 2 worksheets checked for trend chart
+                        </h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed max-w-prose">
+                          &ldquo;{history[0].targetText}&rdquo; ({new Date(history[0].submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}) sets {firstName}&apos;s starting point. Trend lines appear after the next checked worksheet.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 self-start">
+                        {showScoreDetails && history[0].compositeScore != null && (
+                          <span className="font-sans text-sm font-semibold tabular-nums text-foreground">
+                            {Math.round(history[0].compositeScore)}%
+                          </span>
+                        )}
+                        <BandBadge score={history[0].compositeScore} band={history[0].compositeBand} size="sm" showDot />
+                      </div>
+                    </div>
+
+                    {/* Flat 5-Criteria Baseline Summary (no nested cards) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-3 border-t border-border/70 pt-4">
+                      {PARENT_CRITERIA_LIST.map((criterion) => {
+                        const criterionScore = history[0].scores[criterion.key];
+                        const criterionBand = history[0].bands[criterion.key];
+
+                        return (
+                          <div key={criterion.key} className="flex sm:flex-col items-center sm:items-start justify-between gap-1.5">
+                            <span className="text-xs font-medium text-muted-foreground truncate">
+                              {criterion.label}
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <BandBadge band={criterionBand} score={criterionScore} size="sm" showDot />
+                              {showScoreDetails && criterionScore != null && (
+                                <span className="font-sans text-xs font-medium tabular-nums text-muted-foreground">
+                                  {Math.round(criterionScore)}%
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-border bg-card p-6 sm:p-8 text-center space-y-3">
+                    <h3 className="font-heading text-base font-semibold text-foreground">
+                      Progress chart unlocks after 2 checked worksheets
+                    </h3>
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+                      Once {firstName}&apos;s worksheets are checked by their teacher, you&apos;ll see their skill trends over time and full worksheet archive here.
+                    </p>
+                    <div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleNavigateToWrite}
+                        className="min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium cursor-pointer"
+                      >
+                        View practice worksheets
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </section>
+
+              {allHistory !== undefined && allHistory.length > 0 && (
+                <PastWorksheetsSection
+                  history={allHistory}
+                  childName={selectedChild.fullName}
+                  showScoreDetails={showScoreDetails}
+                  onToggleScoreDetails={toggleScoreDetails}
+                  onUploadActivity={handleUploadActivity}
+                />
+              )}
             </div>
 
-            {historyLoading ? (
-              <div
-                role="status"
-                aria-live="polite"
-                className="rounded-xl border border-border bg-card p-8 flex flex-col items-center justify-center min-h-[240px] gap-2.5"
-              >
-                <Loader2
-                  className="size-6 animate-spin motion-reduce:animate-none text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <span className="text-sm text-muted-foreground">Loading progress chart...</span>
-              </div>
-            ) : history && history.length >= 2 ? (
-              <div className="rounded-xl border border-border bg-card p-4 sm:p-5 min-w-0">
-                <CriterionTrendChart
-                  history={history}
-                  variant="parent"
+            {/* Right 5 Columns on Desktop: Coursework Point Ledger + Teacher Conversation Threads */}
+            <div className="xl:col-span-5 space-y-6 min-w-0">
+              {activeTab === "progress" && selectedChildId && (
+                <ParentGrades
+                  key={`${userId}:${selectedChildId}`}
+                  userId={userId}
+                  childId={selectedChildId}
                   showScoreDetails={showScoreDetails}
-                  practiceFocusKey={practiceFocus?.key}
+                  highlightActivityId={gradeDestination ? notificationTargetData?.activityId : undefined}
+                  onDismissTarget={() => {
+                    setSelectedTab("progress");
+                    dismissNotificationTarget(null);
+                  }}
                 />
-              </div>
-            ) : scoredCount === 1 && history?.[0] ? (
-              <div className="rounded-xl border border-border bg-card p-5 sm:p-6 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <h3 className="font-heading text-base sm:text-lg font-semibold text-foreground">
-                      1 of 2 worksheets checked for trend chart
-                    </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed max-w-prose">
-                      &ldquo;{history[0].targetText}&rdquo; ({new Date(history[0].submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}) sets {firstName}&apos;s starting point. Trend lines appear after the next checked worksheet.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 self-start">
-                    {showScoreDetails && history[0].compositeScore != null && (
-                      <span className="font-sans text-sm font-semibold tabular-nums text-foreground">
-                        {Math.round(history[0].compositeScore)}%
-                      </span>
-                    )}
-                    <BandBadge score={history[0].compositeScore} band={history[0].compositeBand} size="sm" showDot />
-                  </div>
-                </div>
+              )}
 
-                {/* Flat 5-Criteria Baseline Summary (no nested cards) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-3 border-t border-border/70 pt-4">
-                  {PARENT_CRITERIA_LIST.map((criterion) => {
-                    const criterionScore = history[0].scores[criterion.key];
-                    const criterionBand = history[0].bands[criterion.key];
-
-                    return (
-                      <div key={criterion.key} className="flex sm:flex-col items-center sm:items-start justify-between gap-1.5">
-                        <span className="text-xs font-medium text-muted-foreground truncate">
-                          {criterion.label}
-                        </span>
-                        <div className="flex items-center gap-1.5">
-                          <BandBadge band={criterionBand} score={criterionScore} size="sm" showDot />
-                          {showScoreDetails && criterionScore != null && (
-                            <span className="font-sans text-xs font-medium tabular-nums text-muted-foreground">
-                              {Math.round(criterionScore)}%
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-border bg-card p-6 sm:p-8 text-center space-y-3">
-                <h3 className="font-heading text-base font-semibold text-foreground">
-                  Progress chart unlocks after 2 checked worksheets
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-                  Once {firstName}&apos;s worksheets are checked by their teacher, you&apos;ll see their skill trends over time and full worksheet archive here.
-                </p>
-                <div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleNavigateToWrite}
-                    className="min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium cursor-pointer"
-                  >
-                    View practice worksheets
-                  </Button>
-                </div>
-              </div>
-            )}
-          </section>
-
-          {allHistory !== undefined && allHistory.length > 0 && (
-            <PastWorksheetsSection
-              history={allHistory}
-              childName={selectedChild.fullName}
-              showScoreDetails={showScoreDetails}
-              onToggleScoreDetails={toggleScoreDetails}
-              onUploadActivity={handleUploadActivity}
-            />
-          )}
-
-          {activeTab === "progress" && selectedChildId && (
-            <ParentGrades
-              key={`${userId}:${selectedChildId}`}
-              userId={userId}
-              childId={selectedChildId}
-              showScoreDetails={showScoreDetails}
-              highlightActivityId={gradeDestination ? notificationTargetData?.activityId : undefined}
-              onDismissTarget={() => {
-                setSelectedTab("progress");
-                dismissNotificationTarget(null);
-              }}
-            />
-          )}
+              {selectedChildId && (
+                <ParentActivityThreads
+                  key={`progress-threads:${userId}:${selectedChildId}`}
+                  userId={userId}
+                  studentId={selectedChildId}
+                />
+              )}
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
 

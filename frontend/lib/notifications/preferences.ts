@@ -15,62 +15,59 @@ async function preferenceRequest(
   signal?.throwIfAborted();
   const token = await getAuthToken(client);
   signal?.throwIfAborted();
-  const { data, error } = await client.auth.getUser(token);
+  const { data: authData, error: authError } = await client.auth.getUser(token);
   signal?.throwIfAborted();
-  if (error || data.user?.id !== accountId) {
+  if (authError || authData.user?.id !== accountId) {
     throw new ApiError({
       code: "UNAUTHORIZED",
       message: "Sign in again to update email settings.",
     });
   }
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const publicKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!base || !publicKey || (role !== "parent" && role !== "teacher")) {
+
+  if (role !== "parent" && role !== "teacher") {
     throw new ApiError({ code: "INTERNAL_ERROR", message: "Email settings are unavailable." });
   }
-  const endpoint = new URL(`/rest/v1/${role}`, base);
-  endpoint.searchParams.set("id", `eq.${accountId}`);
-  endpoint.searchParams.set("select", "id,email_notifications");
-  const response = await fetch(endpoint, {
-    method: enabled === undefined ? "GET" : "PATCH",
-    headers: {
-      apikey: publicKey,
-      Authorization: `Bearer ${token}`,
-      ...(enabled === undefined
-        ? {}
-        : { "Content-Type": "application/json", Prefer: "return=representation" }),
-    },
-    body: enabled === undefined ? undefined : JSON.stringify({ email_notifications: enabled }),
-    signal,
-  });
-  signal?.throwIfAborted();
-  if (!response.ok) {
-    throw new ApiError({
-      code: response.status === 401 || response.status === 403 ? "UNAUTHORIZED" : "INTERNAL_ERROR",
-      message: "Email settings could not be confirmed.",
-    });
+
+  const table = role === "parent" ? "parent" : "teacher";
+
+  if (enabled === undefined) {
+    let query = client
+      .from(table)
+      .select("id,email_notifications")
+      .eq("id", accountId);
+    if (signal) query = query.abortSignal(signal);
+    const { data, error } = await query.maybeSingle();
+    signal?.throwIfAborted();
+    if (error) {
+      throw new ApiError({
+        code: error.code === "PGRST116" ? "NOT_FOUND" : "INTERNAL_ERROR",
+        message: "Email settings could not be confirmed.",
+      });
+    }
+    if (!data || typeof data.email_notifications !== "boolean") {
+      throw new ApiError({ code: "NOT_FOUND", message: "Email settings are unavailable." });
+    }
+    return data.email_notifications;
+  } else {
+    let query = client
+      .from(table)
+      .update({ email_notifications: enabled })
+      .eq("id", accountId)
+      .select("id,email_notifications");
+    if (signal) query = query.abortSignal(signal);
+    const { data, error } = await query.maybeSingle();
+    signal?.throwIfAborted();
+    if (error) {
+      throw new ApiError({
+        code: error.code === "PGRST116" ? "NOT_FOUND" : "INTERNAL_ERROR",
+        message: "Email settings could not be confirmed.",
+      });
+    }
+    if (!data || typeof data.email_notifications !== "boolean") {
+      throw new ApiError({ code: "NOT_FOUND", message: "Email settings could not be confirmed." });
+    }
+    return data.email_notifications;
   }
-  let rows: unknown;
-  try {
-    rows = await response.json();
-  } catch {
-    throw new ApiError({
-      code: "INTERNAL_ERROR",
-      message: "Email settings could not be confirmed.",
-    });
-  }
-  signal?.throwIfAborted();
-  if (!Array.isArray(rows) || rows.length !== 1) {
-    throw new ApiError({ code: "NOT_FOUND", message: "Email settings are unavailable." });
-  }
-  const row = rows[0] as Record<string, unknown> | null;
-  if (row?.id !== accountId || typeof row.email_notifications !== "boolean") {
-    throw new ApiError({
-      code: "INTERNAL_ERROR",
-      message: "Email settings could not be confirmed.",
-    });
-  }
-  return row.email_notifications;
 }
 
 export function readEmailPreference(

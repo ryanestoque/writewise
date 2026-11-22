@@ -16,7 +16,8 @@ export function getParentActivityStatus(work: TakeHomeActivity, now: number) {
   const returned =
     submission?.status === "returned" ||
     Boolean(work.workState?.returned_at && !work.workState.active_submission_id);
-  const rejected = submission?.status === "rejected";
+  const latestRejected = work.latestSubmission?.status === "rejected";
+  const rejected = submission?.status === "rejected" || latestRejected;
   const needsPhoto = !processing && (!submission || returned || rejected);
   const canSend = needsPhoto && !closed;
   const dueTime = work.dueAt ? Date.parse(work.dueAt) : Number.POSITIVE_INFINITY;
@@ -35,9 +36,10 @@ export function getParentActivityStatus(work: TakeHomeActivity, now: number) {
     processing,
     returned,
     rejected,
+    latestRejected,
     excused,
     canSend,
-    // A completed counted attempt remains submitted even after its deadline.
+    // A completed counted attempt remains submitted even after its deadline, unless latest attempt was rejected
     category: excused ? "submitted" : processing ? "processing" : needsPhoto ? (closed ? "closed" : "todo") : "submitted",
     urgency,
     dueTime,
