@@ -41,34 +41,33 @@ export default async function ParentSettingsPage() {
         <Link
           href="/progress"
           className={cn(
-            buttonVariants({ variant: "outline", size: "sm" }),
-            "text-foreground/80 hover:text-foreground hover:bg-muted/50 border-border/80 hover:border-brand-500/40 bg-card focus-visible:ring-primary inline-flex h-10 min-h-[40px] cursor-pointer items-center gap-2 rounded-lg px-3.5 text-xs font-medium shadow-2xs transition-all focus-visible:ring-2 sm:h-9 sm:min-h-[36px]"
+            buttonVariants({ variant: "ghost", size: "sm" }),
+            "-ml-2 h-10 min-h-[40px] gap-1.5 text-muted-foreground hover:text-foreground sm:h-9 sm:min-h-[36px]"
           )}
         >
-          <ArrowLeft className="text-brand-600 dark:text-brand-400 size-3.5" aria-hidden="true" />
-          <span>Back to Child Progress</span>
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          <span>Back to progress</span>
         </Link>
       </div>
 
       {/* Page Header */}
       <div className="border-border space-y-1 border-b pb-6">
         <h1 className="font-heading text-foreground text-2xl font-semibold tracking-tight sm:text-3xl">
-          Account Settings
+          Account settings
         </h1>
-        <p className="text-muted-foreground text-xs sm:text-sm">
-          Manage your parent profile display name and security credentials.
+        <p className="text-muted-foreground text-sm">
+          Manage your profile, password, and email notifications.
         </p>
       </div>
 
-      {/* Profile Section */}
       <ParentProfileSettingsCard initialFullName={fullName} email={email} />
 
-      {/* Section Divider */}
-      <div className="border-border border-t" />
-
-      {/* Password & Security Section */}
-      <SecuritySettingsCard email={email} />
       <Separator />
+
+      <SecuritySettingsCard email={email} />
+
+      <Separator />
+
       <NotificationSettingsCard
         key={`${user.id}:parent`}
         accountId={user.id}

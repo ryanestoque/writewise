@@ -2,14 +2,7 @@
 
 import { humanizeReason } from "@/lib/utils/humanize-reason";
 
-import { useState, useMemo, useRef, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { BandBadge } from "@/components/shared/band-badge";
 import { WorksheetViewDialog } from "./worksheet-view-dialog";
@@ -24,8 +17,6 @@ import {
   getScoreProgressLabel,
 } from "@/lib/utils/score-progress";
 import {
-  FileText,
-  Eye,
   ChevronDown,
   ChevronUp,
   ArrowUpDown,
@@ -119,22 +110,12 @@ function HistoryItemRow({
               {getDeltaChangeLabel(item.delta, showScoreDetails)}
             </span>
           )}
-
-          {item.isBaseline && (
-            <span className="inline-flex items-center text-xs font-medium text-muted-foreground bg-muted/40 px-2 py-0.5 rounded-md border border-border/50 shrink-0">
-              First worksheet
-            </span>
-          )}
-
-          {!item.isActiveAttempt && item.compositeScore != null && (
-            <Badge variant="outline" className="text-xs">
-              Earlier upload
-            </Badge>
-          )}
         </div>
 
         <p className="text-xs text-muted-foreground font-sans tabular-nums">
           {formattedDate}
+          {item.isBaseline ? " · First worksheet" : ""}
+          {!item.isActiveAttempt && item.compositeScore != null ? " · Earlier upload" : ""}
           {showScoreDetails ? ` · Worksheet #${item.attemptNumber}` : ""}
           {item.status === "completed" && item.compositeScore == null
             ? " · Awaiting teacher review"
@@ -168,10 +149,9 @@ function HistoryItemRow({
             onClick={() => onOpenWorksheetView(item)}
             aria-haspopup="dialog"
             aria-label={`See worksheet photo and guide lines for "${item.targetText}"`}
-            className="h-10 min-h-10 sm:h-9 sm:min-h-9 text-xs font-medium gap-1.5 cursor-pointer"
+            className="h-10 min-h-10 sm:h-9 sm:min-h-9 text-xs font-medium cursor-pointer"
           >
-            <Eye className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-            <span>View</span>
+            View
           </Button>
         )}
       </div>
@@ -191,6 +171,7 @@ export function PastWorksheetsSection({
   history,
   childName,
   showScoreDetails,
+  onToggleScoreDetails,
   onUploadActivity,
 }: PastWorksheetsSectionProps) {
   const [showAllInline, setShowAllInline] = useState(false);
@@ -229,7 +210,7 @@ export function PastWorksheetsSection({
             id="past-worksheets-heading"
             className="font-heading text-base sm:text-lg font-semibold text-foreground"
           >
-            Past Worksheets
+            Past worksheets
           </h2>
           <span className="text-xs sm:text-sm text-muted-foreground font-sans tabular-nums">
             ({processedHistory.length})
@@ -304,6 +285,8 @@ export function PastWorksheetsSection({
           }}
           initialCriterion={initialCriterionForView}
           initialShowScoreDetails={showScoreDetails}
+          showScoreDetails={showScoreDetails}
+          onToggleScoreDetails={onToggleScoreDetails}
           submissionId={selectedItemForView.submissionId}
           canDelete={selectedItemForView.canDelete}
           imagePath={selectedItemForView.imagePath ?? null}
@@ -319,201 +302,5 @@ export function PastWorksheetsSection({
         />
       )}
     </section>
-  );
-}
-
-interface SubmissionHistoryDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  history: StudentScoreHistoryItem[];
-  childName: string;
-  onOpenRubric?: () => void;
-  initialShowScoreDetails?: boolean;
-  onUploadActivity?: (activityId: string) => void;
-}
-
-export function SubmissionHistoryDialog({
-  open,
-  onOpenChange,
-  history,
-  childName,
-  initialShowScoreDetails = false,
-  onUploadActivity,
-}: SubmissionHistoryDialogProps) {
-  const [selectedItemForView, setSelectedItemForView] =
-    useState<StudentScoreHistoryItem | null>(null);
-  const [initialCriterionForView, setInitialCriterionForView] =
-    useState<CriterionFilter | undefined>(undefined);
-  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
-  const [showScoreDetails, setShowScoreDetails] = useState(initialShowScoreDetails);
-
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const savedScrollTopRef = useRef<number>(0);
-  const lastTriggeredButtonIdRef = useRef<string | null>(null);
-
-  const processedHistory = useMemo(
-    () => buildProcessedHistory(history, sortOrder),
-    [history, sortOrder]
-  );
-
-  const isViewingWorksheet = !!selectedItemForView;
-
-  useEffect(() => {
-    if (!isViewingWorksheet && scrollContainerRef.current) {
-      const scrollEl = scrollContainerRef.current;
-      const targetScroll = savedScrollTopRef.current;
-      requestAnimationFrame(() => {
-        if (scrollEl) {
-          scrollEl.scrollTop = targetScroll;
-        }
-        if (lastTriggeredButtonIdRef.current) {
-          const btn = document.getElementById(lastTriggeredButtonIdRef.current);
-          if (btn) {
-            btn.focus();
-          }
-        }
-      });
-    }
-  }, [isViewingWorksheet]);
-
-  const handleOpenWorksheetView = (
-    item: StudentScoreHistoryItem,
-    criterion?: CriterionFilter
-  ) => {
-    if (scrollContainerRef.current) {
-      savedScrollTopRef.current = scrollContainerRef.current.scrollTop;
-    }
-    lastTriggeredButtonIdRef.current = `inspect-btn-${item.submissionId}`;
-    setInitialCriterionForView(criterion);
-    setSelectedItemForView(item);
-  };
-
-  const handleBackFromWorksheetView = () => {
-    setSelectedItemForView(null);
-    setInitialCriterionForView(undefined);
-  };
-
-  const handleCloseAll = () => {
-    setSelectedItemForView(null);
-    setInitialCriterionForView(undefined);
-    onOpenChange(false);
-  };
-
-  return (
-    <>
-      <Dialog open={open && !isViewingWorksheet} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[calc(100%-1.5rem)] sm:max-w-3xl lg:max-w-4xl max-h-[min(90dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
-          <DialogHeader className="p-5 sm:p-6 pb-4 border-b border-border bg-card/60">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 pr-8">
-              <div className="space-y-1 min-w-0">
-                <DialogTitle className="font-heading text-lg sm:text-xl font-semibold text-foreground">
-                  Past Worksheets ({processedHistory.length})
-                </DialogTitle>
-                <DialogDescription className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  All worksheets uploaded for {childName}
-                </DialogDescription>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2 self-start sm:self-center shrink-0">
-                {processedHistory.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => setSortOrder((prev) => (prev === "newest" ? "oldest" : "newest"))}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-10 sm:min-h-9 rounded-lg bg-card border border-border/80 hover:bg-muted/50 text-xs font-medium text-foreground transition-colors cursor-pointer"
-                  >
-                    <ArrowUpDown className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                    <span>{sortOrder === "newest" ? "Newest first" : "Oldest first"}</span>
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setShowScoreDetails((prev) => !prev)}
-                  aria-pressed={showScoreDetails}
-                  className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-10 sm:min-h-9 inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors"
-                >
-                  {showScoreDetails ? "Hide details" : "Show details"}
-                </button>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <div
-            ref={scrollContainerRef}
-            className="flex-1 overflow-y-auto p-4 sm:p-6"
-          >
-            {processedHistory.length === 0 ? (
-              <div className="p-8 text-center space-y-2 rounded-xl border border-dashed border-border bg-muted/20">
-                <FileText
-                  className="size-8 text-muted-foreground/60 mx-auto"
-                  aria-hidden="true"
-                />
-                <p className="text-sm font-medium text-foreground">
-                  No past worksheets yet
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Completed worksheets will appear here.
-                </p>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-border bg-card divide-y divide-border/70 overflow-hidden">
-                {processedHistory.map((item) => (
-                  <HistoryItemRow
-                    key={item.submissionId}
-                    item={item}
-                    onOpenWorksheetView={handleOpenWorksheetView}
-                    showScoreDetails={showScoreDetails}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="py-3 px-4 sm:px-6 border-t border-border bg-card/60 flex items-center justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-10 min-h-10 sm:h-9 sm:min-h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
-              onClick={() => onOpenChange(false)}
-            >
-              Close
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {selectedItemForView && selectedItemForView.compositeScore == null && (
-        <PendingWorksheetDialog
-          item={selectedItemForView}
-          childName={childName}
-          onBack={handleBackFromWorksheetView}
-          onUploadActivity={onUploadActivity}
-        />
-      )}
-      {selectedItemForView && selectedItemForView.compositeScore != null && (
-        <WorksheetViewDialog
-          open={!!selectedItemForView}
-          onOpenChange={(openNext) => {
-            if (!openNext) handleCloseAll();
-          }}
-          onBack={handleBackFromWorksheetView}
-          backLabel="Back to Past Worksheets"
-          initialCriterion={initialCriterionForView}
-          initialShowScoreDetails={showScoreDetails}
-          submissionId={selectedItemForView.submissionId}
-          canDelete={selectedItemForView.canDelete}
-          imagePath={selectedItemForView.imagePath ?? null}
-          targetText={selectedItemForView.targetText}
-          submissionDate={selectedItemForView.submissionDate}
-          childName={childName}
-          compositeScore={selectedItemForView.compositeScore}
-          scoreSource={selectedItemForView.scoreSource}
-          scores={selectedItemForView.scores}
-          bands={selectedItemForView.bands}
-          guideLines={selectedItemForView.guideLines}
-          overlay={selectedItemForView.overlay}
-        />
-      )}
-    </>
   );
 }

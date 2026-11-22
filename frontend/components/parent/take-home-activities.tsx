@@ -101,12 +101,29 @@ export function TakeHomeActivities({
     });
   }, [sortedTakeHome, now]);
 
-  const submittedAndClosed = useMemo(() => {
+  const awaitingReviewActivities = useMemo(() => {
     const toDoIds = new Set(toDoActivities.map((item) => item.id));
-    return sortedTakeHome.filter((item) => !toDoIds.has(item.id));
-  }, [sortedTakeHome, toDoActivities]);
+    return sortedTakeHome.filter((work) => {
+      if (toDoIds.has(work.id)) return false;
+      const { excused } = getParentActivityStatus(work, now);
+      if (excused) return false;
+      return (
+        work.submission?.status === "completed" &&
+        work.workState?.work_status !== "Released" &&
+        work.submission?.compositeScore == null
+      );
+    });
+  }, [sortedTakeHome, toDoActivities, now]);
 
-  const closedWithoutPhotoCount = submittedAndClosed.filter(
+  const pastSheets = useMemo(() => {
+    const visibleIds = new Set([
+      ...toDoActivities.map((item) => item.id),
+      ...awaitingReviewActivities.map((item) => item.id),
+    ]);
+    return sortedTakeHome.filter((item) => !visibleIds.has(item.id));
+  }, [sortedTakeHome, toDoActivities, awaitingReviewActivities]);
+
+  const closedWithoutPhotoCount = pastSheets.filter(
     (work) => getParentActivityStatus(work, now).category === "closed"
   ).length;
 
@@ -141,7 +158,7 @@ export function TakeHomeActivities({
             <ClipboardList className="size-6" />
           </EmptyMedia>
           <EmptyHeader>
-            <EmptyTitle>No Practice Worksheets Assigned</EmptyTitle>
+            <EmptyTitle>No practice worksheets assigned</EmptyTitle>
             <EmptyDescription className="text-sm max-w-md mx-auto leading-relaxed">
               When your child&apos;s teacher assigns take-home cursive practice, it will appear right here with a button to send a photo.
             </EmptyDescription>
@@ -151,22 +168,19 @@ export function TakeHomeActivities({
     );
   }
 
-  const activeList = showAllTakeHome ? [...toDoActivities, ...submittedAndClosed] : toDoActivities;
+  const activeList = showAllTakeHome ? [...toDoActivities, ...pastSheets] : toDoActivities;
   const visibleActivities =
     activeList.length > 3 && !isExpanded ? activeList.slice(0, 3) : activeList;
   const focusMeta = practiceFocusKey ? PARENT_CRITERIA_METADATA[practiceFocusKey] : null;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {recovery}
       {focusMeta && toDoActivities.length > 0 && (
-        <div className="rounded-xl border border-band-2/30 dark:border-band-2/40 bg-band-2/10 dark:bg-band-2/20 px-3.5 py-2.5 text-xs sm:text-sm leading-relaxed">
-          <span className="inline-flex items-center gap-1.5 font-semibold text-band-2-text dark:text-amber-200 mr-1.5">
-            <span className="size-1.5 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
-            Active practice focus: {focusMeta.label}.
-          </span>
-          <span className="text-foreground/90">{focusMeta.homeTip}</span>
-        </div>
+        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+          <span className="font-semibold text-foreground">Practice focus ({focusMeta.label}):</span>{" "}
+          {focusMeta.homeTip}
+        </p>
       )}
       {toDoActivities.length === 0 && !showAllTakeHome ? (
         <div className="rounded-xl border border-border bg-card p-5 text-center space-y-3">
@@ -180,10 +194,12 @@ export function TakeHomeActivities({
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">
               {closedWithoutPhotoCount > 0
                 ? `${closedWithoutPhotoCount} ${closedWithoutPhotoCount === 1 ? "worksheet still needs" : "worksheets still need"} a photo, but submissions are closed. Ask the teacher about sending it late.`
-                : "Nothing to send right now. Your practice worksheets have been turned in."}
+                : awaitingReviewActivities.length > 0
+                  ? "Nothing else to send right now. Your turned-in worksheets are listed below while waiting for teacher review."
+                  : "Nothing to send right now. Your practice worksheets have been turned in."}
             </p>
           </div>
-          {submittedAndClosed.length > 0 && (
+          {pastSheets.length > 0 && (
             <Button
               type="button"
               variant="outline"
@@ -192,9 +208,9 @@ export function TakeHomeActivities({
                 setShowAllTakeHome(true);
                 if (!isExpanded) toggleExpanded();
               }}
-              className="h-auto min-h-11 max-w-full whitespace-normal px-3.5 py-2"
+              className="h-auto min-h-11 max-w-full whitespace-normal px-3.5 py-2 cursor-pointer"
             >
-              Show submitted and closed sheets ({submittedAndClosed.length})
+              Show past sheets ({pastSheets.length})
             </Button>
           )}
         </div>
@@ -219,12 +235,12 @@ export function TakeHomeActivities({
             {activeList.length > 3 && showExpandButton && (
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={toggleExpanded}
                 aria-expanded={isExpanded}
                 aria-controls="take-home-activities-grid"
-                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 gap-1.5 cursor-pointer rounded-lg border border-border/60 bg-card shadow-2xs"
+                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
               >
                 {isExpanded ? (
                   <>
@@ -240,29 +256,58 @@ export function TakeHomeActivities({
               </Button>
             )}
 
-            {submittedAndClosed.length > 0 && (
-              <button
+            {pastSheets.length > 0 && (
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   setShowAllTakeHome((prev) => !prev);
                   if (!showAllTakeHome && !isExpanded) toggleExpanded();
                 }}
                 aria-expanded={showAllTakeHome}
                 aria-controls="take-home-activities-grid"
-                className="text-xs sm:text-sm font-medium text-primary hover:underline cursor-pointer px-2 py-1 min-h-11 inline-flex items-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium text-primary hover:text-primary cursor-pointer"
               >
                 {showAllTakeHome
-                  ? `Hide submitted and closed (${submittedAndClosed.length})`
-                  : `Show submitted and closed (${submittedAndClosed.length})`}
-              </button>
+                  ? `Hide past sheets (${pastSheets.length})`
+                  : `Show past sheets (${pastSheets.length})`}
+              </Button>
             )}
           </div>
           {!showAllTakeHome && closedWithoutPhotoCount > 0 && (
             <p className="text-sm text-muted-foreground">
-              {closedWithoutPhotoCount} {closedWithoutPhotoCount === 1 ? "closed worksheet still needs" : "closed worksheets still need"} a photo. Open the submitted and closed sheets to see details.
+              {closedWithoutPhotoCount} {closedWithoutPhotoCount === 1 ? "closed worksheet still needs" : "closed worksheets still need"} a photo. Open past sheets to see details.
             </p>
           )}
         </>
+      )}
+
+      {awaitingReviewActivities.length > 0 && (
+        <div className="space-y-2.5 pt-2 border-t border-border/60">
+          <div className="flex items-baseline gap-2">
+            <h3 className="font-heading text-sm sm:text-base font-semibold text-foreground">
+              Waiting for teacher review
+            </h3>
+            <span className="text-xs text-muted-foreground font-sans tabular-nums">
+              ({awaitingReviewActivities.length})
+            </span>
+          </div>
+          <div className={gridClassName}>
+            {awaitingReviewActivities.map((activity) => (
+              <ActivityCard
+                key={activity.id}
+                work={activity}
+                activityId={activity.id}
+                targetText={activity.targetText}
+                createdAt={activity.createdAt}
+                childId={childId}
+                initialSubmission={activity.submission}
+                onUploadClick={() => onUploadClick(activity.id)}
+              />
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
@@ -327,10 +372,10 @@ function ActivityCard({
   return (
     <div
       className={cn(
-        "rounded-xl border bg-card p-4 flex flex-col justify-between gap-3 transition-colors",
+        "rounded-xl border bg-card p-4 shadow-warm-sm flex flex-col justify-between gap-3 transition-colors",
         isRejected
           ? "border-warning/50 dark:border-warning/60 bg-warning/5 dark:bg-warning/10"
-          : "border-border/80"
+          : "border-border"
       )}
     >
       <div className="space-y-2">
@@ -370,9 +415,9 @@ function ActivityCard({
             </p>
           )}
 
-        {excused && <p className="text-sm text-muted-foreground">This worksheet is excused from coursework totals. Your child can still practise.</p>}
+        {excused && <p className="text-sm text-muted-foreground">This worksheet is excused from coursework totals. Your child can still practice.</p>}
         {isReturned && !excused && (
-          <div className="flex flex-col gap-1 rounded-lg border border-border p-3 text-sm bg-muted/30">
+          <div className="space-y-0.5 border-t border-border/60 pt-2 text-sm">
             <p className="font-semibold text-foreground">Teacher asked for a new photo</p>
             {work.workState?.return_reason && (
               <p className="text-muted-foreground">
@@ -394,9 +439,12 @@ function ActivityCard({
 
       {/* Action Footer */}
       <div className="pt-2.5 border-t border-border/50 flex flex-wrap items-center justify-between gap-2">
-        {childId && (work.attempts.length || submission?.submissionId) ? <WorkCommentsButton
-          scope={{ activityId, studentId: childId }} activeSubmissionId={work.workState?.active_submission_id ?? null} />
-          : <p className="text-xs text-muted-foreground">Comments are available after a worksheet is uploaded.</p>}
+        {childId && (work.attempts.length || submission?.submissionId) ? (
+          <WorkCommentsButton
+            scope={{ activityId, studentId: childId }}
+            activeSubmissionId={work.workState?.active_submission_id ?? null}
+          />
+        ) : null}
         {isLoading ? (
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -412,16 +460,11 @@ function ActivityCard({
             {(() => {
               const rejection = getRejectionSummary(submission?.rejectionCode ?? null);
               return (
-                <div
-                  role="status"
-                  aria-live="polite"
-                  className="space-y-1 text-sm bg-warning/10 dark:bg-warning/20 border border-warning/40 dark:border-warning/50 p-3 rounded-lg leading-normal"
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-warning-foreground">
-                    <Camera className="size-4 shrink-0 text-warning-foreground" aria-hidden="true" />
-                    <span>Clearer photo needed: {rejection.label}</span>
-                  </div>
-                  <p className="text-sm text-foreground/90 pl-5 leading-relaxed">
+                <div role="status" aria-live="polite" className="space-y-0.5 text-sm leading-normal">
+                  <p className="font-semibold text-warning-foreground">
+                    Clearer photo needed: {rejection.label}
+                  </p>
+                  <p className="text-muted-foreground leading-relaxed">
                     {rejection.detail}
                   </p>
                 </div>
@@ -496,22 +539,17 @@ function ActivityCard({
             <span>Send new photo</span>
           </Button>
         ) : (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-2">
-            <span className="text-xs text-muted-foreground sm:truncate">
-              Flat paper · Good light · All 4 corners
-            </span>
-            <Button
-              variant="default"
-              size="sm"
-              className="h-10 min-h-[40px] gap-1.5 font-semibold cursor-pointer text-sm sm:w-auto w-full px-4"
-              onClick={onUploadClick}
-              disabled={closed}
-              aria-label={`Send photo for "${targetText}"`}
-            >
-              <Upload className="size-4" aria-hidden="true" />
-              <span>Send photo</span>
-            </Button>
-          </div>
+          <Button
+            variant="default"
+            size="sm"
+            className="h-10 min-h-[40px] gap-1.5 font-semibold cursor-pointer text-sm w-full px-4"
+            onClick={onUploadClick}
+            disabled={closed}
+            aria-label={`Send photo for "${targetText}"`}
+          >
+            <Upload className="size-4" aria-hidden="true" />
+            <span>Send photo</span>
+          </Button>
         )}
 
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Camera, ArrowLeft, Clock3, AlertCircle, FileText } from "lucide-react";
+import { Camera, ArrowLeft } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -104,26 +104,23 @@ export function PendingWorksheetDialog({
               />
             </div>
 
-            {/* Right Column: Status Card & Teacher Note */}
+            {/* Right Column: Status & Teacher Note */}
             <div className="lg:col-span-5 space-y-4 w-full">
-              <div className="p-4 sm:p-5 rounded-xl border border-border/80 bg-card space-y-4 shadow-2xs">
+              <div className="p-4 sm:p-5 rounded-xl border border-border bg-card space-y-4 shadow-warm-sm">
                 {/* Status Badge & Headline */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     {item.status === "returned" ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-band-2/15 text-band-2-text dark:text-amber-200 border border-band-2/30">
-                        <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
-                        <span>Revision Requested</span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-band-2/15 text-band-2-text dark:text-amber-200 border border-band-2/30">
+                        Revision requested
                       </span>
                     ) : item.status === "rejected" ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-destructive/15 text-destructive border border-destructive/30">
-                        <Camera className="size-3.5 shrink-0" aria-hidden="true" />
-                        <span>Retake Needed</span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-destructive/15 text-destructive border border-destructive/30">
+                        Retake needed
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
-                        <Clock3 className="size-3.5 shrink-0" aria-hidden="true" />
-                        <span>Under Teacher Review</span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
+                        Under teacher review
                       </span>
                     )}
                   </div>
@@ -138,62 +135,41 @@ export function PendingWorksheetDialog({
 
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     {item.status === "returned"
-                      ? "Your child's teacher reviewed this submission and requested another attempt. Earlier photo records remain safely archived in their history."
+                      ? "Your child's teacher reviewed this submission and requested another attempt. Earlier photos stay saved in their history."
                       : item.status === "rejected"
                         ? "This photo could not be evaluated by the quality check. Please take a flatter, well-lit photo of the paper."
-                        : "Your child's worksheet was successfully received. The teacher will share calibrated feedback and writing line guides after grading."}
+                        : "Your child's worksheet was received. The teacher will share handwriting feedback and writing line guides after grading."}
                   </p>
                 </div>
 
-                {/* Teacher Return Note if present */}
+                {/* Teacher Return Note if present (flat, border-divided) */}
                 {item.returnNote && (
-                  <div className="rounded-xl border border-border/80 bg-muted/40 p-3.5 space-y-1.5">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Teacher Note
-                    </span>
+                  <div className="border-t border-border/70 pt-3 space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground">
+                      Teacher note
+                    </p>
                     <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
                       {item.returnNote}
                     </p>
                   </div>
                 )}
 
-                {/* Target Text Card */}
-                {item.targetText && (
-                  <div className="rounded-xl border border-border/70 bg-muted/20 p-3 space-y-1">
-                    <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                      <FileText className="size-3 shrink-0" aria-hidden="true" />
-                      Assigned Practice Text
-                    </span>
-                    <p className="text-sm font-semibold text-foreground italic truncate" title={item.targetText}>
-                      &ldquo;{item.targetText}&rdquo;
-                    </p>
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="space-y-2 pt-2 border-t border-border/60">
-                  {canSendNewPhoto && (
+                {/* Primary Action */}
+                {canSendNewPhoto && (
+                  <div className="pt-2 border-t border-border/60">
                     <Button
                       type="button"
                       onClick={() => {
                         onBack();
                         onUploadActivity?.(item.activityId);
                       }}
-                      className="w-full h-10 min-h-[40px] gap-2 font-semibold cursor-pointer shadow-2xs"
+                      className="w-full h-10 min-h-[40px] gap-2 font-semibold cursor-pointer"
                     >
                       <Camera className="size-4" aria-hidden="true" />
                       <span>Send new photo</span>
                     </Button>
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onBack}
-                    className="w-full h-10 min-h-[40px] cursor-pointer"
-                  >
-                    {backLabel}
-                  </Button>
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -42,6 +42,7 @@ interface OverlayToolbarProps {
   showGuideLines?: boolean;
   onToggleGuideLines?: () => void;
   hasGuideLines?: boolean;
+  hideCriterionSelectorOnMobile?: boolean;
 }
 
 interface FilterItem {
@@ -103,6 +104,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
   showGuideLines,
   onToggleGuideLines,
   hasGuideLines,
+  hideCriterionSelectorOnMobile = false,
 }: OverlayToolbarProps) {
   const [showLegend, setShowLegend] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -323,7 +325,18 @@ export const OverlayToolbar = memo(function OverlayToolbar({
         {/* Tier 1 / Primary Controls: Rubric Selector (+ Reset) + Mobile/Compact Master Switch */}
         <div className="flex items-center justify-between gap-1.5 min-w-0 w-full @min-[540px]:w-auto @min-[540px]:flex-1">
           {variant === "compact" ? (
-            <div className="flex items-center gap-1.5 min-w-0 flex-1 @min-[540px]:flex-initial">
+            <>
+              {hideCriterionSelectorOnMobile && (
+                <span className="lg:hidden text-xs font-semibold text-foreground truncate">
+                  {visible ? "Diagnostic lines on" : "Diagnostic lines off"}
+                </span>
+              )}
+              <div
+                className={cn(
+                  "items-center gap-1.5 min-w-0 flex-1 @min-[540px]:flex-initial",
+                  hideCriterionSelectorOnMobile ? "hidden lg:flex" : "flex"
+                )}
+              >
               <DropdownMenu>
                 <DropdownMenuTrigger
                   disabled={!visible}
@@ -404,6 +417,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 </Button>
               )}
             </div>
+            </>
           ) : (
             <div className="relative min-w-0 flex-1 flex items-center">
               {canScrollLeft && (

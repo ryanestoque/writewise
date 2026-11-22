@@ -89,9 +89,13 @@ export function isQualityGateErrorCode(code: string): boolean {
   ].includes(code);
 }
 
-function resolveErrorPresentation(error: QualityError): ErrorPresentation {
+function resolveErrorPresentation(
+  error: QualityError,
+  variant: "teacher" | "parent" = "teacher"
+): ErrorPresentation {
   const { code, details } = error;
   const isQuality = isQualityGateErrorCode(code);
+  const isParent = variant === "parent";
 
   switch (code) {
     case "QUALITY_GATE_LIGHTING":
@@ -104,11 +108,12 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
           isQualityCheck: true,
           badgeLabel: "Lighting",
           title: "Lighting Is Too Dim",
-          description:
-            "The photo doesn't have enough light to clearly distinguish cursive pencil strokes from the page ruling.",
+          description: isParent
+            ? "The photo is a bit too dark to see your child's pencil lines clearly on the page."
+            : "The photo doesn't have enough light to clearly distinguish cursive pencil strokes from the page ruling.",
           tips: [
             "Turn on room lighting or move closer to an open window.",
-            "Hold your phone steady so the camera sensor can take in more light.",
+            "Hold your phone steady so the camera can take in more light.",
             "Avoid shadows cast by your body or hands over the writing lines.",
           ],
           icon: SunMedium,
@@ -119,12 +124,13 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
         return {
           isQualityCheck: true,
           badgeLabel: "Glare",
-          title: "Writing Details Are Washed Out",
-          description:
-            "The bright photo does not show enough writing detail against the paper. Glare or exposure may be reducing visibility.",
+          title: isParent ? "Too Much Glare on the Paper" : "Writing Details Are Washed Out",
+          description: isParent
+            ? "Bright light or flash is washing out the writing on the page, making the letters hard to see."
+            : "The bright photo does not show enough writing detail against the paper. Glare or exposure may be reducing visibility.",
           tips: [
-            "Turn off the camera flash to eliminate bright white reflections.",
-            "Move the light source or worksheet to reduce reflections while keeping the phone parallel to the page.",
+            "Turn off the camera flash to avoid bright white glare.",
+            "Shift the paper or step slightly aside from direct lights while holding your phone flat above the page.",
             "Move away from harsh direct desk lamps.",
           ],
           icon: SunMedium,
@@ -135,11 +141,12 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
         isQualityCheck: true,
         badgeLabel: "Lighting",
         title: "Lighting Needs a Quick Adjustment",
-        description:
-          "Heavy shadows or strong glare obscured the cursive strokes and penmanship ruling.",
+        description: isParent
+          ? "Strong shadows or glare covered parts of the writing on the page."
+          : "Heavy shadows or strong glare obscured the cursive strokes and penmanship ruling.",
         tips: [
-          "Retake in bright, diffused lighting without harsh direct reflections.",
-          "Keep the camera steady and parallel to the worksheet.",
+          "Retake in bright, even light without shadows or glare.",
+          "Hold your phone flat and steady directly above the worksheet.",
         ],
         icon: SunMedium,
       };
@@ -149,13 +156,14 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
       return {
         isQualityCheck: true,
         badgeLabel: "Contrast",
-        title: "Writing Details Are Too Faint in This Photo",
-        description:
-          "The photo does not separate the writing clearly enough from the nearby paper background.",
+        title: "Writing Looks Too Faint in This Photo",
+        description: isParent
+          ? "The pencil or ink looks too light against the paper in this photo."
+          : "The photo does not separate the writing clearly enough from the nearby paper background.",
         tips: [
-          "Retake in bright, diffused light with the phone parallel to the page.",
-          "Check if table or window glare is reflecting off the shiny graphite.",
-          "Tap the handwriting to focus and use the original camera photo without filters.",
+          "Retake in bright, even light with your phone flat above the page.",
+          "Check for lamp or window glare reflecting off shiny pencil marks.",
+          "Tap the handwriting on your screen to focus and use your normal camera without filters.",
         ],
         icon: Contrast,
       };
@@ -166,12 +174,13 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
         isQualityCheck: true,
         badgeLabel: "Sharpness",
         title: "Photo Is Blurry or Unfocused",
-        description:
-          "Camera movement or slight defocus softened the stroke edges needed for geometric evaluation.",
+        description: isParent
+          ? "The photo came out a bit blurry, so the handwriting lines are hard to read clearly."
+          : "Camera movement or slight defocus softened the stroke edges needed for geometric evaluation.",
         tips: [
-          "Rest your elbows or arms on the table to keep the camera completely steady.",
-          "Tap the handwriting on your screen to lock sharp focus before shooting.",
-          "Ensure adequate room light so your camera uses a fast shutter speed.",
+          "Rest your elbows or arms on the table to keep the phone steady.",
+          "Tap the handwriting on your screen to focus before snapping.",
+          "Use bright room light so the camera takes a sharper photo.",
         ],
         icon: Focus,
       };
@@ -182,8 +191,9 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
         isQualityCheck: true,
         badgeLabel: "Framing",
         title: "Move Closer for More Detail",
-        description:
-          "The captured image does not meet the minimum resolution needed to measure letter formations accurately.",
+        description: isParent
+          ? "The worksheet looks too small or far away in this photo to read each letter clearly."
+          : "The captured image does not meet the minimum resolution needed to measure letter formations accurately.",
         tips: [
           "Move closer so the handwriting worksheet fills most of your phone screen.",
           "Avoid cropping low-res screenshots or images compressed by chat apps.",
@@ -202,15 +212,15 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
         isQualityCheck: true,
         badgeLabel: "Word Count",
         title: hasCounts
-          ? `Detected ${detected} of ${expected} Words`
-          : "Word Count Mismatch",
+          ? `Found ${detected} of ${expected} Words`
+          : "Some Words May Be Missing",
         description: hasCounts
-          ? `The system detected ${detected} words, but the assigned sentence requires ${expected} words.`
-          : "The handwritten words on the page couldn't be matched to the assigned sentence prompt.",
+          ? `We spotted ${detected} words, but this practice sentence has ${expected} words.`
+          : "The handwritten words on the page couldn't be matched to the assigned practice sentence.",
         tips: [
-          "Ensure the full written sentence is in frame and no words are cut off at the margins.",
-          "Check that the student wrote the complete sentence without skipping words.",
-          "Keep the page clean of stray doodles, erased marks, or extra notes.",
+          "Make sure the full written sentence is inside the photo and nothing is cut off at the edges.",
+          "Check that your child wrote the full sentence without skipping any words.",
+          "Keep the page clear of stray doodles, heavy erasures, or extra notes.",
         ],
         icon: FileQuestion,
       };
@@ -220,11 +230,13 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
       return {
         isQualityCheck: true,
         badgeLabel: "Angle",
-        title: "Worksheet Captured at an Angle",
-        description: "The page was tilted too steeply for automated line deskewing.",
+        title: "Worksheet Taken at an Angle",
+        description: isParent
+          ? "The page looks tilted in this photo. Holding your phone flat above the paper helps us read each line."
+          : "The page was tilted too steeply for automated line deskewing.",
         tips: [
           "Place the paper flat on a table.",
-          "Hold the phone directly above the paper, parallel to the surface.",
+          "Hold your phone straight above the paper, flat and level with the page.",
         ],
         icon: Maximize2,
       };
@@ -235,7 +247,7 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
         isQualityCheck: true,
         badgeLabel: "Coverage",
         title: "Worksheet Partially Covered",
-        description: "Part of the writing area or page margin appears obscured or cut off.",
+        description: "Part of the writing area or page edge looks covered or cut off.",
         tips: [
           "Keep hands, fingers, and pencils outside the written sentence area.",
           "Make sure no stray papers or books are covering the worksheet edges.",
@@ -248,11 +260,13 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
       return {
         isQualityCheck: true,
         badgeLabel: "Handwriting",
-        title: "No Handwriting Detected",
-        description: "The page was clear, but no handwritten cursive strokes were found in the guideline zone.",
+        title: "No Handwriting Found",
+        description: isParent
+          ? "The page looks clear, but we couldn't see handwriting inside the writing lines."
+          : "The page was clear, but no handwritten cursive strokes were found in the guideline zone.",
         tips: [
-          "Make sure the student has written on the worksheet before scanning.",
-          "Frame the camera directly on the completed guideline rows.",
+          "Make sure your child has written the sentence on the worksheet before taking the photo.",
+          "Point the camera directly at the completed writing lines.",
         ],
         icon: FileQuestion,
       };
@@ -261,14 +275,15 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
     case "QUALITY_GATE_NO_GUIDELINES": {
       return {
         isQualityCheck: true,
-        badgeLabel: "Missing Guidelines",
-        title: "No 3-Line Guidelines Found",
-        description:
-          "WriteWise requires standard 3-line penmanship paper (topline, midline, baseline) to measure letter size consistency and baseline alignment.",
+        badgeLabel: "Missing Lines",
+        title: "No 3-Line Writing Paper Found",
+        description: isParent
+          ? "WriteWise needs 3-line writing paper (top, middle, and bottom lines) to check letter size and line placement."
+          : "WriteWise requires standard 3-line penmanship paper (topline, midline, baseline) to measure letter size consistency and baseline alignment.",
         tips: [
-          "Use standard 3-line penmanship paper with top, middle, and base rulings.",
-          "Avoid using blank bond paper, unruled sketchpads, or single-line notebooks.",
-          "Ensure the printed guidelines are clearly visible across the page.",
+          "Use standard 3-line writing paper with top, middle, and bottom lines.",
+          "Avoid blank bond paper, unruled sketchpads, or single-line notebooks.",
+          "Make sure the printed writing lines show up clearly in the photo.",
         ],
         icon: FileQuestion,
       };
@@ -277,15 +292,21 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
     case "QUALITY_GATE_OFF_GUIDELINES": {
       return {
         isQualityCheck: true,
-        badgeLabel: "Guideline Placement",
-        title: "Writing Outside Guidelines",
-        description:
-          "Handwriting was detected on the sheet, but it was written in margins or outside the 3-line penmanship ruling.",
-        tips: [
-          "Write between the printed 3-line guidelines rather than in the margins or header.",
-          "Rest lowercase letter bodies on the solid baseline.",
-          "Align letters so ascenders touch the topline and descenders extend below the baseline.",
-        ],
+        badgeLabel: "Line Placement",
+        title: "Writing Outside the Lines",
+        description: isParent
+          ? "We found handwriting on the page, but it looks written in the margins or outside the 3-line writing space."
+          : "Handwriting was detected on the sheet, but it was written in margins or outside the 3-line penmanship ruling.",
+        tips: isParent
+          ? [
+              "Write inside the printed 3-line writing rows rather than in the margins or top space.",
+              "Rest small letters on the solid bottom line, with tall letters reaching up to the top line.",
+            ]
+          : [
+              "Write between the printed 3-line guidelines rather than in the margins or header.",
+              "Rest lowercase letter bodies on the solid baseline.",
+              "Align letters so ascenders touch the topline and descenders extend below the baseline.",
+            ],
         icon: FileQuestion,
       };
     }
@@ -293,14 +314,15 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
     case "QUALITY_GATE_SCRIPT_NOT_CURSIVE": {
       return {
         isQualityCheck: true,
-        badgeLabel: "Script Style",
+        badgeLabel: "Cursive Style",
         title: "Printed Handwriting Detected",
-        description:
-          "The worksheet appears to be written in printed (manuscript) handwriting. WriteWise specifically evaluates continuous cursive penmanship.",
+        description: isParent
+          ? "This page looks written in print instead of connected cursive. WriteWise checks connected cursive handwriting."
+          : "The worksheet appears to be written in printed (manuscript) handwriting. WriteWise specifically evaluates continuous cursive penmanship.",
         tips: [
-          "Ensure the student completes the worksheet using connected cursive letters.",
-          "Check for continuous entry and exit loops connecting characters within each word.",
-          "Avoid uploading printed, block, or manuscript handwriting.",
+          "Have your child write the sentence using connected cursive letters.",
+          "Check that letters join smoothly inside each word.",
+          "Avoid uploading printed or block-letter handwriting.",
         ],
         icon: FileQuestion,
       };
@@ -312,16 +334,19 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
 
       return {
         isQualityCheck: true,
-        badgeLabel: "Text Verification",
-        title: "Worksheet Text Doesn't Match Activity Prompt",
-        description:
-          detected && expected
+        badgeLabel: "Sentence Check",
+        title: isParent
+          ? "Handwriting Doesn't Match This Practice Sentence"
+          : "Worksheet Text Doesn't Match Activity Prompt",
+        description: isParent
+          ? "The handwriting in this photo doesn't seem to match the practice sentence assigned for this worksheet."
+          : detected && expected
             ? `The continuous cursive strokes were transcribed, but the content differs from the assigned prompt.`
             : "The transcribed handwriting on the page couldn't be matched to the assigned sentence prompt.",
         tips: [
-          "Check that the student wrote the exact assigned prompt sentence.",
-          "Ensure writing is clear and connected so letters can be recognized accurately.",
-          "Confirm that the correct activity was selected for this student.",
+          "Check that your child wrote the exact practice sentence shown below.",
+          "Make sure the photo is sharp and bright so every word is easy to read.",
+          "Double-check that you picked the right worksheet before sending.",
         ],
         icon: ScanText,
       };
@@ -343,8 +368,8 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
         isQualityCheck: false,
         badgeLabel: "File Too Large",
         title: "Photo Exceeds 15 MB",
-        description: "The selected photo file is too large for upload processing.",
-        tips: ["Please choose or capture a photo smaller than 15 MB."],
+        description: "The selected photo file is too large to send.",
+        tips: ["Please choose or take a photo smaller than 15 MB."],
         icon: AlertCircle,
       };
     }
@@ -374,10 +399,11 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
     case "MODEL_INFERENCE_ERROR": {
       return {
         isQualityCheck: false,
-        badgeLabel: "Assessment Service",
-        title: "Scoring Engine Busy",
-        description:
-          "The cursive scoring engine encountered a temporary issue while evaluating letter formation.",
+        badgeLabel: isParent ? "Try Again" : "Assessment Service",
+        title: isParent ? "Please Try Sending Again" : "Scoring Engine Busy",
+        description: isParent
+          ? "WriteWise is taking a moment to catch up. Please wait a few seconds and try sending your photo again."
+          : "The cursive scoring engine encountered a temporary issue while evaluating letter formation.",
         tips: ["Please wait a moment and try submitting again."],
         icon: AlertCircle,
       };
@@ -386,15 +412,15 @@ function resolveErrorPresentation(error: QualityError): ErrorPresentation {
     case "NETWORK_ERROR": {
       return {
         isQualityCheck: false,
-        badgeLabel: "Network Error",
-        title: "Connection Failed",
+        badgeLabel: "Connection",
+        title: "Couldn't Reach WriteWise",
         description:
           error.message ||
-          "Unable to connect to WriteWise. Please check your internet connection or dev tunnel.",
+          "Unable to connect to WriteWise right now. Please check your internet connection and try again.",
         tips: [
-          "Reload the page.",
           "Check your Wi-Fi or mobile data signal.",
-          "Click 'Retry Upload' below to re-send without losing your photo.",
+          "Tap 'Retry Upload' below to re-send without losing your photo.",
+          "If it still won't send, reload the page and try again.",
         ],
         icon: WifiOff,
       };
@@ -599,7 +625,7 @@ export function QualityErrorCard({
     }
   };
 
-  const presentation = useMemo(() => resolveErrorPresentation(error), [error]);
+  const presentation = useMemo(() => resolveErrorPresentation(error, variant), [error, variant]);
   const IconComponent = presentation.icon;
 
   const hasTechnicalDetails =
@@ -883,6 +909,21 @@ export function QualityErrorCard({
           )}
         </div>
       </div>
+
+      {/* Expected Practice Sentence Callout for Parents on TARGET_TEXT_MISMATCH */}
+      {variant === "parent" &&
+        error.code === "TARGET_TEXT_MISMATCH" &&
+        typeof error.details?.expected_text === "string" &&
+        error.details.expected_text.trim().length > 0 && (
+          <div className="rounded-xl border border-border/80 bg-card p-3 sm:p-3.5 space-y-1 shadow-2xs">
+            <span className="text-xs font-semibold text-muted-foreground block">
+              Practice sentence for this worksheet
+            </span>
+            <p className="font-sans text-sm text-foreground font-medium italic break-words">
+              &ldquo;{error.details.expected_text}&rdquo;
+            </p>
+          </div>
+        )}
 
       {/* Recognized Text Comparison Callout (Teacher-only diagnostic comparison) */}
       {variant !== "parent" &&

@@ -425,7 +425,7 @@ export function CriterionTrendChart({
                   aria-pressed={showScoreDetails}
                   className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-10 sm:min-h-9 inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors"
                 >
-                  {showScoreDetails ? "Hide details" : "Show details"}
+                  {showScoreDetails ? "Hide numeric scores" : "Show numeric scores"}
                 </button>
               )}
             </div>
@@ -678,7 +678,7 @@ export function CriterionTrendChart({
               >
                 <LineChart
                   data={chartData}
-                  margin={{ top: 12, right: 12, left: -16, bottom: 0 }}
+                  margin={{ top: 12, right: 12, left: showScoreDetails ? -16 : 4, bottom: 0 }}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -706,12 +706,23 @@ export function CriterionTrendChart({
                   />
                   <YAxis
                     domain={[0, 100]}
-                    ticks={[0, 25, 50, 75, 100]}
+                    ticks={showScoreDetails ? [0, 25, 50, 75, 100] : [12.5, 37.5, 62.5, 87.5]}
+                    tickFormatter={
+                      showScoreDetails
+                        ? undefined
+                        : (val: number) => {
+                            if (val >= 75) return "Excellent";
+                            if (val >= 50) return "Satisfactory";
+                            if (val >= 25) return "Developing";
+                            return "Needs Imp.";
+                          }
+                    }
+                    width={showScoreDetails ? 48 : 74}
                     tickLine={false}
                     axisLine={false}
                     tick={{ fontSize: 10, fill: "currentColor" }}
                     className="text-muted-foreground"
-                    unit="%"
+                    unit={showScoreDetails ? "%" : undefined}
                   />
 
                   <Tooltip

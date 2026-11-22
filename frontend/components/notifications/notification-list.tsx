@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { isToday, isYesterday } from "date-fns";
 import { Check, PenTool } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
@@ -31,8 +30,8 @@ export function NotificationList({
   pendingId,
   onRead,
   onActivate,
-  isMobile = false,
   containerRef,
+  totalUnreadCount,
 }: {
   rows: NotificationRow[];
   labels: NotificationLabels;
@@ -47,8 +46,8 @@ export function NotificationList({
   pendingId: string | null;
   onRead: (id: string) => void;
   onActivate: (row: NotificationRow) => void;
-  isMobile?: boolean;
   containerRef?: React.RefObject<HTMLDivElement | null>;
+  totalUnreadCount?: number;
 }) {
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const fallbackRef = useRef<HTMLDivElement>(null);
@@ -127,11 +126,16 @@ export function NotificationList({
   }, [displayedRows]);
 
   return (
-    <div ref={listContainerRef} tabIndex={-1} className="flex-1 min-h-0 flex flex-col gap-2 outline-none">
+    <div
+      ref={listContainerRef}
+      tabIndex={-1}
+      aria-label="Notifications"
+      className="flex-1 min-h-0 flex flex-col gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-lg"
+    >
       {error && (
         <div
           role="alert"
-          className="flex items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-foreground shrink-0"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-foreground shrink-0"
         >
           <p className="font-medium text-destructive dark:text-destructive">Could not refresh notifications. Your last updates are still shown.</p>
           <Button
@@ -168,6 +172,11 @@ export function NotificationList({
           <button
             type="button"
             aria-pressed={filter === "unread"}
+            aria-label={
+              totalUnreadCount !== undefined && totalUnreadCount > unreadCount
+                ? `Unread (${unreadCount} loaded, ${totalUnreadCount} total)`
+                : undefined
+            }
             onClick={() => setFilter("unread")}
             className={cn(
               "min-h-[44px] md:min-h-[28px] flex items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer touch-manipulation",
@@ -188,9 +197,11 @@ export function NotificationList({
 
       {/* Screen reader dynamic status announcement */}
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-        {filter === "all"
-          ? `Showing all ${rows.length} notifications (${unreadCount} unread).`
-          : `Showing ${unreadCount} unread notification${unreadCount === 1 ? "" : "s"}.`}
+        {loading && rows.length === 0
+          ? "Loading notifications…"
+          : filter === "all"
+            ? `Showing all ${rows.length} notifications (${unreadCount} unread).`
+            : `Showing ${unreadCount} unread notification${unreadCount === 1 ? "" : "s"}.`}
       </div>
 
       {loading && rows.length === 0 ? (
@@ -216,17 +227,23 @@ export function NotificationList({
             <EmptyMedia variant="icon" className="bg-primary/10 text-primary">
               <Check className="size-4" aria-hidden="true" />
             </EmptyMedia>
-            <EmptyTitle className="font-heading text-sm font-semibold">All caught up!</EmptyTitle>
+            <EmptyTitle className="font-heading text-sm font-semibold">
+              {totalUnreadCount && totalUnreadCount > 0 && hasMore
+                ? "No unread in recent updates"
+                : "All caught up!"}
+            </EmptyTitle>
             <EmptyDescription className="text-xs text-muted-foreground">
-              No unread notifications right now.
+              {totalUnreadCount && totalUnreadCount > 0 && hasMore
+                ? `You have ${totalUnreadCount} older unread notification${totalUnreadCount === 1 ? "" : "s"}. Load more updates below to view them.`
+                : "No unread notifications right now."}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
-      ) : isMobile ? (
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col gap-3 pr-1 pb-4">
+      ) : (
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col gap-3 pr-1 pb-2 [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/60 hover:[&::-webkit-scrollbar-thumb]:bg-border">
           {groups.map((group) => (
             <div key={group.label} className="flex flex-col gap-1">
-              <h3 className="sticky top-0 z-10 bg-background/95 backdrop-blur-xs px-2 py-1 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+              <h3 className="sticky top-0 z-10 bg-popover/95 backdrop-blur-xs px-2 py-1 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
                 {group.label}
               </h3>
               <ul aria-label={`${group.label} notifications`} className="flex flex-col gap-1">
@@ -245,11 +262,11 @@ export function NotificationList({
             </div>
           ))}
           {hasMore && (
-            <div className="flex flex-col gap-1.5 pt-2 shrink-0">
+            <div className="flex flex-col gap-1.5 pt-2 pb-1 shrink-0">
               <Button
                 variant="outline"
                 size="sm"
-                className="min-h-[44px] touch-manipulation cursor-pointer w-full"
+                className="min-h-[44px] md:min-h-[36px] touch-manipulation cursor-pointer w-full text-xs font-medium"
                 disabled={loadingMore}
                 onClick={() => {
                   wasLoadingMoreRef.current = true;
@@ -259,7 +276,7 @@ export function NotificationList({
                 {loadingMore ? "Loading…" : "Load more"}
               </Button>
               {Boolean(loadMoreError) && (
-                <div role="alert" className="flex items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-xs text-foreground">
+                <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-xs text-foreground">
                   <span className="text-destructive font-medium">Failed to load more.</span>
                   <Button
                     variant="outline"
@@ -268,66 +285,7 @@ export function NotificationList({
                       wasLoadingMoreRef.current = true;
                       loadMore();
                     }}
-                    className="h-8 px-2.5 border-destructive/30 hover:bg-destructive/15 text-xs touch-manipulation cursor-pointer"
-                  >
-                    Retry
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="flex-1 min-h-0 flex flex-col gap-2">
-          <ScrollArea className="flex-1 min-h-0">
-            <div className="flex flex-col gap-3 pr-3">
-              {groups.map((group) => (
-                <div key={group.label} className="flex flex-col gap-1">
-                  <h3 className="sticky top-0 z-10 bg-popover/95 backdrop-blur-xs px-2 py-1 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
-                    {group.label}
-                  </h3>
-                  <ul aria-label={`${group.label} notifications`} className="flex flex-col gap-1">
-                    {group.items.map((row) => (
-                      <NotificationRowItem
-                        key={row.id}
-                        row={row}
-                        labels={labels}
-                        role={role}
-                        pending={row.id === pendingId}
-                        onRead={onRead}
-                        onActivate={onActivate}
-                      />
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-          {hasMore && (
-            <div className="flex flex-col gap-1.5 pt-1 shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                className="min-h-[36px] touch-manipulation cursor-pointer w-full"
-                disabled={loadingMore}
-                onClick={() => {
-                  wasLoadingMoreRef.current = true;
-                  loadMore();
-                }}
-              >
-                {loadingMore ? "Loading…" : "Load more"}
-              </Button>
-              {Boolean(loadMoreError) && (
-                <div role="alert" className="flex items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-xs text-foreground">
-                  <span className="text-destructive font-medium">Failed to load more.</span>
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    onClick={() => {
-                      wasLoadingMoreRef.current = true;
-                      loadMore();
-                    }}
-                    className="h-7 px-2 border-destructive/30 hover:bg-destructive/15 text-xs touch-manipulation cursor-pointer"
+                    className="h-9 min-h-[44px] md:h-7 md:min-h-0 px-3 md:px-2 border-destructive/30 hover:bg-destructive/15 text-xs touch-manipulation cursor-pointer shrink-0"
                   >
                     Retry
                   </Button>

@@ -33,6 +33,7 @@ export interface LatestSubmissionCardProps {
   onOpenRubric?: () => void;
   history?: StudentScoreHistoryItem[];
   showScoreDetails?: boolean;
+  onToggleScoreDetails?: () => void;
   onNavigateToWrite?: () => void;
 }
 
@@ -41,6 +42,7 @@ export function LatestSubmissionCard({
   childName = "Your child",
   history = [],
   showScoreDetails = false,
+  onToggleScoreDetails,
   onNavigateToWrite,
   onOpenRubric,
   scoreControls,
@@ -151,7 +153,7 @@ export function LatestSubmissionCard({
             onClick={navigateToTakeHome}
             className="min-h-[40px] text-xs sm:text-sm font-medium cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
           >
-            View Practice Worksheets
+            View practice worksheets
           </Button>
         </div>
       </div>
@@ -175,19 +177,19 @@ export function LatestSubmissionCard({
         />
       )}
 
-      <section aria-labelledby="latest-worksheet-heading" className="overflow-hidden rounded-xl border bg-card md:grid md:grid-cols-2">
-        <div className="flex min-h-32 items-center justify-center bg-secondary p-4 sm:p-6">
+      <section aria-labelledby="latest-worksheet-heading" className="overflow-hidden rounded-xl border border-border bg-card shadow-warm md:grid md:grid-cols-2">
+        <div className="flex min-h-32 items-center justify-center bg-secondary/70 p-4 sm:p-6">
           {imageUrl && imageUrl !== failedImageUrl ? (
             <button type="button" onClick={() => openWorksheetForCriterion()} aria-haspopup="dialog"
-              aria-label="View worksheet" className="relative h-40 w-full rounded-md focus-visible:ring-2 focus-visible:ring-ring md:h-64">
+              aria-label="View worksheet" className="group relative h-40 w-full cursor-pointer rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring md:h-64">
               <Image src={imageUrl} alt={`Handwriting for ${latest.activityText}`} fill
-                sizes="(min-width: 768px) 50vw, 100vw" className="object-contain"
+                sizes="(min-width: 768px) 50vw, 100vw" className="object-contain transition-transform duration-200 ease-out group-hover:scale-[1.01] motion-reduce:transition-none"
                 onError={() => setFailedImageUrl(imageUrl)} />
             </button>
           ) : <span className="text-sm text-muted-foreground">{imageLoading && latest.imagePath ? "Loading worksheet photo..." : "Worksheet preview unavailable"}</span>}
         </div>
         <div className="flex min-w-0 flex-col items-start justify-center gap-3 p-5 sm:p-7">
-          <p className="text-sm text-muted-foreground">Latest worksheet &middot; {formattedDate}</p>
+          <p className="text-sm text-muted-foreground tabular-nums">Latest worksheet &middot; {formattedDate}</p>
           <h2 id="latest-worksheet-heading" className="font-heading text-xl font-semibold tracking-tight wrap-anywhere sm:text-2xl">
             {latest.activityText}
           </h2>
@@ -200,13 +202,12 @@ export function LatestSubmissionCard({
             <p>{practiceFocus?.meta.homeTip ?? "Choose a word from this worksheet and write it together."}</p>
           </div>
           <div className="flex flex-wrap gap-x-5">
-            <Button variant="link" className="px-0" onClick={() => openWorksheetForCriterion()} aria-haspopup="dialog">View worksheet</Button>
-            <Button variant="link" className="px-0" onClick={navigateToTakeHome}>View practice worksheets</Button>
+            <Button variant="link" className="px-0 cursor-pointer" onClick={() => openWorksheetForCriterion()} aria-haspopup="dialog">View worksheet</Button>
           </div>
         </div>
       </section>
 
-      <section aria-labelledby="handwriting-skills" className="rounded-xl border bg-card px-4 sm:px-6">
+      <section aria-labelledby="handwriting-skills" className="rounded-xl border border-border bg-card shadow-warm px-4 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-2 py-4">
           <div>
             <h2 id="handwriting-skills" className="font-heading text-lg font-semibold">Handwriting skills</h2>
@@ -219,7 +220,7 @@ export function LatestSubmissionCard({
           const band = latest.bands[key] ?? (score == null ? null : getBandFromScore(score));
           return (
             <button key={key} type="button" onClick={() => openWorksheetForCriterion(key)} aria-haspopup="dialog"
-              className="grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 border-t py-3 text-left text-sm hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring md:grid-cols-[minmax(10rem,1fr)_3fr_auto]">
+              className="grid w-full cursor-pointer grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 border-t py-3 text-left text-sm transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring md:grid-cols-[minmax(10rem,1fr)_3fr_auto]">
               <span className="font-semibold">{label}</span>
               <span className="col-span-2 row-start-2 leading-relaxed text-muted-foreground md:col-span-1 md:col-start-2 md:row-start-1">
                 {band ? DIAGNOSTIC_NOTES[key][band] : "Feedback is unavailable for this skill."}
@@ -232,9 +233,12 @@ export function LatestSubmissionCard({
             </button>
           );
         })}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t py-2 text-sm text-muted-foreground">
-          <span>Overall</span><BandBadge band={latest.bands.composite} score={latest.scores.composite} size="sm" />
-          {showScoreDetails && latest.scores.composite != null && <span>{Math.round(latest.scores.composite)}%</span>}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t py-2.5 text-sm text-muted-foreground">
+          <span>Overall</span>
+          <BandBadge band={latest.bands.composite} score={latest.scores.composite} size="sm" />
+          {showScoreDetails && latest.scores.composite != null && (
+            <span className="tabular-nums">{Math.round(latest.scores.composite)}%</span>
+          )}
           {trendSummary && <span>{trendSummary.label} {showScoreDetails && trendSummary.deltaText}</span>}
           {onOpenRubric && <Button variant="link" className="px-0 sm:ml-auto" onClick={onOpenRubric}>How scores work</Button>}
         </div>
@@ -253,6 +257,8 @@ export function LatestSubmissionCard({
         scoreSource={latest.scoreSource}
         initialCriterion={selectedCriterionForView}
         initialShowScoreDetails={showScoreDetails}
+        showScoreDetails={showScoreDetails}
+        onToggleScoreDetails={onToggleScoreDetails}
         scores={latest.scores}
         bands={latest.bands}
         guideLines={latest.guideLines}
@@ -261,12 +267,4 @@ export function LatestSubmissionCard({
       />
     </>
   );
-}
-
-/**
- * Backwards compatibility alias for ParentStatusHero.
- * Streamlined to render the consolidated LatestSubmissionCard directly.
- */
-export function ParentStatusHero(props: LatestSubmissionCardProps) {
-  return <LatestSubmissionCard {...props} />;
 }

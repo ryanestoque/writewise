@@ -75,6 +75,21 @@ const STEPS = [
   { step: 3, label: "Review" },
 ] as const;
 
+const UPLOAD_STAGES = [
+  {
+    title: "Checking photo clarity…",
+    detail: "Making sure the page is bright, flat, and easy to read.",
+  },
+  {
+    title: "Reading handwriting lines…",
+    detail: "Finding your child's writing lines and cursive strokes.",
+  },
+  {
+    title: "Sending to teacher…",
+    detail: "Almost done—saving this worksheet for teacher review.",
+  },
+] as const;
+
 
 
 
@@ -161,6 +176,7 @@ function ParentUploadFlow({
   const [isDragging, setIsDragging] = useState(false);
   const [showTips, setShowTips] = useState(false);
   const [uploadError, setUploadError] = useState<UploadError | null>(null);
+  const [uploadStage, setUploadStage] = useState(0);
   const [lastRetakeTip, setLastRetakeTip] = useState<{ tip: string; badgeLabel?: string } | null>(
     null
   );
@@ -193,6 +209,16 @@ function ParentUploadFlow({
   useEffect(() => {
     onUploadingChange?.(isUploading);
   }, [isUploading, onUploadingChange]);
+
+  useEffect(() => {
+    if (!isUploading) return;
+    const t1 = window.setTimeout(() => setUploadStage(1), 1500);
+    const t2 = window.setTimeout(() => setUploadStage(2), 3500);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [isUploading]);
 
   // Programmatic focus steering upon step transitions
   useEffect(() => {
@@ -246,6 +272,9 @@ function ParentUploadFlow({
       setLastRetakeTip(tipInfo);
     }
     setStep(2);
+    if (isMobile) {
+      cameraInputRef.current?.click();
+    }
   };
 
   const handleFileChange = (file: File | undefined) => {
@@ -306,6 +335,7 @@ function ParentUploadFlow({
     if (!selectedFile || !selectedActivityId || !childId) return;
     if (!selectedActivity) { toast.error("This activity is no longer available for uploads."); onClose(); return; }
 
+    setUploadStage(0);
     setStep(4);
     setUploadError(null);
 
@@ -392,6 +422,27 @@ function ParentUploadFlow({
 
   return (
     <>
+      {/* Persistent Hidden File Inputs so one-tap mobile retake launches the camera synchronously from Step 4 */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/jpeg,image/png"
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+        onChange={(e) => handleFileChange(e.target.files?.[0])}
+      />
+      <input
+        type="file"
+        ref={cameraInputRef}
+        accept="image/jpeg,image/png"
+        capture="environment"
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+        onChange={(e) => handleFileChange(e.target.files?.[0])}
+      />
+
       <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-border/80">
         <div className="min-w-0 pr-10 sm:pr-8">
           <DialogTitle className="text-base sm:text-lg font-semibold text-foreground truncate">
@@ -514,10 +565,10 @@ function ParentUploadFlow({
             />
             <div className="space-y-1">
               <p className="text-sm font-semibold text-foreground tracking-tight">
-                Checking your photo…
+                {UPLOAD_STAGES[uploadStage]?.title ?? UPLOAD_STAGES[0].title}
               </p>
               <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                We&apos;re making sure the page is clear and fully in view. This usually takes a few seconds.
+                {UPLOAD_STAGES[uploadStage]?.detail ?? UPLOAD_STAGES[0].detail}
               </p>
             </div>
           </div>
@@ -653,27 +704,6 @@ function ParentUploadFlow({
                   </div>
                 )}
 
-                {/* Hidden File Inputs */}
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  accept="image/jpeg,image/png"
-                  className="sr-only"
-                  tabIndex={-1}
-                  aria-hidden="true"
-                  onChange={(e) => handleFileChange(e.target.files?.[0])}
-                />
-                <input
-                  type="file"
-                  ref={cameraInputRef}
-                  accept="image/jpeg,image/png"
-                  capture="environment"
-                  className="sr-only"
-                  tabIndex={-1}
-                  aria-hidden="true"
-                  onChange={(e) => handleFileChange(e.target.files?.[0])}
-                />
-
                 {/* Always-visible capture checklist (prevents the most common rejections) */}
                 <p className="flex items-center justify-center gap-1.5 text-xs sm:text-sm font-medium text-foreground text-center">
                   <LightbulbIcon className="size-4 text-primary shrink-0" aria-hidden="true" />
@@ -808,10 +838,10 @@ function ParentUploadFlow({
                         />
                         <div>
                           <p className="font-semibold text-foreground text-xs sm:text-sm">
-                            90° Overhead Angle
+                            Hold Flat Above Paper
                           </p>
                           <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                            Hold camera flat directly above the paper.
+                            Hold your phone straight above the page, not at an angle.
                           </p>
                         </div>
                       </div>
@@ -836,10 +866,10 @@ function ParentUploadFlow({
                         />
                         <div>
                           <p className="font-semibold text-foreground text-xs sm:text-sm">
-                            Clear Ruling
+                            Visible Writing Lines
                           </p>
                           <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                            Keep headline, midline &amp; baseline visible.
+                            Keep the top, middle, and bottom writing lines clear.
                           </p>
                         </div>
                       </div>

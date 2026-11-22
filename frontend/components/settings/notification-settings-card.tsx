@@ -180,7 +180,11 @@ export function NotificationSettingsCard({
         <form onSubmit={save} aria-busy={busy} className="flex flex-col gap-6">
           <CardHeader>
             <CardTitle as="h3">Email updates</CardTitle>
-            <CardDescription>Manage your classroom email preferences.</CardDescription>
+            <CardDescription>
+              {role === "parent"
+                ? "Choose when WriteWise emails you about your child's practice worksheets."
+                : "Manage your classroom email preferences."}
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             {isLoading ? (
@@ -216,14 +220,14 @@ export function NotificationSettingsCard({
             {failure && (
               <Alert variant="destructive">
                 <AlertTitle>Email settings need attention</AlertTitle>
-                <AlertDescription className="flex items-center justify-between gap-2">
-                  <span>{failure}</span>
+                <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="min-w-0 flex-1">{failure}</span>
                   <Button
                     type="button"
                     variant="outline"
                     size="xs"
                     disabled={busy}
-                    className="h-9 min-h-[44px] px-3 md:h-7 md:min-h-0 md:px-2.5 touch-manipulation cursor-pointer"
+                    className="h-9 min-h-[44px] px-3 md:h-7 md:min-h-0 md:px-2.5 touch-manipulation cursor-pointer shrink-0"
                     onClick={() => {
                       setIsLoading(true);
                       setFailure(null);
@@ -250,7 +254,7 @@ export function NotificationSettingsCard({
               disabled={busy || draftEnabled === null || draftEnabled === savedEnabled}
             >
               {isSaving && (
-                <Loader2 data-icon="inline-start" className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />
               )}
               {isSaving ? "Saving…" : "Save changes"}
             </Button>

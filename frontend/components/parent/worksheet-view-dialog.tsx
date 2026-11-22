@@ -71,6 +71,8 @@ interface WorksheetViewDialogProps {
   scoreSource?: "manual" | "calibrated" | "none";
   initialCriterion?: CriterionFilter;
   initialShowScoreDetails?: boolean;
+  showScoreDetails?: boolean;
+  onToggleScoreDetails?: () => void;
   scores?: {
     letter_formation: number | null;
     size_consistency: number | null;
@@ -106,6 +108,8 @@ export function WorksheetViewDialog({
   scoreSource = "none",
   initialCriterion = "all",
   initialShowScoreDetails = false,
+  showScoreDetails: controlledShowScoreDetails,
+  onToggleScoreDetails,
   scores,
   bands,
   guideLines,
@@ -120,7 +124,16 @@ export function WorksheetViewDialog({
   const [showGuideLines, setShowGuideLines] = useState(false);
   const [criterionOverride, setCriterionOverride] = useState<CriterionFilter | null>(null);
   const [showOverlay, setShowOverlay] = useState(true);
-  const [showScoreDetails, setShowScoreDetails] = useState(initialShowScoreDetails);
+  const [internalShowScoreDetails, setInternalShowScoreDetails] = useState(initialShowScoreDetails);
+  const showScoreDetails =
+    controlledShowScoreDetails !== undefined ? controlledShowScoreDetails : internalShowScoreDetails;
+  const handleToggleScoreDetails = () => {
+    if (onToggleScoreDetails) {
+      onToggleScoreDetails();
+    } else {
+      setInternalShowScoreDetails((prev) => !prev);
+    }
+  };
   const [selectedAttentionItem, setSelectedAttentionItem] =
     useState<ActiveAnnotationHover | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -128,8 +141,8 @@ export function WorksheetViewDialog({
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
     setPrevOpen(open);
-    if (open) {
-      setShowScoreDetails(initialShowScoreDetails);
+    if (open && controlledShowScoreDetails === undefined) {
+      setInternalShowScoreDetails(initialShowScoreDetails);
     }
   }
 
@@ -229,11 +242,11 @@ export function WorksheetViewDialog({
           </div>
           <button
             type="button"
-            onClick={() => setShowScoreDetails((prev) => !prev)}
+            onClick={handleToggleScoreDetails}
             aria-pressed={showScoreDetails}
-            className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-md px-2.5 py-1 min-h-[36px] flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
+            className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-md px-2.5 py-1 min-h-[40px] sm:min-h-[36px] flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
           >
-            {showScoreDetails ? "Hide details" : "Show details"}
+            {showScoreDetails ? "Hide numeric scores" : "Show numeric scores"}
           </button>
         </div>
 
@@ -317,12 +330,13 @@ export function WorksheetViewDialog({
                 altText={`Handwriting worksheet submitted for ${childName}`}
                 isLoading={isImageLoading}
                 headerLabel="Handwritten Worksheet"
-                imageToolsDisclosure={true}
+                collapsibleImageTools={true}
                 aspectRatioClass="h-[230px] sm:h-[320px] lg:h-auto lg:min-h-[420px] lg:max-h-[min(640px,calc(100dvh-14rem))]"
                 diagnosticToolbar={
                   overlay ? (
                     <OverlayToolbar
                       variant="compact"
+                      hideCriterionSelectorOnMobile
                       overlay={overlay}
                       activeCriterion={activeCriterion}
                       onChangeCriterion={(c) => {
@@ -412,7 +426,7 @@ export function WorksheetViewDialog({
                     }}
                     aria-pressed={activeCriterion === "all"}
                     className={cn(
-                      "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer border min-h-[36px] flex items-center gap-1.5 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
+                      "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer border min-h-[40px] flex items-center gap-1.5 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
                       activeCriterion === "all"
                         ? "bg-brand-600 text-white border-brand-600 shadow-2xs dark:bg-brand-500 dark:border-brand-500"
                         : "bg-muted/50 text-muted-foreground border-border/80 hover:bg-muted hover:text-foreground"
@@ -424,6 +438,10 @@ export function WorksheetViewDialog({
                   {PARENT_CRITERIA_LIST.map((c) => {
                     const band = bands?.[c.key];
                     const bandMeta = band ? getBandMeta(band) : null;
+                    const shortBandLabel =
+                      band === "needs_improvement"
+                        ? "Needs Imp."
+                        : bandMeta?.label ?? null;
                     const isSelected = activeCriterion === c.key;
 
                     return (
@@ -433,7 +451,7 @@ export function WorksheetViewDialog({
                         onClick={() => handleCriterionSelect(c.key)}
                         aria-pressed={isSelected}
                         className={cn(
-                          "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer border min-h-[36px] flex items-center gap-1.5 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
+                          "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer border min-h-[40px] flex items-center gap-1.5 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
                           isSelected
                             ? "bg-brand-100 text-brand-900 border-brand-400 dark:bg-brand-950 dark:text-brand-100 dark:border-brand-600 shadow-2xs"
                             : "bg-card text-foreground border-border/80 hover:bg-muted/50"
@@ -446,6 +464,18 @@ export function WorksheetViewDialog({
                           />
                         )}
                         <span>{c.label}</span>
+                        {shortBandLabel && (
+                          <span
+                            className={cn(
+                              "text-[11px] font-medium",
+                              isSelected
+                                ? "text-brand-800 dark:text-brand-200"
+                                : "text-muted-foreground"
+                            )}
+                          >
+                            &middot; {shortBandLabel}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -487,28 +517,12 @@ export function WorksheetViewDialog({
                           : PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.homeTip;
                     if (!tip) return null;
                     return (
-                      <div className="pt-2 border-t border-border/70 flex flex-col gap-2.5">
-                        <div className="flex items-start gap-2 text-band-2-text">
-                          <Lightbulb className="size-4 shrink-0 mt-0.5 text-band-2-text" aria-hidden="true" />
-                          <p className="leading-relaxed text-xs sm:text-sm">
-                            <span className="font-semibold">Home tip: </span>
-                            {tip}
-                          </p>
-                        </div>
-                        {onPracticeNow && (
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => {
-                              onOpenChange(false);
-                              onPracticeNow();
-                            }}
-                            className="self-start h-9 min-h-[36px] px-3 text-xs font-semibold gap-1.5 cursor-pointer touch-manipulation bg-brand-700 hover:bg-brand-800 text-white dark:bg-brand-600 dark:hover:bg-brand-500 shadow-2xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
-                          >
-                            <PenLine className="size-3.5" aria-hidden="true" />
-                            <span>Practice this skill now</span>
-                          </Button>
-                        )}
+                      <div className="pt-2 border-t border-border/70 flex items-start gap-2 text-band-2-text">
+                        <Lightbulb className="size-4 shrink-0 mt-0.5 text-band-2-text" aria-hidden="true" />
+                        <p className="leading-relaxed text-xs sm:text-sm">
+                          <span className="font-semibold">Home tip: </span>
+                          {tip}
+                        </p>
                       </div>
                     );
                   })()}
@@ -582,17 +596,6 @@ export function WorksheetViewDialog({
         {/* Footer */}
         <div className="p-3.5 sm:p-4 border-t border-border bg-card/80 flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2">
-            {onBack && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-3.5 text-xs font-medium gap-1.5 cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
-                onClick={onBack}
-              >
-                <ArrowLeft className="size-3.5" aria-hidden="true" />
-                <span>{backLabel}</span>
-              </Button>
-            )}
             {canDelete && submissionId && (
               <Button
                 type="button"
@@ -600,7 +603,7 @@ export function WorksheetViewDialog({
                 size="sm"
                 onClick={() => setIsDeleteDialogOpen(true)}
                 disabled={deleteMutation.isPending}
-                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-3 text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive rounded-xl border border-destructive/20 gap-1.5 cursor-pointer transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-destructive"
+                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-3 text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive rounded-lg border border-destructive/20 gap-1.5 cursor-pointer transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-destructive"
                 title="Delete this photo"
               >
                 <Trash2 className="size-3.5" aria-hidden="true" />

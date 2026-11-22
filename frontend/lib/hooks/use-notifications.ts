@@ -72,7 +72,7 @@ export function useNotificationFeed(
     enabled: enabled && !paging && !!userId && (open || !!client.getQueryData(key)),
     staleTime: 15_000,
     refetchInterval: open ? 60_000 : false,
-    refetchOnWindowFocus: "always",
+    refetchOnWindowFocus: open ? "always" : false,
   });
   const more = useMutation({
     onMutate: () => client.cancelQueries({ queryKey: key, exact: true }),

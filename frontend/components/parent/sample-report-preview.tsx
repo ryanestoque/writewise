@@ -10,12 +10,6 @@ import {
   type CriterionKey,
 } from "@/lib/utils/scoring";
 import {
-  BookOpen,
-  Ruler,
-  Compass,
-  Layers,
-  MoveVertical,
-  Maximize2,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -34,38 +28,32 @@ const SAMPLE_CRITERION_DATA: Record<
     score: number;
     band: "satisfactory" | "excellent";
     bandLabel: string;
-    icon: typeof Ruler;
   }
 > = {
   letter_formation: {
     score: 88,
     band: "satisfactory",
     bandLabel: "Satisfactory",
-    icon: Layers,
   },
   size_consistency: {
     score: 85,
     band: "satisfactory",
     bandLabel: "Satisfactory",
-    icon: MoveVertical,
   },
   spacing: {
     score: 92,
     band: "excellent",
     bandLabel: "Excellent",
-    icon: Maximize2,
   },
   slant: {
     score: 82,
     band: "satisfactory",
     bandLabel: "Satisfactory",
-    icon: Compass,
   },
   baseline_alignment: {
     score: 89,
     band: "satisfactory",
     bandLabel: "Satisfactory",
-    icon: Ruler,
   },
 };
 
@@ -98,22 +86,17 @@ export function SampleReportPreview({
       className="rounded-xl border border-border bg-card shadow-warm overflow-hidden"
     >
       {/* Header bar */}
-      <div className="p-5 sm:p-6 bg-muted/20 space-y-3">
+      <div className="p-5 sm:p-6 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2
-                id="sample-report-heading"
-                className="font-heading text-base sm:text-lg font-bold text-foreground"
-              >
-                What Feedback Looks Like
-              </h2>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-100/80 dark:bg-brand-950/80 text-brand-800 dark:text-brand-200 border border-brand-200/70 dark:border-brand-800/70 shadow-2xs">
-                Example Only
-              </span>
-            </div>
+            <h2
+              id="sample-report-heading"
+              className="font-heading text-base sm:text-lg font-semibold text-foreground"
+            >
+              Example feedback
+            </h2>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
-              Preview how WriteWise checks the 5 handwriting skills and gives simple home practice tips once a worksheet is graded.
+              Preview how WriteWise checks the 5 handwriting skills and gives home practice tips.
             </p>
           </div>
 
@@ -125,7 +108,7 @@ export function SampleReportPreview({
                 aria-pressed={showScoreDetails}
                 className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
               >
-                {showScoreDetails ? "Hide details" : "Show details"}
+                {showScoreDetails ? "Hide numeric scores" : "Show numeric scores"}
               </button>
             )}
             <Button
@@ -156,7 +139,7 @@ export function SampleReportPreview({
           <div
             role="tablist"
             aria-label="Example handwriting skills"
-            className="flex flex-wrap gap-1.5 sm:gap-2 pt-2 border-t border-border/60"
+            className="flex flex-wrap gap-1.5 sm:gap-2 pt-3 border-t border-border/60"
             onKeyDown={(e) => {
               const keys = PARENT_CRITERIA_LIST.map((c) => c.key);
               const i = keys.indexOf(activeCriterion);
@@ -174,7 +157,6 @@ export function SampleReportPreview({
             {PARENT_CRITERIA_LIST.map((criterion) => {
               const isSelected = activeCriterion === criterion.key;
               const data = SAMPLE_CRITERION_DATA[criterion.key];
-              const Icon = data.icon;
 
               return (
                 <button
@@ -187,25 +169,18 @@ export function SampleReportPreview({
                   id={`tab-${criterion.key}`}
                   onClick={() => setActiveCriterion(criterion.key)}
                   className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all cursor-pointer border select-none min-h-[40px] sm:min-h-[36px] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
+                    "inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors cursor-pointer border select-none min-h-[40px] sm:min-h-[36px] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
                     isSelected
-                      ? "bg-brand-600 text-white border-brand-600 shadow-xs dark:bg-brand-500 dark:border-brand-500 font-semibold"
+                      ? "bg-brand-600 text-white border-brand-600 dark:bg-brand-500 dark:border-brand-500 font-semibold"
                       : "bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60 border-border/80"
                   )}
                 >
-                  <Icon
-                    className={cn(
-                      "size-3.5 shrink-0",
-                      isSelected ? "text-white" : "text-brand-600 dark:text-brand-400"
-                    )}
-                    aria-hidden="true"
-                  />
                   <span>{criterion.label}</span>
                   {showScoreDetails && (
                     <span
                       className={cn(
-                        "font-sans tabular-nums text-xs font-semibold px-1.5 py-0.2 rounded-sm",
-                        isSelected ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+                        "font-sans tabular-nums text-xs font-semibold",
+                        isSelected ? "text-white/90" : "text-muted-foreground"
                       )}
                     >
                       {data.score}%
@@ -245,13 +220,13 @@ export function SampleReportPreview({
                 role="img"
               >
                 <line x1="20" y1="35" x2="520" y2="35" stroke="#64748b" strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />
-                <text x="22" y="30" fill="#475569" fontSize="8.5" fontFamily="sans-serif" fontWeight="500">Top Line</text>
+                <text x="22" y="29" fill="#475569" fontSize="10" fontFamily="sans-serif" fontWeight="500">Top Line</text>
 
                 <line x1="20" y1="85" x2="520" y2="85" stroke="#1b6b63" strokeWidth="1.25" strokeDasharray="4 4" opacity="0.8" />
-                <text x="22" y="80" fill="#145049" fontSize="8.5" fontFamily="sans-serif" fontWeight="500">Middle Line</text>
+                <text x="22" y="79" fill="#145049" fontSize="10" fontFamily="sans-serif" fontWeight="500">Middle Line</text>
 
                 <line x1="20" y1="135" x2="520" y2="135" stroke="#9c4a2f" strokeWidth="1.5" opacity="0.85" />
-                <text x="22" y="147" fill="#80351e" fontSize="8.5" fontFamily="sans-serif" fontWeight="500">Bottom Line</text>
+                <text x="22" y="149" fill="#80351e" fontSize="10" fontFamily="sans-serif" fontWeight="500">Bottom Line</text>
 
                 <line x1="20" y1="165" x2="520" y2="165" stroke="#64748b" strokeWidth="0.75" strokeDasharray="2 3" opacity="0.4" />
 
@@ -349,34 +324,34 @@ export function SampleReportPreview({
             </div>
           </div>
 
-          {/* Right Column: Example Feedback & Home Tip */}
+          {/* Right Column: Example Feedback & Home Tip (flat, border-divided — no nested cards) */}
           <div
             id="sample-diagnostic-details"
-            className="lg:col-span-5 space-y-4"
+            className="lg:col-span-5 space-y-5"
           >
             {/* Overall Summary */}
-            <div className="rounded-xl border border-border/80 bg-muted/30 p-4 space-y-2.5 shadow-2xs">
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2">
                   <h3 className="text-base font-heading font-semibold text-foreground">
-                    Example Overall Result
+                    Overall result
                   </h3>
                   {showScoreDetails && (
-                    <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-background px-2 py-0.5 rounded-md border border-border/60">
-                      87% overall
+                    <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground">
+                      87%
                     </span>
                   )}
                 </div>
                 <BandBadge score={87.2} size="default" />
               </div>
               <BandPositionBar score={87.2} height="default" showThresholds={showScoreDetails} />
-              <p className="text-sm text-muted-foreground leading-normal pt-0.5">
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 <span className="font-semibold text-foreground">Satisfactory:</span> Solid cursive foundation with small areas to refine.
               </p>
             </div>
 
-            {/* Active Skill Feedback Card */}
-            <div className="rounded-xl border border-brand-200/80 dark:border-brand-900 bg-brand-50/20 dark:bg-brand-950/20 p-4 sm:p-5 space-y-3.5 shadow-2xs">
+            {/* Active Skill Feedback */}
+            <div className="border-t border-border/70 pt-4 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <h3 className="text-sm sm:text-base font-heading font-semibold text-foreground truncate">
@@ -396,40 +371,26 @@ export function SampleReportPreview({
                 </div>
               </div>
 
-              <div className="space-y-1 text-sm">
-                <span className="font-semibold text-foreground block">
-                  What we look for:
-                </span>
-                <p className="text-muted-foreground leading-relaxed">
-                  {diagnosticNote}
-                </p>
-              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {diagnosticNote}
+              </p>
 
-              <div className="rounded-lg border border-brand-200/60 dark:border-brand-800/60 bg-brand-100/50 dark:bg-brand-950/40 p-3 space-y-1 text-sm">
-                <span className="font-semibold text-brand-900 dark:text-brand-200 block">
-                  Home tip:
-                </span>
-                <p className="text-brand-800 dark:text-brand-300 leading-relaxed">
-                  {currentMeta.homeTip}
-                </p>
-              </div>
+              <p className="text-sm leading-relaxed text-foreground">
+                <strong className="font-semibold text-primary">Home tip:</strong>{" "}
+                {currentMeta.homeTip}
+              </p>
             </div>
 
-            <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+            <div className="border-t border-border/70 pt-3">
               <Button
                 type="button"
-                variant="outline"
+                variant="link"
                 size="sm"
                 onClick={onOpenRubric}
-                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-semibold gap-1.5 border-border/80 hover:bg-muted cursor-pointer justify-center"
+                className="px-0 h-auto text-sm font-medium cursor-pointer"
               >
-                <BookOpen className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                <span>How Scores Work</span>
+                How scores work
               </Button>
-
-              <span className="text-xs text-muted-foreground text-center sm:text-right">
-                Real results appear after your teacher checks a worksheet
-              </span>
             </div>
           </div>
         </div>

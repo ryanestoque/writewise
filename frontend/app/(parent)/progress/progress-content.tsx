@@ -44,8 +44,6 @@ import {
   Loader2,
   UserX,
   PenTool,
-  CheckCircle2,
-  Clock3,
   Camera,
 } from "lucide-react";
 
@@ -88,12 +86,6 @@ export function ProgressPageContent() {
     notificationTarget,
     dismissNotificationTarget,
   } = useParentPortal();
-
-  const [prevChildId, setPrevChildId] = useState<string | null>(selectedChildId);
-  if (selectedChildId !== prevChildId) {
-    setPrevChildId(selectedChildId);
-    // Retain selectedTab when switching children so parents stay on Practice or Progress
-  }
 
   const showScoreDetails = useSyncExternalStore(
     subscribeScoreDetails,
@@ -202,6 +194,8 @@ export function ProgressPageContent() {
       userId={userId}
       target={notificationTargetData}
       childName={selectedChild?.fullName ?? "Your child"}
+      showScoreDetails={showScoreDetails}
+      onToggleScoreDetails={toggleScoreDetails}
       onClose={dismissNotificationTarget}
       onUploadActivity={handleUploadActivity}
     />
@@ -264,9 +258,9 @@ export function ProgressPageContent() {
     : selectedTab ?? (requestedGrades ? "progress" : isZeroState ? "to-write" : "overview");
 
   const scoreControls = (
-    <label className="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
-      <Switch aria-label="Show percentages" size="sm" checked={showScoreDetails} onCheckedChange={setPersistedScoreDetails} />
-      Show percentages
+    <label className="inline-flex min-h-11 cursor-pointer select-none items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+      <Switch aria-label="Show numeric scores" size="sm" checked={showScoreDetails} onCheckedChange={setPersistedScoreDetails} />
+      Show numeric scores
     </label>
   );
 
@@ -349,60 +343,44 @@ export function ProgressPageContent() {
           role="region"
           aria-label="Practice worksheet needing attention"
           className={cn(
-            "rounded-xl p-3.5 sm:p-4 text-foreground shadow-2xs border transition-colors",
+            "rounded-xl px-4 py-3.5 text-foreground border transition-colors",
             urgentStatus.urgency === "new_photo"
               ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
               : "border-band-2/40 bg-band-2/10 dark:bg-band-2/15"
           )}
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-start gap-2.5 min-w-0">
-              <div
-                className={cn(
-                  "size-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 sm:mt-0",
-                  urgentStatus.urgency === "new_photo"
-                    ? "bg-primary/15 text-primary"
-                    : "bg-band-2/20 text-band-2-text"
-                )}
-              >
-                {urgentStatus.urgency === "new_photo" ? (
-                  <Camera className="size-4" aria-hidden="true" />
-                ) : (
-                  <Clock3 className="size-4" aria-hidden="true" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1 space-y-0.5">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span
-                    className={cn(
-                      "text-xs font-semibold uppercase tracking-wider",
-                      urgentStatus.urgency === "new_photo"
-                        ? "text-primary"
-                        : "text-band-2-text"
-                    )}
-                  >
-                    {urgentStatus.urgency === "new_photo"
-                      ? "New photo needed"
-                      : urgentStatus.urgency === "overdue"
-                        ? "Past due"
-                        : "Due soon"}
-                  </span>
-                  {urgentActivity.dueAt && (
-                    <span className="text-xs text-muted-foreground">
-                      · Due {formatActivityDueAt(urgentActivity.dueAt)}
-                    </span>
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <p className="text-sm font-semibold text-foreground truncate">
+                <span
+                  className={cn(
+                    "mr-1.5",
+                    urgentStatus.urgency === "new_photo"
+                      ? "text-primary"
+                      : "text-band-2-text"
                   )}
-                </div>
-                <p className="text-sm font-medium text-foreground truncate">
-                  {urgentActivity.title}
-                </p>
+                >
+                  {urgentStatus.urgency === "new_photo"
+                    ? "New photo needed:"
+                    : urgentStatus.urgency === "overdue"
+                      ? "Past due:"
+                      : "Due soon:"}
+                </span>
+                {urgentActivity.title}
+              </p>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                {urgentActivity.dueAt && (
+                  <span className="tabular-nums">
+                    Due {formatActivityDueAt(urgentActivity.dueAt)}
+                  </span>
+                )}
                 {urgentActivities.length > 1 && (
                   <button
                     type="button"
                     onClick={handleNavigateToWrite}
-                    className="text-xs text-brand-700 dark:text-brand-300 hover:underline cursor-pointer block"
+                    className="text-brand-700 dark:text-brand-300 font-medium hover:underline cursor-pointer"
                   >
-                    +{urgentActivities.length - 1} more {urgentActivities.length === 2 ? "worksheet needs" : "worksheets need"} attention
+                    +{urgentActivities.length - 1} more
                   </button>
                 )}
               </div>
@@ -414,7 +392,7 @@ export function ProgressPageContent() {
               onClick={() => handleUploadActivity(urgentActivity.id)}
               aria-haspopup="dialog"
               aria-label={`Send ${urgentStatus.urgency === "new_photo" ? "new " : ""}photo for ${urgentActivity.title}`}
-              className="h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] w-full sm:w-auto shrink-0 font-medium text-xs sm:text-sm gap-1.5 cursor-pointer shadow-2xs touch-manipulation"
+              className="h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] w-full sm:w-auto shrink-0 font-medium text-xs sm:text-sm gap-1.5 cursor-pointer touch-manipulation"
             >
               <Camera className="size-4" aria-hidden="true" />
               <span>{urgentStatus.urgency === "new_photo" ? "Send new photo" : "Send photo"}</span>
@@ -466,7 +444,7 @@ export function ProgressPageContent() {
               value="progress"
               className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] translate-y-[1px] data-active:text-primary data-active:after:bg-primary"
             >
-              <span>Progress</span>
+              <span>Progress &amp; Grades</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -479,6 +457,7 @@ export function ProgressPageContent() {
             childName={selectedChild.fullName}
             history={history}
             showScoreDetails={showScoreDetails}
+            onToggleScoreDetails={toggleScoreDetails}
             scoreControls={scoreControls}
             onOpenRubric={handleOpenRubric}
             onNavigateToWrite={handleNavigateToWrite}
@@ -499,9 +478,12 @@ export function ProgressPageContent() {
                 id="take-home-heading"
                 className="font-heading text-base sm:text-lg font-semibold text-foreground"
               >
-                Practice Worksheets
+                Practice worksheets
               </h2>
-              <Button variant="ghost" size="sm" onClick={openCursiveGuide}><PenTool aria-hidden="true" />Cursive guide</Button>
+              <Button variant="ghost" size="sm" onClick={openCursiveGuide} className="cursor-pointer">
+                <PenTool aria-hidden="true" />
+                Cursive guide
+              </Button>
             </div>
 
             <TakeHomeActivities
@@ -517,14 +499,6 @@ export function ProgressPageContent() {
           </section>
 
           {selectedChildId && <ParentActivityThreads key={`${userId}:${selectedChildId}`} userId={userId} studentId={selectedChildId} />}
-          {isZeroState && (
-            <SampleReportPreview
-              onOpenRubric={handleOpenRubric}
-              defaultCollapsed={true}
-              showScoreDetails={showScoreDetails}
-              onToggleScoreDetails={toggleScoreDetails}
-            />
-          )}
         </TabsContent>
 
         {/* Tab 3: Progress (Trend Chart + Past Worksheets History) */}
@@ -535,12 +509,12 @@ export function ProgressPageContent() {
             className="space-y-3"
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2
-              id="progress-trends-heading"
-              className="font-heading text-base sm:text-lg font-semibold text-foreground"
-            >
-              Progress Over Time
-            </h2>
+              <h2
+                id="progress-trends-heading"
+                className="font-heading text-base sm:text-lg font-semibold text-foreground"
+              >
+                Progress over time
+              </h2>
               {scoreControls}
             </div>
 
@@ -566,47 +540,38 @@ export function ProgressPageContent() {
                 />
               </div>
             ) : scoredCount === 1 && history?.[0] ? (
-              <div className="rounded-xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-warm">
+              <div className="rounded-xl border border-border bg-card p-5 sm:p-6 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-100 dark:bg-brand-900/60 text-brand-800 dark:text-brand-200 border border-brand-200 dark:border-brand-800">
-                        <CheckCircle2 className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                        Baseline Established
-                      </span>
-                      {showScoreDetails && history[0].compositeScore != null && (
-                        <span className="font-sans text-xs font-semibold tabular-nums text-foreground/80 bg-muted/60 px-2.5 py-0.5 rounded-md border border-border/60">
-                          {Math.round(history[0].compositeScore)}% overall
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="font-heading text-lg font-semibold text-foreground pt-0.5">
-                      Baseline Handwriting Profile
+                    <h3 className="font-heading text-base sm:text-lg font-semibold text-foreground">
+                      1 of 2 worksheets checked for trend chart
                     </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
-                      {firstName}&apos;s first scored worksheet (&ldquo;{history[0].targetText}&rdquo;) sets their foundational benchmark across all 5 handwriting skills. When their next worksheet is checked, comparative growth trends and progress milestones will chart here.
+                    <p className="text-sm text-muted-foreground leading-relaxed max-w-prose">
+                      &ldquo;{history[0].targetText}&rdquo; ({new Date(history[0].submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}) sets {firstName}&apos;s starting point. Trend lines appear after the next checked worksheet.
                     </p>
                   </div>
-                  <div className="shrink-0 self-start sm:self-auto">
+                  <div className="flex items-center gap-2 shrink-0 self-start">
+                    {showScoreDetails && history[0].compositeScore != null && (
+                      <span className="font-sans text-sm font-semibold tabular-nums text-foreground">
+                        {Math.round(history[0].compositeScore)}%
+                      </span>
+                    )}
                     <BandBadge score={history[0].compositeScore} band={history[0].compositeBand} size="sm" showDot />
                   </div>
                 </div>
 
-                {/* 5-Criteria Baseline Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 pt-1">
+                {/* Flat 5-Criteria Baseline Summary (no nested cards) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-3 border-t border-border/70 pt-4">
                   {PARENT_CRITERIA_LIST.map((criterion) => {
                     const criterionScore = history[0].scores[criterion.key];
                     const criterionBand = history[0].bands[criterion.key];
 
                     return (
-                      <div
-                        key={criterion.key}
-                        className="rounded-lg border border-border/70 bg-muted/20 p-3 space-y-2 flex flex-col justify-between"
-                      >
-                        <span className="text-xs font-semibold text-foreground truncate">
+                      <div key={criterion.key} className="flex sm:flex-col items-center sm:items-start justify-between gap-1.5">
+                        <span className="text-xs font-medium text-muted-foreground truncate">
                           {criterion.label}
                         </span>
-                        <div className="flex items-center justify-between gap-1.5">
+                        <div className="flex items-center gap-1.5">
                           <BandBadge band={criterionBand} score={criterionScore} size="sm" showDot />
                           {showScoreDetails && criterionScore != null && (
                             <span className="font-sans text-xs font-medium tabular-nums text-muted-foreground">
@@ -617,11 +582,6 @@ export function ProgressPageContent() {
                       </div>
                     );
                   })}
-                </div>
-
-                <div className="pt-3 border-t border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs sm:text-sm text-muted-foreground">
-                  <span>First worksheet recorded on {new Date(history[0].submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
-                  <span className="font-medium text-brand-700 dark:text-brand-300">Next milestone: Worksheet #2 adds trend lines</span>
                 </div>
               </div>
             ) : (
@@ -640,7 +600,7 @@ export function ProgressPageContent() {
                     onClick={handleNavigateToWrite}
                     className="min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium cursor-pointer"
                   >
-                    View Practice Worksheets
+                    View practice worksheets
                   </Button>
                 </div>
               </div>
@@ -652,6 +612,7 @@ export function ProgressPageContent() {
               history={allHistory}
               childName={selectedChild.fullName}
               showScoreDetails={showScoreDetails}
+              onToggleScoreDetails={toggleScoreDetails}
               onUploadActivity={handleUploadActivity}
             />
           )}

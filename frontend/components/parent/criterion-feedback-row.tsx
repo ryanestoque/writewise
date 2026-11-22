@@ -146,12 +146,10 @@ export function CriterionFeedbackRow({
             )}
 
             {homePracticeTip && (
-              <div className="p-3 rounded-xl bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40 text-xs sm:text-sm text-band-2-text shadow-2xs">
-                <p className="leading-relaxed">
-                  <strong className="font-semibold text-band-2-text">Home tip:</strong>{" "}
-                  {homePracticeTip}
-                </p>
-              </div>
+              <p className="text-xs sm:text-sm text-band-2-text leading-relaxed pt-1">
+                <strong className="font-semibold">Home tip:</strong>{" "}
+                {homePracticeTip}
+              </p>
             )}
 
             {isActive && onSeeOnWorksheetMobile && (

@@ -4,8 +4,7 @@ import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import { MessageSquare, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { formatDate, getRelativeTime } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
 import { useCommentSummaries, useUnreadCommentThreads } from "@/lib/hooks/use-comments";
@@ -20,17 +19,19 @@ export function ParentActivityThreads({
 }) {
   const query = useCommentSummaries(userId, { studentId }, true);
   const unread = useUnreadCommentThreads(userId);
+
+  if (query.data && !query.data.rows.length) {
+    return null;
+  }
+
   return (
     <section
-      className="bg-card space-y-3 rounded-xl border p-4"
+      className="bg-card space-y-3 rounded-xl border p-4 sm:p-5"
       aria-label="Activity conversation history"
     >
-      <div className="space-y-1">
-        <h2 className="font-heading text-lg font-semibold text-foreground">Teacher feedback &amp; conversations</h2>
-        <p className="text-muted-foreground text-xs sm:text-sm">
-          Keep in touch with your child’s teacher about worksheet practice, feedback, and handwriting growth.
-        </p>
-      </div>
+      <h2 className="font-heading text-base sm:text-lg font-semibold text-foreground">
+        Teacher comments
+      </h2>
       {query.isError ? (
         <div role="status" className="space-y-3 py-2">
           <Alert variant="destructive">
@@ -49,24 +50,12 @@ export function ParentActivityThreads({
           <Skeleton className="h-12 w-full rounded-lg" />
           <Skeleton className="h-12 w-full rounded-lg" />
         </div>
-      ) : !query.data.rows.length ? (
-        <Empty className="py-8">
-          <EmptyMedia variant="icon">
-            <MessageSquare className="size-5 text-muted-foreground" aria-hidden="true" />
-          </EmptyMedia>
-          <EmptyHeader>
-            <EmptyTitle>No conversations yet</EmptyTitle>
-            <EmptyDescription>
-              Open any completed worksheet upload to ask a question or read notes from your child’s teacher.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
       ) : (
-        <ul className="divide-y">
+        <ul className="divide-y divide-border/70">
           {query.data.rows.map((row) => (
             <li
               key={row.submission_id}
-              className="flex flex-wrap items-center justify-between gap-3 py-3"
+              className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-1 last:pb-0"
             >
               <div className="space-y-0.5">
                 <p className="text-sm font-semibold text-foreground">{row.activity_title}</p>
@@ -81,8 +70,8 @@ export function ParentActivityThreads({
                       : row.is_archived
                         ? "Archived activity"
                         : row.comments_locked
-                          ? "Comments closed after review"
-                          : "Active conversation"}
+                          ? "Comments closed"
+                          : "Open"}
                   </span>
                 </div>
               </div>
@@ -99,7 +88,6 @@ export function ParentActivityThreads({
                 <span>Comments</span>
                 {unread.data?.has(row.submission_id) && (
                   <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                    <span className="size-1.5 rounded-full bg-primary mr-1" aria-hidden="true" />
                     Unread
                   </span>
                 )}

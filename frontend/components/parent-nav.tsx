@@ -104,7 +104,7 @@ export function ParentNav({
             <BrandLogo size="sm" priority className="hidden sm:inline-flex" />
           </Link>
 
-          {/* Center: Child Switcher (Desktop/Tablet header, mobile rendered in page content) */}
+          {/* Center: Child Switcher (shown only when multiple children are linked) */}
           <div className="hidden sm:flex flex-1 justify-center min-w-0 px-2">
             {pathname === "/progress" && linkedChildren.length > 1 ? (
               <Select
@@ -138,16 +138,6 @@ export function ParentNav({
                   ))}
                 </SelectContent>
               </Select>
-            ) : pathname === "/progress" && linkedChildren.length === 1 ? (
-              <div
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/50 bg-muted/40 text-xs sm:text-sm font-medium max-w-[340px] min-w-0 select-none"
-                title={`${linkedChildren[0].fullName} (Section ${linkedChildren[0].section})`}
-              >
-                <span className="font-semibold text-foreground truncate min-w-0">{linkedChildren[0].fullName}</span>
-                <span className="inline-flex items-center self-center text-xs text-muted-foreground shrink-0 leading-none">
-                  ({linkedChildren[0].section})
-                </span>
-              </div>
             ) : null}
           </div>
 
@@ -157,7 +147,7 @@ export function ParentNav({
 
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="size-10 sm:size-9 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 rounded-full inline-flex items-center justify-center font-semibold text-xs bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 hover:bg-brand-200/80 dark:hover:bg-brand-900/80 ring-1 ring-brand-700/25 dark:ring-brand-400/25 border border-brand-200/60 dark:border-brand-800/60 shadow-2xs cursor-pointer focus-visible:ring-2 focus-visible:ring-primary outline-none transition-all touch-manipulation"
+                className="size-10 sm:size-9 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 rounded-full inline-flex items-center justify-center font-semibold text-xs bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 hover:bg-brand-200/80 dark:hover:bg-brand-900/80 border border-brand-200 dark:border-brand-800 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary outline-none transition-colors touch-manipulation"
                 aria-label={`Account menu for ${user.fullName}`}
               >
                 {initials}

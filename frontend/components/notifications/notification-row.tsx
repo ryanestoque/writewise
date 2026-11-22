@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -47,8 +48,8 @@ function getNotificationVisual(type: NotificationRow["type"]) {
     case "comment_posted":
       return {
         icon: MessageSquare,
-        badgeStyle: "bg-brand-100 text-brand-700 dark:bg-brand-950 dark:text-brand-300",
-        dotStyle: "bg-brand-600 dark:bg-brand-400",
+        badgeStyle: "bg-secondary text-secondary-foreground dark:bg-secondary/40 dark:text-secondary-foreground",
+        dotStyle: "bg-primary",
       };
     case "score_released":
       return {
@@ -66,7 +67,7 @@ function getNotificationVisual(type: NotificationRow["type"]) {
   }
 }
 
-export function NotificationRowItem({
+export const NotificationRowItem = memo(function NotificationRowItem({
   row,
   labels,
   role,
@@ -84,6 +85,13 @@ export function NotificationRowItem({
   const unread = row.read_at === null;
   const visual = getNotificationVisual(row.type);
   const IconComponent = visual.icon;
+
+  const createdAtDate = useMemo(() => new Date(row.created_at), [row.created_at]);
+  const formattedDistance = useMemo(
+    () => formatDistanceToNow(createdAtDate, { addSuffix: true }),
+    [createdAtDate]
+  );
+  const formattedTitle = useMemo(() => createdAtDate.toLocaleString(), [createdAtDate]);
 
   return (
     <li
@@ -120,7 +128,7 @@ export function NotificationRowItem({
           {unread && (
             <span
               className={cn(
-                "absolute -top-0.5 -right-0.5 size-2 rounded-full ring-2 ring-background",
+                "absolute -top-0.5 -right-0.5 size-2 rounded-full ring-2 ring-popover",
                 visual.dotStyle
               )}
               aria-hidden="true"
@@ -146,16 +154,16 @@ export function NotificationRowItem({
           </span>
           <time
             dateTime={row.created_at}
-            title={new Date(row.created_at).toLocaleString()}
+            title={formattedTitle}
             className="text-muted-foreground text-xs font-sans tabular-nums"
           >
-            {formatDistanceToNow(new Date(row.created_at), { addSuffix: true })}
+            {formattedDistance}
           </time>
         </div>
       </Link>
 
       {/* Quick mark-as-read action ONLY when unread with 44px tap target expansion that doesn't bleed into title link */}
-      {unread && (
+      {unread && !(row.type === "comment_posted" && !row.comment_version) && (
         <Button
           variant="ghost"
           size="icon"
@@ -172,4 +180,4 @@ export function NotificationRowItem({
       )}
     </li>
   );
-}
+});

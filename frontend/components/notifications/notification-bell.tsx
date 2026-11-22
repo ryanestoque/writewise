@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Bell } from "lucide-react";
 import { toast } from "sonner";
@@ -94,37 +94,47 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
     };
   }, [client, userId]);
 
-  function feedback(error: unknown) {
+  const feedback = useCallback((error: unknown) => {
     if (error instanceof Error && error.name === "AbortError") return;
     toast.error(
       error instanceof ApiError && error.code === "UNAUTHORIZED"
         ? "Sign in again to update notifications."
         : "Could not mark notifications read. Try again."
     );
-  }
-  function markRead(id: string) {
-    const row = rows.find((row) => row.id === id);
-    if (row?.type === "comment_posted" && !row.comment_version) return;
-    read.mutate(
-      {
-        id,
-        ...(row?.type === "comment_posted" ? { expectedCommentVersion: row.comment_version! } : {}),
-      },
-      { onError: feedback }
-    );
-  }
-  function activate(row: NotificationRow) {
-    if (!row.read_at && row.type !== "comment_posted") markRead(row.id);
-    setOpen(false);
-  }
-  function handleMarkAllRead() {
+  }, []);
+
+  const markRead = useCallback(
+    (id: string) => {
+      const row = rows.find((row) => row.id === id);
+      if (row?.type === "comment_posted" && !row.comment_version) return;
+      read.mutate(
+        {
+          id,
+          ...(row?.type === "comment_posted" ? { expectedCommentVersion: row.comment_version! } : {}),
+        },
+        { onError: feedback }
+      );
+    },
+    [feedback, read, rows]
+  );
+
+  const activate = useCallback(
+    (row: NotificationRow) => {
+      if (!row.read_at && row.type !== "comment_posted") markRead(row.id);
+      setOpen(false);
+    },
+    [markRead]
+  );
+
+  const handleMarkAllRead = useCallback(() => {
     readAll.mutate(undefined, {
       onError: feedback,
       onSettled: () => {
         listContainerRef.current?.focus();
       },
     });
-  }
+  }, [feedback, readAll]);
+
   const label =
     count.data === undefined || count.isError
       ? "Notifications, unread count unavailable"
@@ -134,8 +144,6 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
     setOpen(value);
     if (value) {
       void count.refetch();
-      void feed.refetch();
-      void labels.refetch();
     }
   };
 
@@ -178,8 +186,8 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
       pendingId={read.isPending ? read.variables.id : null}
       onRead={markRead}
       onActivate={activate}
-      isMobile={isMobile}
       containerRef={listContainerRef}
+      totalUnreadCount={count.data}
     />
   );
 
@@ -196,11 +204,6 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
               <DrawerDescription className="sr-only">
                 Recent cursive handwriting submissions, updates, and diagnostic feedback
               </DrawerDescription>
-              {count.data !== undefined && count.data > 0 && (
-                <span className="rounded-full bg-primary/10 dark:bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary tabular-nums shrink-0">
-                  {count.data > 99 ? "99+" : count.data} unread
-                </span>
-              )}
             </div>
             {count.data !== undefined && count.data > 0 && (
               <Button
@@ -242,11 +245,6 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
             <PopoverDescription className="sr-only">
               Recent cursive handwriting submissions, updates, and diagnostic feedback
             </PopoverDescription>
-            {count.data !== undefined && count.data > 0 && (
-              <span className="rounded-full bg-primary/10 dark:bg-primary/20 px-1.5 py-0.5 text-xs font-semibold text-primary tabular-nums shrink-0">
-                {count.data > 99 ? "99+" : count.data} unread
-              </span>
-            )}
           </div>
           {count.data !== undefined && count.data > 0 && (
             <Button

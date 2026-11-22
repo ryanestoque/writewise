@@ -27,12 +27,16 @@ export function NotificationWorkDestination({
   userId,
   target,
   childName,
+  showScoreDetails = false,
+  onToggleScoreDetails,
   onClose,
   onUploadActivity,
 }: {
   userId: string;
   target: ParentNotificationTarget | null;
   childName: string;
+  showScoreDetails?: boolean;
+  onToggleScoreDetails?: () => void;
   onClose: () => void;
   onUploadActivity?: (activityId: string) => void;
 }) {
@@ -55,6 +59,9 @@ export function NotificationWorkDestination({
           childName={childName}
           compositeScore={item.compositeScore}
           scoreSource={item.scoreSource}
+          initialShowScoreDetails={showScoreDetails}
+          showScoreDetails={showScoreDetails}
+          onToggleScoreDetails={onToggleScoreDetails}
           scores={item.scores}
           bands={item.bands}
           guideLines={item.guideLines}
@@ -112,20 +119,20 @@ export function NotificationWorkDestination({
         {work.status === "loading" ? (
           <div className="flex items-center gap-2.5 py-6" role="status">
             <Loader2
-              className="size-4 animate-spin motion-reduce:animate-none text-muted-foreground"
+              className="size-4 animate-spin text-muted-foreground"
               aria-hidden="true"
             />
             <span className="text-sm text-muted-foreground">Loading activity…</span>
           </div>
         ) : work.status === "error" ? (
-          <div className="flex flex-col items-start gap-3 py-2" role="alert">
+          <div className="flex flex-wrap items-center justify-between gap-3 py-2" role="alert">
             <p className="text-sm text-foreground">
               Could not load this work. Please try again.
             </p>
             <Button
               variant="outline"
               onClick={work.retry}
-              className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] touch-manipulation cursor-pointer"
+              className="h-11 md:h-9 min-h-[44px] md:min-h-0 touch-manipulation cursor-pointer shrink-0"
             >
               Try again
             </Button>
@@ -173,7 +180,7 @@ export function NotificationWorkDestination({
           <Button
             variant="outline"
             onClick={onClose}
-            className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] touch-manipulation cursor-pointer"
+            className="h-11 md:h-9 min-h-[44px] md:min-h-0 touch-manipulation cursor-pointer"
           >
             Back to progress
           </Button>
@@ -184,7 +191,7 @@ export function NotificationWorkDestination({
                 onClose();
                 onUploadActivity?.(work.activity.id);
               }}
-              className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] gap-1.5 font-semibold touch-manipulation cursor-pointer"
+              className="h-11 md:h-9 min-h-[44px] md:min-h-0 gap-1.5 font-semibold touch-manipulation cursor-pointer"
             >
               <Camera className="size-4" aria-hidden="true" />
               <span>

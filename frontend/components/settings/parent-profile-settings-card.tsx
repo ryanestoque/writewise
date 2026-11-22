@@ -105,9 +105,9 @@ export function ParentProfileSettingsCard({
               <div className="flex flex-col gap-1.5">
                 <Label
                   htmlFor="parent-full-name"
-                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  className="text-sm font-medium text-foreground"
                 >
-                  Full Name
+                  Full name
                 </Label>
                 <Input
                   id="parent-full-name"
@@ -134,7 +134,7 @@ export function ParentProfileSettingsCard({
                     id="parent-name-error"
                     role="alert"
                     aria-live="polite"
-                    className="text-xs text-destructive font-medium mt-0.5"
+                    className="text-xs text-destructive font-medium mt-1"
                   >
                     {nameError}
                   </p>
@@ -142,18 +142,13 @@ export function ParentProfileSettingsCard({
               </div>
 
               {/* Email (Read-only) */}
-              <div className="flex flex-col gap-1.5 pt-1">
-                <div className="flex items-center justify-between">
-                  <Label
-                    htmlFor="parent-email-display"
-                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                  >
-                    Email Address
-                  </Label>
-                  <span className="inline-flex items-center text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
-                    Verified Login
-                  </span>
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <Label
+                  htmlFor="parent-email-display"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Email address
+                </Label>
                 <Input
                   id="parent-email-display"
                   type="email"
@@ -164,7 +159,7 @@ export function ParentProfileSettingsCard({
                   className="h-10 sm:h-9 text-base sm:text-sm rounded-lg bg-muted/60 text-muted-foreground cursor-default border-dashed select-all focus-visible:ring-1 focus-visible:ring-ring/40"
                   aria-describedby="parent-email-hint"
                 />
-                <p id="parent-email-hint" className="text-xs text-muted-foreground">
+                <p id="parent-email-hint" className="text-xs text-muted-foreground mt-1">
                   Your email is your login identifier and cannot be changed here.
                 </p>
               </div>
@@ -177,7 +172,7 @@ export function ParentProfileSettingsCard({
                   variant="ghost"
                   onClick={handleReset}
                   disabled={isSaving}
-                  className="w-full sm:w-auto h-10 sm:h-9 text-xs sm:text-sm font-medium"
+                  className="w-full sm:w-auto h-10 sm:h-9 text-xs sm:text-sm font-medium cursor-pointer"
                 >
                   Discard
                 </Button>
@@ -185,7 +180,7 @@ export function ParentProfileSettingsCard({
               <Button
                 type="submit"
                 disabled={!isDirty || isSaving}
-                className="w-full sm:w-auto h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 sm:px-5 text-xs sm:text-sm font-medium shadow-xs"
+                className="w-full sm:w-auto h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 sm:px-5 text-xs sm:text-sm font-medium shadow-xs cursor-pointer"
               >
                 {isSaving ? (
                   <>
