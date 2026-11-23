@@ -15,6 +15,7 @@ import { useCommentAccountId, useUnreadCommentThreads } from "@/lib/hooks/use-co
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import { BandBadge } from "@/components/shared/band-badge";
 import { QueryRecovery } from "@/components/shared/query-recovery";
+import { WorksheetPrompt } from "@/components/activities/worksheet-prompt";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -79,7 +80,7 @@ export function TakeHomeActivities({
   expanded: controlledExpanded,
   onToggleExpanded,
   showExpandButton = true,
-  gridClassName = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4",
+  gridClassName = "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4",
   practiceFocusKey,
   onOpenCursiveGuide,
 }: TakeHomeActivitiesProps) {
@@ -190,7 +191,7 @@ export function TakeHomeActivities({
     return (
       <div className="flex flex-col gap-3">
         {recovery}
-        <Empty className="border border-border rounded-xl shadow-warm bg-card py-8">
+        <Empty className="border border-border rounded-xl sm:rounded-2xl shadow-warm bg-surface dark:bg-card py-8">
           <EmptyMedia variant="icon" className="bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
             <ClipboardList className="size-6" aria-hidden="true" />
           </EmptyMedia>
@@ -236,7 +237,7 @@ export function TakeHomeActivities({
 
       {/* Primary To-Do Worksheets Area */}
       {toDoActivities.length === 0 ? (
-        <div className="rounded-xl border border-border bg-card p-5 text-center space-y-2.5">
+        <div className="rounded-xl sm:rounded-2xl border border-border bg-surface dark:bg-card p-5 shadow-warm text-center space-y-2.5">
           <div className="size-9 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center mx-auto">
             {closedWithoutPhotoCount > 0 ? (
               <Clock3 className="size-5" aria-hidden="true" />
@@ -259,9 +260,6 @@ export function TakeHomeActivities({
         </div>
       ) : (
         <>
-          <p className="text-xs text-muted-foreground">
-            Write in connected cursive on standard 3-line paper.
-          </p>
           <div id="take-home-activities-grid" className={gridClassName}>
             {visibleToDo.map((activity) => (
               <ActivityCard
@@ -500,22 +498,49 @@ function ActivityCard({
 
   const isCompleted = submission?.status === "completed";
   const firstLetter = targetText.trim().match(/[a-zA-Z]/)?.[0]?.toUpperCase() ?? "A";
+  const wordCount = useMemo(() => {
+    const trimmed = targetText.trim();
+    return trimmed ? trimmed.split(/\s+/).filter(Boolean).length : 0;
+  }, [targetText]);
 
   return (
     <div
       className={cn(
-        "rounded-xl border bg-card p-4 shadow-warm-sm flex flex-col justify-between gap-4 transition-colors",
+        "group relative flex flex-col justify-between gap-4 border rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-warm hover:shadow-md transition-all duration-200",
         isRejected || latestRejected
-          ? "border-warning/50 dark:border-warning/60 bg-warning/5 dark:bg-warning/10"
+          ? "border-warning/50 dark:border-warning/60 bg-warning/5 dark:bg-warning/10 hover:border-warning/80"
           : isReturned
-            ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
-            : "border-border"
+            ? "border-primary/40 bg-primary/5 dark:bg-primary/10 hover:border-primary/60"
+            : "bg-surface dark:bg-card border-border hover:border-brand-300 dark:hover:border-brand-800"
       )}
     >
-      <div className="space-y-3">
-        {/* Status Eyebrow & Urgency Badges */}
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums">
+      <div>
+        {/* Attention status indicator when action is requested */}
+        {(isReturned || isRejected || latestRejected) && (
+          <div className="flex items-center justify-between gap-2 flex-wrap mb-2.5">
+            {isReturned && (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                <AlertTriangle className="size-3.5" aria-hidden="true" />
+                <span>New photo requested</span>
+              </span>
+            )}
+            {(isRejected || latestRejected) && (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-warning-foreground">
+                <AlertTriangle className="size-3.5" aria-hidden="true" />
+                <span>Clearer photo needed</span>
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Title */}
+        <h3 className="mb-1 font-heading text-base font-semibold leading-snug text-foreground" title={work.title}>
+          {work.title}
+        </h3>
+
+        {/* Metadata line: Due date + word count */}
+        <p className="mb-3 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground font-sans tabular-nums">
+          <span>
             {excused ? (
               "Excused · Optional"
             ) : category === "closed" ? (
@@ -534,39 +559,22 @@ function ActivityCard({
               `Assigned ${formattedDate}`
             )}
           </span>
-          {isReturned && (
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
-              <AlertTriangle className="size-3.5" aria-hidden="true" />
-              <span>New photo requested</span>
-            </span>
+          {wordCount > 0 && (
+            <>
+              <span aria-hidden="true" className="text-muted-foreground/40">·</span>
+              <span>
+                {wordCount} {wordCount === 1 ? "word" : "words"}
+              </span>
+            </>
           )}
-          {(isRejected || latestRejected) && (
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-warning-foreground">
-              <AlertTriangle className="size-3.5" aria-hidden="true" />
-              <span>Clearer photo needed</span>
-            </span>
-          )}
-        </div>
-
-        {/* Title */}
-        <h3 className="text-base font-semibold leading-snug text-foreground" title={work.title}>
-          {work.title}
-        </h3>
+        </p>
 
         {/* Cursive Practice Desk: 3-line Guidelines Specimen */}
-        <div className="space-y-2">
-          <div className="rounded-xl border border-border/70 bg-card overflow-hidden">
-            <div
-              aria-label={`Cursive reference model: ${targetText}`}
-              title={targetText}
-              className="cursive-guidelines px-4 py-3 overflow-x-auto flex items-center min-h-[58px] bg-background/50"
-            >
-              <span className="font-cursive text-2xl sm:text-3xl text-foreground whitespace-nowrap tracking-wide select-none">
-                {targetText}
-              </span>
-            </div>
-            {!isCompleted && category !== "closed" && onOpenCursiveGuide && (
-              <div className="px-3 py-0.5 bg-muted/30 border-t border-border/50 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+        <WorksheetPrompt
+          text={targetText}
+          footer={
+            !isCompleted && category !== "closed" && onOpenCursiveGuide ? (
+              <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                 {work.title.trim().toLowerCase() !== targetText.trim().toLowerCase() ? (
                   <span className="truncate font-sans">{targetText}</span>
                 ) : (
@@ -582,33 +590,33 @@ function ActivityCard({
                   <span>Letters</span>
                 </button>
               </div>
-            )}
-          </div>
+            ) : undefined
+          }
+        />
 
-          {work.instructions && (
-            <p className="whitespace-pre-wrap text-xs text-muted-foreground leading-relaxed pt-0.5">
-              {work.instructions}
-            </p>
-          )}
-        </div>
+        {work.instructions && (
+          <p className="mt-2.5 whitespace-pre-wrap text-xs text-muted-foreground leading-relaxed">
+            {work.instructions}
+          </p>
+        )}
 
         {/* Status Notices */}
         {work.latestSubmission?.submissionId !== submission?.submissionId &&
           work.latestSubmission?.status === "rejected" && (
-            <p role="status" className="rounded-lg bg-warning/15 border border-warning/30 px-2.5 py-2 text-xs text-warning-foreground font-medium">
+            <p role="status" className="mt-3 rounded-lg bg-warning/15 border border-warning/30 px-2.5 py-2 text-xs text-warning-foreground font-medium">
               Latest photo rejected: {getRejectionSummary(work.latestSubmission.rejectionCode).label}. Previous photo kept.
             </p>
           )}
 
         {work.latestSubmission?.submissionId !== submission?.submissionId &&
           work.latestSubmission?.status === "processing" && (
-            <p role="status" className="text-xs text-muted-foreground">
+            <p role="status" className="mt-3 text-xs text-muted-foreground">
               Checking your new photo…
             </p>
           )}
 
         {isReturned && !excused && (work.workState?.return_reason || work.workState?.return_note) && (
-          <div className="space-y-0.5 rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-2 text-xs">
+          <div className="mt-3 space-y-0.5 rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-2 text-xs">
             {work.workState?.return_reason && (
               <p className="font-medium text-foreground">
                 {humanizeReason(work.workState.return_reason)}
@@ -621,14 +629,14 @@ function ActivityCard({
         )}
 
         {closed && !excused && category === "closed" && (
-          <p role="status" className="text-xs text-muted-foreground">
+          <p role="status" className="mt-3 text-xs text-muted-foreground">
             Deadline passed. Ask your teacher for late submission.
           </p>
         )}
       </div>
 
       {/* Action Footer */}
-      <div className="pt-3 border-t border-border/50 flex flex-wrap items-center justify-between gap-3">
+      <div className="pt-3 border-t border-border/60 flex flex-wrap items-center justify-between gap-3">
         {/* Left Side: Status indicator */}
         <div className="flex items-center gap-2 min-w-0">
           {isLoading ? (
