@@ -82,6 +82,8 @@ export interface WorksheetImageInspectorProps {
   aspectRatioClass?: string;
   /** Whether to dynamically match image's natural aspect ratio (defaults to true) */
   autoAspectRatio?: boolean;
+  /** Render flat without outer container shadow (e.g. inside a modal dialog) */
+  flatFrame?: boolean;
 }
 
 export function WorksheetImageInspector({
@@ -104,6 +106,7 @@ export function WorksheetImageInspector({
   className,
   aspectRatioClass,
   autoAspectRatio = true,
+  flatFrame = false,
 }: WorksheetImageInspectorProps) {
   const [imageToolsExpanded, setImageToolsExpanded] = useState(false);
   const [loadedDimensions, setNaturalDimensions] = useState<{
@@ -590,7 +593,8 @@ export function WorksheetImageInspector({
       {/* Action Controls: Unified Command Deck or Standalone Inspector Controls */}
       {diagnosticToolbar ? (
         <CommandDeck className={cn(
-          "w-full rounded-xl border border-border/70 bg-muted/35 overflow-hidden shadow-2xs shrink-0",
+          "w-full rounded-xl border border-border/70 bg-muted/35 overflow-hidden shrink-0",
+          !flatFrame && "shadow-2xs",
           (!imageToolsDisclosure || !showImageTools) && "flex flex-col",
           showImageTools && "divide-y divide-border/60"
         )}>
@@ -853,9 +857,21 @@ export function WorksheetImageInspector({
           setIsDragging(false);
           setLoupeState((prev) => ({ ...prev, visible: false }));
         }}
+        onDoubleClick={(e) => {
+          if (e.target instanceof Element && e.target.closest("[role='button'], button")) {
+            return;
+          }
+          if (zoomScale > 1) {
+            handleResetZoom();
+          } else {
+            setZoomScale(1.75);
+            setAccessibilityNotice("Worksheet magnified to 175 percent");
+          }
+        }}
         style={dynamicAspectStyle}
         className={cn(
-          "relative w-full mx-auto rounded-xl sm:rounded-2xl border border-border/80 bg-muted/30 dark:bg-muted/20 overflow-hidden transition-[aspect-ratio,max-width,max-height] duration-200 flex items-center justify-center shadow-warm select-none",
+          "relative w-full mx-auto rounded-xl sm:rounded-2xl border border-border/80 bg-muted/30 dark:bg-muted/20 overflow-hidden transition-[aspect-ratio,max-width,max-height] duration-200 flex items-center justify-center select-none",
+          !flatFrame && "shadow-warm",
           isLoupeActive || zoomScale > 1 ? "touch-none" : "touch-pan-y",
           "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           aspectRatioClass ?? "max-h-[min(640px,calc(100dvh-12rem))] min-h-[280px] sm:min-h-[320px]",
@@ -927,7 +943,7 @@ export function WorksheetImageInspector({
                 Worksheet photo unavailable
               </p>
               <p className="text-xs text-muted-foreground leading-normal">
-                The image could not be loaded or the secure session link expired.
+                We couldn&apos;t load this photo right now. Please try again.
               </p>
             </div>
             {onRetry && (

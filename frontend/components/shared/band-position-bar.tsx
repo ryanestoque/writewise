@@ -81,7 +81,7 @@ export function BandPositionBar({
       {showBandLabels && (
         <div
           aria-hidden="true"
-          className="grid grid-cols-4 gap-1.5 text-[11px] sm:text-xs leading-snug font-medium text-muted-foreground select-none pt-1"
+          className="grid grid-cols-4 gap-2 text-[11px] leading-tight font-medium text-muted-foreground select-none pt-1"
         >
           <span className="text-left sm:text-center text-band-1-text">Needs Improvement</span>
           <span className="text-center text-band-2-text">Developing</span>

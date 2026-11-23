@@ -34,11 +34,11 @@ export const OVERLAY_COLORS = {
 
 export const OVERLAY_WEIGHTS = {
   minTargetSize: 44,
-  strokeNormal: 2.25,
-  strokeAttention: 3.0,
-  strokeHover: 3.75,
-  opacitySpotlight: 1.0,
-  opacityAllGuides: 0.90,
+  strokeNormal: 1.5,
+  strokeAttention: 2.25,
+  strokeHover: 3.0,
+  opacitySpotlight: 0.92,
+  opacityAllGuides: 0.65,
   opacityDimmed: 0.25,
 } as const;
 

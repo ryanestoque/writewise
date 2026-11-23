@@ -124,9 +124,9 @@ export const BaselineLayer = memo(function BaselineLayer({
               x2={x2}
               y2={baseY}
               stroke={OVERLAY_COLORS.guidelines.baseline}
-              strokeWidth={isSpotlight ? 3 : 2.5}
+              strokeWidth={isSpotlight ? 2.25 : 1.75}
               vectorEffect="non-scaling-stroke"
-              strokeOpacity={isSpotlight ? 1.0 : 0.50}
+              strokeOpacity={isSpotlight ? 0.9 : 0.45}
             />
           </g>
         );

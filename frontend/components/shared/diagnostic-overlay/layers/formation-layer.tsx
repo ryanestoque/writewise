@@ -77,7 +77,7 @@ const FormationWordItem = memo(function FormationWordItem({
     : hasLetterZones
       ? y - 28 * hitScale
       : y - 10 * hitScale;
-  const strokeW = Math.max(2, 2.5 * hitScale);
+  const strokeW = Math.max(1.5, 1.75 * hitScale);
 
   const hoverPayload = {
     id,
@@ -147,11 +147,15 @@ const FormationWordItem = memo(function FormationWordItem({
           key={`stroke-${id}-${pIdx}`}
           d={pCmd}
           fill="none"
-          stroke="#06b6d4" // Neon Cyan
+          stroke="#0d9488" // Grounded Teal (low visual weight)
           strokeWidth={strokeW}
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="pointer-events-none opacity-90 group-hover:opacity-100"
+          className={
+            isSpotlight
+              ? "pointer-events-none opacity-75 group-hover:opacity-95"
+              : "pointer-events-none opacity-60 group-hover:opacity-85"
+          }
         />
       ))}
 

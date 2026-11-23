@@ -164,9 +164,9 @@ export const SizeLayer = memo(function SizeLayer({
               width={cw}
               height={ch}
               fill={boxColor}
-              fillOpacity={isAttention ? 0.32 : 0.20}
+              fillOpacity={isAttention ? 0.18 : 0.10}
               stroke={boxColor}
-              strokeWidth={isAttention ? 3.5 : 2.75}
+              strokeWidth={isAttention ? 2.0 : 1.5}
               vectorEffect="non-scaling-stroke"
               strokeDasharray={isAttention ? "none" : `${5 * hitScale} ${3 * hitScale}`}
               rx={3 * hitScale}
@@ -180,7 +180,7 @@ export const SizeLayer = memo(function SizeLayer({
               x2={cx + cw}
               y2={cy}
               stroke={boxColor}
-              strokeWidth={isAttention ? 3.5 : 2.5}
+              strokeWidth={isAttention ? 2.0 : 1.5}
               vectorEffect="non-scaling-stroke"
             />
             <line
@@ -189,7 +189,7 @@ export const SizeLayer = memo(function SizeLayer({
               x2={cx + cw}
               y2={cy + ch}
               stroke={boxColor}
-              strokeWidth={isAttention ? 3.5 : 2.5}
+              strokeWidth={isAttention ? 2.0 : 1.5}
               vectorEffect="non-scaling-stroke"
             />
 
@@ -199,7 +199,7 @@ export const SizeLayer = memo(function SizeLayer({
                 d={`M ${cx} ${cy + 10 * hitScale} L ${cx} ${cy} L ${cx + 10 * hitScale} ${cy}`}
                 fill="none"
                 stroke={boxColor}
-                strokeWidth={3}
+                strokeWidth={2.25}
                 vectorEffect="non-scaling-stroke"
                 strokeLinecap="round"
               />
