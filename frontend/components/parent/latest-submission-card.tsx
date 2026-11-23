@@ -266,12 +266,12 @@ export function LatestSubmissionCard({
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                <BandBadge band={compositeBand} score={latest.scores.composite} size="default" showDot />
                 {latest.scores.composite != null && (
                   <span className="font-sans text-sm font-semibold tabular-nums text-foreground">
                     {Math.round(latest.scores.composite)}%
                   </span>
                 )}
-                <BandBadge band={compositeBand} score={latest.scores.composite} size="default" showDot />
               </div>
             </div>
 
@@ -350,12 +350,12 @@ export function LatestSubmissionCard({
                 )}
               </span>
               <span className="flex items-center justify-end gap-2.5 shrink-0">
+                <BandBadge band={band} score={score} size="sm" showDot />
                 {score != null && (
                   <span className="font-sans tabular-nums text-xs sm:text-sm font-semibold text-foreground min-w-[2.5rem] text-right">
                     {Math.round(score)}%
                   </span>
                 )}
-                <BandBadge band={band} score={score} size="sm" showDot />
                 <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden="true" />
               </span>
             </button>

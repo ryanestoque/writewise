@@ -38,7 +38,6 @@ import { useSubmissionImageUrl, useDeleteSubmission } from "@/lib/hooks/use-subm
 import { cn } from "@/lib/utils";
 import {
   PARENT_CRITERIA_LIST,
-  PARENT_BAND_EXPLANATIONS,
   PARENT_CRITERIA_METADATA,
   computeStrengthAndFocus,
   getBandMeta,
@@ -47,7 +46,6 @@ import {
   type CriterionKey,
 } from "@/lib/utils/scoring";
 import {
-  ArrowLeft,
   HelpCircle,
   Loader2,
   MoreHorizontal,
@@ -102,8 +100,6 @@ interface WorksheetViewDialogProps {
   };
   guideLines?: GuideLines | null;
   overlay?: DiagnosticOverlayData | null;
-  onBack?: () => void;
-  backLabel?: string;
   returnNote?: string | null;
   onPracticeNow?: () => void;
 }
@@ -123,8 +119,6 @@ export function WorksheetViewDialog({
   bands,
   guideLines,
   overlay,
-  onBack,
-  backLabel = "Back",
   submissionId,
   canDelete = false,
   returnNote,
@@ -138,7 +132,7 @@ export function WorksheetViewDialog({
     useState<ActiveAnnotationHover | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const { topStrength, practiceFocus, isBalanced } = useMemo(() => {
+  const { topStrength, practiceFocus } = useMemo(() => {
     return computeStrengthAndFocus(scores, bands);
   }, [scores, bands]);
 
@@ -207,16 +201,6 @@ export function WorksheetViewDialog({
       : null;
   const compositeBandMeta = compositeBand ? getBandMeta(compositeBand) : null;
 
-  const summaryTakeaway = useMemo(() => {
-    if (topStrength && practiceFocus) {
-      return `Strongest in ${topStrength.meta.label}; next, focus on ${practiceFocus.meta.label} together.`;
-    }
-    if (isBalanced) {
-      return "Steady, balanced progress across all five cursive skills.";
-    }
-    return compositeBand ? PARENT_BAND_EXPLANATIONS[compositeBand] : null;
-  }, [topStrength, practiceFocus, isBalanced, compositeBand]);
-
   const showHeaderMenu = Boolean(canDelete && submissionId);
 
   return (
@@ -226,16 +210,6 @@ export function WorksheetViewDialog({
         <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border bg-card/80">
           <div className="flex items-start justify-between gap-2 pr-11 sm:pr-10">
             <div className="min-w-0 space-y-1">
-              {onBack && (
-                <button
-                  type="button"
-                  onClick={onBack}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 transition-colors cursor-pointer group mb-0.5 touch-manipulation min-h-[40px] sm:min-h-[36px] px-2 py-1 rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
-                >
-                  <ArrowLeft className="size-3.5 transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
-                  <span>{backLabel}</span>
-                </button>
-              )}
               <DialogTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
                 {childName ? `${childName}'s Worksheet` : "Worksheet Feedback"}
               </DialogTitle>
@@ -499,12 +473,6 @@ export function WorksheetViewDialog({
                       ariaLabel={`Overall score: ${Math.round(compositeScore)}%`}
                       ariaValueText={`${Math.round(compositeScore)}% overall`}
                     />
-
-                    {summaryTakeaway && (
-                      <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                        {summaryTakeaway}
-                      </p>
-                    )}
                   </div>
                 )}
 

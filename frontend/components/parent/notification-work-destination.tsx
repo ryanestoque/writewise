@@ -67,8 +67,6 @@ export function NotificationWorkDestination({
           guideLines={item.guideLines}
           overlay={item.overlay}
           returnNote={item.returnNote}
-          onBack={onClose}
-          backLabel="Back to progress"
         />
       );
     return (

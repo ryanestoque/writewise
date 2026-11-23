@@ -62,12 +62,12 @@ export function CriterionFeedbackRow({
       </div>
 
       <div className="shrink-0 flex items-center gap-2">
+        <BandBadge band={band} score={score} size="sm" showDot />
         {score != null && (
           <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground">
             {Math.round(score)}%
           </span>
         )}
-        <BandBadge band={band} score={score} size="sm" showDot />
         {onInspect && (
           <ChevronDown
             className={cn(

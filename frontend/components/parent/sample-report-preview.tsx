@@ -357,10 +357,10 @@ export function SampleReportPreview({
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
+                  <BandBadge band={currentSample.band} score={currentSample.score} size="sm" />
                   <span className="font-sans tabular-nums text-xs font-semibold text-muted-foreground">
                     {currentSample.score}%
                   </span>
-                  <BandBadge band={currentSample.band} score={currentSample.score} size="sm" />
                 </div>
               </div>
 

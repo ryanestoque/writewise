@@ -125,15 +125,15 @@ function HistoryItemRow({
 
       <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
         <div className="flex items-center gap-2">
-          {item.compositeScore != null && (
-            <span className="text-sm font-semibold font-sans tabular-nums text-foreground">
-              {Math.round(item.compositeScore)}%
-            </span>
-          )}
           {item.compositeScore != null ? (
             <BandBadge score={item.compositeScore} size="sm" showDot />
           ) : (
             <Badge variant="secondary">{statusLabel}</Badge>
+          )}
+          {item.compositeScore != null && (
+            <span className="text-sm font-semibold font-sans tabular-nums text-foreground">
+              {Math.round(item.compositeScore)}%
+            </span>
           )}
         </div>
 

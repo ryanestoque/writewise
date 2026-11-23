@@ -615,12 +615,12 @@ export function ProgressPageContent() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 self-start">
+                    <BandBadge score={history[0].compositeScore} band={history[0].compositeBand} size="sm" showDot />
                     {history[0].compositeScore != null && (
                       <span className="font-sans text-sm font-semibold tabular-nums text-foreground">
                         {Math.round(history[0].compositeScore)}%
                       </span>
                     )}
-                    <BandBadge score={history[0].compositeScore} band={history[0].compositeBand} size="sm" showDot />
                   </div>
                 </div>
 
