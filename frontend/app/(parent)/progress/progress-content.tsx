@@ -11,7 +11,6 @@ import { SampleReportPreview } from "@/components/parent/sample-report-preview";
 import { NotificationWorkDestination } from "@/components/parent/notification-work-destination";
 import { QueryRecovery } from "@/components/shared/query-recovery";
 import { ParentGrades } from "@/components/gradebook/parent-grades";
-import { ParentActivityThreads } from "@/components/comments/parent-activity-threads";
 import { SubmissionCommentThreadSheet } from "@/components/comments/submission-comment-thread-sheet";
 import {
   useChildScoreHistory,
@@ -58,9 +57,7 @@ export function ProgressPageContent() {
 
   const {
     selectedChildId,
-    setSelectedChildId,
     selectedChild,
-    children: linkedChildren,
     isLoading: childrenLoading,
     isError: childrenError,
     isRetrying: childrenRetrying,
@@ -164,7 +161,7 @@ export function ProgressPageContent() {
       <div
         role="status"
         aria-live="polite"
-        className="flex flex-col items-center justify-center min-h-[50vh] gap-3"
+        className="flex flex-col items-center justify-center min-h-[50vh] gap-3 px-4 py-6"
       >
         <Loader2
           className="size-8 animate-spin text-brand-600 dark:text-brand-400"
@@ -177,18 +174,20 @@ export function ProgressPageContent() {
 
   if (childrenError && !selectedChild) {
     return (
-      <QueryRecovery
-        title="Could not load child profiles"
-        description="We could not check your linked child profiles. Please check your connection and try again."
-        onRetry={retryChildren}
-        isRetrying={childrenRetrying}
-      />
+      <div className="w-full px-4 py-6 sm:px-6">
+        <QueryRecovery
+          title="Could not load child profiles"
+          description="We could not check your linked child profiles. Please check your connection and try again."
+          onRetry={retryChildren}
+          isRetrying={childrenRetrying}
+        />
+      </div>
     );
   }
 
   if (!selectedChild) {
     return (
-      <>
+      <div className="w-full px-4 py-6 sm:px-6">
         {notificationDestination}
         <div className="max-w-md mx-auto my-12">
           <Empty className="border border-border rounded-xl shadow-warm bg-card py-10">
@@ -203,7 +202,7 @@ export function ProgressPageContent() {
             </EmptyHeader>
           </Empty>
         </div>
-      </>
+      </div>
     );
   }
 
@@ -231,7 +230,7 @@ export function ProgressPageContent() {
     : selectedTab ?? defaultTab;
 
   return (
-    <div className="w-full space-y-6 pb-12">
+    <div className="w-full min-w-0 flex flex-col">
       {/* Notification Deep-Link Modal */}
       {notificationDestination}
       {!notificationDestination && inspectedGradeWork && selectedChildId && (
@@ -250,167 +249,7 @@ export function ProgressPageContent() {
         />
       )}
 
-      {/* Mobile-Friendly Child Switcher (Within comfortable one-handed thumb reach) */}
-      {linkedChildren && linkedChildren.length > 1 && (
-        <div
-          role="radiogroup"
-          aria-label="Select student profile"
-          className="flex sm:hidden items-center gap-2 overflow-x-auto pb-1 scrollbar-none -mt-1 touch-manipulation"
-        >
-          {linkedChildren.map((child) => {
-            const isSelected = child.id === selectedChildId;
-            return (
-              <button
-                key={child.id}
-                type="button"
-                role="radio"
-                aria-checked={isSelected}
-                onClick={() => {
-                  setSelectedChildId(child.id);
-                }}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 cursor-pointer transition-all min-h-11 touch-manipulation",
-                  isSelected
-                    ? "bg-brand-700 text-white dark:bg-brand-600 shadow-warm-sm"
-                    : "bg-muted/70 text-muted-foreground hover:text-foreground hover:bg-muted border border-border/70"
-                )}
-              >
-                <span className="truncate max-w-[130px]">{child.fullName}</span>
-                <span className={cn("text-xs", isSelected ? "text-white/80" : "text-muted-foreground")}>
-                  ({child.section})
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Page Header Bar (Matches Teacher Portal Dashboard Header) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="space-y-0.5 min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
-            {firstName}&apos;s handwriting
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            Section {selectedChild.section}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 shrink-0">
-          {pendingActivitiesCount > 0 && !urgentActivity && (
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => {
-                if (openTakeHomeActivities.length === 1) {
-                  handleUploadActivity(openTakeHomeActivities[0].id);
-                } else {
-                  openUploadDialog();
-                }
-              }}
-              className="h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] font-medium text-xs sm:text-sm gap-1.5 cursor-pointer touch-manipulation"
-            >
-              <Camera className="size-4" aria-hidden="true" />
-              <span>Send photo</span>
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {childrenError && (
-        <QueryRecovery
-          title="Could not refresh child profiles"
-          description="Showing the child profiles loaded earlier. Please check your connection and try again to get the latest information."
-          onRetry={retryChildren}
-          isRetrying={childrenRetrying}
-        />
-      )}
-
-      {historyError && (
-        <QueryRecovery
-          title={allHistory === undefined ? "Could not load progress history" : "Could not refresh progress history"}
-          description={allHistory === undefined
-            ? "Your worksheet history is unavailable right now. Please check your connection and try again."
-            : "Showing the worksheet history loaded earlier. Try again to check for newly shared results."}
-          onRetry={() => { void refetchHistory(); }}
-          isRetrying={historyRetrying}
-        />
-      )}
-
-      {urgentActivity && urgentStatus && activeTab !== "to-write" && (
-        <div
-          role="region"
-          aria-label="Practice worksheet needing attention"
-          className={cn(
-            "rounded-xl px-4 py-3 text-foreground border transition-colors",
-            urgentStatus.urgency === "teacher_returned"
-              ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
-              : urgentStatus.urgency === "retake_needed"
-                ? "border-warning/40 bg-warning/10 dark:bg-warning/15"
-                : "border-band-2/40 bg-band-2/10 dark:bg-band-2/15"
-          )}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="min-w-0 flex-1 space-y-0.5">
-              <p className="text-sm font-semibold text-foreground truncate">
-                <span
-                  className={cn(
-                    "mr-1.5",
-                    urgentStatus.urgency === "teacher_returned"
-                      ? "text-primary"
-                      : urgentStatus.urgency === "retake_needed"
-                        ? "text-warning-foreground"
-                        : "text-band-2-text"
-                  )}
-                >
-                  {urgentStatus.urgency === "teacher_returned"
-                    ? "New photo requested:"
-                    : urgentStatus.urgency === "retake_needed"
-                      ? "Clearer photo needed:"
-                      : urgentStatus.urgency === "overdue"
-                        ? "Past due:"
-                        : "Due soon:"}
-                </span>
-                {urgentActivity.title}
-              </p>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-                {urgentActivity.dueAt && (
-                  <span className="tabular-nums">
-                    Due {formatActivityDueAt(urgentActivity.dueAt)}
-                  </span>
-                )}
-                {urgentActivities.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={handleNavigateToWrite}
-                    className="text-brand-700 dark:text-brand-300 font-medium hover:underline cursor-pointer min-h-[40px] px-2 -my-2 touch-manipulation inline-flex items-center text-xs"
-                  >
-                    +{urgentActivities.length - 1} more
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => handleUploadActivity(urgentActivity.id)}
-              aria-haspopup="dialog"
-              aria-label={`Send ${urgentStatus.urgency === "teacher_returned" || urgentStatus.urgency === "retake_needed" ? "new " : ""}photo for ${urgentActivity.title}`}
-              className="h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] w-full sm:w-auto shrink-0 font-medium text-xs sm:text-sm gap-1.5 cursor-pointer touch-manipulation"
-            >
-              <Camera className="size-4" aria-hidden="true" />
-              <span>
-                {urgentStatus.urgency === "teacher_returned" || urgentStatus.urgency === "retake_needed"
-                  ? "Send new photo"
-                  : "Send photo"}
-              </span>
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Segmented 4-Tab View: Latest Feedback, Practice, Progress, Grades */}
+      {/* Segmented 4-Tab View: Recent, Practice, Progress, Grades */}
       <Tabs
         value={activeTab}
         onValueChange={(val) => {
@@ -419,54 +258,184 @@ export function ProgressPageContent() {
           }
           setSelectedTab(val as ParentProgressTab);
         }}
-        className="w-full gap-6"
+        className="w-full gap-0 flex flex-col"
       >
-        <div className="border-b border-border/80 overflow-x-auto scrollbar-none">
-          <TabsList
-            variant="line"
-            aria-label={`${firstName}'s portal sections`}
-            className="w-max min-w-full sm:w-fit flex h-auto gap-1 sm:gap-2 rounded-none bg-transparent p-0"
-          >
-            <TabsTrigger
-              value="overview"
-              className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] translate-y-[1px] data-active:text-primary data-active:after:bg-primary"
+        {/* Sticky Sub-Navbar directly below the main navbar (top-14) */}
+        <div className="sticky top-14 z-30 w-full border-b border-border/80 bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80">
+          <div className="w-full px-4 sm:px-6">
+            <TabsList
+              variant="line"
+              aria-label={`${firstName}'s portal sections`}
+              className="w-full grid grid-cols-4 sm:w-fit sm:flex h-auto gap-0 sm:gap-2 rounded-none bg-transparent p-0"
             >
-              <span>Latest Feedback</span>
-            </TabsTrigger>
+              <TabsTrigger
+                value="overview"
+                className="h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-3 pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none translate-y-[1px] touch-manipulation data-active:text-primary data-active:after:bg-primary"
+              >
+                <span>Recent</span>
+              </TabsTrigger>
 
-            <TabsTrigger
-              value="to-write"
-              className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] translate-y-[1px] data-active:text-primary data-active:after:bg-primary"
-            >
-              <span>Practice</span>
-              {pendingActivitiesCount > 0 && (
-                <span className="inline-flex items-center justify-center px-1.5 py-0 rounded-full text-xs font-bold tabular-nums bg-brand-100/90 dark:bg-brand-950/90 text-brand-800 dark:text-brand-200 border border-brand-200/70 dark:border-brand-800/70">
-                  <span aria-hidden="true">{pendingActivitiesCount}</span>
-                  <span className="sr-only">
-                    {`, ${pendingActivitiesCount} to send`}
+              <TabsTrigger
+                value="to-write"
+                className="h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-3 pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none translate-y-[1px] touch-manipulation data-active:text-primary data-active:after:bg-primary"
+              >
+                <span>Practice</span>
+                {pendingActivitiesCount > 0 && (
+                  <span className="inline-flex items-center justify-center px-1.5 py-0 rounded-full text-xs font-bold tabular-nums bg-brand-100/90 dark:bg-brand-950/90 text-brand-800 dark:text-brand-200 border border-brand-200/70 dark:border-brand-800/70">
+                    <span aria-hidden="true">{pendingActivitiesCount}</span>
+                    <span className="sr-only">
+                      {`, ${pendingActivitiesCount} to send`}
+                    </span>
                   </span>
-                </span>
-              )}
-            </TabsTrigger>
+                )}
+              </TabsTrigger>
 
-            <TabsTrigger
-              value="progress"
-              className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] translate-y-[1px] data-active:text-primary data-active:after:bg-primary"
-            >
-              <span>Progress</span>
-            </TabsTrigger>
+              <TabsTrigger
+                value="progress"
+                className="h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-3 pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none translate-y-[1px] touch-manipulation data-active:text-primary data-active:after:bg-primary"
+              >
+                <span>Progress</span>
+              </TabsTrigger>
 
-            <TabsTrigger
-              value="grades"
-              className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] translate-y-[1px] data-active:text-primary data-active:after:bg-primary"
-            >
-              <span>Grades</span>
-            </TabsTrigger>
-          </TabsList>
+              <TabsTrigger
+                value="grades"
+                className="h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-3 pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none translate-y-[1px] touch-manipulation data-active:text-primary data-active:after:bg-primary"
+              >
+                <span>Grades</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
         </div>
 
-        {/* Tab 1: Overview (Coaching Hero + Latest Worksheet) */}
-        <TabsContent value="overview" className="space-y-6">
+        {/* Main Content Area */}
+        <div className="w-full px-4 sm:px-6 py-6 space-y-6 pb-16">
+          {/* Page Header Bar (Matches Teacher Portal Dashboard Header) */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-0.5 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
+                {firstName}&apos;s handwriting
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Section {selectedChild.section}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              {pendingActivitiesCount > 0 && !urgentActivity && (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    if (openTakeHomeActivities.length === 1) {
+                      handleUploadActivity(openTakeHomeActivities[0].id);
+                    } else {
+                      openUploadDialog();
+                    }
+                  }}
+                  className="h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] font-medium text-xs sm:text-sm gap-1.5 cursor-pointer touch-manipulation"
+                >
+                  <Camera className="size-4" aria-hidden="true" />
+                  <span>Send photo</span>
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {childrenError && (
+            <QueryRecovery
+              title="Could not refresh child profiles"
+              description="Showing the child profiles loaded earlier. Please check your connection and try again to get the latest information."
+              onRetry={retryChildren}
+              isRetrying={childrenRetrying}
+            />
+          )}
+
+          {historyError && (
+            <QueryRecovery
+              title={allHistory === undefined ? "Could not load progress history" : "Could not refresh progress history"}
+              description={allHistory === undefined
+                ? "Your worksheet history is unavailable right now. Please check your connection and try again."
+                : "Showing the worksheet history loaded earlier. Try again to check for newly shared results."}
+              onRetry={() => { void refetchHistory(); }}
+              isRetrying={historyRetrying}
+            />
+          )}
+
+          {urgentActivity && urgentStatus && activeTab !== "to-write" && (
+            <div
+              role="region"
+              aria-label="Practice worksheet needing attention"
+              className={cn(
+                "rounded-xl px-4 py-3 text-foreground border transition-colors",
+                urgentStatus.urgency === "teacher_returned"
+                  ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
+                  : urgentStatus.urgency === "retake_needed"
+                    ? "border-warning/40 bg-warning/10 dark:bg-warning/15"
+                    : "border-band-2/40 bg-band-2/10 dark:bg-band-2/15"
+              )}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    <span
+                      className={cn(
+                        "mr-1.5",
+                        urgentStatus.urgency === "teacher_returned"
+                          ? "text-primary"
+                          : urgentStatus.urgency === "retake_needed"
+                            ? "text-warning-foreground"
+                            : "text-band-2-text"
+                      )}
+                    >
+                      {urgentStatus.urgency === "teacher_returned"
+                        ? "New photo requested:"
+                        : urgentStatus.urgency === "retake_needed"
+                          ? "Clearer photo needed:"
+                          : urgentStatus.urgency === "overdue"
+                            ? "Past due:"
+                            : "Due soon:"}
+                    </span>
+                    {urgentActivity.title}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                    {urgentActivity.dueAt && (
+                      <span className="tabular-nums">
+                        Due {formatActivityDueAt(urgentActivity.dueAt)}
+                      </span>
+                    )}
+                    {urgentActivities.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={handleNavigateToWrite}
+                        className="text-brand-700 dark:text-brand-300 font-medium hover:underline cursor-pointer min-h-[40px] px-2 -my-2 touch-manipulation inline-flex items-center text-xs"
+                      >
+                        +{urgentActivities.length - 1} more
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => handleUploadActivity(urgentActivity.id)}
+                  aria-haspopup="dialog"
+                  aria-label={`Send ${urgentStatus.urgency === "teacher_returned" || urgentStatus.urgency === "retake_needed" ? "new " : ""}photo for ${urgentActivity.title}`}
+                  className="h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] w-full sm:w-auto shrink-0 font-medium text-xs sm:text-sm gap-1.5 cursor-pointer touch-manipulation"
+                >
+                  <Camera className="size-4" aria-hidden="true" />
+                  <span>
+                    {urgentStatus.urgency === "teacher_returned" || urgentStatus.urgency === "retake_needed"
+                      ? "Send new photo"
+                      : "Send photo"}
+                  </span>
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Tab 1: Overview (Coaching Hero + Latest Worksheet) */}
+          <TabsContent value="overview" className="space-y-6">
           {isResolvingInitialTab ? (
             <div
               role="status"
@@ -681,35 +650,25 @@ export function ProgressPageContent() {
           )}
         </TabsContent>
 
-        {/* Tab 4: Grades (Coursework Point Ledger & Teacher Comments) */}
+        {/* Tab 4: Grades (Coursework Point Ledger) */}
         <TabsContent value="grades" className="space-y-6">
           {activeTab === "grades" && selectedChildId && (
-            <div className="flex flex-col xl:flex-row xl:items-start gap-6">
-              <div className="flex-1 min-w-0">
-                <ParentGrades
-                  key={`${userId}:${selectedChildId}`}
-                  userId={userId}
-                  childId={selectedChildId}
-                  childName={selectedChild.fullName}
-                  showScoreDetails={showScoreDetails}
-                  highlightActivityId={gradeDestination ? notificationTargetData?.activityId : undefined}
-                  onDismissTarget={() => {
-                    setSelectedTab("grades");
-                    dismissNotificationTarget("grades");
-                  }}
-                  onInspectActivity={setInspectedGradeWork}
-                />
-              </div>
-
-              <ParentActivityThreads
-                key={`progress-threads:${userId}:${selectedChildId}`}
-                userId={userId}
-                studentId={selectedChildId}
-                className="w-full xl:w-[380px] shrink-0"
-              />
-            </div>
+            <ParentGrades
+              key={`${userId}:${selectedChildId}`}
+              userId={userId}
+              childId={selectedChildId}
+              childName={selectedChild.fullName}
+              showScoreDetails={showScoreDetails}
+              highlightActivityId={gradeDestination ? notificationTargetData?.activityId : undefined}
+              onDismissTarget={() => {
+                setSelectedTab("grades");
+                dismissNotificationTarget("grades");
+              }}
+              onInspectActivity={setInspectedGradeWork}
+            />
           )}
         </TabsContent>
+        </div>
       </Tabs>
     </div>
   );

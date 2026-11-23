@@ -13,6 +13,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { WorkCommentsButton } from "@/components/comments/submission-comment-picker-sheet";
 import type { GradebookCell } from "@/lib/hooks/use-gradebook";
 
+function formatTeacherDisplayName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "Teacher";
+  if (trimmed.toLowerCase().startsWith("teacher")) {
+    return trimmed;
+  }
+  const firstName = trimmed.split(/\s+/)[0];
+  return `Teacher ${firstName}`;
+}
+
 function formatPointsValue(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return "";
   const num = typeof value === "number" ? value : Number(value);
@@ -268,7 +278,7 @@ export function ParentGrades({
                   id={`grades-teacher-${group.teacher_id}`}
                   className="font-heading text-sm sm:text-base font-semibold text-foreground"
                 >
-                  {group.teacher_name}
+                  {formatTeacherDisplayName(group.teacher_name)}
                 </h3>
                 <div className="text-right tabular-nums">
                   {hasPointTotals ? (

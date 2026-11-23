@@ -201,7 +201,7 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
           onOpenRubric={openRubric}
           onOpenCursiveGuide={openCursiveGuide}
         />
-        <main className="w-full min-w-0 flex-1 space-y-6 px-4 py-6 sm:px-6">{pageChildren}</main>
+        <main className="w-full min-w-0 flex-1">{pageChildren}</main>
       </div>
 
       {/* Global Parent Modals: Upload, Cursive Guide, & How Scores Work */}
