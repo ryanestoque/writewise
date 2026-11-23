@@ -35,6 +35,18 @@ export function formatActivityDueAt(value: string): string {
   }).format(new Date(value));
 }
 
+export function formatActivityDate(
+  value: string,
+  options?: { includeYear?: boolean }
+): string {
+  return new Intl.DateTimeFormat("en-PH", {
+    timeZone: MANILA,
+    month: "short",
+    day: "numeric",
+    ...(options?.includeYear === false ? {} : { year: "numeric" }),
+  }).format(new Date(value));
+}
+
 export function activitySubmissionsClosed(
   activity: {
     due_at: string | null;

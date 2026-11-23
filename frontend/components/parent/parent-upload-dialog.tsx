@@ -29,7 +29,15 @@ import {
   type QualityError,
 } from "@/components/submissions/quality-error-card";
 import { useActivityNow } from "@/components/activities/activity-work-status";
-import { activitySubmissionsClosed } from "@/lib/utils/activity-deadlines";
+import {
+  activitySubmissionsClosed,
+  formatActivityDate,
+  formatActivityDueAt,
+} from "@/lib/utils/activity-deadlines";
+import {
+  compareParentActivityUrgency,
+  getParentActivityStatus,
+} from "@/lib/utils/parent-activity-status";
 import { ApiError } from "@/lib/utils/api-error";
 import { toast } from "sonner";
 import {
@@ -65,7 +73,7 @@ const ACCEPTED_MIME_TYPES = ["image/jpeg", "image/png"];
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
 
 const STEPS = [
-  { step: 1, label: "Activity" },
+  { step: 1, label: "Worksheet" },
   { step: 2, label: "Capture" },
   { step: 3, label: "Review" },
 ] as const;
@@ -158,7 +166,10 @@ function ParentUploadFlow({
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   const retryButtonRef = useRef<HTMLButtonElement>(null);
   const doneButtonRef = useRef<HTMLButtonElement>(null);
+  const unavailableActionRef = useRef<HTMLButtonElement>(null);
+  const lastFocusedStateRef = useRef<string | null>(null);
 
+  const [allowActivitySwitch, setAllowActivitySwitch] = useState(!prefilledActivityId);
   const [step, setStep] = useState<Step>(prefilledActivityId ? 2 : 1);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(
     prefilledActivityId ?? null
@@ -190,7 +201,19 @@ function ParentUploadFlow({
     selectedActivityId ?? ""
   );
   const now = useActivityNow();
-  const activities = useMemo(() => assignedActivities?.filter((a) => a.isTakeHome && !activitySubmissionsClosed({ due_at: a.dueAt, close_after_due: a.closeAfterDue }, now)), [assignedActivities, now]);
+  const activities = useMemo(() => {
+    if (!assignedActivities) return undefined;
+    return assignedActivities
+      .filter(
+        (a) =>
+          a.isTakeHome &&
+          !activitySubmissionsClosed(
+            { due_at: a.dueAt, close_after_due: a.closeAfterDue },
+            now
+          )
+      )
+      .sort((a, b) => compareParentActivityUrgency(a, b, now));
+  }, [assignedActivities, now]);
   const uploadMutation = useUploadSubmission();
   const queryClient = useQueryClient();
 
@@ -216,18 +239,62 @@ function ParentUploadFlow({
     };
   }, [isUploading]);
 
-  // Programmatic focus steering upon step transitions
+  const selectedActivity = useMemo(() => {
+    return activities?.find((a) => a.id === selectedActivityId) ?? null;
+  }, [activities, selectedActivityId]);
+  const hasSelectedActivity = Boolean(selectedActivity);
+  const isWaitingForSelectedActivity =
+    activitiesLoading && Boolean(selectedActivityId) && !hasSelectedActivity && (step === 2 || step === 3);
+  const isUnavailableSelection =
+    !activitiesLoading &&
+    !activitiesError &&
+    Boolean(selectedActivityId) &&
+    !hasSelectedActivity &&
+    (step === 2 || step === 3);
+
+  // Programmatic focus steering upon genuine step/recovery transitions
   useEffect(() => {
-    if (step === 2) {
+    const focusKey = isUnavailableSelection
+      ? `unavailable:${activities?.length ? "switch" : "close"}`
+      : isWaitingForSelectedActivity
+        ? null
+        : step === 2 && hasSelectedActivity
+          ? `step2:${isMobile ? "mobile" : "desktop"}`
+          : step === 3 && hasSelectedActivity
+            ? "step3"
+            : step === 4 && uploadError
+              ? "step4:error"
+              : step === 5
+                ? "step5"
+                : null;
+
+    if (!focusKey) {
+      lastFocusedStateRef.current = null;
+      return;
+    }
+    if (lastFocusedStateRef.current === focusKey) return;
+    lastFocusedStateRef.current = focusKey;
+
+    if (isUnavailableSelection) {
+      unavailableActionRef.current?.focus();
+    } else if (step === 2 && hasSelectedActivity) {
       choosePhotoButtonRef.current?.focus();
-    } else if (step === 3) {
+    } else if (step === 3 && hasSelectedActivity) {
       submitButtonRef.current?.focus();
     } else if (step === 4 && uploadError) {
       retryButtonRef.current?.focus();
     } else if (step === 5) {
       doneButtonRef.current?.focus();
     }
-  }, [step, uploadError, isMobile, activitiesError]);
+  }, [
+    step,
+    uploadError,
+    isMobile,
+    hasSelectedActivity,
+    isUnavailableSelection,
+    isWaitingForSelectedActivity,
+    activities?.length,
+  ]);
 
   // Revoke object URL on unmount
   useEffect(() => {
@@ -238,10 +305,6 @@ function ParentUploadFlow({
       }
     };
   }, []);
-
-  const selectedActivity = useMemo(() => {
-    return activities?.find((a) => a.id === selectedActivityId) ?? null;
-  }, [activities, selectedActivityId]);
 
   const handleClearFile = () => {
     setDropError(null);
@@ -336,7 +399,7 @@ function ParentUploadFlow({
 
   const handleSubmit = (bypassTextCheck = false) => {
     if (!selectedFile || !selectedActivityId || !childId) return;
-    if (!selectedActivity) { toast.error("This activity is no longer available for uploads."); onClose(); return; }
+    if (!selectedActivity) { toast.error("This worksheet is no longer open for uploads."); onClose(); return; }
 
     setUploadStage(0);
     setStep(4);
@@ -370,7 +433,7 @@ function ParentUploadFlow({
         onError: (err) => {
           if (err instanceof ApiError && (err.code === "ACTIVITY_NOT_ASSIGNED" || err.code === "SUBMISSIONS_CLOSED")) {
             queryClient.invalidateQueries({ queryKey: ["parent-take-home-activities", childId] });
-            toast.error(err.code === "SUBMISSIONS_CLOSED" ? "Submissions have closed for this activity." : "This activity is no longer assigned to your child.");
+            toast.error(err.code === "SUBMISSIONS_CLOSED" ? "Uploads have closed for this worksheet." : "This worksheet is no longer assigned to your child.");
             onClose();
             return;
           }
@@ -397,21 +460,31 @@ function ParentUploadFlow({
   };
 
   const isStepNavigable = (targetStep: Step): boolean => {
-    if (isUploading) return false;
-    if (targetStep === 1) return !prefilledActivityId;
+    if (isUploading || isUnavailableSelection) return false;
+    if (targetStep === 1) return allowActivitySwitch;
     if (targetStep === 2) return Boolean(selectedActivity);
     if (targetStep === 3) return Boolean(selectedActivity && selectedFile);
     return false;
   };
 
+  const handleChooseAnotherWorksheet = () => {
+    handleClearFile();
+    setSelectedActivityId(null);
+    setAllowActivitySwitch(true);
+    setStep(1);
+  };
+
   const stepAnnouncement = useMemo(() => {
-    if (prefilledActivityId) {
+    if (isUnavailableSelection) {
+      return "This worksheet is no longer open for uploads.";
+    }
+    if (!allowActivitySwitch) {
       if (step === 2) return "Step 1 of 2: Capture or Choose Photo";
       if (step === 3) return "Step 2 of 2: Review and Confirm Submission";
     }
     switch (step) {
       case 1:
-        return "Step 1 of 3: Select Take-Home Activity";
+        return "Step 1 of 3: Select Practice Worksheet";
       case 2:
         return "Step 2 of 3: Capture or Choose Photo";
       case 3:
@@ -425,7 +498,7 @@ function ParentUploadFlow({
       default:
         return "";
     }
-  }, [step, uploadError, prefilledActivityId]);
+  }, [step, uploadError, allowActivitySwitch, isUnavailableSelection]);
 
   return (
     <>
@@ -466,7 +539,7 @@ function ParentUploadFlow({
             {stepAnnouncement}
           </p>
           {(() => {
-            const activeSteps = prefilledActivityId
+            const activeSteps = !allowActivitySwitch
               ? STEPS.filter((s) => s.step !== 1)
               : STEPS;
             return (
@@ -475,7 +548,7 @@ function ParentUploadFlow({
                   const isCurrent = step === s.step;
                   const isCompleted = step > s.step || step === 5;
                   const canJump = isStepNavigable(s.step as Step) && !isUploading && step !== 5;
-                  const stepNumber = prefilledActivityId ? idx + 1 : s.step;
+                  const stepNumber = !allowActivitySwitch ? idx + 1 : s.step;
 
                   return (
                     <li
@@ -555,7 +628,7 @@ function ParentUploadFlow({
       <div className="px-4 sm:px-6 py-4 max-h-[min(72dvh,calc(100vh-10rem))] overflow-y-auto overscroll-contain">
         {activitiesError && step !== 5 && (
           <QueryRecovery
-            title="Could not load take-home worksheets"
+            title="Could not load practice worksheets"
             description={assignedActivities
               ? "Your saved worksheets are still shown. Try again to check for assignment updates."
               : "Check your connection and try again to choose a worksheet for this photo."}
@@ -563,9 +636,6 @@ function ParentUploadFlow({
             isRetrying={activitiesFetching}
           />
         )}
-        {!activitiesLoading && !activitiesError && selectedActivityId && !selectedActivity && step !== 5 && <p role="alert" className="mb-3 rounded-lg border border-border bg-muted p-3 text-sm">
-          This activity is no longer available for parent uploads. It may be closed or no longer assigned to your child. Close this dialog and choose another activity.
-        </p>}
         {/* Step 4 — Uploading / Analyzing state */}
         {isUploading ? (
           <div
@@ -586,6 +656,35 @@ function ParentUploadFlow({
                 {UPLOAD_STAGES[uploadStage]?.detail ?? UPLOAD_STAGES[0].detail}
               </p>
             </div>
+          </div>
+        ) : isWaitingForSelectedActivity ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex flex-col items-center justify-center py-10 gap-3 text-center min-h-[180px]"
+          >
+            <Loader2Icon
+              className="size-6 animate-spin text-primary"
+              aria-hidden="true"
+            />
+            <p className="text-sm text-muted-foreground">
+              Checking worksheet availability…
+            </p>
+          </div>
+        ) : isUnavailableSelection ? (
+          <div
+            role="alert"
+            className="rounded-xl border border-warning/35 bg-warning/10 p-4 sm:p-5 space-y-2 text-sm"
+          >
+            <p className="font-semibold text-foreground">
+              This worksheet is no longer open for uploads
+            </p>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Its deadline may have passed, or it may no longer be assigned to {childName}.
+              {activities && activities.length > 0
+                ? " You can pick another open worksheet below."
+                : " Closed worksheets remain visible on your child's progress page."}
+            </p>
           </div>
         ) : activitiesError && !assignedActivities && step !== 5 ? null : (
           <div className="space-y-4">
@@ -612,16 +711,31 @@ function ParentUploadFlow({
                       aria-hidden="true"
                     />
                     <p className="text-sm font-medium text-foreground">
-                      No take-home activities available
+                      No practice worksheets open
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      There are no open take-home worksheets to send right now. Closed worksheets remain in your child&apos;s progress page.
+                      There are no open practice worksheets right now. Past worksheets remain on your child&apos;s Practice tab.
                     </p>
                   </div>
                 ) : (
                   <div className="grid gap-2.5">
                     {activities.map((act) => {
                       const isSelected = selectedActivityId === act.id;
+                      const status = getParentActivityStatus(act, now);
+                      const statusBadge = status.urgency === "new_photo"
+                        ? { label: "New photo requested", className: "text-primary font-semibold" }
+                        : status.urgency === "overdue"
+                          ? { label: "Past due", className: "text-band-1-text font-semibold" }
+                          : status.urgency === "due_soon"
+                            ? { label: "Due soon", className: "text-band-2-text font-semibold" }
+                            : status.processing
+                              ? { label: "Checking photo…", className: "text-muted-foreground font-medium" }
+                              : status.category === "submitted" && !status.excused
+                                ? { label: "Photo sent · Replace if needed", className: "text-brand-700 dark:text-brand-300 font-medium" }
+                                : status.excused
+                                  ? { label: "Excused · Optional", className: "text-muted-foreground font-medium" }
+                                  : null;
+
                       return (
                         <button
                           key={act.id}
@@ -646,14 +760,26 @@ function ParentUploadFlow({
                               />
                             )}
                           </div>
-                          <span className="text-xs text-muted-foreground mt-1 font-sans tabular-nums">
-                            Assigned on{" "}
-                            {new Date(act.createdAt).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </span>
+                          {act.targetText && (
+                            <span className="mt-0.5 text-xs text-muted-foreground italic line-clamp-1">
+                              &ldquo;{act.targetText}&rdquo;
+                            </span>
+                          )}
+                          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground font-sans tabular-nums">
+                            {statusBadge && (
+                              <>
+                                <span className={statusBadge.className}>
+                                  {statusBadge.label}
+                                </span>
+                                <span aria-hidden="true" className="text-muted-foreground/40">·</span>
+                              </>
+                            )}
+                            <span>
+                              {act.dueAt
+                                ? `Due ${formatActivityDueAt(act.dueAt)}`
+                                : `Assigned ${formatActivityDate(act.createdAt)}`}
+                            </span>
+                          </div>
                         </button>
                       );
                     })}
@@ -665,19 +791,22 @@ function ParentUploadFlow({
             {/* Step 2 — Capture or Select Photo */}
             {step === 2 && (
               <>
-                {/* Context Header: Active Child & Activity */}
+                {/* Context Header: Active Child & Worksheet */}
                 <div className="p-3 rounded-xl bg-muted/40 border border-border/80 text-xs space-y-1">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-semibold text-foreground truncate">
-                      {childName} · {selectedActivity?.title ?? "Take-Home Activity"}
+                      {childName} · {selectedActivity?.title ?? "Practice worksheet"}
                     </span>
-                    {!prefilledActivityId && (
+                    {activities && activities.length > 1 && (
                       <button
                         type="button"
-                        onClick={() => setStep(1)}
-                        className="inline-flex min-h-10 items-center px-2 text-xs text-primary font-medium hover:underline shrink-0 cursor-pointer rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                        onClick={() => {
+                          setAllowActivitySwitch(true);
+                          setStep(1);
+                        }}
+                        className="inline-flex min-h-10 sm:min-h-9 items-center px-2 -my-1 text-xs text-primary font-medium hover:underline shrink-0 cursor-pointer rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                       >
-                        Change activity
+                        Change worksheet
                       </button>
                     )}
                   </div>
@@ -894,10 +1023,10 @@ function ParentUploadFlow({
             {/* Step 3 — Review & Confirm */}
             {step === 3 && selectedFile && (
               <>
-                {/* Context Header: Active Child & Activity */}
+                {/* Context Header: Active Child & Worksheet */}
                 <div className="p-3 rounded-xl bg-muted/40 border border-border/80 text-xs space-y-1">
                   <p className="font-semibold text-foreground truncate">
-                    {childName} · {selectedActivity?.title ?? "Take-Home Activity"}
+                    {childName} · {selectedActivity?.title ?? "Practice worksheet"}
                   </p>
                   {selectedActivity?.targetText && (
                     <p className="text-muted-foreground italic font-sans break-words leading-relaxed">
@@ -1041,80 +1170,105 @@ function ParentUploadFlow({
         )}
       </div>
 
-      {/* Standardized Sticky Footer for Steps 1–3 and Step 4 Error */}
-      {!isUploading && (step <= 3 || (step === 4 && uploadError)) && (
+      {/* Standardized Sticky Footer for Steps 1–3, Unavailable State, and Step 4 Error */}
+      {!isUploading && (isUnavailableSelection || step <= 3 || (step === 4 && uploadError)) && (
         <div className="flex items-center justify-between p-3 sm:p-3.5 px-4 sm:px-6 border-t border-border bg-muted/20">
-          {step === 4 && uploadError && (
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
-            >
-              Cancel
-            </Button>
-          )}
-          {step === 1 && (
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
-            >
-              Cancel
-            </Button>
-          )}
-          {step === 2 && (
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (prefilledActivityId) {
-                  onClose();
-                } else {
-                  setStep(1);
-                }
-              }}
-              className="gap-1.5 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
-            >
-              {prefilledActivityId ? (
-                "Cancel"
-              ) : (
-                <>
+          {isUnavailableSelection ? (
+            <>
+              <Button
+                ref={activities && activities.length > 0 ? undefined : unavailableActionRef}
+                variant="outline"
+                onClick={onClose}
+                className="h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
+              >
+                Close
+              </Button>
+              {activities && activities.length > 0 && (
+                <Button
+                  ref={unavailableActionRef}
+                  type="button"
+                  onClick={handleChooseAnotherWorksheet}
+                  className="h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
+                >
+                  Choose another worksheet
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
+              {step === 4 && uploadError && (
+                <Button
+                  variant="outline"
+                  onClick={onClose}
+                  className="h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
+                >
+                  Cancel
+                </Button>
+              )}
+              {step === 1 && (
+                <Button
+                  variant="outline"
+                  onClick={onClose}
+                  className="h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
+                >
+                  Cancel
+                </Button>
+              )}
+              {step === 2 && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (!allowActivitySwitch) {
+                      onClose();
+                    } else {
+                      setStep(1);
+                    }
+                  }}
+                  className="gap-1.5 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
+                >
+                  {!allowActivitySwitch ? (
+                    "Cancel"
+                  ) : (
+                    <>
+                      <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
+                      Back
+                    </>
+                  )}
+                </Button>
+              )}
+              {step === 3 && (
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(2)}
+                  className="gap-1.5 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
+                >
                   <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
                   Back
-                </>
+                </Button>
               )}
-            </Button>
-          )}
-          {step === 3 && (
-            <Button
-              variant="outline"
-              onClick={() => setStep(2)}
-              className="gap-1.5 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
-            >
-              <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
-              Back
-            </Button>
-          )}
 
-          {step === 1 && (
-            <Button
-              disabled={!selectedActivity}
-              onClick={() => setStep(2)}
-              className="gap-2 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
-            >
-              <span>Next</span>
-              <ArrowRightIcon className="size-3.5" aria-hidden="true" />
-            </Button>
-          )}
-          {step === 3 && (
-            <Button
-              ref={submitButtonRef}
-              disabled={uploadMutation.isPending || !selectedActivity}
-              onClick={handleRetryUpload}
-              className="gap-2 h-10 sm:h-9 px-5 text-xs sm:text-sm font-semibold shadow-warm-sm cursor-pointer"
-            >
-              <CheckCircle2Icon className="size-4" aria-hidden="true" />
-              Send worksheet photo
-            </Button>
+              {step === 1 && (
+                <Button
+                  disabled={!selectedActivity}
+                  onClick={() => setStep(2)}
+                  className="gap-2 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
+                >
+                  <span>Next</span>
+                  <ArrowRightIcon className="size-3.5" aria-hidden="true" />
+                </Button>
+              )}
+              {step === 3 && (
+                <Button
+                  ref={submitButtonRef}
+                  disabled={uploadMutation.isPending || !selectedActivity}
+                  onClick={handleRetryUpload}
+                  className="gap-2 h-10 sm:h-9 px-5 text-xs sm:text-sm font-semibold shadow-warm-sm cursor-pointer"
+                >
+                  <CheckCircle2Icon className="size-4" aria-hidden="true" />
+                  Send worksheet photo
+                </Button>
+              )}
+            </>
           )}
         </div>
       )}

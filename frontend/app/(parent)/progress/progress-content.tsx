@@ -118,12 +118,16 @@ export function ProgressPageContent() {
     return activities.filter((a) => a.isTakeHome);
   }, [activities]);
 
-  const pendingActivitiesCount = useMemo(() => {
-    return takeHomeActivities.filter((a) => {
-      const status = getParentActivityStatus(a, now);
-      return status.canSend && !status.excused;
-    }).length;
+  const openTakeHomeActivities = useMemo(() => {
+    return takeHomeActivities
+      .filter((a) => {
+        const status = getParentActivityStatus(a, now);
+        return status.canSend && !status.excused;
+      })
+      .sort((a, b) => compareParentActivityUrgency(a, b, now));
   }, [takeHomeActivities, now]);
+
+  const pendingActivitiesCount = openTakeHomeActivities.length;
 
   const urgentActivities = useMemo(
     () => takeHomeActivities
@@ -286,19 +290,15 @@ export function ProgressPageContent() {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          {pendingActivitiesCount > 0 && !urgentActivity && (
+          {pendingActivitiesCount > 0 && !urgentActivity && activeTab !== "to-write" && (
             <Button
               type="button"
               size="sm"
               onClick={() => {
-                const firstOpen = takeHomeActivities.find((a) => {
-                  const status = getParentActivityStatus(a, now);
-                  return status.canSend && !status.excused;
-                });
-                if (firstOpen) {
-                  handleUploadActivity(firstOpen.id);
+                if (openTakeHomeActivities.length === 1) {
+                  handleUploadActivity(openTakeHomeActivities[0].id);
                 } else {
-                  handleNavigateToWrite();
+                  openUploadDialog();
                 }
               }}
               className="h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] font-medium text-xs sm:text-sm gap-1.5 cursor-pointer touch-manipulation"
@@ -532,7 +532,7 @@ export function ProgressPageContent() {
                 variant="outline"
                 size="sm"
                 onClick={() => openCursiveGuide()}
-                className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80"
+                className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80"
               >
                 <PenTool className="size-3.5" aria-hidden="true" />
                 <span>Cursive guide</span>
@@ -542,10 +542,13 @@ export function ProgressPageContent() {
             <TakeHomeActivities
               key={selectedChildId}
               childId={selectedChildId}
+              childName={selectedChild.fullName}
               onUploadClick={handleUploadActivity}
               expanded={activitiesExpanded}
               onToggleExpanded={() => setActivitiesExpanded((prev) => !prev)}
-              showExpandButton={true}
+              showExpandButton={false}
+              showScoreDetails={showScoreDetails}
+              onViewScoredHistory={() => setSelectedTab("progress")}
               gridClassName="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4"
               practiceFocusKey={practiceFocus?.key}
               onOpenCursiveGuide={openCursiveGuide}

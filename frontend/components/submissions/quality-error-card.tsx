@@ -1028,7 +1028,7 @@ export function QualityErrorCard({
               <button
                 type="button"
                 onClick={() => setShowAllTips((prev) => !prev)}
-                className="inline-flex items-center justify-center gap-1.5 py-1.5 px-3 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-md min-h-[38px] sm:min-h-0"
+                className="inline-flex items-center justify-center gap-1.5 py-1.5 px-3 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-md min-h-11 sm:min-h-0"
                 aria-expanded={showAllTips}
                 aria-controls="remediation-tips-list"
               >
@@ -1125,7 +1125,7 @@ export function QualityErrorCard({
                     onClick={handleZoomOut}
                     disabled={zoomScale <= 1}
                     aria-label="Zoom out photo"
-                    className="h-9 w-9 sm:h-7 sm:w-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground"
+                    className="h-11 w-11 sm:h-7 sm:w-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground"
                   >
                     <ZoomOut className="size-4 sm:size-3.5" aria-hidden="true" />
                   </Button>
@@ -1144,7 +1144,7 @@ export function QualityErrorCard({
                     onClick={handleZoomIn}
                     disabled={zoomScale >= 3}
                     aria-label="Zoom in photo"
-                    className="h-9 w-9 sm:h-7 sm:w-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground"
+                    className="h-11 w-11 sm:h-7 sm:w-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground"
                   >
                     <ZoomIn className="size-4 sm:size-3.5" aria-hidden="true" />
                   </Button>
@@ -1156,7 +1156,7 @@ export function QualityErrorCard({
                     onClick={handleResetZoom}
                     disabled={zoomScale === 1 && panOffset.x === 0 && panOffset.y === 0}
                     aria-label="Reset zoom to fit"
-                    className="h-9 sm:h-7 px-3 sm:px-2 text-xs sm:text-[11px] font-medium cursor-pointer text-muted-foreground hover:text-foreground"
+                    className="h-11 sm:h-7 px-3 sm:px-2 text-xs sm:text-[11px] font-medium cursor-pointer text-muted-foreground hover:text-foreground"
                   >
                     <RotateCcw className="size-3.5 sm:size-3 mr-1" aria-hidden="true" />
                     Fit
