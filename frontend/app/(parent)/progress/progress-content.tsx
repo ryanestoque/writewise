@@ -261,7 +261,7 @@ export function ProgressPageContent() {
         className="w-full gap-0 flex flex-col"
       >
         {/* Sticky Sub-Navbar directly below the main navbar (top-14) */}
-        <div className="sticky top-14 z-30 w-full border-b border-border/80 bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80">
+        <div className="sticky top-14 z-30 w-full border-b border-border/80 bg-background">
           <div className="w-full px-4 sm:px-6">
             <TabsList
               variant="line"
