@@ -16,7 +16,6 @@ import {
   computeStrengthAndFocus,
 } from "@/lib/utils/scoring";
 import {
-  formatScoreDifference,
   getScoreProgressLabel,
 } from "@/lib/utils/score-progress";
 import type { CriterionFilter } from "@/components/shared/diagnostic-overlay";
@@ -26,9 +25,24 @@ import {
   Loader2,
   ChevronRight,
   MessageSquare,
-  PenTool,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+/**
+ * Normalizes erratic mid-word sponge-case (e.g. "pSychophySioLogiCaL") into readable
+ * sentence-cased text while preserving intentional Title Case or acronyms.
+ */
+function normalizeActivityPrompt(text: string): string {
+  const words = text.trim().split(/\s+/);
+  return words
+    .map((word, index) => {
+      const hasMidWordCaseFlip = /^[a-z][A-Za-z]*[A-Z]|[A-Z][a-z]+[A-Z]/.test(word);
+      if (!hasMidWordCaseFlip) return word;
+      const lower = word.toLowerCase();
+      return index === 0 ? lower.charAt(0).toUpperCase() + lower.slice(1) : lower;
+    })
+    .join(" ");
+}
 
 export interface LatestSubmissionCardProps {
   userId: string;
@@ -93,7 +107,6 @@ export function LatestSubmissionCard({
 
     return {
       label: `${getScoreProgressLabel(diff, "first")} (${startDate})`,
-      deltaText: formatScoreDifference(diff),
     };
   }, [history]);
 
@@ -192,6 +205,7 @@ export function LatestSubmissionCard({
   const compositeBand =
     latest.bands.composite ??
     (latest.scores.composite != null ? getBandFromScore(latest.scores.composite) : null);
+  const displayActivityText = normalizeActivityPrompt(latest.activityText);
 
   return (
     <>
@@ -209,29 +223,23 @@ export function LatestSubmissionCard({
         className="overflow-hidden rounded-xl border border-border bg-card shadow-warm md:grid md:grid-cols-12"
       >
         {/* Photo first in DOM: leads on phones, sits on left column on desktop */}
-        <div className="md:col-span-5 flex min-h-48 items-center justify-center bg-secondary/60 p-4 sm:p-6">
+        <div className="md:col-span-5 flex items-center justify-center bg-secondary/45 p-4 sm:p-6">
           {imageUrl && imageUrl !== failedImageUrl ? (
             <button
               type="button"
               onClick={() => openWorksheetForCriterion()}
               aria-haspopup="dialog"
-              aria-label={`Inspect worksheet photo for ${latest.activityText}`}
-              className="group relative h-52 w-full cursor-pointer rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring md:h-full md:min-h-64"
+              aria-label={`Inspect worksheet photo for ${displayActivityText}`}
+              className="group relative aspect-[4/3] w-full max-w-md cursor-pointer overflow-hidden rounded-lg border border-border/70 bg-background shadow-warm-sm transition-shadow hover:shadow-warm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Image
                 src={imageUrl}
-                alt={`Handwriting for ${latest.activityText}`}
+                alt={`Handwriting for ${displayActivityText}`}
                 fill
                 sizes="(min-width: 768px) 42vw, 100vw"
-                className="object-contain transition-transform duration-200 ease-out group-hover:scale-[1.01] motion-reduce:transition-none"
+                className="object-contain p-1.5 transition-transform duration-200 ease-out group-hover:scale-[1.015] motion-reduce:transition-none"
                 onError={() => setFailedImageUrl(imageUrl)}
               />
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute bottom-2 right-2 rounded-full bg-foreground/90 px-3 py-1 text-xs font-medium text-background shadow-warm-sm transition-colors group-hover:bg-foreground dark:border dark:border-border/80 dark:bg-card/95 dark:text-foreground"
-              >
-                Inspect worksheet
-              </span>
             </button>
           ) : (
             <span className="text-sm text-muted-foreground">
@@ -242,25 +250,19 @@ export function LatestSubmissionCard({
           )}
         </div>
 
-        <div className="md:col-span-7 flex min-w-0 flex-col justify-center gap-5 p-5 sm:p-6">
-          <div className="space-y-3">
+        <div className="md:col-span-7 flex min-w-0 flex-col justify-center gap-4 p-5 sm:p-6">
+          <div className="space-y-2.5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 space-y-1">
                 <h2
                   id="latest-worksheet-heading"
                   className="font-heading text-lg sm:text-xl font-semibold tracking-tight wrap-anywhere text-foreground"
                 >
-                  {latest.activityText}
+                  {displayActivityText}
                 </h2>
                 <p className="text-xs sm:text-sm text-muted-foreground tabular-nums">
                   {formattedDate}
-                  {trendSummary ? (
-                    <>
-                      {" · "}
-                      {trendSummary.label}
-                      {trendSummary.deltaText ? ` (${trendSummary.deltaText})` : ""}
-                    </>
-                  ) : null}
+                  {trendSummary ? ` · ${trendSummary.label}` : ""}
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -276,48 +278,12 @@ export function LatestSubmissionCard({
             {latest.scores.composite != null && (
               <BandPositionBar
                 score={latest.scores.composite}
+                band={compositeBand}
                 height="sm"
-                showThresholds={true}
+                showThresholds={false}
                 ariaLabel={`Overall score: ${Math.round(latest.scores.composite)}%`}
                 ariaValueText={`${Math.round(latest.scores.composite)}% overall`}
               />
-            )}
-          </div>
-
-          <div className="rounded-xl border border-brand-200/70 dark:border-brand-800/60 bg-brand-50/60 dark:bg-brand-950/30 p-4 space-y-2.5">
-            <div className="space-y-1 text-sm leading-relaxed">
-              <p className="font-semibold text-primary">
-                {practiceFocus
-                  ? `Try together · ${practiceFocus.meta.label}`
-                  : "Try together"}
-              </p>
-              <p className="text-foreground max-w-prose">
-                {practiceFocus?.meta.homeTip ??
-                  "Pick one word from this worksheet and trace it together."}
-              </p>
-            </div>
-            {(showPracticeLink || onOpenCursiveGuide) && (
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                {showPracticeLink && (
-                  <button
-                    type="button"
-                    onClick={navigateToTakeHome}
-                    className="font-medium text-primary hover:underline cursor-pointer inline-flex items-center gap-1 min-h-10 sm:min-h-9 rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation"
-                  >
-                    <span>Practice worksheets &rarr;</span>
-                  </button>
-                )}
-                {onOpenCursiveGuide && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenCursiveGuide()}
-                    className="font-medium text-muted-foreground hover:text-foreground cursor-pointer inline-flex items-center gap-1 min-h-10 sm:min-h-9 rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation"
-                  >
-                    <PenTool className="size-3 text-muted-foreground" aria-hidden="true" />
-                    <span>Cursive guide</span>
-                  </button>
-                )}
-              </div>
             )}
           </div>
 

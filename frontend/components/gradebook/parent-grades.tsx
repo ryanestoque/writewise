@@ -35,7 +35,7 @@ function formatCourseworkStatus(status: GradebookCell["coursework_status"]): str
 
 function formatCellPoints(cell: GradebookCell): string {
   if (cell.coursework_status === "Excused") return "Excused";
-  if (cell.points_possible === null) return "Feedback only";
+  if (cell.points_possible === null) return "Not a graded activity";
   const possible = formatPointsValue(cell.points_possible);
   if (cell.final_points !== null) {
     return `${formatPointsValue(cell.final_points)} / ${possible} pts`;

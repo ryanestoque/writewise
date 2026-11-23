@@ -17,19 +17,23 @@ export function getParentActivityStatus(work: TakeHomeActivity, now: number) {
     submission?.status === "returned" ||
     Boolean(work.workState?.returned_at && !work.workState.active_submission_id);
   const latestRejected = work.latestSubmission?.status === "rejected";
+  const hasActiveCompleted = submission?.status === "completed";
   const rejected = submission?.status === "rejected" || latestRejected;
-  const needsPhoto = !processing && (!submission || returned || rejected);
+  const needsPhoto =
+    !processing && (!submission || returned || (rejected && !hasActiveCompleted));
   const canSend = needsPhoto && !closed;
   const dueTime = work.dueAt ? Date.parse(work.dueAt) : Number.POSITIVE_INFINITY;
   const urgency = !canSend || excused
     ? null
-    : returned || rejected
-      ? "new_photo"
-      : dueTime < now
-        ? "overdue"
-        : dueTime <= now + TWO_DAYS_MS
-          ? "due_soon"
-          : null;
+    : returned
+      ? "teacher_returned"
+      : rejected
+        ? "retake_needed"
+        : dueTime < now
+          ? "overdue"
+          : dueTime <= now + TWO_DAYS_MS
+            ? "due_soon"
+            : null;
 
   return {
     closed,
@@ -37,9 +41,10 @@ export function getParentActivityStatus(work: TakeHomeActivity, now: number) {
     returned,
     rejected,
     latestRejected,
+    hasActiveCompleted,
     excused,
     canSend,
-    // A completed counted attempt remains submitted even after its deadline, unless latest attempt was rejected
+    // A completed counted attempt remains submitted even after its deadline or a failed retake
     category: excused ? "submitted" : processing ? "processing" : needsPhoto ? (closed ? "closed" : "todo") : "submitted",
     urgency,
     dueTime,
@@ -53,7 +58,7 @@ export function compareParentActivityUrgency(
 ) {
   const first = getParentActivityStatus(a, now);
   const second = getParentActivityStatus(b, now);
-  const rank = { new_photo: 0, overdue: 1, due_soon: 2 };
+  const rank = { teacher_returned: 0, retake_needed: 1, overdue: 2, due_soon: 3 };
   const difference = (first.urgency ? rank[first.urgency] : 3) -
     (second.urgency ? rank[second.urgency] : 3);
   if (difference !== 0) return difference;

@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { ScoreBand } from "@/lib/utils/scoring";
+import { getBandFromScore, type ScoreBand } from "@/lib/utils/scoring";
 
 interface BandPositionBarProps {
   score?: number | null;
@@ -15,6 +15,7 @@ interface BandPositionBarProps {
 
 export function BandPositionBar({
   score,
+  band,
   showLabel = false,
   showThresholds = false,
   showBandLabels = true,
@@ -27,6 +28,7 @@ export function BandPositionBar({
     typeof score === "number" && !isNaN(score)
       ? Math.max(0, Math.min(100, score))
       : null;
+  const activeBand = band ?? getBandFromScore(numericScore);
 
   return (
     <div className={cn("w-full space-y-1", className)}>
@@ -81,12 +83,48 @@ export function BandPositionBar({
       {showBandLabels && (
         <div
           aria-hidden="true"
-          className="grid grid-cols-4 gap-2 text-[11px] leading-tight font-medium text-muted-foreground select-none pt-1"
+          className="grid grid-cols-4 gap-2 text-xs leading-tight select-none pt-1"
         >
-          <span className="text-left sm:text-center text-band-1-text">Needs Improvement</span>
-          <span className="text-center text-band-2-text">Developing</span>
-          <span className="text-center text-band-3-text">Satisfactory</span>
-          <span className="text-right sm:text-center text-band-4-text">Excellent</span>
+          <span
+            className={cn(
+              "text-left sm:text-center",
+              activeBand === "needs_improvement"
+                ? "font-semibold text-band-1-text"
+                : "font-medium text-muted-foreground/80"
+            )}
+          >
+            Needs Improvement
+          </span>
+          <span
+            className={cn(
+              "text-center",
+              activeBand === "developing"
+                ? "font-semibold text-band-2-text"
+                : "font-medium text-muted-foreground/80"
+            )}
+          >
+            Developing
+          </span>
+          <span
+            className={cn(
+              "text-center",
+              activeBand === "satisfactory"
+                ? "font-semibold text-band-3-text"
+                : "font-medium text-muted-foreground/80"
+            )}
+          >
+            Satisfactory
+          </span>
+          <span
+            className={cn(
+              "text-right sm:text-center",
+              activeBand === "excellent"
+                ? "font-semibold text-band-4-text"
+                : "font-medium text-muted-foreground/80"
+            )}
+          >
+            Excellent
+          </span>
         </div>
       )}
 

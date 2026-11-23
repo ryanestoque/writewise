@@ -16,6 +16,7 @@ import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import { BandBadge } from "@/components/shared/band-badge";
 import { QueryRecovery } from "@/components/shared/query-recovery";
 import { WorksheetPrompt } from "@/components/activities/worksheet-prompt";
+import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -42,7 +43,6 @@ import {
   Clock3,
   Eye,
   AlertTriangle,
-  RefreshCw,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -70,11 +70,9 @@ interface TakeHomeActivitiesProps {
   expanded?: boolean;
   onToggleExpanded?: () => void;
   showExpandButton?: boolean;
-  showScoreDetails?: boolean;
-  onViewScoredHistory?: () => void;
+  onViewScoredHistory?: (work: { activityId: string; submissionId: string | null }) => void;
   gridClassName?: string;
   practiceFocusKey?: CriterionKey | null;
-  onOpenCursiveGuide?: (initialLetter?: string) => void;
 }
 
 export function TakeHomeActivities({
@@ -89,7 +87,7 @@ export function TakeHomeActivities({
   practiceFocusKey,
 }: TakeHomeActivitiesProps) {
   const [internalExpanded, setInternalExpanded] = useState(false);
-  const [showPastSheets, setShowPastSheets] = useState(false);
+  const [pastSheetsToggled, setPastSheetsToggled] = useState<boolean | null>(null);
   const [photoPreview, setPhotoPreview] = useState<{
     activityId: string;
     submissionId?: string;
@@ -222,6 +220,8 @@ export function TakeHomeActivities({
     showExpandButton && toDoActivities.length > 3 && !isExpanded
       ? toDoActivities.slice(0, 3)
       : toDoActivities;
+  const isPastSheetsOpen =
+    pastSheetsToggled ?? (toDoActivities.length === 0 && awaitingReviewActivities.length === 0);
   const focusMeta = practiceFocusKey ? PARENT_CRITERIA_METADATA[practiceFocusKey] : null;
 
   return (
@@ -254,7 +254,7 @@ export function TakeHomeActivities({
             </p>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-sm mx-auto">
               {closedWithoutPhotoCount > 0
-                ? `${closedWithoutPhotoCount} ${closedWithoutPhotoCount === 1 ? "worksheet is" : "worksheets are"} closed. Ask your teacher for late submission.`
+                ? `${closedWithoutPhotoCount} ${closedWithoutPhotoCount === 1 ? "worksheet is" : "worksheets are"} closed. Contact your teacher directly to ask about late submission.`
                 : awaitingReviewActivities.length > 0
                   ? "Nothing to send. Submitted worksheets are waiting for review below."
                   : "All assigned practice worksheets have been turned in."}
@@ -332,6 +332,7 @@ export function TakeHomeActivities({
                 key={activity.id}
                 work={activity}
                 childId={childId}
+                onReplacePhoto={() => onUploadClick(activity.id)}
                 onPreviewPhoto={(preview) =>
                   setPhotoPreview({ activityId: activity.id, ...preview })
                 }
@@ -347,13 +348,13 @@ export function TakeHomeActivities({
         </section>
       )}
 
-      {/* Dedicated Section: Past Worksheets */}
+      {/* Dedicated Section: Completed & Closed Practice */}
       {pastSheets.length > 0 && (
         <section aria-labelledby="past-worksheets-heading" className="space-y-3 pt-4 border-t border-border/60">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-baseline gap-2">
               <h3 id="past-worksheets-heading" className="font-heading text-sm sm:text-base font-semibold text-foreground">
-                Past worksheets
+                Completed &amp; closed practice
               </h3>
               <span className="text-xs text-muted-foreground font-sans tabular-nums">
                 ({pastSheets.length})
@@ -363,12 +364,12 @@ export function TakeHomeActivities({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => setShowPastSheets((prev) => !prev)}
-              aria-expanded={showPastSheets}
+              onClick={() => setPastSheetsToggled(!(isPastSheetsOpen))}
+              aria-expanded={isPastSheetsOpen}
               aria-controls="past-sheets-list"
               className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium text-primary hover:text-primary cursor-pointer gap-1.5"
             >
-              {showPastSheets ? (
+              {isPastSheetsOpen ? (
                 <>
                   <span>Hide</span>
                   <ChevronUp className="size-3.5" aria-hidden="true" />
@@ -383,19 +384,16 @@ export function TakeHomeActivities({
           </div>
 
           {closedWithoutPhotoCount > 0 && (
-            <p
-              role="status"
-              className="rounded-lg border border-band-1/30 bg-band-1/10 px-3 py-2 text-xs text-band-1-text font-medium"
-            >
+            <p className="rounded-lg border border-band-1/30 bg-band-1/10 px-3 py-2 text-xs text-band-1-text font-medium">
               {closedWithoutPhotoCount}{" "}
               {closedWithoutPhotoCount === 1
                 ? "missed worksheet is closed without a photo."
                 : "missed worksheets are closed without a photo."}{" "}
-              Ask your teacher for late submission.
+              Contact your teacher directly to ask about late submission.
             </p>
           )}
 
-          {showPastSheets && (
+          {isPastSheetsOpen && (
             <div
               id="past-sheets-list"
               className="rounded-xl border border-border bg-surface dark:bg-card divide-y divide-border/70"
@@ -406,6 +404,7 @@ export function TakeHomeActivities({
                   work={activity}
                   childId={childId}
                   onViewScoredHistory={onViewScoredHistory}
+                  onReplacePhoto={() => onUploadClick(activity.id)}
                   onPreviewPhoto={(preview) =>
                     setPhotoPreview({ activityId: activity.id, ...preview })
                   }
@@ -462,12 +461,14 @@ function CompactWorksheetRow({
   work,
   childId,
   onViewScoredHistory,
+  onReplacePhoto,
   onPreviewPhoto,
   hasUnreadComments,
 }: {
   work: TakeHomeActivity;
   childId: string | null;
-  onViewScoredHistory?: () => void;
+  onViewScoredHistory?: (work: { activityId: string; submissionId: string | null }) => void;
+  onReplacePhoto?: () => void;
   onPreviewPhoto: (preview: PhotoPreviewTarget) => void;
   hasUnreadComments?: boolean;
 }) {
@@ -480,6 +481,11 @@ function CompactWorksheetRow({
     isCompleted &&
     work.workState?.work_status === "Released" &&
     submission?.compositeScore != null;
+  const hasRejectedLatestRetake =
+    isCompleted &&
+    work.latestSubmission?.status === "rejected" &&
+    work.latestSubmission.submissionId !== submission?.submissionId &&
+    !isProcessing;
   const activeAttempt = submission?.submissionId
     ? work.attempts.find((attempt) => attempt.id === submission.submissionId)
     : undefined;
@@ -547,10 +553,20 @@ function CompactWorksheetRow({
           {category === "closed" && !excused && (
             <>
               <span aria-hidden="true" className="text-muted-foreground/40">·</span>
-              <span>Ask your teacher for late submission</span>
+              <span>
+                {work.attempts.length > 0 || submission?.submissionId
+                  ? "Use Comments to ask your teacher for late submission"
+                  : "Contact your teacher directly for late submission"}
+              </span>
             </>
           )}
         </p>
+
+        {hasRejectedLatestRetake && (
+          <p className="text-xs text-warning-foreground font-medium">
+            Latest retake wasn&apos;t clear enough — your earlier photo is kept on file.
+          </p>
+        )}
       </div>
 
       <div className="flex items-center gap-2 flex-wrap sm:shrink-0">
@@ -587,12 +603,31 @@ function CompactWorksheetRow({
           </Button>
         )}
 
+        {!isScored && !closed && !isProcessing && onReplacePhoto && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onReplacePhoto}
+            className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50 px-3"
+            aria-label={`Replace photo for ${work.title}`}
+          >
+            <Camera className="size-3.5 shrink-0" aria-hidden="true" />
+            <span>Replace photo</span>
+          </Button>
+        )}
+
         {isScored && onViewScoredHistory && (
           <Button
             type="button"
             variant="secondary"
             size="sm"
-            onClick={onViewScoredHistory}
+            onClick={() =>
+              onViewScoredHistory({
+                activityId: work.id,
+                submissionId: submission?.submissionId ?? null,
+              })
+            }
             className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium cursor-pointer px-3"
           >
             View feedback
@@ -704,24 +739,6 @@ function ActivityCard({
       )}
     >
       <div>
-        {/* Attention status indicator when action is requested */}
-        {(isReturned || isRejected || latestRejected) && (
-          <div className="flex items-center justify-between gap-2 flex-wrap mb-2.5">
-            {isReturned && (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
-                <AlertTriangle className="size-3.5" aria-hidden="true" />
-                <span>New photo requested</span>
-              </span>
-            )}
-            {(isRejected || latestRejected) && (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-warning-foreground">
-                <AlertTriangle className="size-3.5" aria-hidden="true" />
-                <span>Clearer photo needed</span>
-              </span>
-            )}
-          </div>
-        )}
-
         {/* Title */}
         <h3 className="mb-1 font-heading text-base font-semibold leading-snug text-foreground" title={work.title}>
           {work.title}
@@ -759,7 +776,16 @@ function ActivityCard({
         </p>
 
         {/* Cursive Practice Desk: 3-line Guidelines Specimen */}
-        <WorksheetPrompt text={targetText} />
+        <WorksheetPrompt
+          text={targetText}
+          footer={
+            targetText.trim() ? (
+              <p className="font-sans text-xs text-muted-foreground leading-snug break-words py-0.5">
+                {targetText.trim()}
+              </p>
+            ) : undefined
+          }
+        />
 
         {work.instructions && (
           <p className="mt-2.5 whitespace-pre-wrap text-xs text-muted-foreground leading-relaxed">
@@ -767,16 +793,16 @@ function ActivityCard({
           </p>
         )}
 
-        {/* Status Notices */}
+        {/* Consolidated Status Notice (single clear callout per card) */}
         {rejectionSummary && !isProcessing && (
-          <div
-            role="status"
-            className="mt-3 rounded-lg bg-warning/15 border border-warning/30 px-2.5 py-2 text-xs text-warning-foreground space-y-0.5"
-          >
-            <p className="font-semibold">
-              {hasKeptCompletedPhoto
-                ? `Latest photo not accepted: ${rejectionSummary.label}`
-                : rejectionSummary.label}
+          <div className="mt-3 rounded-lg bg-warning/15 border border-warning/30 px-3 py-2 text-xs text-warning-foreground space-y-1">
+            <p className="inline-flex items-center gap-1.5 font-semibold">
+              <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
+              <span>
+                {hasKeptCompletedPhoto
+                  ? `Clearer photo needed · ${rejectionSummary.label}`
+                  : `Clearer photo needed · ${rejectionSummary.label}`}
+              </span>
             </p>
             <p className="text-foreground/85 leading-relaxed">
               {rejectionSummary.detail.endsWith(".")
@@ -787,35 +813,34 @@ function ActivityCard({
           </div>
         )}
 
-        {work.latestSubmission?.submissionId !== submission?.submissionId &&
-          work.latestSubmission?.status === "processing" && (
-            <p role="status" className="mt-3 text-xs text-muted-foreground">
-              Checking your new photo…
+        {isReturned && !excused && !rejectionSummary && !isProcessing && (
+          <div className="mt-3 space-y-1 rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 text-xs">
+            <p className="inline-flex items-center gap-1.5 font-semibold text-primary">
+              <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
+              <span>New photo requested</span>
             </p>
-          )}
-
-        {isReturned && !excused && (work.workState?.return_reason || work.workState?.return_note) && (
-          <div className="mt-3 space-y-0.5 rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-2 text-xs">
             {work.workState?.return_reason && (
               <p className="font-medium text-foreground">
                 {humanizeReason(work.workState.return_reason)}
               </p>
             )}
             {work.workState?.return_note && (
-              <p className="text-muted-foreground">{work.workState.return_note}</p>
+              <p className="text-muted-foreground leading-relaxed">{work.workState.return_note}</p>
             )}
           </div>
         )}
 
         {closed && !excused && category === "closed" && (
-          <p role="status" className="mt-3 text-xs text-muted-foreground">
-            Deadline passed. Ask your teacher for late submission.
+          <p className="mt-3 text-xs text-muted-foreground">
+            {work.attempts.length > 0 || submission?.submissionId
+              ? "Deadline passed. Use Comments to ask your teacher for late submission."
+              : "Deadline passed. Contact your teacher directly for late submission."}
           </p>
         )}
       </div>
 
       {/* Action Footer */}
-      <div className="pt-3 border-t border-border/60 flex flex-wrap items-center justify-between gap-3">
+      <div className="pt-3 border-t border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         {/* Left Side: Status indicator */}
         <div className="flex items-center gap-2 min-w-0">
           {isLoading ? (
@@ -826,7 +851,9 @@ function ActivityCard({
           ) : isProcessing ? (
             <div role="status" aria-live="polite" className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden="true" />
-              <span>Checking handwriting…</span>
+              <span>
+                {isCompleted ? "Checking new photo…" : "Checking handwriting…"}
+              </span>
             </div>
           ) : hasKeptCompletedPhoto ? (
             <div className="flex items-center gap-1.5 min-w-0">
@@ -846,25 +873,11 @@ function ActivityCard({
                 />
               )}
             </div>
-          ) : isCompleted ? (
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-brand-700 dark:text-brand-300">
-                <CheckCircle2 className="size-4 shrink-0 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                <span>{work.workState?.work_status === "Released" ? "Scored" : "Turned in"}</span>
-              </span>
-              {submission?.compositeScore != null && (
-                <BandBadge
-                  score={submission.compositeScore}
-                  band={submission.compositeBand}
-                  size="sm"
-                />
-              )}
-            </div>
           ) : null}
         </div>
 
         {/* Right Side: Primary and Secondary Action Buttons */}
-        <div className="flex items-center gap-2 flex-wrap ml-auto">
+        <div className="flex items-center gap-2 flex-wrap sm:ml-auto">
           {/* Comments Button */}
           {childId && (work.attempts.length || submission?.submissionId) ? (
             <WorkCommentsButton
@@ -903,33 +916,7 @@ function ActivityCard({
                 <span>Send new photo</span>
               </Button>
             </>
-          ) : isCompleted ? (
-            submission?.imagePath ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={openPreview}
-                className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50 px-3"
-                aria-label={`View uploaded photo for ${work.title}`}
-              >
-                <Eye className="size-3.5 shrink-0" aria-hidden="true" />
-                <span>View photo</span>
-              </Button>
-            ) : !closed ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer shrink-0 border-border/80 hover:bg-muted/50 px-3"
-                onClick={onUploadClick}
-                disabled={isProcessing}
-                aria-label={`Send new photo for ${work.title}`}
-              >
-                <Camera className="size-3.5 shrink-0" aria-hidden="true" />
-                <span>Send new photo</span>
-              </Button>
-            ) : null
-          ) : category === "closed" ? null : (
+          ) : (
             <Button
               variant="default"
               size="sm"
@@ -973,35 +960,28 @@ function PhotoPreviewDialog({
   canSendNewPhoto?: boolean;
   onSendNewPhoto?: () => void;
 }) {
-  const { data: imageUrl, isLoading, isError, isFetching, refetch } = useSubmissionImageUrl(imagePath);
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const { data: imageUrl, isLoading, isError, refetch } = useSubmissionImageUrl(imagePath);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const deleteMutation = useDeleteSubmission();
-  const hasLoadError = isError || !imageUrl || failedUrl === imageUrl;
-
-  const handleRetry = () => {
-    setFailedUrl(null);
-    void refetch();
-  };
 
   const handleDelete = async () => {
     if (!submissionId) return;
     try {
       await deleteMutation.mutateAsync(submissionId);
-      toast.success("Upload deleted. You can send a new photo anytime.");
+      toast.success("Photo removed. You can send a new photo anytime.");
       setIsDeleteDialogOpen(false);
       onOpenChange(false);
     } catch {
-      toast.error("We couldn't delete the upload. Please check your connection and try again.");
+      toast.error("We couldn't remove the photo. Please check your connection and try again.");
     }
   };
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90dvh] p-0 overflow-hidden flex flex-col">
+        <DialogContent className="w-[calc(100%-1.5rem)] sm:max-w-3xl max-h-[90dvh] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
           <DialogHeader className="p-4 sm:p-5 border-b border-border/70 pr-12 space-y-1">
-            <DialogTitle className="text-base sm:text-lg font-semibold text-foreground break-words">
+            <DialogTitle className="font-heading text-base sm:text-lg font-semibold text-foreground break-words">
               {title}
             </DialogTitle>
             {(childName || statusLabel) && (
@@ -1014,45 +994,23 @@ function PhotoPreviewDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-auto p-4 sm:p-6 flex items-center justify-center bg-muted/20 min-h-[300px]">
-            {isLoading ? (
-              <div role="status" aria-live="polite" className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="size-6 animate-spin text-primary" aria-hidden="true" />
-                <span>Loading uploaded worksheet...</span>
-              </div>
-            ) : hasLoadError ? (
-              <div role="alert" className="text-center p-6 space-y-3 max-w-sm">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-foreground">Could not load worksheet photo</p>
-                  <p className="text-xs text-muted-foreground">Please check your connection and try again.</p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRetry}
-                  disabled={isFetching}
-                  className="h-11 sm:h-9 min-h-11 sm:min-h-9 gap-1.5 text-xs sm:text-sm font-medium cursor-pointer"
-                >
-                  <RefreshCw className={cn("size-3.5", isFetching && "animate-spin")} aria-hidden="true" />
-                  <span>{isFetching ? "Retrying..." : "Try again"}</span>
-                </Button>
-              </div>
-            ) : (
-              <div className="relative rounded-lg overflow-hidden border border-border shadow-warm max-h-[65dvh]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={imageUrl}
-                  alt={`Uploaded handwriting worksheet for ${title}`}
-                  loading="lazy"
-                  onError={() => setFailedUrl(imageUrl)}
-                  className="w-full h-auto object-contain max-h-[65dvh]"
-                />
-              </div>
-            )}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+            <WorksheetImageInspector
+              imageUrl={imageUrl}
+              altText={`Uploaded handwriting worksheet for ${title}`}
+              isLoading={isLoading}
+              isError={isError}
+              onRetry={() => {
+                void refetch();
+              }}
+              headerLabel="Uploaded Worksheet Photo"
+              imageToolsDisclosure={true}
+              flatFrame={true}
+              aspectRatioClass="h-[260px] sm:h-[360px] lg:min-h-[420px] lg:max-h-[min(600px,calc(100dvh-18rem))]"
+            />
           </div>
 
-          <div className="p-3 sm:p-4 border-t border-border flex flex-wrap items-center justify-between gap-2 bg-background">
+          <div className="p-3 sm:p-4 border-t border-border flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 bg-background">
             <div className="flex items-center gap-2 flex-wrap">
               {canDelete && submissionId && (
                 <Button

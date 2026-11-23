@@ -50,7 +50,6 @@ type ParentProgressTab = "overview" | "to-write" | "progress" | "grades";
 
 export function ProgressPageContent() {
   const searchParams = useSearchParams();
-  const [activitiesExpanded, setActivitiesExpanded] = useState(false);
   const [selectedTab, setSelectedTab] = useState<ParentProgressTab | null>(null);
   const [inspectedGradeWork, setInspectedGradeWork] = useState<{
     activityId: string;
@@ -298,7 +297,7 @@ export function ProgressPageContent() {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          {pendingActivitiesCount > 0 && !urgentActivity && activeTab !== "to-write" && (
+          {pendingActivitiesCount > 0 && !urgentActivity && (
             <Button
               type="button"
               size="sm"
@@ -344,9 +343,11 @@ export function ProgressPageContent() {
           aria-label="Practice worksheet needing attention"
           className={cn(
             "rounded-xl px-4 py-3 text-foreground border transition-colors",
-            urgentStatus.urgency === "new_photo"
+            urgentStatus.urgency === "teacher_returned"
               ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
-              : "border-band-2/40 bg-band-2/10 dark:bg-band-2/15"
+              : urgentStatus.urgency === "retake_needed"
+                ? "border-warning/40 bg-warning/10 dark:bg-warning/15"
+                : "border-band-2/40 bg-band-2/10 dark:bg-band-2/15"
           )}
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -355,16 +356,20 @@ export function ProgressPageContent() {
                 <span
                   className={cn(
                     "mr-1.5",
-                    urgentStatus.urgency === "new_photo"
+                    urgentStatus.urgency === "teacher_returned"
                       ? "text-primary"
-                      : "text-band-2-text"
+                      : urgentStatus.urgency === "retake_needed"
+                        ? "text-warning-foreground"
+                        : "text-band-2-text"
                   )}
                 >
-                  {urgentStatus.urgency === "new_photo"
+                  {urgentStatus.urgency === "teacher_returned"
                     ? "New photo requested:"
-                    : urgentStatus.urgency === "overdue"
-                      ? "Past due:"
-                      : "Due soon:"}
+                    : urgentStatus.urgency === "retake_needed"
+                      ? "Clearer photo needed:"
+                      : urgentStatus.urgency === "overdue"
+                        ? "Past due:"
+                        : "Due soon:"}
                 </span>
                 {urgentActivity.title}
               </p>
@@ -391,11 +396,15 @@ export function ProgressPageContent() {
               size="sm"
               onClick={() => handleUploadActivity(urgentActivity.id)}
               aria-haspopup="dialog"
-              aria-label={`Send ${urgentStatus.urgency === "new_photo" ? "new " : ""}photo for ${urgentActivity.title}`}
+              aria-label={`Send ${urgentStatus.urgency === "teacher_returned" || urgentStatus.urgency === "retake_needed" ? "new " : ""}photo for ${urgentActivity.title}`}
               className="h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] w-full sm:w-auto shrink-0 font-medium text-xs sm:text-sm gap-1.5 cursor-pointer touch-manipulation"
             >
               <Camera className="size-4" aria-hidden="true" />
-              <span>{urgentStatus.urgency === "new_photo" ? "Send new photo" : "Send photo"}</span>
+              <span>
+                {urgentStatus.urgency === "teacher_returned" || urgentStatus.urgency === "retake_needed"
+                  ? "Send new photo"
+                  : "Send photo"}
+              </span>
             </Button>
           </div>
         </div>
@@ -549,14 +558,10 @@ export function ProgressPageContent() {
               childId={selectedChildId}
               childName={selectedChild.fullName}
               onUploadClick={handleUploadActivity}
-              expanded={activitiesExpanded}
-              onToggleExpanded={() => setActivitiesExpanded((prev) => !prev)}
               showExpandButton={false}
-              showScoreDetails={showScoreDetails}
-              onViewScoredHistory={() => setSelectedTab("progress")}
+              onViewScoredHistory={(target) => setInspectedGradeWork(target)}
               gridClassName="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4"
               practiceFocusKey={practiceFocus?.key}
-              onOpenCursiveGuide={openCursiveGuide}
             />
           </section>
         </TabsContent>

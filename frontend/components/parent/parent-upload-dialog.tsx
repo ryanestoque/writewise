@@ -54,6 +54,7 @@ import {
   XIcon,
   ArrowRightIcon,
   ArrowLeftIcon,
+  ZoomInIcon,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -181,6 +182,7 @@ function ParentUploadFlow({
   const [isRotating, setIsRotating] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [showTips, setShowTips] = useState(false);
+  const [zoomOpen, setZoomOpen] = useState(false);
   const [uploadError, setUploadError] = useState<UploadError | null>(null);
   const [dropError, setDropError] = useState<string | null>(null);
   const [uploadStage, setUploadStage] = useState(0);
@@ -722,12 +724,14 @@ function ParentUploadFlow({
                     {activities.map((act) => {
                       const isSelected = selectedActivityId === act.id;
                       const status = getParentActivityStatus(act, now);
-                      const statusBadge = status.urgency === "new_photo"
+                      const statusBadge = status.urgency === "teacher_returned"
                         ? { label: "New photo requested", className: "text-primary font-semibold" }
-                        : status.urgency === "overdue"
-                          ? { label: "Past due", className: "text-band-1-text font-semibold" }
-                          : status.urgency === "due_soon"
-                            ? { label: "Due soon", className: "text-band-2-text font-semibold" }
+                        : status.urgency === "retake_needed"
+                          ? { label: "Clearer photo needed", className: "text-warning-foreground font-semibold" }
+                          : status.urgency === "overdue"
+                            ? { label: "Past due", className: "text-band-1-text font-semibold" }
+                            : status.urgency === "due_soon"
+                              ? { label: "Due soon", className: "text-band-2-text font-semibold" }
                             : status.processing
                               ? { label: "Checking photo…", className: "text-muted-foreground font-medium" }
                               : status.category === "submitted" && !status.excused
@@ -1025,9 +1029,23 @@ function ParentUploadFlow({
               <>
                 {/* Context Header: Active Child & Worksheet */}
                 <div className="p-3 rounded-xl bg-muted/40 border border-border/80 text-xs space-y-1">
-                  <p className="font-semibold text-foreground truncate">
-                    {childName} · {selectedActivity?.title ?? "Practice worksheet"}
-                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-semibold text-foreground truncate">
+                      {childName} · {selectedActivity?.title ?? "Practice worksheet"}
+                    </p>
+                    {activities && activities.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAllowActivitySwitch(true);
+                          setStep(1);
+                        }}
+                        className="inline-flex min-h-10 sm:min-h-9 items-center px-2 -my-1 text-xs text-primary font-medium hover:underline shrink-0 cursor-pointer rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        Change worksheet
+                      </button>
+                    )}
+                  </div>
                   {selectedActivity?.targetText && (
                     <p className="text-muted-foreground italic font-sans break-words leading-relaxed">
                       &ldquo;{selectedActivity.targetText}&rdquo;
@@ -1053,7 +1071,7 @@ function ParentUploadFlow({
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="truncate min-w-0">
                       <p className="text-sm font-semibold truncate text-foreground">
-                        {selectedFile.name}
+                        Worksheet photo ready
                       </p>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <p className="text-xs text-muted-foreground font-sans tabular-nums">
@@ -1100,8 +1118,11 @@ function ParentUploadFlow({
                   </div>
 
                   {previewUrl && (
-                    <div
-                      className={`relative w-full rounded-xl overflow-hidden bg-muted/40 border border-border flex items-center justify-center touch-pan-y ${isPortrait
+                    <button
+                      type="button"
+                      onClick={() => setZoomOpen(true)}
+                      aria-label="Inspect worksheet photo full size before sending"
+                      className={`group relative w-full rounded-xl overflow-hidden bg-muted/40 border border-border flex items-center justify-center touch-pan-y cursor-zoom-in focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${isPortrait
                         ? "aspect-3/4 max-h-[240px] sm:max-h-[400px]"
                         : "aspect-4/3 max-h-[220px] sm:max-h-[340px]"
                         }`}
@@ -1117,9 +1138,36 @@ function ParentUploadFlow({
                         }}
                         className="size-full object-contain pointer-events-none select-none"
                       />
-                    </div>
+                      <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-xs border border-border/80 px-2.5 py-1 text-xs font-medium text-foreground shadow-warm-sm group-hover:bg-background">
+                        <ZoomInIcon className="size-3.5 text-primary" aria-hidden="true" />
+                        <span>Tap to zoom</span>
+                      </span>
+                    </button>
                   )}
                 </div>
+
+                {previewUrl && (
+                  <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
+                    <DialogContent className="max-w-3xl max-h-[92dvh] p-0 overflow-hidden flex flex-col">
+                      <DialogHeader className="p-4 border-b border-border/70 pr-12">
+                        <DialogTitle className="text-base font-semibold text-foreground">
+                          Check photo sharpness
+                        </DialogTitle>
+                        <DialogDescription className="text-xs text-muted-foreground">
+                          Make sure 3-line rulings, cursive strokes, and all 4 corners are crisp before sending.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="flex-1 overflow-auto p-4 bg-muted/20 flex items-center justify-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={previewUrl}
+                          alt={`Full-size handwriting preview for ${childName}`}
+                          className="w-full h-auto max-h-[72dvh] object-contain rounded-lg border border-border"
+                        />
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
               </>
             )}
 
