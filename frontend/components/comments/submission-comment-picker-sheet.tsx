@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Sheet,
   SheetContent,
@@ -24,6 +25,7 @@ export function WorkCommentsButton({
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   showTrigger = true,
+  className,
 }: {
   scope: WorkCommentScope;
   activeSubmissionId: string | null;
@@ -33,6 +35,7 @@ export function WorkCommentsButton({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   showTrigger?: boolean;
+  className?: string;
 }) {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
@@ -52,7 +55,10 @@ export function WorkCommentsButton({
             <Button
               variant="outline"
               size="sm"
-              className="min-h-11 sm:min-h-9 h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50"
+              className={cn(
+                "min-h-11 sm:min-h-9 h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50",
+                className
+              )}
               aria-label={accessibleLabel}
             />
           }

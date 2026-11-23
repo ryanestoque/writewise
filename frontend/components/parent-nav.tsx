@@ -181,7 +181,7 @@ export function ParentNav({
                       className="cursor-pointer gap-2 py-2 min-h-10 sm:min-h-9 text-sm"
                     >
                       <BookOpen className="size-4 text-muted-foreground" aria-hidden="true" />
-                      <span>How scores work</span>
+                      <span>Rubrics</span>
                     </DropdownMenuItem>
                   )}
                   {onOpenCursiveGuide && (
@@ -190,7 +190,7 @@ export function ParentNav({
                       className="cursor-pointer gap-2 py-2 min-h-10 sm:min-h-9 text-sm"
                     >
                       <PenTool className="size-4 text-muted-foreground" aria-hidden="true" />
-                      <span>Cursive guide</span>
+                      <span>Cursive Guide</span>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem

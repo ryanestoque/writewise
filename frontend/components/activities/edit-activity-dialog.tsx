@@ -43,7 +43,7 @@ import {
   type Activity,
   useUpdateActivity,
 } from "@/lib/hooks/use-activities";
-import { Loader2, Edit3, Home, AlertTriangle } from "lucide-react";
+import { Loader2, Edit3, Home } from "lucide-react";
 import { toast } from "sonner";
 
 function getWordCount(text: string): number {
@@ -276,7 +276,6 @@ export function EditActivityDialog({
 
                 {wordCount > 0 && wordCount < 3 && (
                   <div className="flex items-center gap-1.5 mt-1.5 p-2 rounded-lg bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-300">
-                    <AlertTriangle className="size-3.5 shrink-0" />
                     <span>
                       Short prompt ({wordCount} {wordCount === 1 ? "word" : "words"}): At least 3 words recommended for reliable spacing and slant assessment.
                     </span>
@@ -285,7 +284,6 @@ export function EditActivityDialog({
 
                 {wordCount > 35 && (
                   <div className="flex items-center gap-1.5 mt-1.5 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-300">
-                    <AlertTriangle className="size-3.5 shrink-0" />
                     <span>
                       Long prompt ({wordCount} words) may exceed standard single-page 3-line ruled worksheets.
                     </span>

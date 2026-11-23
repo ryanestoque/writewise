@@ -42,7 +42,6 @@ import {
   Trash2,
   Clock3,
   Eye,
-  AlertTriangle,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -83,7 +82,7 @@ export function TakeHomeActivities({
   onToggleExpanded,
   showExpandButton = true,
   onViewScoredHistory,
-  gridClassName = "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4",
+  gridClassName = "grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4",
   practiceFocusKey,
 }: TakeHomeActivitiesProps) {
   const [internalExpanded, setInternalExpanded] = useState(false);
@@ -796,8 +795,7 @@ function ActivityCard({
         {/* Consolidated Status Notice (single clear callout per card) */}
         {rejectionSummary && !isProcessing && (
           <div className="mt-3 rounded-lg bg-warning/15 border border-warning/30 px-3 py-2 text-xs text-warning-foreground space-y-1">
-            <p className="inline-flex items-center gap-1.5 font-semibold">
-              <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
+            <p className="font-semibold">
               <span>
                 {hasKeptCompletedPhoto
                   ? `Clearer photo needed · ${rejectionSummary.label}`
@@ -815,8 +813,7 @@ function ActivityCard({
 
         {isReturned && !excused && !rejectionSummary && !isProcessing && (
           <div className="mt-3 space-y-1 rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 text-xs">
-            <p className="inline-flex items-center gap-1.5 font-semibold text-primary">
-              <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
+            <p className="font-semibold text-primary">
               <span>New photo requested</span>
             </p>
             {work.workState?.return_reason && (
@@ -840,96 +837,86 @@ function ActivityCard({
       </div>
 
       {/* Action Footer */}
-      <div className="pt-3 border-t border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-        {/* Left Side: Status indicator */}
-        <div className="flex items-center gap-2 min-w-0">
-          {isLoading ? (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-              <span>Checking status...</span>
-            </div>
-          ) : isProcessing ? (
-            <div role="status" aria-live="polite" className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden="true" />
-              <span>
-                {isCompleted ? "Checking new photo…" : "Checking handwriting…"}
-              </span>
-            </div>
-          ) : hasKeptCompletedPhoto ? (
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-muted-foreground">
-                <Clock3 className="size-3.5 shrink-0" aria-hidden="true" />
-                <span>
-                  {work.workState?.work_status === "Released"
-                    ? "Scored photo kept"
-                    : "Previous photo kept"}
-                </span>
-              </span>
-              {submission?.compositeScore != null && (
-                <BandBadge
-                  score={submission.compositeScore}
-                  band={submission.compositeBand}
-                  size="sm"
+      <div className="pt-3 border-t border-border/60 space-y-2">
+        {/* Status / processing message if active */}
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2 py-1 text-xs text-muted-foreground w-full">
+            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+            <span>Checking status...</span>
+          </div>
+        ) : isProcessing ? (
+          <div role="status" aria-live="polite" className="flex items-center justify-center gap-2 py-1 text-xs text-muted-foreground w-full">
+            <Loader2 className="size-3.5 shrink-0 animate-spin text-primary" aria-hidden="true" />
+            <span className="font-medium text-foreground">
+              {isCompleted ? "Checking new photo…" : "Checking handwriting…"}
+            </span>
+          </div>
+        ) : (
+          <>
+            {/* Kept photo status row (secondary state if an earlier scored photo is preserved) */}
+            {hasKeptCompletedPhoto && (
+              <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Clock3 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  <span className="font-medium truncate text-foreground/80">
+                    {work.workState?.work_status === "Released"
+                      ? "Scored photo kept"
+                      : "Previous photo kept"}
+                  </span>
+                  {submission?.compositeScore != null && (
+                    <BandBadge
+                      score={submission.compositeScore}
+                      band={submission.compositeBand}
+                      size="sm"
+                    />
+                  )}
+                </div>
+                {submission?.imagePath && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={openPreview}
+                    className="h-7 px-2 text-xs font-medium text-primary hover:text-primary gap-1 shrink-0 cursor-pointer"
+                    aria-label={`View kept photo for ${work.title}`}
+                  >
+                    <Eye className="size-3" aria-hidden="true" />
+                    <span>View photo</span>
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {/* Main Action Bar: Cohesive single row with clear primary/secondary balance */}
+            <div className="flex items-center gap-2 w-full">
+              {/* Secondary utility: Comments with teacher */}
+              {childId && (work.attempts.length || submission?.submissionId) ? (
+                <WorkCommentsButton
+                  scope={{ activityId, studentId: childId }}
+                  activeSubmissionId={work.workState?.active_submission_id ?? null}
+                  activityTitle={work.title}
+                  hasUnread={hasUnreadComments}
+                  className="shrink-0 h-10 sm:h-9 min-h-10 sm:min-h-9 px-3 text-xs sm:text-sm font-medium gap-1.5"
                 />
-              )}
-            </div>
-          ) : null}
-        </div>
+              ) : null}
 
-        {/* Right Side: Primary and Secondary Action Buttons */}
-        <div className="flex items-center gap-2 flex-wrap sm:ml-auto">
-          {/* Comments Button */}
-          {childId && (work.attempts.length || submission?.submissionId) ? (
-            <WorkCommentsButton
-              scope={{ activityId, studentId: childId }}
-              activeSubmissionId={work.workState?.active_submission_id ?? null}
-              activityTitle={work.title}
-              hasUnread={hasUnreadComments}
-            />
-          ) : null}
-
-          {/* Card-specific action controls */}
-          {isRejected || isReturned ? (
-            <>
-              {hasKeptCompletedPhoto && submission?.imagePath && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={openPreview}
-                  className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50 px-3"
-                  aria-label={`View kept photo for ${work.title}`}
-                >
-                  <Eye className="size-3.5 shrink-0" aria-hidden="true" />
-                  <span>View photo</span>
-                </Button>
-              )}
+              {/* Primary CTA: Clear call to action filling remaining width */}
               <Button
                 variant="default"
                 size="sm"
-                className="h-11 sm:h-9 min-h-11 sm:min-h-9 gap-1.5 font-semibold cursor-pointer text-xs sm:text-sm px-4"
+                className="flex-1 min-w-0 h-10 sm:h-9 min-h-10 sm:min-h-9 gap-1.5 font-semibold cursor-pointer text-xs sm:text-sm px-3.5 shadow-warm-sm"
                 onClick={onUploadClick}
                 disabled={closed}
-                aria-label={`Send new photo for ${work.title}`}
+                aria-label={`${isRejected || isReturned ? "Send new photo" : "Send photo"} for ${work.title}`}
               >
-                <Camera className="size-4" aria-hidden="true" />
-                <span>Send new photo</span>
+                <Camera className="size-4 shrink-0" aria-hidden="true" />
+                <span className="truncate">
+                  {isRejected || isReturned ? "Send new photo" : "Send photo"}
+                </span>
               </Button>
-            </>
-          ) : (
-            <Button
-              variant="default"
-              size="sm"
-              className="h-11 sm:h-9 min-h-11 sm:min-h-9 gap-1.5 font-semibold cursor-pointer text-xs sm:text-sm px-4"
-              onClick={onUploadClick}
-              disabled={closed}
-              aria-label={`Send photo for ${work.title}`}
-            >
-              <Camera className="size-4" aria-hidden="true" />
-              <span>Send photo</span>
-            </Button>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

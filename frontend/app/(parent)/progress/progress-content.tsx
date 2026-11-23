@@ -560,7 +560,7 @@ export function ProgressPageContent() {
               onUploadClick={handleUploadActivity}
               showExpandButton={false}
               onViewScoredHistory={(target) => setInspectedGradeWork(target)}
-              gridClassName="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4"
+              gridClassName="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4"
               practiceFocusKey={practiceFocus?.key}
             />
           </section>
