@@ -12,8 +12,6 @@ import { QueryRecovery } from "@/components/shared/query-recovery";
 import { WorksheetViewDialog } from "./worksheet-view-dialog";
 import {
   PARENT_CRITERIA_LIST,
-  PARENT_BAND_EXPLANATIONS,
-  DIAGNOSTIC_NOTES,
   getBandFromScore,
   getBandMeta,
   computeStrengthAndFocus,
@@ -21,7 +19,6 @@ import {
 import {
   formatScoreDifference,
   getScoreProgressLabel,
-  getScoreProgressSupportNote,
 } from "@/lib/utils/score-progress";
 import type { CriterionFilter } from "@/components/shared/diagnostic-overlay";
 import {
@@ -79,23 +76,12 @@ export function LatestSubmissionCard({
 
   const firstName = childName.trim().split(/\s+/)[0] || childName;
 
-  const { topStrength, practiceFocus, isBalanced } = useMemo(() => {
+  const { topStrength, practiceFocus } = useMemo(() => {
     return computeStrengthAndFocus(latest?.scores, latest?.bands);
   }, [latest]);
 
   const trendSummary = useMemo(() => {
-    if (!history || history.length === 0) return null;
-    if (history.length === 1) {
-      const onlyDate = new Date(history[0].submissionDate).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-      return {
-        label: `First worksheet (${onlyDate})`,
-        deltaText: null,
-        supportNote: null,
-      };
-    }
+    if (!history || history.length < 2) return null;
     const oldest = history[0];
     const newest = history[history.length - 1];
     const startDate = new Date(oldest.submissionDate).toLocaleDateString("en-US", {
@@ -110,7 +96,6 @@ export function LatestSubmissionCard({
     return {
       label: `${getScoreProgressLabel(diff, "first")} (${startDate})`,
       deltaText: formatScoreDifference(diff),
-      supportNote: getScoreProgressSupportNote(diff),
     };
   }, [history]);
 
@@ -141,7 +126,7 @@ export function LatestSubmissionCard({
         aria-live="polite"
         className="rounded-xl border border-border bg-card shadow-warm p-8 flex flex-col items-center justify-center min-h-[220px] gap-3"
       >
-        <Loader2 className="size-6 animate-spin motion-reduce:animate-none text-brand-600 dark:text-brand-400" aria-hidden="true" />
+        <Loader2 className="size-6 animate-spin text-brand-600 dark:text-brand-400" aria-hidden="true" />
         <span className="text-sm text-muted-foreground">Loading {firstName}&apos;s latest worksheet overview...</span>
       </div>
     );
@@ -171,17 +156,17 @@ export function LatestSubmissionCard({
           </div>
         </div>
         <div className="space-y-1">
-          <h3 className="font-heading text-base font-semibold text-foreground">
+          <h2 className="font-heading text-base font-semibold text-foreground">
             {hasPendingSubmission
-              ? "Worksheet sent · Feedback pending"
-              : "No worksheet feedback yet"}
-          </h3>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+              ? "Worksheet received · pending review"
+              : "No feedback yet"}
+          </h2>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
             {hasPendingSubmission
-              ? `We received ${firstName}'s worksheet photo. Their handwriting feedback and home tips will appear here once their teacher shares them.`
+              ? `${firstName}'s feedback will appear here once their teacher shares it.`
               : hasNoAssignedPractice
-                ? "Your child's teacher hasn't assigned a practice worksheet yet. Use the cursive guide to practice together at home."
-                : `${childName}'s worksheet photo and handwriting feedback will appear here when their teacher shares it.`}
+                ? "No practice assigned yet. Use the cursive guide to practice at home."
+                : `${firstName}'s latest worksheet and feedback will appear here once shared.`}
           </p>
         </div>
         {emptyAction && (
@@ -226,10 +211,44 @@ export function LatestSubmissionCard({
         aria-labelledby="latest-worksheet-heading"
         className="overflow-hidden rounded-xl border border-border bg-card shadow-warm md:grid md:grid-cols-12"
       >
-        <div className="md:col-span-7 md:col-start-6 md:row-start-1 flex min-w-0 flex-col justify-center gap-4 p-5 sm:p-7">
-          <div className="space-y-2.5">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="min-w-0 space-y-2">
+        {/* Photo first in DOM: leads on phones, sits on left column on desktop */}
+        <div className="md:col-span-5 flex min-h-48 items-center justify-center bg-secondary/60 p-4 sm:p-6">
+          {imageUrl && imageUrl !== failedImageUrl ? (
+            <button
+              type="button"
+              onClick={() => openWorksheetForCriterion()}
+              aria-haspopup="dialog"
+              aria-label={`Inspect worksheet photo for ${latest.activityText}`}
+              className="group relative h-52 w-full cursor-pointer rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring md:h-full md:min-h-64"
+            >
+              <Image
+                src={imageUrl}
+                alt={`Handwriting for ${latest.activityText}`}
+                fill
+                sizes="(min-width: 768px) 42vw, 100vw"
+                className="object-contain transition-transform duration-200 ease-out group-hover:scale-[1.01] motion-reduce:transition-none"
+                onError={() => setFailedImageUrl(imageUrl)}
+              />
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute bottom-2 right-2 rounded-full bg-foreground/90 px-3 py-1 text-xs font-medium text-background shadow-warm-sm transition-colors group-hover:bg-foreground dark:border dark:border-border/80 dark:bg-card/95 dark:text-foreground"
+              >
+                Inspect worksheet
+              </span>
+            </button>
+          ) : (
+            <span className="text-sm text-muted-foreground">
+              {imageLoading && latest.imagePath
+                ? "Loading worksheet photo..."
+                : "Worksheet preview unavailable"}
+            </span>
+          )}
+        </div>
+
+        <div className="md:col-span-7 flex min-w-0 flex-col justify-center gap-5 p-5 sm:p-6">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0 space-y-1">
                 <h2
                   id="latest-worksheet-heading"
                   className="font-heading text-lg sm:text-xl font-semibold tracking-tight wrap-anywhere text-foreground"
@@ -237,7 +256,14 @@ export function LatestSubmissionCard({
                   {latest.activityText}
                 </h2>
                 <p className="text-xs sm:text-sm text-muted-foreground tabular-nums">
-                  Checked worksheet &middot; {formattedDate}
+                  {formattedDate}
+                  {trendSummary ? (
+                    <>
+                      {" · "}
+                      {trendSummary.label}
+                      {showScoreDetails && trendSummary.deltaText ? ` (${trendSummary.deltaText})` : ""}
+                    </>
+                  ) : null}
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -247,53 +273,6 @@ export function LatestSubmissionCard({
                   </span>
                 )}
                 <BandBadge band={compositeBand} score={latest.scores.composite} size="default" showDot />
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-brand-200/70 dark:border-brand-800/60 bg-brand-50/60 dark:bg-brand-950/30 p-3.5 sm:p-4 space-y-2.5 max-w-prose">
-            <div className="space-y-1 text-sm leading-relaxed">
-              <p className="font-semibold text-primary">
-                {practiceFocus
-                  ? `Try together · ${practiceFocus.meta.label}`
-                  : "Try together"}
-              </p>
-              <p className="text-base text-foreground sm:text-sm">
-                {practiceFocus?.meta.homeTip ??
-                  "Choose a word from this worksheet and write it together."}
-              </p>
-            </div>
-            {(showPracticeLink || onOpenCursiveGuide) && (
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 text-xs">
-                {showPracticeLink && (
-                  <button
-                    type="button"
-                    onClick={navigateToTakeHome}
-                    className="font-medium text-primary hover:underline cursor-pointer inline-flex items-center gap-1 min-h-10 sm:min-h-9 touch-manipulation"
-                  >
-                    <span>Practice worksheets &rarr;</span>
-                  </button>
-                )}
-                {onOpenCursiveGuide && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenCursiveGuide()}
-                    className="font-medium text-muted-foreground hover:text-foreground cursor-pointer inline-flex items-center gap-1 min-h-10 sm:min-h-9 touch-manipulation"
-                  >
-                    <PenTool className="size-3 text-muted-foreground" aria-hidden="true" />
-                    <span>Open cursive guide</span>
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2.5">
-            <div className="rounded-xl border border-border/70 bg-card overflow-hidden shadow-2xs">
-              <div className="cursive-guidelines px-3.5 py-2 overflow-x-auto flex items-center min-h-[46px] bg-background/50">
-                <span className="font-cursive text-xl sm:text-2xl text-foreground whitespace-nowrap tracking-wide select-none">
-                  {latest.activityText}
-                </span>
               </div>
             </div>
 
@@ -316,114 +295,80 @@ export function LatestSubmissionCard({
                 }
               />
             )}
+          </div>
 
-            {compositeBand && PARENT_BAND_EXPLANATIONS[compositeBand] && (
-              <p className="max-w-prose text-sm text-muted-foreground leading-relaxed">
-                {PARENT_BAND_EXPLANATIONS[compositeBand]}
+          <div className="rounded-xl border border-brand-200/70 dark:border-brand-800/60 bg-brand-50/60 dark:bg-brand-950/30 p-4 space-y-2.5">
+            <div className="space-y-1 text-sm leading-relaxed">
+              <p className="font-semibold text-primary">
+                {practiceFocus
+                  ? `Try together · ${practiceFocus.meta.label}`
+                  : "Try together"}
               </p>
-            )}
-
-            {trendSummary && (
-              <div className="space-y-0.5 text-xs sm:text-sm text-muted-foreground">
-                <p className="tabular-nums">
-                  {trendSummary.label}
-                  {showScoreDetails && trendSummary.deltaText ? ` · ${trendSummary.deltaText}` : ""}
-                </p>
-                {trendSummary.supportNote && (
-                  <p className="max-w-prose text-xs text-muted-foreground/90 leading-relaxed">
-                    {trendSummary.supportNote}
-                  </p>
+              <p className="text-foreground max-w-prose">
+                {practiceFocus?.meta.homeTip ??
+                  "Pick one word from this worksheet and trace it together."}
+              </p>
+            </div>
+            {(showPracticeLink || onOpenCursiveGuide) && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                {showPracticeLink && (
+                  <button
+                    type="button"
+                    onClick={navigateToTakeHome}
+                    className="font-medium text-primary hover:underline cursor-pointer inline-flex items-center gap-1 min-h-10 sm:min-h-9 rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation"
+                  >
+                    <span>Practice worksheets &rarr;</span>
+                  </button>
+                )}
+                {onOpenCursiveGuide && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenCursiveGuide()}
+                    className="font-medium text-muted-foreground hover:text-foreground cursor-pointer inline-flex items-center gap-1 min-h-10 sm:min-h-9 rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation"
+                  >
+                    <PenTool className="size-3 text-muted-foreground" aria-hidden="true" />
+                    <span>Cursive guide</span>
+                  </button>
                 )}
               </div>
             )}
           </div>
 
-          {topStrength && (
-            <p className="max-w-prose text-sm leading-relaxed text-foreground">
-              <strong>{topStrength.meta.label}</strong> is a standout strength on this worksheet.
-            </p>
-          )}
-          {isBalanced && (
-            <p className="max-w-prose text-sm leading-relaxed text-foreground">
-              {firstName}&apos;s ratings are steady and balanced across all 5 skills.
-            </p>
-          )}
-
           {/* Worksheet and conversation actions */}
-          <div className="flex flex-wrap items-center gap-3 pt-1">
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               type="button"
               variant="default"
               size="sm"
-              className="min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-semibold cursor-pointer touch-manipulation shadow-warm gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+              className="min-h-10 sm:min-h-9 h-10 sm:h-9 px-4 text-xs sm:text-sm font-semibold cursor-pointer touch-manipulation shadow-warm-sm gap-2"
               onClick={() => openWorksheetForCriterion("all", "details")}
               aria-haspopup="dialog"
             >
-              <span>{hasWritingMarks ? "View worksheet & marks" : "View worksheet feedback"}</span>
+              <span>{hasWritingMarks ? "View worksheet & marks" : "View worksheet"}</span>
             </Button>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="min-h-[40px] sm:min-h-[36px] gap-1.5 text-xs sm:text-sm font-medium cursor-pointer touch-manipulation"
+              className="min-h-10 sm:min-h-9 h-10 sm:h-9 px-3 gap-2 text-xs sm:text-sm font-medium cursor-pointer touch-manipulation"
               onClick={() => openWorksheetForCriterion("all", "comments")}
               aria-haspopup="dialog"
             >
               <MessageSquare className="size-3.5 text-primary" aria-hidden="true" />
               <span>Teacher comments</span>
               {hasUnreadComments && (
-                <>
-                  <span className="size-2 rounded-full bg-primary" aria-hidden="true" />
-                  <span className="sr-only">Unread</span>
-                </>
+                <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+                  Unread
+                </span>
               )}
             </Button>
           </div>
-        </div>
-        <div className="md:col-span-5 md:col-start-1 md:row-start-1 flex min-h-44 items-center justify-center bg-secondary/60 p-4 sm:p-6">
-          {imageUrl && imageUrl !== failedImageUrl ? (
-            <button
-              type="button"
-              onClick={() => openWorksheetForCriterion()}
-              aria-haspopup="dialog"
-              aria-label={`Inspect worksheet photo for ${latest.activityText}`}
-              className="group relative h-48 w-full cursor-pointer rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring md:h-full md:min-h-64"
-            >
-              <Image
-                src={imageUrl}
-                alt={`Handwriting for ${latest.activityText}`}
-                fill
-                sizes="(min-width: 768px) 42vw, 100vw"
-                className="object-contain transition-transform duration-200 ease-out group-hover:scale-[1.01] motion-reduce:transition-none"
-                onError={() => setFailedImageUrl(imageUrl)}
-              />
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute bottom-2 right-2 rounded-full border border-border/80 bg-background/90 px-2.5 py-1 text-xs font-medium text-foreground shadow-xs backdrop-blur-xs"
-              >
-                Inspect worksheet
-              </span>
-            </button>
-          ) : (
-            <span className="text-sm text-muted-foreground">
-              {imageLoading && latest.imagePath
-                ? "Loading worksheet photo..."
-                : "Worksheet preview unavailable"}
-            </span>
-          )}
         </div>
       </section>
 
       <section aria-labelledby="handwriting-skills" className="overflow-hidden rounded-xl border border-border bg-card shadow-warm px-4 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-2 py-4">
-          <div>
-            <h2 id="handwriting-skills" className="font-heading text-lg font-semibold">Handwriting skills</h2>
-            <p className="text-sm text-muted-foreground">
-              {hasWritingMarks
-                ? "Select a skill to see its feedback and any marks on the worksheet."
-                : "Select a skill to read its feedback and home practice tip."}
-            </p>
-          </div>
+          <h2 id="handwriting-skills" className="font-heading text-lg font-semibold">Handwriting skills</h2>
           {scoreControls}
         </div>
         {PARENT_CRITERIA_LIST.map(({ key, label }) => {
@@ -437,10 +382,10 @@ export function LatestSubmissionCard({
               type="button"
               onClick={() => openWorksheetForCriterion(key, "details")}
               aria-haspopup="dialog"
-              className="grid w-[calc(100%+2rem)] sm:w-[calc(100%+3rem)] -mx-4 sm:-mx-6 px-4 sm:px-6 cursor-pointer grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 border-t py-3.5 text-left text-sm transition-colors hover:bg-muted/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring md:grid-cols-[minmax(11rem,14rem)_minmax(0,1fr)_auto]"
+              className="group grid w-[calc(100%+2rem)] sm:w-[calc(100%+3rem)] -mx-4 sm:-mx-6 px-4 sm:px-6 cursor-pointer grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_7.5rem_minmax(10rem,auto)] items-center gap-3 sm:gap-4 border-t py-3.5 text-left text-sm transition-colors hover:bg-muted/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring min-h-12"
             >
-              <span className="flex flex-col gap-0.5 min-w-0">
-                <span className="font-semibold text-foreground">{label}</span>
+              <span className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 min-w-0">
+                <span className="font-semibold text-foreground group-hover:text-primary transition-colors">{label}</span>
                 {isTop && (
                   <span className="text-xs font-medium text-band-4-text">
                     Top strength
@@ -452,30 +397,35 @@ export function LatestSubmissionCard({
                   </span>
                 )}
               </span>
-              <span className="col-span-2 row-start-2 max-w-prose leading-relaxed text-muted-foreground md:col-span-1 md:col-start-2 md:row-start-1">
-                {band ? DIAGNOSTIC_NOTES[key][band] : "Feedback is unavailable for this skill."}
+              <span className="hidden sm:flex items-center">
+                {score != null && (
+                  <BandPositionBar
+                    score={score}
+                    height="sm"
+                    showBandLabels={false}
+                    className="w-full"
+                    ariaLabel={`${label} level`}
+                  />
+                )}
               </span>
-              <span className="col-start-2 row-start-1 flex items-center gap-1.5 md:col-start-3">
+              <span className="flex items-center justify-end gap-2.5 shrink-0">
                 {showScoreDetails && score != null && (
-                  <span className="font-sans tabular-nums text-xs sm:text-sm font-semibold text-foreground">
+                  <span className="font-sans tabular-nums text-xs sm:text-sm font-semibold text-foreground min-w-[2.5rem] text-right">
                     {Math.round(score)}%
                   </span>
                 )}
-                <BandBadge band={band} score={score} size="sm" />
-                <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
+                <BandBadge band={band} score={score} size="sm" showDot />
+                <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden="true" />
               </span>
             </button>
           );
         })}
         {onOpenRubric && (
-          <div className="flex items-center justify-between gap-2 border-t py-2.5 text-sm text-muted-foreground">
-            <span className="text-xs sm:text-sm">
-              Want to see how each skill level is evaluated?
-            </span>
+          <div className="flex items-center justify-end border-t py-2 text-sm">
             <Button
               type="button"
               variant="link"
-              className="px-0 min-h-[40px] sm:min-h-[36px] cursor-pointer touch-manipulation"
+              className="px-0 min-h-10 sm:min-h-9 text-xs sm:text-sm text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
               onClick={onOpenRubric}
             >
               How scores work

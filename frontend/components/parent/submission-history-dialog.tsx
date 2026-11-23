@@ -56,7 +56,7 @@ function buildProcessedHistory(
 
 function getDeltaChangeLabel(delta: number, showScoreDetails: boolean): string {
   const label = getScoreProgressLabel(delta, "previous");
-  return showScoreDetails ? `${label} (${formatScoreDifference(delta)})` : label;
+  return showScoreDetails ? `${label} ${formatScoreDifference(delta)}` : label;
 }
 
 function HistoryItemRow({
@@ -86,7 +86,7 @@ function HistoryItemRow({
             : "Turned in";
 
   return (
-    <div className="px-4 py-3.5 sm:px-5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-muted/25 transition-colors">
+    <div className="px-4 py-4 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-muted/25 transition-colors">
       <div className="space-y-1 min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <h3
@@ -101,9 +101,9 @@ function HistoryItemRow({
               className={cn(
                 "inline-flex max-w-full items-center px-2 py-0.5 rounded-md tabular-nums text-xs font-medium",
                 getScoreProgressDirection(item.delta) === "improving"
-                  ? "text-band-4-text dark:text-emerald-300 bg-band-4/15 dark:bg-band-4/25 border border-band-4/30 dark:border-band-4/40"
+                  ? "text-band-4-text bg-band-4/15 dark:bg-band-4/25 border border-band-4/30 dark:border-band-4/40"
                   : getScoreProgressDirection(item.delta) === "lower"
-                    ? "text-band-2-text dark:text-amber-200 bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40"
+                    ? "text-band-2-text bg-band-2/15 dark:bg-band-2/25 border border-band-2/30 dark:border-band-2/40"
                     : "text-muted-foreground bg-muted/40 border border-border/60"
               )}
             >
@@ -114,20 +114,18 @@ function HistoryItemRow({
 
         <p className="text-xs text-muted-foreground font-sans tabular-nums">
           {formattedDate}
-          {item.isBaseline ? " · First worksheet" : ""}
+          {item.isBaseline ? " · First" : ""}
           {!item.isActiveAttempt && item.compositeScore != null ? " · Earlier upload" : ""}
-          {showScoreDetails ? ` · Worksheet #${item.attemptNumber}` : ""}
           {item.status === "completed" && item.compositeScore == null
-            ? " · Awaiting teacher review"
+            ? " · Pending review"
             : ""}
           {item.returnedAt
-            ? ` · Teacher requested another photo${item.returnReason ? ` (${humanizeReason(item.returnReason)})` : ""
-            }`
+            ? ` · New photo requested${item.returnReason ? ` (${humanizeReason(item.returnReason)})` : ""}`
             : ""}
         </p>
       </div>
 
-      <div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0">
+      <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
         <div className="flex items-center gap-2">
           {showScoreDetails && item.compositeScore != null && (
             <span className="text-sm font-semibold font-sans tabular-nums text-foreground">
@@ -252,12 +250,12 @@ export function PastWorksheetsSection({
             {showAllInline ? (
               <>
                 <ChevronUp className="size-4" aria-hidden="true" />
-                <span>Show latest 5 only</span>
+                <span>Show fewer</span>
               </>
             ) : (
               <>
                 <ChevronDown className="size-4" aria-hidden="true" />
-                <span>See all worksheets ({processedHistory.length})</span>
+                <span>See all ({processedHistory.length})</span>
               </>
             )}
           </Button>

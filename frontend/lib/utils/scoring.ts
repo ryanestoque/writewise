@@ -62,12 +62,12 @@ export const RUBRIC_BANDS: RubricBandMeta[] = [
   {
     band: "needs_improvement",
     label: "Needs Improvement",
-    shortLabel: "Needs Imp.",
+    shortLabel: "Needs Improvement",
     score: "12.5%",
     activeClass:
-      "bg-band-1/20 dark:bg-band-1/30 text-band-1-text dark:text-orange-200 border-band-1 ring-2 ring-band-1/40 shadow-xs font-semibold",
+      "bg-band-1/20 dark:bg-band-1/30 text-band-1-text border-band-1 ring-2 ring-band-1/40 shadow-warm-sm font-semibold",
     badgeClass:
-      "bg-band-1/15 text-band-1-text dark:text-orange-200 border-band-1/30 dark:border-band-1/40",
+      "bg-band-1/15 text-band-1-text border-band-1/30 dark:border-band-1/40",
     dotColor: "bg-band-1",
   },
   {
@@ -76,9 +76,9 @@ export const RUBRIC_BANDS: RubricBandMeta[] = [
     shortLabel: "Developing",
     score: "37.5%",
     activeClass:
-      "bg-band-2/20 dark:bg-band-2/30 text-band-2-text dark:text-amber-200 border-band-2 ring-2 ring-band-2/40 shadow-xs font-semibold",
+      "bg-band-2/20 dark:bg-band-2/30 text-band-2-text border-band-2 ring-2 ring-band-2/40 shadow-warm-sm font-semibold",
     badgeClass:
-      "bg-band-2/15 text-band-2-text dark:text-amber-200 border-band-2/30 dark:border-band-2/40",
+      "bg-band-2/15 text-band-2-text border-band-2/30 dark:border-band-2/40",
     dotColor: "bg-band-2",
   },
   {
@@ -87,9 +87,9 @@ export const RUBRIC_BANDS: RubricBandMeta[] = [
     shortLabel: "Satisfactory",
     score: "62.5%",
     activeClass:
-      "bg-band-3/20 dark:bg-band-3/30 text-band-3-text dark:text-emerald-200 border-band-3 ring-2 ring-band-3/40 shadow-xs font-semibold",
+      "bg-band-3/20 dark:bg-band-3/30 text-band-3-text border-band-3 ring-2 ring-band-3/40 shadow-warm-sm font-semibold",
     badgeClass:
-      "bg-band-3/15 text-band-3-text dark:text-emerald-200 border-band-3/30 dark:border-band-3/40",
+      "bg-band-3/15 text-band-3-text border-band-3/30 dark:border-band-3/40",
     dotColor: "bg-band-3",
   },
   {
@@ -98,88 +98,88 @@ export const RUBRIC_BANDS: RubricBandMeta[] = [
     shortLabel: "Excellent",
     score: "87.5%",
     activeClass:
-      "bg-band-4/20 dark:bg-band-4/30 text-band-4-text dark:text-emerald-300 border-band-4 ring-2 ring-band-4/40 shadow-xs font-semibold",
+      "bg-band-4/20 dark:bg-band-4/30 text-band-4-text border-band-4 ring-2 ring-band-4/40 shadow-warm-sm font-semibold",
     badgeClass:
-      "bg-band-4/15 text-band-4-text dark:text-emerald-300 border-band-4/30 dark:border-band-4/40",
+      "bg-band-4/15 text-band-4-text border-band-4/30 dark:border-band-4/40",
     dotColor: "bg-band-4",
   },
 ];
 
 export const RUBRIC_CRITERIA: Array<{
   key:
-    | "letter_formation_band"
-    | "size_consistency_band"
-    | "spacing_band"
-    | "slant_band"
-    | "baseline_alignment_band";
+  | "letter_formation_band"
+  | "size_consistency_band"
+  | "spacing_band"
+  | "slant_band"
+  | "baseline_alignment_band";
   criterionKey:
-    | "letter_formation"
-    | "size_consistency"
-    | "spacing"
-    | "slant"
-    | "baseline_alignment";
+  | "letter_formation"
+  | "size_consistency"
+  | "spacing"
+  | "slant"
+  | "baseline_alignment";
   bandKey:
-    | "letter_formation_band"
-    | "size_consistency_band"
-    | "spacing_band"
-    | "slant_band"
-    | "baseline_alignment_band";
+  | "letter_formation_band"
+  | "size_consistency_band"
+  | "spacing_band"
+  | "slant_band"
+  | "baseline_alignment_band";
   scoreKey:
-    | "letter_formation_score"
-    | "size_consistency_score"
-    | "spacing_score"
-    | "slant_score"
-    | "baseline_alignment_score";
+  | "letter_formation_score"
+  | "size_consistency_score"
+  | "spacing_score"
+  | "slant_score"
+  | "baseline_alignment_score";
   name: string;
   shortName: string;
   hint: string;
 }> = [
-  {
-    key: "letter_formation_band",
-    criterionKey: "letter_formation",
-    bandKey: "letter_formation_band",
-    scoreKey: "letter_formation_score",
-    name: "1. Letter Formation",
-    shortName: "Letter Formation",
-    hint: "Proper cursive loops and complete stroke closures",
-  },
-  {
-    key: "size_consistency_band",
-    criterionKey: "size_consistency",
-    bandKey: "size_consistency_band",
-    scoreKey: "size_consistency_score",
-    name: "2. Size Consistency",
-    shortName: "Size Consistency",
-    hint: "Proportion and height across 3-line penmanship ruling",
-  },
-  {
-    key: "spacing_band",
-    criterionKey: "spacing",
-    bandKey: "spacing_band",
-    scoreKey: "spacing_score",
-    name: "3. Spacing",
-    shortName: "Spacing",
-    hint: "Inter-word rhythm and character separation spacing",
-  },
-  {
-    key: "slant_band",
-    criterionKey: "slant",
-    bandKey: "slant_band",
-    scoreKey: "slant_score",
-    name: "4. Slant Angle",
-    shortName: "Slant Angle",
-    hint: "Uniform forward slant tilt across letter stems",
-  },
-  {
-    key: "baseline_alignment_band",
-    criterionKey: "baseline_alignment",
-    bandKey: "baseline_alignment_band",
-    scoreKey: "baseline_alignment_score",
-    name: "5. Baseline Alignment",
-    shortName: "Baseline Alignment",
-    hint: "Letters resting stably along bottom ruling baseline",
-  },
-];
+    {
+      key: "letter_formation_band",
+      criterionKey: "letter_formation",
+      bandKey: "letter_formation_band",
+      scoreKey: "letter_formation_score",
+      name: "1. Letter Formation",
+      shortName: "Letter Formation",
+      hint: "Proper cursive loops and complete stroke closures",
+    },
+    {
+      key: "size_consistency_band",
+      criterionKey: "size_consistency",
+      bandKey: "size_consistency_band",
+      scoreKey: "size_consistency_score",
+      name: "2. Size Consistency",
+      shortName: "Size Consistency",
+      hint: "Proportion and height across 3-line penmanship ruling",
+    },
+    {
+      key: "spacing_band",
+      criterionKey: "spacing",
+      bandKey: "spacing_band",
+      scoreKey: "spacing_score",
+      name: "3. Spacing",
+      shortName: "Spacing",
+      hint: "Inter-word rhythm and character separation spacing",
+    },
+    {
+      key: "slant_band",
+      criterionKey: "slant",
+      bandKey: "slant_band",
+      scoreKey: "slant_score",
+      name: "4. Slant Angle",
+      shortName: "Slant Angle",
+      hint: "Uniform forward slant tilt across letter stems",
+    },
+    {
+      key: "baseline_alignment_band",
+      criterionKey: "baseline_alignment",
+      bandKey: "baseline_alignment_band",
+      scoreKey: "baseline_alignment_score",
+      name: "5. Baseline Alignment",
+      shortName: "Baseline Alignment",
+      hint: "Letters resting stably along bottom ruling baseline",
+    },
+  ];
 
 export const DIAGNOSTIC_NOTES: Record<
   "letter_formation" | "size_consistency" | "spacing" | "slant" | "baseline_alignment",

@@ -9,13 +9,18 @@ export function getScoreProgressLabel(
   comparison: "first" | "previous"
 ) {
   const direction = getScoreProgressDirection(delta);
-  if (direction === "improving") return `Improving since the ${comparison} worksheet`;
-  if (direction === "lower") return `Lower than the ${comparison} worksheet`;
-  return `Steady since the ${comparison} worksheet`;
+  if (comparison === "previous") {
+    if (direction === "improving") return "Improving";
+    if (direction === "lower") return "Lower";
+    return "Steady";
+  }
+  if (direction === "improving") return "Improving since first";
+  if (direction === "lower") return "Lower than first";
+  return "Steady since first";
 }
 
 export function formatScoreDifference(delta: number) {
-  return `${delta >= 0 ? "+" : ""}${delta.toFixed(1)} percentage points`;
+  return `${delta >= 0 ? "+" : ""}${delta.toFixed(1)} pts`;
 }
 
 export function getScoreProgressSupportNote(delta: number): string | null {

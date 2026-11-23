@@ -49,10 +49,10 @@ export function BandPositionBar({
           )}
         >
           {/* 4 Colored Band Zones: Clay, Gold, Sage, Forest */}
-          <div className="bg-band-1/25 dark:bg-band-1/30 rounded-l-full border-r border-background/60" />
-          <div className="bg-band-2/25 dark:bg-band-2/30 border-r border-background/60" />
-          <div className="bg-band-3/25 dark:bg-band-3/30 border-r border-background/60" />
-          <div className="bg-band-4/25 dark:bg-band-4/30 rounded-r-full" />
+          <div className="bg-band-1/40 dark:bg-band-1/45 rounded-l-full border-r border-background/80" />
+          <div className="bg-band-2/40 dark:bg-band-2/45 border-r border-background/80" />
+          <div className="bg-band-3/40 dark:bg-band-3/45 border-r border-background/80" />
+          <div className="bg-band-4/40 dark:bg-band-4/45 rounded-r-full" />
 
           {/* Marker indicator for current score */}
           {numericScore !== null && (
@@ -81,19 +81,19 @@ export function BandPositionBar({
       {showBandLabels && (
         <div
           aria-hidden="true"
-          className="grid grid-cols-4 text-[10px] sm:text-[11px] font-medium text-muted-foreground px-0.5 select-none pt-0.5"
+          className="grid grid-cols-4 gap-1.5 text-[11px] sm:text-xs leading-snug font-medium text-muted-foreground select-none pt-1"
         >
-          <span className="truncate text-left sm:text-center text-band-1-text">Needs Imp.</span>
-          <span className="truncate text-center text-band-2-text">Developing</span>
-          <span className="truncate text-center text-band-3-text">Satisfactory</span>
-          <span className="truncate text-right sm:text-center text-band-4-text">Excellent</span>
+          <span className="text-left sm:text-center text-band-1-text">Needs Improvement</span>
+          <span className="text-center text-band-2-text">Developing</span>
+          <span className="text-center text-band-3-text">Satisfactory</span>
+          <span className="text-right sm:text-center text-band-4-text">Excellent</span>
         </div>
       )}
 
       {showThresholds && (
         <div
           aria-hidden="true"
-          className="flex items-center justify-between text-[10px] text-muted-foreground/80 font-sans tabular-nums px-0.5 select-none"
+          className="flex items-center justify-between text-xs text-muted-foreground/80 font-sans tabular-nums select-none"
         >
           <span>0%</span>
           <span title="Developing (25%)">25%</span>

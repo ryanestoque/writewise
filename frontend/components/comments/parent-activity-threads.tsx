@@ -5,7 +5,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
-import { formatDate, getRelativeTime } from "@/lib/utils/formatters";
+import { formatDate } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
 import { useCommentSummaries, useUnreadCommentThreads } from "@/lib/hooks/use-comments";
 import { commentThreadHref } from "@/lib/comments/targets";
@@ -64,18 +64,20 @@ export function ParentActivityThreads({
                 <p className="text-sm font-semibold text-foreground">{row.activity_title}</p>
                 <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
                   <time dateTime={row.submitted_at} className="font-sans tabular-nums">
-                    Uploaded {formatDate(row.submitted_at)} ({getRelativeTime(row.submitted_at)})
+                    {formatDate(row.submitted_at)}
                   </time>
-                  <span className="text-muted-foreground/50 select-none" aria-hidden="true">·</span>
-                  <span className="font-medium text-foreground/75">
-                    {!row.assigned
-                      ? "Past practice"
-                      : row.is_archived
-                        ? "Archived activity"
-                        : row.comments_locked
-                          ? "Comments closed"
-                          : "Open"}
-                  </span>
+                  {(!row.assigned || row.is_archived || row.comments_locked) && (
+                    <>
+                      <span className="text-muted-foreground/50 select-none" aria-hidden="true">·</span>
+                      <span className="font-medium text-foreground/75">
+                        {!row.assigned
+                          ? "Past practice"
+                          : row.is_archived
+                            ? "Archived"
+                            : "Closed"}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
               <Link

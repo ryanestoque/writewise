@@ -58,10 +58,9 @@ export function WorkCommentsButton({
         >
           <span>Comments</span>
           {hasUnread && (
-            <span
-              className="size-2 rounded-full bg-brand-600 dark:bg-brand-400 shrink-0"
-              aria-hidden="true"
-            />
+            <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+              Unread
+            </span>
           )}
         </SheetTrigger>
       )}

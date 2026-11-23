@@ -118,7 +118,7 @@ Role-differentiated, matching how much "surface area" each role actually manages
   - **Upload setup guidance:** The upload details step distinguishes loading, failed reads, missing activities, missing roster students, unassigned students, and unmatched searches. Missing setup includes a destination to Activities, Class Roster, or the selected activity's assignments; navigation closes the upload dialog first.
   - **Student Avatar Simplification:** Student initials avatars have been removed across student views (roster, class table, drill-down, submission cards) to prioritize clear typography, responsive scannability, and reduce visual noise. Teacher profile avatar is preserved.
 - **Parent:** lightweight top nav, mobile-first — the parent's world is effectively one screen (their child's progress) plus an upload action, so a full sidebar would be wasted structure.
-- **Multi-child parents:** an always-present child switcher at the top of the parent nav (a simple selector, not conditional UI) — for a parent with one child it just shows their name; for a parent with more than one enrolled at the school, it scales automatically. Cheap insurance against a real edge case at a single-school pilot scale.
+- **Multi-child parents:** on tablet/desktop (`>= sm`), the child selector sits centered in the top parent nav (a plain text pill for a single child; a dropdown switcher when multiple children are linked). On phones (`< sm`), the active child's name and section anchor the page header while multi-child parents get a one-handed radio-pill switcher directly above the header.
 
 Class-related management (which roster/section a teacher is linked to) lives on the Roster screen, not in Settings — one source of truth for "class" information.
 
@@ -149,10 +149,10 @@ Class-related management (which roster/section a teacher is linked to) lives on 
 14. Latest diagnostic feedback view
 15. Submission upload — same core flow as teacher's, scoped to an assigned activity
 
-**Parent progress hierarchy:** Desktop uses the full viewport width with normal page gutters; do not introduce a centered maximum-width container. The `/progress` view is organized into a segmented 3-tab layout (`Latest Feedback`, `Practice`, and `Progress`) so parents focus on one task at a time:
-- **`Latest Feedback` (default once scored worksheets exist):** Pairs the latest worksheet photo with coaching, then shows its five-skill breakdown (`LatestSubmissionCard`).
-- **`Practice` (default on zero-result onboarding; shows a live badge count of open worksheets):** Displays assigned take-home practice worksheets (`TakeHomeActivities`) in a responsive 2-column desktop grid alongside the current practice-focus tip.
-- **`Progress`:** Stacks longitudinal skill trends (`CriterionTrendChart`) above the sortable archive of all past worksheets (`PastWorksheetsSection`).
+**Parent progress hierarchy:** Desktop uses the full viewport width with normal page gutters; do not introduce a centered maximum-width container. The `/progress` view is organized into a segmented 3-tab layout (`Latest Feedback`, `Practice`, and `Progress & Grades`) so parents focus on one task at a time:
+- **`Latest Feedback` (default once scored worksheets exist, or when no take-home practice is assigned):** Pairs the latest worksheet photo with coaching (photo-first on phones, side-by-side on desktop), then shows its five-skill breakdown (`LatestSubmissionCard`) with compact band-position indicators and diagnostic notes.
+- **`Practice` (default on zero-result onboarding when open take-home worksheets exist; shows a live badge count of open worksheets):** Displays assigned take-home practice worksheets (`TakeHomeActivities`) in a responsive 1/2/3-column grid alongside the current practice-focus tip and teacher comment threads.
+- **`Progress & Grades`:** Pairs longitudinal skill trends (`CriterionTrendChart`) and the sortable archive of past worksheets (`PastWorksheetsSection`) with released coursework totals (`ParentGrades`) and teacher comment threads (`ParentActivityThreads`).
 
 On all viewports, an urgent-task prompt precedes the tab bar when an open worksheet needs a replacement photo, is overdue but still accepts uploads, or is due within 48 hours. It names the worksheet and opens its existing upload dialog directly (and links to the `Practice` tab when multiple worksheets need attention). Replacement photos take priority, then overdue work, then the nearest upcoming deadline. Processing uploads and closed assignments never receive this upload prompt.
 

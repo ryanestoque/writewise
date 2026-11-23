@@ -47,7 +47,7 @@ export function ParentGrades({
   if (!query.data || query.data.student_id !== childId)
     return (
       <p role="status" className="text-muted-foreground flex items-center gap-2 py-8 text-sm">
-        <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden /> Loading
+        <Loader2 className="size-4 animate-spin" aria-hidden /> Loading
         grades…
       </p>
     );
@@ -63,7 +63,11 @@ export function ParentGrades({
         <p className="text-muted-foreground text-sm">
           The activity may have been removed or access may have changed.
         </p>
-        <Button variant="outline" onClick={onDismissTarget}>
+        <Button
+          variant="outline"
+          onClick={onDismissTarget}
+          className="h-10 min-h-10 sm:h-9 sm:min-h-9 cursor-pointer touch-manipulation"
+        >
           Back to progress
         </Button>
       </div>
@@ -75,17 +79,12 @@ export function ParentGrades({
       aria-labelledby="coursework-heading"
       className="space-y-3"
     >
-      <div className="space-y-1">
-        <h2
-          id="coursework-heading"
-          className="font-heading text-base sm:text-lg font-semibold text-foreground"
-        >
-          Coursework
-        </h2>
-        <p className="text-muted-foreground text-xs sm:text-sm">
-          Point totals include released coursework only. Excused work is excluded.
-        </p>
-      </div>
+      <h2
+        id="coursework-heading"
+        className="font-heading text-base sm:text-lg font-semibold text-foreground"
+      >
+        Coursework
+      </h2>
       <div className="space-y-4">
       {query.data.groups.map((group) => {
         const totals = group.row.totals;
@@ -95,7 +94,7 @@ export function ParentGrades({
             className="bg-card overflow-hidden rounded-xl border border-border"
             aria-labelledby={`grades-teacher-${group.teacher_id}`}
           >
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/80 px-4 py-3.5 sm:px-5">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/80 px-4 py-4 sm:px-5">
               <h3
                 id={`grades-teacher-${group.teacher_id}`}
                 className="font-heading text-sm sm:text-base font-semibold text-foreground"
@@ -105,13 +104,13 @@ export function ParentGrades({
               <div className="text-right tabular-nums">
                 <p className="text-sm font-semibold text-foreground">
                   {totals.earned} / {totals.possible}{" "}
-                  <span className="text-muted-foreground text-xs font-normal">points</span>
+                  <span className="text-muted-foreground text-xs font-normal">pts</span>
                 </p>
                 {(totals.percentage === null || showScoreDetails) && (
                   <p className="text-muted-foreground mt-0.5 text-xs">
                     {totals.percentage === null
-                      ? "No released points yet"
-                      : `${totals.percentage}% overall`}
+                      ? "No points yet"
+                      : `${totals.percentage}%`}
                   </p>
                 )}
               </div>
@@ -126,7 +125,7 @@ export function ParentGrades({
                     id={`parent-grade-${activity.id}`}
                     className={`flex scroll-mt-24 flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-5 ${highlightActivityId === activity.id ? "bg-primary/5 ring-primary ring-2 ring-inset" : ""}`}
                   >
-                    <div className="min-w-0 flex-1 basis-40 space-y-1">
+                    <div className="min-w-0 flex-1 basis-40 space-y-0.5">
                       <h4 className="font-sans text-sm font-medium text-foreground break-words">
                         {activity.title}
                       </h4>
@@ -156,16 +155,9 @@ export function ParentGrades({
                           : cell.points_possible === null
                             ? "Feedback only"
                             : cell.final_points === null
-                              ? "Points not yet released"
-                              : `${cell.final_points} / ${cell.points_possible} points`}
+                              ? `Pending · ${cell.points_possible} pts`
+                              : `${cell.final_points} / ${cell.points_possible} pts`}
                       </p>
-                      {cell.final_points === null &&
-                        cell.points_possible !== null &&
-                        cell.coursework_status !== "Excused" && (
-                          <p className="text-muted-foreground text-xs tabular-nums">
-                            {cell.points_possible} points possible
-                          </p>
-                        )}
                     </div>
                   </li>
                 );

@@ -31,7 +31,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Upload,
   ClipboardList,
   Loader2,
   CheckCircle2,
@@ -149,7 +148,7 @@ export function TakeHomeActivities({
   if (isLoading) {
     return (
       <div role="status" aria-live="polite" className="flex flex-col items-center justify-center py-8 gap-2">
-        <Loader2 className="size-5 animate-spin motion-reduce:animate-none text-muted-foreground" aria-hidden="true" />
+        <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden="true" />
         <span className="text-sm text-muted-foreground">Checking practice worksheets...</span>
       </div>
     );
@@ -195,27 +194,22 @@ export function TakeHomeActivities({
     <div className="space-y-4">
       {recovery}
 
-      {/* Elevated Practice Focus Coaching Strip */}
+      {/* Compact Practice Focus Strip */}
       {focusMeta && toDoActivities.length > 0 && (
-        <div className="rounded-xl border border-primary/20 bg-primary/5 dark:bg-primary/10 p-3 sm:p-4 flex items-start gap-3 text-xs sm:text-sm">
-          <PenTool className="size-4 text-primary shrink-0 mt-0.5" aria-hidden="true" />
-          <div className="space-y-0.5 flex-1 min-w-0">
-            <p className="font-semibold text-foreground">
-              Practice focus: {focusMeta.label}
-            </p>
-            <p className="text-muted-foreground leading-relaxed">
-              {focusMeta.homeTip}
-            </p>
-          </div>
+        <div className="rounded-xl border border-primary/20 bg-primary/5 dark:bg-primary/10 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs sm:text-sm">
+          <p className="text-muted-foreground leading-relaxed flex-1 min-w-0">
+            <span className="font-semibold text-foreground">Focus · {focusMeta.label}:</span>{" "}
+            {focusMeta.homeTip}
+          </p>
           {practiceFocusKey === "letter_formation" && onOpenCursiveGuide && (
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => onOpenCursiveGuide("A")}
-              className="shrink-0 h-9 min-h-[36px] text-xs font-medium cursor-pointer border-primary/30 text-primary hover:bg-primary/10"
+              className="shrink-0 h-10 min-h-10 sm:h-9 sm:min-h-9 text-xs font-medium cursor-pointer border-primary/30 text-primary hover:bg-primary/10 touch-manipulation"
             >
-              Open guide
+              Cursive guide
             </Button>
           )}
         </div>
@@ -223,7 +217,7 @@ export function TakeHomeActivities({
 
       {/* Primary To-Do Worksheets Area */}
       {toDoActivities.length === 0 ? (
-        <div className="rounded-xl border border-border bg-card p-5 text-center space-y-3">
+        <div className="rounded-xl border border-border bg-card p-5 text-center space-y-2.5">
           <div className="size-9 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center mx-auto">
             {closedWithoutPhotoCount > 0 ? (
               <Clock3 className="size-5" aria-hidden="true" />
@@ -233,19 +227,22 @@ export function TakeHomeActivities({
           </div>
           <div className="space-y-1">
             <p className="text-sm sm:text-base font-semibold text-foreground">
-              {closedWithoutPhotoCount > 0 ? "Some worksheets are closed" : "All caught up!"}
+              {closedWithoutPhotoCount > 0 ? "Past-due worksheets closed" : "All caught up"}
             </p>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-sm mx-auto">
               {closedWithoutPhotoCount > 0
-                ? `${closedWithoutPhotoCount} ${closedWithoutPhotoCount === 1 ? "worksheet is past due" : "worksheets are past due"}, but submissions are closed. Ask the teacher if you need to submit late.`
+                ? `${closedWithoutPhotoCount} ${closedWithoutPhotoCount === 1 ? "worksheet is" : "worksheets are"} closed. Ask your teacher for late submission.`
                 : awaitingReviewActivities.length > 0
-                  ? "Nothing to send right now. Your turned-in worksheets are waiting for teacher review below."
-                  : "Nothing to send right now. All assigned practice worksheets have been turned in."}
+                  ? "Nothing to send. Submitted worksheets are waiting for review below."
+                  : "All assigned practice worksheets have been turned in."}
             </p>
           </div>
         </div>
       ) : (
         <>
+          <p className="text-xs text-muted-foreground">
+            Write in connected cursive on standard 3-line paper.
+          </p>
           <div id="take-home-activities-grid" className={gridClassName}>
             {visibleToDo.map((activity) => (
               <ActivityCard
@@ -310,9 +307,6 @@ export function TakeHomeActivities({
               ({awaitingReviewActivities.length})
             </span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            These worksheets have been turned in. Your teacher reviews every submission before grades and feedback are released.
-          </p>
           <div className={gridClassName}>
             {awaitingReviewActivities.map((activity) => (
               <ActivityCard
@@ -363,12 +357,12 @@ export function TakeHomeActivities({
             >
               {showPastSheets ? (
                 <>
-                  <span>Hide past worksheets</span>
+                  <span>Hide</span>
                   <ChevronUp className="size-3.5" aria-hidden="true" />
                 </>
               ) : (
                 <>
-                  <span>Show past worksheets ({pastSheets.length})</span>
+                  <span>Show</span>
                   <ChevronDown className="size-3.5" aria-hidden="true" />
                 </>
               )}
@@ -491,7 +485,7 @@ function ActivityCard({
   return (
     <div
       className={cn(
-        "rounded-xl border bg-card p-4 shadow-warm-sm flex flex-col justify-between gap-3.5 transition-colors",
+        "rounded-xl border bg-card p-4 shadow-warm-sm flex flex-col justify-between gap-4 transition-colors",
         isRejected || latestRejected
           ? "border-warning/50 dark:border-warning/60 bg-warning/5 dark:bg-warning/10"
           : isReturned
@@ -504,16 +498,16 @@ function ActivityCard({
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums">
             {excused ? (
-              "Excused · Optional practice"
+              "Excused · Optional"
             ) : category === "closed" ? (
-              "Closed · Deadline passed"
+              "Closed"
             ) : urgency === "overdue" ? (
-              <span className="text-band-1 font-semibold">
-                Past due {work.dueAt ? `· Due ${formatActivityDueAt(work.dueAt)}` : ""}
+              <span className="text-band-1-text font-semibold">
+                Past due{work.dueAt ? ` · ${formatActivityDueAt(work.dueAt)}` : ""}
               </span>
             ) : urgency === "due_soon" ? (
-              <span className="text-band-2 font-semibold">
-                Due soon {work.dueAt ? `· Due ${formatActivityDueAt(work.dueAt)}` : ""}
+              <span className="text-band-2-text font-semibold">
+                Due soon{work.dueAt ? ` · ${formatActivityDueAt(work.dueAt)}` : ""}
               </span>
             ) : work.dueAt ? (
               `Due ${formatActivityDueAt(work.dueAt)}`
@@ -524,13 +518,13 @@ function ActivityCard({
           {isReturned && (
             <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
               <AlertTriangle className="size-3.5" aria-hidden="true" />
-              <span>Redo requested</span>
+              <span>New photo requested</span>
             </span>
           )}
           {(isRejected || latestRejected) && (
             <span className="inline-flex items-center gap-1 text-xs font-semibold text-warning-foreground">
               <AlertTriangle className="size-3.5" aria-hidden="true" />
-              <span>Photo needed</span>
+              <span>Clearer photo needed</span>
             </span>
           )}
         </div>
@@ -542,33 +536,35 @@ function ActivityCard({
 
         {/* Cursive Practice Desk: 3-line Guidelines Specimen */}
         <div className="space-y-2">
-          <div className="rounded-xl border border-border/70 bg-card overflow-hidden shadow-2xs">
-            <div className="cursive-guidelines px-4 py-3 overflow-x-auto flex items-center min-h-[58px] bg-background/50">
+          <div className="rounded-xl border border-border/70 bg-card overflow-hidden">
+            <div
+              aria-label={`Cursive reference model: ${targetText}`}
+              title={targetText}
+              className="cursive-guidelines px-4 py-3 overflow-x-auto flex items-center min-h-[58px] bg-background/50"
+            >
               <span className="font-cursive text-2xl sm:text-3xl text-foreground whitespace-nowrap tracking-wide select-none">
                 {targetText}
               </span>
             </div>
-            <div className="px-3 py-1.5 bg-muted/40 border-t border-border/50 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-              <span className="truncate italic font-sans max-w-full">&ldquo;{targetText}&rdquo;</span>
-              {onOpenCursiveGuide && (
+            {!isCompleted && category !== "closed" && onOpenCursiveGuide && (
+              <div className="px-3 py-0.5 bg-muted/30 border-t border-border/50 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                {work.title.trim().toLowerCase() !== targetText.trim().toLowerCase() ? (
+                  <span className="truncate font-sans">{targetText}</span>
+                ) : (
+                  <span />
+                )}
                 <button
                   type="button"
                   onClick={() => onOpenCursiveGuide(firstLetter)}
-                  className="inline-flex items-center gap-1 font-medium text-primary hover:text-primary-hover hover:underline cursor-pointer shrink-0 min-h-6 touch-manipulation"
+                  className="inline-flex items-center gap-1 font-medium text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:underline cursor-pointer shrink-0 min-h-10 sm:min-h-9 px-2 -mr-2 rounded-md touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                   aria-label={`Inspect cursive letters for "${work.title}"`}
                 >
                   <PenTool className="size-3" aria-hidden="true" />
-                  <span>Inspect letters</span>
+                  <span>Letters</span>
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-
-          {/* Paper and script prerequisite cue */}
-          <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-sans">
-            <span className="size-1.5 rounded-full bg-primary/70 shrink-0" aria-hidden="true" />
-            <span>Write in connected cursive on standard 3-line paper</span>
-          </p>
 
           {work.instructions && (
             <p className="whitespace-pre-wrap text-xs text-muted-foreground leading-relaxed pt-0.5">
@@ -580,62 +576,50 @@ function ActivityCard({
         {/* Status Notices */}
         {work.latestSubmission?.submissionId !== submission?.submissionId &&
           work.latestSubmission?.status === "rejected" && (
-            <div role="status" className="rounded-lg bg-warning/15 border border-warning/30 p-2.5 text-xs text-foreground space-y-0.5">
-              <p className="font-semibold text-warning-foreground">
-                Latest photo needs a clearer shot: {getRejectionSummary(work.latestSubmission.rejectionCode).label}.
-              </p>
-              <p className="text-muted-foreground">
-                Your earlier completed worksheet is still safely recorded.
-              </p>
-            </div>
+            <p role="status" className="rounded-lg bg-warning/15 border border-warning/30 px-2.5 py-2 text-xs text-warning-foreground font-medium">
+              Latest photo rejected: {getRejectionSummary(work.latestSubmission.rejectionCode).label}. Previous photo kept.
+            </p>
           )}
 
         {work.latestSubmission?.submissionId !== submission?.submissionId &&
           work.latestSubmission?.status === "processing" && (
             <p role="status" className="text-xs text-muted-foreground">
-              Checking your new photo now. Your earlier result stays saved until it finishes.
+              Checking your new photo…
             </p>
           )}
 
-        {excused && (
-          <p className="text-xs text-muted-foreground">
-            This worksheet is excused from coursework totals. Your child can still practice.
-          </p>
-        )}
-
-        {isReturned && !excused && (
-          <div className="space-y-1 rounded-lg bg-primary/10 border border-primary/20 p-2.5 text-xs">
-            <p className="font-semibold text-foreground">Teacher requested a new photo</p>
+        {isReturned && !excused && (work.workState?.return_reason || work.workState?.return_note) && (
+          <div className="space-y-0.5 rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-2 text-xs">
             {work.workState?.return_reason && (
-              <p className="text-muted-foreground">
-                Note: {humanizeReason(work.workState.return_reason)}
+              <p className="font-medium text-foreground">
+                {humanizeReason(work.workState.return_reason)}
               </p>
             )}
             {work.workState?.return_note && (
-              <p className="text-foreground">{work.workState.return_note}</p>
+              <p className="text-muted-foreground">{work.workState.return_note}</p>
             )}
           </div>
         )}
 
         {closed && !excused && category === "closed" && (
           <p role="status" className="text-xs text-muted-foreground">
-            The deadline has passed. Ask your teacher if you need to send a late photo.
+            Deadline passed. Ask your teacher for late submission.
           </p>
         )}
       </div>
 
       {/* Action Footer */}
-      <div className="pt-3 border-t border-border/50 flex flex-wrap items-center justify-between gap-2.5">
+      <div className="pt-3 border-t border-border/50 flex flex-wrap items-center justify-between gap-3">
         {/* Left Side: Status indicator */}
         <div className="flex items-center gap-2 min-w-0">
           {isLoading ? (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
               <span>Checking status...</span>
             </div>
           ) : isProcessing ? (
             <div role="status" aria-live="polite" className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Loader2 className="size-3.5 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+              <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden="true" />
               <span>Checking handwriting…</span>
             </div>
           ) : isCompleted ? (
@@ -664,28 +648,16 @@ function ActivityCard({
           ) : null}
 
           {/* Card-specific action controls */}
-          {isRejected ? (
+          {isRejected || isReturned ? (
             <Button
               variant="default"
               size="sm"
-              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 font-semibold cursor-pointer text-xs sm:text-sm px-4"
+              className="h-10 sm:h-9 min-h-10 sm:min-h-9 gap-1.5 font-semibold cursor-pointer text-xs sm:text-sm px-4"
               onClick={onUploadClick}
               disabled={closed}
               aria-label={`Send new photo for ${work.title}`}
             >
               <Camera className="size-4" aria-hidden="true" />
-              <span>Send new photo</span>
-            </Button>
-          ) : isReturned ? (
-            <Button
-              variant="default"
-              size="sm"
-              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-semibold gap-1.5 cursor-pointer px-4"
-              onClick={onUploadClick}
-              disabled={closed}
-              aria-label={`Send new photo for ${work.title}`}
-            >
-              <Upload className="size-4" aria-hidden="true" />
               <span>Send new photo</span>
             </Button>
           ) : isCompleted ? (
@@ -696,7 +668,7 @@ function ActivityCard({
                   variant="outline"
                   size="sm"
                   onClick={() => onPreviewPhoto(submission.imagePath!, work.title, targetText)}
-                  className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50 px-3"
+                  className="h-10 sm:h-9 min-h-10 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50 px-3"
                   aria-label={`View uploaded photo for ${work.title}`}
                 >
                   <Eye className="size-3.5 shrink-0" aria-hidden="true" />
@@ -711,11 +683,11 @@ function ActivityCard({
                   size="sm"
                   onClick={() => setIsDeleteDialogOpen(true)}
                   disabled={deleteMutation.isPending}
-                  className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive gap-1 px-2.5 rounded-lg border border-destructive/20 cursor-pointer"
+                  className="h-10 sm:h-9 min-h-10 sm:min-h-9 text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive gap-1.5 px-3 rounded-lg border border-destructive/20 cursor-pointer"
                   aria-label={`Delete uploaded photo for ${work.title}`}
                 >
                   <Trash2 className="size-3.5 shrink-0" aria-hidden="true" />
-                  <span>Delete</span>
+                  <span>Delete upload</span>
                 </Button>
               )}
 
@@ -723,12 +695,12 @@ function ActivityCard({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium gap-1.5 cursor-pointer shrink-0 border-border/80 hover:bg-muted/50 px-3"
+                  className="h-10 sm:h-9 min-h-10 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer shrink-0 border-border/80 hover:bg-muted/50 px-3"
                   onClick={onUploadClick}
                   disabled={isProcessing}
                   aria-label={`Send new photo for ${work.title}`}
                 >
-                  <Upload className="size-3.5 shrink-0" aria-hidden="true" />
+                  <Camera className="size-3.5 shrink-0" aria-hidden="true" />
                   <span>Send new photo</span>
                 </Button>
               )}
@@ -737,12 +709,12 @@ function ActivityCard({
             <Button
               variant="default"
               size="sm"
-              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] gap-1.5 font-semibold cursor-pointer text-xs sm:text-sm px-4"
+              className="h-10 sm:h-9 min-h-10 sm:min-h-9 gap-1.5 font-semibold cursor-pointer text-xs sm:text-sm px-4"
               onClick={onUploadClick}
               disabled={closed}
               aria-label={`Send photo for ${work.title}`}
             >
-              <Upload className="size-4" aria-hidden="true" />
+              <Camera className="size-4" aria-hidden="true" />
               <span>Send photo</span>
             </Button>
           )}
@@ -752,9 +724,9 @@ function ActivityCard({
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete this photo?</AlertDialogTitle>
+              <AlertDialogTitle>Delete this upload?</AlertDialogTitle>
               <AlertDialogDescription>
-                This permanently deletes your uploaded photo and comments for &ldquo;{work.title}&rdquo;. You can take and send a new photo anytime.
+                This permanently deletes your uploaded photo and comments for &ldquo;{work.title}&rdquo;. This action cannot be undone, and you can send a new photo anytime.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -779,7 +751,7 @@ function ActivityCard({
                     <span>Deleting...</span>
                   </>
                 ) : (
-                  "Delete Photo"
+                  "Delete upload"
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -834,6 +806,7 @@ function PhotoPreviewDialog({
               <img
                 src={imageUrl}
                 alt={`Uploaded handwriting worksheet for ${title}`}
+                loading="lazy"
                 className="w-full h-auto object-contain max-h-[65dvh]"
               />
             </div>

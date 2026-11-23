@@ -102,13 +102,13 @@ export function ParentNav({
             className="flex items-center gap-2 shrink-0 rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-opacity hover:opacity-90 min-h-[40px] min-w-[40px]"
             aria-label="WriteWise Parent Portal Home"
           >
-            <div className="flex sm:hidden size-8 items-center justify-center rounded-lg overflow-hidden shrink-0 shadow-2xs">
+            <div className="flex sm:hidden size-8 items-center justify-center rounded-lg overflow-hidden shrink-0 border border-border/60">
               <BrandIcon size={32} className="size-full object-contain" priority />
             </div>
             <BrandLogo size="sm" priority className="hidden sm:inline-flex" />
           </Link>
 
-          {/* Center: Child Switcher (Select when multiple, subtle profile indicator when single) */}
+          {/* Center: Child Switcher (only shown when linked to multiple children) */}
           <div className="hidden sm:flex flex-1 justify-center min-w-0 px-2">
             {pathname === "/progress" && linkedChildren.length > 1 ? (
               <Select
@@ -118,7 +118,7 @@ export function ParentNav({
                 }}
               >
                 <SelectTrigger
-                  className="w-auto min-w-0 max-w-[340px] h-9 text-xs sm:text-sm font-medium gap-1.5 border-border/70 bg-card hover:bg-muted/40 transition-colors shadow-xs"
+                  className="w-auto min-w-0 max-w-[340px] h-9 text-xs sm:text-sm font-medium gap-1.5 border-border/70 bg-card hover:bg-muted/40 transition-colors shadow-warm-sm"
                   aria-label="Switch child profile"
                 >
                   <Users className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
@@ -142,12 +142,6 @@ export function ParentNav({
                   ))}
                 </SelectContent>
               </Select>
-            ) : pathname === "/progress" && linkedChildren.length === 1 && activeChild ? (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/40 border border-border/60 text-xs text-foreground max-w-[280px]">
-                <Users className="size-3 text-muted-foreground shrink-0" aria-hidden="true" />
-                <span className="truncate font-semibold">{activeChild.fullName}</span>
-                <span className="text-muted-foreground text-xs shrink-0">({activeChild.section})</span>
-              </div>
             ) : null}
           </div>
 
@@ -184,7 +178,7 @@ export function ParentNav({
                   {onOpenRubric && (
                     <DropdownMenuItem
                       onClick={onOpenRubric}
-                      className="cursor-pointer gap-2 py-2 text-sm"
+                      className="cursor-pointer gap-2 py-2 min-h-10 sm:min-h-9 text-sm"
                     >
                       <BookOpen className="size-4 text-muted-foreground" aria-hidden="true" />
                       <span>How scores work</span>
@@ -193,7 +187,7 @@ export function ParentNav({
                   {onOpenCursiveGuide && (
                     <DropdownMenuItem
                       onClick={onOpenCursiveGuide}
-                      className="cursor-pointer gap-2 py-2 text-sm"
+                      className="cursor-pointer gap-2 py-2 min-h-10 sm:min-h-9 text-sm"
                     >
                       <PenTool className="size-4 text-muted-foreground" aria-hidden="true" />
                       <span>Cursive guide</span>
@@ -201,7 +195,7 @@ export function ParentNav({
                   )}
                   <DropdownMenuItem
                     render={<Link href="/parent-settings" />}
-                    className="cursor-pointer gap-2 py-2 text-sm"
+                    className="cursor-pointer gap-2 py-2 min-h-10 sm:min-h-9 text-sm"
                   >
                     <Settings className="size-4 text-muted-foreground" aria-hidden="true" />
                     <span>Account Settings</span>
@@ -211,7 +205,7 @@ export function ParentNav({
                 <DropdownMenuGroup>
                   <DropdownMenuItem
                     onClick={() => setShowSignOutDialog(true)}
-                    className="cursor-pointer gap-2 py-2 text-sm text-destructive focus:text-destructive"
+                    className="cursor-pointer gap-2 py-2 min-h-10 sm:min-h-9 text-sm text-destructive focus:text-destructive"
                   >
                     <LogOut className="size-4" aria-hidden="true" />
                     <span>Sign out</span>

@@ -12,6 +12,7 @@ import {
   ChevronDownIcon,
   ChevronsUpDownIcon,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 interface RubricReferenceDialogProps {
@@ -413,19 +414,20 @@ export function RubricReferenceDialog({
         className="p-0 overflow-hidden flex flex-col gap-0 shadow-warm w-[calc(100%-1.5rem)] sm:max-w-2xl max-h-[min(90dvh,calc(100vh-2rem))] rounded-2xl"
       >
         <DialogHeader className="p-4 sm:p-5 border-b border-border/70 bg-background/95 backdrop-blur-xs shrink-0">
-          <div className="flex items-center justify-between gap-2 min-w-0 pr-10 sm:pr-8">
+          <div className="flex flex-wrap items-center justify-between gap-2 min-w-0 pr-10 sm:pr-8">
             <DialogTitle className="text-base sm:text-lg font-heading font-semibold text-foreground tracking-tight">
               {isParent ? "How Scores Work" : "Scoring Rubric"}
             </DialogTitle>
             {isParent && (
-              <button
-                type="button"
-                onClick={toggleScoreDetails}
-                aria-pressed={showScoreDetails}
-                className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-2.5 py-1 min-h-[40px] sm:min-h-[36px] inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors shrink-0 touch-manipulation"
-              >
-                {showScoreDetails ? "Hide details" : "Show details"}
-              </button>
+              <label className="inline-flex min-h-10 sm:min-h-9 cursor-pointer select-none items-center gap-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0 touch-manipulation">
+                <Switch
+                  aria-label="Show numeric scores"
+                  size="sm"
+                  checked={showScoreDetails}
+                  onCheckedChange={toggleScoreDetails}
+                />
+                Show numeric scores
+              </label>
             )}
           </div>
 

@@ -67,7 +67,7 @@ export function PendingWorksheetDialog({
                 <span>{backLabel}</span>
               </button>
               <DialogTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
-                Worksheet Photo &amp; Review Status
+                Worksheet &amp; Review Status
               </DialogTitle>
               <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
                 <span className="font-medium text-foreground">{childName}</span>
@@ -107,38 +107,22 @@ export function PendingWorksheetDialog({
             {/* Right Column: Status & Teacher Note */}
             <div className="lg:col-span-5 space-y-4 w-full">
               <div className="p-4 sm:p-5 rounded-xl border border-border bg-card space-y-4 shadow-warm-sm">
-                {/* Status Badge & Headline */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    {item.status === "returned" ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-band-2/15 text-band-2-text dark:text-amber-200 border border-band-2/30">
-                        Revision requested
-                      </span>
-                    ) : item.status === "rejected" ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-band-2/15 text-band-2-text dark:text-amber-200 border border-band-2/30">
-                        Clearer photo needed
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
-                        Under teacher review
-                      </span>
-                    )}
-                  </div>
-
+                {/* Status Headline & Explanation */}
+                <div className="space-y-1.5">
                   <h3 className="font-heading text-base font-semibold text-foreground">
                     {item.status === "returned"
-                      ? "Teacher requested another attempt"
+                      ? "New photo requested"
                       : item.status === "rejected"
                         ? "Clearer photo needed"
-                        : "Turned in — waiting for teacher review"}
+                        : "Waiting for teacher review"}
                   </h3>
 
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     {item.status === "returned"
-                      ? "Your child's teacher reviewed this submission and requested another attempt. Earlier photos stay saved in their history."
+                      ? "Your teacher asked for another photo. Earlier uploads stay saved in history."
                       : item.status === "rejected"
-                        ? "This photo could not be evaluated by the quality check. Please take a flatter, well-lit photo of the paper."
-                        : "Your child's worksheet was received. The teacher will share handwriting feedback and writing line guides after grading."}
+                        ? "This photo couldn't be read clearly. Retake it flat in even light."
+                        : "Worksheet received. Feedback will appear here once your teacher shares it."}
                   </p>
                 </div>
 

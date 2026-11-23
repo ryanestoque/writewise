@@ -62,6 +62,7 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -98,6 +99,7 @@
 
   /* Primary mapped to brand-600 */
   --primary: #1b6b63;
+  --primary-hover: #145049;
   --primary-foreground: #ffffff;
 
   /* Secondary mapped to brand-100 */
@@ -152,6 +154,7 @@
   --popover-foreground: #f7f8f7;
 
   --primary: #e4f1ef;
+  --primary-hover: #b8ddd7;
   --primary-foreground: #1b6b63;
 
   --secondary: #145049;

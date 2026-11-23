@@ -42,7 +42,7 @@ export default async function ParentLayout({
           className="flex flex-col items-center justify-center min-h-[50vh] gap-3"
         >
           <Loader2
-            className="size-8 animate-spin motion-reduce:animate-none text-brand-600 dark:text-brand-400"
+            className="size-8 animate-spin text-brand-600 dark:text-brand-400"
             aria-hidden="true"
           />
           <p className="text-sm text-muted-foreground">Loading parent portal...</p>

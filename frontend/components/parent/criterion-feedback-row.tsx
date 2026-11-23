@@ -54,14 +54,14 @@ export function CriterionFeedbackRow({
     <div
       onClick={hasNestedButton ? undefined : onInspect}
       className={cn(
-        "px-3.5 py-3 transition-colors space-y-2",
+        "px-4 py-3 transition-colors space-y-2",
         onInspect &&
-          "cursor-pointer hover:bg-muted/30 focus-within:bg-muted/30 group",
+        "cursor-pointer hover:bg-muted/30 focus-within:bg-muted/30 group",
         isActive && "bg-brand-50/70 dark:bg-brand-950/40"
       )}
     >
       {/* Header Row */}
-      <div className="flex items-start sm:items-center justify-between gap-2.5 flex-wrap">
+      <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap">
         {/* Left: Criterion Info */}
         <div className="min-w-0 flex-1 space-y-0.5">
           <div className="flex flex-wrap items-center gap-1.5">
@@ -104,7 +104,9 @@ export function CriterionFeedbackRow({
                 "cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
                 inspectLabel
                   ? "inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors bg-muted/40 group-hover:bg-brand-50 dark:group-hover:bg-brand-950/40 px-2.5 py-1.5 min-h-10 sm:min-h-9 rounded-md border border-border/60"
-                  : "size-10 sm:size-9 rounded-md inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent hover:border-border/60"
+                  : isActive
+                    ? "size-10 sm:size-9 rounded-md inline-flex items-center justify-center text-primary bg-primary/10 border border-primary/25 transition-colors"
+                    : "size-10 sm:size-9 rounded-md inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent hover:border-border/60 transition-colors"
               )}
             >
               <Eye className="size-3.5 shrink-0" aria-hidden="true" />

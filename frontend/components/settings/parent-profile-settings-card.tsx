@@ -165,7 +165,7 @@ export function ParentProfileSettingsCard({
               </div>
             </CardContent>
 
-            <CardFooter className="flex flex-col-reverse sm:flex-row justify-end gap-2 border-t border-border bg-muted/20 px-6 py-3.5">
+            <CardFooter className="flex flex-col-reverse sm:flex-row justify-end gap-2 border-t border-border bg-muted/20 px-6 py-4">
               {isDirty && (
                 <Button
                   type="button"
@@ -180,11 +180,11 @@ export function ParentProfileSettingsCard({
               <Button
                 type="submit"
                 disabled={!isDirty || isSaving}
-                className="w-full sm:w-auto h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 sm:px-5 text-xs sm:text-sm font-medium shadow-xs cursor-pointer"
+                className="w-full sm:w-auto h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 sm:px-5 text-xs sm:text-sm font-medium shadow-warm-sm cursor-pointer"
               >
                 {isSaving ? (
                   <>
-                    <Loader2 data-icon="inline-start" className="mr-1.5 size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                    <Loader2 data-icon="inline-start" className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
                     Saving...
                   </>
                 ) : (

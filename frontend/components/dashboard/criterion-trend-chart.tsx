@@ -404,10 +404,8 @@ export function CriterionTrendChart({
       {isParent ? (
         <div className="flex flex-col gap-3 border-b border-border/50 pb-3 min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xs sm:text-sm text-muted-foreground">
-              {showEachSkill
-                ? "Comparing overall result and individual handwriting skills"
-                : "Showing overall handwriting progress across worksheets"}
+            <span className="text-xs font-medium text-muted-foreground">
+              {showEachSkill ? "By skill" : "Overall"}
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -604,7 +602,7 @@ export function CriterionTrendChart({
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-3 rounded-xl bg-muted/20 border border-border/60 text-xs">
               <div className="space-y-1">
                 <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums block">
-                  First Worksheet ({trajectoryStats.firstDate})
+                  First ({trajectoryStats.firstDate})
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {showScoreDetails && (
@@ -617,7 +615,7 @@ export function CriterionTrendChart({
               </div>
               <div className="space-y-1">
                 <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums block">
-                  Latest Worksheet ({trajectoryStats.latestDate})
+                  Latest ({trajectoryStats.latestDate})
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {showScoreDetails && (
@@ -630,29 +628,23 @@ export function CriterionTrendChart({
               </div>
               <div className="col-span-2 sm:col-span-1 space-y-1 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-border/50">
                 <span className="text-xs text-muted-foreground font-medium block">
-                  Overall Progress
+                  Trend · {trajectoryStats.totalCount} worksheets
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span
                     className={cn(
                       "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-semibold text-xs tabular-nums",
                       trajectoryStats.direction === "improving"
-                        ? "bg-band-4/15 dark:bg-band-4/25 text-band-4-text dark:text-emerald-300 border border-band-4/30 dark:border-band-4/40"
+                        ? "bg-band-4/15 dark:bg-band-4/25 text-band-4-text border border-band-4/30 dark:border-band-4/40"
                         : trajectoryStats.direction === "lower"
-                          ? "bg-band-2/15 dark:bg-band-2/25 text-band-2-text dark:text-amber-200 border border-band-2/30 dark:border-band-2/40"
+                          ? "bg-band-2/15 dark:bg-band-2/25 text-band-2-text border border-band-2/30 dark:border-band-2/40"
                           : "bg-muted text-muted-foreground border border-border/60"
                     )}
                   >
                     {trajectoryStats.label}
                     {showScoreDetails ? ` (${formatScoreDifference(trajectoryStats.diff)})` : ""}
                   </span>
-                  <span className="text-xs text-muted-foreground font-sans tabular-nums">({trajectoryStats.totalCount} worksheets)</span>
                 </div>
-                {trajectoryStats.direction === "lower" && variant === "parent" && (
-                  <p className="text-xs text-muted-foreground/90 max-w-prose leading-relaxed pt-0.5">
-                    Longer words or new sentences can dip scores briefly — steady practice builds consistency.
-                  </p>
-                )}
               </div>
             </div>
           )}

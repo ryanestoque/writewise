@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useMemo, useCallback, useSyncExternalStore, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   parseParentNotificationTarget,
@@ -11,6 +11,22 @@ import { ParentUploadDialog } from "@/components/parent/parent-upload-dialog";
 import { CursiveGuideDialog } from "@/components/cursive-guide-dialog";
 import { RubricReferenceDialog } from "@/components/rubric-reference-dialog";
 import { useLinkedChildren, type LinkedChild } from "@/lib/hooks/use-parent-data";
+
+function getScoreDetailsStorageKey(userId: string) {
+  return `writewise:parent:show-score-details:${userId}`;
+}
+
+const SCORE_DETAILS_EVENT = "writewise:parent-score-details";
+
+function subscribeScoreDetails(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", callback);
+  window.addEventListener(SCORE_DETAILS_EVENT, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(SCORE_DETAILS_EVENT, callback);
+  };
+}
 
 interface ParentPortalContextValue {
   userId: string;
@@ -34,6 +50,9 @@ interface ParentPortalContextValue {
   rubricOpen: boolean;
   setRubricOpen: (open: boolean) => void;
   openRubric: () => void;
+  showScoreDetails: boolean;
+  setShowScoreDetails: (next: boolean) => void;
+  toggleScoreDetails: () => void;
 }
 
 const ParentPortalContext = createContext<ParentPortalContextValue | null>(null);
@@ -129,6 +148,36 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
     setRubricOpen(true);
   }, []);
 
+  const showScoreDetails = useSyncExternalStore(
+    subscribeScoreDetails,
+    () => {
+      if (!user.id || typeof window === "undefined") return false;
+      try {
+        return window.localStorage.getItem(getScoreDetailsStorageKey(user.id)) === "true";
+      } catch {
+        return false;
+      }
+    },
+    () => false
+  );
+
+  const setShowScoreDetails = useCallback(
+    (next: boolean) => {
+      if (!user.id || typeof window === "undefined") return;
+      try {
+        window.localStorage.setItem(getScoreDetailsStorageKey(user.id), String(next));
+        window.dispatchEvent(new Event(SCORE_DETAILS_EVENT));
+      } catch {
+        // Ignore storage access errors
+      }
+    },
+    [user.id]
+  );
+
+  const toggleScoreDetails = useCallback(() => {
+    setShowScoreDetails(!showScoreDetails);
+  }, [setShowScoreDetails, showScoreDetails]);
+
   const contextValue: ParentPortalContextValue = useMemo(
     () => ({
       userId: user.id,
@@ -152,6 +201,9 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
       rubricOpen,
       setRubricOpen,
       openRubric,
+      showScoreDetails,
+      setShowScoreDetails,
+      toggleScoreDetails,
     }),
     [
       user.id,
@@ -172,6 +224,9 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
       openCursiveGuide,
       rubricOpen,
       openRubric,
+      showScoreDetails,
+      setShowScoreDetails,
+      toggleScoreDetails,
     ]
   );
 
@@ -217,6 +272,8 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
         open={rubricOpen}
         onOpenChange={setRubricOpen}
         variant="parent"
+        showScoreDetails={showScoreDetails}
+        onToggleScoreDetails={toggleScoreDetails}
       />
     </ParentPortalContext.Provider>
   );

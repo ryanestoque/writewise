@@ -12,9 +12,13 @@ colors:
   neutral-text: "#1e2422"
   neutral-muted-text: "#5b6663"
   band-1: "#b6754a"
+  band-1-text: "#8f4a21"
   band-2: "#c9a227"
+  band-2-text: "#7a4e00"
   band-3: "#7c9b6e"
+  band-3-text: "#36542c"
   band-4: "#4a8b5c"
+  band-4-text: "#1a4a2b"
   destructive: "#9c4a2f"
 typography:
   display:
@@ -86,8 +90,8 @@ components:
     padding: "8px 12px"
     height: "36px"
   chip-band-1:
-    backgroundColor: "rgba(182, 117, 74, 0.12)"
-    textColor: "{colors.band-1}"
+    backgroundColor: "rgba(182, 117, 74, 0.15)"
+    textColor: "{colors.band-1-text}"
     rounded: "{rounded.full}"
     padding: "2px 10px"
 ---
@@ -212,7 +216,7 @@ Form geometry communicates interaction depth and intent:
 
 ### Chips & Badges
 - **Shape:** Fully rounded (`rounded-full`), height 22px–26px, padding `2px 10px`, text `0.75rem` font-medium.
-- **Band Badges:** Colored pill background (15% opacity tint of band color) paired with solid band foreground text and a 6px circular dot indicator.
+- **Band Badges:** Colored pill background (15% opacity tint of band color) paired with WCAG AA darkened band text tokens (`--band-1-text` `#8f4a21`, `--band-2-text` `#7a4e00`, `--band-3-text` `#36542c`, `--band-4-text` `#1a4a2b` in light mode) and a 6px circular dot indicator (`--color-band-*`).
 
 ### Cards / Containers
 - **Corner Style:** 12px radius (`rounded-xl`), border 1px `#e3e6e4`, background `#ffffff`.

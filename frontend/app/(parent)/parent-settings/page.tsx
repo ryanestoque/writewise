@@ -53,7 +53,7 @@ export default async function ParentSettingsPage() {
       {/* Page Header */}
       <div className="border-border space-y-1 border-b pb-6">
         <h1 className="font-heading text-foreground text-2xl font-semibold tracking-tight sm:text-3xl">
-          Account settings
+          Account Settings
         </h1>
         <p className="text-muted-foreground text-sm">
           Manage your profile, password, and email notifications.

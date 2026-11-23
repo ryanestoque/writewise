@@ -575,7 +575,7 @@ function ParentUploadFlow({
             className="flex flex-col items-center justify-center py-10 space-y-3.5 text-center min-h-[160px]"
           >
             <Loader2Icon
-              className="size-8 animate-spin text-primary motion-reduce:animate-none"
+              className="size-8 animate-spin text-primary"
               aria-hidden="true"
             />
             <div className="space-y-1">
@@ -593,15 +593,15 @@ function ParentUploadFlow({
             {step === 1 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Select Assigned Take-Home Activity
+                  <span className="text-sm font-heading font-semibold text-foreground">
+                    Select a practice worksheet
                   </span>
                 </div>
 
                 {activitiesLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2Icon
-                      className="size-5 animate-spin motion-reduce:animate-none text-muted-foreground"
+                      className="size-5 animate-spin text-muted-foreground"
                       aria-hidden="true"
                     />
                   </div>
@@ -696,7 +696,7 @@ function ParentUploadFlow({
                       aria-hidden="true"
                     />
                     <span>
-                      <strong>New attempt:</strong> Submitting a new photo records an updated assessment while keeping earlier scores safely archived in your child&apos;s history.
+                      <strong>New attempt</strong> — earlier photos stay saved in history.
                     </span>
                   </div>
                 )}
@@ -759,8 +759,8 @@ function ParentUploadFlow({
                   </p>
                   <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                     {isMobile
-                      ? "Supports JPEG or PNG (up to 15MB) · Take a photo or choose from library"
-                      : "Supports JPEG or PNG (up to 15MB) · Drag & drop or browse"}
+                      ? "JPEG or PNG, up to 15 MB"
+                      : "JPEG or PNG, up to 15 MB · Drag & drop or browse"}
                   </p>
 
                   {/* Action Triggers */}
@@ -774,7 +774,7 @@ function ParentUploadFlow({
                         onClick={() => cameraInputRef.current?.click()}
                       >
                         <CameraIcon className="size-3.5" aria-hidden="true" />
-                        Take Photo
+                        Take photo
                       </Button>
                       <Button
                         type="button"
@@ -786,7 +786,7 @@ function ParentUploadFlow({
                           className="size-3.5 text-muted-foreground"
                           aria-hidden="true"
                         />
-                        Photo Library
+                        Photo library
                       </Button>
                     </div>
                   ) : (
@@ -815,7 +815,7 @@ function ParentUploadFlow({
                     <button
                       type="button"
                       onClick={() => setDropError(null)}
-                      className="font-semibold underline shrink-0 cursor-pointer"
+                      className="inline-flex items-center justify-center min-h-10 sm:min-h-9 px-2 -my-1 rounded-md font-semibold underline shrink-0 cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-destructive"
                     >
                       Dismiss
                     </button>
@@ -823,7 +823,7 @@ function ParentUploadFlow({
                 )}
 
                 {/* Subtle Privacy Notice Footnote (Clean Typography, No Decorative Icon) */}
-                <p className="text-center text-xs text-muted-foreground pt-0.5">
+                <p className="text-center text-xs text-muted-foreground pt-1">
                   Location &amp; device metadata stripped automatically for student privacy
                 </p>
 
@@ -832,7 +832,7 @@ function ParentUploadFlow({
                   <button
                     type="button"
                     onClick={() => setShowTips((prev) => !prev)}
-                    className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-muted/50 transition-colors text-left font-medium text-foreground cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                    className="w-full min-h-10 sm:min-h-9 flex items-center justify-between px-4 py-2 hover:bg-muted/50 transition-colors text-left font-medium text-foreground cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                     aria-expanded={showTips}
                     aria-controls={photoTipsId}
                   >
@@ -914,7 +914,7 @@ function ParentUploadFlow({
                       aria-hidden="true"
                     />
                     <span>
-                      <strong>New attempt:</strong> Submitting a new photo records an updated assessment while keeping earlier scores safely archived in your child&apos;s history.
+                      <strong>New attempt</strong> — earlier photos stay saved in history.
                     </span>
                   </div>
                 )}
@@ -1030,7 +1030,7 @@ function ParentUploadFlow({
                     type="button"
                     variant="default"
                     onClick={onClose}
-                    className="min-h-11 sm:min-h-9 h-10 sm:h-9 text-xs sm:text-sm font-medium w-full shadow-warm cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="min-h-11 sm:min-h-9 h-10 sm:h-9 text-xs sm:text-sm font-medium w-full shadow-warm-sm cursor-pointer"
                   >
                     Done
                   </Button>
@@ -1110,7 +1110,7 @@ function ParentUploadFlow({
               ref={submitButtonRef}
               disabled={uploadMutation.isPending || !selectedActivity}
               onClick={handleRetryUpload}
-              className="gap-2 h-10 sm:h-9 px-5 text-xs sm:text-sm font-semibold shadow-warm cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
+              className="gap-2 h-10 sm:h-9 px-5 text-xs sm:text-sm font-semibold shadow-warm-sm cursor-pointer"
             >
               <CheckCircle2Icon className="size-4" aria-hidden="true" />
               Send worksheet photo

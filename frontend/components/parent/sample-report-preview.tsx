@@ -4,6 +4,7 @@ import { useState } from "react";
 import { BandBadge } from "@/components/shared/band-badge";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   PARENT_CRITERIA_LIST,
   PARENT_BAND_EXPLANATIONS,
@@ -66,7 +67,7 @@ const SAMPLE_COMPOSITE_META = getBandMeta(SAMPLE_COMPOSITE_BAND);
 
 export function SampleReportPreview({
   onOpenRubric,
-  defaultCollapsed = false,
+  defaultCollapsed = true,
   showScoreDetails: controlledShowDetails,
   onToggleScoreDetails,
 }: SampleReportPreviewProps) {
@@ -93,30 +94,33 @@ export function SampleReportPreview({
       className="rounded-xl border border-border bg-card shadow-warm overflow-hidden"
     >
       {/* Header bar */}
-      <div className="p-5 sm:p-6 space-y-3">
+      <div className={cn("px-5 sm:px-6", isCollapsed ? "py-4" : "py-5 sm:py-6 space-y-3")}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <h2
               id="sample-report-heading"
               className="font-heading text-base sm:text-lg font-semibold text-foreground"
             >
               Example feedback
             </h2>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
-              Preview how WriteWise checks the 5 handwriting skills and gives home practice tips.
-            </p>
+            {!isCollapsed && (
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
+                How WriteWise evaluates each skill and suggests home practice.
+              </p>
+            )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
             {!isCollapsed && (
-              <button
-                type="button"
-                onClick={toggleScoreDetails}
-                aria-pressed={showScoreDetails}
-                className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
-              >
-                {showScoreDetails ? "Hide numeric scores" : "Show numeric scores"}
-              </button>
+              <label className="inline-flex min-h-10 sm:min-h-9 cursor-pointer select-none items-center gap-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors touch-manipulation">
+                <Switch
+                  aria-label="Show numeric scores"
+                  size="sm"
+                  checked={showScoreDetails}
+                  onCheckedChange={toggleScoreDetails}
+                />
+                Show numeric scores
+              </label>
             )}
             <Button
               type="button"
@@ -124,7 +128,7 @@ export function SampleReportPreview({
               size="sm"
               onClick={() => setIsCollapsed((prev) => !prev)}
               aria-expanded={!isCollapsed}
-              className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
+              className="h-10 sm:h-9 min-h-10 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
             >
               {isCollapsed ? (
                 <>
@@ -219,84 +223,84 @@ export function SampleReportPreview({
               </p>
             </div>
 
-            <div className="relative rounded-xl border border-border/80 bg-background/80 dark:bg-muted/20 p-4 sm:p-5 overflow-hidden shadow-2xs">
+            <div className="relative rounded-xl border border-border/80 bg-background/80 dark:bg-muted/20 p-4 sm:p-6 overflow-hidden">
               <svg
                 viewBox="0 0 540 180"
                 className="w-full h-auto select-none"
                 aria-label={`Example handwriting illustration with ${currentMeta.label} guide lines`}
                 role="img"
               >
-                <line x1="20" y1="35" x2="520" y2="35" stroke="#64748b" strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />
-                <text x="22" y="29" fill="#475569" fontSize="10" fontFamily="sans-serif" fontWeight="500">Top Line</text>
+                <line x1="20" y1="35" x2="520" y2="35" stroke="var(--muted-foreground)" strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />
+                <text x="22" y="29" fill="var(--muted-foreground)" fontSize="10" fontFamily="sans-serif" fontWeight="500">Top Line</text>
 
-                <line x1="20" y1="85" x2="520" y2="85" stroke="#1b6b63" strokeWidth="1.25" strokeDasharray="4 4" opacity="0.8" />
-                <text x="22" y="79" fill="#145049" fontSize="10" fontFamily="sans-serif" fontWeight="500">Middle Line</text>
+                <line x1="20" y1="85" x2="520" y2="85" stroke="var(--primary)" strokeWidth="1.25" strokeDasharray="4 4" opacity="0.8" />
+                <text x="22" y="79" fill="var(--secondary-foreground)" fontSize="10" fontFamily="sans-serif" fontWeight="500">Middle Line</text>
 
-                <line x1="20" y1="135" x2="520" y2="135" stroke="#9c4a2f" strokeWidth="1.5" opacity="0.85" />
-                <text x="22" y="149" fill="#80351e" fontSize="10" fontFamily="sans-serif" fontWeight="500">Bottom Line</text>
+                <line x1="20" y1="135" x2="520" y2="135" stroke="var(--destructive)" strokeWidth="1.5" opacity="0.85" />
+                <text x="22" y="149" fill="var(--destructive)" fontSize="10" fontFamily="sans-serif" fontWeight="500">Bottom Line</text>
 
-                <line x1="20" y1="165" x2="520" y2="165" stroke="#64748b" strokeWidth="0.75" strokeDasharray="2 3" opacity="0.4" />
+                <line x1="20" y1="165" x2="520" y2="165" stroke="var(--muted-foreground)" strokeWidth="0.75" strokeDasharray="2 3" opacity="0.4" />
 
                 {activeCriterion === "slant" && (
-                  <g className="animate-in fade-in duration-300">
-                    <line x1="75" y1="145" x2="115" y2="25" stroke="#1b6b63" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
-                    <line x1="140" y1="145" x2="180" y2="25" stroke="#1b6b63" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
-                    <line x1="210" y1="145" x2="250" y2="25" stroke="#1b6b63" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
-                    <line x1="310" y1="145" x2="350" y2="25" stroke="#1b6b63" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
-                    <line x1="420" y1="145" x2="460" y2="25" stroke="#1b6b63" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
+                  <g className="animate-in fade-in duration-300 motion-reduce:animate-none">
+                    <line x1="75" y1="145" x2="115" y2="25" stroke="var(--primary)" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
+                    <line x1="140" y1="145" x2="180" y2="25" stroke="var(--primary)" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
+                    <line x1="210" y1="145" x2="250" y2="25" stroke="var(--primary)" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
+                    <line x1="310" y1="145" x2="350" y2="25" stroke="var(--primary)" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
+                    <line x1="420" y1="145" x2="460" y2="25" stroke="var(--primary)" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8" />
 
-                    <rect x="235" y="15" width="110" height="18" rx="4" fill="#1b6b63" opacity="0.9" />
-                    <text x="290" y="27" fill="#ffffff" fontSize="9" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
+                    <rect x="235" y="15" width="110" height="18" rx="4" fill="var(--primary)" opacity="0.92" />
+                    <text x="290" y="27" fill="var(--primary-foreground)" fontSize="9" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
                       Steady Forward Tilt
                     </text>
                   </g>
                 )}
 
                 {activeCriterion === "baseline_alignment" && (
-                  <g className="animate-in fade-in duration-300">
-                    <line x1="45" y1="135" x2="495" y2="135" stroke="#4a8b5c" strokeWidth="3" opacity="0.4" />
-                    <circle cx="85" cy="135" r="3.5" fill="#4a8b5c" stroke="#ffffff" strokeWidth="1.5" />
-                    <circle cx="155" cy="135" r="3.5" fill="#4a8b5c" stroke="#ffffff" strokeWidth="1.5" />
-                    <circle cx="230" cy="135" r="3.5" fill="#4a8b5c" stroke="#ffffff" strokeWidth="1.5" />
-                    <circle cx="340" cy="135" r="3.5" fill="#4a8b5c" stroke="#ffffff" strokeWidth="1.5" />
-                    <circle cx="445" cy="135" r="3.5" fill="#4a8b5c" stroke="#ffffff" strokeWidth="1.5" />
+                  <g className="animate-in fade-in duration-300 motion-reduce:animate-none">
+                    <line x1="45" y1="135" x2="495" y2="135" stroke="var(--color-band-4)" strokeWidth="3" opacity="0.4" />
+                    <circle cx="85" cy="135" r="3.5" fill="var(--color-band-4)" stroke="var(--surface)" strokeWidth="1.5" />
+                    <circle cx="155" cy="135" r="3.5" fill="var(--color-band-4)" stroke="var(--surface)" strokeWidth="1.5" />
+                    <circle cx="230" cy="135" r="3.5" fill="var(--color-band-4)" stroke="var(--surface)" strokeWidth="1.5" />
+                    <circle cx="340" cy="135" r="3.5" fill="var(--color-band-4)" stroke="var(--surface)" strokeWidth="1.5" />
+                    <circle cx="445" cy="135" r="3.5" fill="var(--color-band-4)" stroke="var(--surface)" strokeWidth="1.5" />
 
-                    <rect x="355" y="145" width="135" height="18" rx="4" fill="#4a8b5c" opacity="0.9" />
-                    <text x="422" y="157" fill="#ffffff" fontSize="9" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
+                    <rect x="355" y="145" width="135" height="18" rx="4" fill="var(--color-band-4)" opacity="0.92" />
+                    <text x="422" y="157" fill="var(--surface)" fontSize="9" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
                       Rests on Bottom Line
                     </text>
                   </g>
                 )}
 
                 {activeCriterion === "size_consistency" && (
-                  <g className="animate-in fade-in duration-300">
-                    <rect x="40" y="85" width="460" height="50" fill="#1b6b63" opacity="0.08" />
-                    <line x1="125" y1="88" x2="125" y2="132" stroke="#1b6b63" strokeWidth="2" />
-                    <line x1="265" y1="88" x2="265" y2="132" stroke="#1b6b63" strokeWidth="2" />
-                    <rect x="175" y="75" width="105" height="18" rx="4" fill="#1b6b63" opacity="0.9" />
-                    <text x="227" y="87" fill="#ffffff" fontSize="9" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
+                  <g className="animate-in fade-in duration-300 motion-reduce:animate-none">
+                    <rect x="40" y="85" width="460" height="50" fill="var(--primary)" opacity="0.08" />
+                    <line x1="125" y1="88" x2="125" y2="132" stroke="var(--primary)" strokeWidth="2" />
+                    <line x1="265" y1="88" x2="265" y2="132" stroke="var(--primary)" strokeWidth="2" />
+                    <rect x="175" y="75" width="105" height="18" rx="4" fill="var(--primary)" opacity="0.92" />
+                    <text x="227" y="87" fill="var(--primary-foreground)" fontSize="9" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
                       Even Letter Height
                     </text>
                   </g>
                 )}
 
                 {activeCriterion === "spacing" && (
-                  <g className="animate-in fade-in duration-300">
-                    <rect x="135" y="80" width="30" height="55" fill="#1b6b63" opacity="0.12" rx="3" stroke="#1b6b63" strokeDasharray="2 2" strokeWidth="1" />
-                    <rect x="270" y="80" width="32" height="55" fill="#1b6b63" opacity="0.12" rx="3" stroke="#1b6b63" strokeDasharray="2 2" strokeWidth="1" />
-                    <rect x="390" y="80" width="28" height="55" fill="#1b6b63" opacity="0.12" rx="3" stroke="#1b6b63" strokeDasharray="2 2" strokeWidth="1" />
-                    <text x="150" y="148" fill="#145049" fontSize="8" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">1 finger</text>
-                    <text x="286" y="148" fill="#145049" fontSize="8" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">1 finger</text>
+                  <g className="animate-in fade-in duration-300 motion-reduce:animate-none">
+                    <rect x="135" y="80" width="30" height="55" fill="var(--primary)" opacity="0.12" rx="3" stroke="var(--primary)" strokeDasharray="2 2" strokeWidth="1" />
+                    <rect x="270" y="80" width="32" height="55" fill="var(--primary)" opacity="0.12" rx="3" stroke="var(--primary)" strokeDasharray="2 2" strokeWidth="1" />
+                    <rect x="390" y="80" width="28" height="55" fill="var(--primary)" opacity="0.12" rx="3" stroke="var(--primary)" strokeDasharray="2 2" strokeWidth="1" />
+                    <text x="150" y="148" fill="var(--secondary-foreground)" fontSize="8" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">1 finger</text>
+                    <text x="286" y="148" fill="var(--secondary-foreground)" fontSize="8" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">1 finger</text>
                   </g>
                 )}
 
                 {activeCriterion === "letter_formation" && (
-                  <g className="animate-in fade-in duration-300">
-                    <circle cx="95" cy="55" r="9" fill="none" stroke="#c9a227" strokeWidth="2" strokeDasharray="3 2" />
-                    <circle cx="215" cy="110" r="10" fill="none" stroke="#c9a227" strokeWidth="2" strokeDasharray="3 2" />
-                    <circle cx="345" cy="110" r="10" fill="none" stroke="#c9a227" strokeWidth="2" strokeDasharray="3 2" />
-                    <rect x="235" y="15" width="105" height="18" rx="4" fill="#b6754a" opacity="0.9" />
-                    <text x="287" y="27" fill="#ffffff" fontSize="9" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
+                  <g className="animate-in fade-in duration-300 motion-reduce:animate-none">
+                    <circle cx="95" cy="55" r="9" fill="none" stroke="var(--color-band-2)" strokeWidth="2" strokeDasharray="3 2" />
+                    <circle cx="215" cy="110" r="10" fill="none" stroke="var(--color-band-2)" strokeWidth="2" strokeDasharray="3 2" />
+                    <circle cx="345" cy="110" r="10" fill="none" stroke="var(--color-band-2)" strokeWidth="2" strokeDasharray="3 2" />
+                    <rect x="235" y="15" width="105" height="18" rx="4" fill="var(--color-band-1)" opacity="0.92" />
+                    <text x="287" y="27" fill="var(--surface)" fontSize="9" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
                       Clean Loops &amp; Joins
                     </text>
                   </g>

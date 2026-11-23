@@ -16,12 +16,12 @@ export function SubmissionCommentTabs({ submissionId, open = true, initialView =
   if (!submissionId) return <>{children}</>;
   return <Tabs value={view} onValueChange={value => setView(value as "details" | "comments")}
     className="flex min-h-0 flex-1 flex-col">
-    <TabsList className="mx-4 mt-3 shrink-0" aria-label="Submission view">
-      <TabsTrigger value="details">Details</TabsTrigger>
-      <TabsTrigger value="comments" className="gap-1.5">
+    <TabsList className="mx-4 mt-3 shrink-0 h-auto min-h-10 sm:min-h-9" aria-label="Submission view">
+      <TabsTrigger value="details" className="min-h-10 sm:min-h-9 px-3 touch-manipulation">Details</TabsTrigger>
+      <TabsTrigger value="comments" className="min-h-10 sm:min-h-9 px-3 gap-2 touch-manipulation">
         Comments
         {unread.data?.has(submissionId) && (
-          <span className="inline-flex items-center rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+          <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
             Unread
           </span>
         )}

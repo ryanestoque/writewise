@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useCallback, useMemo, useSyncExternalStore } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useParentPortal } from "@/components/parent-portal-provider";
 import { LatestSubmissionCard } from "@/components/parent/latest-submission-card";
 import { TakeHomeActivities } from "@/components/parent/take-home-activities";
 import { CriterionTrendChart } from "@/components/dashboard/criterion-trend-chart";
-import { RubricReferenceDialog } from "@/components/rubric-reference-dialog";
 import { PastWorksheetsSection } from "@/components/parent/submission-history-dialog";
 import { SampleReportPreview } from "@/components/parent/sample-report-preview";
 import { NotificationWorkDestination } from "@/components/parent/notification-work-destination";
@@ -50,25 +49,8 @@ import {
 
 type ParentProgressTab = "overview" | "to-write" | "progress";
 
-function getScoreDetailsStorageKey(userId: string) {
-  return `writewise:parent:show-score-details:${userId}`;
-}
-
-const SCORE_DETAILS_EVENT = "writewise:parent-score-details";
-
-function subscribeScoreDetails(callback: () => void) {
-  if (typeof window === "undefined") return () => {};
-  window.addEventListener("storage", callback);
-  window.addEventListener(SCORE_DETAILS_EVENT, callback);
-  return () => {
-    window.removeEventListener("storage", callback);
-    window.removeEventListener(SCORE_DETAILS_EVENT, callback);
-  };
-}
-
 export function ProgressPageContent() {
   const searchParams = useSearchParams();
-  const [rubricOpen, setRubricOpen] = useState(false);
   const [activitiesExpanded, setActivitiesExpanded] = useState(false);
   const [selectedTab, setSelectedTab] = useState<ParentProgressTab | null>(null);
 
@@ -83,42 +65,14 @@ export function ProgressPageContent() {
     retryChildren,
     openUploadDialog,
     openCursiveGuide,
+    openRubric,
+    showScoreDetails,
+    setShowScoreDetails,
+    toggleScoreDetails,
     userId,
     notificationTarget,
     dismissNotificationTarget,
   } = useParentPortal();
-
-  const showScoreDetails = useSyncExternalStore(
-    subscribeScoreDetails,
-    () => {
-      if (!userId || typeof window === "undefined") return false;
-      try {
-        return window.localStorage.getItem(getScoreDetailsStorageKey(userId)) === "true";
-      } catch {
-        return false;
-      }
-    },
-    () => false
-  );
-
-  const setPersistedScoreDetails = useCallback(
-    (next: boolean) => {
-      if (!userId || typeof window === "undefined") return;
-      try {
-        window.localStorage.setItem(getScoreDetailsStorageKey(userId), String(next));
-        window.dispatchEvent(new Event(SCORE_DETAILS_EVENT));
-      } catch {
-        // Ignore storage access errors
-      }
-    },
-    [userId]
-  );
-
-  const toggleScoreDetails = useCallback(() => {
-    setPersistedScoreDetails(!showScoreDetails);
-  }, [setPersistedScoreDetails, showScoreDetails]);
-
-  const handleOpenRubric = useCallback(() => setRubricOpen(true), []);
 
   const handleNavigateToWrite = useCallback(() => {
     setSelectedTab("to-write");
@@ -210,7 +164,7 @@ export function ProgressPageContent() {
         className="flex flex-col items-center justify-center min-h-[50vh] gap-3"
       >
         <Loader2
-          className="size-8 animate-spin motion-reduce:animate-none text-brand-600 dark:text-brand-400"
+          className="size-8 animate-spin text-brand-600 dark:text-brand-400"
           aria-hidden="true"
         />
         <p className="text-sm text-muted-foreground">Loading child profile...</p>
@@ -263,13 +217,19 @@ export function ProgressPageContent() {
   const requestedGrades = searchParams.getAll("tab").length === 1 && searchParams.get("tab") === "grades";
   const isResolvingInitialTab =
     selectedTab === null && !gradeDestination && !requestedGrades && historyLoading;
+  const defaultTab: ParentProgressTab =
+    requestedGrades
+      ? "progress"
+      : !historyLoading && scoredCount === 0 && takeHomeActivities.length > 0
+        ? "to-write"
+        : "overview";
   const activeTab: ParentProgressTab = gradeDestination
     ? "progress"
-    : selectedTab ?? (requestedGrades ? "progress" : "overview");
+    : selectedTab ?? defaultTab;
 
   const scoreControls = (
-    <label className="inline-flex min-h-11 cursor-pointer select-none items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-      <Switch aria-label="Show numeric scores" size="sm" checked={showScoreDetails} onCheckedChange={setPersistedScoreDetails} />
+    <label className="inline-flex min-h-11 sm:min-h-9 cursor-pointer select-none items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+      <Switch aria-label="Show numeric scores" size="sm" checked={showScoreDetails} onCheckedChange={setShowScoreDetails} />
       Show numeric scores
     </label>
   );
@@ -300,7 +260,7 @@ export function ProgressPageContent() {
                 className={cn(
                   "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 cursor-pointer transition-all min-h-11 touch-manipulation",
                   isSelected
-                    ? "bg-brand-700 text-white dark:bg-brand-600 shadow-2xs"
+                    ? "bg-brand-700 text-white dark:bg-brand-600 shadow-warm-sm"
                     : "bg-muted/70 text-muted-foreground hover:text-foreground hover:bg-muted border border-border/70"
                 )}
               >
@@ -393,7 +353,7 @@ export function ProgressPageContent() {
                   )}
                 >
                   {urgentStatus.urgency === "new_photo"
-                    ? "New photo needed:"
+                    ? "New photo requested:"
                     : urgentStatus.urgency === "overdue"
                       ? "Past due:"
                       : "Due soon:"}
@@ -489,7 +449,7 @@ export function ProgressPageContent() {
               aria-live="polite"
               className="rounded-xl border border-border bg-card shadow-warm p-8 flex flex-col items-center justify-center min-h-[220px] gap-3"
             >
-              <Loader2 className="size-6 animate-spin motion-reduce:animate-none text-brand-600 dark:text-brand-400" aria-hidden="true" />
+              <Loader2 className="size-6 animate-spin text-brand-600 dark:text-brand-400" aria-hidden="true" />
               <span className="text-sm text-muted-foreground">Loading {firstName}&apos;s latest feedback...</span>
             </div>
           ) : (
@@ -497,20 +457,15 @@ export function ProgressPageContent() {
               {hasPendingSubmission && latestScores && (
                 <div
                   role="status"
-                  className="rounded-xl border border-brand-200/80 bg-brand-50/80 dark:border-brand-800/60 dark:bg-brand-950/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-foreground"
+                  className="rounded-xl border border-brand-200/80 bg-brand-50/80 dark:border-brand-800/60 dark:bg-brand-950/40 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-foreground"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex size-9 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300 shrink-0">
+                    <div className="flex size-8 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300 shrink-0">
                       <Clock className="size-4 text-primary" aria-hidden="true" />
                     </div>
-                    <div className="space-y-0.5 min-w-0">
-                      <p className="text-sm font-semibold text-foreground">
-                        Worksheet received · Feedback pending
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        {firstName}&apos;s teacher hasn&apos;t shared feedback for that worksheet yet. You can still see their latest released feedback below.
-                      </p>
-                    </div>
+                    <p className="text-sm font-medium text-foreground min-w-0">
+                      New worksheet received · waiting for teacher review
+                    </p>
                   </div>
                   <Button
                     type="button"
@@ -534,7 +489,7 @@ export function ProgressPageContent() {
                 showScoreDetails={showScoreDetails}
                 onToggleScoreDetails={toggleScoreDetails}
                 scoreControls={scoreControls}
-                onOpenRubric={handleOpenRubric}
+                onOpenRubric={openRubric}
                 onOpenCursiveGuide={openCursiveGuide}
                 hasPendingSubmission={hasPendingSubmission}
                 hasNoAssignedPractice={practiceLoaded && takeHomeActivities.length === 0}
@@ -542,8 +497,8 @@ export function ProgressPageContent() {
               />
               {showExampleFeedback && (
                 <SampleReportPreview
-                  onOpenRubric={handleOpenRubric}
-                  defaultCollapsed={false}
+                  onOpenRubric={openRubric}
+                  defaultCollapsed={true}
                   showScoreDetails={showScoreDetails}
                   onToggleScoreDetails={toggleScoreDetails}
                 />
@@ -589,8 +544,6 @@ export function ProgressPageContent() {
               onOpenCursiveGuide={openCursiveGuide}
             />
           </section>
-
-          {selectedChildId && <ParentActivityThreads key={`${userId}:${selectedChildId}`} userId={userId} studentId={selectedChildId} />}
         </TabsContent>
 
         {/* Tab 3: Progress (Trend Chart, Past Worksheets, Coursework & Comments) */}
@@ -617,16 +570,16 @@ export function ProgressPageContent() {
                   <div
                     role="status"
                     aria-live="polite"
-                    className="rounded-xl border border-border bg-card p-8 flex flex-col items-center justify-center min-h-[240px] gap-2.5"
+                    className="rounded-xl border border-border bg-card p-8 flex flex-col items-center justify-center min-h-[240px] gap-3"
                   >
                     <Loader2
-                      className="size-6 animate-spin motion-reduce:animate-none text-muted-foreground"
+                      className="size-6 animate-spin text-muted-foreground"
                       aria-hidden="true"
                     />
                     <span className="text-sm text-muted-foreground">Loading progress chart...</span>
                   </div>
                 ) : history && history.length >= 2 ? (
-                  <div className="rounded-xl border border-border bg-card p-4 sm:p-5 min-w-0">
+                  <div className="rounded-xl border border-border bg-card p-4 sm:p-6 min-w-0">
                     <CriterionTrendChart
                       history={history}
                       variant="parent"
@@ -638,11 +591,11 @@ export function ProgressPageContent() {
                   <div className="rounded-xl border border-border bg-card p-5 sm:p-6 space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                       <div className="space-y-1">
-                        <h3 className="font-heading text-base sm:text-lg font-semibold text-foreground">
-                          1 of 2 worksheets checked for trend chart
+                        <h3 className="font-heading text-base font-semibold text-foreground">
+                          1 of 2 worksheets checked
                         </h3>
-                        <p className="text-sm text-muted-foreground leading-relaxed max-w-prose">
-                          &ldquo;{history[0].targetText}&rdquo; ({new Date(history[0].submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}) sets {firstName}&apos;s starting point. Trend lines appear after the next checked worksheet.
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          &ldquo;{history[0].targetText}&rdquo; ({new Date(history[0].submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}) · Trend chart unlocks after the next worksheet.
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0 self-start">
@@ -682,10 +635,10 @@ export function ProgressPageContent() {
                 ) : (
                   <div className="rounded-xl border border-border bg-card p-6 sm:p-8 text-center space-y-3">
                     <h3 className="font-heading text-base font-semibold text-foreground">
-                      Progress chart unlocks after 2 checked worksheets
+                      No trend data yet
                     </h3>
-                    <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-                      Once {firstName}&apos;s worksheets are checked by their teacher, you&apos;ll see their skill trends over time and full worksheet archive here.
+                    <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                      Progress charts appear after 2 checked worksheets.
                     </p>
                     <div>
                       <Button
@@ -740,15 +693,6 @@ export function ProgressPageContent() {
           </div>
         </TabsContent>
       </Tabs>
-
-      {/* How Scores Work Dialog */}
-      <RubricReferenceDialog
-        open={rubricOpen}
-        onOpenChange={setRubricOpen}
-        variant="parent"
-        showScoreDetails={showScoreDetails}
-        onToggleScoreDetails={toggleScoreDetails}
-      />
     </div>
   );
 }
