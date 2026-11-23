@@ -13,9 +13,11 @@ import { commentThreadHref } from "@/lib/comments/targets";
 export function ParentActivityThreads({
   userId,
   studentId,
+  className,
 }: {
   userId: string;
   studentId: string;
+  className?: string;
 }) {
   const query = useCommentSummaries(userId, { studentId }, true);
   const unread = useUnreadCommentThreads(userId);
@@ -26,7 +28,7 @@ export function ParentActivityThreads({
 
   return (
     <section
-      className="bg-card space-y-3 rounded-xl border p-4 sm:p-5"
+      className={cn("bg-card space-y-3 rounded-xl border p-4 sm:p-5", className)}
       aria-labelledby="teacher-comments-heading"
     >
       <h2

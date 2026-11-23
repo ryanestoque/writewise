@@ -5,7 +5,7 @@ import { useActivityNow } from "@/components/activities/activity-work-status";
 import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
 import { compareParentActivityUrgency, getParentActivityStatus } from "@/lib/utils/parent-activity-status";
 import type { TakeHomeActivity, TakeHomeActivitySubmission } from "@/lib/hooks/use-parent-data";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { WorkCommentsButton } from "@/components/comments/submission-comment-picker-sheet";
 import {
   useTakeHomeActivities,
@@ -93,6 +93,25 @@ export function TakeHomeActivities({
 
   const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
   const toggleExpanded = onToggleExpanded || (() => setInternalExpanded((prev) => !prev));
+  const isCollapsingRef = useRef(false);
+  const toggleContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (isCollapsingRef.current && !isExpanded) {
+      isCollapsingRef.current = false;
+      toggleContainerRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    }
+  }, [isExpanded]);
+
+  const handleToggleExpanded = () => {
+    if (isExpanded) {
+      isCollapsingRef.current = true;
+    }
+    toggleExpanded();
+  };
   const { data: activities, isLoading, isError, isFetching, refetch } = useTakeHomeActivities(childId);
   const userId = useCommentAccountId();
   const unread = useUnreadCommentThreads(userId ?? "");
@@ -269,12 +288,12 @@ export function TakeHomeActivities({
           </div>
 
           {toDoActivities.length > 3 && showExpandButton && (
-            <div className="pt-1">
+            <div ref={toggleContainerRef} className="pt-1 scroll-mb-6">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={toggleExpanded}
+                onClick={handleToggleExpanded}
                 aria-expanded={isExpanded}
                 aria-controls="take-home-activities-grid"
                 className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"

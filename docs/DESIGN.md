@@ -149,10 +149,11 @@ Class-related management (which roster/section a teacher is linked to) lives on 
 14. Latest diagnostic feedback view
 15. Submission upload — same core flow as teacher's, scoped to an assigned activity
 
-**Parent progress hierarchy:** Desktop uses the full viewport width with normal page gutters; do not introduce a centered maximum-width container. The `/progress` view is organized into a segmented 3-tab layout (`Latest Feedback`, `Practice`, and `Progress & Grades`) so parents focus on one task at a time:
+**Parent progress hierarchy:** Desktop uses the full viewport width with normal page gutters; do not introduce a centered maximum-width container. The `/progress` view is organized into a segmented 4-tab layout (`Latest Feedback`, `Practice`, `Progress`, and `Grades`) so parents focus on one task at a time:
 - **`Latest Feedback` (default once scored worksheets exist, or when no take-home practice is assigned):** Pairs the latest worksheet photo with coaching (photo-first on phones, side-by-side on desktop), then shows its five-skill breakdown (`LatestSubmissionCard`) with compact band-position indicators and diagnostic notes.
 - **`Practice` (default on zero-result onboarding when open take-home worksheets exist; shows a live badge count of open worksheets):** Displays assigned take-home practice worksheets (`TakeHomeActivities`) in a responsive 1/2/3-column grid alongside the current practice-focus tip and teacher comment threads.
-- **`Progress & Grades`:** Pairs longitudinal skill trends (`CriterionTrendChart`) and the sortable archive of past worksheets (`PastWorksheetsSection`) with released coursework totals (`ParentGrades`) and teacher comment threads (`ParentActivityThreads`).
+- **`Progress`:** Gives full width to longitudinal skill trends (`CriterionTrendChart`) and the sortable archive of past worksheets (`PastWorksheetsSection`).
+- **`Grades`:** Pairs released coursework totals (`ParentGrades`) with teacher comment threads (`ParentActivityThreads`), expanding coursework to full width when no comment threads exist.
 
 On all viewports, an urgent-task prompt precedes the tab bar when an open worksheet needs a replacement photo, is overdue but still accepts uploads, or is due within 48 hours. It names the worksheet and opens its existing upload dialog directly (and links to the `Practice` tab when multiple worksheets need attention). Replacement photos take priority, then overdue work, then the nearest upcoming deadline. Processing uploads and closed assignments never receive this upload prompt.
 

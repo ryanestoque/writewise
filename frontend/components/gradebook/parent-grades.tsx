@@ -68,11 +68,33 @@ export function ParentGrades({
           onClick={onDismissTarget}
           className="h-10 min-h-10 sm:h-9 sm:min-h-9 cursor-pointer touch-manipulation"
         >
-          Back to progress
+          Back to grades
         </Button>
       </div>
     );
-  if (query.data.groups.length === 0) return null;
+  if (query.data.groups.length === 0)
+    return (
+      <section
+        id="coursework-section"
+        aria-labelledby="coursework-heading"
+        className="space-y-3"
+      >
+        <h2
+          id="coursework-heading"
+          className="font-heading text-base sm:text-lg font-semibold text-foreground"
+        >
+          Coursework
+        </h2>
+        <div className="rounded-xl border border-border bg-card p-6 sm:p-8 text-center space-y-2">
+          <h3 className="font-heading text-base font-semibold text-foreground">
+            No coursework grades yet
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
+            Released points and coursework updates from your child&apos;s teacher will appear here.
+          </p>
+        </div>
+      </section>
+    );
   return (
     <section
       id="coursework-section"

@@ -2,7 +2,7 @@
 
 import { humanizeReason } from "@/lib/utils/humanize-reason";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { BandBadge } from "@/components/shared/band-badge";
 import { WorksheetViewDialog } from "./worksheet-view-dialog";
@@ -178,6 +178,27 @@ export function PastWorksheetsSection({
     useState<StudentScoreHistoryItem | null>(null);
   const [initialCriterionForView, setInitialCriterionForView] =
     useState<CriterionFilter | undefined>(undefined);
+  const isCollapsingRef = useRef(false);
+  const toggleContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (isCollapsingRef.current && !showAllInline) {
+      isCollapsingRef.current = false;
+      toggleContainerRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    }
+  }, [showAllInline]);
+
+  const handleToggleExpand = () => {
+    if (showAllInline) {
+      isCollapsingRef.current = true;
+      setShowAllInline(false);
+    } else {
+      setShowAllInline(true);
+    }
+  };
 
   const processedHistory = useMemo(
     () => buildProcessedHistory(history, sortOrder),
@@ -239,12 +260,12 @@ export function PastWorksheetsSection({
       </div>
 
       {processedHistory.length > 5 && (
-        <div className="flex justify-center pt-1">
+        <div ref={toggleContainerRef} className="flex justify-center pt-1 scroll-mb-6">
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => setShowAllInline((prev) => !prev)}
+            onClick={handleToggleExpand}
             className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-4 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
           >
             {showAllInline ? (

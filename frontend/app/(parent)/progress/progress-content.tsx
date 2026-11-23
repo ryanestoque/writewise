@@ -47,7 +47,7 @@ import {
   Clock,
 } from "lucide-react";
 
-type ParentProgressTab = "overview" | "to-write" | "progress";
+type ParentProgressTab = "overview" | "to-write" | "progress" | "grades";
 
 export function ProgressPageContent() {
   const searchParams = useSearchParams();
@@ -219,12 +219,12 @@ export function ProgressPageContent() {
     selectedTab === null && !gradeDestination && !requestedGrades && historyLoading;
   const defaultTab: ParentProgressTab =
     requestedGrades
-      ? "progress"
+      ? "grades"
       : !historyLoading && scoredCount === 0 && takeHomeActivities.length > 0
         ? "to-write"
         : "overview";
   const activeTab: ParentProgressTab = gradeDestination
-    ? "progress"
+    ? "grades"
     : selectedTab ?? defaultTab;
 
   const scoreControls = (
@@ -393,7 +393,7 @@ export function ProgressPageContent() {
         </div>
       )}
 
-      {/* Segmented 3-Tab View: Overview, To-Write, Progress */}
+      {/* Segmented 4-Tab View: Latest Feedback, Practice, Progress, Grades */}
       <Tabs
         value={activeTab}
         onValueChange={(val) => {
@@ -404,11 +404,11 @@ export function ProgressPageContent() {
         }}
         className="w-full gap-6"
       >
-        <div className="border-b border-border/80">
+        <div className="border-b border-border/80 overflow-x-auto scrollbar-none">
           <TabsList
             variant="line"
             aria-label={`${firstName}'s portal sections`}
-            className="w-full sm:w-fit flex h-auto gap-1 sm:gap-2 rounded-none bg-transparent p-0"
+            className="w-max min-w-full sm:w-fit flex h-auto gap-1 sm:gap-2 rounded-none bg-transparent p-0"
           >
             <TabsTrigger
               value="overview"
@@ -436,7 +436,14 @@ export function ProgressPageContent() {
               value="progress"
               className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] translate-y-[1px] data-active:text-primary data-active:after:bg-primary"
             >
-              <span>Progress &amp; Grades</span>
+              <span>Progress</span>
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="grades"
+              className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] translate-y-[1px] data-active:text-primary data-active:after:bg-primary"
+            >
+              <span>Grades</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -546,129 +553,128 @@ export function ProgressPageContent() {
           </section>
         </TabsContent>
 
-        {/* Tab 3: Progress (Trend Chart, Past Worksheets, Coursework & Comments) */}
+        {/* Tab 3: Progress (Trend Chart & Past Worksheets Archive) */}
         <TabsContent value="progress" className="space-y-6">
-          <div className="xl:grid xl:grid-cols-12 xl:gap-6 space-y-6 xl:space-y-0 items-start">
-            {/* Left 7 Columns on Desktop: Longitudinal Trends + Past Worksheets Archive */}
-            <div className="xl:col-span-7 space-y-6 min-w-0">
-              <section
-                id="progress-trends-section"
-                aria-labelledby="progress-trends-heading"
-                className="space-y-3"
+          <section
+            id="progress-trends-section"
+            aria-labelledby="progress-trends-heading"
+            className="space-y-3"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2
+                id="progress-trends-heading"
+                className="font-heading text-base sm:text-lg font-semibold text-foreground"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h2
-                    id="progress-trends-heading"
-                    className="font-heading text-base sm:text-lg font-semibold text-foreground"
-                  >
-                    Progress over time
-                  </h2>
-                  {scoreControls}
-                </div>
-
-                {historyLoading ? (
-                  <div
-                    role="status"
-                    aria-live="polite"
-                    className="rounded-xl border border-border bg-card p-8 flex flex-col items-center justify-center min-h-[240px] gap-3"
-                  >
-                    <Loader2
-                      className="size-6 animate-spin text-muted-foreground"
-                      aria-hidden="true"
-                    />
-                    <span className="text-sm text-muted-foreground">Loading progress chart...</span>
-                  </div>
-                ) : history && history.length >= 2 ? (
-                  <div className="rounded-xl border border-border bg-card p-4 sm:p-6 min-w-0">
-                    <CriterionTrendChart
-                      history={history}
-                      variant="parent"
-                      showScoreDetails={showScoreDetails}
-                      practiceFocusKey={practiceFocus?.key}
-                    />
-                  </div>
-                ) : scoredCount === 1 && history?.[0] ? (
-                  <div className="rounded-xl border border-border bg-card p-5 sm:p-6 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <h3 className="font-heading text-base font-semibold text-foreground">
-                          1 of 2 worksheets checked
-                        </h3>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                          &ldquo;{history[0].targetText}&rdquo; ({new Date(history[0].submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}) · Trend chart unlocks after the next worksheet.
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0 self-start">
-                        {showScoreDetails && history[0].compositeScore != null && (
-                          <span className="font-sans text-sm font-semibold tabular-nums text-foreground">
-                            {Math.round(history[0].compositeScore)}%
-                          </span>
-                        )}
-                        <BandBadge score={history[0].compositeScore} band={history[0].compositeBand} size="sm" showDot />
-                      </div>
-                    </div>
-
-                    {/* Flat 5-Criteria Baseline Summary (no nested cards) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-3 border-t border-border/70 pt-4">
-                      {PARENT_CRITERIA_LIST.map((criterion) => {
-                        const criterionScore = history[0].scores[criterion.key];
-                        const criterionBand = history[0].bands[criterion.key];
-
-                        return (
-                          <div key={criterion.key} className="flex sm:flex-col items-center sm:items-start justify-between gap-1.5">
-                            <span className="text-xs font-medium text-muted-foreground truncate">
-                              {criterion.label}
-                            </span>
-                            <div className="flex items-center gap-1.5">
-                              <BandBadge band={criterionBand} score={criterionScore} size="sm" showDot />
-                              {showScoreDetails && criterionScore != null && (
-                                <span className="font-sans text-xs font-medium tabular-nums text-muted-foreground">
-                                  {Math.round(criterionScore)}%
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-border bg-card p-6 sm:p-8 text-center space-y-3">
-                    <h3 className="font-heading text-base font-semibold text-foreground">
-                      No trend data yet
-                    </h3>
-                    <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                      Progress charts appear after 2 checked worksheets.
-                    </p>
-                    <div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleNavigateToWrite}
-                        className="min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium cursor-pointer"
-                      >
-                        View practice worksheets
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </section>
-
-              {allHistory !== undefined && allHistory.length > 0 && (
-                <PastWorksheetsSection
-                  history={allHistory}
-                  childName={selectedChild.fullName}
-                  showScoreDetails={showScoreDetails}
-                  onToggleScoreDetails={toggleScoreDetails}
-                  onUploadActivity={handleUploadActivity}
-                />
-              )}
+                Progress over time
+              </h2>
+              {scoreControls}
             </div>
 
-            {/* Right 5 Columns on Desktop: Coursework Point Ledger + Teacher Conversation Threads */}
-            <div className="xl:col-span-5 space-y-6 min-w-0">
-              {activeTab === "progress" && selectedChildId && (
+            {historyLoading ? (
+              <div
+                role="status"
+                aria-live="polite"
+                className="rounded-xl border border-border bg-card p-8 flex flex-col items-center justify-center min-h-[240px] gap-3"
+              >
+                <Loader2
+                  className="size-6 animate-spin text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <span className="text-sm text-muted-foreground">Loading progress chart...</span>
+              </div>
+            ) : history && history.length >= 2 ? (
+              <div className="rounded-xl border border-border bg-card p-4 sm:p-6 min-w-0">
+                <CriterionTrendChart
+                  history={history}
+                  variant="parent"
+                  showScoreDetails={showScoreDetails}
+                  practiceFocusKey={practiceFocus?.key}
+                />
+              </div>
+            ) : scoredCount === 1 && history?.[0] ? (
+              <div className="rounded-xl border border-border bg-card p-5 sm:p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <h3 className="font-heading text-base font-semibold text-foreground">
+                      1 of 2 worksheets checked
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      &ldquo;{history[0].targetText}&rdquo; ({new Date(history[0].submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}) · Trend chart unlocks after the next worksheet.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 self-start">
+                    {showScoreDetails && history[0].compositeScore != null && (
+                      <span className="font-sans text-sm font-semibold tabular-nums text-foreground">
+                        {Math.round(history[0].compositeScore)}%
+                      </span>
+                    )}
+                    <BandBadge score={history[0].compositeScore} band={history[0].compositeBand} size="sm" showDot />
+                  </div>
+                </div>
+
+                {/* Flat 5-Criteria Baseline Summary (no nested cards) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-3 border-t border-border/70 pt-4">
+                  {PARENT_CRITERIA_LIST.map((criterion) => {
+                    const criterionScore = history[0].scores[criterion.key];
+                    const criterionBand = history[0].bands[criterion.key];
+
+                    return (
+                      <div key={criterion.key} className="flex sm:flex-col items-center sm:items-start justify-between gap-1.5">
+                        <span className="text-xs font-medium text-muted-foreground truncate">
+                          {criterion.label}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <BandBadge band={criterionBand} score={criterionScore} size="sm" showDot />
+                          {showScoreDetails && criterionScore != null && (
+                            <span className="font-sans text-xs font-medium tabular-nums text-muted-foreground">
+                              {Math.round(criterionScore)}%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-border bg-card p-6 sm:p-8 text-center space-y-3">
+                <h3 className="font-heading text-base font-semibold text-foreground">
+                  No trend data yet
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                  Progress charts appear after 2 checked worksheets.
+                </p>
+                <div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNavigateToWrite}
+                    className="min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium cursor-pointer"
+                  >
+                    View practice worksheets
+                  </Button>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {allHistory !== undefined && allHistory.length > 0 && (
+            <PastWorksheetsSection
+              history={allHistory}
+              childName={selectedChild.fullName}
+              showScoreDetails={showScoreDetails}
+              onToggleScoreDetails={toggleScoreDetails}
+              onUploadActivity={handleUploadActivity}
+            />
+          )}
+        </TabsContent>
+
+        {/* Tab 4: Grades (Coursework Point Ledger & Teacher Comments) */}
+        <TabsContent value="grades" className="space-y-6">
+          {activeTab === "grades" && selectedChildId && (
+            <div className="flex flex-col xl:flex-row xl:items-start gap-6">
+              <div className="flex-1 min-w-0">
                 <ParentGrades
                   key={`${userId}:${selectedChildId}`}
                   userId={userId}
@@ -676,21 +682,20 @@ export function ProgressPageContent() {
                   showScoreDetails={showScoreDetails}
                   highlightActivityId={gradeDestination ? notificationTargetData?.activityId : undefined}
                   onDismissTarget={() => {
-                    setSelectedTab("progress");
-                    dismissNotificationTarget(null);
+                    setSelectedTab("grades");
+                    dismissNotificationTarget("grades");
                   }}
                 />
-              )}
+              </div>
 
-              {selectedChildId && (
-                <ParentActivityThreads
-                  key={`progress-threads:${userId}:${selectedChildId}`}
-                  userId={userId}
-                  studentId={selectedChildId}
-                />
-              )}
+              <ParentActivityThreads
+                key={`progress-threads:${userId}:${selectedChildId}`}
+                userId={userId}
+                studentId={selectedChildId}
+                className="w-full xl:w-[380px] shrink-0"
+              />
             </div>
-          </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
