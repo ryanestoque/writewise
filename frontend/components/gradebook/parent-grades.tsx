@@ -300,6 +300,8 @@ export function ParentGrades({
                     studentId: childId,
                   });
                   const canShowComments = cell.active_submission_id !== null || hasUnread;
+                  const hasCompositeScore = cell.assessment_composite !== null;
+                  const pointsLabel = formatCellPoints(cell);
                   const statusText = `${formatCourseworkStatus(cell.coursework_status)}${cell.late ? " · Late" : ""}${activity.is_archived ? " · Archived" : ""}`;
 
                   return (
@@ -308,7 +310,7 @@ export function ParentGrades({
                       id={`parent-grade-${activity.id}`}
                       ref={isHighlighted ? highlightedRowRef : undefined}
                       tabIndex={isHighlighted ? -1 : undefined}
-                      className={`flex scroll-mt-24 flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-5 focus:outline-none ${isHighlighted ? "bg-primary/5 ring-primary ring-2 ring-inset" : ""}`}
+                      className={`flex scroll-mt-24 flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3.5 sm:px-5 focus:outline-none ${isHighlighted ? "bg-primary/5 ring-primary ring-2 ring-inset" : ""}`}
                     >
                       {onInspectActivity ? (
                         <button
@@ -319,7 +321,7 @@ export function ParentGrades({
                               submissionId: cell.active_submission_id,
                             })
                           }
-                          className="group min-w-0 flex-1 basis-40 text-left space-y-0.5 rounded-md py-0.5 -mx-1.5 px-1.5 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer touch-manipulation transition-colors"
+                          className="group min-w-0 flex-1 text-left space-y-0.5 rounded-md py-0.5 -mx-1.5 px-1.5 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer touch-manipulation transition-colors"
                           aria-label={`View worksheet details for ${activity.title}`}
                         >
                           <div className="flex items-center gap-1.5 min-w-0">
@@ -331,47 +333,74 @@ export function ParentGrades({
                               aria-hidden="true"
                             />
                           </div>
-                          <p className="text-muted-foreground text-xs">{statusText}</p>
+                          <p className="text-muted-foreground text-xs">
+                            <span className="sm:hidden">
+                              {statusText} · {pointsLabel}
+                            </span>
+                            <span className="hidden sm:inline">
+                              {statusText}
+                            </span>
+                          </p>
                         </button>
                       ) : (
-                        <div className="min-w-0 flex-1 basis-40 space-y-0.5">
+                        <div className="min-w-0 flex-1 space-y-0.5">
                           <h4 className="font-sans text-sm font-medium text-foreground break-words">
                             {activity.title}
                           </h4>
-                          <p className="text-muted-foreground text-xs">{statusText}</p>
+                          <p className="text-muted-foreground text-xs">
+                            <span className="sm:hidden">
+                              {statusText} · {pointsLabel}
+                            </span>
+                            <span className="hidden sm:inline">
+                              {statusText}
+                            </span>
+                          </p>
                         </div>
                       )}
 
-                      <div className="flex flex-col items-end gap-1.5 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {cell.assessment_composite !== null && (
-                            <div className="flex items-center gap-1.5">
-                              {showScoreDetails && (
-                                <span className="font-sans text-xs font-semibold tabular-nums text-foreground">
-                                  {Math.round(Number(cell.assessment_composite))}%
-                                </span>
-                              )}
-                              <BandBadge
-                                score={Number(cell.assessment_composite)}
-                                size="sm"
-                                showDot
+                      {hasCompositeScore || canShowComments ? (
+                        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-2.5 sm:pt-0 border-t border-border/40 sm:border-0">
+                          <div className="flex flex-col sm:items-end gap-1">
+                            {hasCompositeScore ? (
+                              <div className="flex items-center gap-1.5">
+                                {showScoreDetails && (
+                                  <span className="font-sans text-xs font-semibold tabular-nums text-foreground">
+                                    {Math.round(Number(cell.assessment_composite))}%
+                                  </span>
+                                )}
+                                <BandBadge
+                                  score={Number(cell.assessment_composite)}
+                                  size="sm"
+                                  showDot
+                                />
+                              </div>
+                            ) : (
+                              <div className="sm:hidden" />
+                            )}
+                            <p className="hidden sm:block text-xs sm:text-sm font-medium tabular-nums text-foreground">
+                              {pointsLabel}
+                            </p>
+                          </div>
+
+                          {canShowComments && (
+                            <div className="shrink-0">
+                              <WorkCommentsButton
+                                scope={{ activityId: activity.id, studentId: childId }}
+                                activeSubmissionId={cell.active_submission_id}
+                                studentName={childName}
+                                activityTitle={activity.title}
+                                hasUnread={hasUnread}
                               />
                             </div>
                           )}
-                          {canShowComments && (
-                            <WorkCommentsButton
-                              scope={{ activityId: activity.id, studentId: childId }}
-                              activeSubmissionId={cell.active_submission_id}
-                              studentName={childName}
-                              activityTitle={activity.title}
-                              hasUnread={hasUnread}
-                            />
-                          )}
                         </div>
-                        <p className="text-xs sm:text-sm font-medium tabular-nums text-foreground">
-                          {formatCellPoints(cell)}
-                        </p>
-                      </div>
+                      ) : (
+                        <div className="hidden sm:block text-right shrink-0">
+                          <p className="text-xs sm:text-sm font-medium tabular-nums text-foreground">
+                            {pointsLabel}
+                          </p>
+                        </div>
+                      )}
                     </li>
                   );
                 })}

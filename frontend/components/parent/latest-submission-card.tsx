@@ -334,7 +334,7 @@ export function LatestSubmissionCard({
               type="button"
               onClick={() => openWorksheetForCriterion(key, "details")}
               aria-haspopup="dialog"
-              className="group grid w-[calc(100%+2rem)] sm:w-[calc(100%+3rem)] -mx-4 sm:-mx-6 px-4 sm:px-6 cursor-pointer grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_7.5rem_minmax(10rem,auto)] items-center gap-3 sm:gap-4 border-t py-3.5 text-left text-sm transition-colors hover:bg-muted/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring min-h-12"
+              className="group flex w-[calc(100%+2rem)] sm:w-[calc(100%+3rem)] -mx-4 sm:-mx-6 px-4 sm:px-6 cursor-pointer items-center justify-between gap-3 sm:gap-4 border-t py-3.5 text-left text-sm transition-colors hover:bg-muted/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring min-h-12"
             >
               <span className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 min-w-0">
                 <span className="font-semibold text-foreground group-hover:text-primary transition-colors">{label}</span>
@@ -347,17 +347,6 @@ export function LatestSubmissionCard({
                   <span className="text-xs font-medium text-primary">
                     Practice focus
                   </span>
-                )}
-              </span>
-              <span className="hidden sm:flex items-center">
-                {score != null && (
-                  <BandPositionBar
-                    score={score}
-                    height="sm"
-                    showBandLabels={false}
-                    className="w-full"
-                    ariaLabel={`${label} level`}
-                  />
                 )}
               </span>
               <span className="flex items-center justify-end gap-2.5 shrink-0">

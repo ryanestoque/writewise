@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -56,6 +57,7 @@ export function WorkCommentsButton({
             />
           }
         >
+          <MessageSquare className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
           <span>Comments</span>
           {hasUnread && (
             <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
