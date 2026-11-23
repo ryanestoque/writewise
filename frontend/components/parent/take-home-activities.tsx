@@ -85,7 +85,6 @@ export function TakeHomeActivities({
   expanded: controlledExpanded,
   onToggleExpanded,
   showExpandButton = true,
-  showScoreDetails = false,
   onViewScoredHistory,
   gridClassName = "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4",
   practiceFocusKey,
@@ -336,7 +335,6 @@ export function TakeHomeActivities({
                 key={activity.id}
                 work={activity}
                 childId={childId}
-                showScoreDetails={showScoreDetails}
                 onPreviewPhoto={(preview) =>
                   setPhotoPreview({ activityId: activity.id, ...preview })
                 }
@@ -410,7 +408,6 @@ export function TakeHomeActivities({
                   key={activity.id}
                   work={activity}
                   childId={childId}
-                  showScoreDetails={showScoreDetails}
                   onViewScoredHistory={onViewScoredHistory}
                   onPreviewPhoto={(preview) =>
                     setPhotoPreview({ activityId: activity.id, ...preview })
@@ -467,14 +464,12 @@ interface PhotoPreviewTarget {
 function CompactWorksheetRow({
   work,
   childId,
-  showScoreDetails,
   onViewScoredHistory,
   onPreviewPhoto,
   hasUnreadComments,
 }: {
   work: TakeHomeActivity;
   childId: string | null;
-  showScoreDetails?: boolean;
   onViewScoredHistory?: () => void;
   onPreviewPhoto: (preview: PhotoPreviewTarget) => void;
   hasUnreadComments?: boolean;
@@ -523,11 +518,9 @@ function CompactWorksheetRow({
                 band={submission.compositeBand}
                 size="sm"
               />
-              {showScoreDetails && (
-                <span className="font-sans text-xs font-semibold tabular-nums text-foreground">
-                  {Math.round(submission.compositeScore)}%
-                </span>
-              )}
+              <span className="font-sans text-xs font-semibold tabular-nums text-foreground">
+                {Math.round(submission.compositeScore)}%
+              </span>
             </div>
           )}
         </div>

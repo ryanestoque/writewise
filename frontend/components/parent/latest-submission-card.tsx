@@ -13,7 +13,6 @@ import { WorksheetViewDialog } from "./worksheet-view-dialog";
 import {
   PARENT_CRITERIA_LIST,
   getBandFromScore,
-  getBandMeta,
   computeStrengthAndFocus,
 } from "@/lib/utils/scoring";
 import {
@@ -51,14 +50,13 @@ export function LatestSubmissionCard({
   childId,
   childName = "Your child",
   history = [],
-  showScoreDetails = false,
+  showScoreDetails = true,
   onToggleScoreDetails,
   onNavigateToWrite,
   onOpenRubric,
   onOpenCursiveGuide,
   hasPendingSubmission = false,
   hasNoAssignedPractice = false,
-  scoreControls,
 }: LatestSubmissionCardProps) {
   const [viewImageOpen, setViewImageOpen] = useState(false);
   const [initialDialogView, setInitialDialogView] = useState<"details" | "comments">("details");
@@ -194,7 +192,6 @@ export function LatestSubmissionCard({
   const compositeBand =
     latest.bands.composite ??
     (latest.scores.composite != null ? getBandFromScore(latest.scores.composite) : null);
-  const compositeBandMeta = compositeBand ? getBandMeta(compositeBand) : null;
 
   return (
     <>
@@ -261,13 +258,13 @@ export function LatestSubmissionCard({
                     <>
                       {" · "}
                       {trendSummary.label}
-                      {showScoreDetails && trendSummary.deltaText ? ` (${trendSummary.deltaText})` : ""}
+                      {trendSummary.deltaText ? ` (${trendSummary.deltaText})` : ""}
                     </>
                   ) : null}
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                {showScoreDetails && latest.scores.composite != null && (
+                {latest.scores.composite != null && (
                   <span className="font-sans text-sm font-semibold tabular-nums text-foreground">
                     {Math.round(latest.scores.composite)}%
                   </span>
@@ -280,19 +277,9 @@ export function LatestSubmissionCard({
               <BandPositionBar
                 score={latest.scores.composite}
                 height="sm"
-                showThresholds={showScoreDetails}
-                ariaLabel={
-                  showScoreDetails
-                    ? `Overall score: ${Math.round(latest.scores.composite)}%`
-                    : compositeBandMeta
-                      ? `Overall level: ${compositeBandMeta.label}`
-                      : "Overall level"
-                }
-                ariaValueText={
-                  showScoreDetails
-                    ? `${Math.round(latest.scores.composite)}% overall`
-                    : compositeBandMeta?.label
-                }
+                showThresholds={true}
+                ariaLabel={`Overall score: ${Math.round(latest.scores.composite)}%`}
+                ariaValueText={`${Math.round(latest.scores.composite)}% overall`}
               />
             )}
           </div>
@@ -369,7 +356,6 @@ export function LatestSubmissionCard({
       <section aria-labelledby="handwriting-skills" className="overflow-hidden rounded-xl border border-border bg-card shadow-warm px-4 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-2 py-4">
           <h2 id="handwriting-skills" className="font-heading text-lg font-semibold">Handwriting skills</h2>
-          {scoreControls}
         </div>
         {PARENT_CRITERIA_LIST.map(({ key, label }) => {
           const score = latest.scores[key];
@@ -409,7 +395,7 @@ export function LatestSubmissionCard({
                 )}
               </span>
               <span className="flex items-center justify-end gap-2.5 shrink-0">
-                {showScoreDetails && score != null && (
+                {score != null && (
                   <span className="font-sans tabular-nums text-xs sm:text-sm font-semibold text-foreground min-w-[2.5rem] text-right">
                     {Math.round(score)}%
                   </span>

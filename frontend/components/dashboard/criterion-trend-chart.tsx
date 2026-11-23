@@ -138,7 +138,7 @@ export function CriterionTrendChart({
 }: CriterionTrendChartProps) {
   const isParent = variant === "parent";
   const showScoreDetails =
-    controlledShowDetails !== undefined ? controlledShowDetails : !isParent;
+    controlledShowDetails !== undefined ? controlledShowDetails : true;
 
   const [viewMode, setViewMode] = useState<"chart" | "table">("chart");
   const [isDark, setIsDark] = useState(false);

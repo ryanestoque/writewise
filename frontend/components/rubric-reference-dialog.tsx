@@ -12,7 +12,6 @@ import {
   ChevronDownIcon,
   ChevronsUpDownIcon,
 } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 interface RubricReferenceDialogProps {
@@ -366,15 +365,8 @@ export function RubricReferenceDialog({
   open,
   onOpenChange,
   variant = "teacher",
-  showScoreDetails: controlledShowDetails,
-  onToggleScoreDetails,
 }: RubricReferenceDialogProps) {
   const isParent = variant === "parent";
-  const [internalShowDetails, setInternalShowDetails] = useState(!isParent);
-  const showScoreDetails =
-    controlledShowDetails !== undefined ? controlledShowDetails : internalShowDetails;
-  const toggleScoreDetails =
-    onToggleScoreDetails || (() => setInternalShowDetails((prev) => !prev));
 
   const [expandedCriteria, setExpandedCriteria] = useState<Set<string>>(new Set());
 
@@ -418,17 +410,6 @@ export function RubricReferenceDialog({
             <DialogTitle className="text-base sm:text-lg font-heading font-semibold text-foreground tracking-tight">
               {isParent ? "How Scores Work" : "Scoring Rubric"}
             </DialogTitle>
-            {isParent && (
-              <label className="inline-flex min-h-10 sm:min-h-9 cursor-pointer select-none items-center gap-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0 touch-manipulation">
-                <Switch
-                  aria-label="Show numeric scores"
-                  size="sm"
-                  checked={showScoreDetails}
-                  onCheckedChange={toggleScoreDetails}
-                />
-                Show numeric scores
-              </label>
-            )}
           </div>
 
           <DialogDescription className="sr-only">
@@ -569,11 +550,9 @@ export function RubricReferenceDialog({
                             {band.band}
                           </span>
                         </div>
-                        {(!isParent || showScoreDetails) && (
-                          <span className="text-xs font-semibold text-foreground/90 font-sans tabular-nums shrink-0 whitespace-nowrap">
-                            {band.range}
-                          </span>
-                        )}
+                        <span className="text-xs font-semibold text-foreground/90 font-sans tabular-nums shrink-0 whitespace-nowrap">
+                          {band.range}
+                        </span>
                       </div>
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {isParent ? band.parentDesc : band.desc}

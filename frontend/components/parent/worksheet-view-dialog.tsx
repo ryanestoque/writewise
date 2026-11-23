@@ -13,10 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -121,9 +119,6 @@ export function WorksheetViewDialog({
   scoreSource = "none",
   initialCriterion = "all",
   initialView = "details",
-  initialShowScoreDetails = false,
-  showScoreDetails: controlledShowScoreDetails,
-  onToggleScoreDetails,
   scores,
   bands,
   guideLines,
@@ -138,27 +133,10 @@ export function WorksheetViewDialog({
   const [showGuideLines, setShowGuideLines] = useState(false);
   const [criterionOverride, setCriterionOverride] = useState<CriterionFilter | null>(null);
   const [showOverlay, setShowOverlay] = useState(true);
-  const [internalShowScoreDetails, setInternalShowScoreDetails] = useState(initialShowScoreDetails);
-  const showScoreDetails =
-    controlledShowScoreDetails !== undefined ? controlledShowScoreDetails : internalShowScoreDetails;
-  const handleToggleScoreDetails = () => {
-    if (onToggleScoreDetails) {
-      onToggleScoreDetails();
-    } else {
-      setInternalShowScoreDetails((prev) => !prev);
-    }
-  };
+  const showScoreDetails = true;
   const [selectedAttentionItem, setSelectedAttentionItem] =
     useState<ActiveAnnotationHover | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
-  const [prevOpen, setPrevOpen] = useState(open);
-  if (open !== prevOpen) {
-    setPrevOpen(open);
-    if (open && controlledShowScoreDetails === undefined) {
-      setInternalShowScoreDetails(initialShowScoreDetails);
-    }
-  }
 
   const { topStrength, practiceFocus, isBalanced } = useMemo(() => {
     return computeStrengthAndFocus(scores, bands);
@@ -239,7 +217,7 @@ export function WorksheetViewDialog({
     return compositeBand ? PARENT_BAND_EXPLANATIONS[compositeBand] : null;
   }, [topStrength, practiceFocus, isBalanced, compositeBand]);
 
-  const showHeaderMenu = Boolean((canDelete && submissionId) || compositeScore != null);
+  const showHeaderMenu = Boolean(canDelete && submissionId);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -289,26 +267,15 @@ export function WorksheetViewDialog({
                 >
                   <MoreHorizontal className="size-4" aria-hidden="true" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52 rounded-xl">
-                  {compositeScore != null && (
-                    <DropdownMenuCheckboxItem
-                      checked={showScoreDetails}
-                      onCheckedChange={handleToggleScoreDetails}
-                    >
-                      Show numeric scores
-                    </DropdownMenuCheckboxItem>
-                  )}
+                <DropdownMenuContent align="end" className="w-48 rounded-xl">
                   {canDelete && submissionId && (
-                    <>
-                      {compositeScore != null && <DropdownMenuSeparator />}
-                      <DropdownMenuItem
-                        variant="destructive"
-                        onClick={() => setIsDeleteDialogOpen(true)}
-                      >
-                        <Trash2 className="size-4" aria-hidden="true" />
-                        <span>Delete upload</span>
-                      </DropdownMenuItem>
-                    </>
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                    >
+                      <Trash2 className="size-4" aria-hidden="true" />
+                      <span>Delete upload</span>
+                    </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -519,32 +486,18 @@ export function WorksheetViewDialog({
                           </h3>
                         </div>
                       )}
-                      {showScoreDetails && (
-                        <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/60 shrink-0">
-                          {Math.round(compositeScore)}% overall
-                        </span>
-                      )}
+                      <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/60 shrink-0">
+                        {Math.round(compositeScore)}% overall
+                      </span>
                     </div>
 
                     <BandPositionBar
                       score={compositeScore}
                       height="sm"
                       showBandLabels={false}
-                      showThresholds={false}
-                      ariaLabel={
-                        showScoreDetails
-                          ? `Overall score: ${Math.round(compositeScore)}%`
-                          : compositeBandMeta
-                            ? `Overall level: ${compositeBandMeta.label}`
-                            : "Overall level not yet available"
-                      }
-                      ariaValueText={
-                        showScoreDetails
-                          ? `${Math.round(compositeScore)}% overall`
-                          : compositeBandMeta
-                            ? compositeBandMeta.label
-                            : undefined
-                      }
+                      showThresholds={true}
+                      ariaLabel={`Overall score: ${Math.round(compositeScore)}%`}
+                      ariaValueText={`${Math.round(compositeScore)}% overall`}
                     />
 
                     {summaryTakeaway && (

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { BandBadge } from "@/components/shared/band-badge";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import {
   PARENT_CRITERIA_LIST,
   PARENT_BAND_EXPLANATIONS,
@@ -68,15 +67,8 @@ const SAMPLE_COMPOSITE_META = getBandMeta(SAMPLE_COMPOSITE_BAND);
 export function SampleReportPreview({
   onOpenRubric,
   defaultCollapsed = true,
-  showScoreDetails: controlledShowDetails,
-  onToggleScoreDetails,
 }: SampleReportPreviewProps) {
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
-  const [internalShowDetails, setInternalShowDetails] = useState(false);
-  const showScoreDetails =
-    controlledShowDetails !== undefined ? controlledShowDetails : internalShowDetails;
-  const toggleScoreDetails =
-    onToggleScoreDetails || (() => setInternalShowDetails((prev) => !prev));
 
   const [activeCriterion, setActiveCriterion] =
     useState<CriterionKey>("slant");
@@ -111,17 +103,6 @@ export function SampleReportPreview({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
-            {!isCollapsed && (
-              <label className="inline-flex min-h-10 sm:min-h-9 cursor-pointer select-none items-center gap-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors touch-manipulation">
-                <Switch
-                  aria-label="Show numeric scores"
-                  size="sm"
-                  checked={showScoreDetails}
-                  onCheckedChange={toggleScoreDetails}
-                />
-                Show numeric scores
-              </label>
-            )}
             <Button
               type="button"
               variant="outline"
@@ -187,16 +168,14 @@ export function SampleReportPreview({
                   )}
                 >
                   <span>{criterion.label}</span>
-                  {showScoreDetails && (
-                    <span
-                      className={cn(
-                        "font-sans tabular-nums text-xs font-semibold",
-                        isSelected ? "text-white/90" : "text-muted-foreground"
-                      )}
-                    >
-                      {data.score}%
-                    </span>
-                  )}
+                  <span
+                    className={cn(
+                      "font-sans tabular-nums text-xs font-semibold",
+                      isSelected ? "text-white/90" : "text-muted-foreground"
+                    )}
+                  >
+                    {data.score}%
+                  </span>
                 </button>
               );
             })}
@@ -347,28 +326,18 @@ export function SampleReportPreview({
                   <h3 className="text-base font-heading font-semibold text-foreground">
                     Overall result
                   </h3>
-                  {showScoreDetails && (
-                    <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground">
-                      {Math.round(SAMPLE_COMPOSITE_SCORE)}%
-                    </span>
-                  )}
+                  <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground">
+                    {Math.round(SAMPLE_COMPOSITE_SCORE)}%
+                  </span>
                 </div>
                 <BandBadge band={SAMPLE_COMPOSITE_BAND} score={SAMPLE_COMPOSITE_SCORE} size="default" />
               </div>
               <BandPositionBar
                 score={SAMPLE_COMPOSITE_SCORE}
                 height="default"
-                showThresholds={showScoreDetails}
-                ariaLabel={
-                  showScoreDetails
-                    ? `Example overall score: ${Math.round(SAMPLE_COMPOSITE_SCORE)}%`
-                    : `Example overall level: ${SAMPLE_COMPOSITE_META.label}`
-                }
-                ariaValueText={
-                  showScoreDetails
-                    ? `${Math.round(SAMPLE_COMPOSITE_SCORE)}% overall`
-                    : SAMPLE_COMPOSITE_META.label
-                }
+                showThresholds={true}
+                ariaLabel={`Example overall score: ${Math.round(SAMPLE_COMPOSITE_SCORE)}%`}
+                ariaValueText={`${Math.round(SAMPLE_COMPOSITE_SCORE)}% overall`}
               />
               <p className="text-sm text-muted-foreground leading-relaxed">
                 <span className="font-semibold text-foreground">{SAMPLE_COMPOSITE_META.label}:</span>{" "}
@@ -388,11 +357,9 @@ export function SampleReportPreview({
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  {showScoreDetails && (
-                    <span className="font-sans tabular-nums text-xs font-semibold text-muted-foreground">
-                      {currentSample.score}%
-                    </span>
-                  )}
+                  <span className="font-sans tabular-nums text-xs font-semibold text-muted-foreground">
+                    {currentSample.score}%
+                  </span>
                   <BandBadge band={currentSample.band} score={currentSample.score} size="sm" />
                 </div>
               </div>

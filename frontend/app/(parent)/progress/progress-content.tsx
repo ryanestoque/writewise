@@ -23,7 +23,6 @@ import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
 import { compareParentActivityUrgency, getParentActivityStatus } from "@/lib/utils/parent-activity-status";
 import { useActivityNow } from "@/components/activities/activity-work-status";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { BandBadge } from "@/components/shared/band-badge";
 import { cn } from "@/lib/utils";
 import {
@@ -67,8 +66,6 @@ export function ProgressPageContent() {
     openCursiveGuide,
     openRubric,
     showScoreDetails,
-    setShowScoreDetails,
-    toggleScoreDetails,
     userId,
     notificationTarget,
     dismissNotificationTarget,
@@ -154,7 +151,6 @@ export function ProgressPageContent() {
       target={notificationTargetData}
       childName={selectedChild?.fullName ?? "Your child"}
       showScoreDetails={showScoreDetails}
-      onToggleScoreDetails={toggleScoreDetails}
       onClose={dismissNotificationTarget}
       onUploadActivity={handleUploadActivity}
     />
@@ -230,13 +226,6 @@ export function ProgressPageContent() {
   const activeTab: ParentProgressTab = gradeDestination
     ? "grades"
     : selectedTab ?? defaultTab;
-
-  const scoreControls = (
-    <label className="inline-flex min-h-11 sm:min-h-9 cursor-pointer select-none items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-      <Switch aria-label="Show numeric scores" size="sm" checked={showScoreDetails} onCheckedChange={setShowScoreDetails} />
-      Show numeric scores
-    </label>
-  );
 
   return (
     <div className="w-full space-y-6 pb-12">
@@ -493,9 +482,7 @@ export function ProgressPageContent() {
                 childId={selectedChildId}
                 childName={selectedChild.fullName}
                 history={history}
-                showScoreDetails={showScoreDetails}
-                onToggleScoreDetails={toggleScoreDetails}
-                scoreControls={scoreControls}
+                showScoreDetails={true}
                 onOpenRubric={openRubric}
                 onOpenCursiveGuide={openCursiveGuide}
                 hasPendingSubmission={hasPendingSubmission}
@@ -507,7 +494,6 @@ export function ProgressPageContent() {
                   onOpenRubric={openRubric}
                   defaultCollapsed={true}
                   showScoreDetails={showScoreDetails}
-                  onToggleScoreDetails={toggleScoreDetails}
                 />
               )}
             </>
@@ -570,7 +556,6 @@ export function ProgressPageContent() {
               >
                 Progress over time
               </h2>
-              {scoreControls}
             </div>
 
             {historyLoading ? (
@@ -590,7 +575,7 @@ export function ProgressPageContent() {
                 <CriterionTrendChart
                   history={history}
                   variant="parent"
-                  showScoreDetails={showScoreDetails}
+                  showScoreDetails={true}
                   practiceFocusKey={practiceFocus?.key}
                 />
               </div>
@@ -606,7 +591,7 @@ export function ProgressPageContent() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 self-start">
-                    {showScoreDetails && history[0].compositeScore != null && (
+                    {history[0].compositeScore != null && (
                       <span className="font-sans text-sm font-semibold tabular-nums text-foreground">
                         {Math.round(history[0].compositeScore)}%
                       </span>
@@ -628,7 +613,7 @@ export function ProgressPageContent() {
                         </span>
                         <div className="flex items-center gap-1.5">
                           <BandBadge band={criterionBand} score={criterionScore} size="sm" showDot />
-                          {showScoreDetails && criterionScore != null && (
+                          {criterionScore != null && (
                             <span className="font-sans text-xs font-medium tabular-nums text-muted-foreground">
                               {Math.round(criterionScore)}%
                             </span>
@@ -667,7 +652,6 @@ export function ProgressPageContent() {
               history={allHistory}
               childName={selectedChild.fullName}
               showScoreDetails={showScoreDetails}
-              onToggleScoreDetails={toggleScoreDetails}
               onUploadActivity={handleUploadActivity}
             />
           )}

@@ -34,7 +34,7 @@ export function CriterionFeedbackRow({
   highlightBadge,
   homePracticeTip,
   isActive = false,
-  showScoreDetails = false,
+  showScoreDetails = true,
 }: CriterionFeedbackRowProps) {
   const meta = PARENT_CRITERIA_METADATA[criterionKey];
   const displayLabel = label || meta?.label || criterionKey;
@@ -62,7 +62,7 @@ export function CriterionFeedbackRow({
       </div>
 
       <div className="shrink-0 flex items-center gap-2">
-        {showScoreDetails && score != null && (
+        {score != null && (
           <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground">
             {Math.round(score)}%
           </span>

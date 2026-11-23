@@ -11,7 +11,7 @@ import { WorkCommentsButton } from "@/components/comments/submission-comment-pic
 export function ParentGrades({
   userId,
   childId,
-  showScoreDetails = false,
+  showScoreDetails = true,
   highlightActivityId,
   onDismissTarget,
 }: {

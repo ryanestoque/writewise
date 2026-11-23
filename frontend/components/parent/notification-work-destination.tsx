@@ -27,7 +27,7 @@ export function NotificationWorkDestination({
   userId,
   target,
   childName,
-  showScoreDetails = false,
+  showScoreDetails = true,
   onToggleScoreDetails,
   onClose,
   onUploadActivity,

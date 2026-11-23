@@ -54,19 +54,17 @@ function buildProcessedHistory(
   return sortOrder === "newest" ? items.reverse() : items;
 }
 
-function getDeltaChangeLabel(delta: number, showScoreDetails: boolean): string {
+function getDeltaChangeLabel(delta: number): string {
   const label = getScoreProgressLabel(delta, "previous");
-  return showScoreDetails ? `${label} ${formatScoreDifference(delta)}` : label;
+  return `${label} ${formatScoreDifference(delta)}`;
 }
 
 function HistoryItemRow({
   item,
   onOpenWorksheetView,
-  showScoreDetails,
 }: {
   item: ProcessedHistoryItem;
   onOpenWorksheetView: (item: StudentScoreHistoryItem, criterion?: CriterionFilter) => void;
-  showScoreDetails: boolean;
 }) {
   const formattedDate = new Date(item.submissionDate).toLocaleDateString("en-US", {
     month: "short",
@@ -107,7 +105,7 @@ function HistoryItemRow({
                     : "text-muted-foreground bg-muted/40 border border-border/60"
               )}
             >
-              {getDeltaChangeLabel(item.delta, showScoreDetails)}
+              {getDeltaChangeLabel(item.delta)}
             </span>
           )}
         </div>
@@ -127,7 +125,7 @@ function HistoryItemRow({
 
       <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
         <div className="flex items-center gap-2">
-          {showScoreDetails && item.compositeScore != null && (
+          {item.compositeScore != null && (
             <span className="text-sm font-semibold font-sans tabular-nums text-foreground">
               {Math.round(item.compositeScore)}%
             </span>
@@ -254,7 +252,6 @@ export function PastWorksheetsSection({
             key={item.submissionId}
             item={item}
             onOpenWorksheetView={handleOpenWorksheetView}
-            showScoreDetails={showScoreDetails}
           />
         ))}
       </div>
