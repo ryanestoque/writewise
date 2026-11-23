@@ -177,7 +177,7 @@ export function ParentNav({
                 <DropdownMenuGroup>
                   {onOpenRubric && (
                     <DropdownMenuItem
-                      onClick={onOpenRubric}
+                      onClick={() => onOpenRubric()}
                       className="cursor-pointer gap-2 py-2 min-h-10 sm:min-h-9 text-sm"
                     >
                       <BookOpen className="size-4 text-muted-foreground" aria-hidden="true" />
@@ -186,7 +186,7 @@ export function ParentNav({
                   )}
                   {onOpenCursiveGuide && (
                     <DropdownMenuItem
-                      onClick={onOpenCursiveGuide}
+                      onClick={() => onOpenCursiveGuide()}
                       className="cursor-pointer gap-2 py-2 min-h-10 sm:min-h-9 text-sm"
                     >
                       <PenTool className="size-4 text-muted-foreground" aria-hidden="true" />

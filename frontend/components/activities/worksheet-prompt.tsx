@@ -43,7 +43,7 @@ export function WorksheetPrompt({
         </div>
       </div>
       {footer && (
-        <div className="border-t border-border/50 bg-muted/30 px-3 py-0.5">
+        <div className="border-t border-border/50 bg-muted/30 px-3 py-1">
           {footer}
         </div>
       )}

@@ -52,6 +52,10 @@ export function ProgressPageContent() {
   const searchParams = useSearchParams();
   const [activitiesExpanded, setActivitiesExpanded] = useState(false);
   const [selectedTab, setSelectedTab] = useState<ParentProgressTab | null>(null);
+  const [inspectedGradeWork, setInspectedGradeWork] = useState<{
+    activityId: string;
+    submissionId: string | null;
+  } | null>(null);
 
   const {
     selectedChildId,
@@ -231,6 +235,21 @@ export function ProgressPageContent() {
     <div className="w-full space-y-6 pb-12">
       {/* Notification Deep-Link Modal */}
       {notificationDestination}
+      {!notificationDestination && inspectedGradeWork && selectedChildId && (
+        <NotificationWorkDestination
+          key={`grade-inspect:${selectedChildId}:${inspectedGradeWork.activityId}:${inspectedGradeWork.submissionId}`}
+          userId={userId}
+          target={{
+            childId: selectedChildId,
+            activityId: inspectedGradeWork.activityId,
+            submissionId: inspectedGradeWork.submissionId,
+          }}
+          childName={selectedChild.fullName}
+          showScoreDetails={showScoreDetails}
+          onClose={() => setInspectedGradeWork(null)}
+          onUploadActivity={handleUploadActivity}
+        />
+      )}
 
       {/* Mobile-Friendly Child Switcher (Within comfortable one-handed thumb reach) */}
       {linkedChildren && linkedChildren.length > 1 && (
@@ -666,12 +685,14 @@ export function ProgressPageContent() {
                   key={`${userId}:${selectedChildId}`}
                   userId={userId}
                   childId={selectedChildId}
+                  childName={selectedChild.fullName}
                   showScoreDetails={showScoreDetails}
                   highlightActivityId={gradeDestination ? notificationTargetData?.activityId : undefined}
                   onDismissTarget={() => {
                     setSelectedTab("grades");
                     dismissNotificationTarget("grades");
                   }}
+                  onInspectActivity={setInspectedGradeWork}
                 />
               </div>
 

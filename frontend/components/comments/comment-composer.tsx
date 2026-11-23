@@ -49,7 +49,7 @@ export function CommentComposer({
           value={draft}
           rows={3}
           disabled={disabled || pending || busy}
-          aria-describedby={`${id}-count ${id}-error`}
+          aria-describedby={error ? `${id}-count ${id}-error` : `${id}-count`}
           aria-invalid={count > 1000 || undefined}
           placeholder="Ask a question or share a small update…"
           onChange={(event) => setDraft(event.target.value)}
@@ -65,9 +65,11 @@ export function CommentComposer({
             {pending || busy ? "Sending…" : "Send comment"}
           </Button>
         </div>
-        <p id={`${id}-error`} role="status" className="text-destructive text-sm">
-          {error}
-        </p>
+        {error ? (
+          <p id={`${id}-error`} role="status" className="text-destructive text-sm">
+            {error}
+          </p>
+        ) : null}
       </Field>
     </form>
   );

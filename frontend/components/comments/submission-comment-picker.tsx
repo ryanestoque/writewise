@@ -36,38 +36,47 @@ function LoadedPicker({ userId, rows, activeSubmissionId, explicitSubmissionId, 
   if (!rows.length) return <Empty><EmptyHeader><EmptyTitle>No worksheet uploaded</EmptyTitle>
     <EmptyDescription>Comments are available after a worksheet is uploaded.</EmptyDescription>
   </EmptyHeader></Empty>;
+
+  const formatUploadLabel = (row: CommentAttempt, index: number) => {
+    const dateStr = new Date(row.submitted_at).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+    const timeStr = new Date(row.submitted_at).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+    const statusLabel = {
+      processing: "Analyzing",
+      rejected: "Needs a new photo",
+      completed: "Uploaded",
+      returned: "Returned",
+    }[row.submission_status];
+    const unreadLabel = unread.data?.has(row.submission_id) ? " · Unread comments" : "";
+    return `Upload ${rows.length - index} · ${dateStr} at ${timeStr} · ${statusLabel}${unreadLabel}`;
+  };
+
   return <div className="flex min-h-0 flex-1 flex-col">
-    <Field className="shrink-0 border-b p-4">
-      <FieldLabel htmlFor={id}>Worksheet upload</FieldLabel>
-      <NativeSelect id={id} className="w-full" value={selected?.submission_id ?? ""}
-        onChange={event => setSelectedId(event.target.value)}>
-        <NativeSelectOption value="" disabled>Choose an upload</NativeSelectOption>
-        <NativeSelectOptGroup label="Worksheet uploads">
-          {rows.map((row, index) => {
-            const dateStr = new Date(row.submitted_at).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            });
-            const timeStr = new Date(row.submitted_at).toLocaleTimeString("en-US", {
-              hour: "numeric",
-              minute: "2-digit",
-            });
-            const statusLabel = {
-              processing: "Analyzing",
-              rejected: "Needs a new photo",
-              completed: "Uploaded",
-              returned: "Returned",
-            }[row.submission_status];
-            const unreadLabel = unread.data?.has(row.submission_id) ? " · Unread comments" : "";
-            return (
+    {rows.length === 1 ? (
+      <div className="shrink-0 border-b px-4 py-3 text-xs text-muted-foreground">
+        {formatUploadLabel(rows[0], 0)}
+      </div>
+    ) : (
+      <Field className="shrink-0 border-b p-4">
+        <FieldLabel htmlFor={id}>Worksheet upload</FieldLabel>
+        <NativeSelect id={id} className="w-full" value={selected?.submission_id ?? ""}
+          onChange={event => setSelectedId(event.target.value)}>
+          <NativeSelectOption value="" disabled>Choose an upload</NativeSelectOption>
+          <NativeSelectOptGroup label="Worksheet uploads">
+            {rows.map((row, index) => (
               <NativeSelectOption key={row.submission_id} value={row.submission_id}>
-                {`Upload ${rows.length - index} · ${dateStr} at ${timeStr} · ${statusLabel}${unreadLabel}`}
+                {formatUploadLabel(row, index)}
               </NativeSelectOption>
-            );
-          })}
-        </NativeSelectOptGroup>
-      </NativeSelect>
-    </Field>
+            ))}
+          </NativeSelectOptGroup>
+        </NativeSelect>
+      </Field>
+    )}
     {selected ? <SubmissionCommentThread key={`${userId}:${selected.submission_id}`} userId={userId}
       target={{ submissionId: selected.submission_id }}
       location={{ submissionId: selected.submission_id, activityId: selected.activity_id, studentId: selected.student_id }}

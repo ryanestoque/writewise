@@ -110,7 +110,7 @@ export function NotificationWorkDestination({
           <DialogTitle>
             {work.status === "ready" ? work.activity.title : "Activity update"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="sr-only">
             {work.status === "ready"
               ? `Review activity instructions, due date, and submission status for ${childName}.`
               : "View your activity update."}

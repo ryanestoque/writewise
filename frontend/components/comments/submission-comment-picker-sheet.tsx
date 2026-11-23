@@ -58,7 +58,7 @@ export function WorkCommentsButton({
         >
           <span>Comments</span>
           {hasUnread && (
-            <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
               Unread
             </span>
           )}

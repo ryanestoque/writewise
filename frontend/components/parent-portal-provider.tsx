@@ -119,12 +119,14 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
   );
 
   const openUploadDialog = useCallback((activityId?: string) => {
-    setPrefilledActivityId(activityId);
+    setPrefilledActivityId(typeof activityId === "string" ? activityId : undefined);
     setUploadOpen(true);
   }, []);
 
   const openCursiveGuide = useCallback((initialLetterOrQuery?: string) => {
-    setCursiveGuideInitialLetter(initialLetterOrQuery);
+    setCursiveGuideInitialLetter(
+      typeof initialLetterOrQuery === "string" ? initialLetterOrQuery : undefined
+    );
     setCursiveGuideOpen(true);
   }, []);
 

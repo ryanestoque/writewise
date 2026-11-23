@@ -45,18 +45,23 @@ export function CursiveGuideDialog({
   initialLetterId,
   initialQuery,
 }: CursiveGuideDialogProps) {
-  const [searchQuery, setSearchQuery] = useState(() => initialQuery ?? "");
+  const [searchQuery, setSearchQuery] = useState(() =>
+    typeof initialQuery === "string" ? initialQuery : ""
+  );
   const [caseFilter, setCaseFilter] = useState<"pairs" | "upper" | "lower">("pairs");
   const [zoneFilter, setZoneFilter] = useState<"all" | "ascender" | "midline" | "descender" | "highJoiner">("all");
   const [selectedLetterId, setSelectedLetterId] = useState<string | null>(() => {
-    if (initialLetterId) {
-      const found = CURSIVE_ALPHABET.find((l) => l.id.toUpperCase() === initialLetterId.toUpperCase());
+    if (typeof initialLetterId === "string" && initialLetterId.trim().length > 0) {
+      const target = initialLetterId.trim().toUpperCase();
+      const found = CURSIVE_ALPHABET.find((l) => l.id.toUpperCase() === target);
       if (found) return found.id;
     }
     return "A";
   });
   const [mobileView, setMobileView] = useState<"grid" | "detail">(() => {
-    return initialLetterId ? "detail" : "grid";
+    return typeof initialLetterId === "string" && initialLetterId.trim().length > 0
+      ? "detail"
+      : "grid";
   });
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [activeStepTab, setActiveStepTab] = useState<"lower" | "upper">("lower");

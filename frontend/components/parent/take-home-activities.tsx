@@ -40,7 +40,6 @@ import {
   Camera,
   Trash2,
   Clock3,
-  PenTool,
   Eye,
   AlertTriangle,
   RefreshCw,
@@ -88,7 +87,6 @@ export function TakeHomeActivities({
   onViewScoredHistory,
   gridClassName = "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4",
   practiceFocusKey,
-  onOpenCursiveGuide,
 }: TakeHomeActivitiesProps) {
   const [internalExpanded, setInternalExpanded] = useState(false);
   const [showPastSheets, setShowPastSheets] = useState(false);
@@ -276,7 +274,6 @@ export function TakeHomeActivities({
                 childId={childId}
                 initialSubmission={activity.submission}
                 onUploadClick={() => onUploadClick(activity.id)}
-                onOpenCursiveGuide={onOpenCursiveGuide}
                 onPreviewPhoto={(preview) =>
                   setPhotoPreview({ activityId: activity.id, ...preview })
                 }
@@ -614,7 +611,6 @@ function ActivityCard({
   childId,
   initialSubmission,
   onUploadClick,
-  onOpenCursiveGuide,
   onPreviewPhoto,
   hasUnreadComments,
 }: {
@@ -625,7 +621,6 @@ function ActivityCard({
   childId: string | null;
   initialSubmission?: TakeHomeActivitySubmission | null;
   onUploadClick: () => void;
-  onOpenCursiveGuide?: (initialLetter?: string) => void;
   onPreviewPhoto: (preview: PhotoPreviewTarget) => void;
   hasUnreadComments?: boolean;
 }) {
@@ -668,7 +663,6 @@ function ActivityCard({
     isCompleted &&
     Boolean(rejectedSubmission) &&
     rejectedSubmission?.submissionId !== submission?.submissionId;
-  const firstLetter = targetText.trim().match(/[a-zA-Z]/)?.[0]?.toUpperCase() ?? "A";
   const activeAttempt = submission?.submissionId
     ? work.attempts.find((attempt) => attempt.id === submission.submissionId)
     : undefined;
@@ -765,29 +759,7 @@ function ActivityCard({
         </p>
 
         {/* Cursive Practice Desk: 3-line Guidelines Specimen */}
-        <WorksheetPrompt
-          text={targetText}
-          footer={
-            !isCompleted && category !== "closed" && onOpenCursiveGuide ? (
-              <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                {work.title.trim().toLowerCase() !== targetText.trim().toLowerCase() ? (
-                  <span aria-hidden="true" className="truncate font-sans">{targetText}</span>
-                ) : (
-                  <span />
-                )}
-                <button
-                  type="button"
-                  onClick={() => onOpenCursiveGuide(firstLetter)}
-                  className="inline-flex items-center gap-1 font-medium text-primary hover:text-brand-700 dark:hover:text-brand-300 hover:underline cursor-pointer shrink-0 min-h-11 sm:min-h-9 px-2 -mr-2 rounded-md touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                  aria-label={`Inspect cursive letters for "${work.title}"`}
-                >
-                  <PenTool className="size-3" aria-hidden="true" />
-                  <span>Letters</span>
-                </button>
-              </div>
-            ) : undefined
-          }
-        />
+        <WorksheetPrompt text={targetText} />
 
         {work.instructions && (
           <p className="mt-2.5 whitespace-pre-wrap text-xs text-muted-foreground leading-relaxed">
