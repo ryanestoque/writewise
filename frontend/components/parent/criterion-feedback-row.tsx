@@ -1,6 +1,13 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import { BandBadge } from "@/components/shared/band-badge";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   DIAGNOSTIC_NOTES,
   PARENT_CRITERIA_METADATA,
@@ -37,9 +44,8 @@ export function CriterionFeedbackRow({
   const meta = PARENT_CRITERIA_METADATA[criterionKey];
   const displayLabel = label || meta?.label || criterionKey;
   const diagnosticNote = band ? DIAGNOSTIC_NOTES[criterionKey][band] : null;
-  const isExpanded = Boolean(
-    showDiagnosticNote && (diagnosticNote || homePracticeTip)
-  );
+  const hasDetails = Boolean(diagnosticNote || homePracticeTip);
+  const isExpanded = Boolean(showDiagnosticNote && hasDetails);
 
   const headerContent = (
     <>
@@ -79,6 +85,70 @@ export function CriterionFeedbackRow({
     </>
   );
 
+  const positionBar = showPositionBar && (
+    <div className="px-4 pb-2">
+      <BandPositionBar
+        score={score}
+        height="sm"
+        showBandLabels={false}
+        showThresholds={true}
+        ariaValueText={
+          score != null
+            ? `${Math.round(score)}%`
+            : band
+              ? band.replace("_", " ")
+              : undefined
+        }
+      />
+    </div>
+  );
+
+  const detailsBody = (
+    <>
+      {diagnosticNote && (
+        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+          {diagnosticNote}
+        </p>
+      )}
+
+      {homePracticeTip && (
+        <p className="text-xs sm:text-sm text-foreground leading-relaxed">
+          <strong className="font-semibold text-primary">Home tip:</strong>{" "}
+          {homePracticeTip}
+        </p>
+      )}
+    </>
+  );
+
+  if (onInspect) {
+    return (
+      <Collapsible
+        open={isExpanded}
+        onOpenChange={() => onInspect()}
+        className={cn(
+          "transition-colors",
+          isActive && "bg-brand-50/70 dark:bg-brand-950/40"
+        )}
+      >
+        <CollapsibleTrigger
+          type="button"
+          className="group w-full flex items-center justify-between gap-3 px-4 py-3 cursor-pointer hover:bg-muted/30 transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500 min-h-11 sm:min-h-10"
+        >
+          {headerContent}
+        </CollapsibleTrigger>
+        {positionBar}
+        {hasDetails && (
+          <CollapsibleContent
+            id={`diagnostic-note-${criterionKey}`}
+            className="px-4 pb-3.5 pt-0.5 space-y-2"
+          >
+            {detailsBody}
+          </CollapsibleContent>
+        )}
+      </Collapsible>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -86,57 +156,16 @@ export function CriterionFeedbackRow({
         isActive && "bg-brand-50/70 dark:bg-brand-950/40"
       )}
     >
-      {onInspect ? (
-        <button
-          type="button"
-          onClick={onInspect}
-          aria-expanded={isExpanded}
-          aria-controls={isExpanded ? `diagnostic-note-${criterionKey}` : undefined}
-          className="group w-full flex items-center justify-between gap-3 px-4 py-3 cursor-pointer hover:bg-muted/30 transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500 min-h-11 sm:min-h-10"
-        >
-          {headerContent}
-        </button>
-      ) : (
-        <div className="flex items-center justify-between gap-3 px-4 py-3">
-          {headerContent}
-        </div>
-      )}
-
-      {showPositionBar && (
-        <div className="px-4 pb-2">
-          <BandPositionBar
-            score={score}
-            height="sm"
-            showBandLabels={false}
-            showThresholds={true}
-            ariaValueText={
-              score != null
-                ? `${Math.round(score)}%`
-                : band
-                  ? band.replace("_", " ")
-                  : undefined
-            }
-          />
-        </div>
-      )}
-
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
+        {headerContent}
+      </div>
+      {positionBar}
       {isExpanded && (
         <div
           id={`diagnostic-note-${criterionKey}`}
           className="px-4 pb-3.5 pt-0.5 space-y-2"
         >
-          {diagnosticNote && (
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              {diagnosticNote}
-            </p>
-          )}
-
-          {homePracticeTip && (
-            <p className="text-xs sm:text-sm text-foreground leading-relaxed">
-              <strong className="font-semibold text-primary">Home tip:</strong>{" "}
-              {homePracticeTip}
-            </p>
-          )}
+          {detailsBody}
         </div>
       )}
     </div>

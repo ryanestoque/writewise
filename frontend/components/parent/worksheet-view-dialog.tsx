@@ -6,11 +6,16 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Toggle } from "@/components/ui/toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -227,11 +232,29 @@ export function WorksheetViewDialog({
 
   const showHeaderMenu = Boolean(canDelete && submissionId);
 
+  const paperLinesToggle = Boolean(resolvedGuideLines) && (
+    <Toggle
+      size="sm"
+      pressed={showGuideLines}
+      onPressedChange={setShowGuideLines}
+      className="h-auto min-h-10 sm:min-h-8 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 aria-pressed:bg-brand-100 aria-pressed:text-brand-900 dark:aria-pressed:bg-brand-950 dark:aria-pressed:text-brand-200 cursor-pointer touch-manipulation shrink-0 focus-visible:ring-2 focus-visible:ring-brand-500"
+      title="Toggle 3-line penmanship paper guides"
+    >
+      <span className="hidden sm:inline">Paper lines</span>
+      <span className="sm:hidden">Lines</span>
+    </Toggle>
+  );
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[calc(100%-1.5rem)] sm:max-w-3xl lg:max-w-4xl max-h-[min(94dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
+      <DialogContent className="w-[calc(100%-1.5rem)] sm:w-[95vw] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[min(94dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
         {/* Header */}
-        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border bg-card/80">
+        <DialogHeader
+          className={cn(
+            "p-4 sm:p-5 bg-card/80",
+            submissionId ? "pb-0 border-b-0" : "pb-3 border-b border-border"
+          )}
+        >
           <div className="flex items-start justify-between gap-2 pr-11 sm:pr-10">
             <div className="min-w-0 space-y-1">
               <DialogTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
@@ -279,7 +302,7 @@ export function WorksheetViewDialog({
               </DropdownMenu>
             )}
           </div>
-          {returnNote && <p className="text-sm whitespace-pre-wrap pt-1">{returnNote}</p>}
+          {returnNote && <p className="text-sm whitespace-pre-wrap pt-1 pb-2">{returnNote}</p>}
         </DialogHeader>
 
         {/* Content Body */}
@@ -290,6 +313,7 @@ export function WorksheetViewDialog({
           initialView={initialView}
           studentName={childName}
           commentsLabel="Notes"
+          tabBarClassName="px-4 sm:px-5"
           onViewChange={setActiveView}
         >
           <div className="flex-1 overflow-y-auto p-4 sm:p-6">
@@ -309,7 +333,7 @@ export function WorksheetViewDialog({
                   showImageTools={false}
                   flatFrame={true}
                   keyboardScope="focused"
-                  aspectRatioClass="max-h-[min(560px,calc(100dvh-14rem))] min-h-[200px]"
+                  aspectRatioClass="max-h-[min(640px,calc(100dvh-14rem))] min-h-[220px]"
                   diagnosticToolbar={
                     resolvedOverlay ? (
                       <div className="flex items-center justify-between gap-1.5 sm:gap-2 px-1.5 sm:px-2 py-1 min-h-10 sm:min-h-9 flex-nowrap w-full">
@@ -328,13 +352,15 @@ export function WorksheetViewDialog({
                               <span className="hidden sm:inline text-xs font-medium text-foreground shrink-0">
                                 Writing marks:
                               </span>
-                              <button
+                              <Button
                                 type="button"
+                                variant="secondary"
+                                size="sm"
                                 onClick={() => {
                                   setCriterionOverride("all");
                                   setSelectedAttentionItem(null);
                                 }}
-                                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-950 transition-colors cursor-pointer touch-manipulation min-h-10 sm:min-h-8 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 shrink min-w-0"
+                                className="h-auto min-h-10 sm:min-h-8 rounded-md px-2 py-1 text-xs font-medium text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-950 gap-1 cursor-pointer touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-500 shrink min-w-0"
                                 title="Filtering by this skill. Click to show all marks."
                               >
                                 <span className="hidden sm:inline truncate max-w-[140px]">
@@ -347,47 +373,33 @@ export function WorksheetViewDialog({
                                 </span>
                                 <X className="size-3 opacity-70 shrink-0" aria-hidden="true" />
                                 <span className="sr-only">Show all marks</span>
-                              </button>
+                              </Button>
                             </div>
                           ) : (
-                            <label
+                            <Label
                               htmlFor="parent-toggle-writing-marks"
-                              className="inline-flex items-center text-xs font-medium text-foreground cursor-pointer select-none min-h-10 sm:min-h-8 touch-manipulation shrink-0"
+                              className="inline-flex items-center text-xs font-medium text-foreground cursor-pointer min-h-10 sm:min-h-8 touch-manipulation shrink-0"
                             >
                               <span className="hidden sm:inline">Show writing marks</span>
                               <span className="hidden min-[360px]:inline sm:hidden">Writing marks</span>
                               <span className="min-[360px]:hidden">Marks</span>
-                            </label>
+                            </Label>
                           )}
                         </div>
 
-                        {/* Right: Lines button + Guide Popover */}
+                        {/* Right: Lines toggle + Guide Popover */}
                         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                          {Boolean(resolvedGuideLines) && (
-                            <button
-                              type="button"
-                              onClick={() => setShowGuideLines((prev) => !prev)}
-                              aria-pressed={showGuideLines}
-                              className={cn(
-                                "inline-flex items-center gap-1 rounded-md px-2 sm:px-2 py-1 text-xs font-medium transition-colors cursor-pointer touch-manipulation min-h-10 sm:min-h-8 shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
-                                showGuideLines
-                                  ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200"
-                                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                              )}
-                              title="Toggle 3-line penmanship paper guides"
-                            >
-                              <span className="hidden sm:inline">Paper lines</span>
-                              <span className="sm:hidden">Lines</span>
-                            </button>
-                          )}
+                          {paperLinesToggle}
 
                           {showOverlay && (
                             <Popover>
                               <PopoverTrigger
                                 render={
-                                  <button
+                                  <Button
                                     type="button"
-                                    className="inline-flex items-center gap-1 rounded-md px-1.5 sm:px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer touch-manipulation min-h-10 sm:min-h-8 shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-auto min-h-10 sm:min-h-8 rounded-md px-1.5 sm:px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 gap-1 cursor-pointer touch-manipulation shrink-0 focus-visible:ring-2 focus-visible:ring-brand-500"
                                     aria-label="What the writing marks mean"
                                     title="What the writing marks mean"
                                   />
@@ -450,23 +462,7 @@ export function WorksheetViewDialog({
                             ? "Reviewed directly by your child's teacher."
                             : "Original worksheet photo."}
                         </span>
-                        {Boolean(resolvedGuideLines) && (
-                          <button
-                            type="button"
-                            onClick={() => setShowGuideLines((prev) => !prev)}
-                            aria-pressed={showGuideLines}
-                            className={cn(
-                              "inline-flex items-center gap-1 rounded-md px-2 sm:px-2 py-1 text-xs font-medium transition-colors cursor-pointer touch-manipulation min-h-10 sm:min-h-8 shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
-                              showGuideLines
-                                ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200"
-                                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                            )}
-                            title="Toggle 3-line penmanship paper guides"
-                          >
-                            <span className="hidden sm:inline">Paper lines</span>
-                            <span className="sm:hidden">Lines</span>
-                          </button>
-                        )}
+                        {paperLinesToggle}
                       </div>
                     )
                   }
@@ -495,33 +491,38 @@ export function WorksheetViewDialog({
               {/* Right (Desktop) / Below Photo (Mobile): Overall Summary + 5 Skills */}
               <div className="lg:col-span-5 space-y-4 w-full">
                 {compositeScore != null && (
-                  <div className="rounded-xl border border-border/80 bg-card p-4 space-y-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      {compositeBandMeta && (
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span
-                            className={cn("size-2.5 rounded-full shrink-0", compositeBandMeta.dotColor)}
-                            aria-hidden="true"
-                          />
-                          <h3 className="text-base sm:text-lg font-heading font-semibold text-foreground truncate">
-                            {compositeBandMeta.label}
-                          </h3>
-                        </div>
-                      )}
-                      <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/60 shrink-0">
-                        {Math.round(compositeScore)}% overall
-                      </span>
-                    </div>
+                  <Card size="sm" className="border-border/80 shadow-none gap-2.5">
+                    <CardContent className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        {compositeBandMeta && (
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span
+                              className={cn("size-2.5 rounded-full shrink-0", compositeBandMeta.dotColor)}
+                              aria-hidden="true"
+                            />
+                            <h3 className="text-base sm:text-lg font-heading font-semibold text-foreground truncate">
+                              {compositeBandMeta.label}
+                            </h3>
+                          </div>
+                        )}
+                        <Badge
+                          variant="outline"
+                          className="h-auto rounded-md text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 border-border/60 shrink-0"
+                        >
+                          {Math.round(compositeScore)}% overall
+                        </Badge>
+                      </div>
 
-                    <BandPositionBar
-                      score={compositeScore}
-                      height="sm"
-                      showBandLabels={false}
-                      showThresholds={true}
-                      ariaLabel={`Overall score: ${Math.round(compositeScore)}%`}
-                      ariaValueText={`${Math.round(compositeScore)}% overall`}
-                    />
-                  </div>
+                      <BandPositionBar
+                        score={compositeScore}
+                        height="sm"
+                        showBandLabels={false}
+                        showThresholds={true}
+                        ariaLabel={`Overall score: ${Math.round(compositeScore)}%`}
+                        ariaValueText={`${Math.round(compositeScore)}% overall`}
+                      />
+                    </CardContent>
+                  </Card>
                 )}
 
                 {scores && bands && (
@@ -530,7 +531,7 @@ export function WorksheetViewDialog({
                       Skill breakdown
                     </h3>
 
-                    <div className="rounded-xl border border-border/80 bg-card overflow-hidden divide-y divide-border/60">
+                    <Card className="border-border/80 shadow-none py-0 gap-0 divide-y divide-border/60">
                       {PARENT_CRITERIA_LIST.map((criterion) => {
                         const isTop = topStrength?.key === criterion.key;
                         const isFocus = practiceFocus?.key === criterion.key;
@@ -568,7 +569,7 @@ export function WorksheetViewDialog({
                           />
                         );
                       })}
-                    </div>
+                    </Card>
                   </div>
                 )}
               </div>
@@ -578,7 +579,7 @@ export function WorksheetViewDialog({
 
         {/* Footer — single calm primary CTA when practice is available */}
         {onPracticeNow && activeView !== "comments" && (
-          <div className="px-4 py-3 sm:px-5 border-t border-border bg-card/80 flex items-center justify-end">
+          <DialogFooter className="px-4 py-3 sm:px-5 border-t border-border bg-card/80">
             <Button
               type="button"
               variant="default"
@@ -592,7 +593,7 @@ export function WorksheetViewDialog({
               <PenLine className="size-3.5" aria-hidden="true" />
               <span>Practice together</span>
             </Button>
-          </div>
+          </DialogFooter>
         )}
       </DialogContent>
 
