@@ -284,39 +284,39 @@ export function ParentGrades({
                       tabIndex={isHighlighted ? -1 : undefined}
                       className={`flex scroll-mt-24 flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3.5 sm:px-5 focus:outline-none ${isHighlighted ? "bg-primary/5 ring-primary ring-2 ring-inset" : ""}`}
                     >
-                      <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="min-w-0 flex-1">
                         {onInspectActivity ? (
-                          <>
-                            <h4 className="font-sans text-sm font-medium text-foreground break-words">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  onInspectActivity({
-                                    activityId: activity.id,
-                                    submissionId: cell.active_submission_id,
-                                  })
-                                }
-                                aria-describedby={`parent-grade-meta-${activity.id}`}
-                                className="group inline-flex max-w-full items-center gap-1.5 min-h-11 sm:min-h-0 text-left rounded-md py-1.5 sm:py-0.5 -mx-1.5 px-1.5 hover:text-primary hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer touch-manipulation transition-colors"
-                              >
-                                <span className="break-words">{activity.title}</span>
-                                <ChevronRight
-                                  className="size-3.5 shrink-0 text-muted-foreground/70 group-hover:text-primary group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none"
-                                  aria-hidden="true"
-                                />
-                              </button>
-                            </h4>
-                            <p id={`parent-grade-meta-${activity.id}`} className="text-muted-foreground text-xs">
-                              <span className="sm:hidden">
-                                {statusText} · <span className="tabular-nums">{pointsLabel}</span>
-                              </span>
-                              <span className="hidden sm:inline">
-                                {statusText}
-                              </span>
-                            </p>
-                          </>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onInspectActivity({
+                                activityId: activity.id,
+                                submissionId: cell.active_submission_id,
+                              })
+                            }
+                            aria-describedby={`parent-grade-meta-${activity.id}`}
+                            className="group flex w-full items-center justify-between gap-3 min-h-11 sm:min-h-0 text-left rounded-md py-1.5 sm:py-1 -mx-1.5 px-1.5 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer touch-manipulation transition-colors"
+                          >
+                            <div className="min-w-0 space-y-0.5">
+                              <h4 className="font-sans text-sm font-medium text-foreground group-hover:text-primary transition-colors break-words">
+                                {activity.title}
+                              </h4>
+                              <p id={`parent-grade-meta-${activity.id}`} className="text-muted-foreground text-xs">
+                                <span className="sm:hidden">
+                                  {statusText} · <span className="tabular-nums">{pointsLabel}</span>
+                                </span>
+                                <span className="hidden sm:inline">
+                                  {statusText}
+                                </span>
+                              </p>
+                            </div>
+                            <ChevronRight
+                              className="size-4 shrink-0 text-muted-foreground/70 group-hover:text-primary group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none"
+                              aria-hidden="true"
+                            />
+                          </button>
                         ) : (
-                          <>
+                          <div className="space-y-0.5 py-1.5 sm:py-1">
                             <h4 className="font-sans text-sm font-medium text-foreground break-words">
                               {activity.title}
                             </h4>
@@ -328,12 +328,12 @@ export function ParentGrades({
                                 {statusText}
                               </span>
                             </p>
-                          </>
+                          </div>
                         )}
                       </div>
 
                       {hasCompositeScore || canShowComments ? (
-                        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-2.5 sm:pt-0 border-t border-border/40 sm:border-0">
+                        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-1 sm:pt-0 shrink-0">
                           <div className="flex flex-col sm:items-end gap-1">
                             {hasCompositeScore ? (
                               <div className="flex items-center gap-1.5">

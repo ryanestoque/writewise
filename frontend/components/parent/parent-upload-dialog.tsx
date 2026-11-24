@@ -797,11 +797,20 @@ function ParentUploadFlow({
             {step === 2 && (
               <>
                 {/* Context Header: Active Child & Worksheet */}
-                <div className="p-3 rounded-xl bg-muted/40 border border-border/80 text-xs space-y-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold text-foreground truncate">
-                      {childName} · {selectedActivity?.title ?? "Practice worksheet"}
-                    </span>
+                <div className="p-3 rounded-xl bg-muted/40 border border-border/80 text-xs">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-0.5">
+                      <div className="font-semibold text-foreground break-words">
+                        <span>{childName}</span>
+                        <span className="text-muted-foreground font-normal"> · </span>
+                        <span>{selectedActivity?.title ?? "Practice worksheet"}</span>
+                      </div>
+                      {selectedActivity?.targetText && (
+                        <p className="text-muted-foreground italic font-sans break-words leading-relaxed">
+                          &ldquo;{selectedActivity.targetText}&rdquo;
+                        </p>
+                      )}
+                    </div>
                     {activities && activities.length > 1 && (
                       <button
                         type="button"
@@ -815,11 +824,6 @@ function ParentUploadFlow({
                       </button>
                     )}
                   </div>
-                  {selectedActivity?.targetText && (
-                    <p className="text-muted-foreground italic font-sans break-words leading-relaxed">
-                      &ldquo;{selectedActivity.targetText}&rdquo;
-                    </p>
-                  )}
                 </div>
 
                 {/* Reassurance banner for re-attempts */}
@@ -855,11 +859,6 @@ function ParentUploadFlow({
                     </button>
                   </div>
                 )}
-
-                {/* Always-visible capture checklist (prevents the most common rejections) */}
-                <p className="flex items-center justify-center gap-1.5 text-xs sm:text-sm font-medium text-foreground text-center">
-                  <span>3-line paper · Connected cursive · All 4 corners in view</span>
-                </p>
 
                 {/* Dropzone Container */}
                 <div
@@ -1030,11 +1029,20 @@ function ParentUploadFlow({
             {step === 3 && selectedFile && (
               <>
                 {/* Context Header: Active Child & Worksheet */}
-                <div className="p-3 rounded-xl bg-muted/40 border border-border/80 text-xs space-y-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-semibold text-foreground truncate">
-                      {childName} · {selectedActivity?.title ?? "Practice worksheet"}
-                    </p>
+                <div className="p-3 rounded-xl bg-muted/40 border border-border/80 text-xs">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-0.5">
+                      <div className="font-semibold text-foreground break-words">
+                        <span>{childName}</span>
+                        <span className="text-muted-foreground font-normal"> · </span>
+                        <span>{selectedActivity?.title ?? "Practice worksheet"}</span>
+                      </div>
+                      {selectedActivity?.targetText && (
+                        <p className="text-muted-foreground italic font-sans break-words leading-relaxed">
+                          &ldquo;{selectedActivity.targetText}&rdquo;
+                        </p>
+                      )}
+                    </div>
                     {activities && activities.length > 1 && (
                       <button
                         type="button"
@@ -1048,11 +1056,6 @@ function ParentUploadFlow({
                       </button>
                     )}
                   </div>
-                  {selectedActivity?.targetText && (
-                    <p className="text-muted-foreground italic font-sans break-words leading-relaxed">
-                      &ldquo;{selectedActivity.targetText}&rdquo;
-                    </p>
-                  )}
                 </div>
 
                 {/* Reassurance banner for re-attempts */}
