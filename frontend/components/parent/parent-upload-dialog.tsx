@@ -2,7 +2,6 @@
 
 import {
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
@@ -12,11 +11,34 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
 import { QueryRecovery } from "@/components/shared/query-recovery";
 import {
   useTakeHomeActivities,
@@ -45,14 +67,12 @@ import {
   CameraIcon,
   FileImageIcon,
   CheckCircle2Icon,
-  Loader2Icon,
   RotateCwIcon,
   ChevronDownIcon,
   LightbulbIcon,
   BookOpen,
   CheckIcon,
   XIcon,
-  ArrowRightIcon,
   ArrowLeftIcon,
   ZoomInIcon,
 } from "lucide-react";
@@ -158,7 +178,6 @@ function ParentUploadFlow({
   prefilledActivityId?: string;
   onUploadingChange?: (uploading: boolean) => void;
 }) {
-  const photoTipsId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const previewUrlRef = useRef<string | null>(null);
@@ -644,13 +663,13 @@ function ParentUploadFlow({
             aria-busy="true"
             aria-live="polite"
             aria-atomic="true"
-            className="flex flex-col items-center justify-center py-10 space-y-3.5 text-center min-h-[160px]"
+            className="flex flex-col items-center justify-center py-10 gap-3.5 text-center min-h-[160px]"
           >
-            <Loader2Icon
-              className="size-8 animate-spin text-primary"
+            <Spinner
+              className="size-8 text-primary"
               aria-hidden="true"
             />
-            <div className="space-y-1">
+            <div className="flex flex-col gap-1">
               <p className="text-sm font-semibold text-foreground tracking-tight">
                 {UPLOAD_STAGES[uploadStage]?.title ?? UPLOAD_STAGES[0].title}
               </p>
@@ -665,8 +684,8 @@ function ParentUploadFlow({
             aria-live="polite"
             className="flex flex-col items-center justify-center py-10 gap-3 text-center min-h-[180px]"
           >
-            <Loader2Icon
-              className="size-6 animate-spin text-primary"
+            <Spinner
+              className="size-6 text-primary"
               aria-hidden="true"
             />
             <p className="text-sm text-muted-foreground">
@@ -674,25 +693,36 @@ function ParentUploadFlow({
             </p>
           </div>
         ) : isUnavailableSelection ? (
-          <div
-            role="alert"
-            className="rounded-xl border border-warning/35 bg-warning/10 p-4 sm:p-5 space-y-2 text-sm"
-          >
-            <p className="font-semibold text-foreground">
+          <Alert className="border-warning/35 bg-warning/10 p-4 sm:p-5 gap-3">
+            <AlertTitle className="font-semibold text-foreground">
               This worksheet is no longer open for uploads
-            </p>
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            </AlertTitle>
+            <AlertDescription className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
               Its deadline may have passed, or it may no longer be assigned to {childName}.
               {activities && activities.length > 0
                 ? " You can pick another open worksheet below."
                 : " Closed worksheets remain visible on your child's progress page."}
-            </p>
-          </div>
+            </AlertDescription>
+            {activities && activities.length > 0 && (
+              <div className="pt-1">
+                <Button
+                  ref={unavailableActionRef}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleChooseAnotherWorksheet}
+                  className="h-9 px-3 text-xs sm:text-sm font-medium cursor-pointer"
+                >
+                  Choose another worksheet
+                </Button>
+              </div>
+            )}
+          </Alert>
         ) : activitiesError && !assignedActivities && step !== 5 ? null : (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-4">
             {/* Step 1 — Select Take-Home Activity */}
             {step === 1 && (
-              <div className="space-y-3">
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-heading font-semibold text-foreground">
                     Select a practice worksheet
@@ -701,25 +731,26 @@ function ParentUploadFlow({
 
                 {activitiesLoading ? (
                   <div role="status" aria-live="polite" className="flex items-center justify-center gap-2 py-8">
-                    <Loader2Icon
-                      className="size-5 animate-spin text-muted-foreground"
+                    <Spinner
+                      className="size-5 text-muted-foreground"
                       aria-hidden="true"
                     />
                     <span className="sr-only">Loading practice worksheets…</span>
                   </div>
                 ) : !activities || activities.length === 0 ? (
-                  <div className="p-6 rounded-xl border border-dashed text-center space-y-2">
-                    <BookOpen
-                      className="size-8 text-muted-foreground mx-auto"
-                      aria-hidden="true"
-                    />
-                    <p className="text-sm font-medium text-foreground">
-                      No practice worksheets open
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      There are no open practice worksheets right now. Past worksheets remain on your child&apos;s Practice tab.
-                    </p>
-                  </div>
+                  <Empty className="p-6 rounded-xl border border-dashed gap-2">
+                    <EmptyMedia variant="icon" className="mb-0 bg-muted/60 text-muted-foreground">
+                      <BookOpen aria-hidden="true" />
+                    </EmptyMedia>
+                    <EmptyHeader className="gap-1">
+                      <EmptyTitle className="text-sm font-medium">
+                        No practice worksheets open
+                      </EmptyTitle>
+                      <EmptyDescription className="text-xs">
+                        There are no open practice worksheets right now. Past worksheets remain on your child&apos;s Practice tab.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
                 ) : (
                   <div className="grid gap-2.5">
                     {activities.map((act) => {
@@ -749,10 +780,12 @@ function ParentUploadFlow({
                             setSelectedActivityId(act.id);
                             setStep(2);
                           }}
-                          className={`flex flex-col text-left p-3.5 rounded-xl border transition-colors text-xs sm:text-sm cursor-pointer shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${isSelected
-                            ? "border-primary bg-primary/5 ring-1 ring-primary"
-                            : "border-border/80 bg-card hover:border-primary/60 hover:bg-muted/30"
-                            }`}
+                          className={cn(
+                            "flex flex-col text-left p-3.5 rounded-xl border transition-colors text-xs sm:text-sm cursor-pointer shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                            isSelected
+                              ? "border-primary bg-primary/5 ring-1 ring-primary"
+                              : "border-border/80 bg-card hover:border-primary/60 hover:bg-muted/30"
+                          )}
                         >
                           <span className="flex items-center justify-between gap-2">
                             <span className="font-semibold text-foreground line-clamp-2">
@@ -799,7 +832,7 @@ function ParentUploadFlow({
                 {/* Context Header: Active Child & Worksheet */}
                 <div className="p-3 rounded-xl bg-muted/40 border border-border/80 text-xs">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0 space-y-0.5">
+                    <div className="min-w-0 flex flex-col gap-0.5">
                       <div className="font-semibold text-foreground break-words">
                         <span>{childName}</span>
                         <span className="text-muted-foreground font-normal"> · </span>
@@ -812,52 +845,64 @@ function ParentUploadFlow({
                       )}
                     </div>
                     {activities && activities.length > 1 && (
-                      <button
+                      <Button
                         type="button"
+                        variant="link"
+                        size="xs"
                         onClick={() => {
                           setAllowActivitySwitch(true);
                           setStep(1);
                         }}
-                        className="inline-flex min-h-10 sm:min-h-9 items-center px-2 -my-1 text-xs text-primary font-medium hover:underline shrink-0 cursor-pointer rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                        className="min-h-10 sm:min-h-9 h-auto px-2 -my-1 text-xs font-medium shrink-0 cursor-pointer"
                       >
                         Change worksheet
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
 
                 {/* Reassurance banner for re-attempts */}
                 {priorSubmission?.status === "completed" && (
-                  <div className="flex items-center gap-2 p-2.5 px-3 rounded-xl bg-brand-50/80 dark:bg-brand-950/40 border border-brand-200/70 dark:border-brand-800/50 text-xs text-brand-900 dark:text-brand-200">
+                  <Alert
+                    role="status"
+                    className="py-2.5 px-3 bg-brand-50/80 dark:bg-brand-950/40 border-brand-200/70 dark:border-brand-800/50 text-xs text-brand-900 dark:text-brand-200"
+                  >
                     <CheckCircle2Icon
-                      className="size-4 shrink-0 text-brand-600 dark:text-brand-400"
+                      className="text-brand-600 dark:text-brand-400"
                       aria-hidden="true"
                     />
-                    <span>
+                    <AlertDescription className="text-xs text-brand-900 dark:text-brand-200">
                       <strong>New attempt</strong> — earlier photos stay saved in history.
-                    </span>
-                  </div>
+                    </AlertDescription>
+                  </Alert>
                 )}
 
                 {/* Persistent Retake Guidance Banner */}
                 {lastRetakeTip && (
-                  <div className="flex items-start gap-2.5 p-3 rounded-xl bg-warning/10 border border-warning/25 text-foreground text-xs animate-in fade-in-50 duration-200">
-                    <LightbulbIcon className="size-4 text-warning shrink-0 mt-0.5" aria-hidden="true" />
-                    <div className="flex-1 space-y-0.5">
-                      <p className="font-semibold text-foreground">
-                        Tip for this retake{lastRetakeTip.badgeLabel ? ` (${lastRetakeTip.badgeLabel})` : ""}:
-                      </p>
-                      <p className="text-muted-foreground leading-relaxed">{lastRetakeTip.tip}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setLastRetakeTip(null)}
-                      className="inline-flex size-11 sm:size-9 items-center justify-center text-muted-foreground hover:text-foreground shrink-0 rounded cursor-pointer touch-manipulation focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                      aria-label="Dismiss tip"
-                    >
-                      <XIcon className="size-3.5" aria-hidden="true" />
-                    </button>
-                  </div>
+                  <Alert
+                    role="status"
+                    className="p-3 bg-warning/10 border-warning/25 text-foreground text-xs animate-in fade-in-50 duration-200"
+                  >
+                    <LightbulbIcon className="text-warning" aria-hidden="true" />
+                    <AlertTitle className="font-semibold text-foreground text-xs">
+                      Tip for this retake{lastRetakeTip.badgeLabel ? ` (${lastRetakeTip.badgeLabel})` : ""}:
+                    </AlertTitle>
+                    <AlertDescription className="text-xs text-muted-foreground leading-relaxed">
+                      {lastRetakeTip.tip}
+                    </AlertDescription>
+                    <AlertAction className="top-1.5 right-1.5">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => setLastRetakeTip(null)}
+                        className="size-10 sm:size-8 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+                        aria-label="Dismiss tip"
+                      >
+                        <XIcon aria-hidden="true" />
+                      </Button>
+                    </AlertAction>
+                  </Alert>
                 )}
 
                 {/* Dropzone Container */}
@@ -874,10 +919,12 @@ function ParentUploadFlow({
                     setIsDragging(false);
                     handleFileChange(e.dataTransfer.files?.[0]);
                   }}
-                  className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-[border-color,background-color,transform] text-center shadow-warm ${isDragging
-                    ? "border-primary bg-primary/5 scale-[0.99]"
-                    : "border-border bg-card hover:border-primary/60 hover:bg-muted/10"
-                    }`}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-[border-color,background-color,transform] text-center shadow-warm",
+                    isDragging
+                      ? "border-primary bg-primary/5 scale-[0.99]"
+                      : "border-border bg-card hover:border-primary/60 hover:bg-muted/10"
+                  )}
                 >
                   <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-2.5">
                     {isMobile ? (
@@ -904,20 +951,21 @@ function ParentUploadFlow({
                         ref={choosePhotoButtonRef}
                         type="button"
                         variant="default"
-                        className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
+                        className="h-10 sm:h-9 text-xs sm:text-sm font-medium w-full shadow-warm cursor-pointer"
                         onClick={() => cameraInputRef.current?.click()}
                       >
-                        <CameraIcon className="size-3.5" aria-hidden="true" />
+                        <CameraIcon data-icon="inline-start" aria-hidden="true" />
                         Take photo
                       </Button>
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full bg-background hover:bg-muted cursor-pointer"
+                        className="h-10 sm:h-9 text-xs sm:text-sm font-medium w-full bg-background hover:bg-muted cursor-pointer"
                         onClick={() => fileInputRef.current?.click()}
                       >
                         <FileImageIcon
-                          className="size-3.5 text-muted-foreground"
+                          data-icon="inline-start"
+                          className="text-muted-foreground"
                           aria-hidden="true"
                         />
                         Photo library
@@ -929,10 +977,10 @@ function ParentUploadFlow({
                         ref={choosePhotoButtonRef}
                         type="button"
                         variant="default"
-                        className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
+                        className="h-10 sm:h-9 text-xs sm:text-sm font-medium w-full shadow-warm cursor-pointer"
                         onClick={() => fileInputRef.current?.click()}
                       >
-                        <FileImageIcon className="size-3.5" aria-hidden="true" />
+                        <FileImageIcon data-icon="inline-start" aria-hidden="true" />
                         Browse Files
                       </Button>
                     </div>
@@ -941,19 +989,22 @@ function ParentUploadFlow({
 
                 {/* Inline Dropzone Error Alert */}
                 {dropError && (
-                  <div
-                    role="alert"
-                    className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-center justify-between gap-2"
-                  >
-                    <span>{dropError}</span>
-                    <button
-                      type="button"
-                      onClick={() => setDropError(null)}
-                      className="inline-flex items-center justify-center min-h-10 sm:min-h-9 px-2 -my-1 rounded-md font-semibold underline shrink-0 cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-destructive"
-                    >
-                      Dismiss
-                    </button>
-                  </div>
+                  <Alert variant="destructive" className="p-3 text-xs">
+                    <AlertDescription className="text-xs text-destructive">
+                      {dropError}
+                    </AlertDescription>
+                    <AlertAction className="top-1.5 right-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="xs"
+                        onClick={() => setDropError(null)}
+                        className="min-h-10 sm:min-h-8 h-auto px-2 font-semibold underline text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer touch-manipulation"
+                      >
+                        Dismiss
+                      </Button>
+                    </AlertAction>
+                  </Alert>
                 )}
 
                 {/* Subtle Privacy Notice Footnote (Clean Typography, No Decorative Icon) */}
@@ -962,13 +1013,19 @@ function ParentUploadFlow({
                 </p>
 
                 {/* Streamlined Photo Quality Guide (2x2 Micro-card Grid) */}
-                <div className="rounded-xl bg-muted/30 overflow-hidden text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setShowTips((prev) => !prev)}
-                    className="w-full min-h-10 sm:min-h-9 flex items-center justify-between px-4 py-2 hover:bg-muted/50 transition-colors text-left font-medium text-foreground cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                    aria-expanded={showTips}
-                    aria-controls={photoTipsId}
+                <Collapsible
+                  open={showTips}
+                  onOpenChange={setShowTips}
+                  className="rounded-xl bg-muted/30 overflow-hidden text-xs"
+                >
+                  <CollapsibleTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="w-full min-h-10 sm:min-h-9 h-auto justify-between rounded-none px-4 py-2 hover:bg-muted/50 text-left font-medium text-foreground cursor-pointer touch-manipulation"
+                      />
+                    }
                   >
                     <span className="text-xs sm:text-sm font-semibold">
                       Photo quality tips
@@ -976,52 +1033,49 @@ function ParentUploadFlow({
                     <span className="flex items-center gap-1 text-muted-foreground text-xs font-medium">
                       <span>{showTips ? "Hide tips" : "Show tips"}</span>
                       <ChevronDownIcon
-                        className={`size-3.5 transition-transform duration-200 ${showTips ? "rotate-180" : ""
-                          }`}
+                        className={cn(
+                          "size-3.5 transition-transform duration-200",
+                          showTips && "rotate-180"
+                        )}
                         aria-hidden="true"
                       />
                     </span>
-                  </button>
-                  {showTips && (
-                    <div
-                      id={photoTipsId}
-                      className="px-3.5 pb-3.5 pt-1.5 border-t border-border/40 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs animate-in fade-in-50 duration-150 motion-reduce:animate-none"
-                    >
-                      <div className="p-2.5 rounded-lg bg-background/60 dark:bg-muted/30 space-y-0.5">
-                        <p className="font-semibold text-foreground text-xs sm:text-sm">
-                          1. 3-line penmanship paper
-                        </p>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Use standard 3-line paper with top line, midline, and baseline clearly visible.
-                        </p>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-background/60 dark:bg-muted/30 space-y-0.5">
-                        <p className="font-semibold text-foreground text-xs sm:text-sm">
-                          2. Connected cursive
-                        </p>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Words must be written in connected cursive strokes, not separated print letters.
-                        </p>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-background/60 dark:bg-muted/30 space-y-0.5">
-                        <p className="font-semibold text-foreground text-xs sm:text-sm">
-                          3. Flat paper &amp; even light
-                        </p>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Hold your phone straight above the page. Avoid strong glare, shadows, or camera angles.
-                        </p>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-background/60 dark:bg-muted/30 space-y-0.5">
-                        <p className="font-semibold text-foreground text-xs sm:text-sm">
-                          4. Sharp focus
-                        </p>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Tap your phone screen on the ink before snapping so writing lines stay crisp.
-                        </p>
-                      </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="px-3.5 pb-3.5 pt-1.5 border-t border-border/40 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs animate-in fade-in-50 duration-150 motion-reduce:animate-none">
+                    <div className="p-2.5 rounded-lg bg-background/60 dark:bg-muted/30 flex flex-col gap-0.5">
+                      <p className="font-semibold text-foreground text-xs sm:text-sm">
+                        1. 3-line penmanship paper
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Use standard 3-line paper with top line, midline, and baseline clearly visible.
+                      </p>
                     </div>
-                  )}
-                </div>
+                    <div className="p-2.5 rounded-lg bg-background/60 dark:bg-muted/30 flex flex-col gap-0.5">
+                      <p className="font-semibold text-foreground text-xs sm:text-sm">
+                        2. Connected cursive
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Words must be written in connected cursive strokes, not separated print letters.
+                      </p>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-background/60 dark:bg-muted/30 flex flex-col gap-0.5">
+                      <p className="font-semibold text-foreground text-xs sm:text-sm">
+                        3. Flat paper &amp; even light
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Hold your phone straight above the page. Avoid strong glare, shadows, or camera angles.
+                      </p>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-background/60 dark:bg-muted/30 flex flex-col gap-0.5">
+                      <p className="font-semibold text-foreground text-xs sm:text-sm">
+                        4. Sharp focus
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Tap your phone screen on the ink before snapping so writing lines stay crisp.
+                      </p>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </>
             )}
 
@@ -1031,7 +1085,7 @@ function ParentUploadFlow({
                 {/* Context Header: Active Child & Worksheet */}
                 <div className="p-3 rounded-xl bg-muted/40 border border-border/80 text-xs">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0 space-y-0.5">
+                    <div className="min-w-0 flex flex-col gap-0.5">
                       <div className="font-semibold text-foreground break-words">
                         <span>{childName}</span>
                         <span className="text-muted-foreground font-normal"> · </span>
@@ -1044,40 +1098,45 @@ function ParentUploadFlow({
                       )}
                     </div>
                     {activities && activities.length > 1 && (
-                      <button
+                      <Button
                         type="button"
+                        variant="link"
+                        size="xs"
                         onClick={() => {
                           setAllowActivitySwitch(true);
                           setStep(1);
                         }}
-                        className="inline-flex min-h-10 sm:min-h-9 items-center px-2 -my-1 text-xs text-primary font-medium hover:underline shrink-0 cursor-pointer rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                        className="min-h-10 sm:min-h-9 h-auto px-2 -my-1 text-xs font-medium shrink-0 cursor-pointer"
                       >
                         Change worksheet
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
 
                 {/* Reassurance banner for re-attempts */}
                 {priorSubmission?.status === "completed" && (
-                  <div className="flex items-center gap-2 p-2.5 px-3 rounded-xl bg-brand-50/80 dark:bg-brand-950/40 border border-brand-200/70 dark:border-brand-800/50 text-xs text-brand-900 dark:text-brand-200">
+                  <Alert
+                    role="status"
+                    className="py-2.5 px-3 bg-brand-50/80 dark:bg-brand-950/40 border-brand-200/70 dark:border-brand-800/50 text-xs text-brand-900 dark:text-brand-200"
+                  >
                     <CheckCircle2Icon
-                      className="size-4 shrink-0 text-brand-600 dark:text-brand-400"
+                      className="text-brand-600 dark:text-brand-400"
                       aria-hidden="true"
                     />
-                    <span>
+                    <AlertDescription className="text-xs text-brand-900 dark:text-brand-200">
                       <strong>New attempt</strong> — earlier photos stay saved in history.
-                    </span>
-                  </div>
+                    </AlertDescription>
+                  </Alert>
                 )}
 
                 {/* File Inspection Card */}
-                <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
+                <Card size="sm" className="rounded-2xl shadow-none gap-3">
+                  <CardHeader className="items-center gap-1">
                     <div className="truncate min-w-0">
-                      <p className="text-sm font-semibold truncate text-foreground">
+                      <CardTitle as="p" className="font-sans text-sm font-semibold truncate text-foreground">
                         Worksheet photo ready
-                      </p>
+                      </CardTitle>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <p className="text-xs text-muted-foreground font-sans tabular-nums">
                           {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
@@ -1092,18 +1151,19 @@ function ParentUploadFlow({
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <CardAction className="flex items-center gap-2 shrink-0 self-center">
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-10 sm:h-9 text-xs font-medium cursor-pointer gap-1.5 px-3"
+                        className="h-10 sm:h-9 text-xs font-medium cursor-pointer px-3"
                         onClick={handleRotateClockwise}
                         disabled={isRotating}
                         aria-label="Rotate photo 90 degrees clockwise"
                       >
                         <RotateCwIcon
-                          className={`size-3.5 ${isRotating ? "animate-spin" : ""}`}
+                          data-icon="inline-start"
+                          className={cn(isRotating && "animate-spin")}
                           aria-hidden="true"
                         />
                         <span>Rotate</span>
@@ -1112,44 +1172,48 @@ function ParentUploadFlow({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-10 sm:h-9 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer gap-1.5 px-2.5"
+                        className="h-10 sm:h-9 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer px-2.5"
                         onClick={handleClearFile}
                         aria-label="Remove photo and take another"
                       >
-                        <XIcon className="size-3.5" aria-hidden="true" />
+                        <XIcon data-icon="inline-start" aria-hidden="true" />
                         <span>Retake</span>
                       </Button>
-                    </div>
-                  </div>
+                    </CardAction>
+                  </CardHeader>
 
                   {previewUrl && (
-                    <button
-                      type="button"
-                      onClick={() => setZoomOpen(true)}
-                      aria-label="Inspect worksheet photo full size before sending"
-                      className={`group relative w-full rounded-xl overflow-hidden bg-muted/40 border border-border flex items-center justify-center touch-pan-y cursor-zoom-in focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${isPortrait
-                        ? "aspect-3/4 max-h-[240px] sm:max-h-[400px]"
-                        : "aspect-4/3 max-h-[220px] sm:max-h-[340px]"
-                        }`}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={previewUrl}
-                        alt={`Handwriting worksheet preview for ${childName}`}
-                        draggable={false}
-                        onLoad={(e) => {
-                          const img = e.currentTarget;
-                          setIsPortrait(img.naturalHeight >= img.naturalWidth);
-                        }}
-                        className="size-full object-contain pointer-events-none select-none"
-                      />
-                      <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-xs border border-border/80 px-2.5 py-1 text-xs font-medium text-foreground shadow-warm-sm group-hover:bg-background">
-                        <ZoomInIcon className="size-3.5 text-primary" aria-hidden="true" />
-                        <span>Tap to zoom</span>
-                      </span>
-                    </button>
+                    <CardContent>
+                      <button
+                        type="button"
+                        onClick={() => setZoomOpen(true)}
+                        aria-label="Inspect worksheet photo full size before sending"
+                        className={cn(
+                          "group relative w-full rounded-xl overflow-hidden bg-muted/40 border border-border flex items-center justify-center touch-pan-y cursor-zoom-in focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                          isPortrait
+                            ? "aspect-3/4 max-h-[240px] sm:max-h-[400px]"
+                            : "aspect-4/3 max-h-[220px] sm:max-h-[340px]"
+                        )}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={previewUrl}
+                          alt={`Handwriting worksheet preview for ${childName}`}
+                          draggable={false}
+                          onLoad={(e) => {
+                            const img = e.currentTarget;
+                            setIsPortrait(img.naturalHeight >= img.naturalWidth);
+                          }}
+                          className="size-full object-contain pointer-events-none select-none"
+                        />
+                        <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-xs border border-border/80 px-2.5 py-1 text-xs font-medium text-foreground shadow-warm-sm group-hover:bg-background">
+                          <ZoomInIcon className="size-3.5 text-primary" aria-hidden="true" />
+                          <span>Tap to zoom</span>
+                        </span>
+                      </button>
+                    </CardContent>
                   )}
-                </div>
+                </Card>
 
                 {previewUrl && (
                   <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
@@ -1223,107 +1287,28 @@ function ParentUploadFlow({
         )}
       </div>
 
-      {/* Standardized Sticky Footer for Steps 1–3, Unavailable State, and Step 4 Error */}
-      {!isUploading && (isUnavailableSelection || step <= 3 || (step === 4 && uploadError)) && (
-        <div className="shrink-0 flex items-center justify-between p-3 sm:p-3.5 px-4 sm:px-6 border-t border-border bg-muted/20">
-          {isUnavailableSelection ? (
-            <>
-              <Button
-                ref={activities && activities.length > 0 ? undefined : unavailableActionRef}
-                variant="outline"
-                onClick={onClose}
-                className="h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
-              >
-                Close
-              </Button>
-              {activities && activities.length > 0 && (
-                <Button
-                  ref={unavailableActionRef}
-                  type="button"
-                  onClick={handleChooseAnotherWorksheet}
-                  className="h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
-                >
-                  Choose another worksheet
-                </Button>
-              )}
-            </>
-          ) : (
-            <>
-              {step === 4 && uploadError && (
-                <Button
-                  variant="outline"
-                  onClick={onClose}
-                  className="h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
-                >
-                  Cancel
-                </Button>
-              )}
-              {step === 1 && (
-                <Button
-                  variant="outline"
-                  onClick={onClose}
-                  className="h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
-                >
-                  Cancel
-                </Button>
-              )}
-              {step === 2 && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (!allowActivitySwitch) {
-                      onClose();
-                    } else {
-                      setStep(1);
-                    }
-                  }}
-                  className="gap-1.5 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
-                >
-                  {!allowActivitySwitch ? (
-                    "Cancel"
-                  ) : (
-                    <>
-                      <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
-                      Back
-                    </>
-                  )}
-                </Button>
-              )}
-              {step === 3 && (
-                <Button
-                  variant="outline"
-                  onClick={() => setStep(2)}
-                  className="gap-1.5 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
-                >
-                  <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
-                  Back
-                </Button>
-              )}
+      {/* Step 3 (Review & Confirm) Action Footer */}
+      {!isUploading && step === 3 && (
+        <DialogFooter className="shrink-0 flex-row items-center justify-between sm:justify-between p-3 sm:p-3.5 px-4 sm:px-6 border-t border-border bg-background">
+          <Button
+            variant="outline"
+            onClick={() => setStep(2)}
+            className="h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
+          >
+            <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
+            Back
+          </Button>
 
-              {step === 1 && (
-                <Button
-                  disabled={!selectedActivity}
-                  onClick={() => setStep(2)}
-                  className="gap-2 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
-                >
-                  <span>Next</span>
-                  <ArrowRightIcon className="size-3.5" aria-hidden="true" />
-                </Button>
-              )}
-              {step === 3 && (
-                <Button
-                  ref={submitButtonRef}
-                  disabled={uploadMutation.isPending || !selectedActivity}
-                  onClick={handleRetryUpload}
-                  className="gap-2 h-10 sm:h-9 px-5 text-xs sm:text-sm font-semibold shadow-warm-sm cursor-pointer"
-                >
-                  <CheckCircle2Icon className="size-4" aria-hidden="true" />
-                  Send worksheet photo
-                </Button>
-              )}
-            </>
-          )}
-        </div>
+          <Button
+            ref={submitButtonRef}
+            disabled={uploadMutation.isPending || !selectedActivity}
+            onClick={handleRetryUpload}
+            className="h-10 sm:h-9 px-5 text-xs sm:text-sm font-semibold shadow-warm-sm cursor-pointer"
+          >
+            <CheckCircle2Icon data-icon="inline-start" aria-hidden="true" />
+            Send worksheet photo
+          </Button>
+        </DialogFooter>
       )}
     </>
   );

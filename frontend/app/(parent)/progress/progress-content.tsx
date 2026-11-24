@@ -637,11 +637,11 @@ export function ProgressPageContent() {
         </TabsContent>
 
         {/* Tab 2: To-Write (Assigned Take-Home Practice) */}
-        <TabsContent value="to-write" className="space-y-6">
+        <TabsContent value="to-write" className="flex flex-col gap-6">
           <section
             id="assigned-take-home-section"
             aria-labelledby="take-home-heading"
-            className="space-y-3 scroll-mt-28"
+            className="flex flex-col gap-3 scroll-mt-28"
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2
@@ -656,9 +656,9 @@ export function ProgressPageContent() {
                 size="sm"
                 aria-haspopup="dialog"
                 onClick={() => openCursiveGuide()}
-                className="h-8 px-3 rounded-full text-xs font-medium text-foreground border-border/80 bg-background hover:text-primary hover:border-primary/40 hover:bg-primary/5 active:bg-primary/10 cursor-pointer touch-manipulation transition-colors gap-1.5 shadow-2xs"
+                className="rounded-full text-xs font-medium text-foreground border-border/80 bg-background hover:text-primary hover:border-primary/40 hover:bg-primary/5 active:bg-primary/10 cursor-pointer touch-manipulation transition-colors shadow-2xs"
               >
-                <PenTool className="size-3.5 text-primary shrink-0" aria-hidden="true" />
+                <PenTool data-icon="inline-start" className="text-primary" aria-hidden="true" />
                 <span>Cursive Guide</span>
               </Button>
             </div>

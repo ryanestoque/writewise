@@ -18,8 +18,30 @@ import { BandBadge } from "@/components/shared/band-badge";
 import { QueryRecovery } from "@/components/shared/query-recovery";
 import { WorksheetPrompt } from "@/components/activities/worksheet-prompt";
 import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemTitle,
+} from "@/components/ui/item";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { TakeHomeActivitiesSkeleton } from "@/components/parent/parent-portal-skeletons";
 import {
   Empty,
@@ -32,12 +54,12 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
   ClipboardList,
-  Loader2,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -90,7 +112,6 @@ export function TakeHomeActivities({
 }: TakeHomeActivitiesProps) {
   const awaitingReviewHeadingId = useId();
   const completedPracticeHeadingId = useId();
-  const pastSheetsListId = useId();
   const gridId = useId();
   const [internalExpanded, setInternalExpanded] = useState(false);
   const [pastSheetsToggled, setPastSheetsToggled] = useState<boolean | null>(null);
@@ -226,42 +247,45 @@ export function TakeHomeActivities({
   const focusMeta = practiceFocusKey ? PARENT_CRITERIA_METADATA[practiceFocusKey] : null;
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       {recovery}
 
       {/* Compact Practice Focus Strip */}
       {focusMeta && toDoActivities.length > 0 && (
-        <div className="rounded-xl border border-primary/20 bg-primary/5 dark:bg-primary/10 px-4 py-3 text-xs sm:text-sm">
-          <p className="text-muted-foreground leading-relaxed">
+        <Alert
+          role="note"
+          className="border-primary/20 bg-primary/5 dark:bg-primary/10 px-4 py-3 text-xs sm:text-sm"
+        >
+          <AlertDescription className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
             <span className="font-semibold text-foreground">Focus · {focusMeta.label}:</span>{" "}
             {focusMeta.homeTip}
-          </p>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Primary To-Do Worksheets Area */}
       {toDoActivities.length === 0 ? (
-        <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-5 shadow-warm text-center space-y-2.5">
-          <div className="size-9 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center mx-auto">
+        <Empty className="border border-border rounded-xl sm:rounded-2xl shadow-warm bg-card p-5 gap-2.5">
+          <EmptyMedia variant="icon" className="mb-0 size-9 rounded-full bg-secondary text-secondary-foreground">
             {closedWithoutPhotoCount > 0 ? (
-              <Clock3 className="size-5" aria-hidden="true" />
+              <Clock3 aria-hidden="true" />
             ) : (
-              <CheckCircle2 className="size-5" aria-hidden="true" />
+              <CheckCircle2 aria-hidden="true" />
             )}
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm sm:text-base font-semibold text-foreground">
+          </EmptyMedia>
+          <EmptyHeader className="gap-1">
+            <EmptyTitle className="text-sm sm:text-base font-semibold">
               {closedWithoutPhotoCount > 0 ? "Past-due worksheets closed" : "All caught up"}
-            </p>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-sm mx-auto">
+            </EmptyTitle>
+            <EmptyDescription className="text-sm leading-relaxed">
               {closedWithoutPhotoCount > 0
                 ? `${closedWithoutPhotoCount} ${closedWithoutPhotoCount === 1 ? "worksheet is" : "worksheets are"} closed. Contact your teacher directly to ask about late submission.`
                 : awaitingReviewActivities.length > 0
                   ? "Nothing to send. Submitted worksheets are waiting for review below."
                   : "All assigned practice worksheets have been turned in."}
-            </p>
-          </div>
-        </div>
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <>
           <div id={gridId} className={gridClassName}>
@@ -298,16 +322,16 @@ export function TakeHomeActivities({
                 onClick={handleToggleExpanded}
                 aria-expanded={isExpanded}
                 aria-controls={gridId}
-                className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
+                className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium cursor-pointer"
               >
                 {isExpanded ? (
                   <>
-                    <ChevronUp className="size-3.5" aria-hidden="true" />
+                    <ChevronUp data-icon="inline-start" aria-hidden="true" />
                     <span>Show fewer</span>
                   </>
                 ) : (
                   <>
-                    <ChevronDown className="size-3.5" aria-hidden="true" />
+                    <ChevronDown data-icon="inline-start" aria-hidden="true" />
                     <span>See all ({toDoActivities.length})</span>
                   </>
                 )}
@@ -319,8 +343,9 @@ export function TakeHomeActivities({
 
       {/* Dedicated Section: Waiting for Teacher Review */}
       {awaitingReviewActivities.length > 0 && (
-        <section aria-labelledby={awaitingReviewHeadingId} className="space-y-3 pt-4 border-t border-border/60">
-          <div className="flex items-baseline gap-2">
+        <section aria-labelledby={awaitingReviewHeadingId} className="flex flex-col gap-3">
+          <Separator className="bg-border/60" />
+          <div className="flex items-baseline gap-2 pt-1">
             <h3 id={awaitingReviewHeadingId} className="font-heading text-sm sm:text-base font-semibold text-foreground">
               Waiting for teacher review
             </h3>
@@ -328,86 +353,14 @@ export function TakeHomeActivities({
               ({awaitingReviewActivities.length})
             </span>
           </div>
-          <div className="rounded-xl border border-border bg-card divide-y divide-border/70">
-            {awaitingReviewActivities.map((activity) => (
-              <CompactWorksheetRow
-                key={activity.id}
-                work={activity}
-                childId={childId}
-                now={now}
-                onReplacePhoto={() => onUploadClick(activity.id)}
-                onPreviewPhoto={(preview) =>
-                  setPhotoPreview({ activityId: activity.id, ...preview })
-                }
-                hasUnreadComments={
-                  activity.attempts.some((a) => unread.data?.has(a.id)) ||
-                  (activity.submission?.submissionId
-                    ? Boolean(unread.data?.has(activity.submission.submissionId))
-                    : false)
-                }
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Dedicated Section: Completed & Closed Practice */}
-      {pastSheets.length > 0 && (
-        <section aria-labelledby={completedPracticeHeadingId} className="space-y-3 pt-4 border-t border-border/60">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-baseline gap-2">
-              <h3 id={completedPracticeHeadingId} className="font-heading text-sm sm:text-base font-semibold text-foreground">
-                Completed &amp; closed practice
-              </h3>
-              <span className="text-xs text-muted-foreground font-sans tabular-nums">
-                ({pastSheets.length})
-              </span>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setPastSheetsToggled(!(isPastSheetsOpen))}
-              aria-expanded={isPastSheetsOpen}
-              aria-controls={pastSheetsListId}
-              className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium text-primary hover:text-primary cursor-pointer gap-1.5"
-            >
-              {isPastSheetsOpen ? (
-                <>
-                  <span>Hide</span>
-                  <ChevronUp className="size-3.5" aria-hidden="true" />
-                </>
-              ) : (
-                <>
-                  <span>Show</span>
-                  <ChevronDown className="size-3.5" aria-hidden="true" />
-                </>
-              )}
-            </Button>
-          </div>
-
-          {closedWithoutPhotoCount > 0 && (
-            <p className="rounded-lg border border-band-1/30 bg-band-1/10 px-3 py-2 text-xs text-band-1-text font-medium">
-              {closedWithoutPhotoCount}{" "}
-              {closedWithoutPhotoCount === 1
-                ? "missed worksheet is closed without a photo."
-                : "missed worksheets are closed without a photo."}{" "}
-              Contact your teacher directly to ask about late submission.
-            </p>
-          )}
-
-          {isPastSheetsOpen && (
-            <div
-              id={pastSheetsListId}
-              className="rounded-xl border border-border bg-card divide-y divide-border/70"
-            >
-              {pastSheets.map((activity) => (
+          <Card className="p-0 gap-0 shadow-none">
+            <CardContent className="p-0 divide-y divide-border/70">
+              {awaitingReviewActivities.map((activity) => (
                 <CompactWorksheetRow
                   key={activity.id}
                   work={activity}
                   childId={childId}
                   now={now}
-                  onViewScoredHistory={onViewScoredHistory}
                   onReplacePhoto={() => onUploadClick(activity.id)}
                   onPreviewPhoto={(preview) =>
                     setPhotoPreview({ activityId: activity.id, ...preview })
@@ -420,9 +373,98 @@ export function TakeHomeActivities({
                   }
                 />
               ))}
-            </div>
-          )}
+            </CardContent>
+          </Card>
         </section>
+      )}
+
+      {/* Dedicated Section: Completed & Closed Practice */}
+      {pastSheets.length > 0 && (
+        <Collapsible
+          open={isPastSheetsOpen}
+          onOpenChange={setPastSheetsToggled}
+          render={
+            <section
+              aria-labelledby={completedPracticeHeadingId}
+              className="flex flex-col gap-3"
+            />
+          }
+        >
+          <Separator className="bg-border/60" />
+          <div className="flex items-center justify-between gap-2 pt-1">
+            <div className="flex items-baseline gap-2">
+              <h3 id={completedPracticeHeadingId} className="font-heading text-sm sm:text-base font-semibold text-foreground">
+                Completed &amp; closed practice
+              </h3>
+              <span className="text-xs text-muted-foreground font-sans tabular-nums">
+                ({pastSheets.length})
+              </span>
+            </div>
+            <CollapsibleTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium text-primary hover:text-primary cursor-pointer"
+                />
+              }
+            >
+              {isPastSheetsOpen ? (
+                <>
+                  <span>Hide</span>
+                  <ChevronUp data-icon="inline-end" aria-hidden="true" />
+                </>
+              ) : (
+                <>
+                  <span>Show</span>
+                  <ChevronDown data-icon="inline-end" aria-hidden="true" />
+                </>
+              )}
+            </CollapsibleTrigger>
+          </div>
+
+          {closedWithoutPhotoCount > 0 && (
+            <Alert
+              role="note"
+              className="rounded-lg border-band-1/30 bg-band-1/10 px-3 py-2"
+            >
+              <AlertDescription className="text-xs text-band-1-text font-medium">
+                {closedWithoutPhotoCount}{" "}
+                {closedWithoutPhotoCount === 1
+                  ? "missed worksheet is closed without a photo."
+                  : "missed worksheets are closed without a photo."}{" "}
+                Contact your teacher directly to ask about late submission.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <CollapsibleContent>
+            <Card className="p-0 gap-0 shadow-none">
+              <CardContent className="p-0 divide-y divide-border/70">
+                {pastSheets.map((activity) => (
+                  <CompactWorksheetRow
+                    key={activity.id}
+                    work={activity}
+                    childId={childId}
+                    now={now}
+                    onViewScoredHistory={onViewScoredHistory}
+                    onReplacePhoto={() => onUploadClick(activity.id)}
+                    onPreviewPhoto={(preview) =>
+                      setPhotoPreview({ activityId: activity.id, ...preview })
+                    }
+                    hasUnreadComments={
+                      activity.attempts.some((a) => unread.data?.has(a.id)) ||
+                      (activity.submission?.submissionId
+                        ? Boolean(unread.data?.has(activity.submission.submissionId))
+                        : false)
+                    }
+                  />
+                ))}
+              </CardContent>
+            </Card>
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       {/* Photo Preview Dialog */}
@@ -524,12 +566,14 @@ function CompactWorksheetRow({
   })();
 
   return (
-    <div className="px-4 py-3.5 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <div className="min-w-0 flex-1 space-y-1">
+    <Item className="rounded-none border-0 px-4 py-3.5 sm:px-5 flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <ItemContent className="min-w-0 w-full sm:w-auto flex-1 gap-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h4 className="font-heading text-sm sm:text-base font-semibold text-foreground break-words">
-            {work.title}
-          </h4>
+          <ItemTitle className="line-clamp-none">
+            <h4 className="font-heading text-sm sm:text-base font-semibold text-foreground break-words">
+              {work.title}
+            </h4>
+          </ItemTitle>
           {isScored && submission?.compositeScore != null && (
             <div className="inline-flex items-center gap-1.5">
               <BandBadge
@@ -573,9 +617,9 @@ function CompactWorksheetRow({
             Latest retake wasn&apos;t clear enough — your earlier photo is kept on file.
           </p>
         )}
-      </div>
+      </ItemContent>
 
-      <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto sm:shrink-0">
+      <ItemActions className="gap-1.5 sm:gap-2 w-full sm:w-auto sm:shrink-0">
         {childId && (work.attempts.length || submission?.submissionId) ? (
           <WorkCommentsButton
             scope={{ activityId: work.id, studentId: childId }}
@@ -627,10 +671,10 @@ function CompactWorksheetRow({
                 canDelete: Boolean(submission.canDelete),
               })
             }
-            className="flex-1 sm:flex-initial min-w-0 h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50 px-2 sm:px-3"
+            className="flex-1 sm:flex-initial min-w-0 h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium cursor-pointer border-border/80 hover:bg-muted/50 px-2 sm:px-3"
             aria-label={`View uploaded photo for ${work.title}`}
           >
-            <Eye className="size-3.5 shrink-0" aria-hidden="true" />
+            <Eye data-icon="inline-start" aria-hidden="true" />
             <span className="truncate sm:hidden">Photo</span>
             <span className="hidden sm:inline">View photo</span>
           </Button>
@@ -642,10 +686,10 @@ function CompactWorksheetRow({
             variant="outline"
             size="sm"
             onClick={onReplacePhoto}
-            className="flex-1 sm:flex-initial min-w-0 h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50 px-2 sm:px-3"
+            className="flex-1 sm:flex-initial min-w-0 h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium cursor-pointer border-border/80 hover:bg-muted/50 px-2 sm:px-3"
             aria-label={`Replace photo for ${work.title}`}
           >
-            <Camera className="size-3.5 shrink-0" aria-hidden="true" />
+            <Camera data-icon="inline-start" aria-hidden="true" />
             <span className="truncate sm:hidden">Replace</span>
             <span className="hidden sm:inline">Replace photo</span>
           </Button>
@@ -668,8 +712,8 @@ function CompactWorksheetRow({
             <span className="hidden sm:inline">View feedback</span>
           </Button>
         )}
-      </div>
-    </div>
+      </ItemActions>
+    </Item>
   );
 }
 
@@ -764,24 +808,25 @@ function ActivityCard({
   }, [targetText]);
 
   return (
-    <div
+    <Card
+      size="sm"
       className={cn(
-        "group relative flex flex-col justify-between gap-4 border rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-warm hover:shadow-md transition-[border-color,box-shadow] duration-200",
+        "group relative justify-between rounded-xl sm:rounded-2xl sm:[--card-spacing:--spacing(5)] hover:shadow-md transition-[border-color,box-shadow] duration-200",
         isRejected || latestRejected
           ? "border-warning/50 dark:border-warning/60 bg-warning/5 dark:bg-warning/10 hover:border-warning/80"
           : isReturned
             ? "border-primary/40 bg-primary/5 dark:bg-primary/10 hover:border-primary/60"
-            : "bg-card border-border hover:border-brand-300 dark:hover:border-brand-800"
+            : "hover:border-brand-300 dark:hover:border-brand-800"
       )}
     >
-      <div>
+      <CardHeader className="gap-1">
         {/* Title */}
-        <h3 className="mb-1 font-heading text-base font-semibold leading-snug text-foreground" title={work.title}>
+        <CardTitle as="h3" className="text-base font-semibold leading-snug text-foreground" title={work.title}>
           {work.title}
-        </h3>
+        </CardTitle>
 
         {/* Metadata line: Due date + word count */}
-        <p className="mb-3 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground font-sans tabular-nums">
+        <CardDescription className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs font-sans tabular-nums">
           <span>
             {excused ? (
               "Excused · Optional"
@@ -809,8 +854,10 @@ function ActivityCard({
               </span>
             </>
           )}
-        </p>
+        </CardDescription>
+      </CardHeader>
 
+      <CardContent className="flex flex-1 flex-col gap-3">
         {/* Cursive Practice Desk: 3-line Guidelines Specimen */}
         <WorksheetPrompt
           text={targetText}
@@ -824,53 +871,57 @@ function ActivityCard({
         />
 
         {work.instructions && (
-          <p className="mt-2.5 whitespace-pre-wrap text-xs text-muted-foreground leading-relaxed">
+          <p className="whitespace-pre-wrap text-xs text-muted-foreground leading-relaxed">
             {work.instructions}
           </p>
         )}
 
         {/* Consolidated Status Notice (single clear callout per card) */}
         {rejectionSummary && !isProcessing && (
-          <div className="mt-3 rounded-lg bg-warning/15 border border-warning/30 px-3 py-2 text-xs text-warning-foreground space-y-1">
-            <p className="font-semibold">
-              <span>{`Clearer photo needed · ${rejectionSummary.label}`}</span>
-            </p>
-            <p className="text-foreground/85 leading-relaxed">
+          <Alert className="rounded-lg bg-warning/15 border-warning/30 px-3 py-2 text-xs text-warning-foreground gap-1">
+            <AlertTitle className="font-semibold">
+              {`Clearer photo needed · ${rejectionSummary.label}`}
+            </AlertTitle>
+            <AlertDescription className="text-xs text-foreground/85 leading-relaxed">
               {rejectionSummary.detail.endsWith(".")
                 ? rejectionSummary.detail
                 : `${rejectionSummary.detail}.`}
               {hasKeptCompletedPhoto ? " Your earlier photo is still on file." : ""}
-            </p>
-          </div>
+            </AlertDescription>
+          </Alert>
         )}
 
         {isReturned && !excused && !rejectionSummary && !isProcessing && (
-          <div className="mt-3 space-y-1 rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 text-xs">
-            <p className="font-semibold text-primary">
-              <span>New photo requested</span>
-            </p>
-            {work.workState?.return_reason && (
-              <p className="font-medium text-foreground">
-                {humanizeReason(work.workState.return_reason)}
-              </p>
+          <Alert className="rounded-lg bg-primary/10 border-primary/20 px-3 py-2 text-xs gap-1">
+            <AlertTitle className="font-semibold text-primary">
+              New photo requested
+            </AlertTitle>
+            {(work.workState?.return_reason || work.workState?.return_note) && (
+              <AlertDescription className="flex flex-col gap-1 text-xs">
+                {work.workState?.return_reason && (
+                  <p className="font-medium text-foreground">
+                    {humanizeReason(work.workState.return_reason)}
+                  </p>
+                )}
+                {work.workState?.return_note && (
+                  <p className="text-muted-foreground leading-relaxed">{work.workState.return_note}</p>
+                )}
+              </AlertDescription>
             )}
-            {work.workState?.return_note && (
-              <p className="text-muted-foreground leading-relaxed">{work.workState.return_note}</p>
-            )}
-          </div>
+          </Alert>
         )}
 
         {closed && !excused && category === "closed" && (
-          <p className="mt-3 text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {work.attempts.length > 0 || submission?.submissionId
               ? "Deadline passed. Use Notes to ask your teacher for late submission."
               : "Deadline passed. Contact your teacher directly for late submission."}
           </p>
         )}
-      </div>
+      </CardContent>
 
       {/* Action Footer */}
-      <div className="pt-3 border-t border-border/60 space-y-2">
+      <CardFooter className="flex-col items-stretch gap-2 border-t border-border/60 pt-3">
         {/* Status / processing message if active */}
         {isLoading ? (
           <div role="status" aria-live="polite" aria-label="Checking worksheet status" className="w-full">
@@ -879,7 +930,7 @@ function ActivityCard({
           </div>
         ) : isProcessing ? (
           <div role="status" aria-live="polite" className="flex items-center justify-center gap-2 py-1 text-xs text-muted-foreground w-full">
-            <Loader2 className="size-3.5 shrink-0 animate-spin text-primary" aria-hidden="true" />
+            <Spinner className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
             <span className="font-medium text-foreground">
               {isCompleted ? "Checking new photo…" : "Checking handwriting…"}
             </span>
@@ -910,10 +961,10 @@ function ActivityCard({
                     variant="ghost"
                     size="sm"
                     onClick={openPreview}
-                    className="h-11 sm:h-8 px-3 sm:px-2 text-xs font-medium text-primary hover:text-primary gap-1 shrink-0 cursor-pointer touch-manipulation"
+                    className="h-11 sm:h-8 px-3 sm:px-2 text-xs font-medium text-primary hover:text-primary shrink-0 cursor-pointer touch-manipulation"
                     aria-label={`View kept photo for ${work.title}`}
                   >
-                    <Eye className="size-3" aria-hidden="true" />
+                    <Eye data-icon="inline-start" aria-hidden="true" />
                     <span>View photo</span>
                   </Button>
                 )}
@@ -944,12 +995,12 @@ function ActivityCard({
               <Button
                 variant="default"
                 size="sm"
-                className="flex-1 min-w-0 h-11 sm:h-9 gap-1.5 font-semibold cursor-pointer text-xs sm:text-sm px-3.5 shadow-warm-sm touch-manipulation"
+                className="flex-1 min-w-0 h-11 sm:h-9 font-semibold cursor-pointer text-xs sm:text-sm px-3.5 shadow-warm-sm touch-manipulation"
                 onClick={onUploadClick}
                 disabled={closed}
                 aria-label={`${isRejected || isReturned ? "Send new photo" : "Send photo"} for ${work.title}`}
               >
-                <Camera className="size-4 shrink-0" aria-hidden="true" />
+                <Camera data-icon="inline-start" aria-hidden="true" />
                 <span className="truncate">
                   {isRejected || isReturned ? "Send new photo" : "Send photo"}
                 </span>
@@ -957,8 +1008,8 @@ function ActivityCard({
             </div>
           </>
         )}
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 }
 
@@ -1043,7 +1094,7 @@ function PhotoPreviewDialog({
             />
           </div>
 
-          <div className="p-3 sm:p-4 border-t border-border flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 bg-background">
+          <DialogFooter className="p-3 sm:p-4 border-t border-border sm:items-center sm:justify-between bg-background">
             <div className="flex items-center gap-2 flex-wrap">
               {activityId && childId && submissionId && (
                 <WorkCommentsButton
@@ -1062,9 +1113,9 @@ function PhotoPreviewDialog({
                   size="sm"
                   onClick={() => setIsDeleteDialogOpen(true)}
                   disabled={deleteMutation.isPending}
-                  className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive gap-1.5 px-3 cursor-pointer"
+                  className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive px-3 cursor-pointer"
                 >
-                  <Trash2 className="size-3.5 shrink-0" aria-hidden="true" />
+                  <Trash2 data-icon="inline-start" aria-hidden="true" />
                   <span>Delete upload</span>
                 </Button>
               )}
@@ -1074,9 +1125,9 @@ function PhotoPreviewDialog({
                   variant="outline"
                   size="sm"
                   onClick={onSendNewPhoto}
-                  className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 px-3 cursor-pointer"
+                  className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium px-3 cursor-pointer"
                 >
-                  <Camera className="size-3.5 shrink-0" aria-hidden="true" />
+                  <Camera data-icon="inline-start" aria-hidden="true" />
                   <span>Send new photo</span>
                 </Button>
               )}
@@ -1090,7 +1141,7 @@ function PhotoPreviewDialog({
             >
               Close
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -1120,7 +1171,7 @@ function PhotoPreviewDialog({
             >
               {deleteMutation.isPending ? (
                 <>
-                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  <Spinner data-icon="inline-start" aria-hidden="true" />
                   <span>Deleting...</span>
                 </>
               ) : (

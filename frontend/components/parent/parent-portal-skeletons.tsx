@@ -1,5 +1,5 @@
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Item, ItemActions, ItemContent } from "@/components/ui/item";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -140,26 +140,29 @@ export function TakeHomeActivitiesSkeleton({
       role="status"
       aria-live="polite"
       aria-label="Loading practice worksheets"
-      className="space-y-4"
+      className="flex flex-col gap-4"
     >
       <span className="sr-only">Loading practice worksheets</span>
 
       <div aria-hidden="true" className={gridClassName}>
         {Array.from({ length: count }).map((_, index) => (
-          <div
+          <Card
             key={index}
-            className="flex flex-col justify-between gap-4 border border-border bg-card rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-warm"
+            size="sm"
+            className="justify-between rounded-xl sm:rounded-2xl sm:[--card-spacing:--spacing(5)]"
           >
-            <div>
+            <CardHeader className="gap-1.5">
               {/* Title + due/word-count metadata */}
               <Skeleton
                 className={cn(
-                  "mb-1.5 h-5 rounded-md",
+                  "h-5 rounded-md",
                   PRACTICE_TITLE_WIDTHS[index % PRACTICE_TITLE_WIDTHS.length]
                 )}
               />
-              <Skeleton className="mb-3 h-3.5 w-36 rounded-md" />
+              <Skeleton className="h-3.5 w-36 rounded-md" />
+            </CardHeader>
 
+            <CardContent className="flex-1">
               {/* Cursive Guidelines Specimen Desk placeholder */}
               <div className="relative overflow-hidden rounded-xl border border-border/70 bg-surface dark:bg-card">
                 <div className="relative p-3.5 pb-5 sm:p-4 sm:pb-6">
@@ -167,7 +170,7 @@ export function TakeHomeActivitiesSkeleton({
                     className="cursive-guidelines pointer-events-none absolute inset-0 z-0 opacity-45"
                     aria-hidden="true"
                   />
-                  <div className="relative z-10 space-y-5 py-2">
+                  <div className="relative z-10 flex flex-col gap-5 py-2">
                     <Skeleton className="h-5 w-4/5 rounded-md opacity-80" />
                     <Skeleton className="h-5 w-3/5 rounded-md opacity-70" />
                   </div>
@@ -176,13 +179,13 @@ export function TakeHomeActivitiesSkeleton({
                   <Skeleton className="h-3.5 w-3/4 rounded-md" />
                 </div>
               </div>
-            </div>
+            </CardContent>
 
             {/* Action footer */}
-            <div className="pt-3 border-t border-border/60">
+            <CardFooter className="border-t border-border/60 pt-3">
               <Skeleton className="h-11 sm:h-9 w-full rounded-lg" />
-            </div>
-          </div>
+            </CardFooter>
+          </Card>
         ))}
       </div>
     </div>
