@@ -1,8 +1,7 @@
 <div align="center">
   <img src="./frontend/public/images/app_icons/writewise-app-icon-192.png" alt="WriteWise Logo" width="88" />
   <h1>WriteWise</h1>
-  <p><strong>Computer Vision & Deep Learning Diagnostic Cursive Handwriting Assessment</strong></p>
-  <p>An automated diagnostic assessment and progress monitoring platform for basic education cursive handwriting.</p>
+  <p><strong>A Computer Vision and CNN-Based Diagnostic Cursive Handwriting Assessment and Progress Monitoring System for Basic Education Teachers and Parents</strong></p>
 </div>
 
 ---
