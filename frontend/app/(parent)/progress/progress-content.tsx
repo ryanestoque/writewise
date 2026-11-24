@@ -266,18 +266,18 @@ export function ProgressPageContent() {
             <TabsList
               variant="line"
               aria-label={`${firstName}'s portal sections`}
-              className="w-full grid grid-cols-4 sm:w-fit sm:flex h-auto gap-0 sm:gap-2 rounded-none bg-transparent p-0"
+              className="w-full grid grid-cols-4 sm:w-fit sm:flex h-auto -mb-px gap-0 sm:gap-2 rounded-none bg-transparent p-0"
             >
               <TabsTrigger
                 value="overview"
-                className="h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-3 pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none translate-y-[1px] touch-manipulation data-active:text-primary data-active:after:bg-primary"
+                className="h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-3 pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
               >
                 <span>Recent</span>
               </TabsTrigger>
 
               <TabsTrigger
                 value="to-write"
-                className="h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-3 pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none translate-y-[1px] touch-manipulation data-active:text-primary data-active:after:bg-primary"
+                className="h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-3 pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
               >
                 <span>Practice</span>
                 {pendingActivitiesCount > 0 && (
@@ -292,14 +292,14 @@ export function ProgressPageContent() {
 
               <TabsTrigger
                 value="progress"
-                className="h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-3 pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none translate-y-[1px] touch-manipulation data-active:text-primary data-active:after:bg-primary"
+                className="h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-3 pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
               >
                 <span>Progress</span>
               </TabsTrigger>
 
               <TabsTrigger
                 value="grades"
-                className="h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-3 pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none translate-y-[1px] touch-manipulation data-active:text-primary data-active:after:bg-primary"
+                className="h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-3 pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
               >
                 <span>Grades</span>
               </TabsTrigger>

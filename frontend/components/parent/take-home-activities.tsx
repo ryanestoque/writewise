@@ -549,16 +549,6 @@ function CompactWorksheetRow({
                 ? `Due ${formatActivityDueAt(work.dueAt)}`
                 : `Assigned ${assignedDate}`}
           </span>
-          {category === "closed" && !excused && (
-            <>
-              <span aria-hidden="true" className="text-muted-foreground/40">·</span>
-              <span>
-                {work.attempts.length > 0 || submission?.submissionId
-                  ? "Use Comments to ask your teacher for late submission"
-                  : "Contact your teacher directly for late submission"}
-              </span>
-            </>
-          )}
         </p>
 
         {hasRejectedLatestRetake && (

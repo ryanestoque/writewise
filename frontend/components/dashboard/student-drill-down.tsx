@@ -288,13 +288,13 @@ export function StudentDrillDownDrawer({
               <div className="-mx-5 sm:-mx-6 px-5 sm:px-6 pt-1">
                 <TabsList
                   variant="line"
-                  className="w-full grid grid-cols-3 h-auto gap-0 rounded-none bg-transparent p-0"
+                  className="w-full grid grid-cols-3 h-auto -mb-px gap-0 rounded-none bg-transparent p-0"
                 >
                   <TabsTrigger
                     value="overview"
                     title="Overview (Alt + 1)"
                     aria-keyshortcuts="Alt+1"
-                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] translate-y-[1px] data-active:text-primary data-active:after:bg-primary"
+                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] data-active:text-primary data-active:after:bg-primary"
                   >
                     <LayoutDashboard className="size-3.5 shrink-0" aria-hidden="true" />
                     <span>Overview</span>
@@ -304,7 +304,7 @@ export function StudentDrillDownDrawer({
                     value="trends"
                     title="Score Trends (Alt + 2)"
                     aria-keyshortcuts="Alt+2"
-                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] translate-y-[1px] data-active:text-primary data-active:after:bg-primary"
+                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] data-active:text-primary data-active:after:bg-primary"
                   >
                     <LineChart className="size-3.5 shrink-0" aria-hidden="true" />
                     <span>
@@ -317,7 +317,7 @@ export function StudentDrillDownDrawer({
                     value="history"
                     title="History (Alt + 3)"
                     aria-keyshortcuts="Alt+3"
-                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] translate-y-[1px] data-active:text-primary data-active:after:bg-primary"
+                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] data-active:text-primary data-active:after:bg-primary"
                   >
                     <History className="size-3.5 shrink-0" aria-hidden="true" />
                     <span>History</span>
