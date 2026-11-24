@@ -197,16 +197,8 @@ export function TakeHomeActivitiesSkeleton({
  * Controls bar + 3-column trajectory summary strip + hairline plot grid.
  */
 export function ProgressTrendSkeleton({ bare = false }: { bare?: boolean }) {
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-label="Loading progress chart"
-      className={cn(
-        "space-y-4 min-w-0",
-        !bare && "rounded-xl border border-border bg-card p-4 sm:p-6"
-      )}
-    >
+  const inner = (
+    <>
       <span className="sr-only">Loading progress chart</span>
 
       {/* Controls Bar */}
@@ -271,7 +263,33 @@ export function ProgressTrendSkeleton({ bare = false }: { bare?: boolean }) {
           <Skeleton className="hidden sm:block h-3 w-12 rounded-sm opacity-75" />
         </div>
       </div>
-    </div>
+    </>
+  );
+
+  if (bare) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        aria-label="Loading progress chart"
+        className="space-y-4 min-w-0"
+      >
+        {inner}
+      </div>
+    );
+  }
+
+  return (
+    <Card
+      role="status"
+      aria-live="polite"
+      aria-label="Loading progress chart"
+      className="p-0 gap-0 shadow-none min-w-0"
+    >
+      <CardContent className="p-4 sm:p-6 space-y-4 min-w-0">
+        {inner}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -297,40 +315,39 @@ export function PastWorksheetsSkeleton({ rows = 3 }: { rows?: number }) {
         <Skeleton className="h-11 sm:h-9 w-28 rounded-lg" />
       </div>
 
-      <div
-        aria-hidden="true"
-        className="rounded-xl border border-border bg-card divide-y divide-border/70 overflow-hidden"
-      >
-        {Array.from({ length: rows }).map((_, index) => (
-          <div
-            key={index}
-            className="px-4 py-4 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-          >
-            <div className="space-y-1.5 min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <Skeleton
-                  className={cn(
-                    "h-4 sm:h-5 rounded-md",
-                    HISTORY_PROMPT_WIDTHS[index % HISTORY_PROMPT_WIDTHS.length]
+      <Card aria-hidden="true" className="p-0 gap-0 shadow-none">
+        <CardContent className="p-0 divide-y divide-border/70">
+          {Array.from({ length: rows }).map((_, index) => (
+            <Item
+              key={index}
+              className="rounded-none border-0 px-4 py-4 sm:px-5 flex-col sm:flex-row sm:items-center justify-between gap-3"
+            >
+              <ItemContent className="gap-1.5 min-w-0 w-full sm:w-auto flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Skeleton
+                    className={cn(
+                      "h-4 sm:h-5 rounded-md",
+                      HISTORY_PROMPT_WIDTHS[index % HISTORY_PROMPT_WIDTHS.length]
+                    )}
+                  />
+                  {index === 0 && (
+                    <Skeleton className="h-5 w-24 rounded-md" />
                   )}
-                />
-                {index === 0 && (
-                  <Skeleton className="h-5 w-24 rounded-md" />
-                )}
-              </div>
-              <Skeleton className="h-3.5 w-28 rounded-md" />
-            </div>
+                </div>
+                <Skeleton className="h-3.5 w-28 rounded-md" />
+              </ItemContent>
 
-            <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-6 w-24 rounded-full" />
-                <Skeleton className="h-4 w-9 rounded-md" />
-              </div>
-              <Skeleton className="h-11 sm:h-9 w-16 rounded-lg" />
-            </div>
-          </div>
-        ))}
-      </div>
+              <ItemActions className="w-full sm:w-auto justify-between sm:justify-end gap-3 shrink-0">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-6 w-24 rounded-full" />
+                  <Skeleton className="h-4 w-9 rounded-md" />
+                </div>
+                <Skeleton className="h-11 sm:h-9 w-16 rounded-lg" />
+              </ItemActions>
+            </Item>
+          ))}
+        </CardContent>
+      </Card>
     </section>
   );
 }
@@ -352,34 +369,34 @@ export function ParentGradesSkeleton({ rows = 3 }: { rows?: number }) {
       >
         Coursework
       </h2>
-      <div
+      <Card
         role="status"
         aria-live="polite"
         aria-label="Loading grades"
-        className="bg-card overflow-hidden rounded-xl border border-border"
+        className="p-0 gap-0 shadow-none"
       >
         <span className="sr-only">Loading grades</span>
 
         {/* Teacher header + overall points */}
-        <div
+        <CardHeader
           aria-hidden="true"
-          className="flex items-center justify-between gap-4 border-b border-border/80 px-4 py-4 sm:px-5"
+          className="flex flex-row items-center justify-between gap-4 border-b border-border/80 px-4 py-4 sm:px-5"
         >
           <Skeleton className="h-5 w-36 rounded-md" />
           <div className="flex flex-col items-end gap-1.5">
             <Skeleton className="h-4 w-24 rounded-md" />
             <Skeleton className="h-3 w-12 rounded-md" />
           </div>
-        </div>
+        </CardHeader>
 
         {/* Coursework activity rows */}
-        <div aria-hidden="true" className="divide-y divide-border/70">
+        <CardContent aria-hidden="true" className="p-0 divide-y divide-border/70">
           {Array.from({ length: rows }).map((_, index) => (
-            <div
+            <Item
               key={index}
-              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3.5 sm:px-5"
+              className="rounded-none border-0 flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3.5 sm:px-5"
             >
-              <div className="min-w-0 flex-1 space-y-1.5">
+              <ItemContent className="min-w-0 w-full sm:w-auto flex-1 gap-1.5">
                 <Skeleton
                   className={cn(
                     "h-4 rounded-md",
@@ -387,8 +404,8 @@ export function ParentGradesSkeleton({ rows = 3 }: { rows?: number }) {
                   )}
                 />
                 <Skeleton className="h-3.5 w-32 rounded-md" />
-              </div>
-              <div className="flex items-center justify-between sm:justify-end gap-3 pt-2.5 sm:pt-0 border-t border-border/40 sm:border-0">
+              </ItemContent>
+              <ItemActions className="w-full sm:w-auto justify-between sm:justify-end gap-3 pt-2.5 sm:pt-0 border-t border-border/40 sm:border-0">
                 <div className="flex flex-col sm:items-end gap-1.5">
                   <div className="flex items-center gap-1.5">
                     <Skeleton className="h-4 w-8 rounded-md" />
@@ -396,11 +413,11 @@ export function ParentGradesSkeleton({ rows = 3 }: { rows?: number }) {
                   </div>
                   <Skeleton className="hidden sm:block h-4 w-24 rounded-md" />
                 </div>
-              </div>
-            </div>
+              </ItemActions>
+            </Item>
           ))}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </section>
   );
 }

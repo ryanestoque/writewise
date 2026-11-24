@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { BrandIcon, BrandLogo } from "@/components/brand-logo";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -184,10 +185,11 @@ export function ParentNav({
                   <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen} showSwipeHandle>
                     <DrawerTrigger
                       render={
-                        <button
+                        <Button
                           type="button"
+                          variant="outline"
                           aria-label={`Switch student profile, currently viewing ${activeChild?.fullName ?? "child"}`}
-                          className="inline-flex items-center gap-1.5 w-full min-w-0 px-2.5 py-1 rounded-full text-xs font-medium bg-card hover:bg-muted/50 border border-border/80 text-foreground shadow-warm-sm active:bg-muted transition-colors cursor-pointer touch-manipulation min-h-11"
+                          className="h-auto inline-flex items-center gap-1.5 w-full min-w-0 px-2.5 py-1 rounded-full text-xs font-medium bg-card hover:bg-muted/50 border-border/80 text-foreground shadow-warm-sm active:bg-muted cursor-pointer touch-manipulation min-h-11"
                         >
                           <span className="flex size-5 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold text-xs shrink-0">
                             {activeChild ? getStudentInitials(activeChild.fullName) : "S"}
@@ -199,7 +201,7 @@ export function ParentNav({
                             ({activeChild?.section})
                           </span>
                           <ChevronDown className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
-                        </button>
+                        </Button>
                       }
                     />
                     <DrawerContent className="max-h-[80dvh] px-4 pb-6 pt-3 flex flex-col">
@@ -218,18 +220,19 @@ export function ParentNav({
                           const childInitials = getStudentInitials(child.fullName);
 
                           return (
-                            <button
+                            <Button
                               key={child.id}
                               type="button"
+                              variant="outline"
                               aria-pressed={isSelected}
                               onClick={() => {
                                 onChildChange(child.id);
                                 setMobileDrawerOpen(false);
                               }}
                               className={cn(
-                                "flex items-center justify-between p-3 rounded-xl border text-left transition-colors cursor-pointer min-h-[52px] touch-manipulation",
+                                "h-auto w-full flex items-center justify-between p-3 rounded-xl text-left font-normal cursor-pointer min-h-[52px] touch-manipulation",
                                 isSelected
-                                  ? "bg-brand-50/80 border-brand-500/50 dark:bg-brand-950/50 dark:border-brand-500/40 shadow-warm-sm"
+                                  ? "bg-brand-50/80 border-brand-500/50 hover:bg-brand-50 dark:bg-brand-950/50 dark:border-brand-500/40 dark:hover:bg-brand-950/70 shadow-warm-sm"
                                   : "bg-card border-border/70 hover:bg-muted/40 active:bg-muted/70"
                               )}
                             >
@@ -258,7 +261,7 @@ export function ParentNav({
                                   <Check className="size-3.5 stroke-[2.5]" aria-hidden="true" />
                                 </span>
                               )}
-                            </button>
+                            </Button>
                           );
                         })}
                       </div>

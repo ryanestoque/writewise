@@ -9,6 +9,20 @@ import { BandBadge } from "@/components/shared/band-badge";
 import { QueryRecovery } from "@/components/shared/query-recovery";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Item, ItemActions, ItemContent } from "@/components/ui/item";
 import { ParentGradesSkeleton } from "@/components/parent/parent-portal-skeletons";
 import { WorkCommentsButton } from "@/components/comments/submission-comment-picker-sheet";
 import type { GradebookCell } from "@/lib/hooks/use-gradebook";
@@ -119,11 +133,13 @@ export function ParentGrades({
         >
           Coursework
         </h2>
-        <div className="rounded-xl border border-border bg-card p-6">
-          <p role="status" className="text-muted-foreground text-sm">
-            Sign in again to view grades.
-          </p>
-        </div>
+        <Card className="p-0 gap-0 shadow-none">
+          <CardContent className="p-6">
+            <p role="status" className="text-muted-foreground text-sm">
+              Sign in again to view grades.
+            </p>
+          </CardContent>
+        </Card>
       </section>
     );
   }
@@ -189,14 +205,16 @@ export function ParentGrades({
           Coursework
         </h2>
         {missingHighlightBanner}
-        <div className="rounded-xl border border-border bg-card p-6 sm:p-8 text-center space-y-2">
-          <h3 className="font-heading text-base font-semibold text-foreground">
-            No coursework grades yet
-          </h3>
-          <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
-            Released points and coursework updates from your child&apos;s teacher will appear here.
-          </p>
-        </div>
+        <Empty className="border border-solid border-border rounded-xl bg-card p-6 sm:p-8 gap-2">
+          <EmptyHeader className="gap-1.5">
+            <EmptyTitle className="text-base font-semibold text-foreground">
+              No coursework grades yet
+            </EmptyTitle>
+            <EmptyDescription className="text-sm max-w-sm leading-relaxed">
+              Released points and coursework updates from your child&apos;s teacher will appear here.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       </section>
     );
   }
@@ -232,19 +250,21 @@ export function ParentGrades({
           const totals = group.row.totals;
           const hasPointTotals = totals.percentage !== null;
           return (
-            <section
+            <Card
               key={group.teacher_id}
-              className="bg-card overflow-hidden rounded-xl border border-border"
+              role="region"
               aria-labelledby={`grades-teacher-${group.teacher_id}`}
+              className="p-0 gap-0 shadow-none"
             >
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/80 px-4 py-4 sm:px-5">
-                <h3
+              <CardHeader className="items-center border-b border-border/80 px-4 py-4 sm:px-5 gap-0">
+                <CardTitle
+                  as="h3"
                   id={`grades-teacher-${group.teacher_id}`}
-                  className="font-heading text-sm sm:text-base font-semibold text-foreground"
+                  className="text-sm sm:text-base font-semibold text-foreground"
                 >
                   {formatTeacherDisplayName(group.teacher_name)}
-                </h3>
-                <div className="text-right tabular-nums">
+                </CardTitle>
+                <CardAction className="row-span-1 self-center text-right tabular-nums">
                   {hasPointTotals ? (
                     <>
                       <p className="text-sm font-semibold text-foreground">
@@ -260,58 +280,83 @@ export function ParentGrades({
                       No points released yet
                     </p>
                   )}
-                </div>
-              </div>
-              <ul className="divide-y divide-border/70">
-                {group.activities.map((activity) => {
-                  const cell = group.row.cells.find((item) => item.activity_id === activity.id);
-                  if (!cell?.applicable) return null;
-                  const isHighlighted = highlightActivityId === activity.id;
-                  const hasUnread = hasUnreadWorkComments(unread.data, {
-                    activityId: activity.id,
-                    studentId: childId,
-                  });
-                  const canShowComments =
-                    cell.active_submission_id !== null ||
-                    cell.coursework_status === "Returned" ||
-                    hasUnread;
-                  const teacherDisplayName = formatTeacherDisplayName(group.teacher_name);
-                  const hasCompositeScore = cell.assessment_composite !== null;
-                  const pointsLabel = formatCellPoints(cell);
-                  const statusText = `${formatCourseworkStatus(cell.coursework_status)}${cell.late ? " · Late" : ""}${activity.is_archived ? " · Archived" : ""}`;
+                </CardAction>
+              </CardHeader>
+              <CardContent className="p-0">
+                <ul className="divide-y divide-border/70">
+                  {group.activities.map((activity) => {
+                    const cell = group.row.cells.find((item) => item.activity_id === activity.id);
+                    if (!cell?.applicable) return null;
+                    const isHighlighted = highlightActivityId === activity.id;
+                    const hasUnread = hasUnreadWorkComments(unread.data, {
+                      activityId: activity.id,
+                      studentId: childId,
+                    });
+                    const canShowComments =
+                      cell.active_submission_id !== null ||
+                      cell.coursework_status === "Returned" ||
+                      hasUnread;
+                    const teacherDisplayName = formatTeacherDisplayName(group.teacher_name);
+                    const hasCompositeScore = cell.assessment_composite !== null;
+                    const pointsLabel = formatCellPoints(cell);
+                    const statusText = `${formatCourseworkStatus(cell.coursework_status)}${cell.late ? " · Late" : ""}${activity.is_archived ? " · Archived" : ""}`;
 
-                  return (
-                    <li
-                      key={activity.id}
-                      id={`parent-grade-${activity.id}`}
-                      ref={isHighlighted ? highlightedRowRef : undefined}
-                      tabIndex={isHighlighted ? -1 : undefined}
-                      className={`group/row relative flex scroll-mt-24 flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3.5 sm:px-5 focus:outline-none ${
-                        isHighlighted
-                          ? "bg-primary/5 ring-primary ring-2 ring-inset"
-                          : onInspectActivity
-                            ? "hover:bg-muted/40 transition-colors"
-                            : ""
-                      }`}
-                    >
-                      <div className="min-w-0 flex-1">
-                        {onInspectActivity ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              onInspectActivity({
-                                activityId: activity.id,
-                                submissionId: cell.active_submission_id,
-                              })
-                            }
-                            aria-describedby={`parent-grade-meta-${activity.id}`}
-                            className="group flex w-full sm:w-auto items-center justify-between gap-3 min-h-11 sm:min-h-0 text-left rounded-md py-1.5 sm:py-1 -mx-1.5 px-1.5 hover:bg-muted/50 sm:hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer touch-manipulation transition-colors sm:after:absolute sm:after:inset-0 sm:after:content-['']"
-                          >
-                            <div className="min-w-0 space-y-0.5">
-                              <h4 className="font-sans text-sm font-medium text-foreground group-hover/row:text-primary transition-colors break-words">
+                    return (
+                      <Item
+                        key={activity.id}
+                        render={
+                          <li
+                            id={`parent-grade-${activity.id}`}
+                            ref={isHighlighted ? highlightedRowRef : undefined}
+                            tabIndex={isHighlighted ? -1 : undefined}
+                          />
+                        }
+                        className={`group/row relative rounded-none border-0 scroll-mt-24 flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3.5 sm:px-5 focus:outline-none ${
+                          isHighlighted
+                            ? "bg-primary/5 ring-primary ring-2 ring-inset"
+                            : onInspectActivity
+                              ? "hover:bg-muted/40 transition-colors"
+                              : ""
+                        }`}
+                      >
+                        <ItemContent className="min-w-0 w-full sm:w-auto flex-1 gap-0">
+                          {onInspectActivity ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() =>
+                                onInspectActivity({
+                                  activityId: activity.id,
+                                  submissionId: cell.active_submission_id,
+                                })
+                              }
+                              aria-describedby={`parent-grade-meta-${activity.id}`}
+                              className="group h-auto flex w-full sm:w-auto items-center justify-between gap-3 min-h-11 sm:min-h-0 text-left font-normal whitespace-normal rounded-md py-1.5 sm:py-1 -mx-1.5 px-1.5 hover:bg-muted/50 sm:hover:bg-transparent cursor-pointer touch-manipulation sm:after:absolute sm:after:inset-0 sm:after:content-['']"
+                            >
+                              <div className="min-w-0 space-y-0.5">
+                                <h4 className="font-sans text-sm font-medium text-foreground group-hover/row:text-primary transition-colors break-words">
+                                  {activity.title}
+                                </h4>
+                                <p id={`parent-grade-meta-${activity.id}`} className="text-muted-foreground text-xs">
+                                  <span className="sm:hidden">
+                                    {statusText} · <span className="tabular-nums">{pointsLabel}</span>
+                                  </span>
+                                  <span className="hidden sm:inline">
+                                    {statusText}
+                                  </span>
+                                </p>
+                              </div>
+                              <ChevronRight
+                                className="sm:hidden size-4 shrink-0 text-muted-foreground/70 group-hover:text-primary group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none"
+                                aria-hidden="true"
+                              />
+                            </Button>
+                          ) : (
+                            <div className="space-y-0.5 py-1.5 sm:py-1">
+                              <h4 className="font-sans text-sm font-medium text-foreground break-words">
                                 {activity.title}
                               </h4>
-                              <p id={`parent-grade-meta-${activity.id}`} className="text-muted-foreground text-xs">
+                              <p className="text-muted-foreground text-xs">
                                 <span className="sm:hidden">
                                   {statusText} · <span className="tabular-nums">{pointsLabel}</span>
                                 </span>
@@ -320,100 +365,82 @@ export function ParentGrades({
                                 </span>
                               </p>
                             </div>
-                            <ChevronRight
-                              className="sm:hidden size-4 shrink-0 text-muted-foreground/70 group-hover:text-primary group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none"
-                              aria-hidden="true"
-                            />
-                          </button>
-                        ) : (
-                          <div className="space-y-0.5 py-1.5 sm:py-1">
-                            <h4 className="font-sans text-sm font-medium text-foreground break-words">
-                              {activity.title}
-                            </h4>
-                            <p className="text-muted-foreground text-xs">
-                              <span className="sm:hidden">
-                                {statusText} · <span className="tabular-nums">{pointsLabel}</span>
-                              </span>
-                              <span className="hidden sm:inline">
-                                {statusText}
-                              </span>
-                            </p>
-                          </div>
-                        )}
-                      </div>
+                          )}
+                        </ItemContent>
 
-                      {hasCompositeScore || canShowComments ? (
-                        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-1 sm:pt-0 shrink-0">
-                          <div className="flex flex-col sm:items-end gap-1">
-                            {hasCompositeScore ? (
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-sans text-xs font-semibold tabular-nums text-foreground">
-                                  {Math.round(Number(cell.assessment_composite))}%
-                                </span>
-                                <BandBadge
-                                  score={Number(cell.assessment_composite)}
-                                  size="sm"
-                                  showDot
+                        {hasCompositeScore || canShowComments ? (
+                          <ItemActions className="justify-between sm:justify-end gap-3 w-full sm:w-auto pt-1 sm:pt-0 shrink-0">
+                            <div className="flex flex-col sm:items-end gap-1">
+                              {hasCompositeScore ? (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-sans text-xs font-semibold tabular-nums text-foreground">
+                                    {Math.round(Number(cell.assessment_composite))}%
+                                  </span>
+                                  <BandBadge
+                                    score={Number(cell.assessment_composite)}
+                                    size="sm"
+                                    showDot
+                                  />
+                                </div>
+                              ) : (
+                                <div className="sm:hidden" />
+                              )}
+                              <p className="hidden sm:block text-xs sm:text-sm font-medium tabular-nums text-foreground">
+                                {pointsLabel}
+                              </p>
+                            </div>
+
+                            {canShowComments && (
+                              <div className="shrink-0 relative z-10">
+                                <WorkCommentsButton
+                                  scope={{ activityId: activity.id, studentId: childId }}
+                                  activeSubmissionId={cell.active_submission_id}
+                                  studentName={childName}
+                                  activityTitle={activity.title}
+                                  teacherName={teacherDisplayName}
+                                  audience="parent"
+                                  hasUnread={hasUnread}
+                                  worksheetContext={
+                                    onInspectActivity
+                                      ? {
+                                          onViewWorksheet: () =>
+                                            onInspectActivity({
+                                              activityId: activity.id,
+                                              submissionId: cell.active_submission_id,
+                                            }),
+                                        }
+                                      : undefined
+                                  }
                                 />
                               </div>
-                            ) : (
-                              <div className="sm:hidden" />
                             )}
-                            <p className="hidden sm:block text-xs sm:text-sm font-medium tabular-nums text-foreground">
+
+                            {onInspectActivity && (
+                              <ChevronRight
+                                className="hidden sm:block size-4 shrink-0 text-muted-foreground/70 group-hover/row:text-primary group-hover/row:translate-x-0.5 transition-transform motion-reduce:transition-none pointer-events-none"
+                                aria-hidden="true"
+                              />
+                            )}
+                          </ItemActions>
+                        ) : (
+                          <ItemActions className="hidden sm:flex items-center justify-end gap-3 shrink-0">
+                            <p className="text-xs sm:text-sm font-medium tabular-nums text-foreground">
                               {pointsLabel}
                             </p>
-                          </div>
-
-                          {canShowComments && (
-                            <div className="shrink-0 relative z-10">
-                              <WorkCommentsButton
-                                scope={{ activityId: activity.id, studentId: childId }}
-                                activeSubmissionId={cell.active_submission_id}
-                                studentName={childName}
-                                activityTitle={activity.title}
-                                teacherName={teacherDisplayName}
-                                audience="parent"
-                                hasUnread={hasUnread}
-                                worksheetContext={
-                                  onInspectActivity
-                                    ? {
-                                        onViewWorksheet: () =>
-                                          onInspectActivity({
-                                            activityId: activity.id,
-                                            submissionId: cell.active_submission_id,
-                                          }),
-                                      }
-                                    : undefined
-                                }
+                            {onInspectActivity && (
+                              <ChevronRight
+                                className="size-4 shrink-0 text-muted-foreground/70 group-hover/row:text-primary group-hover/row:translate-x-0.5 transition-transform motion-reduce:transition-none pointer-events-none"
+                                aria-hidden="true"
                               />
-                            </div>
-                          )}
-
-                          {onInspectActivity && (
-                            <ChevronRight
-                              className="hidden sm:block size-4 shrink-0 text-muted-foreground/70 group-hover/row:text-primary group-hover/row:translate-x-0.5 transition-transform motion-reduce:transition-none pointer-events-none"
-                              aria-hidden="true"
-                            />
-                          )}
-                        </div>
-                      ) : (
-                        <div className="hidden sm:flex items-center justify-end gap-3 shrink-0">
-                          <p className="text-xs sm:text-sm font-medium tabular-nums text-foreground">
-                            {pointsLabel}
-                          </p>
-                          {onInspectActivity && (
-                            <ChevronRight
-                              className="size-4 shrink-0 text-muted-foreground/70 group-hover/row:text-primary group-hover/row:translate-x-0.5 transition-transform motion-reduce:transition-none pointer-events-none"
-                              aria-hidden="true"
-                            />
-                          )}
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
+                            )}
+                          </ItemActions>
+                        )}
+                      </Item>
+                    );
+                  })}
+                </ul>
+              </CardContent>
+            </Card>
           );
         })}
       </div>

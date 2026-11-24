@@ -10,6 +10,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import type { StudentScoreHistoryItem } from "@/lib/hooks/use-dashboard";
@@ -60,14 +61,16 @@ export function PendingWorksheetDialog({
         <DialogHeader className="p-4 sm:p-5 pb-0 border-b-0 bg-card/80">
           <div className="flex items-center justify-between gap-3 pr-10">
             <div className="min-w-0 space-y-1">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={onBack}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 transition-colors cursor-pointer group mb-0.5 touch-manipulation min-h-[40px] sm:min-h-[36px] px-2 py-1 rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+                className="h-auto min-h-[40px] sm:min-h-[36px] px-2 py-1 mb-0.5 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer group touch-manipulation"
               >
-                <ArrowLeft className="size-3.5 transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
+                <ArrowLeft data-icon="inline-start" className="size-3.5 transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
                 <span>{backLabel}</span>
-              </button>
+              </Button>
               <DialogTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
                 Worksheet &amp; Review Status
               </DialogTitle>
@@ -116,55 +119,57 @@ export function PendingWorksheetDialog({
 
             {/* Right Column: Status & Teacher Note */}
             <div className="lg:col-span-5 space-y-4 w-full">
-              <div className="p-4 sm:p-5 rounded-xl border border-border bg-card space-y-4 shadow-warm-sm">
-                {/* Status Headline & Explanation */}
-                <div className="space-y-1.5">
-                  <h3 className="font-heading text-base font-semibold text-foreground">
-                    {item.status === "returned"
-                      ? "New photo requested"
-                      : item.status === "rejected"
-                        ? "Clearer photo needed"
-                        : "Waiting for teacher review"}
-                  </h3>
+              <Card className="p-0 gap-0 shadow-warm-sm">
+                <CardContent className="p-4 sm:p-5 space-y-4">
+                  {/* Status Headline & Explanation */}
+                  <div className="space-y-1.5">
+                    <h3 className="font-heading text-base font-semibold text-foreground">
+                      {item.status === "returned"
+                        ? "New photo requested"
+                        : item.status === "rejected"
+                          ? "Clearer photo needed"
+                          : "Waiting for teacher review"}
+                    </h3>
 
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {item.status === "returned"
-                      ? "Your teacher asked for another photo. Earlier uploads stay saved in history."
-                      : item.status === "rejected"
-                        ? "This photo couldn't be read clearly. Retake it flat in even light."
-                        : "Worksheet received. Feedback will appear here once your teacher shares it."}
-                  </p>
-                </div>
-
-                {/* Teacher Return Note if present (flat, border-divided) */}
-                {item.returnNote && (
-                  <div className="border-t border-border/70 pt-3 space-y-1">
-                    <p className="text-xs font-semibold text-muted-foreground">
-                      Teacher note
-                    </p>
-                    <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                      {item.returnNote}
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {item.status === "returned"
+                        ? "Your teacher asked for another photo. Earlier uploads stay saved in history."
+                        : item.status === "rejected"
+                          ? "This photo couldn't be read clearly. Retake it flat in even light."
+                          : "Worksheet received. Feedback will appear here once your teacher shares it."}
                     </p>
                   </div>
-                )}
 
-                {/* Primary Action */}
-                {canSendNewPhoto && (
-                  <div className="pt-2 border-t border-border/60">
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        onBack();
-                        onUploadActivity?.(item.activityId);
-                      }}
-                      className="w-full h-10 min-h-[40px] gap-2 font-semibold cursor-pointer"
-                    >
-                      <Camera className="size-4" aria-hidden="true" />
-                      <span>Send new photo</span>
-                    </Button>
-                  </div>
-                )}
-              </div>
+                  {/* Teacher Return Note if present (flat, border-divided) */}
+                  {item.returnNote && (
+                    <div className="border-t border-border/70 pt-3 space-y-1">
+                      <p className="text-xs font-semibold text-muted-foreground">
+                        Teacher note
+                      </p>
+                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                        {item.returnNote}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Primary Action */}
+                  {canSendNewPhoto && (
+                    <div className="pt-2 border-t border-border/60">
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          onBack();
+                          onUploadActivity?.(item.activityId);
+                        }}
+                        className="w-full h-10 min-h-[40px] gap-2 font-semibold cursor-pointer"
+                      >
+                        <Camera className="size-4" aria-hidden="true" />
+                        <span>Send new photo</span>
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>

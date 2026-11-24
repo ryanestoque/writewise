@@ -52,11 +52,13 @@ import { useActivityNow } from "@/components/activities/activity-work-status";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { BandBadge } from "@/components/shared/band-badge";
 import { cn } from "@/lib/utils";
 import { useScrolled } from "@/hooks/use-scrolled";
 import {
   Empty,
+  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -695,68 +697,74 @@ export function ProgressPageContent() {
             {historyLoading ? (
               <ProgressTrendSkeleton />
             ) : history && history.length >= 2 ? (
-              <div className="rounded-xl border border-border bg-card p-4 sm:p-6 min-w-0">
-                <CriterionTrendChart
-                  history={history}
-                  variant="parent"
-                  showScoreDetails={true}
-                  practiceFocusKey={practiceFocus?.key}
-                />
-              </div>
+              <Card className="p-0 gap-0 shadow-none min-w-0">
+                <CardContent className="p-4 sm:p-6 min-w-0">
+                  <CriterionTrendChart
+                    history={history}
+                    variant="parent"
+                    showScoreDetails={true}
+                    practiceFocusKey={practiceFocus?.key}
+                  />
+                </CardContent>
+              </Card>
             ) : scoredCount === 1 && history?.[0] ? (
-              <div className="rounded-xl border border-border bg-card p-5 sm:p-6 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <h3 className="font-heading text-base font-semibold text-foreground">
-                      1 of 2 worksheets checked
-                    </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed font-sans tabular-nums">
-                      &ldquo;{history[0].targetText}&rdquo; ({new Date(history[0].submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}) · Trend chart unlocks after the next worksheet.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 self-start">
-                    <BandBadge score={history[0].compositeScore} band={history[0].compositeBand} size="sm" showDot />
-                    {history[0].compositeScore != null && (
-                      <span className="font-sans text-sm font-semibold tabular-nums text-foreground">
-                        {Math.round(history[0].compositeScore)}%
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Flat 5-Criteria Baseline Summary (no nested cards) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-3 border-t border-border/70 pt-4">
-                  {PARENT_CRITERIA_LIST.map((criterion) => {
-                    const criterionScore = history[0].scores[criterion.key];
-                    const criterionBand = history[0].bands[criterion.key];
-
-                    return (
-                      <div key={criterion.key} className="flex sm:flex-col items-center sm:items-start justify-between gap-1.5">
-                        <span className="text-xs font-medium text-muted-foreground truncate">
-                          {criterion.label}
+              <Card className="p-0 gap-0 shadow-none">
+                <CardContent className="p-5 sm:p-6 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <h3 className="font-heading text-base font-semibold text-foreground">
+                        1 of 2 worksheets checked
+                      </h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed font-sans tabular-nums">
+                        &ldquo;{history[0].targetText}&rdquo; ({new Date(history[0].submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}) · Trend chart unlocks after the next worksheet.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 self-start">
+                      <BandBadge score={history[0].compositeScore} band={history[0].compositeBand} size="sm" showDot />
+                      {history[0].compositeScore != null && (
+                        <span className="font-sans text-sm font-semibold tabular-nums text-foreground">
+                          {Math.round(history[0].compositeScore)}%
                         </span>
-                        <div className="flex items-center gap-1.5">
-                          <BandBadge band={criterionBand} score={criterionScore} size="sm" showDot />
-                          {criterionScore != null && (
-                            <span className="font-sans text-xs font-medium tabular-nums text-muted-foreground">
-                              {Math.round(criterionScore)}%
-                            </span>
-                          )}
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Flat 5-Criteria Baseline Summary (no nested cards) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-3 border-t border-border/70 pt-4">
+                    {PARENT_CRITERIA_LIST.map((criterion) => {
+                      const criterionScore = history[0].scores[criterion.key];
+                      const criterionBand = history[0].bands[criterion.key];
+
+                      return (
+                        <div key={criterion.key} className="flex sm:flex-col items-center sm:items-start justify-between gap-1.5">
+                          <span className="text-xs font-medium text-muted-foreground truncate">
+                            {criterion.label}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <BandBadge band={criterionBand} score={criterionScore} size="sm" showDot />
+                            {criterionScore != null && (
+                              <span className="font-sans text-xs font-medium tabular-nums text-muted-foreground">
+                                {Math.round(criterionScore)}%
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
             ) : (
-              <div className="rounded-xl border border-border bg-card p-6 sm:p-8 text-center space-y-3">
-                <h3 className="font-heading text-base font-semibold text-foreground">
-                  No trend data yet
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                  Progress charts appear after 2 checked worksheets.
-                </p>
-                <div>
+              <Empty className="border border-solid border-border rounded-xl bg-card p-6 sm:p-8 gap-3">
+                <EmptyHeader className="gap-1.5">
+                  <EmptyTitle className="text-base font-semibold text-foreground">
+                    No trend data yet
+                  </EmptyTitle>
+                  <EmptyDescription className="text-sm max-w-sm leading-relaxed">
+                    Progress charts appear after 2 checked worksheets.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
                   <Button
                     type="button"
                     variant="outline"
@@ -766,8 +774,8 @@ export function ProgressPageContent() {
                   >
                     View practice worksheets
                   </Button>
-                </div>
-              </div>
+                </EmptyContent>
+              </Empty>
             )}
           </section>
 
