@@ -62,7 +62,7 @@ export const RUBRIC_BANDS: RubricBandMeta[] = [
   {
     band: "needs_improvement",
     label: "Needs Improvement",
-    shortLabel: "Needs Improvement",
+    shortLabel: "Needs Imp.",
     score: "12.5%",
     activeClass:
       "bg-band-1/20 dark:bg-band-1/30 text-band-1-text border-band-1 ring-2 ring-band-1/40 shadow-warm-sm font-semibold",

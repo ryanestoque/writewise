@@ -288,12 +288,12 @@ export function LatestSubmissionCard({
           </div>
 
           {/* Worksheet and conversation actions */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
             <Button
               type="button"
               variant="default"
               size="sm"
-              className="min-h-10 sm:min-h-9 h-10 sm:h-9 px-4 text-xs sm:text-sm font-semibold cursor-pointer touch-manipulation shadow-warm-sm gap-2"
+              className="w-full sm:w-auto min-h-10 sm:min-h-9 h-10 sm:h-9 px-4 text-xs sm:text-sm font-semibold cursor-pointer touch-manipulation shadow-warm-sm gap-2 justify-center"
               onClick={() => openWorksheetForCriterion("all", "details")}
               aria-haspopup="dialog"
             >
@@ -303,7 +303,7 @@ export function LatestSubmissionCard({
               type="button"
               variant="outline"
               size="sm"
-              className="min-h-10 sm:min-h-9 h-10 sm:h-9 px-3 gap-2 text-xs sm:text-sm font-medium cursor-pointer touch-manipulation"
+              className="w-full sm:w-auto min-h-10 sm:min-h-9 h-10 sm:h-9 px-3 gap-2 text-xs sm:text-sm font-medium cursor-pointer touch-manipulation justify-center"
               onClick={() => openWorksheetForCriterion("all", "comments")}
               aria-haspopup="dialog"
             >
@@ -322,6 +322,16 @@ export function LatestSubmissionCard({
       <section aria-labelledby="handwriting-skills" className="overflow-hidden rounded-xl border border-border bg-card shadow-warm px-4 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-2 py-4">
           <h2 id="handwriting-skills" className="font-heading text-lg font-semibold">Handwriting skills</h2>
+          {onOpenRubric && (
+            <Button
+              type="button"
+              variant="link"
+              className="px-0 min-h-10 sm:min-h-9 text-xs sm:text-sm text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+              onClick={onOpenRubric}
+            >
+              How scores work
+            </Button>
+          )}
         </div>
         {PARENT_CRITERIA_LIST.map(({ key, label }) => {
           const score = latest.scores[key];
@@ -361,18 +371,6 @@ export function LatestSubmissionCard({
             </button>
           );
         })}
-        {onOpenRubric && (
-          <div className="flex items-center justify-end border-t py-2 text-sm">
-            <Button
-              type="button"
-              variant="link"
-              className="px-0 min-h-10 sm:min-h-9 text-xs sm:text-sm text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
-              onClick={onOpenRubric}
-            >
-              How scores work
-            </Button>
-          </div>
-        )}
       </section>
 
       <WorksheetViewDialog

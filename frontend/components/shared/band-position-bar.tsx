@@ -83,7 +83,7 @@ export function BandPositionBar({
       {showBandLabels && (
         <div
           aria-hidden="true"
-          className="grid grid-cols-4 gap-2 text-xs leading-tight select-none pt-1"
+          className="grid grid-cols-4 gap-1 sm:gap-2 text-[11px] sm:text-xs leading-tight select-none pt-1"
         >
           <span
             className={cn(
@@ -93,7 +93,8 @@ export function BandPositionBar({
                 : "font-medium text-muted-foreground/80"
             )}
           >
-            Needs Improvement
+            <span className="sm:hidden">Needs Imp.</span>
+            <span className="hidden sm:inline">Needs Improvement</span>
           </span>
           <span
             className={cn(
