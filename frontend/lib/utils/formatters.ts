@@ -4,6 +4,22 @@ export function getWordCount(text: string): number {
   return trimmed.split(/\s+/).filter(Boolean).length;
 }
 
+/**
+ * Normalizes erratic mid-word sponge-case (e.g. "pSychophySioLogiCaL") into readable
+ * sentence-cased text while preserving intentional Title Case or acronyms.
+ */
+export function normalizeActivityPrompt(text: string): string {
+  const words = text.trim().split(/\s+/);
+  return words
+    .map((word, index) => {
+      const hasMidWordCaseFlip = /^[a-z][A-Za-z]*[A-Z]|[A-Z][a-z]+[A-Z]/.test(word);
+      if (!hasMidWordCaseFlip) return word;
+      const lower = word.toLowerCase();
+      return index === 0 ? lower.charAt(0).toUpperCase() + lower.slice(1) : lower;
+    })
+    .join(" ");
+}
+
 export function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-US", {
     weekday: "short",

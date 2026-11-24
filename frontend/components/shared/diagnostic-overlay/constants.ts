@@ -7,28 +7,28 @@
  */
 
 export const OVERLAY_COLORS = {
-  // Developmental tiers (pedagogical grading standards)
+  // Developmental tiers aligned with DESIGN.md CSS tokens
   proficient: {
-    stroke: "#1b6b63", // Forest Teal
+    stroke: "var(--color-brand-600)",
     fill: "rgba(27, 107, 99, 0.12)",
   },
   consistent: {
-    stroke: "#4a7c59", // Warm Sage
-    fill: "rgba(74, 124, 89, 0.12)",
+    stroke: "var(--color-band-4)",
+    fill: "rgba(74, 139, 92, 0.12)",
   },
   developing: {
-    stroke: "#d48b28", // Ochre Gold
-    fill: "rgba(212, 139, 40, 0.14)",
+    stroke: "var(--color-band-2)",
+    fill: "rgba(201, 162, 39, 0.14)",
   },
   needs_attention: {
-    stroke: "#c2410c", // Vibrant Terracotta / Rust (distinct, pedagogical, never harsh red #ef4444)
-    fill: "rgba(194, 65, 12, 0.18)",
+    stroke: "var(--color-band-1)",
+    fill: "rgba(182, 117, 74, 0.18)",
   },
   // Traditional 3-line penmanship ruling guides
   guidelines: {
-    topline: "#64748b", // Slate 500 headline
-    midline: "#0f766e", // Teal dotted midline
-    baseline: "#115e59", // Deep Forest Teal baseline
+    topline: "var(--muted-foreground)",
+    midline: "var(--color-brand-600)",
+    baseline: "var(--color-brand-700)",
   },
 } as const;
 

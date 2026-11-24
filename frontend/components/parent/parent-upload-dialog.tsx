@@ -525,7 +525,7 @@ function ParentUploadFlow({
         onChange={(e) => handleFileChange(e.target.files?.[0])}
       />
 
-      <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-border/80">
+      <DialogHeader className="shrink-0 px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-border/80">
         <div className="min-w-0 pr-10 sm:pr-8">
           <DialogTitle className="text-base sm:text-lg font-semibold text-foreground truncate">
             Send worksheet photo
@@ -563,11 +563,11 @@ function ParentUploadFlow({
                         <button
                           type="button"
                           onClick={() => setStep(s.step as Step)}
-                          aria-label={`${s.label} — Step ${stepNumber}, completed`}
-                          className="group flex items-center gap-1.5 sm:gap-2 min-w-0 min-h-10 sm:min-h-9 p-1 -m-1 rounded-lg transition-colors hover:bg-muted/80 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary text-left cursor-pointer"
+                          aria-label={`${s.label} — Step ${stepNumber}${isCompleted ? ", completed" : ""}`}
+                          className="group flex items-center gap-1.5 sm:gap-2 min-w-0 min-h-11 sm:min-h-9 p-1 -m-1 rounded-lg transition-colors hover:bg-muted/80 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary text-left cursor-pointer touch-manipulation"
                         >
-                          <div
-                            className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-all ${isCompleted
+                          <span
+                            className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-transform ${isCompleted
                               ? "bg-primary text-primary-foreground group-hover:bg-primary/90 group-hover:scale-105"
                               : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"
                               }`}
@@ -577,7 +577,7 @@ function ParentUploadFlow({
                             ) : (
                               stepNumber
                             )}
-                          </div>
+                          </span>
                           <span className="text-xs sm:text-sm truncate font-medium text-foreground group-hover:text-primary transition-colors">
                             {s.label}
                           </span>
@@ -627,7 +627,7 @@ function ParentUploadFlow({
         </nav>
       </DialogHeader>
 
-      <div className="px-4 sm:px-6 py-4 max-h-[min(72dvh,calc(100vh-10rem))] overflow-y-auto overscroll-contain">
+      <div className="flex-1 min-h-0 px-4 sm:px-6 py-4 overflow-y-auto overscroll-contain">
         {activitiesError && step !== 5 && (
           <QueryRecovery
             title="Could not load practice worksheets"
@@ -700,11 +700,12 @@ function ParentUploadFlow({
                 </div>
 
                 {activitiesLoading ? (
-                  <div className="flex items-center justify-center py-8">
+                  <div role="status" aria-live="polite" className="flex items-center justify-center gap-2 py-8">
                     <Loader2Icon
                       className="size-5 animate-spin text-muted-foreground"
                       aria-hidden="true"
                     />
+                    <span className="sr-only">Loading practice worksheets…</span>
                   </div>
                 ) : !activities || activities.length === 0 ? (
                   <div className="p-6 rounded-xl border border-dashed text-center space-y-2">
@@ -748,12 +749,12 @@ function ParentUploadFlow({
                             setSelectedActivityId(act.id);
                             setStep(2);
                           }}
-                          className={`flex flex-col text-left p-3.5 rounded-xl border transition-all text-xs sm:text-sm cursor-pointer shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${isSelected
+                          className={`flex flex-col text-left p-3.5 rounded-xl border transition-colors text-xs sm:text-sm cursor-pointer shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${isSelected
                             ? "border-primary bg-primary/5 ring-1 ring-primary"
                             : "border-border/80 bg-card hover:border-primary/60 hover:bg-muted/30"
                             }`}
                         >
-                          <div className="flex items-center justify-between gap-2">
+                          <span className="flex items-center justify-between gap-2">
                             <span className="font-semibold text-foreground line-clamp-2">
                               {act.title}
                             </span>
@@ -763,13 +764,13 @@ function ParentUploadFlow({
                                 aria-hidden="true"
                               />
                             )}
-                          </div>
+                          </span>
                           {act.targetText && (
                             <span className="mt-0.5 text-xs text-muted-foreground italic line-clamp-1">
                               &ldquo;{act.targetText}&rdquo;
                             </span>
                           )}
-                          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground font-sans tabular-nums">
+                          <span className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground font-sans tabular-nums">
                             {statusBadge && (
                               <>
                                 <span className={statusBadge.className}>
@@ -783,7 +784,7 @@ function ParentUploadFlow({
                                 ? `Due ${formatActivityDueAt(act.dueAt)}`
                                 : `Assigned ${formatActivityDate(act.createdAt)}`}
                             </span>
-                          </div>
+                          </span>
                         </button>
                       );
                     })}
@@ -847,10 +848,10 @@ function ParentUploadFlow({
                     <button
                       type="button"
                       onClick={() => setLastRetakeTip(null)}
-                      className="inline-flex size-10 sm:size-9 items-center justify-center text-muted-foreground hover:text-foreground shrink-0 rounded cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                      className="inline-flex size-11 sm:size-9 items-center justify-center text-muted-foreground hover:text-foreground shrink-0 rounded cursor-pointer touch-manipulation focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       aria-label="Dismiss tip"
                     >
-                      <XIcon className="size-3.5" />
+                      <XIcon className="size-3.5" aria-hidden="true" />
                     </button>
                   </div>
                 )}
@@ -860,8 +861,9 @@ function ParentUploadFlow({
                   <span>3-line paper · Connected cursive · All 4 corners in view</span>
                 </p>
 
-                {/* Dropzone Container (Clean Non-Interactive Wrapper, WCAG 4.1.2) */}
+                {/* Dropzone Container */}
                 <div
+                  role="region"
                   aria-label="Worksheet photo upload dropzone"
                   onDragOver={(e) => {
                     e.preventDefault();
@@ -873,7 +875,7 @@ function ParentUploadFlow({
                     setIsDragging(false);
                     handleFileChange(e.dataTransfer.files?.[0]);
                   }}
-                  className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-all text-center shadow-warm ${isDragging
+                  className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-[border-color,background-color,transform] text-center shadow-warm ${isDragging
                     ? "border-primary bg-primary/5 scale-[0.99]"
                     : "border-border bg-card hover:border-primary/60 hover:bg-muted/10"
                     }`}
@@ -972,14 +974,14 @@ function ParentUploadFlow({
                     <span className="text-xs sm:text-sm font-semibold">
                       Photo quality tips
                     </span>
-                    <div className="flex items-center gap-1 text-muted-foreground text-xs font-medium">
+                    <span className="flex items-center gap-1 text-muted-foreground text-xs font-medium">
                       <span>{showTips ? "Hide tips" : "Show tips"}</span>
                       <ChevronDownIcon
                         className={`size-3.5 transition-transform duration-200 ${showTips ? "rotate-180" : ""
                           }`}
                         aria-hidden="true"
                       />
-                    </div>
+                    </span>
                   </button>
                   {showTips && (
                     <div
@@ -1207,7 +1209,7 @@ function ParentUploadFlow({
                     type="button"
                     variant="default"
                     onClick={onClose}
-                    className="min-h-11 sm:min-h-9 h-10 sm:h-9 text-xs sm:text-sm font-medium w-full shadow-warm-sm cursor-pointer"
+                    className="h-11 sm:h-9 text-xs sm:text-sm font-medium w-full shadow-warm-sm cursor-pointer touch-manipulation"
                   >
                     Done
                   </Button>
@@ -1220,7 +1222,7 @@ function ParentUploadFlow({
 
       {/* Standardized Sticky Footer for Steps 1–3, Unavailable State, and Step 4 Error */}
       {!isUploading && (isUnavailableSelection || step <= 3 || (step === 4 && uploadError)) && (
-        <div className="flex items-center justify-between p-3 sm:p-3.5 px-4 sm:px-6 border-t border-border bg-muted/20">
+        <div className="shrink-0 flex items-center justify-between p-3 sm:p-3.5 px-4 sm:px-6 border-t border-border bg-muted/20">
           {isUnavailableSelection ? (
             <>
               <Button

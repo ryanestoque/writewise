@@ -1,8 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Camera, Loader2 } from "lucide-react";
+import { Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NotificationWorkLoadingSkeleton } from "@/components/parent/parent-portal-skeletons";
 import {
   Dialog,
   DialogContent,
@@ -27,16 +28,12 @@ export function NotificationWorkDestination({
   userId,
   target,
   childName,
-  showScoreDetails = true,
-  onToggleScoreDetails,
   onClose,
   onUploadActivity,
 }: {
   userId: string;
   target: ParentNotificationTarget | null;
   childName: string;
-  showScoreDetails?: boolean;
-  onToggleScoreDetails?: () => void;
   onClose: () => void;
   onUploadActivity?: (activityId: string) => void;
 }) {
@@ -59,9 +56,6 @@ export function NotificationWorkDestination({
           childName={childName}
           compositeScore={item.compositeScore}
           scoreSource={item.scoreSource}
-          initialShowScoreDetails={showScoreDetails}
-          showScoreDetails={showScoreDetails}
-          onToggleScoreDetails={onToggleScoreDetails}
           scores={item.scores}
           bands={item.bands}
           guideLines={item.guideLines}
@@ -115,13 +109,7 @@ export function NotificationWorkDestination({
           </DialogDescription>
         </DialogHeader>
         {work.status === "loading" ? (
-          <div className="flex items-center gap-2.5 py-6" role="status">
-            <Loader2
-              className="size-4 animate-spin text-muted-foreground"
-              aria-hidden="true"
-            />
-            <span className="text-sm text-muted-foreground">Loading activity…</span>
-          </div>
+          <NotificationWorkLoadingSkeleton />
         ) : work.status === "error" ? (
           <div className="flex flex-wrap items-center justify-between gap-3 py-2" role="alert">
             <p className="text-sm text-foreground">

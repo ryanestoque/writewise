@@ -1,16 +1,27 @@
 "use client";
 
 import { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   parseParentNotificationTarget,
   type ParsedNotificationTarget,
 } from "@/lib/notifications/data";
 import { ParentNav } from "@/components/parent-nav";
-import { ParentUploadDialog } from "@/components/parent/parent-upload-dialog";
-import { CursiveGuideDialog } from "@/components/cursive-guide-dialog";
-import { RubricReferenceDialog } from "@/components/rubric-reference-dialog";
 import { useLinkedChildren, type LinkedChild } from "@/lib/hooks/use-parent-data";
+
+const ParentUploadDialog = dynamic(
+  () => import("@/components/parent/parent-upload-dialog").then((m) => m.ParentUploadDialog),
+  { ssr: false }
+);
+const CursiveGuideDialog = dynamic(
+  () => import("@/components/cursive-guide-dialog").then((m) => m.CursiveGuideDialog),
+  { ssr: false }
+);
+const RubricReferenceDialog = dynamic(
+  () => import("@/components/rubric-reference-dialog").then((m) => m.RubricReferenceDialog),
+  { ssr: false }
+);
 
 interface ParentPortalContextValue {
   userId: string;
@@ -34,9 +45,6 @@ interface ParentPortalContextValue {
   rubricOpen: boolean;
   setRubricOpen: (open: boolean) => void;
   openRubric: () => void;
-  showScoreDetails: boolean;
-  setShowScoreDetails: (next: boolean) => void;
-  toggleScoreDetails: () => void;
 }
 
 const ParentPortalContext = createContext<ParentPortalContextValue | null>(null);
@@ -76,11 +84,27 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
   );
   const requestedChild =
     notificationTarget.kind === "valid" ? notificationTarget.target.childId : null;
-  const [uploadOpen, setUploadOpen] = useState(false);
-  const [cursiveGuideOpen, setCursiveGuideOpen] = useState(false);
-  const [rubricOpen, setRubricOpen] = useState(false);
+  const [uploadOpen, setUploadOpenState] = useState(false);
+  const [uploadMounted, setUploadMounted] = useState(false);
+  const [cursiveGuideOpen, setCursiveGuideOpenState] = useState(false);
+  const [cursiveGuideMounted, setCursiveGuideMounted] = useState(false);
+  const [rubricOpen, setRubricOpenState] = useState(false);
+  const [rubricMounted, setRubricMounted] = useState(false);
   const [cursiveGuideInitialLetter, setCursiveGuideInitialLetter] = useState<string | undefined>();
   const [prefilledActivityId, setPrefilledActivityId] = useState<string | undefined>();
+
+  const setUploadOpen = useCallback((open: boolean) => {
+    if (open) setUploadMounted(true);
+    setUploadOpenState(open);
+  }, []);
+  const setCursiveGuideOpen = useCallback((open: boolean) => {
+    if (open) setCursiveGuideMounted(true);
+    setCursiveGuideOpenState(open);
+  }, []);
+  const setRubricOpen = useCallback((open: boolean) => {
+    if (open) setRubricMounted(true);
+    setRubricOpenState(open);
+  }, []);
 
   // Derive the active selected child without cascading effect renders
   const selectedChildId =
@@ -120,23 +144,22 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
 
   const openUploadDialog = useCallback((activityId?: string) => {
     setPrefilledActivityId(typeof activityId === "string" ? activityId : undefined);
-    setUploadOpen(true);
+    setUploadMounted(true);
+    setUploadOpenState(true);
   }, []);
 
   const openCursiveGuide = useCallback((initialLetterOrQuery?: string) => {
     setCursiveGuideInitialLetter(
       typeof initialLetterOrQuery === "string" ? initialLetterOrQuery : undefined
     );
-    setCursiveGuideOpen(true);
+    setCursiveGuideMounted(true);
+    setCursiveGuideOpenState(true);
   }, []);
 
   const openRubric = useCallback(() => {
-    setRubricOpen(true);
+    setRubricMounted(true);
+    setRubricOpenState(true);
   }, []);
-
-  const showScoreDetails = true;
-  const setShowScoreDetails = useCallback(() => {}, []);
-  const toggleScoreDetails = useCallback(() => {}, []);
 
   const contextValue: ParentPortalContextValue = useMemo(
     () => ({
@@ -161,9 +184,6 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
       rubricOpen,
       setRubricOpen,
       openRubric,
-      showScoreDetails,
-      setShowScoreDetails,
-      toggleScoreDetails,
     }),
     [
       user.id,
@@ -178,21 +198,27 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
       isRetrying,
       retryChildren,
       uploadOpen,
+      setUploadOpen,
       prefilledActivityId,
       openUploadDialog,
       cursiveGuideOpen,
+      setCursiveGuideOpen,
       openCursiveGuide,
       rubricOpen,
+      setRubricOpen,
       openRubric,
-      showScoreDetails,
-      setShowScoreDetails,
-      toggleScoreDetails,
     ]
   );
 
   return (
     <ParentPortalContext.Provider value={contextValue}>
       <div className="bg-background text-foreground flex min-h-dvh flex-col">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground focus:shadow-warm focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          Skip to main content
+        </a>
         <ParentNav
           user={user}
           selectedChildId={selectedChildId}
@@ -201,15 +227,17 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
           onOpenRubric={openRubric}
           onOpenCursiveGuide={openCursiveGuide}
         />
-        <main className="w-full min-w-0 flex-1">{pageChildren}</main>
+        <main id="main-content" tabIndex={-1} className="w-full min-w-0 flex-1 outline-none">
+          {pageChildren}
+        </main>
       </div>
 
-      {/* Global Parent Modals: Upload, Cursive Guide, & How Scores Work */}
-      {selectedChildId && selectedChild && (
+      {/* Global Parent Modals: Upload, Cursive Guide, & How Scores Work (lazy-mounted on demand) */}
+      {uploadMounted && selectedChildId && selectedChild && (
         <ParentUploadDialog
           open={uploadOpen}
           onOpenChange={(open) => {
-            setUploadOpen(open);
+            setUploadOpenState(open);
             if (!open) setPrefilledActivityId(undefined);
           }}
           childId={selectedChildId}
@@ -218,23 +246,25 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
         />
       )}
 
-      <CursiveGuideDialog
-        key={`${cursiveGuideInitialLetter ?? "all"}:${cursiveGuideOpen ? "open" : "closed"}`}
-        open={cursiveGuideOpen}
-        onOpenChange={(open) => {
-          setCursiveGuideOpen(open);
-          if (!open) setCursiveGuideInitialLetter(undefined);
-        }}
-        initialLetterId={cursiveGuideInitialLetter}
-      />
+      {cursiveGuideMounted && (
+        <CursiveGuideDialog
+          key={`${cursiveGuideInitialLetter ?? "all"}:${cursiveGuideOpen ? "open" : "closed"}`}
+          open={cursiveGuideOpen}
+          onOpenChange={(open) => {
+            setCursiveGuideOpenState(open);
+            if (!open) setCursiveGuideInitialLetter(undefined);
+          }}
+          initialLetterId={cursiveGuideInitialLetter}
+        />
+      )}
 
-      <RubricReferenceDialog
-        open={rubricOpen}
-        onOpenChange={setRubricOpen}
-        variant="parent"
-        showScoreDetails={showScoreDetails}
-        onToggleScoreDetails={toggleScoreDetails}
-      />
+      {rubricMounted && (
+        <RubricReferenceDialog
+          open={rubricOpen}
+          onOpenChange={setRubricOpenState}
+          variant="parent"
+        />
+      )}
     </ParentPortalContext.Provider>
   );
 }

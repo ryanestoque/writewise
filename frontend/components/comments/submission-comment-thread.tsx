@@ -108,7 +108,12 @@ export function SubmissionCommentThread({
               : "Unable to retrieve conversation history from the server."}
           </AlertDescription>
         </Alert>
-        <Button variant="outline" size="sm" onClick={() => void query.retry()}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-11 sm:h-9 px-4 cursor-pointer touch-manipulation"
+          onClick={() => void query.retry()}
+        >
           Try again
         </Button>
       </div>
@@ -174,6 +179,7 @@ export function SubmissionCommentThread({
           <Button
             size="sm"
             variant="outline"
+            className="h-11 sm:h-9 px-3 cursor-pointer touch-manipulation"
             disabled={actions.setLocked.isPending}
             onClick={() => {
               setFeedback(null);
@@ -197,6 +203,7 @@ export function SubmissionCommentThread({
           <Button
             size="sm"
             variant="ghost"
+            className="h-11 sm:h-9 px-3 cursor-pointer touch-manipulation"
             onClick={() => {
               attempted.current.clear();
               setFeedback(null);
@@ -212,6 +219,7 @@ export function SubmissionCommentThread({
           <Button
             variant="outline"
             size="sm"
+            className="h-11 sm:h-9 px-3 cursor-pointer touch-manipulation"
             disabled={query.isLoadingMore || query.isFetching}
             onClick={query.loadMore}
           >

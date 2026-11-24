@@ -76,11 +76,10 @@ export interface TakeHomeActivity {
 // --- Hooks ---
 
 export function useLinkedChildren(userId?: string) {
-  const supabase = createClient();
-
   return useQuery({
     queryKey: ["parent-linked-children", userId],
     queryFn: async (): Promise<LinkedChild[]> => {
+      const supabase = createClient();
       // student_parent RLS: parent can view own links
       // student RLS: parent can view own child
       const { data, error } = await supabase
@@ -105,14 +104,18 @@ export function useLinkedChildren(userId?: string) {
   });
 }
 
-export function useChildLatestScores(childId: string | null) {
-  const supabase = createClient();
+export function useChildLatestScores(
+  childId: string | null,
+  options?: { hasPendingSubmission?: boolean }
+) {
+  const hasPendingSubmission = options?.hasPendingSubmission ?? false;
 
-  return useQuery({
+  return useQuery<ChildLatestScores | null>({
     queryKey: ["parent-child-latest-scores", childId],
-    refetchInterval: 15000,
+    refetchInterval: (query) => (hasPendingSubmission || query.state.data === null ? 15000 : 60000),
     queryFn: async (): Promise<ChildLatestScores | null> => {
       if (!childId) return null;
+      const supabase = createClient();
 
       const { data, error } = await supabase
         .from("active_submission")
@@ -153,7 +156,8 @@ export function useChildLatestScores(childId: string | null) {
         .eq("status", "completed")
         .not("released_at", "is", null)
         .order("created_at", { ascending: false })
-        .order("id", { ascending: false });
+        .order("id", { ascending: false })
+        .limit(5);
 
       if (error) throw new Error(error.message);
 
@@ -280,17 +284,68 @@ export function useParentNotificationWork(userId: string, target: ParentNotifica
     work: meta.data.work, assigned: meta.data.assigned, item };
 }
 
+export function useSubmissionDiagnostics(submissionId: string | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: ["submission-diagnostics", submissionId],
+    enabled: Boolean(submissionId) && enabled,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async ({ signal }) => {
+      if (!submissionId) return null;
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("measurement")
+        .select("raw_output, overlay")
+        .eq("submission_id", submissionId)
+        .abortSignal(signal)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!data) return { guideLines: null, overlay: null };
+      return {
+        guideLines: extractGuideLines(data),
+        overlay: extractDiagnosticOverlay(data),
+      };
+    },
+  });
+}
+
 export function useChildScoreHistory(childId: string | null,
   target?: { activityId: string; submissionId: string; accountId: string }) {
-  const supabase = createClient();
-
-  return useQuery({
+  return useQuery<StudentScoreHistoryItem[]>({
     queryKey: target ? [...notificationKeys.account(target.accountId), "work-attempt", childId,
       target.activityId, target.submissionId] : ["parent-child-score-history", childId],
-    refetchInterval: 15000,
+    refetchInterval: (query) => {
+      if (target) return 15000;
+      const rows = query.state.data;
+      const hasPending = rows?.some(
+        (row) =>
+          row.isActiveAttempt &&
+          (row.status === "processing" || (row.status === "completed" && !row.releasedAt))
+      );
+      return hasPending ? 15000 : 60000;
+    },
     refetchOnMount: target ? "always" : true,
     queryFn: async ({ signal }): Promise<StudentScoreHistoryItem[]> => {
       if (!childId) return [];
+      const supabase = createClient();
+      const measurementSelect = target
+        ? `
+            letter_formation_score,
+            size_consistency_score,
+            spacing_score,
+            slant_score,
+            baseline_alignment_score,
+            composite_score,
+            raw_output,
+            overlay
+          `
+        : `
+            letter_formation_score,
+            size_consistency_score,
+            spacing_score,
+            slant_score,
+            baseline_alignment_score,
+            composite_score
+          `;
 
       let historyQuery = supabase
         .from("submission")
@@ -318,16 +373,7 @@ export function useChildScoreHistory(childId: string | null,
             baseline_alignment_band,
             baseline_alignment_score
           ),
-          measurement(
-            letter_formation_score,
-            size_consistency_score,
-            spacing_score,
-            slant_score,
-            baseline_alignment_score,
-            composite_score,
-            raw_output,
-            overlay
-          )
+          measurement(${measurementSelect})
         `)
         .eq("student_id", childId)
         .order("created_at", { ascending: true }).order("id", { ascending: true }).abortSignal(signal);
@@ -425,8 +471,8 @@ export function useChildScoreHistory(childId: string | null,
             slant: slBand,
             baseline_alignment: baBand,
           },
-          guideLines: extractGuideLines(rawMeasurement),
-          overlay: extractDiagnosticOverlay(rawMeasurement),
+          guideLines: target ? extractGuideLines(rawMeasurement) : undefined,
+          overlay: target ? extractDiagnosticOverlay(rawMeasurement) : undefined,
           canDelete: row.uploader_role === "parent" && !rawManual,
         });
       }
@@ -438,30 +484,27 @@ export function useChildScoreHistory(childId: string | null,
 }
 
 export function useTakeHomeActivities(childId: string | null) {
-  const supabase = createClient();
-
   return useQuery({
     queryKey: ["parent-take-home-activities", childId],
     queryFn: async (): Promise<TakeHomeActivity[]> => {
       if (!childId) return [];
+      const supabase = createClient();
 
-      // 1. Fetch teacher(s) linked to this specific child (via 0018_parent_access_policies)
-      const { data: teacherLinks, error: teacherError } = await supabase
-        .from("teacher_student")
-        .select("teacher_id")
-        .eq("student_id", childId);
+      // 1. Fetch teacher(s) and student section in parallel
+      const [teacherRes, childRes] = await Promise.all([
+        supabase.from("teacher_student").select("teacher_id").eq("student_id", childId),
+        supabase.from("student").select("section_id").eq("id", childId).single(),
+      ]);
 
-      if (teacherError) throw new Error(teacherError.message);
+      if (teacherRes.error) throw new Error(teacherRes.error.message);
+      if (childRes.error) throw childRes.error;
 
-      const teacherIds = (teacherLinks || []).map((t) => t.teacher_id);
+      const teacherIds = (teacherRes.data || []).map((t) => t.teacher_id);
       if (teacherIds.length === 0) return [];
 
-      // Scope targets to this child before reading activities. RLS alone is a sibling union.
-      const { data: child, error: childError } = await supabase.from("student")
-        .select("section_id").eq("id", childId).single();
-      if (childError) throw childError;
-      const match = child.section_id
-        ? `student_id.eq.${childId},section_id.eq.${child.section_id}`
+      // 2. Scope targets to this child before reading activities. RLS alone is a sibling union.
+      const match = childRes.data.section_id
+        ? `student_id.eq.${childId},section_id.eq.${childRes.data.section_id}`
         : `student_id.eq.${childId}`;
       const { data: targets, error: targetsError } = await supabase.from("activity_assignment")
         .select("activity_id").or(match);
@@ -469,7 +512,7 @@ export function useTakeHomeActivities(childId: string | null) {
       const assignedIds = [...new Set((targets ?? []).map((t) => t.activity_id))];
       if (!assignedIds.length) return [];
 
-      // Both assigned modes are visible; only take-home allows parent uploads.
+      // 3. Both assigned modes are visible; only take-home allows parent uploads.
       const { data: activitiesData, error } = await supabase
         .from("activity")
         .select("id, title, instructions, target_text, is_take_home, due_at, close_after_due, created_at, created_by")
@@ -482,18 +525,15 @@ export function useTakeHomeActivities(childId: string | null) {
       if (!activitiesData || activitiesData.length === 0) return [];
 
       const activityIds = activitiesData.map((a) => a.id);
-      const { data: workRows, error: workError } = await supabase.from("activity_work_state")
-        .select("*").eq("student_id", childId).in("activity_id", activityIds);
-      if (workError) throw workError;
-      const workByActivity = new Map((workRows as ActivityWorkState[] ?? [])
-        .map((row) => [row.activity_id, row]));
 
-      // Batch-fetch the latest submission per activity for this child in a single query (eliminating N+1)
-      const submissionsMap: Record<string, TakeHomeActivitySubmission> = {};
-      const submissionsById = new Map<string, TakeHomeActivitySubmission>();
-      const attemptsMap: Record<string, WorkAttempt[]> = {};
-      if (childId && activityIds.length > 0) {
-        const { data: subsData, error: subsError } = await supabase
+      // 4. Fetch work states and submissions in parallel
+      const [workResult, subsResult] = await Promise.all([
+        supabase
+          .from("activity_work_state")
+          .select("*")
+          .eq("student_id", childId)
+          .in("activity_id", activityIds),
+        supabase
           .from("submission")
           .select(`
             id,
@@ -516,36 +556,43 @@ export function useTakeHomeActivities(childId: string | null) {
           `)
           .eq("student_id", childId)
           .in("activity_id", activityIds)
-          .order("created_at", { ascending: false }).order("id", { ascending: false });
+          .order("created_at", { ascending: false }).order("id", { ascending: false }),
+      ]);
 
-        if (subsError) throw subsError;
-        if (subsData) {
-          for (const sub of subsData) {
-            (attemptsMap[sub.activity_id] ??= []).push({ id: sub.id, status: sub.status, created_at: sub.created_at });
-            // Since sorted created_at desc, the first time we see an activity_id is the latest
-            {
-              const isReleased = Boolean(sub.released_at) || workByActivity.get(sub.activity_id)?.work_status === "Released";
-              const m = Array.isArray(sub.measurement) ? sub.measurement[0] : sub.measurement;
-              const rawScore = m?.composite_score != null
-                ? Number(m.composite_score)
-                : computeCompositeFromCriteria(m);
-              const compositeScore = isReleased ? rawScore : null;
-              const hasManualScore = Array.isArray(sub.manual_score)
-                ? sub.manual_score.length > 0
-                : !!sub.manual_score;
-              const model: TakeHomeActivitySubmission = {
-                submissionId: sub.id,
-                status: sub.status,
-                rejectionCode: sub.rejection_code,
-                imagePath: sub.image_path,
-                compositeScore,
-                compositeBand: compositeScore != null ? getBandFromScore(compositeScore) : null,
-                canDelete: sub.uploader_role === "parent" && !hasManualScore,
-              };
-              submissionsById.set(sub.id, model);
-              submissionsMap[sub.activity_id] ??= model;
-            }
-          }
+      if (workResult.error) throw workResult.error;
+      if (subsResult.error) throw subsResult.error;
+
+      const workByActivity = new Map((workResult.data as ActivityWorkState[] ?? [])
+        .map((row) => [row.activity_id, row]));
+
+      const submissionsMap: Record<string, TakeHomeActivitySubmission> = {};
+      const submissionsById = new Map<string, TakeHomeActivitySubmission>();
+      const attemptsMap: Record<string, WorkAttempt[]> = {};
+      const subsData = subsResult.data;
+      if (subsData) {
+        for (const sub of subsData) {
+          (attemptsMap[sub.activity_id] ??= []).push({ id: sub.id, status: sub.status, created_at: sub.created_at });
+          // Since sorted created_at desc, the first time we see an activity_id is the latest
+          const isReleased = Boolean(sub.released_at) || workByActivity.get(sub.activity_id)?.work_status === "Released";
+          const m = Array.isArray(sub.measurement) ? sub.measurement[0] : sub.measurement;
+          const rawScore = m?.composite_score != null
+            ? Number(m.composite_score)
+            : computeCompositeFromCriteria(m);
+          const compositeScore = isReleased ? rawScore : null;
+          const hasManualScore = Array.isArray(sub.manual_score)
+            ? sub.manual_score.length > 0
+            : !!sub.manual_score;
+          const model: TakeHomeActivitySubmission = {
+            submissionId: sub.id,
+            status: sub.status,
+            rejectionCode: sub.rejection_code,
+            imagePath: sub.image_path,
+            compositeScore,
+            compositeBand: compositeScore != null ? getBandFromScore(compositeScore) : null,
+            canDelete: sub.uploader_role === "parent" && !hasManualScore,
+          };
+          submissionsById.set(sub.id, model);
+          submissionsMap[sub.activity_id] ??= model;
         }
       }
 
@@ -576,12 +623,11 @@ export function useChildSubmissionForActivity(
   childId: string | null,
   activityId: string
 ) {
-  const supabase = createClient();
-
   return useQuery({
     queryKey: ["parent-child-submission", childId, activityId],
     queryFn: async (): Promise<TakeHomeActivitySubmission | null> => {
       if (!childId || !activityId) return null;
+      const supabase = createClient();
 
       const { data: work, error: workError } = await supabase.from("activity_work_state")
         .select("active_submission_id,latest_submission_id").eq("student_id", childId)

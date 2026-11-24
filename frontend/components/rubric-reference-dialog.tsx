@@ -18,8 +18,6 @@ interface RubricReferenceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   variant?: "teacher" | "parent";
-  showScoreDetails?: boolean;
-  onToggleScoreDetails?: () => void;
 }
 
 interface CriterionItem {
@@ -463,16 +461,16 @@ export function RubricReferenceDialog({
                             aria-controls={isExpanded ? `criterion-panel-${item.id}` : undefined}
                             className="w-full flex items-center justify-between p-3.5 text-left transition-colors gap-3 cursor-pointer select-none rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
                           >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="min-w-0">
+                            <span className="flex items-center gap-2.5 min-w-0">
+                              <span className="block min-w-0">
                                 <span className="text-sm font-semibold text-foreground tracking-tight block">
                                   {item.name}
                                 </span>
-                                <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1 mt-0.5">
+                                <span className="block text-xs sm:text-sm text-muted-foreground line-clamp-1 mt-0.5">
                                   {item.classroomStandard}
-                                </p>
-                              </div>
-                            </div>
+                                </span>
+                              </span>
+                            </span>
 
                             <ChevronDownIcon
                               className={cn(

@@ -76,7 +76,7 @@ export function ParentNav({
 }: ParentNavProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const supabase = createClient();
+  const [supabase] = useState(createClient);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -175,25 +175,25 @@ export function ParentNav({
                 </div>
 
                 {/* Mobile Switcher: Bottom Sheet Drawer */}
-                <div className="sm:hidden flex items-center min-w-0 max-w-[190px]">
+                <div className="sm:hidden flex items-center min-w-0 w-full max-w-[min(280px,100%)]">
                   <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen} showSwipeHandle>
                     <DrawerTrigger
                       render={
                         <button
                           type="button"
                           aria-label={`Switch student profile, currently viewing ${activeChild?.fullName ?? "child"}`}
-                          className="inline-flex items-center gap-1.5 w-full min-w-0 px-2.5 py-1 rounded-full text-xs font-medium bg-card hover:bg-muted/50 border border-border/80 text-foreground shadow-warm-sm active:bg-muted transition-colors cursor-pointer touch-manipulation min-h-8"
+                          className="inline-flex items-center gap-1.5 w-full min-w-0 px-2.5 py-1 rounded-full text-xs font-medium bg-card hover:bg-muted/50 border border-border/80 text-foreground shadow-warm-sm active:bg-muted transition-colors cursor-pointer touch-manipulation min-h-11"
                         >
-                          <span className="flex size-4.5 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold text-[9px] shrink-0">
+                          <span className="flex size-5 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold text-xs shrink-0">
                             {activeChild ? getStudentInitials(activeChild.fullName) : "S"}
                           </span>
                           <span className="truncate font-semibold text-xs min-w-0 flex-1 text-left">
                             {activeChild?.fullName}
                           </span>
-                          <span className="text-muted-foreground text-[11px] shrink-0">
+                          <span className="text-muted-foreground text-xs shrink-0">
                             ({activeChild?.section})
                           </span>
-                          <ChevronDown className="size-3 text-muted-foreground shrink-0" aria-hidden="true" />
+                          <ChevronDown className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
                         </button>
                       }
                     />
@@ -216,41 +216,42 @@ export function ParentNav({
                             <button
                               key={child.id}
                               type="button"
+                              aria-pressed={isSelected}
                               onClick={() => {
                                 onChildChange(child.id);
                                 setMobileDrawerOpen(false);
                               }}
                               className={cn(
-                                "flex items-center justify-between p-3 rounded-xl border text-left transition-all cursor-pointer min-h-[52px] touch-manipulation",
+                                "flex items-center justify-between p-3 rounded-xl border text-left transition-colors cursor-pointer min-h-[52px] touch-manipulation",
                                 isSelected
                                   ? "bg-brand-50/80 border-brand-500/50 dark:bg-brand-950/50 dark:border-brand-500/40 shadow-warm-sm"
                                   : "bg-card border-border/70 hover:bg-muted/40 active:bg-muted/70"
                               )}
                             >
-                              <div className="flex items-center gap-3 min-w-0">
-                                <div
+                              <span className="flex items-center gap-3 min-w-0">
+                                <span
                                   className={cn(
                                     "flex size-9 items-center justify-center rounded-full font-bold text-xs shrink-0",
                                     isSelected
-                                      ? "bg-brand-700 text-white dark:bg-brand-600 shadow-xs"
+                                      ? "bg-primary text-primary-foreground shadow-xs"
                                       : "bg-muted text-muted-foreground border border-border/60"
                                   )}
                                 >
                                   {childInitials}
-                                </div>
-                                <div className="flex flex-col min-w-0">
+                                </span>
+                                <span className="flex flex-col min-w-0">
                                   <span className="font-semibold text-sm text-foreground truncate">
                                     {child.fullName}
                                   </span>
                                   <span className="text-xs text-muted-foreground">
                                     Section {child.section}
                                   </span>
-                                </div>
-                              </div>
+                                </span>
+                              </span>
                               {isSelected && (
-                                <div className="flex size-6 items-center justify-center rounded-full bg-brand-700 text-white dark:bg-brand-600 shrink-0 ml-3">
+                                <span className="flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground shrink-0 ml-3">
                                   <Check className="size-3.5 stroke-[2.5]" aria-hidden="true" />
-                                </div>
+                                </span>
                               )}
                             </button>
                           );

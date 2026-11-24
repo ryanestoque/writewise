@@ -1,21 +1,49 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useParentPortal } from "@/components/parent-portal-provider";
 import { LatestSubmissionCard } from "@/components/parent/latest-submission-card";
 import { TakeHomeActivities } from "@/components/parent/take-home-activities";
-import { CriterionTrendChart } from "@/components/dashboard/criterion-trend-chart";
-import { PastWorksheetsSection } from "@/components/parent/submission-history-dialog";
-import { SampleReportPreview } from "@/components/parent/sample-report-preview";
-import { NotificationWorkDestination } from "@/components/parent/notification-work-destination";
 import { QueryRecovery } from "@/components/shared/query-recovery";
-import { ParentGrades } from "@/components/gradebook/parent-grades";
-import { SubmissionCommentThreadSheet } from "@/components/comments/submission-comment-thread-sheet";
+import {
+  LatestSubmissionSkeleton,
+  ParentGradesSkeleton,
+  ParentPortalPageSkeleton,
+  PastWorksheetsSkeleton,
+  ProgressTrendSkeleton,
+} from "@/components/parent/parent-portal-skeletons";
+
+const CriterionTrendChart = dynamic(
+  () => import("@/components/dashboard/criterion-trend-chart").then((m) => m.CriterionTrendChart),
+  { ssr: false, loading: () => <ProgressTrendSkeleton bare /> }
+);
+const PastWorksheetsSection = dynamic(
+  () => import("@/components/parent/submission-history-dialog").then((m) => m.PastWorksheetsSection),
+  { ssr: false, loading: () => <PastWorksheetsSkeleton /> }
+);
+const SampleReportPreview = dynamic(
+  () => import("@/components/parent/sample-report-preview").then((m) => m.SampleReportPreview),
+  { ssr: false }
+);
+const NotificationWorkDestination = dynamic(
+  () => import("@/components/parent/notification-work-destination").then((m) => m.NotificationWorkDestination),
+  { ssr: false }
+);
+const ParentGrades = dynamic(
+  () => import("@/components/gradebook/parent-grades").then((m) => m.ParentGrades),
+  { ssr: false, loading: () => <ParentGradesSkeleton /> }
+);
+const SubmissionCommentThreadSheet = dynamic(
+  () => import("@/components/comments/submission-comment-thread-sheet").then((m) => m.SubmissionCommentThreadSheet),
+  { ssr: false }
+);
 import {
   useChildScoreHistory,
   useTakeHomeActivities,
   useChildLatestScores,
+  type TakeHomeActivity,
 } from "@/lib/hooks/use-parent-data";
 import { computeStrengthAndFocus, PARENT_CRITERIA_LIST } from "@/lib/utils/scoring";
 import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
@@ -38,7 +66,6 @@ import {
   TabsContent,
 } from "@/components/ui/tabs";
 import {
-  Loader2,
   UserX,
   PenTool,
   Camera,
@@ -46,6 +73,176 @@ import {
 } from "lucide-react";
 
 type ParentProgressTab = "overview" | "to-write" | "progress" | "grades";
+
+function ParentHeaderUploadAction({
+  takeHomeActivities,
+  onUploadActivity,
+  onOpenUploadDialog,
+}: {
+  takeHomeActivities: TakeHomeActivity[];
+  onUploadActivity: (activityId: string) => void;
+  onOpenUploadDialog: () => void;
+}) {
+  const now = useActivityNow();
+
+  const openTakeHomeActivities = useMemo(() => {
+    return takeHomeActivities
+      .filter((a) => {
+        const status = getParentActivityStatus(a, now);
+        return status.canSend && !status.excused;
+      })
+      .sort((a, b) => compareParentActivityUrgency(a, b, now));
+  }, [takeHomeActivities, now]);
+
+  const hasUrgentActivity = useMemo(
+    () => takeHomeActivities.some((activity) => getParentActivityStatus(activity, now).urgency != null),
+    [takeHomeActivities, now]
+  );
+
+  if (openTakeHomeActivities.length === 0 || hasUrgentActivity) {
+    return null;
+  }
+
+  return (
+    <Button
+      type="button"
+      size="sm"
+      onClick={() => {
+        if (openTakeHomeActivities.length === 1) {
+          onUploadActivity(openTakeHomeActivities[0].id);
+        } else {
+          onOpenUploadDialog();
+        }
+      }}
+      className="h-11 sm:h-9 font-medium text-xs sm:text-sm gap-1.5 cursor-pointer touch-manipulation"
+    >
+      <Camera className="size-4" aria-hidden="true" />
+      <span>Send photo</span>
+    </Button>
+  );
+}
+
+function UrgentPracticeBanner({
+  takeHomeActivities,
+  onNavigateToWrite,
+  onUploadActivity,
+}: {
+  takeHomeActivities: TakeHomeActivity[];
+  onNavigateToWrite: () => void;
+  onUploadActivity: (activityId: string) => void;
+}) {
+  const now = useActivityNow();
+
+  const urgentActivities = useMemo(
+    () =>
+      takeHomeActivities
+        .filter((activity) => getParentActivityStatus(activity, now).urgency != null)
+        .sort((a, b) => compareParentActivityUrgency(a, b, now)),
+    [takeHomeActivities, now]
+  );
+  const urgentActivity = urgentActivities[0];
+  const urgentStatus = urgentActivity ? getParentActivityStatus(urgentActivity, now) : null;
+
+  if (!urgentActivity || !urgentStatus) {
+    return null;
+  }
+
+  return (
+    <div
+      role="region"
+      aria-label="Practice worksheet needing attention"
+      className={cn(
+        "rounded-xl px-4 py-3 text-foreground border transition-colors",
+        urgentStatus.urgency === "teacher_returned"
+          ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
+          : urgentStatus.urgency === "retake_needed"
+            ? "border-warning/40 bg-warning/10 dark:bg-warning/15"
+            : "border-band-2/40 bg-band-2/10 dark:bg-band-2/15"
+      )}
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0 flex-1 space-y-0.5">
+          <p className="text-sm font-semibold text-foreground truncate">
+            <span
+              className={cn(
+                "mr-1.5",
+                urgentStatus.urgency === "teacher_returned"
+                  ? "text-primary"
+                  : urgentStatus.urgency === "retake_needed"
+                    ? "text-warning-foreground"
+                    : "text-band-2-text"
+              )}
+            >
+              {urgentStatus.urgency === "teacher_returned"
+                ? "New photo requested:"
+                : urgentStatus.urgency === "retake_needed"
+                  ? "Clearer photo needed:"
+                  : urgentStatus.urgency === "overdue"
+                    ? "Past due:"
+                    : "Due soon:"}
+            </span>
+            {urgentActivity.title}
+          </p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+            {urgentActivity.dueAt && (
+              <span className="tabular-nums">
+                Due {formatActivityDueAt(urgentActivity.dueAt)}
+              </span>
+            )}
+            {urgentActivities.length > 1 && (
+              <button
+                type="button"
+                onClick={onNavigateToWrite}
+                className="text-brand-700 dark:text-brand-300 font-medium hover:underline cursor-pointer min-h-11 px-2 -my-2 touch-manipulation inline-flex items-center text-xs"
+              >
+                +{urgentActivities.length - 1} more
+              </button>
+            )}
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => onUploadActivity(urgentActivity.id)}
+          aria-haspopup="dialog"
+          aria-label={`Send ${urgentStatus.urgency === "teacher_returned" || urgentStatus.urgency === "retake_needed" ? "new " : ""}photo for ${urgentActivity.title}`}
+          className="h-11 sm:h-9 w-full sm:w-auto shrink-0 font-medium text-xs sm:text-sm gap-1.5 cursor-pointer touch-manipulation"
+        >
+          <Camera className="size-4" aria-hidden="true" />
+          <span>
+            {urgentStatus.urgency === "teacher_returned" || urgentStatus.urgency === "retake_needed"
+              ? "Send new photo"
+              : "Send photo"}
+          </span>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function PracticeTabCountBadge({ takeHomeActivities }: { takeHomeActivities: TakeHomeActivity[] }) {
+  const now = useActivityNow();
+  const count = useMemo(
+    () =>
+      takeHomeActivities.filter((a) => {
+        const status = getParentActivityStatus(a, now);
+        return status.canSend && !status.excused;
+      }).length,
+    [takeHomeActivities, now]
+  );
+
+  if (count === 0) return null;
+
+  return (
+    <span className="inline-flex items-center justify-center px-1.5 py-0 rounded-full text-xs font-bold tabular-nums bg-brand-100/90 dark:bg-brand-950/90 text-brand-800 dark:text-brand-200 border border-brand-200/70 dark:border-brand-800/70">
+      <span aria-hidden="true">{count}</span>
+      <span className="sr-only">
+        {`, ${count} to send`}
+      </span>
+    </span>
+  );
+}
 
 export function ProgressPageContent() {
   const searchParams = useSearchParams();
@@ -65,7 +262,6 @@ export function ProgressPageContent() {
     openUploadDialog,
     openCursiveGuide,
     openRubric,
-    showScoreDetails,
     userId,
     notificationTarget,
     dismissNotificationTarget,
@@ -102,38 +298,26 @@ export function ProgressPageContent() {
     [allHistory]
   );
   const { data: activities, isSuccess: practiceLoaded } = useTakeHomeActivities(selectedChildId);
-  const { data: latestScores, isSuccess: latestFeedbackLoaded } = useChildLatestScores(selectedChildId);
-
-  const now = useActivityNow();
-
-  const { practiceFocus } = useMemo(() => {
-    return computeStrengthAndFocus(latestScores?.scores, latestScores?.bands);
-  }, [latestScores]);
 
   const takeHomeActivities = useMemo(() => {
     if (!activities) return [];
     return activities.filter((a) => a.isTakeHome);
   }, [activities]);
 
-  const openTakeHomeActivities = useMemo(() => {
-    return takeHomeActivities
-      .filter((a) => {
-        const status = getParentActivityStatus(a, now);
-        return status.canSend && !status.excused;
-      })
-      .sort((a, b) => compareParentActivityUrgency(a, b, now));
-  }, [takeHomeActivities, now]);
-
-  const pendingActivitiesCount = openTakeHomeActivities.length;
-
-  const urgentActivities = useMemo(
-    () => takeHomeActivities
-      .filter((activity) => getParentActivityStatus(activity, now).urgency != null)
-      .sort((a, b) => compareParentActivityUrgency(a, b, now)),
-    [takeHomeActivities, now]
+  const hasPendingSubmission = Boolean(
+    allHistory?.some(
+      (row) =>
+        row.isActiveAttempt &&
+        (row.status === "processing" || (row.status === "completed" && !row.releasedAt))
+    )
   );
-  const urgentActivity = urgentActivities[0];
-  const urgentStatus = urgentActivity ? getParentActivityStatus(urgentActivity, now) : null;
+  const { data: latestScores, isSuccess: latestFeedbackLoaded } = useChildLatestScores(selectedChildId, {
+    hasPendingSubmission,
+  });
+
+  const { practiceFocus } = useMemo(() => {
+    return computeStrengthAndFocus(latestScores?.scores, latestScores?.bands);
+  }, [latestScores]);
   const notificationTargetData =
     notificationTarget.kind === "valid" &&
       selectedChildId === notificationTarget.target.childId
@@ -150,26 +334,13 @@ export function ProgressPageContent() {
       userId={userId}
       target={notificationTargetData}
       childName={selectedChild?.fullName ?? "Your child"}
-      showScoreDetails={showScoreDetails}
       onClose={dismissNotificationTarget}
       onUploadActivity={handleUploadActivity}
     />
   ) : null;
 
   if (childrenLoading) {
-    return (
-      <div
-        role="status"
-        aria-live="polite"
-        className="flex flex-col items-center justify-center min-h-[50vh] gap-3 px-4 py-6"
-      >
-        <Loader2
-          className="size-8 animate-spin text-brand-600 dark:text-brand-400"
-          aria-hidden="true"
-        />
-        <p className="text-sm text-muted-foreground">Loading child profile...</p>
-      </div>
-    );
+    return <ParentPortalPageSkeleton />;
   }
 
   if (childrenError && !selectedChild) {
@@ -208,13 +379,6 @@ export function ProgressPageContent() {
 
   const firstName = selectedChild.fullName.trim().split(/\s+/)[0] || selectedChild.fullName;
   const scoredCount = history?.length ?? 0;
-  const hasPendingSubmission = Boolean(
-    allHistory?.some(
-      (row) =>
-        row.isActiveAttempt &&
-        (row.status === "processing" || (row.status === "completed" && !row.releasedAt))
-    )
-  );
   const showExampleFeedback = latestFeedbackLoaded && latestScores === null;
   const requestedGrades = searchParams.getAll("tab").length === 1 && searchParams.get("tab") === "grades";
   const isResolvingInitialTab =
@@ -243,7 +407,6 @@ export function ProgressPageContent() {
             submissionId: inspectedGradeWork.submissionId,
           }}
           childName={selectedChild.fullName}
-          showScoreDetails={showScoreDetails}
           onClose={() => setInspectedGradeWork(null)}
           onUploadActivity={handleUploadActivity}
         />
@@ -270,36 +433,29 @@ export function ProgressPageContent() {
             >
               <TabsTrigger
                 value="overview"
-                className="h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-3 pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
+                className="min-h-11 sm:min-h-10 h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 py-3 sm:pt-3 sm:pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
               >
                 <span>Recent</span>
               </TabsTrigger>
 
               <TabsTrigger
                 value="to-write"
-                className="h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-3 pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
+                className="min-h-11 sm:min-h-10 h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 py-3 sm:pt-3 sm:pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
               >
                 <span>Practice</span>
-                {pendingActivitiesCount > 0 && (
-                  <span className="inline-flex items-center justify-center px-1.5 py-0 rounded-full text-xs font-bold tabular-nums bg-brand-100/90 dark:bg-brand-950/90 text-brand-800 dark:text-brand-200 border border-brand-200/70 dark:border-brand-800/70">
-                    <span aria-hidden="true">{pendingActivitiesCount}</span>
-                    <span className="sr-only">
-                      {`, ${pendingActivitiesCount} to send`}
-                    </span>
-                  </span>
-                )}
+                <PracticeTabCountBadge takeHomeActivities={takeHomeActivities} />
               </TabsTrigger>
 
               <TabsTrigger
                 value="progress"
-                className="h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-3 pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
+                className="min-h-11 sm:min-h-10 h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 py-3 sm:pt-3 sm:pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
               >
                 <span>Progress</span>
               </TabsTrigger>
 
               <TabsTrigger
                 value="grades"
-                className="h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-3 pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
+                className="min-h-11 sm:min-h-10 h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 py-3 sm:pt-3 sm:pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
               >
                 <span>Grades</span>
               </TabsTrigger>
@@ -321,23 +477,11 @@ export function ProgressPageContent() {
             </div>
 
             <div className="flex items-center gap-3 shrink-0">
-              {pendingActivitiesCount > 0 && !urgentActivity && (
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => {
-                    if (openTakeHomeActivities.length === 1) {
-                      handleUploadActivity(openTakeHomeActivities[0].id);
-                    } else {
-                      openUploadDialog();
-                    }
-                  }}
-                  className="h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] font-medium text-xs sm:text-sm gap-1.5 cursor-pointer touch-manipulation"
-                >
-                  <Camera className="size-4" aria-hidden="true" />
-                  <span>Send photo</span>
-                </Button>
-              )}
+              <ParentHeaderUploadAction
+                takeHomeActivities={takeHomeActivities}
+                onUploadActivity={handleUploadActivity}
+                onOpenUploadDialog={openUploadDialog}
+              />
             </div>
           </div>
 
@@ -361,90 +505,18 @@ export function ProgressPageContent() {
             />
           )}
 
-          {urgentActivity && urgentStatus && activeTab !== "to-write" && (
-            <div
-              role="region"
-              aria-label="Practice worksheet needing attention"
-              className={cn(
-                "rounded-xl px-4 py-3 text-foreground border transition-colors",
-                urgentStatus.urgency === "teacher_returned"
-                  ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
-                  : urgentStatus.urgency === "retake_needed"
-                    ? "border-warning/40 bg-warning/10 dark:bg-warning/15"
-                    : "border-band-2/40 bg-band-2/10 dark:bg-band-2/15"
-              )}
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="min-w-0 flex-1 space-y-0.5">
-                  <p className="text-sm font-semibold text-foreground truncate">
-                    <span
-                      className={cn(
-                        "mr-1.5",
-                        urgentStatus.urgency === "teacher_returned"
-                          ? "text-primary"
-                          : urgentStatus.urgency === "retake_needed"
-                            ? "text-warning-foreground"
-                            : "text-band-2-text"
-                      )}
-                    >
-                      {urgentStatus.urgency === "teacher_returned"
-                        ? "New photo requested:"
-                        : urgentStatus.urgency === "retake_needed"
-                          ? "Clearer photo needed:"
-                          : urgentStatus.urgency === "overdue"
-                            ? "Past due:"
-                            : "Due soon:"}
-                    </span>
-                    {urgentActivity.title}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-                    {urgentActivity.dueAt && (
-                      <span className="tabular-nums">
-                        Due {formatActivityDueAt(urgentActivity.dueAt)}
-                      </span>
-                    )}
-                    {urgentActivities.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={handleNavigateToWrite}
-                        className="text-brand-700 dark:text-brand-300 font-medium hover:underline cursor-pointer min-h-[40px] px-2 -my-2 touch-manipulation inline-flex items-center text-xs"
-                      >
-                        +{urgentActivities.length - 1} more
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => handleUploadActivity(urgentActivity.id)}
-                  aria-haspopup="dialog"
-                  aria-label={`Send ${urgentStatus.urgency === "teacher_returned" || urgentStatus.urgency === "retake_needed" ? "new " : ""}photo for ${urgentActivity.title}`}
-                  className="h-10 min-h-[40px] sm:h-9 sm:min-h-[36px] w-full sm:w-auto shrink-0 font-medium text-xs sm:text-sm gap-1.5 cursor-pointer touch-manipulation"
-                >
-                  <Camera className="size-4" aria-hidden="true" />
-                  <span>
-                    {urgentStatus.urgency === "teacher_returned" || urgentStatus.urgency === "retake_needed"
-                      ? "Send new photo"
-                      : "Send photo"}
-                  </span>
-                </Button>
-              </div>
-            </div>
+          {activeTab !== "to-write" && (
+            <UrgentPracticeBanner
+              takeHomeActivities={takeHomeActivities}
+              onNavigateToWrite={handleNavigateToWrite}
+              onUploadActivity={handleUploadActivity}
+            />
           )}
 
           {/* Tab 1: Overview (Coaching Hero + Latest Worksheet) */}
           <TabsContent value="overview" className="space-y-6">
           {isResolvingInitialTab ? (
-            <div
-              role="status"
-              aria-live="polite"
-              className="rounded-xl border border-border bg-card shadow-warm p-8 flex flex-col items-center justify-center min-h-[220px] gap-3"
-            >
-              <Loader2 className="size-6 animate-spin text-brand-600 dark:text-brand-400" aria-hidden="true" />
-              <span className="text-sm text-muted-foreground">Loading {firstName}&apos;s latest feedback...</span>
-            </div>
+            <LatestSubmissionSkeleton childFirstName={firstName} />
           ) : (
             <>
               {hasPendingSubmission && latestScores && (
@@ -467,7 +539,7 @@ export function ProgressPageContent() {
                     onClick={() => {
                       setSelectedTab("progress");
                     }}
-                    className="min-h-10 sm:min-h-9 text-xs font-medium shrink-0 cursor-pointer bg-card"
+                    className="h-11 sm:h-9 text-xs font-medium shrink-0 cursor-pointer bg-card"
                   >
                     View history
                   </Button>
@@ -479,7 +551,6 @@ export function ProgressPageContent() {
                 childId={selectedChildId}
                 childName={selectedChild.fullName}
                 history={history}
-                showScoreDetails={true}
                 onOpenRubric={openRubric}
                 onOpenCursiveGuide={openCursiveGuide}
                 hasPendingSubmission={hasPendingSubmission}
@@ -490,7 +561,6 @@ export function ProgressPageContent() {
                 <SampleReportPreview
                   onOpenRubric={openRubric}
                   defaultCollapsed={true}
-                  showScoreDetails={showScoreDetails}
                 />
               )}
             </>
@@ -529,7 +599,7 @@ export function ProgressPageContent() {
               onUploadClick={handleUploadActivity}
               showExpandButton={false}
               onViewScoredHistory={(target) => setInspectedGradeWork(target)}
-              gridClassName="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4"
+              gridClassName="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4"
               practiceFocusKey={practiceFocus?.key}
             />
           </section>
@@ -552,17 +622,7 @@ export function ProgressPageContent() {
             </div>
 
             {historyLoading ? (
-              <div
-                role="status"
-                aria-live="polite"
-                className="rounded-xl border border-border bg-card p-8 flex flex-col items-center justify-center min-h-[240px] gap-3"
-              >
-                <Loader2
-                  className="size-6 animate-spin text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <span className="text-sm text-muted-foreground">Loading progress chart...</span>
-              </div>
+              <ProgressTrendSkeleton />
             ) : history && history.length >= 2 ? (
               <div className="rounded-xl border border-border bg-card p-4 sm:p-6 min-w-0">
                 <CriterionTrendChart
@@ -579,7 +639,7 @@ export function ProgressPageContent() {
                     <h3 className="font-heading text-base font-semibold text-foreground">
                       1 of 2 worksheets checked
                     </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <p className="text-sm text-muted-foreground leading-relaxed font-sans tabular-nums">
                       &ldquo;{history[0].targetText}&rdquo; ({new Date(history[0].submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}) · Trend chart unlocks after the next worksheet.
                     </p>
                   </div>
@@ -631,7 +691,7 @@ export function ProgressPageContent() {
                     variant="outline"
                     size="sm"
                     onClick={handleNavigateToWrite}
-                    className="min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium cursor-pointer"
+                    className="h-11 sm:h-9 text-xs sm:text-sm font-medium cursor-pointer"
                   >
                     View practice worksheets
                   </Button>
@@ -640,13 +700,16 @@ export function ProgressPageContent() {
             )}
           </section>
 
-          {allHistory !== undefined && allHistory.length > 0 && (
-            <PastWorksheetsSection
-              history={allHistory}
-              childName={selectedChild.fullName}
-              showScoreDetails={showScoreDetails}
-              onUploadActivity={handleUploadActivity}
-            />
+          {historyLoading ? (
+            <PastWorksheetsSkeleton />
+          ) : (
+            allHistory !== undefined && allHistory.length > 0 && (
+              <PastWorksheetsSection
+                history={allHistory}
+                childName={selectedChild.fullName}
+                onUploadActivity={handleUploadActivity}
+              />
+            )
           )}
         </TabsContent>
 
@@ -658,7 +721,6 @@ export function ProgressPageContent() {
               userId={userId}
               childId={selectedChildId}
               childName={selectedChild.fullName}
-              showScoreDetails={showScoreDetails}
               highlightActivityId={gradeDestination ? notificationTargetData?.activityId : undefined}
               onDismissTarget={() => {
                 setSelectedTab("grades");

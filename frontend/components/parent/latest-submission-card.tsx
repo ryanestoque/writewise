@@ -1,15 +1,23 @@
 "use client";
 
-import { useState, useMemo, useCallback, type ReactNode } from "react";
+import { useState, useMemo, useCallback } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useChildLatestScores } from "@/lib/hooks/use-parent-data";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import { useUnreadCommentThreads } from "@/lib/hooks/use-comments";
 import type { StudentScoreHistoryItem } from "@/lib/hooks/use-dashboard";
+import { normalizeActivityPrompt } from "@/lib/utils/formatters";
 import { BandBadge } from "@/components/shared/band-badge";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
 import { QueryRecovery } from "@/components/shared/query-recovery";
-import { WorksheetViewDialog } from "./worksheet-view-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { LatestSubmissionSkeleton } from "@/components/parent/parent-portal-skeletons";
+
+const WorksheetViewDialog = dynamic(
+  () => import("./worksheet-view-dialog").then((m) => m.WorksheetViewDialog),
+  { ssr: false }
+);
 import {
   PARENT_CRITERIA_LIST,
   getBandFromScore,
@@ -22,40 +30,20 @@ import type { CriterionFilter } from "@/components/shared/diagnostic-overlay";
 import {
   FileText,
   Clock,
-  Loader2,
   ChevronRight,
   MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-/**
- * Normalizes erratic mid-word sponge-case (e.g. "pSychophySioLogiCaL") into readable
- * sentence-cased text while preserving intentional Title Case or acronyms.
- */
-function normalizeActivityPrompt(text: string): string {
-  const words = text.trim().split(/\s+/);
-  return words
-    .map((word, index) => {
-      const hasMidWordCaseFlip = /^[a-z][A-Za-z]*[A-Z]|[A-Z][a-z]+[A-Z]/.test(word);
-      if (!hasMidWordCaseFlip) return word;
-      const lower = word.toLowerCase();
-      return index === 0 ? lower.charAt(0).toUpperCase() + lower.slice(1) : lower;
-    })
-    .join(" ");
-}
-
 export interface LatestSubmissionCardProps {
   userId: string;
   childId: string | null;
   childName?: string;
-  scoreControls?: ReactNode;
   onOpenRubric?: () => void;
   onOpenCursiveGuide?: () => void;
   hasPendingSubmission?: boolean;
   hasNoAssignedPractice?: boolean;
   history?: StudentScoreHistoryItem[];
-  showScoreDetails?: boolean;
-  onToggleScoreDetails?: () => void;
   onNavigateToWrite?: () => void;
 }
 
@@ -64,8 +52,6 @@ export function LatestSubmissionCard({
   childId,
   childName = "Your child",
   history = [],
-  showScoreDetails = true,
-  onToggleScoreDetails,
   onNavigateToWrite,
   onOpenRubric,
   onOpenCursiveGuide,
@@ -73,12 +59,15 @@ export function LatestSubmissionCard({
   hasNoAssignedPractice = false,
 }: LatestSubmissionCardProps) {
   const [viewImageOpen, setViewImageOpen] = useState(false);
+  const [viewDialogMounted, setViewDialogMounted] = useState(false);
   const [initialDialogView, setInitialDialogView] = useState<"details" | "comments">("details");
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
   const [selectedCriterionForView, setSelectedCriterionForView] =
     useState<CriterionFilter>("all");
 
-  const { data: latest, isLoading, isError, isFetching, refetch } = useChildLatestScores(childId);
+  const { data: latest, isLoading, isError, isFetching, refetch } = useChildLatestScores(childId, {
+    hasPendingSubmission,
+  });
   const { data: imageUrl, isLoading: imageLoading } = useSubmissionImageUrl(latest?.imagePath ?? null);
   const unreadComments = useUnreadCommentThreads(userId, Boolean(latest?.submissionId));
   const hasUnreadComments = Boolean(
@@ -114,6 +103,7 @@ export function LatestSubmissionCard({
     (criterion: CriterionFilter = "all", view: "details" | "comments" = "details") => {
       setSelectedCriterionForView(criterion);
       setInitialDialogView(view);
+      setViewDialogMounted(true);
       setViewImageOpen(true);
     },
     []
@@ -126,21 +116,15 @@ export function LatestSubmissionCard({
     }
     const el = document.getElementById("assigned-take-home-section");
     if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
+      const prefersReduced =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      el.scrollIntoView({ behavior: prefersReduced ? "auto" : "smooth" });
     }
   }, [onNavigateToWrite]);
 
   if (isLoading) {
-    return (
-      <div
-        role="status"
-        aria-live="polite"
-        className="rounded-xl border border-border bg-card shadow-warm p-8 flex flex-col items-center justify-center min-h-[220px] gap-3"
-      >
-        <Loader2 className="size-6 animate-spin text-brand-600 dark:text-brand-400" aria-hidden="true" />
-        <span className="text-sm text-muted-foreground">Loading {firstName}&apos;s latest worksheet overview...</span>
-      </div>
-    );
+    return <LatestSubmissionSkeleton childFirstName={firstName} />;
   }
 
   if (!latest) {
@@ -186,7 +170,7 @@ export function LatestSubmissionCard({
             variant="outline"
             size="sm"
             onClick={() => emptyAction()}
-            className="min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm font-medium cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+            className="h-11 sm:h-9 text-xs sm:text-sm font-medium cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
           >
             {hasNoAssignedPractice ? "Open cursive guide" : "View practice worksheets"}
           </Button>
@@ -241,12 +225,25 @@ export function LatestSubmissionCard({
                 onError={() => setFailedImageUrl(imageUrl)}
               />
             </button>
+          ) : imageLoading && latest.imagePath ? (
+            <div
+              role="status"
+              aria-live="polite"
+              aria-label="Loading worksheet photo"
+              className="relative aspect-[4/3] w-full max-w-md overflow-hidden rounded-lg border border-border/70 bg-background p-4 shadow-warm-sm flex flex-col justify-center gap-3"
+            >
+              <span className="sr-only">Loading worksheet photo</span>
+              <Skeleton aria-hidden="true" className="h-3.5 w-2/3 rounded-md" />
+              <Skeleton aria-hidden="true" className="h-3.5 w-5/6 rounded-md" />
+              <Skeleton aria-hidden="true" className="h-3.5 w-3/4 rounded-md" />
+              <Skeleton aria-hidden="true" className="h-3.5 w-1/2 rounded-md" />
+            </div>
           ) : (
-            <span className="text-sm text-muted-foreground">
-              {imageLoading && latest.imagePath
-                ? "Loading worksheet photo..."
-                : "Worksheet preview unavailable"}
-            </span>
+            <div className="flex aspect-[4/3] w-full max-w-md items-center justify-center rounded-lg border border-dashed border-border/70 bg-background/70 px-4 text-center">
+              <span className="text-sm text-muted-foreground">
+                Worksheet preview unavailable
+              </span>
+            </div>
           )}
         </div>
 
@@ -293,7 +290,7 @@ export function LatestSubmissionCard({
               type="button"
               variant="default"
               size="sm"
-              className="w-full sm:w-auto min-h-10 sm:min-h-9 h-10 sm:h-9 px-4 text-xs sm:text-sm font-semibold cursor-pointer touch-manipulation shadow-warm-sm gap-2 justify-center"
+              className="w-full sm:w-auto h-11 sm:h-9 px-4 text-xs sm:text-sm font-semibold cursor-pointer touch-manipulation shadow-warm-sm gap-2 justify-center"
               onClick={() => openWorksheetForCriterion("all", "details")}
               aria-haspopup="dialog"
             >
@@ -303,7 +300,7 @@ export function LatestSubmissionCard({
               type="button"
               variant="outline"
               size="sm"
-              className="w-full sm:w-auto min-h-10 sm:min-h-9 h-10 sm:h-9 px-3 gap-2 text-xs sm:text-sm font-medium cursor-pointer touch-manipulation justify-center"
+              className="w-full sm:w-auto h-11 sm:h-9 px-3 gap-2 text-xs sm:text-sm font-medium cursor-pointer touch-manipulation justify-center"
               onClick={() => openWorksheetForCriterion("all", "comments")}
               aria-haspopup="dialog"
             >
@@ -326,7 +323,7 @@ export function LatestSubmissionCard({
             <Button
               type="button"
               variant="link"
-              className="px-0 min-h-10 sm:min-h-9 text-xs sm:text-sm text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+              className="px-0 min-h-11 sm:min-h-9 text-xs sm:text-sm text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
               onClick={onOpenRubric}
             >
               How scores work
@@ -373,28 +370,27 @@ export function LatestSubmissionCard({
         })}
       </section>
 
-      <WorksheetViewDialog
-        open={viewImageOpen}
-        onOpenChange={setViewImageOpen}
-        submissionId={latest.submissionId}
-        canDelete={latest.canDelete}
-        imagePath={latest.imagePath}
-        targetText={latest.activityText}
-        submissionDate={latest.submissionDate}
-        childName={childName}
-        compositeScore={latest.scores.composite}
-        scoreSource={latest.scoreSource}
-        initialCriterion={selectedCriterionForView}
-        initialView={initialDialogView}
-        initialShowScoreDetails={showScoreDetails}
-        showScoreDetails={showScoreDetails}
-        onToggleScoreDetails={onToggleScoreDetails}
-        scores={latest.scores}
-        bands={latest.bands}
-        guideLines={latest.guideLines}
-        overlay={latest.overlay}
-        onPracticeNow={showPracticeLink ? navigateToTakeHome : undefined}
-      />
+      {viewDialogMounted && (
+        <WorksheetViewDialog
+          open={viewImageOpen}
+          onOpenChange={setViewImageOpen}
+          submissionId={latest.submissionId}
+          canDelete={latest.canDelete}
+          imagePath={latest.imagePath}
+          targetText={latest.activityText}
+          submissionDate={latest.submissionDate}
+          childName={childName}
+          compositeScore={latest.scores.composite}
+          scoreSource={latest.scoreSource}
+          initialCriterion={selectedCriterionForView}
+          initialView={initialDialogView}
+          scores={latest.scores}
+          bands={latest.bands}
+          guideLines={latest.guideLines}
+          overlay={latest.overlay}
+          onPracticeNow={showPracticeLink ? navigateToTakeHome : undefined}
+        />
+      )}
     </>
   );
 }

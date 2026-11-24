@@ -20,7 +20,6 @@ interface CriterionFeedbackRowProps {
   highlightBadge?: "top_strength" | "practice_focus" | null;
   homePracticeTip?: string | null;
   isActive?: boolean;
-  showScoreDetails?: boolean;
 }
 
 export function CriterionFeedbackRow({
@@ -34,7 +33,6 @@ export function CriterionFeedbackRow({
   highlightBadge,
   homePracticeTip,
   isActive = false,
-  showScoreDetails = true,
 }: CriterionFeedbackRowProps) {
   const meta = PARENT_CRITERIA_METADATA[criterionKey];
   const displayLabel = label || meta?.label || criterionKey;
@@ -110,9 +108,9 @@ export function CriterionFeedbackRow({
             score={score}
             height="sm"
             showBandLabels={false}
-            showThresholds={showScoreDetails}
+            showThresholds={true}
             ariaValueText={
-              showScoreDetails && score != null
+              score != null
                 ? `${Math.round(score)}%`
                 : band
                   ? band.replace("_", " ")

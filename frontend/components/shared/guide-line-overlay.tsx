@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useInspectorContext } from "@/components/shared/worksheet-image-inspector";
 
 /**
  * Shape of the `guide_lines` object inside `raw_output` (CV_PIPELINE §4).
@@ -68,8 +69,9 @@ export function GuideLineOverlay({
   visible,
   lineBounds,
 }: GuideLineOverlayProps) {
+  const inspectorContext = useInspectorContext();
   const [prevImageUrl, setPrevImageUrl] = useState(imageUrl);
-  const [naturalSize, setNaturalSize] = useState<{
+  const [loadedSize, setNaturalSize] = useState<{
     width: number;
     height: number;
   } | null>(() => (imageUrl ? naturalSizeCache.get(imageUrl) ?? null : null));
@@ -79,9 +81,11 @@ export function GuideLineOverlay({
     setNaturalSize(imageUrl ? naturalSizeCache.get(imageUrl) ?? null : null);
   }
 
-  // Load the image's intrinsic dimensions so the SVG viewBox can mirror them.
+  const naturalSize = inspectorContext.naturalDimensions ?? loadedSize;
+
+  // Load the image's intrinsic dimensions only if not provided by WorksheetImageInspector.
   useEffect(() => {
-    if (!imageUrl || naturalSizeCache.has(imageUrl)) return;
+    if (!imageUrl || inspectorContext.naturalDimensions || naturalSizeCache.has(imageUrl)) return;
 
     let active = true;
     const img = new Image();
@@ -104,7 +108,7 @@ export function GuideLineOverlay({
       img.onload = null;
       img.onerror = null;
     };
-  }, [imageUrl]);
+  }, [imageUrl, inspectorContext.naturalDimensions]);
 
   // Nothing to render if hidden, no data, or image dimensions unknown
   if (!visible || !guideLines || !naturalSize) return null;

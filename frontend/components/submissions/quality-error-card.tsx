@@ -765,7 +765,7 @@ export function QualityErrorCard({
               aria-haspopup="dialog"
               aria-label="Enlarge captured worksheet photo to inspect quality"
               className={cn(
-                "relative w-20 h-24 sm:w-20 sm:h-26 rounded-lg overflow-hidden bg-muted shadow-2xs group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 text-left border transition-all",
+                "relative w-20 h-24 rounded-lg overflow-hidden bg-muted shadow-2xs group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 text-left border transition-all",
                 presentation.isQualityCheck
                   ? "border-warning/40 hover:border-warning/60 focus-visible:ring-warning"
                   : "border-destructive/30 hover:border-destructive/50 focus-visible:ring-destructive"
@@ -774,7 +774,7 @@ export function QualityErrorCard({
               {imageError ? (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-muted text-muted-foreground p-1 text-center">
                   <ImageOff className="size-4 mb-0.5" aria-hidden="true" />
-                  <span className="text-[10px] leading-tight font-medium">No preview</span>
+                  <span className="text-xs leading-tight font-medium">No preview</span>
                 </div>
               ) : (
                 /* eslint-disable-next-line @next/next/no-img-element */
@@ -786,7 +786,7 @@ export function QualityErrorCard({
                 />
               )}
               {/* Floating zoom indicator - non-obstructive corner pill */}
-              <div className="absolute bottom-1 right-1 bg-black/70 backdrop-blur-xs text-white text-[10px] font-medium py-0.5 px-1.5 rounded flex items-center gap-1 transition-all group-hover:bg-black/85 group-hover:scale-105 shadow-2xs">
+              <div className="absolute bottom-1 right-1 bg-foreground/85 backdrop-blur-xs text-background text-xs font-medium py-0.5 px-1.5 rounded flex items-center gap-1 transition-[background-color,transform] group-hover:bg-foreground group-hover:scale-105 shadow-2xs">
                 <Eye className="size-3 shrink-0" aria-hidden="true" />
                 <span>Zoom</span>
               </div>
@@ -820,7 +820,7 @@ export function QualityErrorCard({
             {presentation.badgeLabel && (
               <span
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium border",
+                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border",
                   presentation.isQualityCheck
                     ? "bg-warning/15 text-warning-foreground border-warning/30"
                     : "bg-destructive/15 text-destructive border-destructive/25"
@@ -955,7 +955,7 @@ export function QualityErrorCard({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
             {typeof error.details?.detected_text === "string" && (
               <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 space-y-1">
-                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
+                <span className="text-xs uppercase font-bold text-muted-foreground tracking-wider block">
                   Recognized Cursive Text
                 </span>
                 <p className="font-sans text-xs text-foreground font-medium italic break-words">
@@ -965,7 +965,7 @@ export function QualityErrorCard({
             )}
             {typeof error.details?.expected_text === "string" && (
               <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 space-y-1">
-                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
+                <span className="text-xs uppercase font-bold text-muted-foreground tracking-wider block">
                   Assigned Activity Prompt
                 </span>
                 <p className="font-sans text-xs text-foreground font-medium italic break-words">
@@ -1156,7 +1156,7 @@ export function QualityErrorCard({
                     onClick={handleResetZoom}
                     disabled={zoomScale === 1 && panOffset.x === 0 && panOffset.y === 0}
                     aria-label="Reset zoom to fit"
-                    className="h-11 sm:h-7 px-3 sm:px-2 text-xs sm:text-[11px] font-medium cursor-pointer text-muted-foreground hover:text-foreground"
+                    className="h-11 sm:h-7 px-3 sm:px-2 text-xs font-medium cursor-pointer text-muted-foreground hover:text-foreground"
                   >
                     <RotateCcw className="size-3.5 sm:size-3 mr-1" aria-hidden="true" />
                     Fit
@@ -1219,7 +1219,7 @@ export function QualityErrorCard({
 
               {/* Floating hint pill when zoomed */}
               {!imageError && (
-                <div className="absolute bottom-2 left-2 pointer-events-none bg-black/70 backdrop-blur-xs text-white text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
+                <div className="absolute bottom-2 left-2 pointer-events-none bg-black/70 backdrop-blur-xs text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
                   {zoomScale > 1 ? (
                     <span>Drag, swipe, or use Arrow keys to pan</span>
                   ) : (
@@ -1260,7 +1260,7 @@ export function QualityErrorCard({
                   <span>Retake Photo</span>
                   <kbd
                     aria-hidden="true"
-                    className="hidden sm:inline-block ml-1 px-1.5 py-0.2 rounded bg-primary-foreground/20 text-[10px] font-sans"
+                    className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded bg-primary-foreground/20 text-xs font-sans"
                   >
                     R
                   </kbd>

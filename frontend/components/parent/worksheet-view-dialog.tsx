@@ -35,6 +35,8 @@ import {
 } from "@/components/shared/diagnostic-overlay";
 import { CriterionFeedbackRow } from "./criterion-feedback-row";
 import { useSubmissionImageUrl, useDeleteSubmission } from "@/lib/hooks/use-submissions";
+import { useSubmissionDiagnostics } from "@/lib/hooks/use-parent-data";
+import { normalizeActivityPrompt } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
 import {
   PARENT_CRITERIA_LIST,
@@ -79,9 +81,6 @@ interface WorksheetViewDialogProps {
   scoreSource?: "manual" | "calibrated" | "none";
   initialCriterion?: CriterionFilter;
   initialView?: "details" | "comments";
-  initialShowScoreDetails?: boolean;
-  showScoreDetails?: boolean;
-  onToggleScoreDetails?: () => void;
   scores?: {
     letter_formation: number | null;
     size_consistency: number | null;
@@ -127,7 +126,6 @@ export function WorksheetViewDialog({
   const [showGuideLines, setShowGuideLines] = useState(false);
   const [criterionOverride, setCriterionOverride] = useState<CriterionFilter | null>(null);
   const [showOverlay, setShowOverlay] = useState(true);
-  const showScoreDetails = true;
   const [selectedAttentionItem, setSelectedAttentionItem] =
     useState<ActiveAnnotationHover | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -158,11 +156,18 @@ export function WorksheetViewDialog({
     onOpenChange(nextOpen);
   };
 
+  const shouldLoadDiagnostics =
+    open && Boolean(submissionId) && overlay === undefined && guideLines === undefined;
+  const { data: lazyDiagnostics } = useSubmissionDiagnostics(submissionId, shouldLoadDiagnostics);
+  const resolvedOverlay = overlay !== undefined ? overlay : lazyDiagnostics?.overlay ?? null;
+  const resolvedGuideLines =
+    guideLines !== undefined ? guideLines : lazyDiagnostics?.guideLines ?? null;
+
   const handleCriterionSelect = (criterionKey: CriterionKey) => {
     const key = criterionKey as CriterionFilter;
     setCriterionOverride(key);
-    if (overlay) {
-      const items = getAttentionItems(overlay, key);
+    if (resolvedOverlay) {
+      const items = getAttentionItems(resolvedOverlay, key);
       setSelectedAttentionItem(items.length > 0 ? items[0] : null);
     }
   };
@@ -177,10 +182,10 @@ export function WorksheetViewDialog({
 
   const activeAttentionItem = useMemo(() => {
     if (selectedAttentionItem) return selectedAttentionItem;
-    if (!overlay || activeCriterion === "all") return null;
-    const items = getAttentionItems(overlay, activeCriterion);
+    if (!resolvedOverlay || activeCriterion === "all") return null;
+    const items = getAttentionItems(resolvedOverlay, activeCriterion);
     return items.length > 0 ? items[0] : null;
-  }, [selectedAttentionItem, overlay, activeCriterion]);
+  }, [selectedAttentionItem, resolvedOverlay, activeCriterion]);
 
   const {
     data: imageUrl,
@@ -188,6 +193,8 @@ export function WorksheetViewDialog({
     isError: isImageError,
     refetch: refetchImage,
   } = useSubmissionImageUrl(imagePath);
+
+  const displayTargetText = targetText ? normalizeActivityPrompt(targetText) : "";
 
   const formattedDate = new Date(submissionDate).toLocaleDateString("en-US", {
     month: "short",
@@ -215,11 +222,11 @@ export function WorksheetViewDialog({
               </DialogTitle>
               <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
                 <span className="font-sans tabular-nums">{formattedDate}</span>
-                {targetText && (
+                {displayTargetText && (
                   <>
                     <span>&middot;</span>
-                    <span className="truncate max-w-xs sm:max-w-md" title={targetText}>
-                      Prompt: &ldquo;{targetText}&rdquo;
+                    <span className="truncate max-w-xs sm:max-w-md" title={displayTargetText}>
+                      Prompt: &ldquo;{displayTargetText}&rdquo;
                     </span>
                   </>
                 )}
@@ -285,11 +292,11 @@ export function WorksheetViewDialog({
                   keyboardScope="focused"
                   aspectRatioClass="max-h-[min(560px,calc(100dvh-14rem))] min-h-[200px]"
                   diagnosticToolbar={
-                    overlay ? (
-                      <div className="flex items-center justify-between gap-2 px-2 py-1 min-h-9 flex-wrap">
+                    resolvedOverlay ? (
+                      <div className="flex items-center justify-between gap-2 px-2 py-1 min-h-11 sm:min-h-9 flex-wrap">
                         <label
                           htmlFor="parent-toggle-writing-marks"
-                          className="inline-flex items-center gap-2 text-xs font-medium text-foreground cursor-pointer select-none min-h-9 sm:min-h-8 touch-manipulation"
+                          className="inline-flex items-center gap-2 text-xs font-medium text-foreground cursor-pointer select-none min-h-11 sm:min-h-8 touch-manipulation"
                         >
                           <Switch
                             id="parent-toggle-writing-marks"
@@ -308,7 +315,7 @@ export function WorksheetViewDialog({
                                 setCriterionOverride("all");
                                 setSelectedAttentionItem(null);
                               }}
-                              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-950 transition-colors cursor-pointer touch-manipulation min-h-8 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+                              className="inline-flex items-center gap-1 rounded-md px-2.5 sm:px-2 py-1 text-xs font-medium text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-950 transition-colors cursor-pointer touch-manipulation min-h-11 sm:min-h-8 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
                               title="Show all writing marks"
                             >
                               <span>
@@ -320,13 +327,13 @@ export function WorksheetViewDialog({
                             </button>
                           )}
 
-                          {Boolean(guideLines) && (
+                          {Boolean(resolvedGuideLines) && (
                             <button
                               type="button"
                               onClick={() => setShowGuideLines((prev) => !prev)}
                               aria-pressed={showGuideLines}
                               className={cn(
-                                "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors cursor-pointer touch-manipulation min-h-8 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
+                                "inline-flex items-center gap-1 rounded-md px-2.5 sm:px-2 py-1 text-xs font-medium transition-colors cursor-pointer touch-manipulation min-h-11 sm:min-h-8 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
                                 showGuideLines
                                   ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200"
                                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -342,7 +349,7 @@ export function WorksheetViewDialog({
                                 render={
                                   <button
                                     type="button"
-                                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer touch-manipulation min-h-8 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+                                    className="inline-flex items-center gap-1 rounded-md px-2.5 sm:px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer touch-manipulation min-h-11 sm:min-h-8 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
                                     aria-label="What the writing marks mean"
                                   />
                                 }
@@ -404,13 +411,13 @@ export function WorksheetViewDialog({
                             ? "Reviewed directly by your child's teacher."
                             : "Original worksheet photo."}
                         </span>
-                        {Boolean(guideLines) && (
+                        {Boolean(resolvedGuideLines) && (
                           <button
                             type="button"
                             onClick={() => setShowGuideLines((prev) => !prev)}
                             aria-pressed={showGuideLines}
                             className={cn(
-                              "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors cursor-pointer touch-manipulation min-h-8 shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
+                              "inline-flex items-center gap-1 rounded-md px-2.5 sm:px-2 py-1 text-xs font-medium transition-colors cursor-pointer touch-manipulation min-h-11 sm:min-h-8 shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
                               showGuideLines
                                 ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200"
                                 : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -423,9 +430,9 @@ export function WorksheetViewDialog({
                     )
                   }
                 >
-                  {overlay ? (
+                  {resolvedOverlay ? (
                     <DiagnosticOverlay
-                      overlay={overlay}
+                      overlay={resolvedOverlay}
                       imageUrl={imageUrl}
                       visible={showOverlay}
                       activeCriterion={activeCriterion}
@@ -436,7 +443,7 @@ export function WorksheetViewDialog({
                     />
                   ) : (
                     <GuideLineOverlay
-                      guideLines={guideLines ?? null}
+                      guideLines={resolvedGuideLines ?? null}
                       imageUrl={imageUrl}
                       visible={showGuideLines}
                     />
@@ -506,7 +513,6 @@ export function WorksheetViewDialog({
                             band={band}
                             highlightBadge={highlightBadge}
                             isActive={isRowActive}
-                            showScoreDetails={showScoreDetails}
                             showDiagnosticNote={isRowActive}
                             showPositionBar={false}
                             homePracticeTip={isRowActive ? homeTip : null}
@@ -540,7 +546,7 @@ export function WorksheetViewDialog({
                 onOpenChange(false);
                 onPracticeNow();
               }}
-              className="h-10 sm:h-9 min-h-10 sm:min-h-9 px-4 text-xs sm:text-sm font-semibold gap-1.5 cursor-pointer touch-manipulation shadow-warm-sm"
+              className="h-11 sm:h-9 px-4 text-xs sm:text-sm font-semibold gap-1.5 cursor-pointer touch-manipulation shadow-warm-sm"
             >
               <PenLine className="size-3.5" aria-hidden="true" />
               <span>Practice together</span>

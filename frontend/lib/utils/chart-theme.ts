@@ -18,8 +18,8 @@ export const CRITERION_CONFIG: readonly ChartCriterionConfig[] = [
   {
     key: "composite",
     label: "Overall Score",
-    lightColor: "#1b6b63", // Primary Brand Teal (brand-600)
-    darkColor: "#57b3a6",  // Vibrant Teal (brand-400)
+    lightColor: "var(--color-brand-600)",
+    darkColor: "var(--color-brand-400)",
     strokeWidth: 3,
     strokeDasharray: undefined,
   },
@@ -78,7 +78,7 @@ export const CHART_BAND_AREAS: readonly ChartBandAreaConfig[] = [
   {
     y1: 75,
     y2: 100,
-    fill: "#4a8b5c", // Band 4 — Excellent
+    fill: "var(--color-band-4)",
     lightOpacity: 0.12,
     darkOpacity: 0.18,
     label: "Excellent (75–100%)",
@@ -86,7 +86,7 @@ export const CHART_BAND_AREAS: readonly ChartBandAreaConfig[] = [
   {
     y1: 50,
     y2: 75,
-    fill: "#7c9b6e", // Band 3 — Satisfactory
+    fill: "var(--color-band-3)",
     lightOpacity: 0.12,
     darkOpacity: 0.18,
     label: "Satisfactory (50–74%)",
@@ -94,7 +94,7 @@ export const CHART_BAND_AREAS: readonly ChartBandAreaConfig[] = [
   {
     y1: 25,
     y2: 50,
-    fill: "#c9a227", // Band 2 — Developing
+    fill: "var(--color-band-2)",
     lightOpacity: 0.12,
     darkOpacity: 0.18,
     label: "Developing (25–49%)",
@@ -102,7 +102,7 @@ export const CHART_BAND_AREAS: readonly ChartBandAreaConfig[] = [
   {
     y1: 0,
     y2: 25,
-    fill: "#b6754a", // Band 1 — Needs Improvement
+    fill: "var(--color-band-1)",
     lightOpacity: 0.12,
     darkOpacity: 0.18,
     label: "Needs Improvement (0–24%)",
@@ -110,7 +110,7 @@ export const CHART_BAND_AREAS: readonly ChartBandAreaConfig[] = [
 ] as const;
 
 export const CHART_DOT_STROKE = {
-  light: "#ffffff",
-  dark: "#2a3330",
+  light: "var(--surface)",
+  dark: "var(--surface)",
 } as const;
 

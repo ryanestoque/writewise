@@ -55,7 +55,7 @@ const RULING_GUIDES = (
       x2="390"
       y2="50"
       stroke="currentColor"
-      className="text-primary/75 dark:text-primary-foreground/75"
+      className="text-primary/75"
       strokeWidth="1.2"
       strokeDasharray="4 3"
       strokeOpacity="0.85"
@@ -272,6 +272,22 @@ export function CursiveStrokeCanvas({
     }
   };
 
+  const caseModes: AnimationCaseMode[] = ["lower", "upper", "both"];
+
+  const handleCaseKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const idx = caseModes.indexOf(caseMode);
+    let next = -1;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (idx + 1) % caseModes.length;
+    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = (idx - 1 + caseModes.length) % caseModes.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = caseModes.length - 1;
+    if (next < 0) return;
+    e.preventDefault();
+    handleCaseModeChange(caseModes[next]);
+    const buttons = e.currentTarget.querySelectorAll<HTMLElement>('[role="radio"]');
+    buttons[next]?.focus();
+  };
+
   return (
     <div className={cn("w-full space-y-2.5", className)}>
       {/* Controls & Case Selector Header */}
@@ -280,12 +296,14 @@ export function CursiveStrokeCanvas({
         <div
           role="radiogroup"
           aria-label="Cursive letter case mode"
+          onKeyDown={handleCaseKeyDown}
           className="flex items-center p-0.5 rounded-lg border border-border/70 bg-muted/40"
         >
           <button
             type="button"
             role="radio"
             aria-checked={caseMode === "lower"}
+            tabIndex={caseMode === "lower" ? 0 : -1}
             onClick={() => handleCaseModeChange("lower")}
             className={cn(
               "px-2.5 py-1.5 sm:py-1 min-h-10 sm:min-h-0 font-medium rounded-md transition-all cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
@@ -300,6 +318,7 @@ export function CursiveStrokeCanvas({
             type="button"
             role="radio"
             aria-checked={caseMode === "upper"}
+            tabIndex={caseMode === "upper" ? 0 : -1}
             onClick={() => handleCaseModeChange("upper")}
             className={cn(
               "px-2.5 py-1.5 sm:py-1 min-h-10 sm:min-h-0 font-medium rounded-md transition-all cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
@@ -314,6 +333,7 @@ export function CursiveStrokeCanvas({
             type="button"
             role="radio"
             aria-checked={caseMode === "both"}
+            tabIndex={caseMode === "both" ? 0 : -1}
             onClick={() => handleCaseModeChange("both")}
             className={cn(
               "px-2.5 py-1.5 sm:py-1 min-h-10 sm:min-h-0 font-medium rounded-md transition-all cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
@@ -421,7 +441,7 @@ export function CursiveStrokeCanvas({
                 strokeWidth="2.6"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-primary dark:text-primary-foreground"
+                className="text-primary"
               />
             ))}
 
@@ -438,13 +458,13 @@ export function CursiveStrokeCanvas({
                   strokeWidth="2.6"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className={isCompleted ? "text-primary dark:text-primary-foreground" : "text-primary"}
+                  className="text-primary"
                 />
                 <g ref={penRef}>
                   {isCompleted ? (
                     <circle
                       r="2.5"
-                      className="fill-primary dark:fill-primary-foreground stroke-background stroke-[1.2]"
+                      className="fill-primary stroke-background stroke-[1.2]"
                     />
                   ) : (
                     <>

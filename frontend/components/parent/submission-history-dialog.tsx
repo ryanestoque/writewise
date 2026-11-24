@@ -2,12 +2,18 @@
 
 import { humanizeReason } from "@/lib/utils/humanize-reason";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useId } from "react";
+import dynamic from "next/dynamic";
+import { normalizeActivityPrompt } from "@/lib/utils/formatters";
 import { Button } from "@/components/ui/button";
 import { BandBadge } from "@/components/shared/band-badge";
-import { WorksheetViewDialog } from "./worksheet-view-dialog";
 import { PendingWorksheetDialog } from "./pending-worksheet-dialog";
 import { Badge } from "@/components/ui/badge";
+
+const WorksheetViewDialog = dynamic(
+  () => import("./worksheet-view-dialog").then((m) => m.WorksheetViewDialog),
+  { ssr: false }
+);
 import type { StudentScoreHistoryItem } from "@/lib/hooks/use-dashboard";
 import type { CriterionFilter } from "@/components/shared/diagnostic-overlay";
 import { cn } from "@/lib/utils";
@@ -83,15 +89,17 @@ function HistoryItemRow({
             ? "Scored"
             : "Turned in";
 
+  const displayTargetText = normalizeActivityPrompt(item.targetText);
+
   return (
     <div className="px-4 py-4 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-muted/25 transition-colors">
       <div className="space-y-1 min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <h3
             className="text-sm sm:text-base font-sans font-semibold text-foreground truncate"
-            title={item.targetText}
+            title={displayTargetText}
           >
-            &ldquo;{item.targetText}&rdquo;
+            &ldquo;{displayTargetText}&rdquo;
           </h3>
 
           {item.delta != null && (
@@ -144,8 +152,8 @@ function HistoryItemRow({
             size="sm"
             onClick={() => onOpenWorksheetView(item)}
             aria-haspopup="dialog"
-            aria-label={`See worksheet photo and guide lines for "${item.targetText}"`}
-            className="h-10 min-h-10 sm:h-9 sm:min-h-9 text-xs font-medium cursor-pointer"
+            aria-label={`See worksheet photo and guide lines for "${displayTargetText}"`}
+            className="h-11 sm:h-9 text-xs font-medium cursor-pointer"
           >
             View
           </Button>
@@ -158,18 +166,15 @@ function HistoryItemRow({
 interface PastWorksheetsSectionProps {
   history: StudentScoreHistoryItem[];
   childName: string;
-  showScoreDetails: boolean;
-  onToggleScoreDetails?: () => void;
   onUploadActivity?: (activityId: string) => void;
 }
 
 export function PastWorksheetsSection({
   history,
   childName,
-  showScoreDetails,
-  onToggleScoreDetails,
   onUploadActivity,
 }: PastWorksheetsSectionProps) {
+  const headingId = useId();
   const [showAllInline, setShowAllInline] = useState(false);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [selectedItemForView, setSelectedItemForView] =
@@ -182,8 +187,11 @@ export function PastWorksheetsSection({
   useEffect(() => {
     if (isCollapsingRef.current && !showAllInline) {
       isCollapsingRef.current = false;
+      const prefersReduced =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       toggleContainerRef.current?.scrollIntoView({
-        behavior: "smooth",
+        behavior: prefersReduced ? "auto" : "smooth",
         block: "end",
       });
     }
@@ -220,11 +228,11 @@ export function PastWorksheetsSection({
   };
 
   return (
-    <section aria-labelledby="past-worksheets-heading" className="space-y-3">
+    <section aria-labelledby={headingId} className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-baseline gap-2">
           <h2
-            id="past-worksheets-heading"
+            id={headingId}
             className="font-heading text-base sm:text-lg font-semibold text-foreground"
           >
             Past worksheets
@@ -238,7 +246,7 @@ export function PastWorksheetsSection({
           <button
             type="button"
             onClick={() => setSortOrder((prev) => (prev === "newest" ? "oldest" : "newest"))}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-10 sm:min-h-9 rounded-lg bg-card border border-border/80 hover:bg-muted/50 text-xs font-medium text-foreground transition-colors cursor-pointer touch-manipulation"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-11 sm:min-h-9 rounded-lg bg-card border border-border/80 hover:bg-muted/50 text-xs font-medium text-foreground transition-colors cursor-pointer touch-manipulation"
           >
             <ArrowUpDown className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
             <span>{sortOrder === "newest" ? "Newest first" : "Oldest first"}</span>
@@ -263,7 +271,7 @@ export function PastWorksheetsSection({
             variant="outline"
             size="sm"
             onClick={handleToggleExpand}
-            className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-4 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
+            className="h-11 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
           >
             {showAllInline ? (
               <>
@@ -300,9 +308,6 @@ export function PastWorksheetsSection({
             }
           }}
           initialCriterion={initialCriterionForView}
-          initialShowScoreDetails={showScoreDetails}
-          showScoreDetails={showScoreDetails}
-          onToggleScoreDetails={onToggleScoreDetails}
           submissionId={selectedItemForView.submissionId}
           canDelete={selectedItemForView.canDelete}
           imagePath={selectedItemForView.imagePath ?? null}

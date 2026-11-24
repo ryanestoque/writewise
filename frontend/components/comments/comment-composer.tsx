@@ -61,7 +61,12 @@ export function CommentComposer({
           >
             {count}/1000 characters
           </FieldDescription>
-          <Button type="submit" size="sm" disabled={disabled || pending || busy || !valid}>
+          <Button
+            type="submit"
+            size="sm"
+            className="h-11 sm:h-9 px-4 cursor-pointer touch-manipulation"
+            disabled={disabled || pending || busy || !valid}
+          >
             {pending || busy ? "Sending…" : "Send comment"}
           </Button>
         </div>

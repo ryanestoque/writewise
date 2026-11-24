@@ -115,10 +115,18 @@ export function CursiveGuideDialog({
     return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [open, isMobile, mobileView, handleBackToGrid]);
 
-  // Global hotkey '/' inside modal to focus search
+  // Global hotkey '/' inside modal to focus search (guarded per WCAG 2.1.4)
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.isContentEditable)
+      ) {
+        return;
+      }
       if (e.key === "/" && document.activeElement !== searchInputRef.current) {
         e.preventDefault();
         searchInputRef.current?.focus();
@@ -216,6 +224,25 @@ export function CursiveGuideDialog({
     searchInputRef.current?.focus();
   };
 
+  function handleRadioGroupKeyDown<T extends string>(
+    e: React.KeyboardEvent<HTMLDivElement>,
+    options: readonly T[],
+    current: T,
+    onSelect: (value: T) => void
+  ) {
+    const idx = options.indexOf(current);
+    let next = -1;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (idx + 1) % options.length;
+    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = (idx - 1 + options.length) % options.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = options.length - 1;
+    if (next < 0) return;
+    e.preventDefault();
+    onSelect(options[next]);
+    const buttons = e.currentTarget.querySelectorAll<HTMLElement>('[role="radio"]');
+    buttons[next]?.focus();
+  }
+
   const handleGridKeyDown = (e: React.KeyboardEvent) => {
     if (!["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
     e.preventDefault();
@@ -284,12 +311,16 @@ export function CursiveGuideDialog({
             <div
               role="radiogroup"
               aria-label="Formation step case"
+              onKeyDown={(e) =>
+                handleRadioGroupKeyDown(e, ["lower", "upper"] as const, activeStepTab, setActiveStepTab)
+              }
               className="inline-flex items-center p-0.5 rounded-md border border-border/70 bg-background text-xs"
             >
               <button
                 type="button"
                 role="radio"
                 aria-checked={activeStepTab === "lower"}
+                tabIndex={activeStepTab === "lower" ? 0 : -1}
                 onClick={() => setActiveStepTab("lower")}
                 className={cn(
                   "min-h-[40px] sm:min-h-[28px] px-2.5 py-1 inline-flex items-center justify-center rounded font-medium transition-all cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40",
@@ -304,6 +335,7 @@ export function CursiveGuideDialog({
                 type="button"
                 role="radio"
                 aria-checked={activeStepTab === "upper"}
+                tabIndex={activeStepTab === "upper" ? 0 : -1}
                 onClick={() => setActiveStepTab("upper")}
                 className={cn(
                   "min-h-[40px] sm:min-h-[28px] px-2.5 py-1 inline-flex items-center justify-center rounded font-medium transition-all cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40",
@@ -334,7 +366,7 @@ export function CursiveGuideDialog({
         {/* Coaching Tip & Common Pitfall (Design token styling) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="p-3 rounded-xl border border-primary/25 bg-primary/5 dark:bg-primary/10 space-y-1">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-primary dark:text-primary-foreground">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
               <CheckCircle2Icon className="size-3.5 shrink-0" aria-hidden="true" />
               <span>Coaching Tip</span>
             </div>
@@ -418,7 +450,7 @@ export function CursiveGuideDialog({
                   aria-label="Previous letter"
                   title="Previous letter"
                 >
-                  <ChevronLeftIcon className="size-4.5" aria-hidden="true" />
+                  <ChevronLeftIcon className="size-4" aria-hidden="true" />
                 </button>
                 <button
                   type="button"
@@ -433,7 +465,7 @@ export function CursiveGuideDialog({
                   aria-label="Next letter"
                   title="Next letter"
                 >
-                  <ChevronRightIcon className="size-4.5" aria-hidden="true" />
+                  <ChevronRightIcon className="size-4" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -499,12 +531,16 @@ export function CursiveGuideDialog({
                 <div
                   role="radiogroup"
                   aria-label="Filter letter case"
+                  onKeyDown={(e) =>
+                    handleRadioGroupKeyDown(e, ["pairs", "upper", "lower"] as const, caseFilter, setCaseFilter)
+                  }
                   className="hidden sm:inline-flex items-center p-0.5 rounded-lg border border-border/70 bg-muted/40 shrink-0"
                 >
                   <button
                     type="button"
                     role="radio"
                     aria-checked={caseFilter === "pairs"}
+                    tabIndex={caseFilter === "pairs" ? 0 : -1}
                     onClick={() => setCaseFilter("pairs")}
                     className={cn(
                       "px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
@@ -519,6 +555,7 @@ export function CursiveGuideDialog({
                     type="button"
                     role="radio"
                     aria-checked={caseFilter === "upper"}
+                    tabIndex={caseFilter === "upper" ? 0 : -1}
                     onClick={() => setCaseFilter("upper")}
                     className={cn(
                       "px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
@@ -533,6 +570,7 @@ export function CursiveGuideDialog({
                     type="button"
                     role="radio"
                     aria-checked={caseFilter === "lower"}
+                    tabIndex={caseFilter === "lower" ? 0 : -1}
                     onClick={() => setCaseFilter("lower")}
                     className={cn(
                       "px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
@@ -597,12 +635,16 @@ export function CursiveGuideDialog({
                 <div
                   role="radiogroup"
                   aria-label="Filter letter case"
+                  onKeyDown={(e) =>
+                    handleRadioGroupKeyDown(e, ["pairs", "upper", "lower"] as const, caseFilter, setCaseFilter)
+                  }
                   className="sm:hidden flex items-center p-0.5 rounded-lg border border-border/70 bg-muted/40 shrink-0 self-start w-full animate-in fade-in slide-in-from-top-1"
                 >
                   <button
                     type="button"
                     role="radio"
                     aria-checked={caseFilter === "pairs"}
+                    tabIndex={caseFilter === "pairs" ? 0 : -1}
                     onClick={() => setCaseFilter("pairs")}
                     className={cn(
                       "flex-1 px-2.5 py-2 min-h-10 text-xs font-medium rounded-md transition-all cursor-pointer text-center flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
@@ -617,6 +659,7 @@ export function CursiveGuideDialog({
                     type="button"
                     role="radio"
                     aria-checked={caseFilter === "upper"}
+                    tabIndex={caseFilter === "upper" ? 0 : -1}
                     onClick={() => setCaseFilter("upper")}
                     className={cn(
                       "flex-1 px-2.5 py-2 min-h-10 text-xs font-medium rounded-md transition-all cursor-pointer text-center flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
@@ -631,6 +674,7 @@ export function CursiveGuideDialog({
                     type="button"
                     role="radio"
                     aria-checked={caseFilter === "lower"}
+                    tabIndex={caseFilter === "lower" ? 0 : -1}
                     onClick={() => setCaseFilter("lower")}
                     className={cn(
                       "flex-1 px-2.5 py-2 min-h-10 text-xs font-medium rounded-md transition-all cursor-pointer text-center flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
@@ -648,6 +692,14 @@ export function CursiveGuideDialog({
               <div
                 role="radiogroup"
                 aria-label="Filter by letter category"
+                onKeyDown={(e) =>
+                  handleRadioGroupKeyDown(
+                    e,
+                    ["all", "ascender", "midline", "descender", "highJoiner"] as const,
+                    zoneFilter,
+                    setZoneFilter
+                  )
+                }
                 className={cn(
                   "flex items-center gap-1.5 text-xs pt-0.5 overflow-x-auto pb-1 sm:pb-0 sm:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
                   !isFiltersOpen && "hidden sm:flex"
@@ -667,6 +719,7 @@ export function CursiveGuideDialog({
                       type="button"
                       role="radio"
                       aria-checked={isActive}
+                      tabIndex={isActive ? 0 : -1}
                       title={chip.description}
                       onClick={() => setZoneFilter(chip.id as typeof zoneFilter)}
                       className={cn(

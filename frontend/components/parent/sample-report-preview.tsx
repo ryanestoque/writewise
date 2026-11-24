@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { BandBadge } from "@/components/shared/band-badge";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
 import { Button } from "@/components/ui/button";
@@ -21,8 +21,6 @@ import { cn } from "@/lib/utils";
 interface SampleReportPreviewProps {
   onOpenRubric: () => void;
   defaultCollapsed?: boolean;
-  showScoreDetails?: boolean;
-  onToggleScoreDetails?: () => void;
 }
 
 const SAMPLE_CRITERION_DATA: Record<
@@ -68,6 +66,8 @@ export function SampleReportPreview({
   onOpenRubric,
   defaultCollapsed = true,
 }: SampleReportPreviewProps) {
+  const baseId = useId();
+  const tabRefs = useRef<Partial<Record<CriterionKey, HTMLButtonElement | null>>>({});
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
   const [activeCriterion, setActiveCriterion] =
@@ -82,7 +82,7 @@ export function SampleReportPreview({
 
   return (
     <section
-      aria-labelledby="sample-report-heading"
+      aria-labelledby={`${baseId}-heading`}
       className="rounded-xl border border-border bg-card shadow-warm overflow-hidden"
     >
       {/* Header bar */}
@@ -90,7 +90,7 @@ export function SampleReportPreview({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-0.5">
             <h2
-              id="sample-report-heading"
+              id={`${baseId}-heading`}
               className="font-heading text-base sm:text-lg font-semibold text-foreground"
             >
               Example feedback
@@ -143,7 +143,7 @@ export function SampleReportPreview({
               if (next < 0) return;
               e.preventDefault();
               setActiveCriterion(keys[next]);
-              document.getElementById(`tab-${keys[next]}`)?.focus();
+              tabRefs.current[keys[next]]?.focus();
             }}
           >
             {PARENT_CRITERIA_LIST.map((criterion) => {
@@ -152,18 +152,21 @@ export function SampleReportPreview({
 
               return (
                 <button
+                  ref={(el) => {
+                    tabRefs.current[criterion.key] = el;
+                  }}
                   key={criterion.key}
                   role="tab"
                   type="button"
                   aria-selected={isSelected}
                   tabIndex={isSelected ? 0 : -1}
-                  aria-controls="sample-diagnostic-details"
-                  id={`tab-${criterion.key}`}
+                  aria-controls={`${baseId}-panel`}
+                  id={`${baseId}-tab-${criterion.key}`}
                   onClick={() => setActiveCriterion(criterion.key)}
                   className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors cursor-pointer border select-none min-h-[40px] sm:min-h-[36px] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
+                    "inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors cursor-pointer border select-none min-h-11 sm:min-h-9 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
                     isSelected
-                      ? "bg-brand-600 text-white border-brand-600 dark:bg-brand-500 dark:border-brand-500 font-semibold"
+                      ? "bg-primary text-primary-foreground border-primary font-semibold"
                       : "bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60 border-border/80"
                   )}
                 >
@@ -171,7 +174,7 @@ export function SampleReportPreview({
                   <span
                     className={cn(
                       "font-sans tabular-nums text-xs font-semibold",
-                      isSelected ? "text-white/90" : "text-muted-foreground"
+                      isSelected ? "text-primary-foreground/90" : "text-muted-foreground"
                     )}
                   >
                     {data.score}%
@@ -244,8 +247,8 @@ export function SampleReportPreview({
                     <circle cx="340" cy="135" r="3.5" fill="var(--color-band-4)" stroke="var(--surface)" strokeWidth="1.5" />
                     <circle cx="445" cy="135" r="3.5" fill="var(--color-band-4)" stroke="var(--surface)" strokeWidth="1.5" />
 
-                    <rect x="355" y="145" width="135" height="18" rx="4" fill="var(--color-band-4)" opacity="0.92" />
-                    <text x="422" y="157" fill="var(--surface)" fontSize="9" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
+                    <rect x="355" y="145" width="135" height="18" rx="4" fill="var(--surface)" stroke="var(--color-band-4)" strokeWidth="1" />
+                    <text x="422" y="157" fill="var(--band-4-text)" fontSize="9" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
                       Rests on Bottom Line
                     </text>
                   </g>
@@ -278,8 +281,8 @@ export function SampleReportPreview({
                     <circle cx="95" cy="55" r="9" fill="none" stroke="var(--color-band-2)" strokeWidth="2" strokeDasharray="3 2" />
                     <circle cx="215" cy="110" r="10" fill="none" stroke="var(--color-band-2)" strokeWidth="2" strokeDasharray="3 2" />
                     <circle cx="345" cy="110" r="10" fill="none" stroke="var(--color-band-2)" strokeWidth="2" strokeDasharray="3 2" />
-                    <rect x="235" y="15" width="105" height="18" rx="4" fill="var(--color-band-1)" opacity="0.92" />
-                    <text x="287" y="27" fill="var(--surface)" fontSize="9" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
+                    <rect x="235" y="15" width="105" height="18" rx="4" fill="var(--surface)" stroke="var(--color-band-1)" strokeWidth="1" />
+                    <text x="287" y="27" fill="var(--band-1-text)" fontSize="9" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
                       Clean Loops &amp; Joins
                     </text>
                   </g>
@@ -316,7 +319,9 @@ export function SampleReportPreview({
 
           {/* Right Column: Example Feedback & Home Tip (flat, border-divided — no nested cards) */}
           <div
-            id="sample-diagnostic-details"
+            id={`${baseId}-panel`}
+            role="tabpanel"
+            aria-labelledby={`${baseId}-tab-${activeCriterion}`}
             className="lg:col-span-5 space-y-5"
           >
             {/* Overall Summary */}

@@ -156,7 +156,7 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
       variant="ghost"
       size="icon"
       aria-label={label}
-      className="relative size-10 min-h-[44px] min-w-[44px] shrink-0 md:size-9 md:min-h-0 md:min-w-0"
+      className="relative size-11 shrink-0 md:size-9"
       disabled={!active}
     >
       <Bell aria-hidden="true" />
@@ -213,7 +213,7 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 min-h-[44px] px-2.5 sm:px-3 text-xs text-muted-foreground hover:text-foreground active:bg-muted touch-manipulation cursor-pointer shrink-0"
+                className="h-11 px-2.5 sm:px-3 text-xs text-muted-foreground hover:text-foreground active:bg-muted touch-manipulation cursor-pointer shrink-0"
                 disabled={readAll.isPending}
                 onClick={handleMarkAllRead}
               >

@@ -29,6 +29,7 @@ export interface InspectorContextValue {
   zoomScale: number;
   panOffset: { x: number; y: number };
   isHighContrast: boolean;
+  naturalDimensions?: { width: number; height: number } | null;
   centerPoint?: (point: { x: number; y: number; imageWidth: number; imageHeight: number }) => void;
   viewportRef?: React.RefObject<HTMLDivElement | null>;
 }
@@ -152,25 +153,19 @@ export function WorksheetImageInspector({
     setNaturalDimensions(null);
   }
 
-  // Track natural image dimensions to dynamically eliminate letterbox/pillarbox empty space
+  // Track natural image dimensions from the rendered <img> without a duplicate Image() probe
+  const mainImgRef = useRef<HTMLImageElement>(null);
+
   useEffect(() => {
-    if (!imageUrl || imageDimensions) return;
-
-    let active = true;
-    const img = new Image();
-    img.onload = () => {
-      if (active && img.naturalWidth > 0 && img.naturalHeight > 0) {
-        setNaturalDimensions({ width: img.naturalWidth, height: img.naturalHeight });
-      }
-    };
-    img.onerror = () => {
-      if (active) setNaturalDimensions(null);
-    };
-    img.src = imageUrl;
-
-    return () => {
-      active = false;
-    };
+    const img = mainImgRef.current;
+    if (!imageUrl || imageDimensions || !img) return;
+    if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+      setNaturalDimensions((prev) =>
+        prev?.width === img.naturalWidth && prev?.height === img.naturalHeight
+          ? prev
+          : { width: img.naturalWidth, height: img.naturalHeight }
+      );
+    }
   }, [imageUrl, imageDimensions]);
 
   const imgRatio = naturalDimensions
@@ -308,10 +303,11 @@ export function WorksheetImageInspector({
       zoomScale,
       panOffset,
       isHighContrast,
+      naturalDimensions,
       centerPoint,
       viewportRef: imageContainerRef,
     }),
-    [zoomScale, panOffset, isHighContrast, centerPoint]
+    [zoomScale, panOffset, isHighContrast, naturalDimensions, centerPoint]
   );
 
   // Keyboard shortcuts (global while inspector mounted or inside focused container)
@@ -870,7 +866,7 @@ export function WorksheetImageInspector({
         }}
         style={dynamicAspectStyle}
         className={cn(
-          "relative w-full mx-auto rounded-xl sm:rounded-2xl border border-border/80 bg-muted/30 dark:bg-muted/20 overflow-hidden transition-[aspect-ratio,max-width,max-height] duration-200 flex items-center justify-center select-none",
+          "relative w-full mx-auto rounded-xl sm:rounded-2xl border border-border/80 bg-muted/30 dark:bg-muted/20 overflow-hidden flex items-center justify-center select-none",
           !flatFrame && "shadow-warm",
           isLoupeActive || zoomScale > 1 ? "touch-none" : "touch-pan-y",
           "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
@@ -900,6 +896,7 @@ export function WorksheetImageInspector({
             <div className="relative size-full min-w-0 min-h-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
+                ref={mainImgRef}
                 src={imageUrl}
                 width={imageDimensions?.width}
                 height={imageDimensions?.height}

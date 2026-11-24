@@ -251,13 +251,19 @@
 
   /* Disable disorienting translational movement and large keyframe shifts */
   .animate-in,
+  .animate-out,
   .slide-in-from-top-1,
   .slide-in-from-bottom-1,
   .slide-in-from-left-1,
   .slide-in-from-right-1,
   [data-state="open"],
-  [data-state="closed"] {
+  [data-state="closed"],
+  [data-open],
+  [data-closed],
+  [data-starting-style],
+  [data-ending-style] {
     animation-duration: 150ms !important;
+    transition-duration: 150ms !important;
     transform: none !important;
   }
 

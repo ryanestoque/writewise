@@ -90,7 +90,7 @@ export function BandPositionBar({
               "text-left sm:text-center",
               activeBand === "needs_improvement"
                 ? "font-semibold text-band-1-text"
-                : "font-medium text-muted-foreground/80"
+                : "font-medium text-muted-foreground"
             )}
           >
             <span className="sm:hidden">Needs Imp.</span>
@@ -101,7 +101,7 @@ export function BandPositionBar({
               "text-center",
               activeBand === "developing"
                 ? "font-semibold text-band-2-text"
-                : "font-medium text-muted-foreground/80"
+                : "font-medium text-muted-foreground"
             )}
           >
             Developing
@@ -111,7 +111,7 @@ export function BandPositionBar({
               "text-center",
               activeBand === "satisfactory"
                 ? "font-semibold text-band-3-text"
-                : "font-medium text-muted-foreground/80"
+                : "font-medium text-muted-foreground"
             )}
           >
             Satisfactory
@@ -121,7 +121,7 @@ export function BandPositionBar({
               "text-right sm:text-center",
               activeBand === "excellent"
                 ? "font-semibold text-band-4-text"
-                : "font-medium text-muted-foreground/80"
+                : "font-medium text-muted-foreground"
             )}
           >
             Excellent
@@ -132,7 +132,7 @@ export function BandPositionBar({
       {showThresholds && (
         <div
           aria-hidden="true"
-          className="flex items-center justify-between text-xs text-muted-foreground/80 font-sans tabular-nums select-none"
+          className="flex items-center justify-between text-xs text-muted-foreground font-sans tabular-nums select-none"
         >
           <span>0%</span>
           <span title="Developing (25%)">25%</span>

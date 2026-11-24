@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useSyncExternalStore } from "react";
+import { useState, useMemo, useEffect, useId, useRef, useSyncExternalStore } from "react";
 
 const emptySubscribe = () => () => {};
 
@@ -140,6 +140,13 @@ export function CriterionTrendChart({
   const showScoreDetails =
     controlledShowDetails !== undefined ? controlledShowDetails : true;
 
+  const viewTabsId = useId();
+  const chartTabId = `${viewTabsId}-tab-chart`;
+  const tableTabId = `${viewTabsId}-tab-table`;
+  const chartPanelId = `${viewTabsId}-panel-chart`;
+  const tablePanelId = `${viewTabsId}-panel-table`;
+  const chartTabRef = useRef<HTMLButtonElement>(null);
+  const tableTabRef = useRef<HTMLButtonElement>(null);
   const [viewMode, setViewMode] = useState<"chart" | "table">("chart");
   const [isDark, setIsDark] = useState(false);
   const [showEachSkill, setShowEachSkill] = useState(false);
@@ -161,20 +168,13 @@ export function CriterionTrendChart({
 
   useEffect(() => {
     const checkDark = () => {
-      const isDarkMode =
-        document.documentElement.classList.contains("dark") ||
-        (!document.documentElement.classList.contains("light") &&
-          window.matchMedia("(prefers-color-scheme: dark)").matches);
-      setIsDark(isDarkMode);
+      setIsDark(document.documentElement.classList.contains("dark"));
     };
     checkDark();
 
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const handleMotionChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
     motionQuery.addEventListener("change", handleMotionChange);
-
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    mediaQuery.addEventListener("change", checkDark);
 
     const observer = new MutationObserver(() => checkDark());
     observer.observe(document.documentElement, {
@@ -184,7 +184,6 @@ export function CriterionTrendChart({
 
     return () => {
       motionQuery.removeEventListener("change", handleMotionChange);
-      mediaQuery.removeEventListener("change", checkDark);
       observer.disconnect();
     };
   }, []);
@@ -240,12 +239,9 @@ export function CriterionTrendChart({
       e.preventDefault();
       const nextMode = viewMode === "chart" ? "table" : "chart";
       setViewMode(nextMode);
-      const targetTabId =
-        nextMode === "chart"
-          ? "progress-view-tab-chart"
-          : "progress-view-tab-table";
+      const targetRef = nextMode === "chart" ? chartTabRef : tableTabRef;
       setTimeout(() => {
-        document.getElementById(targetTabId)?.focus();
+        targetRef.current?.focus();
       }, 0);
     }
   };
@@ -403,33 +399,81 @@ export function CriterionTrendChart({
       {/* Controls Bar */}
       {isParent ? (
         <div className="flex flex-col gap-3 border-b border-border/50 pb-3 min-w-0">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              {showEachSkill ? "By skill" : "Overall"}
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleToggleParentSkills}
-                aria-pressed={showEachSkill}
-                className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-10 sm:min-h-9 inline-flex items-center justify-center border border-border/80 bg-card hover:bg-muted/50 transition-colors"
-              >
-                {showEachSkill ? "Overall only" : "Show each skill"}
-              </button>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground">
+                {viewMode === "table" ? "Score table" : showEachSkill ? "By skill" : "Overall"}
+              </span>
+              {viewMode === "chart" && (
+                <button
+                  type="button"
+                  onClick={handleToggleParentSkills}
+                  aria-pressed={showEachSkill}
+                  className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-11 sm:min-h-9 inline-flex items-center justify-center border border-border/80 bg-card hover:bg-muted/50 transition-colors touch-manipulation"
+                >
+                  {showEachSkill ? "Overall only" : "Show each skill"}
+                </button>
+              )}
               {onToggleScoreDetails && (
                 <button
                   type="button"
                   onClick={onToggleScoreDetails}
                   aria-pressed={showScoreDetails}
-                  className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-10 sm:min-h-9 inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors"
+                  className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-11 sm:min-h-9 inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
                 >
                   {showScoreDetails ? "Hide numeric scores" : "Show numeric scores"}
                 </button>
               )}
             </div>
+
+            <div
+              role="tablist"
+              aria-label="Progress view mode"
+              onKeyDown={handleTabKeyDown}
+              className="grid grid-cols-2 sm:flex sm:items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/60 w-full sm:w-auto shrink-0"
+            >
+              <button
+                ref={chartTabRef}
+                id={chartTabId}
+                role="tab"
+                type="button"
+                aria-selected={viewMode === "chart"}
+                aria-controls={chartPanelId}
+                tabIndex={viewMode === "chart" ? 0 : -1}
+                onClick={() => setViewMode("chart")}
+                className={cn(
+                  "inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-11 sm:min-h-8 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary touch-manipulation",
+                  viewMode === "chart"
+                    ? "bg-card text-foreground font-semibold shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <LineChartIcon className="size-3.5" aria-hidden="true" />
+                <span>Chart</span>
+              </button>
+              <button
+                ref={tableTabRef}
+                id={tableTabId}
+                role="tab"
+                type="button"
+                aria-selected={viewMode === "table"}
+                aria-controls={tablePanelId}
+                tabIndex={viewMode === "table" ? 0 : -1}
+                onClick={() => setViewMode("table")}
+                className={cn(
+                  "inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-11 sm:min-h-8 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary touch-manipulation",
+                  viewMode === "table"
+                    ? "bg-card text-foreground font-semibold shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Table2 className="size-3.5" aria-hidden="true" />
+                <span>Table</span>
+              </button>
+            </div>
           </div>
 
-          {showEachSkill && (
+          {viewMode === "chart" && showEachSkill && (
             <div className="flex flex-wrap items-center gap-1.5">
               {CRITERION_CONFIG.map((c) => {
                 const isSelected = activeCriteria[c.key];
@@ -441,7 +485,7 @@ export function CriterionTrendChart({
                     onClick={() => toggleCriterion(c.key)}
                     aria-pressed={isSelected}
                     className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium transition-all cursor-pointer border select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-10 sm:min-h-9 touch-manipulation",
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium transition-colors cursor-pointer border select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-11 sm:min-h-9 touch-manipulation",
                       isSelected
                         ? "bg-card text-foreground border-border/90 shadow-2xs font-semibold ring-1 ring-border/50"
                         : "bg-muted/20 text-muted-foreground border-dashed border-border/60 hover:bg-muted/40 hover:text-foreground"
@@ -460,7 +504,7 @@ export function CriterionTrendChart({
                         x2="18"
                         y2="3"
                         stroke={color}
-                        strokeWidth={c.key === "overall" ? 2.5 : 2}
+                        strokeWidth={c.key === "composite" ? 2.5 : 2}
                         strokeDasharray={c.strokeDasharray}
                       />
                     </svg>
@@ -508,11 +552,12 @@ export function CriterionTrendChart({
               className="grid grid-cols-2 sm:flex sm:items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/60 w-full sm:w-auto shrink-0"
             >
               <button
-                id="progress-view-tab-chart"
+                ref={chartTabRef}
+                id={chartTabId}
                 role="tab"
                 type="button"
                 aria-selected={viewMode === "chart"}
-                aria-controls="progress-view-panel-chart"
+                aria-controls={chartPanelId}
                 tabIndex={viewMode === "chart" ? 0 : -1}
                 onClick={() => setViewMode("chart")}
                 className={cn(
@@ -526,11 +571,12 @@ export function CriterionTrendChart({
                 <span>Chart</span>
               </button>
               <button
-                id="progress-view-tab-table"
+                ref={tableTabRef}
+                id={tableTabId}
                 role="tab"
                 type="button"
                 aria-selected={viewMode === "table"}
-                aria-controls="progress-view-panel-table"
+                aria-controls={tablePanelId}
                 tabIndex={viewMode === "table" ? 0 : -1}
                 onClick={() => setViewMode("table")}
                 className={cn(
@@ -577,7 +623,7 @@ export function CriterionTrendChart({
                         x2="18"
                         y2="3"
                         stroke={color}
-                        strokeWidth={c.key === "overall" ? 2.5 : 2}
+                        strokeWidth={c.key === "composite" ? 2.5 : 2}
                         strokeDasharray={c.strokeDasharray}
                       />
                     </svg>
@@ -592,9 +638,9 @@ export function CriterionTrendChart({
 
       {viewMode === "chart" ? (
         <div
-          id="progress-view-panel-chart"
-          role={isParent ? undefined : "tabpanel"}
-          aria-labelledby={isParent ? undefined : "progress-view-tab-chart"}
+          id={chartPanelId}
+          role="tabpanel"
+          aria-labelledby={chartTabId}
           className="space-y-4"
         >
           {/* High-level Trajectory Summary */}
@@ -665,7 +711,7 @@ export function CriterionTrendChart({
               <button
                 type="button"
                 onClick={resetCriteria}
-                className="min-h-[40px] sm:min-h-[32px] px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                className="min-h-11 sm:min-h-8 px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary-hover transition-colors cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Show overall progress
               </button>
@@ -716,7 +762,7 @@ export function CriterionTrendChart({
                     dataKey="dateLabel"
                     tickLine={false}
                     axisLine={false}
-                    tick={{ fontSize: 11, fill: "currentColor" }}
+                    tick={{ fontSize: 12, fill: "currentColor" }}
                     className="text-muted-foreground"
                   />
                   <YAxis
@@ -732,10 +778,10 @@ export function CriterionTrendChart({
                             return "Needs Improvement";
                           }
                     }
-                    width={showScoreDetails ? 48 : 96}
+                    width={showScoreDetails ? 52 : 112}
                     tickLine={false}
                     axisLine={false}
-                    tick={{ fontSize: 10, fill: "currentColor" }}
+                    tick={{ fontSize: 12, fill: "currentColor" }}
                     className="text-muted-foreground"
                     unit={showScoreDetails ? "%" : undefined}
                   />
@@ -815,9 +861,9 @@ export function CriterionTrendChart({
         </div>
       ) : (
         <div
-          id="progress-view-panel-table"
+          id={tablePanelId}
           role="tabpanel"
-          aria-labelledby="progress-view-tab-table"
+          aria-labelledby={tableTabId}
           className="rounded-xl border border-border bg-card overflow-hidden"
         >
           <div className="overflow-x-auto">
@@ -846,7 +892,7 @@ export function CriterionTrendChart({
                   });
                   return (
                     <tr key={item.submissionId} className="hover:bg-muted/20 transition-colors">
-                      <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap font-medium">
+                      <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap font-medium font-sans tabular-nums">
                         {formattedDate}
                       </td>
                       <td className="py-2.5 px-3 font-medium text-foreground truncate max-w-[180px]" title={item.targetText}>

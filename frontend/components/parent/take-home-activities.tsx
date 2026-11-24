@@ -5,7 +5,8 @@ import { useActivityNow } from "@/components/activities/activity-work-status";
 import { formatActivityDate, formatActivityDueAt } from "@/lib/utils/activity-deadlines";
 import { compareParentActivityUrgency, getParentActivityStatus } from "@/lib/utils/parent-activity-status";
 import type { TakeHomeActivity, TakeHomeActivitySubmission } from "@/lib/hooks/use-parent-data";
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useId } from "react";
+import { normalizeActivityPrompt } from "@/lib/utils/formatters";
 import { WorkCommentsButton } from "@/components/comments/submission-comment-picker-sheet";
 import {
   useTakeHomeActivities,
@@ -18,6 +19,8 @@ import { QueryRecovery } from "@/components/shared/query-recovery";
 import { WorksheetPrompt } from "@/components/activities/worksheet-prompt";
 import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TakeHomeActivitiesSkeleton } from "@/components/parent/parent-portal-skeletons";
 import {
   Empty,
   EmptyDescription,
@@ -82,9 +85,13 @@ export function TakeHomeActivities({
   onToggleExpanded,
   showExpandButton = true,
   onViewScoredHistory,
-  gridClassName = "grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4",
+  gridClassName = "grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4",
   practiceFocusKey,
 }: TakeHomeActivitiesProps) {
+  const awaitingReviewHeadingId = useId();
+  const completedPracticeHeadingId = useId();
+  const pastSheetsListId = useId();
+  const gridId = useId();
   const [internalExpanded, setInternalExpanded] = useState(false);
   const [pastSheetsToggled, setPastSheetsToggled] = useState<boolean | null>(null);
   const [photoPreview, setPhotoPreview] = useState<{
@@ -175,12 +182,7 @@ export function TakeHomeActivities({
   ).length;
 
   if (isLoading) {
-    return (
-      <div role="status" aria-live="polite" className="flex flex-col items-center justify-center py-8 gap-2">
-        <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden="true" />
-        <span className="text-sm text-muted-foreground">Checking practice worksheets...</span>
-      </div>
-    );
+    return <TakeHomeActivitiesSkeleton gridClassName={gridClassName} />;
   }
 
   const recovery = isError ? (
@@ -200,7 +202,7 @@ export function TakeHomeActivities({
     return (
       <div className="flex flex-col gap-3">
         {recovery}
-        <Empty className="border border-border rounded-xl sm:rounded-2xl shadow-warm bg-surface dark:bg-card py-8">
+        <Empty className="border border-border rounded-xl sm:rounded-2xl shadow-warm bg-card py-8">
           <EmptyMedia variant="icon" className="bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
             <ClipboardList className="size-6" aria-hidden="true" />
           </EmptyMedia>
@@ -239,7 +241,7 @@ export function TakeHomeActivities({
 
       {/* Primary To-Do Worksheets Area */}
       {toDoActivities.length === 0 ? (
-        <div className="rounded-xl sm:rounded-2xl border border-border bg-surface dark:bg-card p-5 shadow-warm text-center space-y-2.5">
+        <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-5 shadow-warm text-center space-y-2.5">
           <div className="size-9 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center mx-auto">
             {closedWithoutPhotoCount > 0 ? (
               <Clock3 className="size-5" aria-hidden="true" />
@@ -262,7 +264,7 @@ export function TakeHomeActivities({
         </div>
       ) : (
         <>
-          <div id="take-home-activities-grid" className={gridClassName}>
+          <div id={gridId} className={gridClassName}>
             {visibleToDo.map((activity) => (
               <ActivityCard
                 key={activity.id}
@@ -271,6 +273,7 @@ export function TakeHomeActivities({
                 targetText={activity.targetText}
                 createdAt={activity.createdAt}
                 childId={childId}
+                now={now}
                 initialSubmission={activity.submission}
                 onUploadClick={() => onUploadClick(activity.id)}
                 onPreviewPhoto={(preview) =>
@@ -294,7 +297,7 @@ export function TakeHomeActivities({
                 size="sm"
                 onClick={handleToggleExpanded}
                 aria-expanded={isExpanded}
-                aria-controls="take-home-activities-grid"
+                aria-controls={gridId}
                 className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
               >
                 {isExpanded ? (
@@ -316,21 +319,22 @@ export function TakeHomeActivities({
 
       {/* Dedicated Section: Waiting for Teacher Review */}
       {awaitingReviewActivities.length > 0 && (
-        <section aria-labelledby="awaiting-review-heading" className="space-y-3 pt-4 border-t border-border/60">
+        <section aria-labelledby={awaitingReviewHeadingId} className="space-y-3 pt-4 border-t border-border/60">
           <div className="flex items-baseline gap-2">
-            <h3 id="awaiting-review-heading" className="font-heading text-sm sm:text-base font-semibold text-foreground">
+            <h3 id={awaitingReviewHeadingId} className="font-heading text-sm sm:text-base font-semibold text-foreground">
               Waiting for teacher review
             </h3>
             <span className="text-xs text-muted-foreground font-sans tabular-nums">
               ({awaitingReviewActivities.length})
             </span>
           </div>
-          <div className="rounded-xl border border-border bg-surface dark:bg-card divide-y divide-border/70">
+          <div className="rounded-xl border border-border bg-card divide-y divide-border/70">
             {awaitingReviewActivities.map((activity) => (
               <CompactWorksheetRow
                 key={activity.id}
                 work={activity}
                 childId={childId}
+                now={now}
                 onReplacePhoto={() => onUploadClick(activity.id)}
                 onPreviewPhoto={(preview) =>
                   setPhotoPreview({ activityId: activity.id, ...preview })
@@ -349,10 +353,10 @@ export function TakeHomeActivities({
 
       {/* Dedicated Section: Completed & Closed Practice */}
       {pastSheets.length > 0 && (
-        <section aria-labelledby="past-worksheets-heading" className="space-y-3 pt-4 border-t border-border/60">
+        <section aria-labelledby={completedPracticeHeadingId} className="space-y-3 pt-4 border-t border-border/60">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-baseline gap-2">
-              <h3 id="past-worksheets-heading" className="font-heading text-sm sm:text-base font-semibold text-foreground">
+              <h3 id={completedPracticeHeadingId} className="font-heading text-sm sm:text-base font-semibold text-foreground">
                 Completed &amp; closed practice
               </h3>
               <span className="text-xs text-muted-foreground font-sans tabular-nums">
@@ -365,7 +369,7 @@ export function TakeHomeActivities({
               size="sm"
               onClick={() => setPastSheetsToggled(!(isPastSheetsOpen))}
               aria-expanded={isPastSheetsOpen}
-              aria-controls="past-sheets-list"
+              aria-controls={pastSheetsListId}
               className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium text-primary hover:text-primary cursor-pointer gap-1.5"
             >
               {isPastSheetsOpen ? (
@@ -394,14 +398,15 @@ export function TakeHomeActivities({
 
           {isPastSheetsOpen && (
             <div
-              id="past-sheets-list"
-              className="rounded-xl border border-border bg-surface dark:bg-card divide-y divide-border/70"
+              id={pastSheetsListId}
+              className="rounded-xl border border-border bg-card divide-y divide-border/70"
             >
               {pastSheets.map((activity) => (
                 <CompactWorksheetRow
                   key={activity.id}
                   work={activity}
                   childId={childId}
+                  now={now}
                   onViewScoredHistory={onViewScoredHistory}
                   onReplacePhoto={() => onUploadClick(activity.id)}
                   onPreviewPhoto={(preview) =>
@@ -459,6 +464,7 @@ interface PhotoPreviewTarget {
 function CompactWorksheetRow({
   work,
   childId,
+  now,
   onViewScoredHistory,
   onReplacePhoto,
   onPreviewPhoto,
@@ -466,12 +472,12 @@ function CompactWorksheetRow({
 }: {
   work: TakeHomeActivity;
   childId: string | null;
+  now: number;
   onViewScoredHistory?: (work: { activityId: string; submissionId: string | null }) => void;
   onReplacePhoto?: () => void;
   onPreviewPhoto: (preview: PhotoPreviewTarget) => void;
   hasUnreadComments?: boolean;
 }) {
-  const now = useActivityNow();
   const { closed, processing: isProcessing, category, excused } =
     getParentActivityStatus(work, now);
   const submission = work.submission;
@@ -529,7 +535,7 @@ function CompactWorksheetRow({
 
         {work.targetText && (
           <p className="text-xs text-muted-foreground italic line-clamp-1">
-            &ldquo;{work.targetText}&rdquo;
+            &ldquo;{normalizeActivityPrompt(work.targetText)}&rdquo;
           </p>
         )}
 
@@ -633,6 +639,7 @@ function ActivityCard({
   targetText,
   createdAt,
   childId,
+  now,
   initialSubmission,
   onUploadClick,
   onPreviewPhoto,
@@ -643,6 +650,7 @@ function ActivityCard({
   targetText: string;
   createdAt: string;
   childId: string | null;
+  now: number;
   initialSubmission?: TakeHomeActivitySubmission | null;
   onUploadClick: () => void;
   onPreviewPhoto: (preview: PhotoPreviewTarget) => void;
@@ -661,7 +669,6 @@ function ActivityCard({
 
   const formattedDate = formatActivityDate(createdAt, { includeYear: false });
 
-  const now = useActivityNow();
   const {
     closed,
     processing: isProcessing,
@@ -719,12 +726,12 @@ function ActivityCard({
   return (
     <div
       className={cn(
-        "group relative flex flex-col justify-between gap-4 border rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-warm hover:shadow-md transition-all duration-200",
+        "group relative flex flex-col justify-between gap-4 border rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-warm hover:shadow-md transition-[border-color,box-shadow] duration-200",
         isRejected || latestRejected
           ? "border-warning/50 dark:border-warning/60 bg-warning/5 dark:bg-warning/10 hover:border-warning/80"
           : isReturned
             ? "border-primary/40 bg-primary/5 dark:bg-primary/10 hover:border-primary/60"
-            : "bg-surface dark:bg-card border-border hover:border-brand-300 dark:hover:border-brand-800"
+            : "bg-card border-border hover:border-brand-300 dark:hover:border-brand-800"
       )}
     >
       <div>
@@ -770,7 +777,7 @@ function ActivityCard({
           footer={
             targetText.trim() ? (
               <p className="font-sans text-xs text-muted-foreground leading-snug break-words py-0.5">
-                {targetText.trim()}
+                {normalizeActivityPrompt(targetText)}
               </p>
             ) : undefined
           }
@@ -786,11 +793,7 @@ function ActivityCard({
         {rejectionSummary && !isProcessing && (
           <div className="mt-3 rounded-lg bg-warning/15 border border-warning/30 px-3 py-2 text-xs text-warning-foreground space-y-1">
             <p className="font-semibold">
-              <span>
-                {hasKeptCompletedPhoto
-                  ? `Clearer photo needed · ${rejectionSummary.label}`
-                  : `Clearer photo needed · ${rejectionSummary.label}`}
-              </span>
+              <span>{`Clearer photo needed · ${rejectionSummary.label}`}</span>
             </p>
             <p className="text-foreground/85 leading-relaxed">
               {rejectionSummary.detail.endsWith(".")
@@ -830,9 +833,9 @@ function ActivityCard({
       <div className="pt-3 border-t border-border/60 space-y-2">
         {/* Status / processing message if active */}
         {isLoading ? (
-          <div className="flex items-center justify-center gap-2 py-1 text-xs text-muted-foreground w-full">
-            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-            <span>Checking status...</span>
+          <div role="status" aria-live="polite" aria-label="Checking worksheet status" className="w-full">
+            <span className="sr-only">Checking worksheet status</span>
+            <Skeleton aria-hidden="true" className="h-11 sm:h-9 w-full rounded-lg" />
           </div>
         ) : isProcessing ? (
           <div role="status" aria-live="polite" className="flex items-center justify-center gap-2 py-1 text-xs text-muted-foreground w-full">
@@ -867,7 +870,7 @@ function ActivityCard({
                     variant="ghost"
                     size="sm"
                     onClick={openPreview}
-                    className="h-7 px-2 text-xs font-medium text-primary hover:text-primary gap-1 shrink-0 cursor-pointer"
+                    className="h-11 sm:h-8 px-3 sm:px-2 text-xs font-medium text-primary hover:text-primary gap-1 shrink-0 cursor-pointer touch-manipulation"
                     aria-label={`View kept photo for ${work.title}`}
                   >
                     <Eye className="size-3" aria-hidden="true" />
@@ -886,7 +889,7 @@ function ActivityCard({
                   activeSubmissionId={work.workState?.active_submission_id ?? null}
                   activityTitle={work.title}
                   hasUnread={hasUnreadComments}
-                  className="shrink-0 h-10 sm:h-9 min-h-10 sm:min-h-9 px-3 text-xs sm:text-sm font-medium gap-1.5"
+                  className="shrink-0 h-11 sm:h-9 px-3 text-xs sm:text-sm font-medium gap-1.5"
                 />
               ) : null}
 
@@ -894,7 +897,7 @@ function ActivityCard({
               <Button
                 variant="default"
                 size="sm"
-                className="flex-1 min-w-0 h-10 sm:h-9 min-h-10 sm:min-h-9 gap-1.5 font-semibold cursor-pointer text-xs sm:text-sm px-3.5 shadow-warm-sm"
+                className="flex-1 min-w-0 h-11 sm:h-9 gap-1.5 font-semibold cursor-pointer text-xs sm:text-sm px-3.5 shadow-warm-sm touch-manipulation"
                 onClick={onUploadClick}
                 disabled={closed}
                 aria-label={`${isRejected || isReturned ? "Send new photo" : "Send photo"} for ${work.title}`}
@@ -967,7 +970,7 @@ function PhotoPreviewDialog({
               </p>
             )}
             <DialogDescription className="text-xs text-muted-foreground italic break-words line-clamp-2">
-              &ldquo;{targetText}&rdquo;
+              &ldquo;{normalizeActivityPrompt(targetText)}&rdquo;
             </DialogDescription>
           </DialogHeader>
 

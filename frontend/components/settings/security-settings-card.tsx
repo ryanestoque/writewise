@@ -136,7 +136,7 @@ function ForgotPasswordDialog({ email }: { email: string }) {
                     variant="default"
                     size="sm"
                     autoFocus
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto h-11 sm:h-9 px-4 cursor-pointer touch-manipulation"
                   >
                     Done
                   </Button>
@@ -162,7 +162,12 @@ function ForgotPasswordDialog({ email }: { email: string }) {
             <DialogFooter showCloseButton={false} className="pt-2 flex gap-2 sm:justify-end">
               <DialogClose
                 render={
-                  <Button type="button" variant="outline" size="sm">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-11 sm:h-9 px-4 cursor-pointer touch-manipulation"
+                  >
                     Cancel
                   </Button>
                 }
@@ -172,11 +177,11 @@ function ForgotPasswordDialog({ email }: { email: string }) {
                 size="sm"
                 onClick={handleSendReset}
                 disabled={isSending}
-                className="font-medium"
+                className="font-medium h-11 sm:h-9 px-4 cursor-pointer touch-manipulation"
               >
                 {isSending ? (
                   <>
-                    <Loader2 className="mr-2 size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                    <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
                     Sending Link...
                   </>
                 ) : (
@@ -291,16 +296,16 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
       {/* Right Form Card */}
       <div>
         <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-warm gap-0 pb-0 overflow-hidden ring-0">
-          <form onSubmit={handlePasswordUpdate} aria-busy={isSubmitting}>
+          <form onSubmit={handlePasswordUpdate} noValidate aria-busy={isSubmitting}>
             <CardContent className="flex flex-col gap-5 pt-6 pb-6">
               {/* Current Password */}
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
                   <Label
                     htmlFor="current-password"
-                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                    className="text-sm font-medium text-foreground"
                   >
-                    Current Password
+                    Current password
                   </Label>
                   <ForgotPasswordDialog email={email} />
                 </div>
@@ -309,6 +314,8 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
                     id="current-password"
                     type={showCurrent ? "text" : "password"}
                     autoComplete="current-password"
+                    required
+                    aria-required="true"
                     value={currentPassword}
                     onChange={(e) => {
                       setCurrentPassword(e.target.value);
@@ -356,15 +363,17 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
               <div className="flex flex-col gap-1.5">
                 <Label
                   htmlFor="new-password"
-                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  className="text-sm font-medium text-foreground"
                 >
-                  New Password
+                  New password
                 </Label>
                 <div className="relative">
                   <Input
                     id="new-password"
                     type={showNew ? "text" : "password"}
                     autoComplete="new-password"
+                    required
+                    aria-required="true"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Enter new password"
@@ -476,15 +485,17 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
               <div className="flex flex-col gap-1.5">
                 <Label
                   htmlFor="confirm-password"
-                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  className="text-sm font-medium text-foreground"
                 >
-                  Confirm New Password
+                  Confirm new password
                 </Label>
                 <div className="relative">
                   <Input
                     id="confirm-password"
                     type={showConfirm ? "text" : "password"}
                     autoComplete="new-password"
+                    required
+                    aria-required="true"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter new password"
@@ -536,17 +547,17 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
               <Button
                 type="submit"
                 disabled={!canSubmit}
-                className="w-full sm:w-auto h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 sm:px-5 text-xs sm:text-sm font-medium shadow-xs"
+                className="w-full sm:w-auto h-11 sm:h-9 px-4 sm:px-5 text-xs sm:text-sm font-medium shadow-warm-sm cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 data-icon="inline-start" className="mr-1.5 size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                    <Loader2 data-icon="inline-start" className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
                     Updating...
                   </>
                 ) : (
                   <>
                     <ShieldCheck data-icon="inline-start" className="mr-1.5 size-4" aria-hidden="true" />
-                    Update Password
+                    Update password
                   </>
                 )}
               </Button>

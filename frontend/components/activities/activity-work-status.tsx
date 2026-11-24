@@ -1,17 +1,70 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Badge } from "@/components/ui/badge";
 import type { ActivityWorkState } from "@/lib/hooks/use-activity-work";
 import { teacherWorkStatusLabel } from "@/lib/utils/activity-work";
 
+const ACTIVITY_CLOCK_INTERVAL_MS = 60000;
+const clockListeners = new Set<() => void>();
+let currentClockNow = 0;
+let clockIntervalId: ReturnType<typeof setInterval> | null = null;
+
+function notifyClockListeners() {
+  for (const listener of clockListeners) {
+    listener();
+  }
+}
+
+function syncActivityClock() {
+  if (typeof document !== "undefined" && document.hidden) return;
+  currentClockNow = Date.now();
+  notifyClockListeners();
+}
+
+function handleClockVisibilityChange() {
+  if (!document.hidden) {
+    syncActivityClock();
+  }
+}
+
+function subscribeActivityClock(listener: () => void) {
+  if (clockListeners.size === 0) {
+    currentClockNow = Date.now();
+    clockIntervalId = setInterval(syncActivityClock, ACTIVITY_CLOCK_INTERVAL_MS);
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleClockVisibilityChange);
+    }
+  }
+  clockListeners.add(listener);
+  return () => {
+    clockListeners.delete(listener);
+    if (clockListeners.size === 0) {
+      if (clockIntervalId !== null) {
+        clearInterval(clockIntervalId);
+        clockIntervalId = null;
+      }
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleClockVisibilityChange);
+      }
+    }
+  };
+}
+
+function getActivityClockSnapshot() {
+  return currentClockNow;
+}
+
+function getActivityClockServerSnapshot() {
+  return 0;
+}
+
 export function useActivityNow() {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 15000);
-    return () => clearInterval(timer);
-  }, []);
-  return now;
+  return useSyncExternalStore(
+    subscribeActivityClock,
+    getActivityClockSnapshot,
+    getActivityClockServerSnapshot
+  );
 }
 
 export function ActivityWorkStatus({
@@ -55,7 +108,7 @@ export function ActivityWorkStatus({
         </Badge>
       )}
       {work.late && work.status !== "Excused" && (
-        <Badge variant="outline" className="border-amber-300/60 text-amber-700 dark:text-amber-400">
+        <Badge variant="outline" className="border-band-2/40 bg-band-2/10 text-band-2-text">
           Late
         </Badge>
       )}

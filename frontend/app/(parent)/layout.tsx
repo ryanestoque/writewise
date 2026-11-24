@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ParentPortalProvider } from "@/components/parent-portal-provider";
+import { ParentPortalPageSkeleton } from "@/components/parent/parent-portal-skeletons";
 import { Suspense } from "react";
-import { Loader2 } from "lucide-react";
 
 export default async function ParentLayout({
   children,
@@ -34,21 +34,7 @@ export default async function ParentLayout({
   const email = user.email || "";
 
   return (
-    <Suspense
-      fallback={
-        <div
-          role="status"
-          aria-live="polite"
-          className="flex flex-col items-center justify-center min-h-[50vh] gap-3"
-        >
-          <Loader2
-            className="size-8 animate-spin text-brand-600 dark:text-brand-400"
-            aria-hidden="true"
-          />
-          <p className="text-sm text-muted-foreground">Loading parent portal...</p>
-        </div>
-      }
-    >
+    <Suspense fallback={<ParentPortalPageSkeleton includeTopNavPlaceholder />}>
       <ParentPortalProvider user={{ id: user.id, fullName, email }}>
         {children}
       </ParentPortalProvider>

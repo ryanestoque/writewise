@@ -176,9 +176,9 @@ export function NotificationSettingsCard({
       <h2 id={headingId} className="font-heading text-lg font-semibold">
         Notifications
       </h2>
-      <Card>
-        <form onSubmit={save} aria-busy={busy} className="flex flex-col gap-6">
-          <CardHeader>
+      <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-warm gap-0 pb-0 overflow-hidden ring-0">
+        <form onSubmit={save} aria-busy={busy} className="flex flex-col">
+          <CardHeader className="pt-6 pb-4">
             <CardTitle as="h3">Email updates</CardTitle>
             <CardDescription>
               {role === "parent"
@@ -186,7 +186,7 @@ export function NotificationSettingsCard({
                 : "Manage your classroom email preferences."}
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
+          <CardContent className="flex flex-col gap-4 pb-6">
             {isLoading ? (
               <div role="status" className="flex flex-col gap-2">
                 <span className="text-xs text-muted-foreground">Loading email settings…</span>
@@ -227,7 +227,7 @@ export function NotificationSettingsCard({
                     variant="outline"
                     size="xs"
                     disabled={busy}
-                    className="h-9 min-h-[44px] px-3 md:h-7 md:min-h-0 md:px-2.5 touch-manipulation cursor-pointer shrink-0"
+                    className="h-11 px-3 md:h-8 md:px-2.5 touch-manipulation cursor-pointer shrink-0"
                     onClick={() => {
                       setIsLoading(true);
                       setFailure(null);
@@ -247,10 +247,10 @@ export function NotificationSettingsCard({
               </p>
             )}
           </CardContent>
-          <CardFooter className="justify-end gap-2">
+          <CardFooter className="flex justify-end gap-2 border-t border-border bg-muted/20 px-6 py-3.5">
             <Button
               type="submit"
-              className="min-h-[44px] md:min-h-0 touch-manipulation cursor-pointer"
+              className="w-full sm:w-auto h-11 sm:h-9 px-4 sm:px-5 text-xs sm:text-sm font-medium shadow-warm-sm touch-manipulation cursor-pointer"
               disabled={busy || draftEnabled === null || draftEnabled === savedEnabled}
             >
               {isSaving && (

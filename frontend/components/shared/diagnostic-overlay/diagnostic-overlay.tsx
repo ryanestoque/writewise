@@ -97,7 +97,7 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
     width: number;
     height: number;
   } | null>(null);
-  const naturalSize = imageDimensions ?? loadedSize;
+  const naturalSize = imageDimensions ?? inspectorContext.naturalDimensions ?? loadedSize;
   const [hoveredAnnotation, setHoveredAnnotation] =
     useState<ActiveAnnotationHover | null>(null);
 
@@ -226,9 +226,9 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
     };
   }, [visible, overlay, naturalSize, measureLayout, inspectorContext.viewportRef]);
 
-  // Load natural dimensions of the image so SVG viewBox aligns 1:1 with pixel coordinates
+  // Load natural dimensions of the image only when not already provided by parent/inspector
   useEffect(() => {
-    if (imageDimensions) return;
+    if (imageDimensions || inspectorContext.naturalDimensions) return;
     if (!imageUrl) {
       setNaturalSize(null);
       return;
@@ -261,7 +261,7 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
       img.onload = null;
       img.onerror = null;
     };
-  }, [imageUrl, imageDimensions]);
+  }, [imageUrl, imageDimensions, inspectorContext.naturalDimensions]);
 
   const handleHoverAnnotation: HoverAnnotationCallback = useCallback(
     (hover) => {
@@ -347,7 +347,7 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
         aria-label="Loading handwriting diagnostic guidelines"
       >
         <div className="absolute inset-x-8 top-1/4 bottom-1/4 flex flex-col justify-around opacity-30 animate-pulse motion-reduce:animate-none pointer-events-none">
-          <div className="w-full border-b border-dashed border-slate-400 dark:border-slate-500" />
+          <div className="w-full border-b border-dashed border-muted-foreground/50" />
           <div className="w-full border-b border-dotted border-brand-600 dark:border-brand-400" />
           <div className="w-full border-b border-solid border-brand-600 dark:border-brand-400" />
         </div>

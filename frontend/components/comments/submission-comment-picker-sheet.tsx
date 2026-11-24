@@ -56,7 +56,7 @@ export function WorkCommentsButton({
               variant="outline"
               size="sm"
               className={cn(
-                "min-h-11 sm:min-h-9 h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50",
+                "h-11 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50",
                 className
               )}
               aria-label={accessibleLabel}
