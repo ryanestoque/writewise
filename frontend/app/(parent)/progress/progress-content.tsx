@@ -52,6 +52,7 @@ import { useActivityNow } from "@/components/activities/activity-work-status";
 import { Button } from "@/components/ui/button";
 import { BandBadge } from "@/components/shared/band-badge";
 import { cn } from "@/lib/utils";
+import { useScrolled } from "@/hooks/use-scrolled";
 import {
   Empty,
   EmptyDescription,
@@ -152,7 +153,7 @@ function UrgentPracticeBanner({
       role="region"
       aria-label="Practice worksheet needing attention"
       className={cn(
-        "rounded-xl px-4 py-3 text-foreground border transition-colors",
+        "relative rounded-xl px-4 py-3 text-foreground border transition-colors",
         urgentStatus.urgency === "teacher_returned"
           ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
           : urgentStatus.urgency === "retake_needed"
@@ -162,27 +163,38 @@ function UrgentPracticeBanner({
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-0.5">
-          <p className="text-sm font-semibold text-foreground truncate">
-            <span
-              className={cn(
-                "mr-1.5",
-                urgentStatus.urgency === "teacher_returned"
-                  ? "text-primary"
+          <div className="flex items-center justify-between gap-2 min-w-0">
+            <p className="text-sm font-semibold text-foreground truncate min-w-0">
+              <span
+                className={cn(
+                  "mr-1.5",
+                  urgentStatus.urgency === "teacher_returned"
+                    ? "text-primary"
+                    : urgentStatus.urgency === "retake_needed"
+                      ? "text-warning-foreground"
+                      : "text-band-2-text"
+                )}
+              >
+                {urgentStatus.urgency === "teacher_returned"
+                  ? "New photo requested:"
                   : urgentStatus.urgency === "retake_needed"
-                    ? "text-warning-foreground"
-                    : "text-band-2-text"
-              )}
-            >
-              {urgentStatus.urgency === "teacher_returned"
-                ? "New photo requested:"
-                : urgentStatus.urgency === "retake_needed"
-                  ? "Clearer photo needed:"
-                  : urgentStatus.urgency === "overdue"
-                    ? "Past due:"
-                    : "Due soon:"}
-            </span>
-            {urgentActivity.title}
-          </p>
+                    ? "Clearer photo needed:"
+                    : urgentStatus.urgency === "overdue"
+                      ? "Past due:"
+                      : "Due soon:"}
+              </span>
+              {urgentActivity.title}
+            </p>
+            {urgentActivities.length > 1 && (
+              <button
+                type="button"
+                onClick={onNavigateToWrite}
+                className="sm:hidden relative shrink-0 text-brand-700 dark:text-brand-300 font-medium hover:underline cursor-pointer text-xs touch-manipulation inline-flex items-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-xs after:absolute after:-inset-2 after:content-['']"
+              >
+                + {urgentActivities.length - 1} more
+              </button>
+            )}
+          </div>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
             {urgentActivity.dueAt && (
               <span className="tabular-nums">
@@ -193,9 +205,9 @@ function UrgentPracticeBanner({
               <button
                 type="button"
                 onClick={onNavigateToWrite}
-                className="text-brand-700 dark:text-brand-300 font-medium hover:underline cursor-pointer min-h-11 px-2 -my-2 touch-manipulation inline-flex items-center text-xs"
+                className="hidden sm:inline-flex text-brand-700 dark:text-brand-300 font-medium hover:underline cursor-pointer text-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-xs"
               >
-                +{urgentActivities.length - 1} more
+                + {urgentActivities.length - 1} more
               </button>
             )}
           </div>
@@ -246,6 +258,7 @@ function PracticeTabCountBadge({ takeHomeActivities }: { takeHomeActivities: Tak
 
 export function ProgressPageContent() {
   const searchParams = useSearchParams();
+  const isScrolled = useScrolled(16);
   const [selectedTab, setSelectedTab] = useState<ParentProgressTab | null>(null);
   const [inspectedGradeWork, setInspectedGradeWork] = useState<{
     activityId: string;
@@ -423,9 +436,12 @@ export function ProgressPageContent() {
         }}
         className="w-full gap-0 flex flex-col"
       >
-        {/* Sticky Sub-Navbar directly below the main navbar (top-14) */}
-        <div className="sticky top-14 z-30 w-full border-b border-border/80 bg-background">
-          <div className="w-full px-4 sm:px-6">
+        {/* Fixed Sub-Navbar directly below the main navbar (top-14) with 1px upward overlap to prevent subpixel seams */}
+        <div
+          data-scrolled={isScrolled}
+          className="fixed top-[calc(3.5rem-1px)] left-0 right-0 z-30 h-[calc(2.75rem+1px)] pt-px w-full border-b border-border/80 bg-background transition-[border-color,box-shadow] duration-200 ease-out data-[scrolled=true]:border-brand-200 dark:data-[scrolled=true]:border-border data-[scrolled=true]:shadow-[0_4px_20px_-2px_rgb(20_80_73/0.08)] dark:data-[scrolled=true]:shadow-[0_4px_20px_-2px_rgb(0_0_0/0.35)] print:hidden"
+        >
+          <div className="h-full w-full px-4 sm:px-6">
             <TabsList
               variant="line"
               aria-label={`${firstName}'s portal sections`}
@@ -433,14 +449,14 @@ export function ProgressPageContent() {
             >
               <TabsTrigger
                 value="overview"
-                className="min-h-11 sm:min-h-10 h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 py-3 sm:pt-3 sm:pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
+                className="min-h-11 max-h-11 inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 py-0 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
               >
                 <span>Recent</span>
               </TabsTrigger>
 
               <TabsTrigger
                 value="to-write"
-                className="min-h-11 sm:min-h-10 h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 py-3 sm:pt-3 sm:pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
+                className="min-h-11 max-h-11 inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 py-0 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
               >
                 <span>Practice</span>
                 <PracticeTabCountBadge takeHomeActivities={takeHomeActivities} />
@@ -448,20 +464,23 @@ export function ProgressPageContent() {
 
               <TabsTrigger
                 value="progress"
-                className="min-h-11 sm:min-h-10 h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 py-3 sm:pt-3 sm:pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
+                className="min-h-11 max-h-11 inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 py-0 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
               >
                 <span>Progress</span>
               </TabsTrigger>
 
               <TabsTrigger
                 value="grades"
-                className="min-h-11 sm:min-h-10 h-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 py-3 sm:pt-3 sm:pb-2.5 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
+                className="min-h-11 max-h-11 inline-flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 py-0 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
               >
                 <span>Grades</span>
               </TabsTrigger>
             </TabsList>
           </div>
         </div>
+
+        {/* Layout spacer matching fixed sub-navbar height */}
+        <div aria-hidden="true" className="h-11 shrink-0 print:hidden" />
 
         {/* Main Content Area */}
         <div className="w-full px-4 sm:px-6 py-6 space-y-6 pb-16">
@@ -572,7 +591,7 @@ export function ProgressPageContent() {
           <section
             id="assigned-take-home-section"
             aria-labelledby="take-home-heading"
-            className="space-y-3 scroll-mt-20"
+            className="space-y-3 scroll-mt-28"
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2
@@ -610,7 +629,7 @@ export function ProgressPageContent() {
           <section
             id="progress-trends-section"
             aria-labelledby="progress-trends-heading"
-            className="space-y-3"
+            className="space-y-3 scroll-mt-28"
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2

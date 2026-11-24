@@ -316,9 +316,9 @@ export function LatestSubmissionCard({
         </div>
       </section>
 
-      <section aria-labelledby="handwriting-skills" className="overflow-hidden rounded-xl border border-border bg-card shadow-warm px-4 sm:px-6">
+      <section aria-labelledby="skill-breakdown" className="overflow-hidden rounded-xl border border-border bg-card shadow-warm px-4 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-2 py-4">
-          <h2 id="handwriting-skills" className="font-heading text-lg font-semibold">Handwriting skills</h2>
+          <h2 id="skill-breakdown" className="font-heading text-lg font-semibold">Skill breakdown</h2>
           {onOpenRubric && (
             <Button
               type="button"

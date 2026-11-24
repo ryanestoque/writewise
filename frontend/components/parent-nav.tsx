@@ -44,6 +44,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
+import { useScrolled } from "@/hooks/use-scrolled";
 
 function getStudentInitials(name: string) {
   return (
@@ -110,18 +111,22 @@ export function ParentNav({
       .toUpperCase() || "P";
 
   const activeChild = linkedChildren.find((c) => c.id === selectedChildId);
+  const hasSubNav = pathname === "/progress";
+  const isScrolled = useScrolled(16, !hasSubNav);
 
   return (
     <>
       <header
+        data-scrolled={isScrolled}
         className={cn(
-          "sticky top-0 z-40 bg-background",
-          pathname !== "/progress" && "border-b border-border"
+          "fixed top-0 left-0 right-0 z-40 h-14 bg-background print:hidden",
+          !hasSubNav &&
+            "border-b border-border transition-[border-color,box-shadow] duration-200 ease-out data-[scrolled=true]:border-brand-200 dark:data-[scrolled=true]:border-border data-[scrolled=true]:shadow-[0_4px_20px_-2px_rgb(20_80_73/0.08)] dark:data-[scrolled=true]:shadow-[0_4px_20px_-2px_rgb(0_0_0/0.35)]"
         )}
       >
         <nav
           aria-label="Parent navigation"
-          className="flex h-14 w-full items-center justify-between gap-2 sm:gap-3 px-4 sm:px-6"
+          className="flex h-full w-full items-center justify-between gap-2 sm:gap-3 px-4 sm:px-6"
         >
           {/* Left: Brand Logo (App icon on mobile, full logo on desktop) */}
           <Link

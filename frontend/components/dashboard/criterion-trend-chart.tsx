@@ -149,7 +149,6 @@ export function CriterionTrendChart({
   const tableTabRef = useRef<HTMLButtonElement>(null);
   const [viewMode, setViewMode] = useState<"chart" | "table">("chart");
   const [isDark, setIsDark] = useState(false);
-  const [showEachSkill, setShowEachSkill] = useState(false);
   const [activeCriteria, setActiveCriteria] = useState<Record<string, boolean>>(() => ({
     composite: true,
     letter_formation: !isParent,
@@ -209,29 +208,12 @@ export function CriterionTrendChart({
     });
   };
 
-  const handleToggleParentSkills = () => {
-    if (showEachSkill) {
-      setShowEachSkill(false);
-      setActiveCriteria({
-        composite: true,
-        letter_formation: false,
-        size_consistency: false,
-        spacing: false,
-        slant: false,
-        baseline_alignment: false,
-      });
-    } else {
-      const initialSkillKey = practiceFocusKey || "letter_formation";
-      setShowEachSkill(true);
-      setActiveCriteria({
-        composite: true,
-        letter_formation: initialSkillKey === "letter_formation",
-        size_consistency: initialSkillKey === "size_consistency",
-        spacing: initialSkillKey === "spacing",
-        slant: initialSkillKey === "slant",
-        baseline_alignment: initialSkillKey === "baseline_alignment",
-      });
-    }
+  const showAllSkills = () => {
+    const allActive: Record<string, boolean> = {};
+    CRITERION_CONFIG.forEach((c) => {
+      allActive[c.key] = true;
+    });
+    setActiveCriteria(allActive);
   };
 
   const handleTabKeyDown = (e: React.KeyboardEvent) => {
@@ -246,13 +228,19 @@ export function CriterionTrendChart({
     }
   };
 
-  const isCustomized =
-    !activeCriteria.composite ||
-    !activeCriteria.letter_formation ||
-    activeCriteria.size_consistency ||
-    activeCriteria.spacing ||
-    activeCriteria.slant ||
-    activeCriteria.baseline_alignment;
+  const isCustomized = isParent
+    ? !activeCriteria.composite ||
+      activeCriteria.letter_formation ||
+      activeCriteria.size_consistency ||
+      activeCriteria.spacing ||
+      activeCriteria.slant ||
+      activeCriteria.baseline_alignment
+    : !activeCriteria.composite ||
+      !activeCriteria.letter_formation ||
+      activeCriteria.size_consistency ||
+      activeCriteria.spacing ||
+      activeCriteria.slant ||
+      activeCriteria.baseline_alignment;
 
   const hasActiveCriteria = useMemo(
     () => Object.values(activeCriteria).some(Boolean),
@@ -397,200 +385,102 @@ export function CriterionTrendChart({
   return (
     <div className={cn("space-y-4", className)}>
       {/* Controls Bar */}
-      {isParent ? (
-        <div className="flex flex-col gap-3 border-b border-border/50 pb-3 min-w-0">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
-            <div className="flex flex-wrap items-center gap-2">
-              {viewMode === "chart" && (
-                <button
-                  type="button"
-                  onClick={handleToggleParentSkills}
-                  aria-pressed={showEachSkill}
-                  className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-11 sm:min-h-9 inline-flex items-center justify-center border border-border/80 bg-card hover:bg-muted/50 transition-colors touch-manipulation"
-                >
-                  {showEachSkill ? "Overall only" : "Show each skill"}
-                </button>
-              )}
-              {onToggleScoreDetails && (
-                <button
-                  type="button"
-                  onClick={onToggleScoreDetails}
-                  aria-pressed={showScoreDetails}
-                  className="text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg px-3 py-1.5 min-h-11 sm:min-h-9 inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation"
-                >
-                  {showScoreDetails ? "Hide numeric scores" : "Show numeric scores"}
-                </button>
-              )}
-            </div>
-
-            <div
-              role="tablist"
-              aria-label="Progress view mode"
-              onKeyDown={handleTabKeyDown}
-              className="grid grid-cols-2 sm:flex sm:items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/60 w-full sm:w-auto shrink-0"
-            >
-              <button
-                ref={chartTabRef}
-                id={chartTabId}
-                role="tab"
-                type="button"
-                aria-selected={viewMode === "chart"}
-                aria-controls={chartPanelId}
-                tabIndex={viewMode === "chart" ? 0 : -1}
-                onClick={() => setViewMode("chart")}
-                className={cn(
-                  "inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-11 sm:min-h-8 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary touch-manipulation",
-                  viewMode === "chart"
-                    ? "bg-card text-foreground font-semibold shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <LineChartIcon className="size-3.5" aria-hidden="true" />
-                <span>Chart</span>
-              </button>
-              <button
-                ref={tableTabRef}
-                id={tableTabId}
-                role="tab"
-                type="button"
-                aria-selected={viewMode === "table"}
-                aria-controls={tablePanelId}
-                tabIndex={viewMode === "table" ? 0 : -1}
-                onClick={() => setViewMode("table")}
-                className={cn(
-                  "inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-11 sm:min-h-8 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary touch-manipulation",
-                  viewMode === "table"
-                    ? "bg-card text-foreground font-semibold shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Table2 className="size-3.5" aria-hidden="true" />
-                <span>Table</span>
-              </button>
-            </div>
-          </div>
-
-          {viewMode === "chart" && showEachSkill && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              {CRITERION_CONFIG.map((c) => {
-                const isSelected = activeCriteria[c.key];
-                const color = getCriterionColor(c);
-                return (
+      <div className="flex flex-col gap-3 border-b border-border/50 pb-3 min-w-0">
+        {/* Header Row: Label/Action on Left, Tabs on Right */}
+        <div className="flex items-center justify-between gap-3 min-w-0">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0 flex-wrap">
+            {viewMode === "chart" ? (
+              <>
+                <span className="font-semibold text-foreground">
+                  {isParent ? "Skills" : "Trend Lines"}
+                </span>
+                {isCustomized ? (
                   <button
-                    key={c.key}
                     type="button"
-                    onClick={() => toggleCriterion(c.key)}
-                    aria-pressed={isSelected}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium transition-colors cursor-pointer border select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-11 sm:min-h-9 touch-manipulation",
-                      isSelected
-                        ? "bg-card text-foreground border-border/90 shadow-2xs font-semibold ring-1 ring-border/50"
-                        : "bg-muted/20 text-muted-foreground border-dashed border-border/60 hover:bg-muted/40 hover:text-foreground"
-                    )}
+                    onClick={resetCriteria}
+                    className="text-[11px] font-medium text-primary hover:underline cursor-pointer ml-0.5 min-h-9 sm:min-h-7 px-2 -my-1 rounded-md inline-flex items-center hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <svg
-                      width="18"
-                      height="6"
-                      viewBox="0 0 18 6"
-                      className={cn("shrink-0 transition-opacity", !isSelected && "opacity-35")}
-                      aria-hidden="true"
-                    >
-                      <line
-                        x1="0"
-                        y1="3"
-                        x2="18"
-                        y2="3"
-                        stroke={color}
-                        strokeWidth={c.key === "composite" ? 2.5 : 2}
-                        strokeDasharray={c.strokeDasharray}
-                      />
-                    </svg>
-                    <span>{c.label}</span>
+                    Reset
                   </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3 pt-1 border-b border-border/50 pb-3 min-w-0">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">Trend Lines</span>
-              {isCustomized ? (
-                <button
-                  type="button"
-                  onClick={resetCriteria}
-                  className="text-[11px] font-medium text-primary hover:underline cursor-pointer ml-1 min-h-[40px] sm:min-h-[32px] px-2.5 -my-1 rounded-md inline-flex items-center hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  Reset default
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const allActive: Record<string, boolean> = {};
-                    CRITERION_CONFIG.forEach((c) => {
-                      allActive[c.key] = true;
-                    });
-                    setActiveCriteria(allActive);
-                  }}
-                  className="text-[11px] font-medium text-primary hover:underline cursor-pointer ml-1 min-h-[40px] sm:min-h-[32px] px-2.5 -my-1 rounded-md inline-flex items-center hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  Show all skills
-                </button>
-              )}
-            </div>
-
-            <div
-              role="tablist"
-              aria-label="Progress view mode"
-              onKeyDown={handleTabKeyDown}
-              className="grid grid-cols-2 sm:flex sm:items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/60 w-full sm:w-auto shrink-0"
-            >
-              <button
-                ref={chartTabRef}
-                id={chartTabId}
-                role="tab"
-                type="button"
-                aria-selected={viewMode === "chart"}
-                aria-controls={chartPanelId}
-                tabIndex={viewMode === "chart" ? 0 : -1}
-                onClick={() => setViewMode("chart")}
-                className={cn(
-                  "inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[40px] sm:min-h-[32px] rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary touch-manipulation",
-                  viewMode === "chart"
-                    ? "bg-card text-foreground font-semibold shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
+                ) : (
+                  <button
+                    type="button"
+                    onClick={showAllSkills}
+                    className="text-[11px] font-medium text-primary hover:underline cursor-pointer ml-0.5 min-h-9 sm:min-h-7 px-2 -my-1 rounded-md inline-flex items-center hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    Show all
+                  </button>
                 )}
-              >
-                <LineChartIcon className="size-3.5" aria-hidden="true" />
-                <span>Chart</span>
-              </button>
-              <button
-                ref={tableTabRef}
-                id={tableTabId}
-                role="tab"
-                type="button"
-                aria-selected={viewMode === "table"}
-                aria-controls={tablePanelId}
-                tabIndex={viewMode === "table" ? 0 : -1}
-                onClick={() => setViewMode("table")}
-                className={cn(
-                  "inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[40px] sm:min-h-[32px] rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary touch-manipulation",
-                  viewMode === "table"
-                    ? "bg-card text-foreground font-semibold shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
+                {onToggleScoreDetails && (
+                  <button
+                    type="button"
+                    onClick={onToggleScoreDetails}
+                    aria-pressed={showScoreDetails}
+                    className="text-[11px] font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 rounded-md px-2 py-0.5 min-h-9 sm:min-h-7 inline-flex items-center justify-center border border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 transition-colors touch-manipulation ml-1"
+                  >
+                    {showScoreDetails ? "Hide scores" : "Show scores"}
+                  </button>
                 )}
-              >
-                <Table2 className="size-3.5" aria-hidden="true" />
-                <span>Table</span>
-              </button>
-            </div>
+              </>
+            ) : (
+              <span className="font-semibold text-foreground">
+                Score Table
+              </span>
+            )}
           </div>
 
-          {viewMode === "chart" && (
-            <div className="flex flex-wrap items-center gap-1.5">
+          {/* Only 1 Tab Control in the entire component: [Chart] [Table] */}
+          <div
+            role="tablist"
+            aria-label="Progress view mode"
+            onKeyDown={handleTabKeyDown}
+            className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/60 shrink-0"
+          >
+            <button
+              ref={chartTabRef}
+              id={chartTabId}
+              role="tab"
+              type="button"
+              aria-selected={viewMode === "chart"}
+              aria-controls={chartPanelId}
+              tabIndex={viewMode === "chart" ? 0 : -1}
+              onClick={() => setViewMode("chart")}
+              className={cn(
+                "inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-9 sm:min-h-8 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary touch-manipulation",
+                viewMode === "chart"
+                  ? "bg-card text-foreground font-semibold shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <LineChartIcon className="size-3.5" aria-hidden="true" />
+              <span>Chart</span>
+            </button>
+            <button
+              ref={tableTabRef}
+              id={tableTabId}
+              role="tab"
+              type="button"
+              aria-selected={viewMode === "table"}
+              aria-controls={tablePanelId}
+              tabIndex={viewMode === "table" ? 0 : -1}
+              onClick={() => setViewMode("table")}
+              className={cn(
+                "inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-9 sm:min-h-8 rounded-md text-xs font-medium transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary touch-manipulation",
+                viewMode === "table"
+                  ? "bg-card text-foreground font-semibold shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Table2 className="size-3.5" aria-hidden="true" />
+              <span>Table</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Level 2: Skill Filter Chips (Single-line horizontal rail) */}
+        {viewMode === "chart" && (
+          <div className="overflow-x-auto no-scrollbar [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5 -mx-1 px-1">
+            <div className="flex items-center gap-1.5 min-w-max">
               {CRITERION_CONFIG.map((c) => {
                 const isSelected = activeCriteria[c.key];
                 const color = getCriterionColor(c);
@@ -601,7 +491,7 @@ export function CriterionTrendChart({
                     onClick={() => toggleCriterion(c.key)}
                     aria-pressed={isSelected}
                     className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium transition-all cursor-pointer border select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-[40px] sm:min-h-[32px] touch-manipulation",
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium transition-all cursor-pointer border select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-9 sm:min-h-8 shrink-0 touch-manipulation",
                       isSelected
                         ? "bg-card text-foreground border-border/90 shadow-2xs font-semibold ring-1 ring-border/50"
                         : "bg-muted/20 text-muted-foreground border-dashed border-border/60 hover:bg-muted/40 hover:text-foreground hover:border-border/90"
@@ -625,13 +515,18 @@ export function CriterionTrendChart({
                       />
                     </svg>
                     <span>{c.label}</span>
+                    {practiceFocusKey && c.key === practiceFocusKey && (
+                      <span className="text-[10px] font-semibold text-brand-700 dark:text-brand-300 bg-brand-100/90 dark:bg-brand-950/90 px-1.5 py-0.5 rounded-full border border-brand-200/80 dark:border-brand-800/80">
+                        Focus
+                      </span>
+                    )}
                   </button>
                 );
               })}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {viewMode === "chart" ? (
         <div

@@ -10,6 +10,8 @@ import {
 import { ParentNav } from "@/components/parent-nav";
 import { useLinkedChildren, type LinkedChild } from "@/lib/hooks/use-parent-data";
 
+const EMPTY_LINKED_CHILDREN: LinkedChild[] = [];
+
 const ParentUploadDialog = dynamic(
   () => import("@/components/parent/parent-upload-dialog").then((m) => m.ParentUploadDialog),
   { ssr: false }
@@ -169,7 +171,7 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
       selectedChildId,
       setSelectedChildId,
       selectedChild,
-      children: linkedChildren ?? [],
+      children: linkedChildren ?? EMPTY_LINKED_CHILDREN,
       isLoading,
       isError,
       isRetrying,
@@ -212,7 +214,7 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
 
   return (
     <ParentPortalContext.Provider value={contextValue}>
-      <div className="bg-background text-foreground flex min-h-dvh flex-col">
+      <div className="bg-background text-foreground flex min-h-dvh flex-col overflow-x-clip">
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground focus:shadow-warm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -222,12 +224,12 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
         <ParentNav
           user={user}
           selectedChildId={selectedChildId}
-          linkedChildren={linkedChildren ?? []}
+          linkedChildren={linkedChildren ?? EMPTY_LINKED_CHILDREN}
           onChildChange={setSelectedChildId}
           onOpenRubric={openRubric}
           onOpenCursiveGuide={openCursiveGuide}
         />
-        <main id="main-content" tabIndex={-1} className="w-full min-w-0 flex-1 outline-none">
+        <main id="main-content" tabIndex={-1} className="w-full min-w-0 flex-1 pt-14 print:pt-0 outline-none">
           {pageChildren}
         </main>
       </div>

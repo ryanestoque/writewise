@@ -81,7 +81,7 @@ export function LatestSubmissionSkeleton({
         </div>
       </div>
 
-      {/* Handwriting skills 5-criterion card */}
+      {/* Skill breakdown 5-criterion card */}
       <div
         aria-hidden="true"
         className="overflow-hidden rounded-xl border border-border bg-card shadow-warm px-4 sm:px-6"
@@ -200,13 +200,13 @@ export function ProgressTrendSkeleton({ bare = false }: { bare?: boolean }) {
       {/* Controls Bar */}
       <div
         aria-hidden="true"
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 border-b border-border/50 pb-3"
+        className="flex items-center justify-between gap-3 border-b border-border/50 pb-3"
       >
         <div className="flex items-center gap-2">
-          <Skeleton className="h-4 w-14 rounded-md" />
-          <Skeleton className="h-11 sm:h-9 w-32 rounded-lg" />
+          <Skeleton className="h-4 w-12 rounded-md" />
+          <Skeleton className="h-4 w-24 rounded-md" />
         </div>
-        <Skeleton className="h-11 sm:h-9 w-full sm:w-40 rounded-lg" />
+        <Skeleton className="h-9 sm:h-8 w-36 rounded-lg" />
       </div>
 
       {/* Trajectory Summary Strip */}
@@ -405,7 +405,10 @@ export function ParentPortalPageSkeleton({
       role="status"
       aria-live="polite"
       aria-label="Loading parent portal"
-      className="w-full min-w-0 flex flex-col"
+      className={cn(
+        "w-full min-w-0 flex flex-col",
+        includeTopNavPlaceholder && "pt-14 print:pt-0"
+      )}
     >
       <span className="sr-only">Loading parent portal</span>
 
@@ -413,7 +416,7 @@ export function ParentPortalPageSkeleton({
       {includeTopNavPlaceholder && (
         <div
           aria-hidden="true"
-          className="sticky top-0 z-40 h-14 w-full bg-background flex items-center justify-between px-4 sm:px-6"
+          className="fixed top-0 left-0 right-0 z-40 h-14 w-full bg-background flex items-center justify-between px-4 sm:px-6 print:hidden"
         >
           <Skeleton className="h-8 w-8 sm:w-32 rounded-lg" />
           <div className="flex items-center gap-2">
@@ -423,13 +426,13 @@ export function ParentPortalPageSkeleton({
         </div>
       )}
 
-      {/* Sticky Sub-Navbar matching ProgressPageContent TabsList */}
+      {/* Fixed Sub-Navbar matching ProgressPageContent TabsList */}
       <div
         aria-hidden="true"
-        className="sticky top-14 z-30 w-full border-b border-border/80 bg-background"
+        className="fixed top-[calc(3.5rem-1px)] left-0 right-0 z-30 h-[calc(2.75rem+1px)] pt-px w-full border-b border-border/80 bg-background print:hidden"
       >
-        <div className="w-full px-4 sm:px-6">
-          <div className="w-full grid grid-cols-4 sm:w-fit sm:flex gap-2 py-2.5">
+        <div className="h-full w-full px-4 sm:px-6 flex items-center">
+          <div className="w-full grid grid-cols-4 sm:w-fit sm:flex gap-2">
             {["w-14", "w-16", "w-16", "w-14"].map((width, idx) => (
               <div key={idx} className="flex items-center justify-center sm:px-3 py-1">
                 <Skeleton className={cn("h-4 rounded-md", width)} />
@@ -438,6 +441,9 @@ export function ParentPortalPageSkeleton({
           </div>
         </div>
       </div>
+
+      {/* Layout spacer matching fixed sub-navbar height */}
+      <div aria-hidden="true" className="h-11 shrink-0 print:hidden" />
 
       {/* Main Content Canvas (full width, matching DESIGN.md Full-Width Canvas Rule) */}
       <div aria-hidden="true" className="w-full px-4 sm:px-6 py-6 space-y-6 pb-16">

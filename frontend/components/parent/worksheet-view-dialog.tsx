@@ -68,6 +68,14 @@ import {
 import { toast } from "sonner";
 import { SubmissionCommentTabs } from "@/components/comments/submission-comment-tabs";
 
+const CRITERION_SHORT_LABELS: Record<CriterionKey, string> = {
+  letter_formation: "Formation",
+  size_consistency: "Size",
+  spacing: "Spacing",
+  slant: "Slant",
+  baseline_alignment: "Baseline",
+};
+
 interface WorksheetViewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -293,53 +301,72 @@ export function WorksheetViewDialog({
                   aspectRatioClass="max-h-[min(560px,calc(100dvh-14rem))] min-h-[200px]"
                   diagnosticToolbar={
                     resolvedOverlay ? (
-                      <div className="flex items-center justify-between gap-2 px-2 py-1 min-h-11 sm:min-h-9 flex-wrap">
-                        <label
-                          htmlFor="parent-toggle-writing-marks"
-                          className="inline-flex items-center gap-2 text-xs font-medium text-foreground cursor-pointer select-none min-h-11 sm:min-h-8 touch-manipulation"
-                        >
+                      <div className="flex items-center justify-between gap-1.5 sm:gap-2 px-1.5 sm:px-2 py-1 min-h-10 sm:min-h-9 flex-nowrap w-full">
+                        {/* Left: Switch + Contextual Label / Filter Chip */}
+                        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink">
                           <Switch
                             id="parent-toggle-writing-marks"
                             size="sm"
                             checked={showOverlay}
                             onCheckedChange={setShowOverlay}
+                            aria-label="Toggle writing marks overlay"
                           />
-                          <span>Show writing marks</span>
-                        </label>
 
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {showOverlay && activeCriterion !== "all" && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCriterionOverride("all");
-                                setSelectedAttentionItem(null);
-                              }}
-                              className="inline-flex items-center gap-1 rounded-md px-2.5 sm:px-2 py-1 text-xs font-medium text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-950 transition-colors cursor-pointer touch-manipulation min-h-11 sm:min-h-8 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
-                              title="Show all writing marks"
-                            >
-                              <span>
-                                {PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.label ??
-                                  activeCriterion}
+                          {showOverlay && activeCriterion !== "all" ? (
+                            <div className="inline-flex items-center gap-1.5 min-w-0">
+                              <span className="hidden sm:inline text-xs font-medium text-foreground shrink-0">
+                                Writing marks:
                               </span>
-                              <X className="size-3 opacity-70" aria-hidden="true" />
-                              <span className="sr-only">Show all marks</span>
-                            </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCriterionOverride("all");
+                                  setSelectedAttentionItem(null);
+                                }}
+                                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-950 transition-colors cursor-pointer touch-manipulation min-h-10 sm:min-h-8 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 shrink min-w-0"
+                                title="Filtering by this skill. Click to show all marks."
+                              >
+                                <span className="hidden sm:inline truncate max-w-[140px]">
+                                  {PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.label ??
+                                    activeCriterion}
+                                </span>
+                                <span className="sm:hidden font-medium">
+                                  {CRITERION_SHORT_LABELS[activeCriterion as CriterionKey] ??
+                                    activeCriterion}
+                                </span>
+                                <X className="size-3 opacity-70 shrink-0" aria-hidden="true" />
+                                <span className="sr-only">Show all marks</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <label
+                              htmlFor="parent-toggle-writing-marks"
+                              className="inline-flex items-center text-xs font-medium text-foreground cursor-pointer select-none min-h-10 sm:min-h-8 touch-manipulation shrink-0"
+                            >
+                              <span className="hidden sm:inline">Show writing marks</span>
+                              <span className="hidden min-[360px]:inline sm:hidden">Writing marks</span>
+                              <span className="min-[360px]:hidden">Marks</span>
+                            </label>
                           )}
+                        </div>
 
+                        {/* Right: Lines button + Guide Popover */}
+                        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
                           {Boolean(resolvedGuideLines) && (
                             <button
                               type="button"
                               onClick={() => setShowGuideLines((prev) => !prev)}
                               aria-pressed={showGuideLines}
                               className={cn(
-                                "inline-flex items-center gap-1 rounded-md px-2.5 sm:px-2 py-1 text-xs font-medium transition-colors cursor-pointer touch-manipulation min-h-11 sm:min-h-8 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
+                                "inline-flex items-center gap-1 rounded-md px-2 sm:px-2 py-1 text-xs font-medium transition-colors cursor-pointer touch-manipulation min-h-10 sm:min-h-8 shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
                                 showGuideLines
                                   ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200"
                                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                               )}
+                              title="Toggle 3-line penmanship paper guides"
                             >
-                              <span>Paper lines</span>
+                              <span className="hidden sm:inline">Paper lines</span>
+                              <span className="sm:hidden">Lines</span>
                             </button>
                           )}
 
@@ -349,17 +376,18 @@ export function WorksheetViewDialog({
                                 render={
                                   <button
                                     type="button"
-                                    className="inline-flex items-center gap-1 rounded-md px-2.5 sm:px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer touch-manipulation min-h-11 sm:min-h-8 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+                                    className="inline-flex items-center gap-1 rounded-md px-1.5 sm:px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer touch-manipulation min-h-10 sm:min-h-8 shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
                                     aria-label="What the writing marks mean"
+                                    title="What the writing marks mean"
                                   />
                                 }
                               >
                                 <HelpCircle className="size-3.5" aria-hidden="true" />
-                                <span>Guide</span>
+                                <span className="hidden min-[380px]:inline">Guide</span>
                               </PopoverTrigger>
                               <PopoverContent
                                 align="end"
-                                className="w-72 rounded-xl p-3.5 text-xs space-y-2.5 shadow-warm border border-border"
+                                className="w-72 max-w-[calc(100vw-2rem)] rounded-xl p-3.5 text-xs space-y-2.5 shadow-warm border border-border"
                               >
                                 <p className="font-semibold text-foreground">
                                   What the marks mean
@@ -405,8 +433,8 @@ export function WorksheetViewDialog({
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs text-muted-foreground">
-                        <span>
+                      <div className="flex items-center justify-between gap-2 px-2 sm:px-2.5 py-1 sm:py-1.5 text-xs text-muted-foreground min-h-10 sm:min-h-9 flex-nowrap w-full">
+                        <span className="truncate">
                           {scoreSource === "manual"
                             ? "Reviewed directly by your child's teacher."
                             : "Original worksheet photo."}
@@ -417,13 +445,15 @@ export function WorksheetViewDialog({
                             onClick={() => setShowGuideLines((prev) => !prev)}
                             aria-pressed={showGuideLines}
                             className={cn(
-                              "inline-flex items-center gap-1 rounded-md px-2.5 sm:px-2 py-1 text-xs font-medium transition-colors cursor-pointer touch-manipulation min-h-11 sm:min-h-8 shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
+                              "inline-flex items-center gap-1 rounded-md px-2 sm:px-2 py-1 text-xs font-medium transition-colors cursor-pointer touch-manipulation min-h-10 sm:min-h-8 shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500",
                               showGuideLines
                                 ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200"
                                 : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                             )}
+                            title="Toggle 3-line penmanship paper guides"
                           >
-                            <span>Paper lines</span>
+                            <span className="hidden sm:inline">Paper lines</span>
+                            <span className="sm:hidden">Lines</span>
                           </button>
                         )}
                       </div>
@@ -486,7 +516,7 @@ export function WorksheetViewDialog({
                 {scores && bands && (
                   <div className="space-y-2">
                     <h3 className="text-sm font-heading font-semibold text-foreground px-0.5">
-                      Handwriting skills
+                      Skill breakdown
                     </h3>
 
                     <div className="rounded-xl border border-border/80 bg-card overflow-hidden divide-y divide-border/60">
