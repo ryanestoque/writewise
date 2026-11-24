@@ -305,7 +305,7 @@ export function ParentNav({
                       className="cursor-pointer gap-2 py-2 min-h-10 sm:min-h-9 text-sm"
                     >
                       <BookOpen className="size-4 text-muted-foreground" aria-hidden="true" />
-                      <span>Rubrics</span>
+                      <span>Score Guide</span>
                     </DropdownMenuItem>
                   )}
                   {onOpenCursiveGuide && (

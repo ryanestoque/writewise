@@ -15,6 +15,7 @@ import {
 import {
   ChevronDown,
   ChevronUp,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -382,12 +383,14 @@ export function SampleReportPreview({
             <div className="border-t border-border/70 pt-3">
               <Button
                 type="button"
-                variant="link"
+                variant="outline"
                 size="sm"
+                aria-haspopup="dialog"
                 onClick={onOpenRubric}
-                className="px-0 min-h-[40px] sm:min-h-[36px] text-sm font-medium cursor-pointer touch-manipulation"
+                className="h-8 px-3 rounded-full text-xs font-medium text-foreground border-border/80 bg-background hover:text-primary hover:border-primary/40 hover:bg-primary/5 active:bg-primary/10 cursor-pointer touch-manipulation transition-colors gap-1.5 shadow-2xs"
               >
-                How scores work
+                <HelpCircle className="size-3.5 text-primary shrink-0" aria-hidden="true" />
+                <span>Score Guide</span>
               </Button>
             </div>
           </div>

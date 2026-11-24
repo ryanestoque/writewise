@@ -601,13 +601,15 @@ export function ProgressPageContent() {
                 Practice worksheets
               </h2>
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
+                aria-haspopup="dialog"
                 onClick={() => openCursiveGuide()}
-                className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80"
+                className="h-8 px-3 rounded-full text-xs font-medium text-foreground border-border/80 bg-background hover:text-primary hover:border-primary/40 hover:bg-primary/5 active:bg-primary/10 cursor-pointer touch-manipulation transition-colors gap-1.5 shadow-2xs"
               >
-                <PenTool className="size-3.5" aria-hidden="true" />
-                <span>Cursive guide</span>
+                <PenTool className="size-3.5 text-primary shrink-0" aria-hidden="true" />
+                <span>Cursive Guide</span>
               </Button>
             </div>
 

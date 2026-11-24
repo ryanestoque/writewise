@@ -32,6 +32,7 @@ import {
   Clock,
   ChevronRight,
   MessageSquare,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -322,11 +323,14 @@ export function LatestSubmissionCard({
           {onOpenRubric && (
             <Button
               type="button"
-              variant="link"
-              className="px-0 min-h-11 sm:min-h-9 text-xs sm:text-sm text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+              variant="outline"
+              size="sm"
+              aria-haspopup="dialog"
+              className="h-8 px-3 rounded-full text-xs font-medium text-foreground border-border/80 bg-background hover:text-primary hover:border-primary/40 hover:bg-primary/5 active:bg-primary/10 cursor-pointer touch-manipulation transition-colors gap-1.5 shadow-2xs"
               onClick={onOpenRubric}
             >
-              How scores work
+              <HelpCircle className="size-3.5 text-primary shrink-0" aria-hidden="true" />
+              <span>Score Guide</span>
             </Button>
           )}
         </div>

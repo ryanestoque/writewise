@@ -537,38 +537,14 @@ export function CriterionTrendChart({
         >
           {/* High-level Trajectory Summary */}
           {trajectoryStats && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-3 rounded-xl bg-muted/20 border border-border/60 text-xs">
-              <div className="space-y-1">
-                <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums block">
-                  First ({trajectoryStats.firstDate})
+            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-2 sm:gap-2.5 p-3 rounded-xl bg-muted/20 border border-border/60 text-xs">
+              {/* Trend metric (order-first on mobile to provide headline context, 3rd column on desktop) */}
+              <div className="order-first sm:order-none flex items-center justify-between sm:flex-col sm:items-start sm:space-y-1 pb-2 sm:pb-0 border-b sm:border-b-0 border-border/50 min-w-0">
+                <span className="text-xs text-muted-foreground font-medium shrink-0">
+                  <span className="sm:hidden">{trajectoryStats.totalCount} worksheets</span>
+                  <span className="hidden sm:inline">Trend · {trajectoryStats.totalCount} worksheets</span>
                 </span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {showScoreDetails && (
-                    <span className="font-bold tabular-nums text-foreground text-sm sm:text-base">
-                      {trajectoryStats.baselineScore.toFixed(1)}%
-                    </span>
-                  )}
-                  <BandBadge score={trajectoryStats.baselineScore} size="sm" />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums block">
-                  Latest ({trajectoryStats.latestDate})
-                </span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {showScoreDetails && (
-                    <span className="font-bold tabular-nums text-foreground text-sm sm:text-base">
-                      {trajectoryStats.latestScore.toFixed(1)}%
-                    </span>
-                  )}
-                  <BandBadge score={trajectoryStats.latestScore} size="sm" />
-                </div>
-              </div>
-              <div className="col-span-2 sm:col-span-1 space-y-1 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-border/50">
-                <span className="text-xs text-muted-foreground font-medium block">
-                  Trend · {trajectoryStats.totalCount} worksheets
-                </span>
-                <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <span
                     className={cn(
                       "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-semibold text-xs tabular-nums",
@@ -582,6 +558,36 @@ export function CriterionTrendChart({
                     {trajectoryStats.label}
                     {showScoreDetails ? ` (${formatScoreDifference(trajectoryStats.diff)})` : ""}
                   </span>
+                </div>
+              </div>
+
+              {/* Baseline (First) milestone */}
+              <div className="flex items-center justify-between sm:flex-col sm:items-start sm:space-y-1 min-w-0">
+                <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums">
+                  First ({trajectoryStats.firstDate})
+                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {showScoreDetails && (
+                    <span className="font-bold tabular-nums text-foreground text-sm sm:text-base">
+                      {trajectoryStats.baselineScore.toFixed(1)}%
+                    </span>
+                  )}
+                  <BandBadge score={trajectoryStats.baselineScore} size="sm" />
+                </div>
+              </div>
+
+              {/* Latest milestone */}
+              <div className="flex items-center justify-between sm:flex-col sm:items-start sm:space-y-1 min-w-0">
+                <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums">
+                  Latest ({trajectoryStats.latestDate})
+                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {showScoreDetails && (
+                    <span className="font-bold tabular-nums text-foreground text-sm sm:text-base">
+                      {trajectoryStats.latestScore.toFixed(1)}%
+                    </span>
+                  )}
+                  <BandBadge score={trajectoryStats.latestScore} size="sm" />
                 </div>
               </div>
             </div>
@@ -723,7 +729,7 @@ export function CriterionTrendChart({
 
           {/* Band Zones Legend */}
           {showBandLegend && (
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 max-w-fit mx-auto pt-3 text-xs text-muted-foreground border-t border-border/50">
+            <div className="flex flex-wrap items-center justify-center gap-x-3.5 sm:gap-x-5 gap-y-1.5 sm:gap-y-2 max-w-fit mx-auto pt-2.5 sm:pt-3 text-[11px] sm:text-xs text-muted-foreground border-t border-border/50">
               <span className="flex items-center gap-1.5">
                 <span className="size-3 rounded-xs bg-band-4/60 border border-band-4/80" />
                 <span className="font-medium text-foreground/90">

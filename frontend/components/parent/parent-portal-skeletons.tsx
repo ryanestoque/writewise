@@ -212,25 +212,28 @@ export function ProgressTrendSkeleton({ bare = false }: { bare?: boolean }) {
       {/* Trajectory Summary Strip */}
       <div
         aria-hidden="true"
-        className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-3 rounded-xl bg-muted/20 border border-border/60"
+        className="flex flex-col sm:grid sm:grid-cols-3 gap-2 sm:gap-2.5 p-3 rounded-xl bg-muted/20 border border-border/60"
       >
-        <div className="space-y-2">
+        {/* Trend summary item (order-first on mobile) */}
+        <div className="order-first sm:order-none flex items-center justify-between sm:flex-col sm:items-start sm:space-y-2 pb-2 sm:pb-0 border-b sm:border-b-0 border-border/50">
+          <Skeleton className="h-3.5 w-24 sm:w-28 rounded-md" />
+          <Skeleton className="h-5 sm:h-6 w-32 sm:w-36 rounded-full" />
+        </div>
+        {/* First item */}
+        <div className="flex items-center justify-between sm:flex-col sm:items-start sm:space-y-2">
           <Skeleton className="h-3.5 w-20 rounded-md" />
           <div className="flex items-center gap-1.5">
-            <Skeleton className="h-5 w-12 rounded-md" />
-            <Skeleton className="h-5 w-20 rounded-full" />
+            <Skeleton className="h-5 w-10 sm:w-12 rounded-md" />
+            <Skeleton className="h-5 w-16 sm:w-20 rounded-full" />
           </div>
         </div>
-        <div className="space-y-2">
-          <Skeleton className="h-3.5 w-24 rounded-md" />
+        {/* Latest item */}
+        <div className="flex items-center justify-between sm:flex-col sm:items-start sm:space-y-2">
+          <Skeleton className="h-3.5 w-20 sm:w-24 rounded-md" />
           <div className="flex items-center gap-1.5">
-            <Skeleton className="h-5 w-12 rounded-md" />
-            <Skeleton className="h-5 w-20 rounded-full" />
+            <Skeleton className="h-5 w-10 sm:w-12 rounded-md" />
+            <Skeleton className="h-5 w-16 sm:w-20 rounded-full" />
           </div>
-        </div>
-        <div className="col-span-2 sm:col-span-1 space-y-2 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-border/50">
-          <Skeleton className="h-3.5 w-28 rounded-md" />
-          <Skeleton className="h-6 w-36 rounded-full" />
         </div>
       </div>
 

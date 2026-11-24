@@ -406,7 +406,7 @@ export function RubricReferenceDialog({
         <DialogHeader className="p-4 sm:p-5 border-b border-border/70 bg-background/95 backdrop-blur-xs shrink-0">
           <div className="flex flex-wrap items-center justify-between gap-2 min-w-0 pr-10 sm:pr-8">
             <DialogTitle className="text-base sm:text-lg font-heading font-semibold text-foreground tracking-tight">
-              {isParent ? "How Scores Work" : "Scoring Rubric"}
+              {isParent ? "Score Guide" : "Scoring Rubric"}
             </DialogTitle>
           </div>
 
