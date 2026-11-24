@@ -432,6 +432,11 @@ export function TakeHomeActivities({
           onOpenChange={(open) => {
             if (!open) setPhotoPreview(null);
           }}
+          activityId={photoPreview.activityId}
+          childId={childId}
+          hasUnreadComments={Boolean(
+            photoPreview.submissionId && unread.data?.has(photoPreview.submissionId)
+          )}
           imagePath={photoPreview.imagePath}
           title={photoPreview.title}
           targetText={photoPreview.targetText}
@@ -478,8 +483,14 @@ function CompactWorksheetRow({
   onPreviewPhoto: (preview: PhotoPreviewTarget) => void;
   hasUnreadComments?: boolean;
 }) {
-  const { closed, processing: isProcessing, category, excused } =
-    getParentActivityStatus(work, now);
+  const {
+    closed,
+    processing: isProcessing,
+    rejected: isRejected,
+    returned: isReturned,
+    category,
+    excused,
+  } = getParentActivityStatus(work, now);
   const submission = work.submission;
   const isCompleted = submission?.status === "completed";
   const isScored =
@@ -570,7 +581,32 @@ function CompactWorksheetRow({
             scope={{ activityId: work.id, studentId: childId }}
             activeSubmissionId={work.workState?.active_submission_id ?? null}
             activityTitle={work.title}
+            audience="parent"
             hasUnread={hasUnreadComments}
+            worksheetContext={{
+              targetText: work.targetText,
+              canSendNewPhoto: (isRejected || isReturned) && !closed && !isProcessing,
+              onViewWorksheet:
+                isScored && onViewScoredHistory
+                  ? () =>
+                      onViewScoredHistory({
+                        activityId: work.id,
+                        submissionId: submission?.submissionId ?? null,
+                      })
+                  : submission?.imagePath
+                    ? () =>
+                        onPreviewPhoto({
+                          submissionId: submission.submissionId,
+                          imagePath: submission.imagePath!,
+                          title: work.title,
+                          targetText: work.targetText,
+                          statusLabel: previewStatusLabel,
+                          canSendNewPhoto: !closed && !isProcessing,
+                          canDelete: Boolean(submission.canDelete),
+                        })
+                    : undefined,
+              onSendNewPhoto: !closed && !isProcessing && onReplacePhoto ? onReplacePhoto : undefined,
+            }}
             className="flex-1 sm:flex-initial min-w-0 h-11 sm:h-9 min-h-11 sm:min-h-9 px-2 sm:px-3 text-xs sm:text-sm font-medium gap-1.5"
           />
         ) : null}
@@ -827,7 +863,7 @@ function ActivityCard({
         {closed && !excused && category === "closed" && (
           <p className="mt-3 text-xs text-muted-foreground">
             {work.attempts.length > 0 || submission?.submissionId
-              ? "Deadline passed. Use Comments to ask your teacher for late submission."
+              ? "Deadline passed. Use Notes to ask your teacher for late submission."
               : "Deadline passed. Contact your teacher directly for late submission."}
           </p>
         )}
@@ -886,13 +922,20 @@ function ActivityCard({
 
             {/* Main Action Bar: Cohesive single row with clear primary/secondary balance */}
             <div className="flex items-center gap-1.5 sm:gap-2 w-full">
-              {/* Secondary utility: Comments with teacher */}
+              {/* Secondary utility: Notes with teacher */}
               {childId && (work.attempts.length || submission?.submissionId) ? (
                 <WorkCommentsButton
                   scope={{ activityId, studentId: childId }}
                   activeSubmissionId={work.workState?.active_submission_id ?? null}
                   activityTitle={work.title}
+                  audience="parent"
                   hasUnread={hasUnreadComments}
+                  worksheetContext={{
+                    targetText,
+                    canSendNewPhoto: (isRejected || isReturned) && !closed && !isProcessing,
+                    onViewWorksheet: submission?.imagePath ? openPreview : undefined,
+                    onSendNewPhoto: !closed ? onUploadClick : undefined,
+                  }}
                   className="shrink-0 h-11 sm:h-9 px-2.5 sm:px-3 text-xs sm:text-sm font-medium gap-1.5"
                 />
               ) : null}
@@ -922,6 +965,9 @@ function ActivityCard({
 function PhotoPreviewDialog({
   open,
   onOpenChange,
+  activityId,
+  childId,
+  hasUnreadComments,
   imagePath,
   title,
   targetText,
@@ -934,6 +980,9 @@ function PhotoPreviewDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  activityId?: string;
+  childId?: string | null;
+  hasUnreadComments?: boolean;
   imagePath: string;
   title: string;
   targetText: string;
@@ -996,6 +1045,16 @@ function PhotoPreviewDialog({
 
           <div className="p-3 sm:p-4 border-t border-border flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 bg-background">
             <div className="flex items-center gap-2 flex-wrap">
+              {activityId && childId && submissionId && (
+                <WorkCommentsButton
+                  scope={{ activityId, studentId: childId }}
+                  activeSubmissionId={submissionId}
+                  activityTitle={title}
+                  audience="parent"
+                  hasUnread={hasUnreadComments}
+                  className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 px-3"
+                />
+              )}
               {canDelete && submissionId && (
                 <Button
                   type="button"
@@ -1040,7 +1099,7 @@ function PhotoPreviewDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this upload?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently deletes your uploaded photo and comments for &ldquo;{title}&rdquo;. This action cannot be undone, and you can send a new photo anytime.
+              This permanently deletes your uploaded photo and notes for &ldquo;{title}&rdquo;. This action cannot be undone, and you can send a new photo anytime.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

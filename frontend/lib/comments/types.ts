@@ -3,6 +3,12 @@ import type { Database } from "@/types/database";
 export type ThreadTarget = { submissionId: string };
 export type CommentLocation = ThreadTarget & { activityId: string; studentId: string };
 export type WorkCommentScope = { activityId: string; studentId: string };
+export type CommentWorksheetContext = {
+  targetText?: string;
+  canSendNewPhoto?: boolean;
+  onViewWorksheet?: () => void;
+  onSendNewPhoto?: () => void;
+};
 export type SubmissionStatus = Database["public"]["Enums"]["submission_status"];
 export type ThreadCursor = { event_at: string; kind: "comment" | "return"; id: string };
 export type CommentEntry = {

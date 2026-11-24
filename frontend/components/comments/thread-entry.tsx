@@ -5,6 +5,7 @@ import { Message, MessageContent, MessageFooter, MessageHeader } from "@/compone
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Marker, MarkerContent } from "@/components/ui/marker";
 import { Button } from "@/components/ui/button";
+import { commentFeedback } from "@/lib/comments/presentation";
 import type { ThreadEntry } from "@/lib/comments/types";
 
 const REASONS = {
@@ -15,48 +16,68 @@ const REASONS = {
   other: "Another attempt requested",
 };
 
+const ENTRY_TIME_FORMAT = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
 export function ThreadEntryView({
   entry,
   onDelete,
   deleting = false,
+  actorRole,
+  teacherName,
 }: {
   entry: ThreadEntry;
   onDelete: (id: string) => Promise<void>;
   deleting?: boolean;
+  actorRole?: "teacher" | "parent";
+  teacherName?: string;
 }) {
   const [confirm, setConfirm] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const time = (
-    <time dateTime={entry.event_at}>
-      {new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
-        new Date(entry.event_at)
-      )}
+    <time dateTime={entry.event_at} className="font-sans tabular-nums">
+      {ENTRY_TIME_FORMAT.format(new Date(entry.event_at))}
     </time>
   );
   if (entry.kind === "return")
     return (
-      <Marker className="rounded-xl border px-4 py-3">
+      <Marker className="rounded-xl border border-primary/25 bg-secondary/45 px-4 py-3 text-foreground">
         <MarkerContent className="flex flex-col gap-1">
+          <span className="text-primary text-xs font-medium">Teacher requested a new photo</span>
           <span className="text-foreground font-medium">{REASONS[entry.return_reason]}</span>
           {entry.return_note && (
-            <span className="break-words whitespace-pre-wrap">{entry.return_note}</span>
+            <span className="text-foreground/90 break-words whitespace-pre-wrap">
+              {entry.return_note}
+            </span>
           )}
-          <span className="text-xs">{time}</span>
+          <span className="text-muted-foreground text-xs">{time}</span>
         </MarkerContent>
       </Marker>
     );
+
+  const authorLabel = entry.is_mine
+    ? "You"
+    : entry.author_role === "teacher"
+      ? (teacherName ?? "Teacher")
+      : actorRole === "parent"
+        ? "Co-parent / Guardian"
+        : "Parent";
+
   return (
     <Message align={entry.is_mine ? "end" : "start"}>
       <MessageContent>
-        <MessageHeader>
-          {entry.is_mine ? "You" : entry.author_role === "teacher" ? "Teacher" : "Parent"}
-        </MessageHeader>
+        <MessageHeader>{authorLabel}</MessageHeader>
         <Bubble
           variant={entry.is_mine ? "secondary" : "outline"}
           align={entry.is_mine ? "end" : "start"}
         >
           <BubbleContent className="break-words whitespace-pre-wrap">
             {entry.deleted_at ? (
-              <span className="text-muted-foreground italic">This comment was deleted.</span>
+              <span className="text-muted-foreground italic">This note was deleted.</span>
             ) : (
               entry.body
             )}
@@ -68,8 +89,11 @@ export function ThreadEntryView({
             <Button
               size="xs"
               variant="ghost"
-              className="min-h-[40px] sm:min-h-[28px] px-2.5 touch-manipulation"
-              onClick={() => setConfirm(true)}
+              className="h-10 sm:h-7 min-h-10 sm:min-h-7 px-2.5 cursor-pointer touch-manipulation"
+              onClick={() => {
+                setDeleteError(null);
+                setConfirm(true);
+              }}
             >
               Delete
             </Button>
@@ -78,33 +102,46 @@ export function ThreadEntryView({
         {confirm && !entry.deleted_at && (
           <div
             role="group"
-            aria-label="Delete your comment"
-            className="rounded-xl border p-3 text-sm"
+            aria-label="Delete your note"
+            className="bg-card rounded-xl border border-border p-3 text-sm"
           >
-            <p>Delete this comment? Its text will be removed for everyone.</p>
-            <div className="mt-2 flex gap-2">
+            <p className="text-foreground">
+              Delete this note? Its text will be removed for everyone.
+            </p>
+            {deleteError && (
+              <p role="alert" className="text-destructive mt-2 text-xs sm:text-sm">
+                {deleteError}
+              </p>
+            )}
+            <div className="mt-2.5 flex flex-col sm:flex-row gap-2">
               <Button
                 size="sm"
                 variant="destructive"
+                className="h-11 sm:h-8 min-h-11 sm:min-h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
                 disabled={deleting}
                 onClick={async () => {
+                  setDeleteError(null);
                   try {
                     await onDelete(entry.id);
                     setConfirm(false);
-                  } catch {
-                    /* The thread shows fixed error feedback. */
+                  } catch (error) {
+                    setDeleteError(commentFeedback(error));
                   }
                 }}
               >
-                {deleting ? "Deleting…" : "Delete comment"}
+                {deleting ? "Deleting…" : "Delete note"}
               </Button>
               <Button
                 size="sm"
                 variant="outline"
+                className="h-11 sm:h-8 min-h-11 sm:min-h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
                 disabled={deleting}
-                onClick={() => setConfirm(false)}
+                onClick={() => {
+                  setDeleteError(null);
+                  setConfirm(false);
+                }}
               >
-                Keep comment
+                Keep note
               </Button>
             </div>
           </div>

@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { normalizeActivityPrompt } from "@/lib/utils/formatters";
 import { Button } from "@/components/ui/button";
 import { BandBadge } from "@/components/shared/band-badge";
+import { useCommentAccountId, useUnreadCommentThreads } from "@/lib/hooks/use-comments";
 import { PendingWorksheetDialog } from "./pending-worksheet-dialog";
 import { Badge } from "@/components/ui/badge";
 
@@ -67,10 +68,16 @@ function getDeltaChangeLabel(delta: number): string {
 
 function HistoryItemRow({
   item,
+  hasUnreadComments,
   onOpenWorksheetView,
 }: {
   item: ProcessedHistoryItem;
-  onOpenWorksheetView: (item: StudentScoreHistoryItem, criterion?: CriterionFilter) => void;
+  hasUnreadComments: boolean;
+  onOpenWorksheetView: (
+    item: StudentScoreHistoryItem,
+    criterion?: CriterionFilter,
+    view?: "details" | "comments"
+  ) => void;
 }) {
   const formattedDate = new Date(item.submissionDate).toLocaleDateString("en-US", {
     month: "short",
@@ -132,7 +139,7 @@ function HistoryItemRow({
       </div>
 
       <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {item.compositeScore != null ? (
             <BandBadge score={item.compositeScore} size="sm" showDot />
           ) : (
@@ -142,6 +149,19 @@ function HistoryItemRow({
             <span className="text-sm font-semibold font-sans tabular-nums text-foreground">
               {Math.round(item.compositeScore)}%
             </span>
+          )}
+          {hasUnreadComments && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onOpenWorksheetView(item, undefined, "comments")}
+              aria-haspopup="dialog"
+              aria-label={`Read unread notes for "${displayTargetText}"`}
+              className="h-10 sm:h-8 px-2.5 text-xs font-semibold border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 cursor-pointer touch-manipulation"
+            >
+              Unread note
+            </Button>
           )}
         </div>
 
@@ -181,6 +201,10 @@ export function PastWorksheetsSection({
     useState<StudentScoreHistoryItem | null>(null);
   const [initialCriterionForView, setInitialCriterionForView] =
     useState<CriterionFilter | undefined>(undefined);
+  const [initialViewForDialog, setInitialViewForDialog] =
+    useState<"details" | "comments">("details");
+  const commentUserId = useCommentAccountId();
+  const unreadComments = useUnreadCommentThreads(commentUserId ?? "", Boolean(commentUserId));
   const isCollapsingRef = useRef(false);
   const toggleContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -221,9 +245,11 @@ export function PastWorksheetsSection({
 
   const handleOpenWorksheetView = (
     item: StudentScoreHistoryItem,
-    criterion?: CriterionFilter
+    criterion?: CriterionFilter,
+    view: "details" | "comments" = "details"
   ) => {
     setInitialCriterionForView(criterion);
+    setInitialViewForDialog(view);
     setSelectedItemForView(item);
   };
 
@@ -259,6 +285,7 @@ export function PastWorksheetsSection({
           <HistoryItemRow
             key={item.submissionId}
             item={item}
+            hasUnreadComments={Boolean(unreadComments.data?.has(item.submissionId))}
             onOpenWorksheetView={handleOpenWorksheetView}
           />
         ))}
@@ -292,7 +319,11 @@ export function PastWorksheetsSection({
         <PendingWorksheetDialog
           item={selectedItemForView}
           childName={childName}
-          onBack={() => setSelectedItemForView(null)}
+          initialView={initialViewForDialog}
+          onBack={() => {
+            setSelectedItemForView(null);
+            setInitialViewForDialog("details");
+          }}
           backLabel="Back to worksheets"
           onUploadActivity={onUploadActivity}
         />
@@ -305,9 +336,11 @@ export function PastWorksheetsSection({
             if (!openNext) {
               setSelectedItemForView(null);
               setInitialCriterionForView(undefined);
+              setInitialViewForDialog("details");
             }
           }}
           initialCriterion={initialCriterionForView}
+          initialView={initialViewForDialog}
           submissionId={selectedItemForView.submissionId}
           canDelete={selectedItemForView.canDelete}
           imagePath={selectedItemForView.imagePath ?? null}

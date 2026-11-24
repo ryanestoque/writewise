@@ -306,7 +306,7 @@ export function LatestSubmissionCard({
               aria-haspopup="dialog"
             >
               <MessageSquare className="size-3.5 text-primary" aria-hidden="true" />
-              <span>Teacher comments</span>
+              <span>Notes with teacher</span>
               {hasUnreadComments && (
                 <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
                   Unread

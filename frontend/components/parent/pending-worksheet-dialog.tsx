@@ -20,6 +20,7 @@ interface PendingWorksheetDialogProps {
   childName: string;
   onBack: () => void;
   backLabel?: string;
+  initialView?: "details" | "comments";
   onUploadActivity?: (activityId: string) => void;
 }
 
@@ -28,6 +29,7 @@ export function PendingWorksheetDialog({
   childName,
   onBack,
   backLabel = "Back to history",
+  initialView = "details",
   onUploadActivity,
 }: PendingWorksheetDialogProps) {
   const image = useSubmissionImageUrl(item.imagePath ?? null);
@@ -87,7 +89,14 @@ export function PendingWorksheetDialog({
         </DialogHeader>
 
         {/* Content Body: Unified Multimodal Split View */}
-        <SubmissionCommentTabs key={item.submissionId} submissionId={item.submissionId} open>
+        <SubmissionCommentTabs
+          key={item.submissionId}
+          submissionId={item.submissionId}
+          studentName={childName}
+          initialView={initialView}
+          commentsLabel="Notes"
+          open
+        >
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             {/* Left Column: Photo Inspector */}

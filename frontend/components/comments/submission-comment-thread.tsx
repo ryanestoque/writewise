@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Camera, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   MessageScrollerProvider,
@@ -10,25 +11,34 @@ import {
   MessageScrollerItem,
   MessageScrollerButton,
 } from "@/components/ui/message-scroller";
+import { Marker, MarkerContent } from "@/components/ui/marker";
 import { useCommentActions, useCommentThread } from "@/lib/hooks/use-comments";
 import { useNotificationRead } from "@/lib/hooks/use-notifications";
 import { canAcknowledge } from "@/lib/comments/data";
+import { buildCommentDraftKey } from "@/lib/comments/drafts";
 import { commentFeedback } from "@/lib/comments/presentation";
-import { ApiError } from "@/lib/utils/api-error";
-import type { CommentLocation, ThreadTarget } from "@/lib/comments/types";
+import type { CommentLocation, CommentWorksheetContext, ThreadTarget } from "@/lib/comments/types";
 import { matchesCommentLocation } from "@/lib/comments/selection";
+import { ApiError } from "@/lib/utils/api-error";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { formatDate, getRelativeTime } from "@/lib/utils/formatters";
+import { formatDate, getRelativeTime, normalizeActivityPrompt } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
 import { AlertCircle } from "lucide-react";
 import { CommentComposer } from "./comment-composer";
 import { ThreadEntryView } from "./thread-entry";
 
 const READ_ONLY = {
-  unassigned: "This activity is no longer assigned. Conversation history stays available.",
-  archived: "This activity is archived. Comments are read-only until it is unarchived.",
-  locked: "The teacher has locked this conversation. New comments are paused for everyone.",
+  unassigned: "This activity is no longer assigned. Past notes stay readable.",
+  archived: "This activity is archived. Notes are read-only until it is unarchived.",
+  locked: "The teacher has closed new notes on this worksheet.",
+};
+
+const STATUS_LABELS = {
+  processing: "Analyzing strokes",
+  rejected: "Needs a new photo",
+  completed: "Uploaded",
+  returned: "Returned for redo",
 };
 
 export function SubmissionCommentThread({
@@ -37,20 +47,30 @@ export function SubmissionCommentThread({
   open,
   location,
   studentName,
+  teacherName,
   compactHeader = false,
+  showCompactMeta = false,
+  worksheetContext,
 }: {
   userId: string;
   target: ThreadTarget;
   open: boolean;
   location?: CommentLocation;
   studentName?: string;
+  teacherName?: string;
   compactHeader?: boolean;
+  showCompactMeta?: boolean;
+  worksheetContext?: CommentWorksheetContext;
 }) {
   const query = useCommentThread(userId, target, open);
   const actions = useCommentActions(userId, target);
   const read = useNotificationRead(userId);
   const attempted = useRef(new Set<string>());
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [unreadBoundary, setUnreadBoundary] = useState<{
+    submissionId: string;
+    version: number;
+  } | null>(null);
   const thread = query.data;
   const matchesLocation = !thread || !location || matchesCommentLocation(thread, location);
   const refetch = query.refetch;
@@ -58,6 +78,20 @@ export function SubmissionCommentThread({
   const resetPost = actions.post.reset;
   const resetDelete = actions.deleteComment.reset;
   const resetLock = actions.setLocked.reset;
+
+  if (
+    open &&
+    thread &&
+    matchesLocation &&
+    thread.unread_notice &&
+    unreadBoundary?.submissionId !== thread.submission_id
+  ) {
+    setUnreadBoundary({
+      submissionId: thread.submission_id,
+      version: thread.unread_notice.comment_version,
+    });
+  }
+
   useEffect(() => {
     if (query.isError || !query.isAccountActive || !matchesLocation) {
       resetPost();
@@ -66,8 +100,10 @@ export function SubmissionCommentThread({
       attempted.current.clear();
     }
   }, [query.isError, query.isAccountActive, matchesLocation, resetPost, resetDelete, resetLock]);
+
   useEffect(() => {
-    if (!open || !query.isAccountActive || !thread || !matchesLocation || !canAcknowledge(thread)) return;
+    if (!open || !query.isAccountActive || !thread || !matchesLocation || !canAcknowledge(thread))
+      return;
     const notice = thread.unread_notice!;
     const key = `${notice.id}:${notice.comment_version}`;
     if (attempted.current.has(key)) return;
@@ -85,14 +121,23 @@ export function SubmissionCommentThread({
   }, [open, query.isAccountActive, thread, matchesLocation, markRead, refetch]);
 
   if (!open) return null;
-  if (!matchesLocation) return <p role="status" className="p-4">This conversation is unavailable.</p>;
+  if (!matchesLocation)
+    return (
+      <div className="p-4" role="status">
+        <Alert>
+          <AlertCircle className="size-4" />
+          <AlertTitle>Conversation unavailable</AlertTitle>
+          <AlertDescription>This conversation does not match the selected worksheet.</AlertDescription>
+        </Alert>
+      </div>
+    );
   if (!query.isAccountActive)
     return (
       <div className="p-4" role="status">
         <Alert>
           <AlertCircle className="size-4" />
           <AlertTitle>Sign-in required</AlertTitle>
-          <AlertDescription>Sign in again to view this conversation.</AlertDescription>
+          <AlertDescription>Sign in again to view these notes.</AlertDescription>
         </Alert>
       </div>
     );
@@ -101,11 +146,11 @@ export function SubmissionCommentThread({
       <div className="space-y-3 p-4" role="status">
         <Alert variant="destructive">
           <AlertCircle className="size-4" />
-          <AlertTitle>Could not load conversation</AlertTitle>
+          <AlertTitle>Could not load notes</AlertTitle>
           <AlertDescription>
             {query.error instanceof ApiError && query.error.code === "NOT_FOUND"
-              ? "This conversation is no longer available."
-              : "Unable to retrieve conversation history from the server."}
+              ? "These notes are no longer available."
+              : "Unable to retrieve notes from the server."}
           </AlertDescription>
         </Alert>
         <Button
@@ -120,156 +165,262 @@ export function SubmissionCommentThread({
     );
   if (!thread)
     return (
-      <div className="space-y-3 p-4" role="status" aria-label="Loading conversation">
-        <Skeleton className="h-6 w-48 rounded-md" />
+      <div className="space-y-3 p-4" role="status" aria-label="Loading notes">
+        <Skeleton className="h-5 w-44 rounded-md" />
         <Skeleton className="h-4 w-64 rounded-md" />
-        <div className="space-y-2 pt-4">
+        <div className="space-y-2 pt-3">
           <Skeleton className="h-16 w-3/4 rounded-xl" />
           <Skeleton className="h-16 w-2/3 ml-auto rounded-xl" />
         </div>
       </div>
     );
+
+  const studentFirstName = studentName?.trim().split(/\s+/)[0] || "your child";
+  const privacyNotice =
+    thread.actor_role === "parent"
+      ? `Private to ${teacherName ?? "your child's teacher"} and guardians linked to ${studentFirstName}.`
+      : `Private to teachers on this class and guardians linked to ${studentName?.trim() || "this student"}.`;
+
+  const canRetakePhoto = Boolean(
+    worksheetContext?.onSendNewPhoto &&
+      (worksheetContext.canSendNewPhoto ||
+        thread.submission_status === "returned" ||
+        thread.submission_status === "rejected")
+  );
+  const showContextStrip =
+    Boolean(worksheetContext?.onViewWorksheet) ||
+    canRetakePhoto ||
+    Boolean(worksheetContext?.targetText) ||
+    showCompactMeta;
+
+  const chronologicalEntries = [...thread.entries].reverse();
+  const activeUnreadVersion =
+    unreadBoundary?.submissionId === thread.submission_id ? unreadBoundary.version : null;
+  const firstUnreadEntryId =
+    activeUnreadVersion !== null
+      ? chronologicalEntries.find(
+          (entry) =>
+            entry.kind === "comment" &&
+            !entry.is_mine &&
+            entry.comment_version >= activeUnreadVersion
+        )?.id ?? null
+      : null;
+
+  const recipientLabel =
+    thread.actor_role === "parent" ? (teacherName ?? "teacher") : `${studentFirstName}'s family`;
+
+  const emptyMessage = thread.can_post
+    ? thread.actor_role === "parent"
+      ? `No notes yet. Write a quick note to ${teacherName ?? "your child's teacher"} about this worksheet.`
+      : `No notes yet. Write a quick note to ${studentFirstName}'s family about this worksheet.`
+    : "No notes were added before comments closed.";
+
+  const hasSubHeaderContent = !compactHeader || showContextStrip || thread.can_lock || !thread.can_post;
+
   return (
-    <section aria-label="Private conversation" className="flex min-h-0 flex-1 flex-col">
-      <div className="space-y-2 border-b px-4 py-3">
-        {!compactHeader && (
-          <>
-            <div className="flex flex-wrap items-baseline gap-2 min-w-0">
-              {studentName && (
-                <h2 className="font-heading text-base font-semibold text-foreground truncate">
-                  {studentName}
-                </h2>
-              )}
-              <p
-                className={cn(
-                  "text-xs sm:text-sm truncate",
-                  studentName ? "text-muted-foreground" : "font-heading font-semibold text-foreground"
+    <section aria-label="Worksheet notes" className="flex min-h-0 flex-1 flex-col">
+      {hasSubHeaderContent ? (
+        <div className={cn("border-b px-4", compactHeader ? "space-y-2 py-2.5" : "space-y-2 py-3")}>
+          {!compactHeader && (
+            <>
+              <div className="flex flex-wrap items-baseline gap-2 min-w-0">
+                {studentName && (
+                  <h2 className="font-heading text-base font-semibold text-foreground truncate">
+                    {studentName}
+                  </h2>
                 )}
-              >
-                {studentName ? `· ${thread.activity_title}` : thread.activity_title}
+                <p
+                  className={cn(
+                    "text-xs sm:text-sm truncate",
+                    studentName ? "text-muted-foreground" : "font-heading font-semibold text-foreground"
+                  )}
+                >
+                  {studentName ? `· ${thread.activity_title}` : thread.activity_title}
+                </p>
+              </div>
+              <p className="text-muted-foreground text-xs">
+                Uploaded{" "}
+                <time
+                  dateTime={thread.submitted_at}
+                  className="font-sans tabular-nums font-medium text-foreground/80"
+                >
+                  {formatDate(thread.submitted_at)} ({getRelativeTime(thread.submitted_at)})
+                </time>
+                {" · "}
+                <span className="font-medium text-foreground/80">
+                  {STATUS_LABELS[thread.submission_status]}
+                </span>
               </p>
+            </>
+          )}
+
+          {compactHeader && showContextStrip && (
+            <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
+              <div className="min-w-0 flex-1 space-y-0.5">
+                {(showCompactMeta || worksheetContext?.targetText) && (
+                  <p className="text-xs font-medium text-foreground truncate">
+                    {worksheetContext?.targetText
+                      ? `"${normalizeActivityPrompt(worksheetContext.targetText)}"`
+                      : thread.activity_title}
+                  </p>
+                )}
+                <p className="text-muted-foreground text-xs font-sans tabular-nums truncate">
+                  {formatDate(thread.submitted_at)} · {STATUS_LABELS[thread.submission_status]}
+                </p>
+              </div>
+              {(worksheetContext?.onViewWorksheet || canRetakePhoto) && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {worksheetContext?.onViewWorksheet && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={worksheetContext.onViewWorksheet}
+                      className="h-10 sm:h-8 min-h-10 sm:min-h-8 px-2.5 text-xs gap-1.5 cursor-pointer touch-manipulation"
+                    >
+                      <Eye className="size-3.5 shrink-0" aria-hidden="true" />
+                      <span>View worksheet</span>
+                    </Button>
+                  )}
+                  {canRetakePhoto && worksheetContext?.onSendNewPhoto && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="default"
+                      onClick={worksheetContext.onSendNewPhoto}
+                      className="h-10 sm:h-8 min-h-10 sm:min-h-8 px-2.5 text-xs gap-1.5 cursor-pointer touch-manipulation"
+                    >
+                      <Camera className="size-3.5 shrink-0" aria-hidden="true" />
+                      <span>Send new photo</span>
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
-            <p className="text-muted-foreground text-xs">
-              Uploaded{" "}
-              <time dateTime={thread.submitted_at} className="font-sans tabular-nums font-medium text-foreground/80">
-                {formatDate(thread.submitted_at)} ({getRelativeTime(thread.submitted_at)})
-              </time>
-              {" · "}
-              <span className="font-medium text-foreground/80">
-                {{
-                  processing: "Analyzing strokes",
-                  rejected: "Needs a new photo",
-                  completed: "Uploaded",
-                  returned: "Returned for redo",
-                }[thread.submission_status]}
-              </span>
-            </p>
-          </>
-        )}
-        <p className="text-muted-foreground text-xs">
-          Visible to the teacher and all linked parents immediately, even before results are
-          released.
-        </p>
-        {thread.read_only_reasons.map((reason) => (
-          <p key={reason} className="text-muted-foreground text-sm">
-            {READ_ONLY[reason]}
-          </p>
-        ))}
-        {thread.can_lock && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-11 sm:h-9 px-3 cursor-pointer touch-manipulation"
-            disabled={actions.setLocked.isPending}
-            onClick={() => {
-              setFeedback(null);
-              actions.setLocked.mutate(
-                { locked: !thread.comments_locked },
-                { onError: (error) => setFeedback(commentFeedback(error)) }
-              );
-            }}
-          >
-            {actions.setLocked.isPending
-              ? "Saving…"
-              : thread.comments_locked
-                ? "Unlock comments"
-                : "Lock comments"}
-          </Button>
-        )}
-      </div>
+          )}
+
+          {!compactHeader && <p className="text-muted-foreground text-xs">{privacyNotice}</p>}
+
+          {thread.can_lock && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-11 sm:h-9 px-3 cursor-pointer touch-manipulation"
+              disabled={actions.setLocked.isPending}
+              onClick={() => {
+                setFeedback(null);
+                actions.setLocked.mutate(
+                  { locked: !thread.comments_locked },
+                  { onError: (error) => setFeedback(commentFeedback(error)) }
+                );
+              }}
+            >
+              {actions.setLocked.isPending
+                ? "Saving…"
+                : thread.comments_locked
+                  ? "Unlock notes"
+                  : "Lock notes"}
+            </Button>
+          )}
+        </div>
+      ) : null}
+
       {(feedback || query.loadMoreError) && (
-        <div className="border-b px-4 py-3" role="status">
-          <p className="text-sm">{feedback ?? "Could not load older comments."}</p>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-11 sm:h-9 px-3 cursor-pointer touch-manipulation"
-            onClick={() => {
-              attempted.current.clear();
-              setFeedback(null);
-              void query.retry();
-            }}
-          >
-            Refresh conversation
-          </Button>
+        <div className="border-b px-4 py-2.5" role="alert">
+          <Alert variant="destructive" className="py-2.5">
+            <AlertCircle className="size-4" />
+            <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+              <span>{feedback ?? "Could not load older notes."}</span>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-10 sm:h-8 px-3 cursor-pointer touch-manipulation"
+                onClick={() => {
+                  attempted.current.clear();
+                  setFeedback(null);
+                  void query.retry();
+                }}
+              >
+                Refresh
+              </Button>
+            </AlertDescription>
+          </Alert>
         </div>
       )}
-      {thread.next_cursor && (
-        <div className="px-4 pt-3">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-11 sm:h-9 px-3 cursor-pointer touch-manipulation"
-            disabled={query.isLoadingMore || query.isFetching}
-            onClick={query.loadMore}
-          >
-            {query.isLoadingMore ? "Loading…" : "Load older comments"}
-          </Button>
-        </div>
-      )}
+
       <MessageScrollerProvider autoScroll defaultScrollPosition="end">
         <MessageScroller className="min-h-0 flex-1">
-          <MessageScrollerViewport aria-label="Conversation entries" preserveScrollOnPrepend>
+          <MessageScrollerViewport aria-label="Worksheet notes history" preserveScrollOnPrepend>
             <MessageScrollerContent className="gap-4 p-4">
-              {thread.entries.length === 0 && (
-                <p className="text-muted-foreground py-6 text-center text-sm">
-                  No comments yet. Start a conversation about this worksheet upload.
-                </p>
+              {thread.next_cursor && (
+                <div className="flex justify-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-10 sm:h-8 px-3.5 text-xs cursor-pointer touch-manipulation"
+                    disabled={query.isLoadingMore || query.isFetching}
+                    onClick={query.loadMore}
+                  >
+                    {query.isLoadingMore ? "Loading older notes…" : "Load older notes"}
+                  </Button>
+                </div>
               )}
-              {[...thread.entries].reverse().map((entry) => (
+
+              <p className="text-muted-foreground text-center text-xs">{privacyNotice}</p>
+
+              {chronologicalEntries.length === 0 && (
+                <p className="text-muted-foreground py-6 text-center text-sm">{emptyMessage}</p>
+              )}
+
+              {chronologicalEntries.map((entry) => (
                 <MessageScrollerItem
                   key={`${entry.kind}:${entry.id}`}
                   messageId={`${entry.kind}:${entry.id}`}
                 >
+                  {entry.kind === "comment" && entry.id === firstUnreadEntryId && (
+                    <Marker variant="separator" className="mb-3 text-xs font-medium text-primary">
+                      <MarkerContent>New</MarkerContent>
+                    </Marker>
+                  )}
                   <ThreadEntryView
                     entry={entry}
+                    actorRole={thread.actor_role}
+                    teacherName={teacherName}
                     deleting={actions.deleteComment.isPending}
                     onDelete={async (id) => {
                       setFeedback(null);
-                      try {
-                        await actions.deleteComment.mutateAsync(id);
-                      } catch (error) {
-                        setFeedback(commentFeedback(error));
-                        throw error;
-                      }
+                      await actions.deleteComment.mutateAsync(id);
                     }}
                   />
                 </MessageScrollerItem>
               ))}
             </MessageScrollerContent>
           </MessageScrollerViewport>
-          <MessageScrollerButton direction="end" className="px-3">
+          <MessageScrollerButton
+            direction="end"
+            size="sm"
+            className="h-10 sm:h-8 w-auto rounded-full px-3.5 shadow-warm-sm"
+          >
             Jump to latest
           </MessageScrollerButton>
         </MessageScroller>
       </MessageScrollerProvider>
-      <CommentComposer
-        disabled={!thread.can_post}
-        pending={actions.post.isPending}
-        onSend={async (body) => {
-          await actions.post.mutateAsync({ body });
-        }}
-      />
+
+      {thread.can_post ? (
+        <CommentComposer
+          draftKey={buildCommentDraftKey(userId, thread.submission_id)}
+          recipientLabel={recipientLabel}
+          disabled={!thread.can_post}
+          pending={actions.post.isPending}
+          onSend={async (body) => {
+            await actions.post.mutateAsync({ body });
+          }}
+        />
+      ) : (
+        <div className="bg-muted/35 text-muted-foreground shrink-0 border-t px-4 py-3 text-xs sm:text-sm">
+          {thread.read_only_reasons.map((reason) => READ_ONLY[reason]).join(" ")}
+        </div>
+      )}
     </section>
   );
 }

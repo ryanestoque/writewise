@@ -337,10 +337,53 @@ export function ProgressPageContent() {
       ? notificationTarget.target
       : null;
   const gradeDestination = notificationTargetData?.view === "grades";
+  const now = useActivityNow();
+  const commentHistoryMatch = notificationTargetData?.submissionId
+    ? allHistory?.find((row) => row.submissionId === notificationTargetData.submissionId)
+    : undefined;
+  const commentActivityMatch = notificationTargetData?.activityId
+    ? takeHomeActivities.find((a) => a.id === notificationTargetData.activityId)
+    : undefined;
+  const canSendPhotoFromCommentSheet = Boolean(
+    notificationTargetData &&
+      commentActivityMatch &&
+      getParentActivityStatus(commentActivityMatch, now).canSend
+  );
   const notificationDestination = notificationTargetData?.view === "comments" && notificationTargetData.submissionId ? (
-    <SubmissionCommentThreadSheet key={`${userId}:${notificationTargetData.childId}:${notificationTargetData.submissionId}`}
-      userId={userId} target={{ activityId: notificationTargetData.activityId, studentId: notificationTargetData.childId, submissionId: notificationTargetData.submissionId }} open
-      studentName={selectedChild?.fullName} onOpenChange={open => { if (!open) dismissNotificationTarget(); }} />
+    <SubmissionCommentThreadSheet
+      key={`${userId}:${notificationTargetData.childId}:${notificationTargetData.submissionId}`}
+      userId={userId}
+      target={{
+        activityId: notificationTargetData.activityId,
+        studentId: notificationTargetData.childId,
+        submissionId: notificationTargetData.submissionId,
+      }}
+      open
+      audience="parent"
+      studentName={selectedChild?.fullName}
+      worksheetContext={{
+        targetText: commentHistoryMatch?.targetText ?? commentActivityMatch?.targetText,
+        canSendNewPhoto: canSendPhotoFromCommentSheet,
+        onViewWorksheet: () => {
+          const next = {
+            activityId: notificationTargetData.activityId,
+            submissionId: notificationTargetData.submissionId ?? null,
+          };
+          dismissNotificationTarget();
+          setInspectedGradeWork(next);
+        },
+        onSendNewPhoto: canSendPhotoFromCommentSheet
+          ? () => {
+              const targetActivityId = notificationTargetData.activityId;
+              dismissNotificationTarget();
+              handleUploadActivity(targetActivityId);
+            }
+          : undefined,
+      }}
+      onOpenChange={(open) => {
+        if (!open) dismissNotificationTarget();
+      }}
+    />
   ) : notificationTarget.kind !== "none" && !gradeDestination ? (
     <NotificationWorkDestination
       key={`${notificationTargetData?.childId}:${notificationTargetData?.activityId}:${notificationTargetData?.submissionId}`}

@@ -271,7 +271,11 @@ export function ParentGrades({
                     activityId: activity.id,
                     studentId: childId,
                   });
-                  const canShowComments = cell.active_submission_id !== null || hasUnread;
+                  const canShowComments =
+                    cell.active_submission_id !== null ||
+                    cell.coursework_status === "Returned" ||
+                    hasUnread;
+                  const teacherDisplayName = formatTeacherDisplayName(group.teacher_name);
                   const hasCompositeScore = cell.assessment_composite !== null;
                   const pointsLabel = formatCellPoints(cell);
                   const statusText = `${formatCourseworkStatus(cell.coursework_status)}${cell.late ? " · Late" : ""}${activity.is_archived ? " · Archived" : ""}`;
@@ -282,7 +286,13 @@ export function ParentGrades({
                       id={`parent-grade-${activity.id}`}
                       ref={isHighlighted ? highlightedRowRef : undefined}
                       tabIndex={isHighlighted ? -1 : undefined}
-                      className={`flex scroll-mt-24 flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3.5 sm:px-5 focus:outline-none ${isHighlighted ? "bg-primary/5 ring-primary ring-2 ring-inset" : ""}`}
+                      className={`group/row relative flex scroll-mt-24 flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3.5 sm:px-5 focus:outline-none ${
+                        isHighlighted
+                          ? "bg-primary/5 ring-primary ring-2 ring-inset"
+                          : onInspectActivity
+                            ? "hover:bg-muted/40 transition-colors"
+                            : ""
+                      }`}
                     >
                       <div className="min-w-0 flex-1">
                         {onInspectActivity ? (
@@ -295,10 +305,10 @@ export function ParentGrades({
                               })
                             }
                             aria-describedby={`parent-grade-meta-${activity.id}`}
-                            className="group flex w-full items-center justify-between gap-3 min-h-11 sm:min-h-0 text-left rounded-md py-1.5 sm:py-1 -mx-1.5 px-1.5 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer touch-manipulation transition-colors"
+                            className="group flex w-full sm:w-auto items-center justify-between gap-3 min-h-11 sm:min-h-0 text-left rounded-md py-1.5 sm:py-1 -mx-1.5 px-1.5 hover:bg-muted/50 sm:hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer touch-manipulation transition-colors sm:after:absolute sm:after:inset-0 sm:after:content-['']"
                           >
                             <div className="min-w-0 space-y-0.5">
-                              <h4 className="font-sans text-sm font-medium text-foreground group-hover:text-primary transition-colors break-words">
+                              <h4 className="font-sans text-sm font-medium text-foreground group-hover/row:text-primary transition-colors break-words">
                                 {activity.title}
                               </h4>
                               <p id={`parent-grade-meta-${activity.id}`} className="text-muted-foreground text-xs">
@@ -311,7 +321,7 @@ export function ParentGrades({
                               </p>
                             </div>
                             <ChevronRight
-                              className="size-4 shrink-0 text-muted-foreground/70 group-hover:text-primary group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none"
+                              className="sm:hidden size-4 shrink-0 text-muted-foreground/70 group-hover:text-primary group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none"
                               aria-hidden="true"
                             />
                           </button>
@@ -355,22 +365,48 @@ export function ParentGrades({
                           </div>
 
                           {canShowComments && (
-                            <div className="shrink-0">
+                            <div className="shrink-0 relative z-10">
                               <WorkCommentsButton
                                 scope={{ activityId: activity.id, studentId: childId }}
                                 activeSubmissionId={cell.active_submission_id}
                                 studentName={childName}
                                 activityTitle={activity.title}
+                                teacherName={teacherDisplayName}
+                                audience="parent"
                                 hasUnread={hasUnread}
+                                worksheetContext={
+                                  onInspectActivity
+                                    ? {
+                                        onViewWorksheet: () =>
+                                          onInspectActivity({
+                                            activityId: activity.id,
+                                            submissionId: cell.active_submission_id,
+                                          }),
+                                      }
+                                    : undefined
+                                }
                               />
                             </div>
                           )}
+
+                          {onInspectActivity && (
+                            <ChevronRight
+                              className="hidden sm:block size-4 shrink-0 text-muted-foreground/70 group-hover/row:text-primary group-hover/row:translate-x-0.5 transition-transform motion-reduce:transition-none pointer-events-none"
+                              aria-hidden="true"
+                            />
+                          )}
                         </div>
                       ) : (
-                        <div className="hidden sm:block text-right shrink-0">
+                        <div className="hidden sm:flex items-center justify-end gap-3 shrink-0">
                           <p className="text-xs sm:text-sm font-medium tabular-nums text-foreground">
                             {pointsLabel}
                           </p>
+                          {onInspectActivity && (
+                            <ChevronRight
+                              className="size-4 shrink-0 text-muted-foreground/70 group-hover/row:text-primary group-hover/row:translate-x-0.5 transition-transform motion-reduce:transition-none pointer-events-none"
+                              aria-hidden="true"
+                            />
+                          )}
                         </div>
                       )}
                     </li>

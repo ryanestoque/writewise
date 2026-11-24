@@ -137,6 +137,15 @@ export function WorksheetViewDialog({
   const [selectedAttentionItem, setSelectedAttentionItem] =
     useState<ActiveAnnotationHover | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [activeView, setActiveView] = useState<"details" | "comments">(initialView);
+  const [prevOpen, setPrevOpen] = useState(open);
+
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setActiveView(initialView);
+    }
+  }
 
   const { topStrength, practiceFocus } = useMemo(() => {
     return computeStrengthAndFocus(scores, bands);
@@ -280,6 +289,8 @@ export function WorksheetViewDialog({
           open={open}
           initialView={initialView}
           studentName={childName}
+          commentsLabel="Notes"
+          onViewChange={setActiveView}
         >
           <div className="flex-1 overflow-y-auto p-4 sm:p-6">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
@@ -566,7 +577,7 @@ export function WorksheetViewDialog({
         </SubmissionCommentTabs>
 
         {/* Footer — single calm primary CTA when practice is available */}
-        {onPracticeNow && (
+        {onPracticeNow && activeView !== "comments" && (
           <div className="px-4 py-3 sm:px-5 border-t border-border bg-card/80 flex items-center justify-end">
             <Button
               type="button"
@@ -591,7 +602,7 @@ export function WorksheetViewDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this upload?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently deletes your uploaded worksheet photo and its comments. This action cannot be undone, and you can send a new photo anytime.
+              This permanently deletes your uploaded worksheet photo and its notes. This action cannot be undone, and you can send a new photo anytime.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

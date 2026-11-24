@@ -9,7 +9,7 @@ const COPY: Record<NotificationRow["type"], string> = {
   score_released: "Handwriting assessment ready",
   activity_missing: "Pending worksheet: Ready for submission",
   resubmitted_after_return: "New cursive worksheet submitted",
-  comment_posted: "New private comment",
+  comment_posted: "New note on worksheet",
 };
 
 export function notificationCopy(type: NotificationRow["type"]): string {
