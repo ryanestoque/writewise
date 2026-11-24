@@ -64,10 +64,11 @@ export function WorkCommentsButton({
           }
         >
           <MessageSquare className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-          <span>Comments</span>
+          <span className="truncate">Comments</span>
           {hasUnread && (
-            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-              Unread
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-1.5 sm:px-2 py-0.5 text-xs font-semibold text-primary shrink-0">
+              <span className="sm:hidden size-1.5 rounded-full bg-primary" aria-hidden="true" />
+              <span className="hidden sm:inline">Unread</span>
             </span>
           )}
         </SheetTrigger>

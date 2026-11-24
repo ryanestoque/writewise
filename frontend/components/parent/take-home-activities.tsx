@@ -564,13 +564,14 @@ function CompactWorksheetRow({
         )}
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap sm:shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto sm:shrink-0">
         {childId && (work.attempts.length || submission?.submissionId) ? (
           <WorkCommentsButton
             scope={{ activityId: work.id, studentId: childId }}
             activeSubmissionId={work.workState?.active_submission_id ?? null}
             activityTitle={work.title}
             hasUnread={hasUnreadComments}
+            className="flex-1 sm:flex-initial min-w-0 h-11 sm:h-9 min-h-11 sm:min-h-9 px-2 sm:px-3 text-xs sm:text-sm font-medium gap-1.5"
           />
         ) : null}
 
@@ -590,11 +591,12 @@ function CompactWorksheetRow({
                 canDelete: Boolean(submission.canDelete),
               })
             }
-            className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50 px-3"
+            className="flex-1 sm:flex-initial min-w-0 h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50 px-2 sm:px-3"
             aria-label={`View uploaded photo for ${work.title}`}
           >
             <Eye className="size-3.5 shrink-0" aria-hidden="true" />
-            <span>View photo</span>
+            <span className="truncate sm:hidden">Photo</span>
+            <span className="hidden sm:inline">View photo</span>
           </Button>
         )}
 
@@ -604,11 +606,12 @@ function CompactWorksheetRow({
             variant="outline"
             size="sm"
             onClick={onReplacePhoto}
-            className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50 px-3"
+            className="flex-1 sm:flex-initial min-w-0 h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50 px-2 sm:px-3"
             aria-label={`Replace photo for ${work.title}`}
           >
             <Camera className="size-3.5 shrink-0" aria-hidden="true" />
-            <span>Replace photo</span>
+            <span className="truncate sm:hidden">Replace</span>
+            <span className="hidden sm:inline">Replace photo</span>
           </Button>
         )}
 
@@ -623,9 +626,10 @@ function CompactWorksheetRow({
                 submissionId: submission?.submissionId ?? null,
               })
             }
-            className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium cursor-pointer px-3"
+            className="flex-1 sm:flex-initial min-w-0 h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium cursor-pointer px-2 sm:px-3"
           >
-            View feedback
+            <span className="truncate sm:hidden">Feedback</span>
+            <span className="hidden sm:inline">View feedback</span>
           </Button>
         )}
       </div>
@@ -881,7 +885,7 @@ function ActivityCard({
             )}
 
             {/* Main Action Bar: Cohesive single row with clear primary/secondary balance */}
-            <div className="flex items-center gap-2 w-full">
+            <div className="flex items-center gap-1.5 sm:gap-2 w-full">
               {/* Secondary utility: Comments with teacher */}
               {childId && (work.attempts.length || submission?.submissionId) ? (
                 <WorkCommentsButton
@@ -889,7 +893,7 @@ function ActivityCard({
                   activeSubmissionId={work.workState?.active_submission_id ?? null}
                   activityTitle={work.title}
                   hasUnread={hasUnreadComments}
-                  className="shrink-0 h-11 sm:h-9 px-3 text-xs sm:text-sm font-medium gap-1.5"
+                  className="shrink-0 h-11 sm:h-9 px-2.5 sm:px-3 text-xs sm:text-sm font-medium gap-1.5"
                 />
               ) : null}
 
