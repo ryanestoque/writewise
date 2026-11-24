@@ -401,9 +401,6 @@ export function CriterionTrendChart({
         <div className="flex flex-col gap-3 border-b border-border/50 pb-3 min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground">
-                {viewMode === "table" ? "Score table" : showEachSkill ? "By skill" : "Overall"}
-              </span>
               {viewMode === "chart" && (
                 <button
                   type="button"
@@ -926,7 +923,7 @@ export function CriterionTrendChart({
             </table>
           </div>
           <div className="sm:hidden px-3 py-1.5 bg-muted/20 border-t border-border/50 text-xs text-muted-foreground text-center">
-            Scroll horizontally to view all 5 penmanship criteria columns &rarr;
+            Scroll horizontally to view all columns &rarr;
           </div>
         </div>
       )}
