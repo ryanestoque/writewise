@@ -1,3 +1,6 @@
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Item, ItemActions, ItemContent } from "@/components/ui/item";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -36,30 +39,33 @@ export function LatestSubmissionSkeleton({
       aria-live={decorative ? undefined : "polite"}
       aria-label={decorative ? undefined : statusLabel}
       aria-hidden={decorative ? true : undefined}
-      className="space-y-6"
+      className="flex flex-col gap-6"
     >
       {!decorative && <span className="sr-only">{statusLabel}</span>}
 
       {/* Hero Latest Worksheet Card */}
-      <div
+      <Card
         aria-hidden="true"
-        className="overflow-hidden rounded-xl border border-border bg-card shadow-warm md:grid md:grid-cols-12"
+        className="p-0 gap-0 md:grid md:grid-cols-12"
       >
         {/* Left: Worksheet photo pane */}
         <div className="md:col-span-5 flex items-center justify-center bg-secondary/45 p-4 sm:p-6">
-          <div className="relative aspect-[4/3] w-full max-w-md overflow-hidden rounded-lg border border-border/70 bg-background p-3 shadow-warm-sm flex flex-col justify-center gap-3">
+          <AspectRatio
+            ratio={4 / 3}
+            className="w-full max-w-md overflow-hidden rounded-lg border border-border/70 bg-background p-3 shadow-warm-sm flex flex-col justify-center gap-3"
+          >
             <Skeleton className="h-3.5 w-2/3 rounded-md" />
             <Skeleton className="h-3.5 w-5/6 rounded-md" />
             <Skeleton className="h-3.5 w-3/4 rounded-md" />
             <Skeleton className="h-3.5 w-1/2 rounded-md" />
-          </div>
+          </AspectRatio>
         </div>
 
         {/* Right: Title, score summary, bar, and actions */}
-        <div className="md:col-span-7 flex min-w-0 flex-col justify-center gap-4 p-5 sm:p-6">
-          <div className="space-y-2.5">
+        <CardContent className="md:col-span-7 flex min-w-0 flex-col justify-center gap-4 p-5 sm:p-6">
+          <div className="flex flex-col gap-2.5">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 flex-1 space-y-2">
+              <div className="min-w-0 flex-1 flex flex-col gap-2">
                 <Skeleton className="h-6 sm:h-7 w-3/4 max-w-sm rounded-md" />
                 <Skeleton className="h-4 w-44 sm:w-56 rounded-md" />
               </div>
@@ -78,38 +84,41 @@ export function LatestSubmissionSkeleton({
             <Skeleton className="h-11 sm:h-9 w-full sm:w-44 rounded-lg" />
             <Skeleton className="h-11 sm:h-9 w-full sm:w-40 rounded-lg" />
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Skill breakdown 5-criterion card */}
-      <div
+      <Card
         aria-hidden="true"
-        className="overflow-hidden rounded-xl border border-border bg-card shadow-warm px-4 sm:px-6"
+        className="p-0 gap-0"
       >
-        <div className="flex items-center justify-between gap-2 py-4">
+        <CardHeader className="flex flex-row items-center justify-between gap-2 px-4 sm:px-6 py-4">
           <Skeleton className="h-6 w-40 rounded-md" />
           <Skeleton className="h-4 w-28 rounded-md" />
-        </div>
+        </CardHeader>
 
-        {SKILL_LABEL_WIDTHS.map((labelWidth, index) => (
-          <div
-            key={index}
-            className="flex items-center justify-between gap-3 sm:gap-4 border-t border-border/70 py-3.5 min-h-12"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <Skeleton className={cn("h-4 rounded-md", labelWidth)} />
-              {index === 0 && (
-                <Skeleton className="hidden sm:block h-3.5 w-20 rounded-md" />
-              )}
-            </div>
-            <div className="flex items-center gap-2.5 shrink-0">
-              <Skeleton className="h-6 w-24 rounded-full" />
-              <Skeleton className="h-4 w-9 rounded-md" />
-              <Skeleton className="size-4 rounded-sm opacity-60" />
-            </div>
-          </div>
-        ))}
-      </div>
+        <CardContent className="p-0 border-t border-border divide-y divide-border">
+          {SKILL_LABEL_WIDTHS.map((labelWidth, index) => (
+            <Item
+              key={index}
+              size="sm"
+              className="flex-nowrap rounded-none border-0 px-4 sm:px-6 py-3.5 min-h-12 justify-between last:rounded-b-xl"
+            >
+              <ItemContent className="flex-row items-center gap-2.5 min-w-0">
+                <Skeleton className={cn("h-4 rounded-md", labelWidth)} />
+                {index === 0 && (
+                  <Skeleton className="hidden sm:block h-3.5 w-20 rounded-md" />
+                )}
+              </ItemContent>
+              <ItemActions className="gap-2.5 shrink-0">
+                <Skeleton className="h-6 w-24 rounded-full" />
+                <Skeleton className="h-4 w-9 rounded-md" />
+                <Skeleton className="size-4 rounded-sm opacity-60" />
+              </ItemActions>
+            </Item>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 }

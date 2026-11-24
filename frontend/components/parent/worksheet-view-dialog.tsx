@@ -19,6 +19,7 @@ import { Toggle } from "@/components/ui/toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -54,12 +55,12 @@ import {
 } from "@/lib/utils/scoring";
 import {
   HelpCircle,
-  Loader2,
   MoreHorizontal,
   PenLine,
   Trash2,
   X,
 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -289,15 +290,17 @@ export function WorksheetViewDialog({
                   <MoreHorizontal className="size-4" aria-hidden="true" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                  {canDelete && submissionId && (
-                    <DropdownMenuItem
-                      variant="destructive"
-                      onClick={() => setIsDeleteDialogOpen(true)}
-                    >
-                      <Trash2 className="size-4" aria-hidden="true" />
-                      <span>Delete upload</span>
-                    </DropdownMenuItem>
-                  )}
+                  <DropdownMenuGroup>
+                    {canDelete && submissionId && (
+                      <DropdownMenuItem
+                        variant="destructive"
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                      >
+                        <Trash2 aria-hidden="true" />
+                        <span>Delete upload</span>
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
@@ -624,7 +627,7 @@ export function WorksheetViewDialog({
             >
               {deleteMutation.isPending ? (
                 <>
-                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  <Spinner data-icon="inline-start" aria-hidden="true" />
                   <span>Deleting...</span>
                 </>
               ) : (

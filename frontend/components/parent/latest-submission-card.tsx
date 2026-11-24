@@ -11,6 +11,29 @@ import { normalizeActivityPrompt } from "@/lib/utils/formatters";
 import { BandBadge } from "@/components/shared/band-badge";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
 import { QueryRecovery } from "@/components/shared/query-recovery";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemTitle,
+} from "@/components/ui/item";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LatestSubmissionSkeleton } from "@/components/parent/parent-portal-skeletons";
 
@@ -141,42 +164,42 @@ export function LatestSubmissionCard({
     }
     const emptyAction = hasNoAssignedPractice ? onOpenCursiveGuide : navigateToTakeHome;
     return (
-      <div className="rounded-xl border border-border bg-card shadow-warm p-6 sm:p-8 text-center space-y-4">
-        <div className="flex justify-center">
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
+      <Empty className="border border-solid border-border rounded-xl bg-card shadow-warm p-6 sm:p-8 gap-4">
+        <EmptyHeader className="gap-1.5">
+          <EmptyMedia variant="icon" className="size-12 rounded-2xl bg-secondary text-secondary-foreground [&_svg:not([class*='size-'])]:size-6">
             {hasPendingSubmission ? (
-              <Clock className="size-6" aria-hidden="true" />
+              <Clock aria-hidden="true" />
             ) : (
-              <FileText className="size-6" aria-hidden="true" />
+              <FileText aria-hidden="true" />
             )}
-          </div>
-        </div>
-        <div className="space-y-1">
-          <h2 className="font-heading text-base font-semibold text-foreground">
+          </EmptyMedia>
+          <EmptyTitle className="text-base font-semibold text-foreground">
             {hasPendingSubmission
               ? "Worksheet received · pending review"
               : "No feedback yet"}
-          </h2>
-          <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
+          </EmptyTitle>
+          <EmptyDescription className="max-w-sm leading-relaxed">
             {hasPendingSubmission
               ? `${firstName}'s feedback will appear here once their teacher shares it.`
               : hasNoAssignedPractice
                 ? "No practice assigned yet. Use the cursive guide to practice at home."
                 : `${firstName}'s latest worksheet and feedback will appear here once shared.`}
-          </p>
-        </div>
+          </EmptyDescription>
+        </EmptyHeader>
         {emptyAction && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => emptyAction()}
-            className="h-11 sm:h-9 text-xs sm:text-sm font-medium cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
-          >
-            {hasNoAssignedPractice ? "Open cursive guide" : "View practice worksheets"}
-          </Button>
+          <EmptyContent>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => emptyAction()}
+              className="h-11 sm:h-9 text-xs sm:text-sm font-medium cursor-pointer touch-manipulation"
+            >
+              {hasNoAssignedPractice ? "Open cursive guide" : "View practice worksheets"}
+            </Button>
+          </EmptyContent>
         )}
-      </div>
+      </Empty>
     );
   }
 
@@ -203,55 +226,62 @@ export function LatestSubmissionCard({
         />
       )}
 
-      <section
+      <Card
+        role="region"
         aria-labelledby="latest-worksheet-heading"
-        className="overflow-hidden rounded-xl border border-border bg-card shadow-warm md:grid md:grid-cols-12"
+        className="p-0 gap-0 md:grid md:grid-cols-12"
       >
         {/* Photo first in DOM: leads on phones, sits on left column on desktop */}
         <div className="md:col-span-5 flex items-center justify-center bg-secondary/45 p-4 sm:p-6">
           {imageUrl && imageUrl !== failedImageUrl ? (
-            <button
-              type="button"
-              onClick={() => openWorksheetForCriterion()}
-              aria-haspopup="dialog"
-              aria-label={`Inspect worksheet photo for ${displayActivityText}`}
-              className="group relative aspect-[4/3] w-full max-w-md cursor-pointer overflow-hidden rounded-lg border border-border/70 bg-background shadow-warm-sm transition-shadow hover:shadow-warm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <Image
-                src={imageUrl}
-                alt={`Handwriting for ${displayActivityText}`}
-                fill
-                sizes="(min-width: 768px) 42vw, 100vw"
-                className="object-contain p-1.5 transition-transform duration-200 ease-out group-hover:scale-[1.015] motion-reduce:transition-none"
-                onError={() => setFailedImageUrl(imageUrl)}
-              />
-            </button>
+            <AspectRatio ratio={4 / 3} className="w-full max-w-md">
+              <button
+                type="button"
+                onClick={() => openWorksheetForCriterion()}
+                aria-haspopup="dialog"
+                aria-label={`Inspect worksheet photo for ${displayActivityText}`}
+                className="group relative size-full cursor-pointer overflow-hidden rounded-lg border border-border/70 bg-background shadow-warm-sm transition-shadow hover:shadow-warm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Image
+                  src={imageUrl}
+                  alt={`Handwriting for ${displayActivityText}`}
+                  fill
+                  sizes="(min-width: 768px) 42vw, 100vw"
+                  className="object-contain p-1.5 transition-transform duration-200 ease-out group-hover:scale-[1.015] motion-reduce:transition-none"
+                  onError={() => setFailedImageUrl(imageUrl)}
+                />
+              </button>
+            </AspectRatio>
           ) : imageLoading && latest.imagePath ? (
-            <div
+            <AspectRatio
+              ratio={4 / 3}
               role="status"
               aria-live="polite"
               aria-label="Loading worksheet photo"
-              className="relative aspect-[4/3] w-full max-w-md overflow-hidden rounded-lg border border-border/70 bg-background p-4 shadow-warm-sm flex flex-col justify-center gap-3"
+              className="w-full max-w-md overflow-hidden rounded-lg border border-border/70 bg-background p-4 shadow-warm-sm flex flex-col justify-center gap-3"
             >
               <span className="sr-only">Loading worksheet photo</span>
               <Skeleton aria-hidden="true" className="h-3.5 w-2/3 rounded-md" />
               <Skeleton aria-hidden="true" className="h-3.5 w-5/6 rounded-md" />
               <Skeleton aria-hidden="true" className="h-3.5 w-3/4 rounded-md" />
               <Skeleton aria-hidden="true" className="h-3.5 w-1/2 rounded-md" />
-            </div>
+            </AspectRatio>
           ) : (
-            <div className="flex aspect-[4/3] w-full max-w-md items-center justify-center rounded-lg border border-dashed border-border/70 bg-background/70 px-4 text-center">
+            <AspectRatio
+              ratio={4 / 3}
+              className="flex w-full max-w-md items-center justify-center rounded-lg border border-dashed border-border/70 bg-background/70 px-4 text-center"
+            >
               <span className="text-sm text-muted-foreground">
                 Worksheet preview unavailable
               </span>
-            </div>
+            </AspectRatio>
           )}
         </div>
 
-        <div className="md:col-span-7 flex min-w-0 flex-col justify-center gap-4 p-5 sm:p-6">
-          <div className="space-y-2.5">
+        <CardContent className="md:col-span-7 flex min-w-0 flex-col justify-center gap-4 p-5 sm:p-6">
+          <div className="flex flex-col gap-2.5">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 space-y-1">
+              <div className="min-w-0 flex flex-col gap-1">
                 <h2
                   id="latest-worksheet-heading"
                   className="font-heading text-lg sm:text-xl font-semibold tracking-tight wrap-anywhere text-foreground"
@@ -291,7 +321,7 @@ export function LatestSubmissionCard({
               type="button"
               variant="default"
               size="sm"
-              className="w-full sm:w-auto h-11 sm:h-9 px-4 text-xs sm:text-sm font-semibold cursor-pointer touch-manipulation shadow-warm-sm gap-2 justify-center"
+              className="w-full sm:w-auto h-11 sm:h-9 px-4 text-xs sm:text-sm font-semibold cursor-pointer touch-manipulation shadow-warm-sm justify-center"
               onClick={() => openWorksheetForCriterion("all", "details")}
               aria-haspopup="dialog"
             >
@@ -305,74 +335,87 @@ export function LatestSubmissionCard({
               onClick={() => openWorksheetForCriterion("all", "comments")}
               aria-haspopup="dialog"
             >
-              <MessageSquare className="size-3.5 text-primary" aria-hidden="true" />
+              <MessageSquare data-icon="inline-start" className="text-primary" aria-hidden="true" />
               <span>Notes with teacher</span>
               {hasUnreadComments && (
-                <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+                <Badge variant="secondary" className="rounded-full text-primary font-semibold">
                   Unread
-                </span>
+                </Badge>
               )}
             </Button>
           </div>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
-      <section aria-labelledby="skill-breakdown" className="overflow-hidden rounded-xl border border-border bg-card shadow-warm px-4 sm:px-6">
-        <div className="flex flex-wrap items-center justify-between gap-2 py-4">
-          <h2 id="skill-breakdown" className="font-heading text-lg font-semibold">Skill breakdown</h2>
+      <Card role="region" aria-labelledby="skill-breakdown" className="p-0 gap-0">
+        <CardHeader className="items-center px-4 sm:px-6 py-4 gap-0">
+          <CardTitle id="skill-breakdown" className="text-lg font-semibold">
+            Skill breakdown
+          </CardTitle>
           {onOpenRubric && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              aria-haspopup="dialog"
-              className="h-8 px-3 rounded-full text-xs font-medium text-foreground border-border/80 bg-background hover:text-primary hover:border-primary/40 hover:bg-primary/5 active:bg-primary/10 cursor-pointer touch-manipulation transition-colors gap-1.5 shadow-2xs"
-              onClick={onOpenRubric}
-            >
-              <HelpCircle className="size-3.5 text-primary shrink-0" aria-hidden="true" />
-              <span>Score Guide</span>
-            </Button>
+            <CardAction className="row-span-1 self-center">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-haspopup="dialog"
+                className="h-8 px-3 rounded-full text-xs font-medium text-foreground border-border/80 bg-background hover:text-primary hover:border-primary/40 hover:bg-primary/5 active:bg-primary/10 cursor-pointer touch-manipulation transition-colors shadow-2xs"
+                onClick={onOpenRubric}
+              >
+                <HelpCircle data-icon="inline-start" className="text-primary" aria-hidden="true" />
+                <span>Score Guide</span>
+              </Button>
+            </CardAction>
           )}
-        </div>
-        {PARENT_CRITERIA_LIST.map(({ key, label }) => {
-          const score = latest.scores[key];
-          const band = latest.bands[key] ?? (score == null ? null : getBandFromScore(score));
-          const isTop = topStrength?.key === key;
-          const isFocus = practiceFocus?.key === key;
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => openWorksheetForCriterion(key, "details")}
-              aria-haspopup="dialog"
-              className="group flex w-[calc(100%+2rem)] sm:w-[calc(100%+3rem)] -mx-4 sm:-mx-6 px-4 sm:px-6 cursor-pointer items-center justify-between gap-3 sm:gap-4 border-t py-3.5 text-left text-sm transition-colors hover:bg-muted/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring min-h-12"
-            >
-              <span className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 min-w-0">
-                <span className="font-semibold text-foreground group-hover:text-primary transition-colors">{label}</span>
-                {isTop && (
-                  <span className="text-xs font-medium text-band-4-text">
-                    Top strength
-                  </span>
-                )}
-                {!isTop && isFocus && (
-                  <span className="text-xs font-medium text-primary">
-                    Practice focus
-                  </span>
-                )}
-              </span>
-              <span className="flex items-center justify-end gap-2.5 shrink-0">
-                <BandBadge band={band} score={score} size="sm" showDot />
-                {score != null && (
-                  <span className="font-sans tabular-nums text-xs sm:text-sm font-semibold text-foreground min-w-[2.5rem] text-right">
-                    {Math.round(score)}%
-                  </span>
-                )}
-                <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden="true" />
-              </span>
-            </button>
-          );
-        })}
-      </section>
+        </CardHeader>
+        <CardContent className="p-0 border-t border-border divide-y divide-border">
+          {PARENT_CRITERIA_LIST.map(({ key, label }) => {
+            const score = latest.scores[key];
+            const band = latest.bands[key] ?? (score == null ? null : getBandFromScore(score));
+            const isTop = topStrength?.key === key;
+            const isFocus = practiceFocus?.key === key;
+            return (
+              <Item
+                key={key}
+                size="sm"
+                className="group flex-nowrap rounded-none border-0 px-4 sm:px-6 py-3.5 min-h-12 w-full justify-between text-left cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring last:rounded-b-xl"
+                render={
+                  <button
+                    type="button"
+                    onClick={() => openWorksheetForCriterion(key, "details")}
+                    aria-haspopup="dialog"
+                  />
+                }
+              >
+                <ItemContent className="flex-row flex-wrap items-center gap-x-2.5 gap-y-0.5 min-w-0">
+                  <ItemTitle className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                    {label}
+                  </ItemTitle>
+                  {isTop && (
+                    <span className="text-xs font-medium text-band-4-text">
+                      Top strength
+                    </span>
+                  )}
+                  {!isTop && isFocus && (
+                    <span className="text-xs font-medium text-primary">
+                      Practice focus
+                    </span>
+                  )}
+                </ItemContent>
+                <ItemActions className="gap-2.5 shrink-0">
+                  <BandBadge band={band} score={score} size="sm" showDot />
+                  {score != null && (
+                    <span className="font-sans tabular-nums text-xs sm:text-sm font-semibold text-foreground min-w-[2.5rem] text-right">
+                      {Math.round(score)}%
+                    </span>
+                  )}
+                  <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden="true" />
+                </ItemActions>
+              </Item>
+            );
+          })}
+        </CardContent>
+      </Card>
 
       {viewDialogMounted && (
         <WorksheetViewDialog

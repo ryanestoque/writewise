@@ -49,6 +49,8 @@ import { computeStrengthAndFocus, PARENT_CRITERIA_LIST } from "@/lib/utils/scori
 import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
 import { compareParentActivityUrgency, getParentActivityStatus } from "@/lib/utils/parent-activity-status";
 import { useActivityNow } from "@/components/activities/activity-work-status";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BandBadge } from "@/components/shared/band-badge";
 import { cn } from "@/lib/utils";
@@ -115,9 +117,9 @@ function ParentHeaderUploadAction({
           onOpenUploadDialog();
         }
       }}
-      className="h-11 sm:h-9 font-medium text-xs sm:text-sm gap-1.5 cursor-pointer touch-manipulation"
+      className="h-11 sm:h-9 font-medium text-xs sm:text-sm cursor-pointer touch-manipulation"
     >
-      <Camera className="size-4" aria-hidden="true" />
+      <Camera data-icon="inline-start" aria-hidden="true" />
       <span>Send photo</span>
     </Button>
   );
@@ -149,87 +151,91 @@ function UrgentPracticeBanner({
   }
 
   return (
-    <div
+    <Alert
       role="region"
       aria-label="Practice worksheet needing attention"
       className={cn(
-        "relative rounded-xl px-4 py-3 text-foreground border transition-colors",
+        "flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors",
         urgentStatus.urgency === "teacher_returned"
-          ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
+          ? "border-primary/40 bg-primary/5"
           : urgentStatus.urgency === "retake_needed"
-            ? "border-warning/40 bg-warning/10 dark:bg-warning/15"
-            : "border-band-2/40 bg-band-2/10 dark:bg-band-2/15"
+            ? "border-warning/40 bg-warning/10"
+            : "border-band-2/40 bg-band-2/10"
       )}
     >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="min-w-0 flex-1 space-y-0.5">
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate min-w-0">
-              <span
-                className={cn(
-                  "mr-1.5",
-                  urgentStatus.urgency === "teacher_returned"
-                    ? "text-primary"
-                    : urgentStatus.urgency === "retake_needed"
-                      ? "text-warning-foreground"
-                      : "text-band-2-text"
-                )}
-              >
-                {urgentStatus.urgency === "teacher_returned"
-                  ? "New photo requested:"
+      <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <AlertTitle className="text-sm font-semibold text-foreground truncate min-w-0">
+            <span
+              className={cn(
+                "mr-1.5",
+                urgentStatus.urgency === "teacher_returned"
+                  ? "text-primary"
                   : urgentStatus.urgency === "retake_needed"
-                    ? "Clearer photo needed:"
-                    : urgentStatus.urgency === "overdue"
-                      ? "Past due:"
-                      : "Due soon:"}
-              </span>
-              {urgentActivity.title}
-            </p>
-            {urgentActivities.length > 1 && (
-              <button
-                type="button"
-                onClick={onNavigateToWrite}
-                className="sm:hidden relative shrink-0 text-brand-700 dark:text-brand-300 font-medium hover:underline cursor-pointer text-xs touch-manipulation inline-flex items-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-xs after:absolute after:-inset-2 after:content-['']"
-              >
-                + {urgentActivities.length - 1} more
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                    ? "text-warning-foreground"
+                    : "text-band-2-text"
+              )}
+            >
+              {urgentStatus.urgency === "teacher_returned"
+                ? "New photo requested:"
+                : urgentStatus.urgency === "retake_needed"
+                  ? "Clearer photo needed:"
+                  : urgentStatus.urgency === "overdue"
+                    ? "Past due:"
+                    : "Due soon:"}
+            </span>
+            {urgentActivity.title}
+          </AlertTitle>
+          {urgentActivities.length > 1 && (
+            <Button
+              type="button"
+              variant="link"
+              size="xs"
+              onClick={onNavigateToWrite}
+              className="sm:hidden relative shrink-0 h-auto p-0 font-medium cursor-pointer text-xs touch-manipulation after:absolute after:-inset-2 after:content-['']"
+            >
+              + {urgentActivities.length - 1} more
+            </Button>
+          )}
+        </div>
+        {(urgentActivity.dueAt || urgentActivities.length > 1) && (
+          <AlertDescription className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
             {urgentActivity.dueAt && (
               <span className="tabular-nums">
                 Due {formatActivityDueAt(urgentActivity.dueAt)}
               </span>
             )}
             {urgentActivities.length > 1 && (
-              <button
+              <Button
                 type="button"
+                variant="link"
+                size="xs"
                 onClick={onNavigateToWrite}
-                className="hidden sm:inline-flex text-brand-700 dark:text-brand-300 font-medium hover:underline cursor-pointer text-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-xs"
+                className="hidden sm:inline-flex h-auto p-0 font-medium cursor-pointer text-xs"
               >
                 + {urgentActivities.length - 1} more
-              </button>
+              </Button>
             )}
-          </div>
-        </div>
-
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => onUploadActivity(urgentActivity.id)}
-          aria-haspopup="dialog"
-          aria-label={`Send ${urgentStatus.urgency === "teacher_returned" || urgentStatus.urgency === "retake_needed" ? "new " : ""}photo for ${urgentActivity.title}`}
-          className="h-11 sm:h-9 w-full sm:w-auto shrink-0 font-medium text-xs sm:text-sm gap-1.5 cursor-pointer touch-manipulation"
-        >
-          <Camera className="size-4" aria-hidden="true" />
-          <span>
-            {urgentStatus.urgency === "teacher_returned" || urgentStatus.urgency === "retake_needed"
-              ? "Send new photo"
-              : "Send photo"}
-          </span>
-        </Button>
+          </AlertDescription>
+        )}
       </div>
-    </div>
+
+      <Button
+        type="button"
+        size="sm"
+        onClick={() => onUploadActivity(urgentActivity.id)}
+        aria-haspopup="dialog"
+        aria-label={`Send ${urgentStatus.urgency === "teacher_returned" || urgentStatus.urgency === "retake_needed" ? "new " : ""}photo for ${urgentActivity.title}`}
+        className="h-11 sm:h-9 w-full sm:w-auto shrink-0 font-medium text-xs sm:text-sm cursor-pointer touch-manipulation"
+      >
+        <Camera data-icon="inline-start" aria-hidden="true" />
+        <span>
+          {urgentStatus.urgency === "teacher_returned" || urgentStatus.urgency === "retake_needed"
+            ? "Send new photo"
+            : "Send photo"}
+        </span>
+      </Button>
+    </Alert>
   );
 }
 
@@ -247,12 +253,15 @@ function PracticeTabCountBadge({ takeHomeActivities }: { takeHomeActivities: Tak
   if (count === 0) return null;
 
   return (
-    <span className="inline-flex items-center justify-center px-1.5 py-0 rounded-full text-xs font-bold tabular-nums bg-brand-100/90 dark:bg-brand-950/90 text-brand-800 dark:text-brand-200 border border-brand-200/70 dark:border-brand-800/70">
+    <Badge
+      variant="secondary"
+      className="h-auto rounded-full px-1.5 py-0 text-xs font-bold tabular-nums border-border"
+    >
       <span aria-hidden="true">{count}</span>
       <span className="sr-only">
         {`, ${count} to send`}
       </span>
-    </span>
+    </Badge>
   );
 }
 
@@ -576,23 +585,21 @@ export function ProgressPageContent() {
           )}
 
           {/* Tab 1: Overview (Coaching Hero + Latest Worksheet) */}
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="overview" className="flex flex-col gap-6">
           {isResolvingInitialTab ? (
             <LatestSubmissionSkeleton childFirstName={firstName} />
           ) : (
             <>
               {hasPendingSubmission && latestScores && (
-                <div
+                <Alert
                   role="status"
-                  className="rounded-xl border border-brand-200/80 bg-brand-50/80 dark:border-brand-800/60 dark:bg-brand-950/40 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-foreground"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-primary/25 bg-secondary/50"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex size-8 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300 shrink-0">
-                      <Clock className="size-4 text-primary" aria-hidden="true" />
-                    </div>
-                    <p className="text-sm font-medium text-foreground min-w-0">
+                    <Clock className="size-4 text-primary shrink-0" aria-hidden="true" />
+                    <AlertTitle className="text-sm font-medium text-foreground min-w-0">
                       New worksheet received · waiting for teacher review
-                    </p>
+                    </AlertTitle>
                   </div>
                   <Button
                     type="button"
@@ -605,7 +612,7 @@ export function ProgressPageContent() {
                   >
                     View history
                   </Button>
-                </div>
+                </Alert>
               )}
               <LatestSubmissionCard
                 key={selectedChildId}
