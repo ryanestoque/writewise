@@ -43,7 +43,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/utils/api-error";
-import { getBandFromScore } from "@/lib/utils/scoring";
+import { CV_BENCHMARK_RANGES, getBandFromScore } from "@/lib/utils/scoring";
+import { workActionError } from "./submission-lifecycle-controls";
 
 const LAYOUT_MODE_STORAGE_KEY = "writewise.rubric.layoutMode";
 const AUTO_ADVANCE_STORAGE_KEY = "writewise.rubric.autoAdvance";
@@ -129,9 +130,9 @@ export const RUBRIC_BANDS: Array<{
       score: "12.5%",
       points: 1,
       activeClass:
-        "bg-band-1/15 dark:bg-band-1/30 text-band-1-text dark:text-orange-200 border-band-1 ring-2 ring-band-1/40 shadow-xs font-semibold",
+        "bg-band-1/15 dark:bg-band-1/30 text-band-1-text border-band-1 ring-2 ring-band-1/40 shadow-xs font-semibold",
       badgeClass:
-        "bg-band-1/15 text-band-1-text dark:text-orange-200 border-band-1/40",
+        "bg-band-1/15 text-band-1-text border-band-1/40",
       dotColor: "bg-band-1",
     },
     {
@@ -142,9 +143,9 @@ export const RUBRIC_BANDS: Array<{
       score: "37.5%",
       points: 2,
       activeClass:
-        "bg-band-2/15 dark:bg-band-2/30 text-band-2-text dark:text-amber-200 border-band-2 ring-2 ring-band-2/40 shadow-xs font-semibold",
+        "bg-band-2/15 dark:bg-band-2/30 text-band-2-text border-band-2 ring-2 ring-band-2/40 shadow-xs font-semibold",
       badgeClass:
-        "bg-band-2/15 text-band-2-text dark:text-amber-200 border-band-2/40",
+        "bg-band-2/15 text-band-2-text border-band-2/40",
       dotColor: "bg-band-2",
     },
     {
@@ -155,9 +156,9 @@ export const RUBRIC_BANDS: Array<{
       score: "62.5%",
       points: 3,
       activeClass:
-        "bg-band-3/15 dark:bg-band-3/30 text-band-3-text dark:text-emerald-200 border-band-3 ring-2 ring-band-3/40 shadow-xs font-semibold",
+        "bg-band-3/15 dark:bg-band-3/30 text-band-3-text border-band-3 ring-2 ring-band-3/40 shadow-xs font-semibold",
       badgeClass:
-        "bg-band-3/15 text-band-3-text dark:text-emerald-200 border-band-3/40",
+        "bg-band-3/15 text-band-3-text border-band-3/40",
       dotColor: "bg-band-3",
     },
     {
@@ -168,9 +169,9 @@ export const RUBRIC_BANDS: Array<{
       score: "87.5%",
       points: 4,
       activeClass:
-        "bg-band-4/15 dark:bg-band-4/30 text-band-4-text dark:text-emerald-200 border-band-4 ring-2 ring-band-4/40 shadow-xs font-semibold",
+        "bg-band-4/15 dark:bg-band-4/30 text-band-4-text border-band-4 ring-2 ring-band-4/40 shadow-xs font-semibold",
       badgeClass:
-        "bg-band-4/15 text-band-4-text dark:text-emerald-200 border-band-4/40",
+        "bg-band-4/15 text-band-4-text border-band-4/40",
       dotColor: "bg-band-4",
     },
   ];
@@ -335,26 +336,27 @@ export function extractCriterionCVMetric(
   const buildMetricStyle = (isOptimal: boolean, isBorderline: boolean) => ({
     dotClass: isOptimal ? "bg-band-4" : isBorderline ? "bg-band-2" : "bg-band-1",
     textClass: isOptimal
-      ? "text-band-4-text dark:text-emerald-200"
+      ? "text-band-4-text"
       : isBorderline
-        ? "text-band-2-text dark:text-amber-200"
-        : "text-band-1-text dark:text-orange-200",
+        ? "text-band-2-text"
+        : "text-band-1-text",
     badgeClass: isOptimal
-      ? "bg-band-4/15 border-band-4/40 text-band-4-text dark:bg-band-4/25 dark:text-emerald-200 dark:border-band-4/50"
+      ? "bg-band-4/15 border-band-4/40 text-band-4-text dark:bg-band-4/25 dark:border-band-4/50"
       : isBorderline
-        ? "bg-band-2/15 border-band-2/40 text-band-2-text dark:bg-band-2/25 dark:text-amber-200 dark:border-band-2/50"
-        : "bg-band-1/15 border-band-1/40 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50",
+        ? "bg-band-2/15 border-band-2/40 text-band-2-text dark:bg-band-2/25 dark:border-band-2/50"
+        : "bg-band-1/15 border-band-1/40 text-band-1-text dark:bg-band-1/25 dark:border-band-1/50",
   });
 
   switch (criterionKey) {
     case "letter_formation_band": {
       if (measurement.letter_formation_mean != null) {
         const val = Number(measurement.letter_formation_mean);
-        const isOptimal = val >= 80;
-        const isBorderline = val >= 60;
+        const { minScore, borderlineMinScore, label } = CV_BENCHMARK_RANGES.letterFormation;
+        const isOptimal = val >= minScore;
+        const isBorderline = val >= borderlineMinScore;
         return {
           value: `${Math.round(val)}%`,
-          target: "Target: ≥80% (CNN)",
+          target: `Target: ${label}`,
           status: isOptimal ? "Optimal" : isBorderline ? "Developing" : "Needs Focus",
           ...buildMetricStyle(isOptimal, isBorderline),
         };
@@ -367,11 +369,14 @@ export function extractCriterionCVMetric(
         !Number.isNaN(Number(measurement.size_consistency_mean))
       ) {
         const val = Number(measurement.size_consistency_mean);
-        const isOptimal = val >= 0.85 && val <= 1.05;
-        const isBorderline = (val >= 0.7 && val < 0.85) || (val > 1.05 && val <= 1.2);
+        const { minRatio, maxRatio, borderlineMinRatio, borderlineMaxRatio, shortLabel } =
+          CV_BENCHMARK_RANGES.sizeConsistency;
+        const isOptimal = val >= minRatio && val <= maxRatio;
+        const isBorderline =
+          (val >= borderlineMinRatio && val < minRatio) || (val > maxRatio && val <= borderlineMaxRatio);
         return {
           value: `${val.toFixed(2)}x`,
-          target: "Target: 0.85–1.05x",
+          target: `Target: ${shortLabel}`,
           status: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "Deviating",
           ...buildMetricStyle(isOptimal, isBorderline),
         };
@@ -384,11 +389,14 @@ export function extractCriterionCVMetric(
         !Number.isNaN(Number(measurement.word_spacing_mean))
       ) {
         const val = Number(measurement.word_spacing_mean);
-        const isOptimal = val >= 1.5 && val <= 2.5;
-        const isBorderline = (val >= 1.1 && val < 1.5) || (val > 2.5 && val <= 2.9);
+        const { minRatio, maxRatio, borderlineMinRatio, borderlineMaxRatio, shortLabel } =
+          CV_BENCHMARK_RANGES.wordSpacing;
+        const isOptimal = val >= minRatio && val <= maxRatio;
+        const isBorderline =
+          (val >= borderlineMinRatio && val < minRatio) || (val > maxRatio && val <= borderlineMaxRatio);
         return {
           value: `${val.toFixed(2)}x`,
-          target: "Target: 1.5–2.5x",
+          target: `Target: ${shortLabel}`,
           status: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "Deviating",
           ...buildMetricStyle(isOptimal, isBorderline),
         };
@@ -401,11 +409,14 @@ export function extractCriterionCVMetric(
         !Number.isNaN(Number(measurement.slant_mean))
       ) {
         const val = Number(measurement.slant_mean);
-        const isOptimal = val >= 6.0 && val <= 15.0;
-        const isBorderline = (val >= 3.0 && val < 6.0) || (val > 15.0 && val <= 19.0);
+        const { minDeg, maxDeg, borderlineMinDeg, borderlineMaxDeg, shortLabel } =
+          CV_BENCHMARK_RANGES.slant;
+        const isOptimal = val >= minDeg && val <= maxDeg;
+        const isBorderline =
+          (val >= borderlineMinDeg && val < minDeg) || (val > maxDeg && val <= borderlineMaxDeg);
         return {
           value: `${val.toFixed(1)}°`,
-          target: "Target: 6°–15°",
+          target: `Target: ${shortLabel}`,
           status: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "Deviating",
           ...buildMetricStyle(isOptimal, isBorderline),
         };
@@ -418,11 +429,12 @@ export function extractCriterionCVMetric(
         !Number.isNaN(Number(measurement.baseline_deviation_mean))
       ) {
         const val = Number(measurement.baseline_deviation_mean);
-        const isOptimal = val <= 0.05;
-        const isBorderline = val > 0.05 && val <= 0.15;
+        const { maxRatio, borderlineMaxRatio, shortLabel } = CV_BENCHMARK_RANGES.baselineDeviation;
+        const isOptimal = val <= maxRatio;
+        const isBorderline = val > maxRatio && val <= borderlineMaxRatio;
         return {
           value: `${val.toFixed(3)}`,
-          target: "Target: ≤0.05",
+          target: `Target: ${shortLabel}`,
           status: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "High Drift",
           ...buildMetricStyle(isOptimal, isBorderline),
         };
@@ -670,7 +682,15 @@ export function ManualRubricEntryForm({
       onSuccess?.();
     } catch (err: unknown) {
       if (err instanceof ApiError) {
-        setSubmitErrorMsg(err.message || "Failed to save and release rubric score.");
+        if (err.code === "SUBMISSION_NOT_FOUND") {
+          setSubmitErrorMsg("This submission is no longer available.");
+        } else if (err.code === "CALIBRATED_SCORING_ACTIVE") {
+          setSubmitErrorMsg("Manual rubric scoring is disabled while calibrated scoring is active.");
+        } else if (err.code === "INVALID_RUBRIC_SCORE") {
+          setSubmitErrorMsg("All 5 criteria must be scored with a valid rubric band.");
+        } else {
+          setSubmitErrorMsg(workActionError(err));
+        }
       } else {
         setSubmitErrorMsg("Failed to save and release. Please try again.");
       }
@@ -775,7 +795,7 @@ export function ManualRubricEntryForm({
 
       // Keys 1 - 4 for fast rubric rating (and 0 for Spacing N/A)
       if (["0", "1", "2", "3", "4"].includes(e.key)) {
-        if (e.altKey || e.ctrlKey || e.metaKey) return;
+        if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
 
         const target = e.target as HTMLElement | null;
         if (
@@ -937,7 +957,7 @@ export function ManualRubricEntryForm({
           variant="outline"
           className={`text-[11px] font-semibold px-2 py-0.5 shrink-0 font-sans tabular-nums inline-flex items-center ${allBandsSelected && compositeRubric
               ? compositeRubric.overallBandMeta.badgeClass
-              : "bg-band-2/15 text-amber-900 dark:bg-band-2/25 dark:text-amber-200 border-band-2/40"
+              : "bg-band-2/15 text-band-2-text dark:bg-band-2/25 border-band-2/40"
             }`}
         >
           {allBandsSelected && compositeRubric ? (
@@ -958,7 +978,7 @@ export function ManualRubricEntryForm({
                   variant="outline"
                   size="sm"
                   disabled={isSubmittingScore}
-                  className="h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-2.5 text-xs sm:text-[11px] font-medium gap-1.5 rounded-lg cursor-pointer touch-manipulation text-muted-foreground hover:text-foreground"
+                  className="h-11 sm:h-7 min-h-11 sm:min-h-0 px-2.5 text-xs sm:text-[11px] font-medium gap-1.5 rounded-lg cursor-pointer touch-manipulation text-muted-foreground hover:text-foreground"
                 />
               }
             >
@@ -992,7 +1012,7 @@ export function ManualRubricEntryForm({
             <button
               type="button"
               onClick={() => setLayoutMode("stepper")}
-              className={`px-2 py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-10 sm:min-h-[26px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${layoutMode === "stepper"
+              className={`px-2 py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-11 sm:min-h-[26px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${layoutMode === "stepper"
                   ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                   : "text-muted-foreground hover:text-foreground"
                 }`}
@@ -1005,7 +1025,7 @@ export function ManualRubricEntryForm({
             <button
               type="button"
               onClick={() => setLayoutMode("list")}
-              className={`px-2 py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-10 sm:min-h-[26px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${layoutMode === "list"
+              className={`px-2 py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-11 sm:min-h-[26px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${layoutMode === "list"
                   ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                   : "text-muted-foreground hover:text-foreground"
                 }`}
@@ -1020,7 +1040,7 @@ export function ManualRubricEntryForm({
           <button
             type="button"
             onClick={() => setShowKeyboardHelp((prev) => !prev)}
-            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg cursor-pointer flex items-center justify-center min-h-10 min-w-10 sm:min-h-7 sm:min-w-7 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg cursor-pointer flex items-center justify-center min-h-11 min-w-11 sm:min-h-7 sm:min-w-7 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
             title="Toggle Keyboard Shortcuts (Keys 1–4)"
             aria-label="Toggle Keyboard Shortcuts"
             aria-expanded={showKeyboardHelp}
@@ -1064,7 +1084,7 @@ export function ManualRubricEntryForm({
       {layoutMode === "stepper" && (
         <div className="space-y-2.5">
           {/* 5-Step Navigation Pills (with criterion names + dual-signal score indicators) */}
-          <div className="grid grid-cols-5 gap-1 pt-0.5">
+          <div className="grid grid-cols-2 @[360px]:grid-cols-3 @[480px]:grid-cols-5 gap-1.5 pt-0.5">
             {RUBRIC_CRITERIA.map((criterion, idx) => {
               const isStepActive = activeCriterionIndex === idx;
               const stepBand = rubricScores[criterion.key];
@@ -1076,7 +1096,7 @@ export function ManualRubricEntryForm({
                   key={criterion.key}
                   type="button"
                   onClick={() => handleSelectCriterion(idx)}
-                  className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-center transition-all cursor-pointer min-h-[42px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${isStepActive
+                  className={`flex flex-col items-center justify-center py-1.5 px-1.5 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-[42px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${isStepActive
                       ? "bg-brand-100 dark:bg-brand-950 text-brand-950 dark:text-brand-200 border-brand-500 ring-2 ring-brand-400/40 font-bold"
                       : isRated
                         ? "bg-surface dark:bg-card border-brand-200/80 dark:border-brand-900/80 text-foreground"
@@ -1105,8 +1125,8 @@ export function ManualRubricEntryForm({
                       </>
                     ) : (
                       <>
-                        <span className="size-1.5 rounded-full bg-muted-foreground/30 shrink-0" aria-hidden="true" />
-                        <span className="text-muted-foreground/80">—</span>
+                        <span className="size-1.5 rounded-full bg-muted-foreground/50 shrink-0" aria-hidden="true" />
+                        <span className="text-muted-foreground">—</span>
                       </>
                     )}
                   </div>
@@ -1200,7 +1220,7 @@ export function ManualRubricEntryForm({
                             onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
                           }
                         }}
-                        className={`flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border text-center transition-all cursor-pointer min-h-[42px] @[480px]:min-h-[38px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
+                        className={`flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-[38px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
                             ? option.activeClass
                             : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
                           }`}
@@ -1245,7 +1265,7 @@ export function ManualRubricEntryForm({
                           onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
                         }
                       }}
-                      className={`col-span-2 @[480px]:col-span-1 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border text-center transition-all cursor-pointer min-h-[42px] @[480px]:min-h-[38px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${selectedBand === "not_applicable"
+                      className={`col-span-2 @[480px]:col-span-1 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-[38px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${selectedBand === "not_applicable"
                           ? "bg-muted text-foreground border-border ring-2 ring-border/60 shadow-xs font-semibold"
                           : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
                         }`}
@@ -1274,7 +1294,7 @@ export function ManualRubricEntryForm({
                         onFocusCriterion?.(RUBRIC_CRITERIA[prevIdx].shortName);
                       }
                     }}
-                    className="h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-30 touch-manipulation"
+                    className="h-11 sm:h-7 min-h-11 sm:min-h-0 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-30 touch-manipulation"
                   >
                     <ChevronLeft className="size-3.5" aria-hidden="true" />
                     <span>Prev</span>
@@ -1296,7 +1316,7 @@ export function ManualRubricEntryForm({
                         onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
                       }
                     }}
-                    className="h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-30 touch-manipulation"
+                    className="h-11 sm:h-7 min-h-11 sm:min-h-0 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-30 touch-manipulation"
                   >
                     <span>Next</span>
                     <ChevronRight className="size-3.5" aria-hidden="true" />
@@ -1309,79 +1329,129 @@ export function ManualRubricEntryForm({
       )}
 
       {/* ---------------- 5 CRITERIA LIST (All Mode) ---------------- */}
-      <div
-        className={`space-y-2 ${layoutMode === "stepper" ? "hidden" : "block"}`}
-        role="group"
-        aria-label="5-Criterion Handwriting Rubric"
-      >
-        {RUBRIC_CRITERIA.map((criterion, idx) => {
-          const selectedBand = rubricScores[criterion.key];
-          const isFocused = activeCriterionIndex === idx;
-          const metric = extractCriterionCVMetric(criterion.key, measurement);
+      {layoutMode === "list" && (
+        <div
+          className="space-y-2"
+          role="group"
+          aria-label="5-Criterion Handwriting Rubric"
+        >
+          {RUBRIC_CRITERIA.map((criterion, idx) => {
+            const selectedBand = rubricScores[criterion.key];
+            const isFocused = activeCriterionIndex === idx;
+            const metric = extractCriterionCVMetric(criterion.key, measurement);
 
-          return (
-            <fieldset
-              key={criterion.key}
-              role="radiogroup"
-              aria-labelledby={`criterion-label-${criterion.key}`}
-              className={`space-y-1.5 p-2.5 rounded-xl border transition-all ${isFocused
-                  ? "bg-muted/30 border-brand-300/80 dark:border-brand-800/80 ring-1 ring-brand-400/30 shadow-xs"
-                  : "bg-muted/15 border-border/60 hover:border-border"
-                }`}
-              onClick={() => handleSelectCriterion(idx)}
-            >
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <legend
-                  id={`criterion-label-${criterion.key}`}
-                  className="text-xs font-semibold text-foreground flex items-center gap-1.5 cursor-pointer flex-wrap"
-                >
-                  <span>{idx + 1}. {criterion.name}</span>
-                  {metric && (
-                    <span
-                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-sans font-medium border tabular-nums ${metric.badgeClass}`}
-                      title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
-                    >
-                      <span className={`size-1.5 rounded-full ${metric.dotClass}`} aria-hidden="true" />
-                      <span className="font-semibold">{metric.value}</span>
+            return (
+              <fieldset
+                key={criterion.key}
+                role="radiogroup"
+                aria-labelledby={`criterion-label-${criterion.key}`}
+                className={`space-y-1.5 p-2.5 rounded-xl border transition-colors ${isFocused
+                    ? "bg-muted/30 border-brand-300/80 dark:border-brand-800/80 ring-1 ring-brand-400/30 shadow-xs"
+                    : "bg-muted/15 border-border/60 hover:border-border"
+                  }`}
+                onClick={() => handleSelectCriterion(idx)}
+                onFocus={() => {
+                  if (activeCriterionIndex !== idx) {
+                    handleSelectCriterion(idx);
+                  }
+                }}
+              >
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <legend
+                    id={`criterion-label-${criterion.key}`}
+                    className="text-xs font-semibold text-foreground flex items-center gap-1.5 cursor-pointer flex-wrap"
+                  >
+                    <span>{idx + 1}. {criterion.name}</span>
+                    {metric && (
+                      <span
+                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-sans font-medium border tabular-nums ${metric.badgeClass}`}
+                        title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
+                      >
+                        <span className={`size-1.5 rounded-full ${metric.dotClass}`} aria-hidden="true" />
+                        <span className="font-semibold">{metric.value}</span>
+                      </span>
+                    )}
+                  </legend>
+                  {criterion.key === "spacing_band" && isSingleWordMeasurement && (
+                    <span className="text-[11px] text-brand-700 dark:text-brand-300 font-medium">
+                      No inter-word gaps detected — N/A recommended
                     </span>
                   )}
-                </legend>
-                {criterion.key === "spacing_band" && isSingleWordMeasurement && (
-                  <span className="text-[11px] text-brand-700 dark:text-brand-300 font-medium">
-                    No inter-word gaps detected — N/A recommended
-                  </span>
-                )}
-              </div>
+                </div>
 
-              {/* Segmented Radio Buttons with WAI-ARIA Roving Tabindex & Mobile Touch Sizing */}
-              <div
-                className={`grid grid-cols-2 gap-1.5 ${
-                  criterion.key === "spacing_band"
-                    ? "@[480px]:grid-cols-5"
-                    : "@[480px]:grid-cols-4"
-                }`}
-              >
-                {RUBRIC_BANDS.map((option, optIdx) => {
-                  const isChecked = selectedBand === option.band;
-                  const isTabTarget = isChecked || (!selectedBand && optIdx === 0);
+                {/* Segmented Radio Buttons with WAI-ARIA Roving Tabindex & Mobile Touch Sizing */}
+                <div
+                  className={`grid grid-cols-2 gap-1.5 ${
+                    criterion.key === "spacing_band"
+                      ? "@[480px]:grid-cols-5"
+                      : "@[480px]:grid-cols-4"
+                  }`}
+                >
+                  {RUBRIC_BANDS.map((option, optIdx) => {
+                    const isChecked = selectedBand === option.band;
+                    const isTabTarget = isChecked || (!selectedBand && optIdx === 0);
 
-                  return (
+                    return (
+                      <button
+                        key={option.band}
+                        type="button"
+                        role="radio"
+                        data-criterion={criterion.key}
+                        data-band={option.band}
+                        tabIndex={isTabTarget ? 0 : -1}
+                        aria-checked={isChecked}
+                        aria-label={`${criterion.shortName}: ${option.label} (${option.score})`}
+                        disabled={isSubmittingScore}
+                        onKeyDown={(e) =>
+                          handleCriterionKeyDown(
+                            e,
+                            criterion.key,
+                            idx,
+                            optIdx
+                          )
+                        }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectCriterion(idx);
+                          setRubricScores((prev) => ({
+                            ...prev,
+                            [criterion.key]: option.band,
+                          }));
+                          setSubmitErrorMsg(null);
+                          setAccessibilityAnnouncement(
+                            `${criterion.shortName} rated ${option.label} (${option.score}).`
+                          );
+                        }}
+                        className={`flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-9 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
+                            ? option.activeClass
+                            : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
+                          }`}
+                      >
+                        <span className="text-[11px] font-sans tabular-nums font-medium text-muted-foreground shrink-0">
+                          [{option.shortcutKey}]
+                        </span>
+                        <span className="text-[11px] leading-tight font-medium truncate">
+                          {option.shortLabel}
+                        </span>
+                      </button>
+                    );
+                  })}
+                  {criterion.key === "spacing_band" && (
                     <button
-                      key={option.band}
                       type="button"
                       role="radio"
-                      data-criterion={criterion.key}
-                      data-band={option.band}
-                      tabIndex={isTabTarget ? 0 : -1}
-                      aria-checked={isChecked}
-                      aria-label={`${criterion.shortName}: ${option.label} (${option.score})`}
+                      data-criterion="spacing_band"
+                      data-band="not_applicable"
+                      tabIndex={selectedBand === "not_applicable" ? 0 : -1}
+                      aria-checked={selectedBand === "not_applicable"}
+                      aria-label="Spacing: Not applicable (single-word sample)"
                       disabled={isSubmittingScore}
                       onKeyDown={(e) =>
                         handleCriterionKeyDown(
                           e,
-                          criterion.key,
+                          "spacing_band",
                           idx,
-                          optIdx
+                          RUBRIC_BANDS.length
                         )
                       }
                       onClick={(e) => {
@@ -1389,73 +1459,30 @@ export function ManualRubricEntryForm({
                         handleSelectCriterion(idx);
                         setRubricScores((prev) => ({
                           ...prev,
-                          [criterion.key]: option.band,
+                          spacing_band: "not_applicable",
                         }));
                         setSubmitErrorMsg(null);
-                        setAccessibilityAnnouncement(
-                          `${criterion.shortName} rated ${option.label} (${option.score}).`
-                        );
+                        setAccessibilityAnnouncement("Spacing marked not applicable.");
                       }}
-                      className={`flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border text-center transition-all cursor-pointer min-h-[40px] @[480px]:min-h-[34px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
-                          ? option.activeClass
+                      className={`col-span-2 @[480px]:col-span-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-9 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${selectedBand === "not_applicable"
+                          ? "bg-muted text-foreground border-border ring-2 ring-border/60 shadow-xs font-semibold"
                           : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
                         }`}
                     >
                       <span className="text-[11px] font-sans tabular-nums font-medium text-muted-foreground shrink-0">
-                        [{option.shortcutKey}]
+                        [0]
                       </span>
                       <span className="text-[11px] leading-tight font-medium truncate">
-                        {option.shortLabel}
+                        N/A
                       </span>
                     </button>
-                  );
-                })}
-                {criterion.key === "spacing_band" && (
-                  <button
-                    type="button"
-                    role="radio"
-                    data-criterion="spacing_band"
-                    data-band="not_applicable"
-                    tabIndex={selectedBand === "not_applicable" ? 0 : -1}
-                    aria-checked={selectedBand === "not_applicable"}
-                    aria-label="Spacing: Not applicable (single-word sample)"
-                    disabled={isSubmittingScore}
-                    onKeyDown={(e) =>
-                      handleCriterionKeyDown(
-                        e,
-                        "spacing_band",
-                        idx,
-                        RUBRIC_BANDS.length
-                      )
-                    }
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSelectCriterion(idx);
-                      setRubricScores((prev) => ({
-                        ...prev,
-                        spacing_band: "not_applicable",
-                      }));
-                      setSubmitErrorMsg(null);
-                      setAccessibilityAnnouncement("Spacing marked not applicable.");
-                    }}
-                    className={`col-span-2 @[480px]:col-span-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border text-center transition-all cursor-pointer min-h-[40px] @[480px]:min-h-[34px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${selectedBand === "not_applicable"
-                        ? "bg-muted text-foreground border-border ring-2 ring-border/60 shadow-xs font-semibold"
-                        : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
-                      }`}
-                  >
-                    <span className="text-[11px] font-sans tabular-nums font-medium text-muted-foreground shrink-0">
-                      [0]
-                    </span>
-                    <span className="text-[11px] leading-tight font-medium truncate">
-                      N/A
-                    </span>
-                  </button>
-                )}
-              </div>
-            </fieldset>
-          );
-        })}
-      </div>
+                  )}
+                </div>
+              </fieldset>
+            );
+          })}
+        </div>
+      )}
 
       {/* Form Submit Footer */}
       <div className="flex flex-col @[460px]:flex-row @[460px]:items-center justify-between pt-2 border-t border-border/60 gap-2.5">
@@ -1477,7 +1504,7 @@ export function ManualRubricEntryForm({
           )}
 
           {canGoNext && (
-            <label className="inline-flex items-center gap-1.5 text-xs sm:text-[11px] text-muted-foreground cursor-pointer select-none touch-manipulation px-2 py-1 rounded-md hover:bg-muted/40 transition-colors min-h-10 sm:min-h-0">
+            <label className="inline-flex items-center gap-1.5 text-xs sm:text-[11px] text-muted-foreground cursor-pointer select-none touch-manipulation px-2 py-1 rounded-md hover:bg-muted/40 transition-colors min-h-11 sm:min-h-0">
               <input
                 type="checkbox"
                 checked={autoAdvance}
@@ -1489,14 +1516,14 @@ export function ManualRubricEntryForm({
           )}
         </div>
 
-        <div className="flex items-center gap-2 w-full @[460px]:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full @[460px]:w-auto">
           {onCancel && (
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={requestCancel}
-              className="flex-1 @[460px]:flex-initial h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-3.5 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+              className="flex-1 @[460px]:flex-initial h-11 sm:h-9 min-h-11 sm:min-h-0 px-3.5 text-xs font-medium rounded-lg text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
             >
               Cancel
             </Button>
@@ -1508,7 +1535,7 @@ export function ManualRubricEntryForm({
               size="sm"
               disabled={!allBandsSelected || isSubmittingScore || isSavingAndReleasing}
               onClick={() => void handleSaveAndRelease()}
-              className="flex-1 @[460px]:flex-initial h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-3.5 bg-brand-600 hover:bg-brand-700 text-white dark:bg-brand-500 dark:hover:bg-brand-600 text-xs font-semibold rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation"
+              className="basis-full @[460px]:basis-auto @[460px]:flex-initial h-11 sm:h-9 min-h-11 sm:min-h-0 px-3.5 bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold rounded-lg gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation"
               title="Save rubric score and immediately release to parent portal"
             >
               {isSavingAndReleasing ? (
@@ -1531,10 +1558,10 @@ export function ManualRubricEntryForm({
             variant={canRelease && onSaveAndRelease ? "outline" : "default"}
             disabled={!allBandsSelected || isSubmittingScore || isSavingAndReleasing}
             onClick={handleSubmitRubric}
-            className={`flex-1 @[460px]:flex-initial w-full @[460px]:w-auto h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-4 text-xs font-semibold rounded-lg sm:rounded-xl gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation ${
+            className={`flex-1 @[460px]:flex-initial h-11 sm:h-9 min-h-11 sm:min-h-0 px-4 text-xs font-semibold rounded-lg gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation ${
               canRelease && onSaveAndRelease
                 ? "border-border/80 hover:bg-muted/60"
-                : "bg-primary hover:bg-brand-700 text-primary-foreground"
+                : "bg-primary hover:bg-primary-hover text-primary-foreground"
             }`}
           >
             {isSubmittingScore ? (
@@ -1569,7 +1596,7 @@ export function ManualRubricEntryForm({
           <AlertDialogFooter>
             <AlertDialogCancel
               onClick={() => setDiscardDialogOpen(false)}
-              className="min-h-10 sm:min-h-9"
+              className="min-h-11 sm:min-h-9 rounded-lg"
             >
               Keep editing
             </AlertDialogCancel>
@@ -1579,7 +1606,7 @@ export function ManualRubricEntryForm({
                 onCancel?.();
               }}
               variant="destructive"
-              className="min-h-10 sm:min-h-9 cursor-pointer"
+              className="min-h-11 sm:min-h-9 rounded-lg cursor-pointer"
             >
               Discard changes
             </AlertDialogAction>

@@ -82,24 +82,24 @@ export function RawMeasurementsTable({
       ? `${slantAnalysis.measured_words} / ${slantAnalysis.total_words}`
       : "Not recorded";
     const optimalBadgeClass =
-      "bg-band-4/15 text-band-4-text border-band-4/40 dark:bg-band-4/25 dark:text-emerald-200 dark:border-band-4/50";
+      "bg-band-4/15 text-band-4-text border-band-4/40 dark:bg-band-4/25 dark:border-band-4/50";
     const borderlineBadgeClass =
-      "bg-band-2/15 text-band-2-text border-band-2/40 dark:bg-band-2/25 dark:text-amber-200 dark:border-band-2/50";
+      "bg-band-2/15 text-band-2-text border-band-2/40 dark:bg-band-2/25 dark:border-band-2/50";
     const deviatingBadgeClass =
-      "bg-band-1/15 text-band-1-text border-band-1/40 dark:bg-band-1/25 dark:text-orange-200 dark:border-band-1/50";
+      "bg-band-1/15 text-band-1-text border-band-1/40 dark:bg-band-1/25 dark:border-band-1/50";
 
     // 1. Letter formation benchmark
     let formationBenchmark: BenchmarkIndicator;
     if (measurement?.letter_formation_mean != null) {
       const val = Number(measurement.letter_formation_mean);
-      if (val >= 80) {
+      if (val >= CV_BENCHMARK_RANGES.letterFormation.minScore) {
         formationBenchmark = {
           status: "within_target",
           label: "Optimal (CNN)",
           badgeClass: optimalBadgeClass,
           dotClass: "bg-band-4",
         };
-      } else if (val >= 60) {
+      } else if (val >= CV_BENCHMARK_RANGES.letterFormation.borderlineMinScore) {
         formationBenchmark = {
           status: "borderline",
           label: "Developing",
@@ -123,12 +123,13 @@ export function RawMeasurementsTable({
       };
     }
 
-    // 2. Size consistency benchmark (target: 0.85 - 1.00)
+    // 2. Size consistency benchmark
     let sizeBenchmark: BenchmarkIndicator | undefined;
     if (measurement?.size_consistency_mean != null && !Number.isNaN(Number(measurement.size_consistency_mean))) {
       const val = Number(measurement.size_consistency_mean);
-      const isOptimal = val >= 0.85 && val <= 1.05;
-      const isBorderline = (val >= 0.70 && val < 0.85) || (val > 1.05 && val <= 1.20);
+      const { minRatio, maxRatio, borderlineMinRatio, borderlineMaxRatio } = CV_BENCHMARK_RANGES.sizeConsistency;
+      const isOptimal = val >= minRatio && val <= maxRatio;
+      const isBorderline = (val >= borderlineMinRatio && val < minRatio) || (val > maxRatio && val <= borderlineMaxRatio);
       sizeBenchmark = {
         status: isOptimal ? "within_target" : isBorderline ? "borderline" : "deviating",
         label: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "Deviating",
@@ -138,16 +139,17 @@ export function RawMeasurementsTable({
             ? borderlineBadgeClass
             : deviatingBadgeClass,
         dotClass: isOptimal ? "bg-band-4" : isBorderline ? "bg-band-2" : "bg-band-1",
-        meter: { min: 0.5, max: 1.3, targetMin: 0.85, targetMax: 1.0, current: val },
+        meter: { min: 0.5, max: 1.3, targetMin: minRatio, targetMax: maxRatio, current: val },
       };
     }
 
-    // 3. Spacing benchmark (target: 1.5 - 2.5x)
+    // 3. Spacing benchmark
     let spacingBenchmark: BenchmarkIndicator | undefined;
     if (measurement?.word_spacing_mean != null && !Number.isNaN(Number(measurement.word_spacing_mean))) {
       const val = Number(measurement.word_spacing_mean);
-      const isOptimal = val >= 1.5 && val <= 2.5;
-      const isBorderline = (val >= 1.1 && val < 1.5) || (val > 2.5 && val <= 2.9);
+      const { minRatio, maxRatio, borderlineMinRatio, borderlineMaxRatio } = CV_BENCHMARK_RANGES.wordSpacing;
+      const isOptimal = val >= minRatio && val <= maxRatio;
+      const isBorderline = (val >= borderlineMinRatio && val < minRatio) || (val > maxRatio && val <= borderlineMaxRatio);
       spacingBenchmark = {
         status: isOptimal ? "within_target" : isBorderline ? "borderline" : "deviating",
         label: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "Deviating",
@@ -157,16 +159,17 @@ export function RawMeasurementsTable({
             ? borderlineBadgeClass
             : deviatingBadgeClass,
         dotClass: isOptimal ? "bg-band-4" : isBorderline ? "bg-band-2" : "bg-band-1",
-        meter: { min: 0.8, max: 3.2, targetMin: 1.5, targetMax: 2.5, current: val },
+        meter: { min: 0.8, max: 3.2, targetMin: minRatio, targetMax: maxRatio, current: val },
       };
     }
 
-    // 4. Slant benchmark (target: 6.0° - 15.0°)
+    // 4. Slant benchmark
     let slantBenchmark: BenchmarkIndicator | undefined;
     if (measurement?.slant_mean != null && !Number.isNaN(Number(measurement.slant_mean))) {
       const val = Number(measurement.slant_mean);
-      const isOptimal = val >= 6.0 && val <= 15.0;
-      const isBorderline = (val >= 3.0 && val < 6.0) || (val > 15.0 && val <= 19.0);
+      const { minDeg, maxDeg, borderlineMinDeg, borderlineMaxDeg } = CV_BENCHMARK_RANGES.slant;
+      const isOptimal = val >= minDeg && val <= maxDeg;
+      const isBorderline = (val >= borderlineMinDeg && val < minDeg) || (val > maxDeg && val <= borderlineMaxDeg);
       slantBenchmark = {
         status: isOptimal ? "within_target" : isBorderline ? "borderline" : "deviating",
         label: isOptimal ? "Mean within target" : isBorderline ? "Mean borderline" : "Mean deviating",
@@ -176,16 +179,17 @@ export function RawMeasurementsTable({
             ? borderlineBadgeClass
             : deviatingBadgeClass,
         dotClass: isOptimal ? "bg-band-4" : isBorderline ? "bg-band-2" : "bg-band-1",
-        meter: { min: 0, max: 24, targetMin: 6.0, targetMax: 15.0, current: val },
+        meter: { min: 0, max: 24, targetMin: minDeg, targetMax: maxDeg, current: val },
       };
     }
 
-    // 5. Baseline benchmark (target: < 0.05 drift ratio)
+    // 5. Baseline benchmark
     let baselineBenchmark: BenchmarkIndicator | undefined;
     if (measurement?.baseline_deviation_mean != null && !Number.isNaN(Number(measurement.baseline_deviation_mean))) {
       const val = Number(measurement.baseline_deviation_mean);
-      const isOptimal = val <= 0.05;
-      const isBorderline = val > 0.05 && val <= 0.15;
+      const { maxRatio, borderlineMaxRatio } = CV_BENCHMARK_RANGES.baselineDeviation;
+      const isOptimal = val <= maxRatio;
+      const isBorderline = val > maxRatio && val <= borderlineMaxRatio;
       baselineBenchmark = {
         status: isOptimal ? "within_target" : isBorderline ? "borderline" : "deviating",
         label: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "High Drift",
@@ -195,7 +199,7 @@ export function RawMeasurementsTable({
             ? borderlineBadgeClass
             : deviatingBadgeClass,
         dotClass: isOptimal ? "bg-band-4" : isBorderline ? "bg-band-2" : "bg-band-1",
-        meter: { min: 0, max: 0.8, targetMin: 0, targetMax: 0.05, current: val },
+        meter: { min: 0, max: 0.8, targetMin: 0, targetMax: maxRatio, current: val },
       };
     }
 
@@ -241,7 +245,7 @@ export function RawMeasurementsTable({
         description:
           "Proportion of lowercase core x-height relative to baseline-to-midline ruling distance (1.00 = full midline height).",
         benchmark: sizeBenchmark,
-        targetText: "0.85 – 1.00 ratio",
+        targetText: CV_BENCHMARK_RANGES.sizeConsistency.label,
         subDetails: [
           {
             label: "Core x-height ratio",
@@ -249,7 +253,7 @@ export function RawMeasurementsTable({
           },
           {
             label: "Target guideline ratio",
-            value: "0.85 – 1.00 (at midline)",
+            value: CV_BENCHMARK_RANGES.sizeConsistency.label,
           },
           {
             label: "Height variation (std)",
@@ -350,7 +354,7 @@ export function RawMeasurementsTable({
         description:
           "Vertical distance of letter bases from the ruled penmanship baseline guideline across each word.",
         benchmark: baselineBenchmark,
-        targetText: "< 0.05 drift ratio",
+        targetText: CV_BENCHMARK_RANGES.baselineDeviation.label,
         subDetails: [
           {
             label: "Mean baseline drift",
@@ -358,7 +362,7 @@ export function RawMeasurementsTable({
           },
           {
             label: "Target alignment",
-            value: "< 0.05 drift ratio",
+            value: CV_BENCHMARK_RANGES.baselineDeviation.label,
           },
           {
             label: "Drift variation (std)",
@@ -396,7 +400,7 @@ export function RawMeasurementsTable({
           return (
             <div key={c.name} className="space-y-1">
               <div
-                className={`w-full flex flex-col p-2.5 sm:px-3 sm:py-2.5 rounded-xl border transition-all text-xs text-left ${
+                className={`w-full flex flex-col p-2.5 sm:px-3 sm:py-2.5 rounded-xl border transition-colors text-xs text-left ${
                   isSelected
                     ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/40"
                     : "bg-surface dark:bg-card border-border/70 hover:border-brand-300 dark:hover:border-brand-800 hover:bg-muted/30"
@@ -405,16 +409,9 @@ export function RawMeasurementsTable({
                 <button
                   type="button"
                   onClick={() => onSelectCriterion(c.name)}
-                  aria-expanded={isSelected}
+                  aria-pressed={isSelected}
                   aria-labelledby={`${titleId} ${valueId}`}
-                  aria-controls={
-                    isSelected
-                      ? activeCriterionInfo
-                        ? `${inlineId} criterion-diagnostic-guide`
-                        : inlineId
-                      : undefined
-                  }
-                  className="w-full flex items-center justify-between gap-2 text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg touch-manipulation min-h-[40px] sm:min-h-0"
+                  className="w-full flex items-center justify-between gap-2 text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg touch-manipulation min-h-11 sm:min-h-0"
                 >
                   <div className="min-w-0 flex items-center gap-2 flex-wrap">
                     <span id={titleId} className="font-semibold text-foreground truncate block">

@@ -50,6 +50,7 @@ export const SpacingLayer = memo(function SpacingLayer({
         const bracketColor = isAttention
           ? OVERLAY_COLORS.needs_attention.stroke
           : OVERLAY_COLORS.consistent.stroke;
+        const pillBgColor = isAttention ? "#8f4a21" : "#1a4a2b";
         const tickHeight = (isSpotlight ? 10 : 8) * hitScale;
         const id = `spacing-${ann.line_index}-${ann.gap_index}`;
         const title = isAttention ? "Spacing Needs Attention" : "Consistent Word Spacing";
@@ -224,7 +225,7 @@ export const SpacingLayer = memo(function SpacingLayer({
                   width={badgeW}
                   height={badgeH}
                   rx={badgeH / 2}
-                  fill={bracketColor}
+                  fill={pillBgColor}
                   stroke={isActive ? "#ffffff" : "none"}
                   strokeWidth={1.5}
                   className="transition-transform group-hover:scale-110 motion-reduce:transform-none"

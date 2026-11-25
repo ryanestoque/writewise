@@ -9,9 +9,18 @@ export const SCORE_BAND_THRESHOLDS = {
 } as const;
 
 export const CV_BENCHMARK_RANGES = {
+  letterFormation: {
+    minScore: 80,
+    borderlineMinScore: 60,
+    label: "≥80% (CNN)",
+    shortLabel: "≥80%",
+    description: "CNN cursive stroke formation accuracy.",
+  },
   slant: {
     minDeg: 6.0,
     maxDeg: 15.0,
+    borderlineMinDeg: 3.0,
+    borderlineMaxDeg: 19.0,
     label: "6.0° – 15.0° (provisional)",
     shortLabel: "6°–15°",
     description: "Provisional forward stem lean from vertical.",
@@ -19,6 +28,8 @@ export const CV_BENCHMARK_RANGES = {
   wordSpacing: {
     minRatio: 1.5,
     maxRatio: 2.5,
+    borderlineMinRatio: 1.1,
+    borderlineMaxRatio: 2.9,
     label: "1.5 – 2.5× guideline",
     shortLabel: "1.5–2.5×",
     description: "Word-to-word gap (~finger space).",
@@ -32,12 +43,17 @@ export const CV_BENCHMARK_RANGES = {
   },
   sizeConsistency: {
     minRatio: 0.85,
-    maxRatio: 1.0,
-    label: "0.85 – 1.00 (at midline)",
+    maxRatio: 1.05,
+    borderlineMinRatio: 0.7,
+    borderlineMaxRatio: 1.2,
+    label: "0.85 – 1.05 ratio",
+    shortLabel: "0.85–1.05×",
   },
   baselineDeviation: {
-    maxRatio: 0.1,
-    label: "< 0.10 drift ratio",
+    maxRatio: 0.05,
+    borderlineMaxRatio: 0.15,
+    label: "≤ 0.05 drift ratio",
+    shortLabel: "≤0.05",
   },
 } as const;
 

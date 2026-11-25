@@ -20,12 +20,12 @@ interface FormationLayerProps {
 }
 
 const LETTER_ZONE_PALETTE = [
-  { fill: "rgba(16, 185, 129, 0.14)", stroke: "#047857", badgeBg: "#047857", text: "#064e3b" }, // Emerald 700 (4.67:1 vs #fff)
-  { fill: "rgba(2, 132, 199, 0.14)", stroke: "#0369a1", badgeBg: "#0369a1", text: "#0c4a6e" },   // Sky 700 (4.96:1 vs #fff)
-  { fill: "rgba(147, 51, 234, 0.14)", stroke: "#7e22ce", badgeBg: "#7e22ce", text: "#581c87" },  // Purple 700 (5.48:1 vs #fff)
-  { fill: "rgba(217, 119, 6, 0.14)", stroke: "#b45309", badgeBg: "#b45309", text: "#78350f" },   // Amber 700 (4.59:1 vs #fff)
-  { fill: "rgba(15, 118, 110, 0.14)", stroke: "#0f766e", badgeBg: "#0f766e", text: "#134e4a" },  // Teal 700 (5.09:1 vs #fff)
-  { fill: "rgba(79, 70, 229, 0.14)", stroke: "#4338ca", badgeBg: "#4338ca", text: "#312e81" },   // Indigo 700 (6.55:1 vs #fff)
+  { fill: "rgba(26, 74, 43, 0.14)", stroke: "#1a4a2b", badgeBg: "#1a4a2b", text: "#1a4a2b" }, // Forest Green (10.1:1 vs #fff)
+  { fill: "rgba(20, 80, 73, 0.14)", stroke: "#145049", badgeBg: "#145049", text: "#145049" }, // Deep Teal Shade (9.6:1 vs #fff)
+  { fill: "rgba(143, 74, 33, 0.14)", stroke: "#8f4a21", badgeBg: "#8f4a21", text: "#8f4a21" }, // Terracotta Dark (6.4:1 vs #fff)
+  { fill: "rgba(122, 78, 0, 0.14)", stroke: "#7a4e00", badgeBg: "#7a4e00", text: "#7a4e00" },   // Ochre Dark (6.8:1 vs #fff)
+  { fill: "rgba(54, 84, 44, 0.14)", stroke: "#36542c", badgeBg: "#36542c", text: "#36542c" },  // Sage Dark (8.2:1 vs #fff)
+  { fill: "rgba(3, 105, 161, 0.14)", stroke: "#0369a1", badgeBg: "#0369a1", text: "#0c4a6e" }, // Sky 700 (5.9:1 vs #fff)
 ];
 
 interface FormationWordItemProps {
@@ -55,6 +55,7 @@ const FormationWordItem = memo(function FormationWordItem({
   const formationColor = isAttention
     ? OVERLAY_COLORS.needs_attention.stroke
     : OVERLAY_COLORS.proficient.stroke;
+  const pillBgColor = isAttention ? "#8f4a21" : "#145049";
   const underlineY = y + h + 3;
   const underlineHeight = Math.max(
     4 * hitScale,
@@ -251,7 +252,7 @@ const FormationWordItem = memo(function FormationWordItem({
             width={scoreBadgeW}
             height={scoreBadgeH}
             rx={scoreBadgeH / 2}
-            fill={formationColor}
+            fill={pillBgColor}
             className="transition-transform group-hover:scale-105 motion-reduce:transform-none"
           />
           <text

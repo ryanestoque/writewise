@@ -314,14 +314,15 @@ export function WorksheetImageInspector({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!showImageTools) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       const container = imageContainerRef.current;
       if (!container) return;
 
-      if (keyboardScope === "focused") {
-        const viewer = container.closest('[data-inspector-container="true"]');
-        if (!viewer?.contains(document.activeElement) || e.ctrlKey || e.metaKey || e.altKey) {
-          return;
-        }
+      const viewer = container.closest('[data-inspector-container="true"]');
+      const isFocusedInViewer = Boolean(viewer?.contains(document.activeElement));
+
+      if (keyboardScope === "focused" && !isFocusedInViewer) {
+        return;
       }
 
       if (
@@ -329,7 +330,12 @@ export function WorksheetImageInspector({
         e.target instanceof HTMLTextAreaElement ||
         e.target instanceof HTMLSelectElement ||
         (e.target instanceof HTMLElement && (
+          e.target.isContentEditable ||
           e.target.closest("[role='radiogroup']") ||
+          e.target.closest("[role='tablist']") ||
+          e.target.closest("[role='tab']") ||
+          e.target.closest("[role='slider']") ||
+          e.target.closest("[role='combobox']") ||
           e.target.closest("[role='menu']") ||
           e.target.closest("[role='listbox']")
         ))
@@ -350,6 +356,10 @@ export function WorksheetImageInspector({
         e.preventDefault();
         handleZoomOut();
       } else if (e.key === "0") {
+        // Yield "0" to active rubric editing (Spacing N/A) unless focus is inside the inspector
+        if (document.querySelector('[data-rubric-editing="true"]') && !isFocusedInViewer) {
+          return;
+        }
         e.preventDefault();
         handleResetZoom();
       } else if (e.key === "l" || e.key === "L") {
@@ -358,7 +368,7 @@ export function WorksheetImageInspector({
       } else if (e.key === "c" || e.key === "C") {
         e.preventDefault();
         handleToggleContrast();
-      } else if (zoomScale > 1) {
+      } else if (zoomScale > 1 && isFocusedInViewer) {
         const step = e.shiftKey ? 100 : 40;
         if (e.key === "ArrowUp") {
           e.preventDefault();
@@ -607,7 +617,7 @@ export function WorksheetImageInspector({
               <button
                 type="button"
                 onClick={() => setImageToolsExpanded(true)}
-                className="inline-flex items-center gap-1.5 h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                className="inline-flex items-center gap-1.5 h-11 sm:h-7 min-h-11 sm:min-h-0 px-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                 aria-expanded={false}
               >
                 <SlidersHorizontal className="size-3.5" aria-hidden="true" />
@@ -647,7 +657,7 @@ export function WorksheetImageInspector({
                   variant="ghost"
                   size="sm"
                   onClick={() => setImageToolsExpanded(false)}
-                  className="h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-2 text-xs rounded-lg gap-1 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+                  className="h-11 sm:h-7 min-h-11 sm:min-h-0 px-2 text-xs rounded-lg gap-1 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
                   aria-expanded={true}
                   aria-label="Hide image tools"
                   title="Hide image tools"
@@ -662,7 +672,7 @@ export function WorksheetImageInspector({
                 size="sm"
                 onClick={handleToggleContrast}
                 className={cn(
-                  "h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-2.5 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+                  "h-11 sm:h-7 min-h-11 sm:min-h-0 px-2.5 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
                   isHighContrast
                     ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -681,7 +691,7 @@ export function WorksheetImageInspector({
                 size="sm"
                 onClick={handleToggleLoupe}
                 className={cn(
-                  "h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-2.5 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+                  "h-11 sm:h-7 min-h-11 sm:min-h-0 px-2.5 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
                   isLoupeActive
                     ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -703,7 +713,7 @@ export function WorksheetImageInspector({
                 size="sm"
                 disabled={zoomScale <= 1}
                 onClick={handleZoomOut}
-                className="size-10 sm:size-7 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation flex items-center justify-center"
+                className="size-11 sm:size-7 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation flex items-center justify-center"
                 aria-label="Zoom out (Key: -)"
                 title="Zoom out (-)"
               >
@@ -713,7 +723,7 @@ export function WorksheetImageInspector({
               <button
                 type="button"
                 onClick={handleResetZoom}
-                className="px-2.5 sm:px-2 py-1 sm:py-0.5 h-10 sm:h-7 min-h-[40px] sm:min-h-0 flex items-center justify-center text-xs font-mono font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded-lg touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                className="px-2.5 sm:px-2 py-1 sm:py-0.5 h-11 sm:h-7 min-h-11 sm:min-h-0 flex items-center justify-center text-xs font-sans tabular-nums font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded-lg touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                 title="Click to reset zoom (Key: 0)"
                 aria-label={`Current zoom ${Math.round(zoomScale * 100)} percent. Click to reset (Shortcut: 0).`}
               >
@@ -726,7 +736,7 @@ export function WorksheetImageInspector({
                 size="sm"
                 disabled={zoomScale >= 2.5}
                 onClick={handleZoomIn}
-                className="size-10 sm:size-7 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation flex items-center justify-center"
+                className="size-11 sm:size-7 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation flex items-center justify-center"
                 aria-label="Zoom in (Key: +)"
                 title="Zoom in (+)"
               >
@@ -798,7 +808,7 @@ export function WorksheetImageInspector({
             <button
               type="button"
               onClick={handleResetZoom}
-              className="px-2.5 sm:px-2 py-2 sm:py-0.5 min-h-[44px] sm:min-h-[32px] flex items-center justify-center text-xs sm:text-[11px] font-mono font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded-lg touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+              className="px-2.5 sm:px-2 py-2 sm:py-0.5 min-h-[44px] sm:min-h-[32px] flex items-center justify-center text-xs sm:text-[11px] font-sans tabular-nums font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded-lg touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
               title="Click to reset zoom (Key: 0)"
               aria-label={`Current zoom ${Math.round(zoomScale * 100)} percent. Click to reset (Shortcut: 0).`}
             >
@@ -952,7 +962,7 @@ export function WorksheetImageInspector({
                   setFailedImageUrl(null);
                   onRetry();
                 }}
-                className="min-h-[36px] h-8 px-3 text-xs gap-1.5 cursor-pointer rounded-lg border-border hover:bg-muted/80 text-foreground shadow-2xs"
+                className="min-h-11 sm:min-h-9 h-11 sm:h-9 px-3 text-xs gap-1.5 cursor-pointer rounded-lg border-border hover:bg-muted/80 text-foreground shadow-2xs touch-manipulation"
               >
                 <RotateCcw className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
                 <span>Retry loading photo</span>
@@ -967,10 +977,9 @@ export function WorksheetImageInspector({
         {isLoupeActive && loupeState.visible && imageUrl && (
           <div
             aria-hidden="true"
-            className="absolute size-[130px] rounded-full border-2 border-brand-600 dark:border-brand-400 shadow-xl overflow-hidden pointer-events-none z-30 ring-2 ring-background/80 bg-background"
+            className="absolute left-0 top-0 size-[130px] rounded-full border-2 border-brand-600 dark:border-brand-400 shadow-xl overflow-hidden pointer-events-none z-30 ring-2 ring-background/80 bg-background will-change-transform"
             style={{
-              left: loupeState.x - 65,
-              top: loupeState.y - 65,
+              transform: `translate3d(${loupeState.x - 65}px, ${loupeState.y - 65}px, 0)`,
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -980,15 +989,16 @@ export function WorksheetImageInspector({
               aria-hidden="true"
               style={{
                 position: "absolute",
+                left: 0,
+                top: 0,
                 width: loupeState.width * 2.5,
                 height: loupeState.height * 2.5,
-                left: -loupeState.targetX * 2.5 + 65,
-                top: -loupeState.targetY * 2.5 + 65,
+                transform: `translate3d(${-loupeState.targetX * 2.5 + 65}px, ${-loupeState.targetY * 2.5 + 65}px, 0)`,
                 filter: isHighContrast
                   ? "contrast(1.4) brightness(0.92) saturate(0.6)"
                   : "none",
               }}
-              className="max-w-none object-contain"
+              className="max-w-none object-contain will-change-transform"
             />
             {/* Center target reticle */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-2 rounded-full border border-brand-600/80 dark:border-brand-300/80 bg-brand-500/20 shadow-2xs pointer-events-none" />
@@ -1005,7 +1015,7 @@ export function WorksheetImageInspector({
               e.stopPropagation();
               handleResetZoom();
             }}
-            className="absolute bottom-2.5 right-2.5 z-10 bg-background/95 dark:bg-card/95 text-foreground px-3 py-2 rounded-lg border border-border shadow-xs text-xs font-medium flex items-center gap-1.5 hover:bg-muted transition-colors cursor-pointer min-h-[44px] sm:min-h-[36px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="absolute bottom-2.5 right-2.5 z-10 bg-background/95 dark:bg-card/95 text-foreground px-3 py-2 rounded-lg border border-border shadow-xs text-xs font-medium flex items-center gap-1.5 hover:bg-muted transition-colors cursor-pointer min-h-11 sm:min-h-9 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             title="Reset zoom & pan (Key: 0)"
           >
             <RotateCcw className="size-3.5 text-muted-foreground" aria-hidden="true" />

@@ -349,7 +349,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                 <DropdownMenuTrigger
                   disabled={!visible}
                   className={cn(
-                    "inline-flex items-center gap-1.5 bg-surface dark:bg-card px-2.5 py-1.5 @min-[540px]:py-1 rounded-lg border border-border/70 text-xs shadow-2xs min-w-0 shrink-0 overflow-hidden cursor-pointer hover:bg-muted/70 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation min-h-[40px] @min-[540px]:min-h-0",
+                    "inline-flex items-center gap-1.5 bg-surface dark:bg-card px-2.5 py-1.5 @min-[540px]:py-1 rounded-lg border border-border/70 text-xs shadow-2xs min-w-0 shrink-0 overflow-hidden cursor-pointer hover:bg-muted/70 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation min-h-11 @min-[540px]:min-h-7",
                     !visible && "opacity-50 cursor-not-allowed"
                   )}
                   aria-label={`Current guide: ${activeCriterion === "all" ? "All Guides" : activeFilterMeta.label}. Click to select a diagnostic criterion.`}
@@ -365,7 +365,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   {attentionCounts[activeCriterion] > 0 && (
                     <Badge
                       variant="secondary"
-                      className="px-1.5 py-0 h-4 text-[10px] font-bold tabular-nums rounded-full bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-band-1-text border border-band-1/30 ml-0.5 shrink-0"
+                      className="px-1.5 py-0 h-4 text-[10px] font-bold tabular-nums rounded-full bg-band-1/15 text-band-1-text dark:bg-band-1/25 border border-band-1/30 ml-0.5 shrink-0"
                     >
                       <span className="sr-only">({attentionCounts[activeCriterion]} attention items)</span>
                       <span aria-hidden="true">{attentionCounts[activeCriterion]}</span>
@@ -398,7 +398,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                               "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
                               isSelected
                                 ? "bg-brand-200/60 text-brand-900 dark:bg-brand-900 dark:text-brand-200"
-                                : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-band-1-text border border-band-1/30"
+                                : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 border border-band-1/30"
                             )}
                           >
                             {count}
@@ -416,7 +416,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   variant="ghost"
                   size="sm"
                   onClick={() => onChangeCriterion("all")}
-                  className="h-10 @min-[540px]:h-7 min-h-[40px] @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors touch-manipulation shrink-0 flex items-center justify-center gap-1"
+                  className="h-11 @min-[540px]:h-7 min-h-11 @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors touch-manipulation shrink-0 flex items-center justify-center gap-1"
                   title="Reset to show all guides"
                   aria-label="Reset to show all guides"
                 >
@@ -435,7 +435,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                     filterScrollRef.current?.scrollBy({ left: -80, behavior: "smooth" });
                   }}
                   aria-label="Scroll to see earlier criteria filters"
-                  className="@min-[640px]:hidden absolute left-0 z-10 flex size-8 min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-background/95 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
+                  className="@min-[640px]:hidden absolute left-0 z-10 flex size-8 min-h-11 min-w-11 items-center justify-center rounded-full bg-background/95 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
                 >
                   <ChevronLeft className="size-4" aria-hidden="true" />
                 </button>
@@ -472,9 +472,9 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                       onClick={() => onChangeCriterion(item.id)}
                       aria-pressed={isSelected}
                       className={cn(
-                        "shrink-0 h-9 @min-[540px]:h-8 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium rounded-lg gap-1.5 transition-all cursor-pointer touch-manipulation",
+                        "shrink-0 h-11 @min-[540px]:h-8 min-h-11 @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium rounded-lg gap-1.5 transition-colors cursor-pointer touch-manipulation",
                         isSelected
-                          ? "bg-brand-600 hover:bg-brand-700 text-white shadow-2xs font-semibold"
+                          ? "bg-primary hover:bg-primary-hover text-primary-foreground shadow-2xs font-semibold"
                           : "hover:bg-muted text-muted-foreground hover:text-foreground",
                         !visible && "opacity-50 cursor-not-allowed"
                       )}
@@ -498,8 +498,8 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                           className={cn(
                             "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
                             isSelected
-                              ? "bg-white/25 text-white"
-                              : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-band-1-text border border-band-1/30"
+                              ? "bg-primary-foreground/20 text-primary-foreground"
+                              : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 border border-band-1/30"
                           )}
                         >
                           <span className="sr-only">({count} attention items)</span>
@@ -518,7 +518,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                     filterScrollRef.current?.scrollBy({ left: 80, behavior: "smooth" });
                   }}
                   aria-label="Scroll to see more criteria filters"
-                  className="@min-[640px]:hidden absolute right-0 z-10 flex size-8 min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-background/95 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
+                  className="@min-[640px]:hidden absolute right-0 z-10 flex size-8 min-h-11 min-w-11 items-center justify-center rounded-full bg-background/95 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
                 >
                   <ChevronRight className="size-4" aria-hidden="true" />
                 </button>
@@ -527,7 +527,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
           )}
 
           {/* Master Switch on Compact / Row-1 layout (aligned to the right on Row 1) */}
-          <div className="flex @min-[540px]:hidden items-center justify-center gap-1.5 shrink-0 pl-1 min-h-[40px] min-w-[40px]">
+          <div className="flex @min-[540px]:hidden items-center justify-center gap-1.5 shrink-0 pl-1 min-h-11 min-w-11">
             <Switch
               id="toggle-diagnostic-overlay-mobile"
               aria-label={isParentView ? "Toggle writing marks on worksheet" : "Toggle handwriting diagnostic overlay"}
@@ -557,7 +557,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   size="sm"
                   disabled={!visible}
                   onClick={handlePrevAttention}
-                  className="relative size-8 @min-[540px]:size-7 p-0 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
+                  className="relative size-8 @min-[540px]:size-7 p-0 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-2 @min-[540px]:after:inset-0 after:content-['']"
                   aria-label="Previous practice area (Key: Alt+[ or [)"
                   title="Previous practice area (Alt+[ or [)"
                 >
@@ -574,7 +574,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   size="sm"
                   disabled={!visible}
                   onClick={handleNextAttention}
-                  className="relative size-8 @min-[540px]:size-7 p-0 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1.5 after:content-['']"
+                  className="relative size-8 @min-[540px]:size-7 p-0 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-2 @min-[540px]:after:inset-0 after:content-['']"
                   aria-label="Next practice area (Key: Alt+] or ])"
                   title="Next practice area (Alt+] or ])"
                 >
@@ -594,7 +594,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   size="sm"
                   onClick={onToggleGuideLines}
                   className={cn(
-                    "h-10 @min-[540px]:h-7 min-h-[40px] @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
+                    "h-11 @min-[540px]:h-7 min-h-11 @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
                     showGuideLines
                       ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200 font-semibold"
                       : "text-muted-foreground hover:text-foreground"
@@ -618,7 +618,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   size="sm"
                   onClick={() => setShowLegend((prev) => !prev)}
                   className={cn(
-                    "relative h-10 @min-[540px]:h-7 min-h-[40px] @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium rounded-lg gap-1 cursor-pointer transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-1",
+                    "relative h-11 @min-[540px]:h-7 min-h-11 @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium rounded-lg gap-1 cursor-pointer transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                     showLegend
                       ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200 font-semibold"
                       : "text-muted-foreground hover:text-foreground"
@@ -664,7 +664,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
         <div
           role="region"
           aria-label={isParentView ? "Writing marks guide" : "Diagnostic guide legend"}
-          className="p-3 rounded-xl bg-card border border-border/80 shadow-warm text-xs flex flex-col gap-2 transition-all animate-in fade-in duration-150 motion-reduce:animate-none"
+          className="p-3 rounded-xl bg-card border border-border/80 shadow-warm text-xs flex flex-col gap-2 transition-opacity animate-in fade-in duration-150 motion-reduce:animate-none"
         >
           <div className="flex items-center justify-between pb-1 border-b border-border/50">
             <span className="font-semibold text-foreground text-xs">
@@ -677,10 +677,10 @@ export const OverlayToolbar = memo(function OverlayToolbar({
               variant="ghost"
               size="sm"
               onClick={() => setShowLegend(false)}
-              className="relative size-10 sm:size-7 min-h-[40px] min-w-[40px] sm:min-h-[28px] sm:min-w-[28px] p-0 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation after:absolute after:-inset-1"
+              className="relative size-11 sm:size-7 min-h-11 min-w-11 sm:min-h-[28px] sm:min-w-[28px] p-0 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
               aria-label="Close guide legend"
             >
-              <X className="size-4 sm:size-3.5" />
+              <X className="size-4 sm:size-3.5" aria-hidden="true" />
             </Button>
           </div>
 

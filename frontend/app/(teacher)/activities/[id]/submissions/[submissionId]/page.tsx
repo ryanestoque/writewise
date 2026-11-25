@@ -144,11 +144,31 @@ export default function SubmissionDetailPage({
 
   const isLoading = activityLoading || submissionsLoading;
 
-  if (commentTarget.kind === "invalid") return <p role="status" className="p-4" data-page-studio="true">This conversation link is invalid. Choose a worksheet upload to view its comments.</p>;
+  if (commentTarget.kind === "invalid") {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 px-4 text-center space-y-4 bg-surface/50 dark:bg-card/50 rounded-2xl border border-dashed border-border/80" data-page-studio="true">
+        <div className="space-y-1.5 max-w-md">
+          <h1 className="font-heading text-lg font-semibold text-foreground">
+            Invalid Conversation Link
+          </h1>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            This conversation link is invalid. Choose a worksheet upload from the activity to view its comments.
+          </p>
+        </div>
+        <Link
+          href={activityHref}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary-hover transition-colors shadow-xs min-h-11 sm:min-h-9"
+        >
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          <span>Return to Activity</span>
+        </Link>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
-      <div className="w-full space-y-4 animate-pulse" role="status" aria-label="Loading handwriting submission details" data-page-studio="true">
+      <div className="w-full space-y-4 animate-pulse motion-reduce:animate-none" role="status" aria-label="Loading handwriting submission details" data-page-studio="true">
         {/* Top Back Navigation Trail Skeleton */}
         <div className="py-2 -ml-1 sm:-ml-2">
           <Skeleton className="h-4 w-28 rounded-md" />
@@ -158,21 +178,18 @@ export default function SubmissionDetailPage({
         <div className="space-y-2 pb-2.5 sm:pb-3 border-b border-border/70">
           {/* Main identity row */}
           <div className="flex items-center justify-between gap-2.5 sm:gap-3">
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-              <Skeleton className="size-9 sm:size-10 rounded-xl shrink-0" />
-              <div className="space-y-1.5 min-w-0 flex-1">
-                <Skeleton className="h-5 sm:h-6 w-36 sm:w-48 rounded-md" />
-                <Skeleton className="h-3 w-40 sm:w-52 rounded-md" />
-              </div>
+            <div className="space-y-1.5 min-w-0 flex-1">
+              <Skeleton className="h-6 sm:h-7 w-40 sm:w-52 rounded-md" />
+              <Skeleton className="h-3.5 w-44 sm:w-56 rounded-md" />
             </div>
-            <Skeleton className="h-9 w-32 rounded-xl shrink-0" />
+            <Skeleton className="h-9 w-32 rounded-lg shrink-0" />
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 lg:items-start py-2.5 sm:py-3.5">
           <div className="lg:col-span-6 space-y-2.5">
             <Skeleton className="h-9 w-full rounded-xl" />
-            <Skeleton className="aspect-4/3 sm:aspect-3/2 lg:aspect-4/3 w-full rounded-2xl min-h-[340px] sm:min-h-[440px]" />
+            <Skeleton className="aspect-3/4 w-full rounded-2xl min-h-[300px] sm:min-h-[340px] lg:min-h-[460px]" />
             <Skeleton className="h-9 w-full rounded-xl" />
           </div>
           <div className="lg:col-span-6 space-y-3">
@@ -191,9 +208,9 @@ export default function SubmissionDetailPage({
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4 text-center space-y-4 bg-surface/50 dark:bg-card/50 rounded-2xl border border-destructive/30" data-page-studio="true">
         <div className="space-y-1.5 max-w-md">
-          <h3 className="font-heading text-lg font-semibold text-foreground">
+          <h1 className="font-heading text-lg font-semibold text-foreground">
             Unable to Load Submission
-          </h3>
+          </h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
             There was a problem loading this handwriting assessment. Please check your connection and try again.
           </p>
@@ -205,14 +222,14 @@ export default function SubmissionDetailPage({
               void refetchActivity();
               void refetchSubmissions();
             }}
-            className="min-h-10 sm:min-h-9 px-4 text-xs font-semibold gap-1.5 cursor-pointer"
+            className="min-h-11 sm:min-h-9 px-4 text-xs font-semibold gap-1.5 rounded-lg cursor-pointer"
           >
             <RotateCcw className="size-3.5" aria-hidden="true" />
             <span>Retry</span>
           </Button>
           <Link
             href={activityHref}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium border border-border/80 hover:bg-muted transition-colors min-h-10 sm:min-h-9"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium border border-border/80 hover:bg-muted transition-colors min-h-11 sm:min-h-9"
           >
             <ArrowLeft className="size-3.5" aria-hidden="true" />
             <span>Return to Activity</span>
@@ -236,16 +253,16 @@ export default function SubmissionDetailPage({
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center space-y-4 bg-surface/50 dark:bg-card/50 rounded-2xl border border-dashed border-border/80" data-page-studio="true">
         <div className="space-y-1.5 max-w-md">
-          <h3 className="font-heading text-lg font-semibold text-foreground">
+          <h1 className="font-heading text-lg font-semibold text-foreground">
             Submission Not Found
-          </h3>
+          </h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
             The handwriting submission you are looking for may have been deleted, or the submission ID is invalid.
           </p>
         </div>
         <Link
           href={activityHref}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-xs"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary-hover transition-colors shadow-xs min-h-11 sm:min-h-9"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
           <span>Return to Activity</span>

@@ -149,7 +149,7 @@ export function GuideLineOverlay({
               y1={baseY}
               x2={x2}
               y2={baseY}
-              stroke="var(--color-brand-700, #0f766e)"
+              stroke="var(--color-brand-700, #145049)"
               strokeWidth={2.5}
               vectorEffect="non-scaling-stroke"
               strokeOpacity={0.85}
@@ -163,7 +163,7 @@ export function GuideLineOverlay({
                 y1={midY}
                 x2={x2}
                 y2={midY}
-                stroke="var(--color-brand-600, #0d9488)"
+                stroke="var(--color-brand-600, #1b6b63)"
                 strokeWidth={1.75}
                 vectorEffect="non-scaling-stroke"
                 strokeOpacity={0.75}
@@ -179,7 +179,7 @@ export function GuideLineOverlay({
                 y1={topY}
                 x2={x2}
                 y2={topY}
-                stroke="var(--color-muted-foreground, #64748b)"
+                stroke="var(--muted-foreground, #5b6663)"
                 strokeWidth={1.5}
                 vectorEffect="non-scaling-stroke"
                 strokeOpacity={0.65}

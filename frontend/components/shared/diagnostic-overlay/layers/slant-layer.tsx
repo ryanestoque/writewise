@@ -50,6 +50,7 @@ export const SlantLayer = memo(function SlantLayer({
         const slantColor = isAttention
           ? OVERLAY_COLORS.needs_attention.stroke
           : OVERLAY_COLORS.proficient.stroke;
+        const slantPillBg = isAttention ? "#8f4a21" : "#145049";
         const id = `slant-${ann.line_index}-${ann.word_index}`;
         const isConsistent = ann.note.toLowerCase().includes("consistent");
         const title = isAttention
@@ -173,7 +174,7 @@ export const SlantLayer = memo(function SlantLayer({
                   width={badgeW}
                   height={badgeH}
                   rx={badgeH / 2}
-                  fill={slantColor}
+                  fill={slantPillBg}
                 />
                 <text
                   x={0}

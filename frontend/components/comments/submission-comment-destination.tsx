@@ -32,13 +32,13 @@ export function SubmissionCommentDestination({
     return (
       <div className="flex flex-col gap-3 p-4" role="status">
         <Alert variant="destructive">
-          <AlertCircle className="size-4" />
+          <AlertCircle className="size-4" aria-hidden="true" />
           <AlertTitle>Conversation unavailable</AlertTitle>
           <AlertDescription>
             This conversation is either no longer available or does not match the current activity.
           </AlertDescription>
         </Alert>
-        <Button variant="outline" size="sm" onClick={() => void query.retry()}>
+        <Button variant="outline" size="sm" className="min-h-11 sm:min-h-9 w-fit cursor-pointer" onClick={() => void query.retry()}>
           Try again
         </Button>
       </div>

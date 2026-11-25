@@ -318,18 +318,40 @@ export function SubmissionDetailContent({
     setIsScrolledPastInspector(scrollTop > 140);
   }, []);
 
-  // Track window scroll on mobile page view so teachers get a sticky worksheet preview bar
+  // Track inspector visibility on mobile/tablet page view so teachers get a sticky preview bar without scroll-time layout reads
   useEffect(() => {
     if (variant !== "page") return;
-    const handleWindowScroll = () => {
-      const el = worksheetColumnRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      setIsScrolledPastInspector(rect.bottom < 72);
+    const el = worksheetColumnRef.current;
+    if (!el || typeof window === "undefined") return;
+
+    const mediaQuery = window.matchMedia("(max-width: 1023px)");
+    let observer: IntersectionObserver | null = null;
+
+    const setupObserver = () => {
+      observer?.disconnect();
+      observer = null;
+      if (!mediaQuery.matches) {
+        setIsScrolledPastInspector(false);
+        return;
+      }
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          if (!entry) return;
+          setIsScrolledPastInspector(
+            !entry.isIntersecting && entry.boundingClientRect.bottom < 72
+          );
+        },
+        { rootMargin: "-72px 0px 0px 0px", threshold: 0 }
+      );
+      observer.observe(el);
     };
-    window.addEventListener("scroll", handleWindowScroll, { passive: true });
-    handleWindowScroll();
-    return () => window.removeEventListener("scroll", handleWindowScroll);
+
+    setupObserver();
+    mediaQuery.addEventListener("change", setupObserver);
+    return () => {
+      mediaQuery.removeEventListener("change", setupObserver);
+      observer?.disconnect();
+    };
   }, [variant]);
 
   const {
@@ -338,6 +360,10 @@ export function SubmissionDetailContent({
     isError: isImageError,
     refetch: refetchImage,
   } = useSubmissionImageUrl(submission.image_path ?? null);
+
+  const handleRetryImage = useCallback(() => {
+    void refetchImage();
+  }, [refetchImage]);
 
   // Resolve current submission index with robust fallback to array matching
   const effectiveIndex = useMemo(() => {
@@ -377,6 +403,8 @@ export function SubmissionDetailContent({
   // Keyboard navigation for submission cycling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
       const isPrev =
         e.key === "ArrowLeft" ||
         e.key === "Left" ||
@@ -579,6 +607,24 @@ export function SubmissionDetailContent({
     [setActiveOverlayCriterion]
   );
 
+  const handleChangeOverlayCriterion = useCallback(
+    (c: CriterionFilter) => {
+      setActiveOverlayCriterion(c);
+      const items = getAttentionItems(diagnosticOverlay, c);
+      if (c !== "all" && items.length > 0) {
+        setSelectedAttentionItem(items[0]);
+      } else {
+        setSelectedAttentionItem(null);
+      }
+      const name = CRITERION_FILTER_TO_NAME[c];
+      if (name) {
+        setSelectedCriterion(name);
+        setCriterionAnnouncement(`Selected ${name} on diagnostic overlay`);
+      }
+    },
+    [diagnosticOverlay, setActiveOverlayCriterion]
+  );
+
   // Attention alert counts for embedding in rubric and criterion lists
   const criterionAttentionCounts = useMemo<Record<string, number>>(() => {
     const emptyCounts: Record<string, number> = {};
@@ -747,7 +793,7 @@ export function SubmissionDetailContent({
   const actionsContent = (
     <div className="flex items-center gap-2 shrink-0">
       {hasMultipleSubmissions && submissions && onNavigate && (
-        <div className="flex items-center gap-0.5 sm:gap-1 bg-muted/50 p-0.5 sm:p-1 rounded-xl border border-border h-10 sm:h-9 shrink-0">
+        <div className="flex items-center gap-0.5 sm:gap-1 bg-muted/50 p-0.5 sm:p-1 rounded-lg border border-border h-11 sm:h-9 shrink-0">
           <Button
             ref={prevButtonRef}
             variant="ghost"
@@ -758,7 +804,7 @@ export function SubmissionDetailContent({
                 requestNavigate(submissions[effectiveIndex - 1]);
               }
             }}
-            className="size-10 sm:size-7 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
+            className="size-11 sm:size-7 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
             aria-label="Previous student (Key: J or ←)"
             title="Previous student (← / J)"
           >
@@ -781,7 +827,7 @@ export function SubmissionDetailContent({
                 requestNavigate(submissions[effectiveIndex + 1]);
               }
             }}
-            className="size-10 sm:size-7 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
+            className="size-11 sm:size-7 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
             aria-label="Next student (Key: K or →)"
             title="Next student (→ / K)"
           >
@@ -798,7 +844,7 @@ export function SubmissionDetailContent({
               variant="outline"
               size="sm"
               disabled={deleteMutation.isPending}
-              className="size-10 sm:size-9 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 p-0 rounded-xl border-border/70 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation shrink-0"
+              className="size-11 sm:size-9 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 p-0 rounded-lg border-border/70 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation shrink-0"
               aria-label="More submission actions"
               title="More submission actions"
             />
@@ -835,7 +881,7 @@ export function SubmissionDetailContent({
                   {submission.student?.full_name ?? "Student"}
                 </DialogTitle>
               ) : (
-                <h1 className="font-heading text-base sm:text-xl md:text-2xl font-bold tracking-tight text-foreground truncate">
+                <h1 className="font-heading text-base sm:text-xl md:text-2xl font-semibold tracking-tight text-foreground truncate">
                   {submission.student?.full_name ?? "Student"}
                 </h1>
               )}
@@ -900,7 +946,7 @@ export function SubmissionDetailContent({
           <button
             type="button"
             onClick={handleProtectedClose}
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-2.5 py-1.5 min-h-10 sm:min-h-9 hover:bg-muted/50 cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-2.5 py-1.5 min-h-11 sm:min-h-9 hover:bg-muted/50 cursor-pointer"
           >
             <ArrowLeft
               className="size-3.5 transition-transform group-hover:-translate-x-0.5"
@@ -995,7 +1041,7 @@ export function SubmissionDetailContent({
                   worksheetColumnRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }
               }}
-              className="min-h-[40px] h-10 sm:h-8 px-3 text-xs gap-1.5 cursor-pointer shrink-0 touch-manipulation font-medium text-brand-800 dark:text-brand-300 border-brand-300 dark:border-brand-800 hover:bg-brand-50 dark:hover:bg-brand-950/60"
+              className="min-h-11 h-11 sm:h-9 px-3 text-xs gap-1.5 rounded-lg cursor-pointer shrink-0 touch-manipulation font-medium text-brand-800 dark:text-brand-300 border-brand-300 dark:border-brand-800 hover:bg-brand-50 dark:hover:bg-brand-950/60"
             >
               <Eye className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
               <span>View Image</span>
@@ -1020,6 +1066,7 @@ export function SubmissionDetailContent({
               altText={`Handwriting worksheet submitted for ${submission.student?.full_name ?? "student"}`}
               isLoading={isImageLoading}
               isError={isImageError}
+              priority={variant === "page"}
               collapsibleImageTools
               diagnosticToolbar={
                 diagnosticOverlay ? (
@@ -1027,20 +1074,7 @@ export function SubmissionDetailContent({
                     variant="compact"
                     overlay={diagnosticOverlay}
                     activeCriterion={activeOverlayCriterion}
-                    onChangeCriterion={(c) => {
-                      setActiveOverlayCriterion(c);
-                      const items = getAttentionItems(diagnosticOverlay, c);
-                      if (c !== "all" && items.length > 0) {
-                        setSelectedAttentionItem(items[0]);
-                      } else {
-                        setSelectedAttentionItem(null);
-                      }
-                      const name = CRITERION_FILTER_TO_NAME[c];
-                      if (name) {
-                        setSelectedCriterion(name);
-                        setCriterionAnnouncement(`Selected ${name} on diagnostic overlay`);
-                      }
-                    }}
+                    onChangeCriterion={handleChangeOverlayCriterion}
                     selectedAttentionId={selectedAttentionItem?.id}
                     onSelectAttentionItem={setSelectedAttentionItem}
                     visible={showOverlay}
@@ -1064,9 +1098,7 @@ export function SubmissionDetailContent({
                 )
               }
                 showShortcutsLegend={false}
-                onRetry={() => {
-                  refetchImage();
-                }}
+                onRetry={handleRetryImage}
                 className="flex-1 flex flex-col min-h-0"
                 aspectRatioClass={
                   variant === "page"
@@ -1175,7 +1207,7 @@ export function SubmissionDetailContent({
                               }
                             }}
                             className={cn(
-                              "flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer min-h-10 sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                              "flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-semibold transition-colors cursor-pointer min-h-11 sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                               isActive
                                 ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
                                 : "text-muted-foreground hover:text-foreground"
@@ -1271,7 +1303,7 @@ export function SubmissionDetailContent({
                             {hasCalibratedScores ? (
                               <>
                                 {/* Phase 2: Overall Composite Score Bar */}
-                                <div className="flex items-center justify-between px-3.5 py-3 sm:px-4.5 sm:py-3.5 rounded-xl bg-surface dark:bg-card border border-border shadow-xs">
+                                <div className="flex items-center justify-between px-3.5 py-3 sm:px-4 sm:py-3.5 rounded-xl bg-surface dark:bg-card border border-border shadow-xs">
                                   <span className="text-xs sm:text-sm font-semibold text-foreground">
                                     Overall Score
                                   </span>
@@ -1307,19 +1339,12 @@ export function SubmissionDetailContent({
                                         <button
                                           type="button"
                                           onClick={() => handleSelectCriterion(c.name)}
-                                          aria-expanded={isSelected}
-                                          aria-controls={
-                                            isSelected
-                                              ? isDesktopGuideRendered
-                                                ? `${inlineId} criterion-diagnostic-guide`
-                                                : inlineId
-                                              : undefined
-                                          }
+                                          aria-pressed={isSelected}
                                           aria-label={`${c.name}: ${!isCriterionNA
                                             ? `${Math.round(c.score!)}% (${band.band})`
                                             : "Not applicable"
                                             }. Tap to focus coaching tip.`}
-                                          className={`w-full flex items-center justify-between px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border transition-all text-xs sm:text-sm text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 touch-manipulation ${isSelected
+                                          className={`w-full flex items-center justify-between px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border transition-colors text-xs sm:text-sm text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-11 sm:min-h-0 touch-manipulation ${isSelected
                                             ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
                                             : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
                                             }`}
@@ -1332,10 +1357,10 @@ export function SubmissionDetailContent({
                                               <Badge
                                                 variant="secondary"
                                                 className={cn(
-                                                  "px-2 py-0.5 h-4.5 sm:h-5 text-[10px] sm:text-[11px] font-bold rounded-full",
+                                                  "px-2 py-0.5 h-5 text-[10px] sm:text-[11px] font-bold rounded-full",
                                                   isSelected
                                                     ? "bg-brand-200 text-brand-900 dark:bg-brand-900 dark:text-brand-100"
-                                                    : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
+                                                    : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 border border-band-1/30"
                                                 )}
                                               >
                                                 <span>
@@ -1431,7 +1456,7 @@ export function SubmissionDetailContent({
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => setIsEditingRubric(true)}
-                                                className="h-10 sm:h-7 min-h-[40px] sm:min-h-0 px-3 sm:px-2.5 text-xs text-brand-800 dark:text-brand-200 border-brand-300 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 gap-1.5 cursor-pointer touch-manipulation shrink-0 font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                                                className="h-11 sm:h-7 min-h-11 sm:min-h-0 px-3 sm:px-2.5 text-xs rounded-lg text-brand-800 dark:text-brand-200 border-brand-300 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 gap-1.5 cursor-pointer touch-manipulation shrink-0 font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                                                 aria-label="Edit recorded rubric scores"
                                               >
                                                 <Edit3 className="size-3" aria-hidden="true" />
@@ -1464,17 +1489,10 @@ export function SubmissionDetailContent({
                                                   <button
                                                     type="button"
                                                     onClick={() => handleSelectCriterion(criterion.shortName)}
-                                                    aria-expanded={isSelected}
-                                                    aria-controls={
-                                                      isSelected
-                                                        ? isDesktopGuideRendered
-                                                          ? `criterion-guide-inline-${criterion.key} criterion-diagnostic-guide`
-                                                          : `criterion-guide-inline-${criterion.key}`
-                                                        : undefined
-                                                    }
+                                                    aria-pressed={isSelected}
                                                     aria-label={`${criterion.shortName}: ${bandMeta.label}. Tap to focus coaching tip.`}
                                                     className={cn(
-                                                      "w-full flex items-center justify-between px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border text-xs sm:text-sm text-left cursor-pointer transition-all min-h-[44px] sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                                                      "w-full flex items-center justify-between px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border text-xs sm:text-sm text-left cursor-pointer transition-colors min-h-11 sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                                                       isSelected
                                                         ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
                                                         : "bg-surface dark:bg-card border-border/60 hover:bg-muted/30"
@@ -1504,10 +1522,10 @@ export function SubmissionDetailContent({
                                                         <Badge
                                                           variant="secondary"
                                                           className={cn(
-                                                            "px-2 py-0.5 h-4.5 sm:h-5 text-[10px] sm:text-[11px] font-bold rounded-full",
+                                                            "px-2 py-0.5 h-5 text-[10px] sm:text-[11px] font-bold rounded-full",
                                                             isSelected
                                                               ? "bg-brand-200 text-brand-900 dark:bg-brand-900 dark:text-brand-100"
-                                                              : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 dark:text-orange-200 border border-band-1/30"
+                                                              : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 border border-band-1/30"
                                                           )}
                                                         >
                                                           <span>
@@ -1684,7 +1702,7 @@ export function SubmissionDetailContent({
             variant="outline"
             size="sm"
             onClick={handleProtectedClose}
-            className="h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-3.5 text-xs font-medium cursor-pointer touch-manipulation ml-auto"
+            className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-3.5 text-xs font-medium rounded-lg cursor-pointer touch-manipulation ml-auto"
           >
             Close
           </Button>
@@ -1712,7 +1730,7 @@ export function SubmissionDetailContent({
           <AlertDialogFooter>
             <AlertDialogCancel
               onClick={() => setPendingNavTarget(null)}
-              className="min-h-10 sm:min-h-9"
+              className="min-h-11 sm:min-h-9 rounded-lg"
             >
               Stay here
             </AlertDialogCancel>
@@ -1724,7 +1742,7 @@ export function SubmissionDetailContent({
                 setIsRubricDirty(false);
                 if (target) onNavigate?.(target);
               }}
-              className="min-h-10 sm:min-h-9 cursor-pointer"
+              className="min-h-11 sm:min-h-9 rounded-lg cursor-pointer"
             >
               Discard &amp; continue
             </AlertDialogAction>
@@ -1750,6 +1768,7 @@ export function SubmissionDetailContent({
             <AlertDialogCancel
               disabled={deleteMutation.isPending}
               onClick={() => setIsDeleteDialogOpen(false)}
+              className="min-h-11 sm:min-h-9 rounded-lg"
             >
               Cancel
             </AlertDialogCancel>
@@ -1760,7 +1779,7 @@ export function SubmissionDetailContent({
                 handleDelete();
               }}
               variant="destructive"
-              className="gap-2 cursor-pointer"
+              className="min-h-11 sm:min-h-9 rounded-lg gap-2 cursor-pointer"
             >
               {deleteMutation.isPending ? (
                 <>
@@ -1796,7 +1815,7 @@ export function SubmissionDetailContent({
           <AlertDialogFooter>
             <AlertDialogCancel
               onClick={() => setIsConfirmingClose(false)}
-              className="min-h-10 sm:min-h-9"
+              className="min-h-11 sm:min-h-9 rounded-lg"
             >
               Stay here
             </AlertDialogCancel>
@@ -1807,7 +1826,7 @@ export function SubmissionDetailContent({
                 setIsRubricDirty(false);
                 onClose?.();
               }}
-              className="min-h-10 sm:min-h-9 cursor-pointer"
+              className="min-h-11 sm:min-h-9 rounded-lg cursor-pointer"
             >
               Discard &amp; leave
             </AlertDialogAction>

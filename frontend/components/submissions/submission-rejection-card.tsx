@@ -299,7 +299,7 @@ export function SubmissionRejectionCard({
           onClick={onReupload}
           aria-describedby="rejection-advice"
           aria-label={`Take and re-upload new worksheet photo for ${submission.student?.full_name ?? "student"}`}
-          className="w-full min-h-11 h-11 bg-primary hover:bg-brand-700 text-primary-foreground dark:hover:bg-brand-500 text-xs sm:text-sm font-semibold rounded-xl gap-2 shadow-xs cursor-pointer touch-manipulation transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="w-full min-h-11 h-11 bg-primary hover:bg-primary-hover text-primary-foreground text-xs sm:text-sm font-semibold rounded-lg gap-2 shadow-xs cursor-pointer touch-manipulation transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <Camera className="size-4" aria-hidden="true" />
           Take & Re-upload New Photo

@@ -249,7 +249,7 @@ export function SubmissionLifecycleControls({
           <AlertDialogCancel
             disabled={release.isPending}
             onClick={() => setReleaseConfirmOpen(false)}
-            className="min-h-10 sm:min-h-9"
+            className="min-h-11 sm:min-h-9 rounded-lg"
           >
             Cancel
           </AlertDialogCancel>
@@ -259,7 +259,7 @@ export function SubmissionLifecycleControls({
               e.preventDefault();
               void act("release");
             }}
-            className="min-h-10 sm:min-h-9 gap-1.5 bg-brand-600 hover:bg-brand-700 text-white dark:bg-brand-500 dark:hover:bg-brand-600 cursor-pointer"
+            className="min-h-11 sm:min-h-9 gap-1.5 bg-primary hover:bg-primary-hover text-primary-foreground rounded-lg cursor-pointer"
           >
             {release.isPending ? (
               <>
@@ -285,14 +285,14 @@ export function SubmissionLifecycleControls({
         {submission.status === "returned" ? (
           <Badge
             variant="outline"
-            className="text-[10px] sm:text-[11px] font-semibold h-5 px-2 bg-band-2/15 text-band-2-text dark:bg-band-2/25 dark:text-amber-200 border-band-2/40"
+            className="text-[10px] sm:text-[11px] font-semibold h-5 px-2 bg-band-2/15 text-band-2-text border-band-2/40"
           >
             Returned
           </Badge>
         ) : completed && active && submission.released_at ? (
           <Badge
             variant="outline"
-            className="text-[10px] sm:text-[11px] h-5 px-2 font-medium border-emerald-300 text-emerald-800 dark:border-emerald-700 dark:text-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/40"
+            className="text-[10px] sm:text-[11px] h-5 px-2 font-medium border-band-4/40 text-band-4-text bg-band-4/15"
           >
             Result released
           </Badge>
@@ -326,13 +326,13 @@ export function SubmissionLifecycleControls({
       return (
         <div
           className={cn(
-            "flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl border border-emerald-300/80 dark:border-emerald-800/80 bg-emerald-50/60 dark:bg-emerald-950/40 shadow-warm-sm",
+            "flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl border border-band-4/40 bg-band-4/10 shadow-warm-sm",
             className
           )}
         >
           <div className="min-w-0 space-y-0.5">
-            <p className="text-xs font-semibold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
-              <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+            <p className="text-xs font-semibold text-band-4-text flex items-center gap-1.5">
+              <CheckCircle2 className="size-3.5 text-band-4-text shrink-0" aria-hidden="true" />
               <span>Result released to parent</span>
             </p>
             <p className="text-xs text-muted-foreground leading-snug">
@@ -344,7 +344,7 @@ export function SubmissionLifecycleControls({
               type="button"
               size="sm"
               onClick={onNavigateNext}
-              className="h-10 sm:h-9 min-h-[40px] sm:min-h-0 px-4 text-xs font-semibold cursor-pointer touch-manipulation gap-1.5 bg-brand-600 hover:bg-brand-700 text-white dark:bg-brand-500 dark:hover:bg-brand-600 shrink-0 rounded-lg shadow-xs"
+              className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-4 text-xs font-semibold cursor-pointer touch-manipulation gap-1.5 bg-primary hover:bg-primary-hover text-primary-foreground shrink-0 rounded-lg shadow-xs"
             >
               <span>Next student</span>
               <ArrowRight className="size-3.5" aria-hidden="true" />
@@ -384,7 +384,7 @@ export function SubmissionLifecycleControls({
           }}
           disabled={pending}
           aria-busy={release.isPending}
-          className="h-10 sm:h-9 min-h-[40px] sm:min-h-0 px-4 text-xs font-semibold cursor-pointer touch-manipulation gap-1.5 bg-brand-600 hover:bg-brand-700 text-white dark:bg-brand-500 dark:hover:bg-brand-600 shrink-0 rounded-lg shadow-xs"
+          className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-4 text-xs font-semibold cursor-pointer touch-manipulation gap-1.5 bg-primary hover:bg-primary-hover text-primary-foreground shrink-0 rounded-lg shadow-xs"
         >
           {release.isPending ? (
             <>
@@ -413,7 +413,7 @@ export function SubmissionLifecycleControls({
             variant="outline"
             onClick={() => setReturnOpen(true)}
             disabled={pending}
-            className="h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-3 sm:px-2.5 text-xs font-medium cursor-pointer touch-manipulation gap-1.5"
+            className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-3 text-xs font-medium rounded-lg cursor-pointer touch-manipulation gap-1.5"
             title="Return worksheet to student/parent for another attempt"
           >
             <RotateCcw className="size-3.5" aria-hidden="true" />
@@ -429,7 +429,7 @@ export function SubmissionLifecycleControls({
             }}
             disabled={pending}
             aria-busy={release.isPending}
-            className="h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-3.5 sm:px-3 text-xs font-medium cursor-pointer touch-manipulation gap-1.5 bg-brand-600 hover:bg-brand-700 text-white dark:bg-brand-500 dark:hover:bg-brand-600"
+            className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-3.5 text-xs font-medium rounded-lg cursor-pointer touch-manipulation gap-1.5 bg-primary hover:bg-primary-hover text-primary-foreground"
             title="Release score and diagnostic feedback to parent"
           >
             {release.isPending ? (
@@ -451,7 +451,7 @@ export function SubmissionLifecycleControls({
             variant="outline"
             onClick={() => act("pin")}
             disabled={pending || !work}
-            className="h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-3 sm:px-2.5 text-xs font-medium cursor-pointer touch-manipulation"
+            className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-3 text-xs font-medium rounded-lg cursor-pointer touch-manipulation"
           >
             Count this attempt
           </Button>
@@ -462,7 +462,7 @@ export function SubmissionLifecycleControls({
             variant="ghost"
             onClick={() => act("unpin")}
             disabled={pending}
-            className="h-10 sm:h-8 min-h-[40px] sm:min-h-0 px-2.5 sm:px-2 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+            className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-2.5 text-xs font-medium rounded-lg text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
           >
             Use automatic selection
           </Button>
@@ -616,9 +616,9 @@ export function SubmissionReturnedAlert({ submission }: { submission: Submission
   return (
     <div
       role="status"
-      className="rounded-xl border border-amber-300/80 bg-amber-50/70 p-3 text-xs text-amber-950 dark:border-amber-800/80 dark:bg-amber-950/30 dark:text-amber-200 space-y-1 shadow-2xs"
+      className="rounded-xl border border-band-2/40 bg-band-2/15 p-3 text-xs text-band-2-text space-y-1 shadow-2xs"
     >
-      <div className="flex items-center gap-1.5 font-semibold text-amber-900 dark:text-amber-100">
+      <div className="flex items-center gap-1.5 font-semibold text-band-2-text">
         <RotateCcw className="size-3.5 shrink-0" aria-hidden="true" />
         <span>Worksheet Returned for Revision</span>
       </div>

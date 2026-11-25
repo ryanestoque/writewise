@@ -383,7 +383,7 @@ function TooltipCard({
                 e.stopPropagation();
                 onDismiss();
               }}
-              className="relative !size-5 sm:!size-6 !min-h-0 !min-w-0 rounded-md p-0 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer pointer-events-auto touch-manipulation shrink-0 ml-0.5 hover:bg-muted/80 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-2 after:content-['']"
+              className="relative !size-5 sm:!size-6 !min-h-0 !min-w-0 rounded-md p-0 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer pointer-events-auto touch-manipulation shrink-0 ml-0.5 hover:bg-muted/80 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-3 sm:after:-inset-2 after:content-['']"
               aria-label="Dismiss pinned annotation details"
               title="Close annotation details"
             >
@@ -414,7 +414,7 @@ function TooltipCard({
         )}
 
         {!isPinned && (
-          <div className="mt-1 pt-0.5 sm:mt-1.5 sm:pt-1 border-t border-border/40 text-[9px] sm:text-[10px] text-muted-foreground/75 hidden sm:flex items-center justify-between">
+          <div className="mt-1 pt-0.5 sm:mt-1.5 sm:pt-1 border-t border-border/40 text-[9px] sm:text-[10px] text-muted-foreground hidden sm:flex items-center justify-between">
             <span>Click to pin details</span>
           </div>
         )}
