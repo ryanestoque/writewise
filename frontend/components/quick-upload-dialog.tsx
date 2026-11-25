@@ -150,7 +150,7 @@ export function QuickUploadDialog({
     >
       <DialogContent
         showCloseButton={!isUploading}
-        className="w-[calc(100%-1.5rem)] max-w-xl max-h-[min(92dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm"
+        className="w-[calc(100%-1.5rem)] max-w-xl max-h-[min(92dvh,calc(100dvh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm"
       >
         {/* key remounts the flow on every open/close so state starts fresh */}
         <UploadFlow
@@ -787,7 +787,7 @@ function UploadFlow({
         </nav>
       </DialogHeader>
 
-      <div className="px-4 sm:px-6 py-4 max-h-[min(72dvh,calc(100vh-10rem))] overflow-y-auto overscroll-contain">
+      <div className="px-4 sm:px-6 py-4 max-h-[min(72dvh,calc(100dvh-10rem))] overflow-y-auto overscroll-contain">
         {isUploading ? (
           /* Step 4 — Uploading state (DESIGN.md §7.2 staged progress) */
           <div

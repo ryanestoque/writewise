@@ -214,7 +214,7 @@ export function ParentPortalProvider({ user, children: pageChildren }: ParentPor
 
   return (
     <ParentPortalContext.Provider value={contextValue}>
-      <div className="bg-background text-foreground flex min-h-dvh flex-col overflow-x-clip">
+      <div className="bg-background text-foreground flex min-h-svh flex-col overflow-x-clip">
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground focus:shadow-warm focus:outline-none focus:ring-2 focus:ring-ring"

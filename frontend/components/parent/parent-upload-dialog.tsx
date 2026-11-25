@@ -150,7 +150,7 @@ export function ParentUploadDialog({
     >
       <DialogContent
         showCloseButton={!isUploading}
-        className="w-[calc(100%-1.5rem)] max-w-xl max-h-[min(92dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm"
+        className="w-[calc(100%-1.5rem)] max-w-xl max-h-[min(92dvh,calc(100dvh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm"
       >
         <ParentUploadFlow
           key={open ? "open" : "closed"}

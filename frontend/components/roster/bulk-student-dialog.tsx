@@ -159,7 +159,7 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-xl sm:max-w-[520px] max-h-[min(92dvh,calc(100vh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm border border-border/80 bg-surface dark:bg-card">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-xl sm:max-w-[520px] max-h-[min(92dvh,calc(100dvh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm border border-border/80 bg-surface dark:bg-card">
         <DialogHeader className="pb-3 sm:pb-4 shrink-0 text-left">
           <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">Bulk Add Students</DialogTitle>
           <DialogDescription className="sr-only">

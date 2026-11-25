@@ -136,43 +136,41 @@ export function TeacherGradebook({
     );
 
   return (
-    <div className="w-full min-w-0 space-y-6">
-      {/* Top Header Row with integrated Section Selector & Export */}
-      <div className="flex flex-wrap items-center justify-between gap-4 print:hidden">
-        <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="font-heading text-2xl font-semibold text-foreground">Gradebook</h1>
-          {sections.data && sections.data.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Label htmlFor="gradebook-section-select" className="sr-only">
-                Section
-              </Label>
-              <Select
-                items={sectionItems}
-                value={sectionId ?? null}
-                onValueChange={(val) => {
-                  if (val) setSection(val);
-                }}
+    <div className="w-full min-w-0 space-y-4 sm:space-y-5">
+      {/* Top Header Row with integrated Section Selector */}
+      <div className="flex items-center justify-between sm:justify-start gap-3 print:hidden">
+        <h1 className="font-heading text-2xl font-semibold text-foreground shrink-0">Gradebook</h1>
+        {sections.data && sections.data.length > 0 && (
+          <div className="flex items-center gap-2 min-w-0">
+            <Label htmlFor="gradebook-section-select" className="sr-only">
+              Section
+            </Label>
+            <Select
+              items={sectionItems}
+              value={sectionId ?? null}
+              onValueChange={(val) => {
+                if (val) setSection(val);
+              }}
+            >
+              <SelectTrigger
+                id="gradebook-section-select"
+                className="min-w-[112px] max-w-[200px] sm:w-[180px] data-[size=default]:h-10 sm:data-[size=default]:h-9 cursor-pointer"
+                aria-label="Select section"
               >
-                <SelectTrigger
-                  id="gradebook-section-select"
-                  className="w-[180px] h-10 sm:h-9 cursor-pointer"
-                  aria-label="Select section"
-                >
-                  <SelectValue placeholder="Select section" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {sectionItems.map((item) => (
-                      <SelectItem key={item.value} value={item.value} className="cursor-pointer">
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </div>
+                <SelectValue placeholder="Select section" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {sectionItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value} className="cursor-pointer">
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       {sections.isError ? (
@@ -484,14 +482,14 @@ function SectionGrid({
   }
 
   return (
-    <div className="w-full min-w-0 space-y-4">
-      {/* Action Toolbar */}
-      <div className="flex flex-wrap items-end justify-between gap-3 print:hidden">
-        <div className="flex flex-wrap items-center gap-3">
+    <div className="w-full min-w-0 space-y-3 sm:space-y-4">
+      {/* Action Toolbar: 2 compact rows on mobile, single horizontal row on sm+ */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 print:hidden">
+        <div className="flex items-center gap-2 sm:contents">
           <Input
             aria-label="Find student in gradebook"
             placeholder="Find student…"
-            className="w-full sm:w-56 h-10 sm:h-9"
+            className="flex-1 min-w-0 sm:flex-none sm:w-56 h-10 sm:h-9"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -503,7 +501,7 @@ function SectionGrid({
             }}
           >
             <SelectTrigger
-              className="w-[170px] h-10 sm:h-9 cursor-pointer"
+              className="w-[140px] shrink-0 sm:w-[170px] data-[size=default]:h-10 sm:data-[size=default]:h-9 cursor-pointer"
               aria-label="Show activities"
             >
               <SelectValue />
@@ -518,7 +516,9 @@ function SectionGrid({
               </SelectGroup>
             </SelectContent>
           </Select>
+        </div>
 
+        <div className="flex items-center justify-between gap-2 sm:contents">
           <div
             role="radiogroup"
             aria-label="Gradebook view mode"
@@ -532,13 +532,13 @@ function SectionGrid({
               tabIndex={viewMode === "points" ? 0 : -1}
               onClick={() => setViewMode("points")}
               className={cn(
-                "px-2.5 py-1.5 rounded-md transition-colors cursor-pointer min-h-8",
+                "px-2.5 py-1.5 rounded-md transition-colors cursor-pointer min-h-8 whitespace-nowrap",
                 viewMode === "points"
                   ? "bg-background text-foreground shadow-xs font-semibold"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              Points View
+              Points<span className="hidden sm:inline"> View</span>
             </button>
             <button
               type="button"
@@ -547,31 +547,35 @@ function SectionGrid({
               tabIndex={viewMode === "diagnostic" ? 0 : -1}
               onClick={() => setViewMode("diagnostic")}
               className={cn(
-                "px-2.5 py-1.5 rounded-md transition-colors cursor-pointer min-h-8",
+                "px-2.5 py-1.5 rounded-md transition-colors cursor-pointer min-h-8 whitespace-nowrap",
                 viewMode === "diagnostic"
                   ? "bg-background text-foreground shadow-xs font-semibold"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              Diagnostic View
+              Diagnostic<span className="hidden sm:inline"> View</span>
             </button>
           </div>
-        </div>
 
-        <Button
-          variant="outline"
-          className="h-10 sm:h-9"
-          disabled={exporting}
-          onClick={() => void download()}
-        >
-          <Download aria-hidden className="mr-1.5 size-4" />{" "}
-          {exporting ? "Downloading…" : "Export class record"}
-        </Button>
+          <Button
+            variant="outline"
+            className="h-10 sm:h-9 shrink-0 sm:ml-auto px-3"
+            disabled={exporting}
+            onClick={() => void download()}
+            aria-label={exporting ? "Downloading class record" : "Export class record"}
+          >
+            <Download aria-hidden className="mr-1.5 size-4" />
+            <span className="sm:hidden">{exporting ? "…" : "Export"}</span>
+            <span className="hidden sm:inline">
+              {exporting ? "Downloading…" : "Export class record"}
+            </span>
+          </Button>
+        </div>
       </div>
 
       {/* Section Readiness Summary Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 px-4 py-2.5 text-xs">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 sm:gap-3 rounded-lg border bg-muted/30 px-3 py-2 sm:px-4 sm:py-2.5 text-xs">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 sm:gap-x-4">
           <span className="text-foreground font-medium">
             Class: <strong className="font-semibold">{book.section_name}</strong> ({book.rows.length} students)
           </span>
@@ -585,13 +589,13 @@ function SectionGrid({
 
         <div className="flex items-center gap-2">
           {pendingDraftReleaseCount > 0 ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-band-2/15 border border-band-2/30 px-2.5 py-1 text-xs font-medium text-band-2-text">
-              <span className="size-1.5 rounded-full bg-band-2" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-band-2/15 border border-band-2/30 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-medium text-band-2-text">
+              <span className="size-1.5 rounded-full bg-band-2" aria-hidden="true" />
               <span>{pendingDraftReleaseCount} draft {pendingDraftReleaseCount === 1 ? "grade" : "grades"} pending release</span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-band-4/15 border border-band-4/30 px-2.5 py-1 text-xs font-medium text-band-4-text">
-              <CheckCircle2 className="size-3.5 text-band-4-text" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-band-4/15 border border-band-4/30 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-medium text-band-4-text">
+              <span className="size-1.5 rounded-full bg-band-4" aria-hidden="true" />
               <span>All current grades released</span>
             </span>
           )}
@@ -658,7 +662,7 @@ function SectionGrid({
           <div
             ref={tableRef}
             className={cn(
-              "bg-card max-h-[70vh] overflow-auto rounded-md border transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring print:max-h-none print:overflow-visible print:border-none",
+              "bg-card max-h-[70svh] overflow-auto rounded-md border transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring print:max-h-none print:overflow-visible print:border-none",
               selected.size > 0 && "pb-24 sm:pb-20"
             )}
             tabIndex={-1}

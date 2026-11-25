@@ -426,7 +426,7 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                 side="top"
                 align="start"
                 sideOffset={8}
-                className="w-64 max-h-[calc(100vh-80px)] overflow-y-auto rounded-xl p-1.5 shadow-xl border border-border/80 bg-popover"
+                className="w-64 max-h-[calc(100dvh-80px)] overflow-y-auto rounded-xl p-1.5 shadow-xl border border-border/80 bg-popover"
               >
                 <div className="p-2">
                   <div className="flex items-center gap-2.5 min-w-0">

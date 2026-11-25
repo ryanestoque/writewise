@@ -222,7 +222,7 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
           </form>
 
           {/* Section List */}
-          <div className="space-y-2 max-h-[min(50vh,340px)] overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-[min(50dvh,340px)] overflow-y-auto pr-1">
             {isLoading ? (
               <div className="py-8 text-center text-muted-foreground flex flex-col items-center gap-2">
                 <Spinner className="w-5 h-5 text-primary" />

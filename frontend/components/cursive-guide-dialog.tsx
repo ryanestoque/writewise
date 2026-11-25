@@ -412,7 +412,7 @@ export function CursiveGuideDialog({
       <DialogContent
         id="cursive-guide-dialog"
         overlayClassName="bg-foreground/25 supports-backdrop-filter:backdrop-blur-xs"
-        className="p-0 overflow-hidden flex flex-col gap-0 shadow-warm w-[calc(100%-1rem)] sm:max-w-4xl max-h-[min(92dvh,calc(100vh-1.5rem))] rounded-2xl print:max-w-none print:w-full print:max-h-none print:shadow-none print:rounded-none print:border-none print:p-0"
+        className="p-0 overflow-hidden flex flex-col gap-0 shadow-warm w-[calc(100%-1rem)] sm:max-w-4xl max-h-[min(92dvh,calc(100dvh-1.5rem))] rounded-2xl print:max-w-none print:w-full print:max-h-none print:shadow-none print:rounded-none print:border-none print:p-0"
       >
         {/* Streamlined Header: Title + Stepper (Mobile) / Search (Desktop) */}
         <DialogHeader className="p-3.5 sm:p-5 pb-3 sm:pb-3.5 border-b border-border/70 bg-card/95 backdrop-blur-xs shrink-0 space-y-3 print:hidden">

@@ -56,7 +56,7 @@ export function PendingWorksheetDialog({
         if (!open) onBack();
       }}
     >
-      <DialogContent className="w-[calc(100%-1.5rem)] sm:w-[95vw] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[min(94dvh,calc(100vh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
+      <DialogContent className="w-[calc(100%-1.5rem)] sm:w-[95vw] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[min(94dvh,calc(100dvh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
         {/* Header matching WorksheetViewDialog */}
         <DialogHeader className="p-4 sm:p-5 pb-0 border-b-0 bg-card/80">
           <div className="flex items-center justify-between gap-3 pr-10">

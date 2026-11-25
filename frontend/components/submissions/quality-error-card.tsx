@@ -1102,7 +1102,7 @@ export function QualityErrorCard({
         >
           <DialogContent
             showCloseButton
-            className="w-[calc(100%-1.5rem)] max-w-3xl sm:max-w-3xl p-0 gap-0 overflow-hidden flex flex-col max-h-[min(92dvh,calc(100vh-2rem))] border border-border shadow-warm-lg"
+            className="w-[calc(100%-1.5rem)] max-w-3xl sm:max-w-3xl p-0 gap-0 overflow-hidden flex flex-col max-h-[min(92dvh,calc(100dvh-2rem))] border border-border shadow-warm-lg"
           >
             {/* Modal Header: Title and Zoom Toolbar */}
             <DialogHeader className="p-3 sm:p-3.5 border-b border-border bg-muted/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 shrink-0">
@@ -1180,7 +1180,7 @@ export function QualityErrorCard({
               role="region"
               aria-label="Worksheet photo magnification viewport. Use plus or minus to zoom, arrow keys to pan"
               className={cn(
-                "relative flex-1 min-h-[220px] max-h-[58vh] sm:max-h-[60vh] w-full flex items-center justify-center overflow-hidden bg-muted/30 dark:bg-black/40 select-none touch-none outline-none focus-visible:ring-1 focus-visible:ring-ring/30",
+                "relative flex-1 min-h-[220px] max-h-[58dvh] sm:max-h-[60dvh] w-full flex items-center justify-center overflow-hidden bg-muted/30 dark:bg-black/40 select-none touch-none outline-none focus-visible:ring-1 focus-visible:ring-ring/30",
                 zoomScale > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : "cursor-zoom-in"
               )}
             >

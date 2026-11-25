@@ -206,7 +206,7 @@ export function GradebookBulkDialog({
         if (!pending) onOpenChange(value);
       }}
     >
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg max-h-[min(90dvh,calc(100dvh-2rem))] overflow-y-auto">
         <DialogHeader className="space-y-1.5">
           <DialogTitle className="text-lg font-semibold tracking-tight font-heading">
             {operation === "zero"
