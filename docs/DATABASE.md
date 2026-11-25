@@ -303,9 +303,35 @@ create table public.measurement (
   slant_score numeric(5,2) check (slant_score between 0 and 100),
   baseline_alignment_score numeric(5,2) check (baseline_alignment_score between 0 and 100),
 
+  -- Nullable per-criterion scores: NULL for Phase 1 submissions, and individual
+  -- unmeasurable criteria (spacing on single-word samples, slant with no stems) remain NULL.
+  -- composite_score averages all non-null criteria (NULL if all 5 are NULL).
   composite_score numeric(5,2) generated always as (
-    (letter_formation_score + size_consistency_score + spacing_score
-     + slant_score + baseline_alignment_score) / 5
+    case
+      when (
+        (case when letter_formation_score is not null then 1 else 0 end)
+        + (case when size_consistency_score is not null then 1 else 0 end)
+        + (case when spacing_score is not null then 1 else 0 end)
+        + (case when slant_score is not null then 1 else 0 end)
+        + (case when baseline_alignment_score is not null then 1 else 0 end)
+      ) = 0 then null
+      else round(
+        (
+          coalesce(letter_formation_score, 0)
+          + coalesce(size_consistency_score, 0)
+          + coalesce(spacing_score, 0)
+          + coalesce(slant_score, 0)
+          + coalesce(baseline_alignment_score, 0)
+        ) / (
+          (case when letter_formation_score is not null then 1 else 0 end)
+          + (case when size_consistency_score is not null then 1 else 0 end)
+          + (case when spacing_score is not null then 1 else 0 end)
+          + (case when slant_score is not null then 1 else 0 end)
+          + (case when baseline_alignment_score is not null then 1 else 0 end)
+        ),
+        2
+      )
+    end
   ) stored,
 
   -- Full CV_PIPELINE.md §8 output verbatim (guide_lines, per-line/per-word arrays,
@@ -361,7 +387,8 @@ create table public.manual_score (
     end
   ) stored,
 
-  spacing_band public.score_band not null,
+  -- Nullable (migration 20261125000000): NULL when teacher marks Spacing N/A on single-word samples.
+  spacing_band public.score_band,
   spacing_score numeric(5,2) generated always as (
     case spacing_band
       when 'needs_improvement' then 12.5

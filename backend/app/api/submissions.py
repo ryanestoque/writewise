@@ -41,7 +41,7 @@ class ScoreBandEnum(str, Enum):
 class ManualScoreRequest(BaseModel):
     letter_formation_band: ScoreBandEnum
     size_consistency_band: ScoreBandEnum
-    spacing_band: ScoreBandEnum
+    spacing_band: ScoreBandEnum | None = None
     slant_band: ScoreBandEnum
     baseline_alignment_band: ScoreBandEnum
 
@@ -715,7 +715,7 @@ async def submit_manual_score(
     score_payload = {
         "letter_formation_band": body.letter_formation_band.value,
         "size_consistency_band": body.size_consistency_band.value,
-        "spacing_band": body.spacing_band.value,
+        "spacing_band": body.spacing_band.value if body.spacing_band is not None else None,
         "slant_band": body.slant_band.value,
         "baseline_alignment_band": body.baseline_alignment_band.value,
         "graded_by": teacher_id,

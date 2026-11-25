@@ -914,7 +914,7 @@ export interface components {
         ManualScoreRequest: {
             letter_formation_band: components["schemas"]["ScoreBandEnum"];
             size_consistency_band: components["schemas"]["ScoreBandEnum"];
-            spacing_band: components["schemas"]["ScoreBandEnum"];
+            spacing_band?: components["schemas"]["ScoreBandEnum"] | null;
             slant_band: components["schemas"]["ScoreBandEnum"];
             baseline_alignment_band: components["schemas"]["ScoreBandEnum"];
         };

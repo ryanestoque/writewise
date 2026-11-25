@@ -208,7 +208,7 @@ export type Database = {
           size_consistency_score: number | null
           slant_band: Database["public"]["Enums"]["score_band"]
           slant_score: number | null
-          spacing_band: Database["public"]["Enums"]["score_band"]
+          spacing_band: Database["public"]["Enums"]["score_band"] | null
           spacing_score: number | null
           submission_id: string
         }
@@ -224,7 +224,7 @@ export type Database = {
           size_consistency_score?: number | null
           slant_band: Database["public"]["Enums"]["score_band"]
           slant_score?: number | null
-          spacing_band: Database["public"]["Enums"]["score_band"]
+          spacing_band?: Database["public"]["Enums"]["score_band"] | null
           spacing_score?: number | null
           submission_id: string
         }
@@ -240,7 +240,7 @@ export type Database = {
           size_consistency_score?: number | null
           slant_band?: Database["public"]["Enums"]["score_band"]
           slant_score?: number | null
-          spacing_band?: Database["public"]["Enums"]["score_band"]
+          spacing_band?: Database["public"]["Enums"]["score_band"] | null
           spacing_score?: number | null
           submission_id?: string
         }

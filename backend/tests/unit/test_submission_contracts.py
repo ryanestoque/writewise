@@ -81,3 +81,121 @@ def test_teacher_upload_response_retains_measurements_for_review():
         "11111111-1111-1111-1111-111111111111", {"scores": {"composite_score": 80}}, "teacher"
     )
     assert response.measurement == {"scores": {"composite_score": 80}}
+
+
+def test_manual_score_request_allows_nullable_spacing_band_only():
+    from app.api.submissions import ManualScoreRequest
+
+    req = ManualScoreRequest(
+        letter_formation_band="satisfactory",
+        size_consistency_band="developing",
+        spacing_band=None,
+        slant_band="excellent",
+        baseline_alignment_band="satisfactory",
+    )
+    assert req.spacing_band is None
+
+    for required_field in (
+        "letter_formation_band",
+        "size_consistency_band",
+        "slant_band",
+        "baseline_alignment_band",
+    ):
+        payload = {
+            "letter_formation_band": "satisfactory",
+            "size_consistency_band": "developing",
+            "spacing_band": None,
+            "slant_band": "excellent",
+            "baseline_alignment_band": "satisfactory",
+            required_field: None,
+        }
+        with pytest.raises(ValidationError):
+            ManualScoreRequest.model_validate(payload)
+
+
+def test_manual_score_route_forwards_null_spacing_band(monkeypatch):
+    import json
+
+    import httpx
+    from fastapi.testclient import TestClient
+    from supabase import ClientOptions, create_client
+
+    from app.api import submissions
+    from app.api.deps import get_current_teacher
+    from app.core.config import settings
+    from app.main import app
+
+    teacher_id = "11111111-1111-1111-1111-111111111111"
+    student_id = "22222222-2222-2222-2222-222222222222"
+    activity_id = "33333333-3333-3333-3333-333333333333"
+    submission_id = "44444444-4444-4444-4444-444444444444"
+    rpc_calls = []
+
+    def respond(request):
+        path = request.url.path.removeprefix("/rest/v1/")
+        if path == "submission":
+            return httpx.Response(
+                200,
+                json=[
+                    {
+                        "id": submission_id,
+                        "activity_id": activity_id,
+                        "student_id": student_id,
+                        "status": "completed",
+                    }
+                ],
+            )
+        if path == "activity":
+            return httpx.Response(200, json=[{"id": activity_id}])
+        if path == "teacher_student":
+            return httpx.Response(200, json=[{"student_id": student_id}])
+        if path == "rpc/save_manual_submission_score":
+            body = json.loads(request.content)
+            rpc_calls.append(body)
+            payload = body["payload"]
+            return httpx.Response(
+                200,
+                json={
+                    "letter_formation_band": payload["letter_formation_band"],
+                    "letter_formation_score": 62.5,
+                    "size_consistency_band": payload["size_consistency_band"],
+                    "size_consistency_score": 37.5,
+                    "spacing_band": payload["spacing_band"],
+                    "spacing_score": None,
+                    "slant_band": payload["slant_band"],
+                    "slant_score": 87.5,
+                    "baseline_alignment_band": payload["baseline_alignment_band"],
+                    "baseline_alignment_score": 62.5,
+                    "graded_by": teacher_id,
+                    "created_at": "2026-11-25T00:00:00Z",
+                },
+            )
+        raise AssertionError(f"Unexpected request: {path}")
+
+    fake_client = create_client(
+        "http://supabase.test",
+        "fake-service-role-key",
+        options=ClientOptions(httpx_client=httpx.Client(transport=httpx.MockTransport(respond))),
+    )
+    monkeypatch.setattr(settings, "SCORING_ENGINE", "manual")
+    monkeypatch.setattr(submissions, "supabase_client", fake_client)
+    app.dependency_overrides[get_current_teacher] = lambda: {"sub": teacher_id, "role": "teacher"}
+    try:
+        with TestClient(app) as client:
+            resp = client.patch(
+                f"/api/submissions/{submission_id}/manual-score",
+                json={
+                    "letter_formation_band": "satisfactory",
+                    "size_consistency_band": "developing",
+                    "spacing_band": None,
+                    "slant_band": "excellent",
+                    "baseline_alignment_band": "satisfactory",
+                },
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert resp.status_code == 200, resp.text
+    assert rpc_calls[0]["payload"]["spacing_band"] is None
+    assert resp.json()["manual_score"]["spacing_band"] is None
+    assert resp.json()["manual_score"]["spacing_score"] is None

@@ -466,13 +466,13 @@ In Phase 1 (`SCORING_ENGINE=manual`), `scores.*` and `overlay` are always `null`
 
 `manual_score` never appears in this response — manual grading is a separate step, entered after the teacher reviews these raw measurements, via the endpoint below.
 
-For new `lsd_stems_v2` measurements, `aggregate.slant.mean` and `.std` may be null when no word supplies sustained stem evidence; `scores.slant_score` and the composite score are then null as well. The same nullable values are persisted in existing measurement columns. Unsupported words have `raw_output.lines[].words[].slant_deg: null` and no slant vector. `raw_output.slant_analysis` records the method version, `measured_words`, `total_words`, and `within_word_std_deg` (RMS across measurable words). Each measured word also records `slant_std_deg` and `slant_segment_count`. Existing records without these additions retain their original measurements. See `CV_PIPELINE.md` §6.1 for interpretation and provisional tolerances.
+For new `lsd_stems_v2` measurements, `aggregate.slant.mean` and `.std` may be null when no word supplies sustained stem evidence; `scores.slant_score` is then null as well. Similarly, on single-word worksheets with no inter-word gaps, `aggregate.word_spacing.mean` and `.std` are null and `scores.spacing_score` is null (`overlay.spacing.not_applicable_reason` explains why). In calibrated mode, `scores.composite_score` averages all non-null criterion scores (and is null only if all five are null). The same nullable values are persisted in existing measurement columns. Unsupported words have `raw_output.lines[].words[].slant_deg: null` and no slant vector. `raw_output.slant_analysis` records the method version, `measured_words`, `total_words`, and `within_word_std_deg` (RMS across measurable words). Each measured word also records `slant_std_deg` and `slant_segment_count`. Existing records without these additions retain their original measurements. See `CV_PIPELINE.md` §6.1 for interpretation and provisional tolerances.
 
 #### `PATCH /api/submissions/{id}/manual-score`
 
 **Caller:** Teacher only, and only the teacher who owns the student on this submission.
 
-Enters the teacher's independent rubric grade (PRD §5/§6) — Phase 1's calibration input. All five bands are required together in one call; DESIGN §7.9's segmented-button-group UI submits all five as one screen, and DATABASE §9's columns are all `not null`.
+Enters the teacher's independent rubric grade (PRD §5/§6) — Phase 1's calibration input. Core bands (`letter_formation_band`, `size_consistency_band`, `slant_band`, `baseline_alignment_band`) are required; `spacing_band` may be `null` (`N/A`) when evaluating a single-word worksheet with no inter-word gaps (migration `20261125000000`).
 
 Request:
 ```json
@@ -484,7 +484,7 @@ Request:
   "baseline_alignment_band": "needs_improvement"
 }
 ```
-Each value is one of `needs_improvement` | `developing` | `satisfactory` | `excellent` (DATABASE §3's `score_band` enum).
+Each value is one of `needs_improvement` | `developing` | `satisfactory` | `excellent` (DATABASE §3's `score_band` enum), or `null` for `spacing_band` on single-word samples.
 
 Response (`200 OK`):
 ```json

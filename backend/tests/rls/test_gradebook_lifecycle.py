@@ -329,6 +329,35 @@ def test_identical_manual_rubric_preserves_points_but_changed_rubric_redrafts(fa
     assert read_grade(family["parent_client"], activity, student) == []
 
 
+def test_null_spacing_manual_rubric_grades_and_publishes_four_criterion_average(
+    family, graded_work
+):
+    activity, student = graded_work
+    source = complete(family, activity, measured=False)
+    payload = {
+        "letter_formation_band": "excellent",
+        "size_consistency_band": "satisfactory",
+        "spacing_band": None,
+        "slant_band": "satisfactory",
+        "baseline_alignment_band": "excellent",
+    }
+    saved = admin.rpc(
+        "save_manual_submission_score",
+        {
+            "actor_id": family["teacher"],
+            "target_submission_id": source["id"],
+            "payload": payload,
+        },
+    ).execute().data
+    assert saved["spacing_band"] is None
+    assert saved["spacing_score"] is None
+    current = grade(family, graded_work)
+    assert current["source_submission_id"] == source["id"]
+    release_work(family, activity, student, current["revision"])
+    published = read_grade(family["parent_client"], activity, student)
+    assert len(published) == 1
+
+
 def test_co_teacher_can_delete_but_revoked_roster_cannot(family, graded_work):
     activity, student = graded_work
     source = complete(family, activity)

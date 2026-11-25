@@ -759,6 +759,57 @@ class TestSubmitManualScore:
         assert db_res.data[0]["letter_formation_band"] == "excellent"
         assert float(db_res.data[0]["letter_formation_score"]) == 87.5
 
+    def test_manual_score_accepts_null_spacing_band_and_measurement_averages_four(
+        self, client, test_activity, test_student, cleanup_submissions
+    ):
+        """Single-word submissions accept spacing_band=None and average non-null scores."""
+        sub_id = self._create_completed_submission(
+            client, test_activity, test_student, cleanup_submissions
+        )
+        supabase_client.table("measurement").update(
+            {
+                "letter_formation_score": 80.0,
+                "size_consistency_score": 90.0,
+                "spacing_score": None,
+                "slant_score": 70.0,
+                "baseline_alignment_score": 80.0,
+            }
+        ).eq("submission_id", sub_id).execute()
+        meas = (
+            supabase_client.table("measurement")
+            .select("spacing_score, composite_score")
+            .eq("submission_id", sub_id)
+            .execute()
+            .data[0]
+        )
+        assert meas["spacing_score"] is None
+        assert float(meas["composite_score"]) == 80.0
+
+        resp = client.patch(
+            f"/api/submissions/{sub_id}/manual-score",
+            json={
+                "letter_formation_band": "excellent",
+                "size_consistency_band": "satisfactory",
+                "spacing_band": None,
+                "slant_band": "satisfactory",
+                "baseline_alignment_band": "excellent",
+            },
+        )
+        assert resp.status_code == 200
+        manual_score = resp.json()["manual_score"]
+        assert manual_score["spacing_band"] is None
+        assert manual_score["spacing_score"] is None
+
+        db_res = (
+            supabase_client.table("manual_score")
+            .select("spacing_band, spacing_score")
+            .eq("submission_id", sub_id)
+            .execute()
+        )
+        assert len(db_res.data) == 1
+        assert db_res.data[0]["spacing_band"] is None
+        assert db_res.data[0]["spacing_score"] is None
+
     def test_manual_score_invalid_uuid(self, client):
         """Non-UUID submission ID returns 400 VALIDATION_ERROR."""
         payload = {
