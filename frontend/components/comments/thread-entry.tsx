@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Message, MessageContent, MessageFooter, MessageHeader } from "@/components/ui/message";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Marker, MarkerContent } from "@/components/ui/marker";
@@ -100,51 +101,48 @@ export function ThreadEntryView({
           )}
         </MessageFooter>
         {confirm && !entry.deleted_at && (
-          <div
-            role="group"
-            aria-label="Delete your note"
-            className="bg-card rounded-xl border border-border p-3 text-sm"
-          >
-            <p className="text-foreground">
-              Delete this note? Its text will be removed for everyone.
-            </p>
-            {deleteError && (
-              <p role="alert" className="text-destructive mt-2 text-xs sm:text-sm">
-                {deleteError}
-              </p>
-            )}
-            <div className="mt-2.5 flex flex-col sm:flex-row gap-2">
-              <Button
-                size="sm"
-                variant="destructive"
-                className="h-11 sm:h-8 min-h-11 sm:min-h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
-                disabled={deleting}
-                onClick={async () => {
-                  setDeleteError(null);
-                  try {
-                    await onDelete(entry.id);
+          <Alert role="group" aria-label="Delete your note">
+            <AlertTitle>Delete this note?</AlertTitle>
+            <AlertDescription className="flex flex-col gap-2.5">
+              <span>Its text will be removed for everyone.</span>
+              {deleteError && (
+                <span role="alert" className="text-destructive text-xs sm:text-sm">
+                  {deleteError}
+                </span>
+              )}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-11 sm:h-8 min-h-11 sm:min-h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
+                  disabled={deleting}
+                  onClick={async () => {
+                    setDeleteError(null);
+                    try {
+                      await onDelete(entry.id);
+                      setConfirm(false);
+                    } catch (error) {
+                      setDeleteError(commentFeedback(error));
+                    }
+                  }}
+                >
+                  {deleting ? "Deleting…" : "Delete note"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-11 sm:h-8 min-h-11 sm:min-h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
+                  disabled={deleting}
+                  onClick={() => {
+                    setDeleteError(null);
                     setConfirm(false);
-                  } catch (error) {
-                    setDeleteError(commentFeedback(error));
-                  }
-                }}
-              >
-                {deleting ? "Deleting…" : "Delete note"}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-11 sm:h-8 min-h-11 sm:min-h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
-                disabled={deleting}
-                onClick={() => {
-                  setDeleteError(null);
-                  setConfirm(false);
-                }}
-              >
-                Keep note
-              </Button>
-            </div>
-          </div>
+                  }}
+                >
+                  Keep note
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
         )}
       </MessageContent>
     </Message>

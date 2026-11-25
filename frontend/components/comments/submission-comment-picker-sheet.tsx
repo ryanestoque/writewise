@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MessageSquare } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -53,7 +54,7 @@ export function WorkCommentsButton({
 
   const accessibleLabel = isParent
     ? activityTitle
-      ? `Notes with ${teacherDisplay} for ${activityTitle}${hasUnread ? ", unread notes" : ""}`
+      ? `${activityTitle}${hasUnread ? ", unread notes" : ""}`
       : `Notes with ${teacherDisplay}${hasUnread ? ", unread notes" : ""}`
     : activityTitle
       ? `Comments for ${activityTitle}${hasUnread ? ", unread comments" : ""}`
@@ -62,8 +63,8 @@ export function WorkCommentsButton({
         : `Comments${hasUnread ? ", unread comments" : ""}`;
 
   const sheetTitle = isParent
-    ? `Notes with ${teacherDisplay}${activityTitle ? ` · ${activityTitle}` : ""}`
-    : `Comments${studentName ? ` · ${studentName}` : activityTitle ? ` · ${activityTitle}` : ""}`;
+    ? (activityTitle || (studentName ? `Notes · ${studentName}` : "Notes"))
+    : (activityTitle || studentName || "Comments");
 
   const sheetDescription = isParent
     ? "Message your child's teacher about this worksheet."
@@ -103,19 +104,26 @@ export function WorkCommentsButton({
             />
           }
         >
-          <MessageSquare className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
+          <MessageSquare
+            className="size-3.5 shrink-0 text-primary"
+            aria-hidden="true"
+            data-icon="inline-start"
+          />
           <span className="truncate">{isParent ? "Notes" : "Comments"}</span>
           {hasUnread && (
-            <span className="inline-flex items-center rounded-full bg-primary/15 px-1.5 sm:px-2 py-0.5 text-[11px] sm:text-xs font-semibold text-primary shrink-0">
+            <Badge
+              variant="secondary"
+              className="rounded-full bg-primary/15 px-1.5 sm:px-2 text-[11px] sm:text-xs font-semibold text-primary shrink-0"
+            >
               Unread
-            </span>
+            </Badge>
           )}
         </SheetTrigger>
       )}
       <SheetContent className="w-full sm:max-w-lg">
-        <SheetHeader className="shrink-0 border-b px-4 py-3.5 sm:px-6 sm:py-4 pr-14">
+        <SheetHeader className="shrink-0 px-4 pt-3.5 pb-2 sm:pt-4 sm:pb-2.5 pr-14">
           <SheetTitle className="truncate">{sheetTitle}</SheetTitle>
-          <SheetDescription>{sheetDescription}</SheetDescription>
+          <SheetDescription className="sr-only">{sheetDescription}</SheetDescription>
         </SheetHeader>
         {open && (
           <PickerContent
@@ -156,7 +164,7 @@ function PickerContent({
       open
     />
   ) : (
-    <div className="space-y-3 p-4" role="status" aria-label="Loading notes">
+    <div className="flex flex-col gap-3 p-4" role="status" aria-label="Loading notes">
       <Skeleton className="h-5 w-44 rounded-md" />
       <Skeleton className="h-16 w-3/4 rounded-xl" />
       <Skeleton className="h-16 w-2/3 ml-auto rounded-xl" />

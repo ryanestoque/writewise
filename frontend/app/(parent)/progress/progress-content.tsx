@@ -45,6 +45,7 @@ import {
   useChildLatestScores,
   type TakeHomeActivity,
 } from "@/lib/hooks/use-parent-data";
+import { useChildGradebook } from "@/lib/hooks/use-gradebook";
 import { computeStrengthAndFocus, PARENT_CRITERIA_LIST } from "@/lib/utils/scoring";
 import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
 import { compareParentActivityUrgency, getParentActivityStatus } from "@/lib/utils/parent-activity-status";
@@ -360,6 +361,25 @@ export function ProgressPageContent() {
       commentActivityMatch &&
       getParentActivityStatus(commentActivityMatch, now).canSend
   );
+  const childGradebook = useChildGradebook(userId, selectedChildId, Boolean(userId && selectedChildId));
+  const targetActivityId = notificationTargetData?.activityId;
+  const parentTeacherName = useMemo(() => {
+    const groups = childGradebook.data?.groups;
+    if (!groups || groups.length === 0) return undefined;
+    if (targetActivityId) {
+      const match = groups.find((g) =>
+        g.activities.some((a) => a.id === targetActivityId)
+      );
+      if (match?.teacher_name?.trim()) {
+        const raw = match.teacher_name.trim();
+        return raw.toLowerCase().startsWith("teacher") ? raw : `Teacher ${raw.split(/\s+/)[0]}`;
+      }
+    }
+    const raw = groups[0]?.teacher_name?.trim();
+    if (!raw) return undefined;
+    return raw.toLowerCase().startsWith("teacher") ? raw : `Teacher ${raw.split(/\s+/)[0]}`;
+  }, [childGradebook.data, targetActivityId]);
+
   const notificationDestination = notificationTargetData?.view === "comments" && notificationTargetData.submissionId ? (
     <SubmissionCommentThreadSheet
       key={`${userId}:${notificationTargetData.childId}:${notificationTargetData.submissionId}`}
@@ -372,6 +392,8 @@ export function ProgressPageContent() {
       open
       audience="parent"
       studentName={selectedChild?.fullName}
+      teacherName={parentTeacherName}
+      activityTitle={commentActivityMatch?.title}
       worksheetContext={{
         targetText: commentHistoryMatch?.targetText ?? commentActivityMatch?.targetText,
         canSendNewPhoto: canSendPhotoFromCommentSheet,

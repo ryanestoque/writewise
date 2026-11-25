@@ -13,6 +13,7 @@ import {
   useChildSubmissionForActivity,
 } from "@/lib/hooks/use-parent-data";
 import { useCommentAccountId, useUnreadCommentThreads } from "@/lib/hooks/use-comments";
+import { useChildGradebook } from "@/lib/hooks/use-gradebook";
 import { useSubmissionImageUrl } from "@/lib/hooks/use-submissions";
 import { BandBadge } from "@/components/shared/band-badge";
 import { QueryRecovery } from "@/components/shared/query-recovery";
@@ -154,6 +155,29 @@ export function TakeHomeActivities({
   const userId = useCommentAccountId();
   const unread = useUnreadCommentThreads(userId ?? "");
   const now = useActivityNow();
+  const gradebook = useChildGradebook(userId ?? "", childId, Boolean(userId && childId));
+
+  const teacherNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (!gradebook.data?.groups) return map;
+    for (const group of gradebook.data.groups) {
+      const raw = group.teacher_name?.trim();
+      if (!raw) continue;
+      const formatted = raw.toLowerCase().startsWith("teacher")
+        ? raw
+        : `Teacher ${raw.split(/\s+/)[0]}`;
+      for (const act of group.activities) {
+        map.set(act.id, formatted);
+      }
+    }
+    return map;
+  }, [gradebook.data]);
+
+  const fallbackTeacherName = useMemo(() => {
+    const raw = gradebook.data?.groups[0]?.teacher_name?.trim();
+    if (!raw) return undefined;
+    return raw.toLowerCase().startsWith("teacher") ? raw : `Teacher ${raw.split(/\s+/)[0]}`;
+  }, [gradebook.data]);
 
   // Filter to take-home activities only (in-class worksheets are handled in Progress)
   const takeHomeOnly = useMemo(() => {
@@ -293,6 +317,7 @@ export function TakeHomeActivities({
               <ActivityCard
                 key={activity.id}
                 work={activity}
+                teacherName={teacherNameMap.get(activity.id) ?? fallbackTeacherName}
                 activityId={activity.id}
                 targetText={activity.targetText}
                 createdAt={activity.createdAt}
@@ -359,6 +384,7 @@ export function TakeHomeActivities({
                 <CompactWorksheetRow
                   key={activity.id}
                   work={activity}
+                  teacherName={teacherNameMap.get(activity.id) ?? fallbackTeacherName}
                   childId={childId}
                   now={now}
                   onReplacePhoto={() => onUploadClick(activity.id)}
@@ -446,6 +472,7 @@ export function TakeHomeActivities({
                   <CompactWorksheetRow
                     key={activity.id}
                     work={activity}
+                    teacherName={teacherNameMap.get(activity.id) ?? fallbackTeacherName}
                     childId={childId}
                     now={now}
                     onViewScoredHistory={onViewScoredHistory}
@@ -475,6 +502,7 @@ export function TakeHomeActivities({
             if (!open) setPhotoPreview(null);
           }}
           activityId={photoPreview.activityId}
+          teacherName={(photoPreview.activityId && teacherNameMap.get(photoPreview.activityId)) ?? fallbackTeacherName}
           childId={childId}
           hasUnreadComments={Boolean(
             photoPreview.submissionId && unread.data?.has(photoPreview.submissionId)
@@ -510,6 +538,7 @@ interface PhotoPreviewTarget {
 
 function CompactWorksheetRow({
   work,
+  teacherName,
   childId,
   now,
   onViewScoredHistory,
@@ -518,6 +547,7 @@ function CompactWorksheetRow({
   hasUnreadComments,
 }: {
   work: TakeHomeActivity;
+  teacherName?: string;
   childId: string | null;
   now: number;
   onViewScoredHistory?: (work: { activityId: string; submissionId: string | null }) => void;
@@ -625,6 +655,7 @@ function CompactWorksheetRow({
             scope={{ activityId: work.id, studentId: childId }}
             activeSubmissionId={work.workState?.active_submission_id ?? null}
             activityTitle={work.title}
+            teacherName={teacherName}
             audience="parent"
             hasUnread={hasUnreadComments}
             worksheetContext={{
@@ -719,6 +750,7 @@ function CompactWorksheetRow({
 
 function ActivityCard({
   work,
+  teacherName,
   activityId,
   targetText,
   createdAt,
@@ -730,6 +762,7 @@ function ActivityCard({
   hasUnreadComments,
 }: {
   work: TakeHomeActivity;
+  teacherName?: string;
   activityId: string;
   targetText: string;
   createdAt: string;
@@ -979,6 +1012,7 @@ function ActivityCard({
                   scope={{ activityId, studentId: childId }}
                   activeSubmissionId={work.workState?.active_submission_id ?? null}
                   activityTitle={work.title}
+                  teacherName={teacherName}
                   audience="parent"
                   hasUnread={hasUnreadComments}
                   worksheetContext={{
@@ -1017,6 +1051,7 @@ function PhotoPreviewDialog({
   open,
   onOpenChange,
   activityId,
+  teacherName,
   childId,
   hasUnreadComments,
   imagePath,
@@ -1032,6 +1067,7 @@ function PhotoPreviewDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   activityId?: string;
+  teacherName?: string;
   childId?: string | null;
   hasUnreadComments?: boolean;
   imagePath: string;
@@ -1101,6 +1137,7 @@ function PhotoPreviewDialog({
                   scope={{ activityId, studentId: childId }}
                   activeSubmissionId={submissionId}
                   activityTitle={title}
+                  teacherName={teacherName}
                   audience="parent"
                   hasUnread={hasUnreadComments}
                   className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 px-3"

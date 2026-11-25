@@ -17,6 +17,7 @@ export function SubmissionCommentThreadSheet({
   onOpenChange,
   studentName,
   teacherName,
+  activityTitle,
   audience = "teacher",
   worksheetContext,
 }: {
@@ -26,13 +27,14 @@ export function SubmissionCommentThreadSheet({
   onOpenChange: (open: boolean) => void;
   studentName?: string;
   teacherName?: string;
+  activityTitle?: string;
   audience?: "parent" | "teacher";
   worksheetContext?: CommentWorksheetContext;
 }) {
   const isParent = audience === "parent";
   const title = isParent
-    ? `Notes with ${teacherName ?? "teacher"}${studentName ? ` · ${studentName}` : ""}`
-    : `Comments${studentName ? ` · ${studentName}` : ""}`;
+    ? (activityTitle || (studentName ? `Notes · ${studentName}` : "Notes"))
+    : (activityTitle || studentName || "Comments");
   const description = isParent
     ? "Message your child's teacher about this worksheet."
     : "A private conversation about this worksheet upload.";
@@ -40,9 +42,9 @@ export function SubmissionCommentThreadSheet({
   return (
     <Sheet open={open && !!target} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-lg">
-        <SheetHeader className="shrink-0 border-b px-4 py-3.5 sm:px-6 sm:py-4 pr-14">
+        <SheetHeader className="shrink-0 px-4 pt-3.5 pb-2 sm:pt-4 sm:pb-2.5 pr-14">
           <SheetTitle className="truncate">{title}</SheetTitle>
-          <SheetDescription>{description}</SheetDescription>
+          <SheetDescription className="sr-only">{description}</SheetDescription>
         </SheetHeader>
         {open && target && (
           <SubmissionCommentThread

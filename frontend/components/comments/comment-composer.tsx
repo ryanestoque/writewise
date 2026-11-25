@@ -47,7 +47,7 @@ export function CommentComposer({
 
   return (
     <form
-      className="bg-card shrink-0 border-t px-4 py-3 sm:py-4"
+      className="bg-card shrink-0 px-4 py-3 sm:py-4"
       onSubmit={async (event) => {
         event.preventDefault();
         if (!valid || disabled || pending || busy) return;

@@ -143,7 +143,7 @@ export function SubmissionCommentThread({
     );
   if (query.isError)
     return (
-      <div className="space-y-3 p-4" role="status">
+      <div className="flex flex-col gap-3 p-4" role="status">
         <Alert variant="destructive">
           <AlertCircle className="size-4" />
           <AlertTitle>Could not load notes</AlertTitle>
@@ -165,10 +165,10 @@ export function SubmissionCommentThread({
     );
   if (!thread)
     return (
-      <div className="space-y-3 p-4" role="status" aria-label="Loading notes">
+      <div className="flex flex-col gap-3 p-4" role="status" aria-label="Loading notes">
         <Skeleton className="h-5 w-44 rounded-md" />
         <Skeleton className="h-4 w-64 rounded-md" />
-        <div className="space-y-2 pt-3">
+        <div className="flex flex-col gap-2 pt-3">
           <Skeleton className="h-16 w-3/4 rounded-xl" />
           <Skeleton className="h-16 w-2/3 ml-auto rounded-xl" />
         </div>
@@ -176,10 +176,6 @@ export function SubmissionCommentThread({
     );
 
   const studentFirstName = studentName?.trim().split(/\s+/)[0] || "your child";
-  const privacyNotice =
-    thread.actor_role === "parent"
-      ? `Private to ${teacherName ?? "your child's teacher"} and guardians linked to ${studentFirstName}.`
-      : `Private to teachers on this class and guardians linked to ${studentName?.trim() || "this student"}.`;
 
   const canRetakePhoto = Boolean(
     worksheetContext?.onSendNewPhoto &&
@@ -206,8 +202,14 @@ export function SubmissionCommentThread({
         )?.id ?? null
       : null;
 
+  const formattedTeacherName = teacherName?.trim()
+    ? teacherName.trim().toLowerCase().startsWith("teacher")
+      ? teacherName.trim()
+      : `Teacher ${teacherName.trim().split(/\s+/)[0]}`
+    : "Teacher";
+
   const recipientLabel =
-    thread.actor_role === "parent" ? (teacherName ?? "teacher") : `${studentFirstName}'s family`;
+    thread.actor_role === "parent" ? formattedTeacherName : `${studentFirstName}'s family`;
 
   const emptyMessage = thread.can_post
     ? thread.actor_role === "parent"
@@ -220,7 +222,7 @@ export function SubmissionCommentThread({
   return (
     <section aria-label="Worksheet notes" className="flex min-h-0 flex-1 flex-col">
       {hasSubHeaderContent ? (
-        <div className={cn("border-b px-4", compactHeader ? "space-y-2 py-2.5" : "space-y-2 py-3")}>
+        <div className={cn("border-b px-4 flex flex-col gap-2", compactHeader ? "py-2.5" : "py-3")}>
           {!compactHeader && (
             <>
               <div className="flex flex-wrap items-baseline gap-2 min-w-0">
@@ -256,7 +258,7 @@ export function SubmissionCommentThread({
 
           {compactHeader && showContextStrip && (
             <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
-              <div className="min-w-0 flex-1 space-y-0.5">
+              <div className="min-w-0 flex-1 flex flex-col gap-0.5">
                 {(showCompactMeta || worksheetContext?.targetText) && (
                   <p className="text-xs font-medium text-foreground truncate">
                     {worksheetContext?.targetText
@@ -265,7 +267,7 @@ export function SubmissionCommentThread({
                   </p>
                 )}
                 <p className="text-muted-foreground text-xs font-sans tabular-nums truncate">
-                  {formatDate(thread.submitted_at)} · {STATUS_LABELS[thread.submission_status]}
+                  {formatDate(thread.submitted_at)}
                 </p>
               </div>
               {(worksheetContext?.onViewWorksheet || canRetakePhoto) && (
@@ -276,10 +278,13 @@ export function SubmissionCommentThread({
                       size="sm"
                       variant="outline"
                       onClick={worksheetContext.onViewWorksheet}
-                      className="h-10 sm:h-8 min-h-10 sm:min-h-8 px-2.5 text-xs gap-1.5 cursor-pointer touch-manipulation"
+                      aria-label="View worksheet"
+                      className="h-8 min-h-8 px-2 sm:px-2.5 text-xs gap-1 sm:gap-1.5 cursor-pointer touch-manipulation"
                     >
-                      <Eye className="size-3.5 shrink-0" aria-hidden="true" />
-                      <span>View worksheet</span>
+                      <Eye className="size-3.5 shrink-0" aria-hidden="true" data-icon="inline-start" />
+                      <span className="min-[360px]:hidden">View</span>
+                      <span className="hidden min-[360px]:inline sm:hidden">Worksheet</span>
+                      <span className="hidden sm:inline">View worksheet</span>
                     </Button>
                   )}
                   {canRetakePhoto && worksheetContext?.onSendNewPhoto && (
@@ -288,18 +293,19 @@ export function SubmissionCommentThread({
                       size="sm"
                       variant="default"
                       onClick={worksheetContext.onSendNewPhoto}
-                      className="h-10 sm:h-8 min-h-10 sm:min-h-8 px-2.5 text-xs gap-1.5 cursor-pointer touch-manipulation"
+                      aria-label="Send new photo"
+                      className="h-8 min-h-8 px-2 sm:px-2.5 text-xs gap-1 sm:gap-1.5 cursor-pointer touch-manipulation"
                     >
-                      <Camera className="size-3.5 shrink-0" aria-hidden="true" />
-                      <span>Send new photo</span>
+                      <Camera className="size-3.5 shrink-0" aria-hidden="true" data-icon="inline-start" />
+                      <span className="min-[360px]:hidden">Photo</span>
+                      <span className="hidden min-[360px]:inline sm:hidden">New photo</span>
+                      <span className="hidden sm:inline">Send new photo</span>
                     </Button>
                   )}
                 </div>
               )}
             </div>
           )}
-
-          {!compactHeader && <p className="text-muted-foreground text-xs">{privacyNotice}</p>}
 
           {thread.can_lock && (
             <Button
@@ -334,7 +340,7 @@ export function SubmissionCommentThread({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-10 sm:h-8 px-3 cursor-pointer touch-manipulation"
+                className="h-8 px-3 cursor-pointer touch-manipulation"
                 onClick={() => {
                   attempted.current.clear();
                   setFeedback(null);
@@ -357,7 +363,7 @@ export function SubmissionCommentThread({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-10 sm:h-8 px-3.5 text-xs cursor-pointer touch-manipulation"
+                    className="h-8 px-3.5 text-xs cursor-pointer touch-manipulation"
                     disabled={query.isLoadingMore || query.isFetching}
                     onClick={query.loadMore}
                   >
@@ -365,8 +371,6 @@ export function SubmissionCommentThread({
                   </Button>
                 </div>
               )}
-
-              <p className="text-muted-foreground text-center text-xs">{privacyNotice}</p>
 
               {chronologicalEntries.length === 0 && (
                 <p className="text-muted-foreground py-6 text-center text-sm">{emptyMessage}</p>

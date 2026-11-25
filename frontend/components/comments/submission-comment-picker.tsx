@@ -6,7 +6,14 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Field, FieldLabel } from "@/components/ui/field";
-import { NativeSelect, NativeSelectOptGroup, NativeSelectOption } from "@/components/ui/native-select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { hasCommentDraft, buildCommentDraftKey } from "@/lib/comments/drafts";
 import { useCommentAttempts, useUnreadCommentThreads } from "@/lib/hooks/use-comments";
@@ -72,7 +79,7 @@ export function SubmissionCommentPicker({
     );
   if (!query.data)
     return (
-      <div className="space-y-3 p-4" role="status" aria-label="Loading worksheet uploads">
+      <div className="flex flex-col gap-3 p-4" role="status" aria-label="Loading worksheet uploads">
         <Skeleton className="h-9 w-full rounded-lg" />
         <Skeleton className="h-16 w-3/4 rounded-xl" />
         <Skeleton className="h-16 w-2/3 ml-auto rounded-xl" />
@@ -115,7 +122,8 @@ function LoadedPicker({
   );
   const [pendingSwitchId, setPendingSwitchId] = useState<string | null>(null);
   const unread = useUnreadCommentThreads(userId);
-  const selected = rows.find((row) => row.submission_id === selectedId);
+  const selectedIndex = rows.findIndex((row) => row.submission_id === selectedId);
+  const selected = selectedIndex >= 0 ? rows[selectedIndex] : undefined;
   if (!rows.length)
     return (
       <Empty>
@@ -151,60 +159,71 @@ function LoadedPicker({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {rows.length > 1 && (
-        <Field className="shrink-0 border-b px-4 py-3">
+        <Field className="shrink-0 px-4 pt-1 pb-2.5">
           <FieldLabel htmlFor={id}>Worksheet upload</FieldLabel>
-          <NativeSelect
-            id={id}
-            className="w-full font-sans tabular-nums"
+          <Select
             value={selected?.submission_id ?? ""}
-            onChange={(event) => handleUploadChange(event.target.value)}
+            onValueChange={(value) => {
+              if (value) handleUploadChange(value);
+            }}
           >
-            <NativeSelectOption value="" disabled>
-              Choose an upload
-            </NativeSelectOption>
-            <NativeSelectOptGroup label="Worksheet uploads">
-              {rows.map((row, index) => (
-                <NativeSelectOption key={row.submission_id} value={row.submission_id}>
-                  {formatUploadLabel(row, index)}
-                </NativeSelectOption>
-              ))}
-            </NativeSelectOptGroup>
-          </NativeSelect>
-          {pendingSwitchId && (
-            <div
-              role="alert"
-              className="mt-2 rounded-lg border border-border bg-secondary/45 p-3 text-xs sm:text-sm space-y-2"
+            <SelectTrigger
+              id={id}
+              className="h-11 sm:h-9 w-full bg-card border-border font-sans tabular-nums cursor-pointer touch-manipulation"
             >
-              <p className="text-foreground font-medium">
+              <SelectValue placeholder="Choose an upload">
+                {selected ? formatUploadLabel(selected, selectedIndex) : undefined}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent align="start">
+              <SelectGroup>
+                {rows.map((row, index) => (
+                  <SelectItem
+                    key={row.submission_id}
+                    value={row.submission_id}
+                    className="font-sans tabular-nums cursor-pointer"
+                  >
+                    {formatUploadLabel(row, index)}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          {pendingSwitchId && (
+            <Alert className="mt-2 bg-secondary/45">
+              <AlertCircle />
+              <AlertTitle>
                 You have an unsent note on this upload. Keep editing or switch uploads anyway?
-              </p>
-              <p className="text-muted-foreground text-xs">
-                Your draft stays saved on this upload if you return to it later.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-11 sm:h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
-                  onClick={() => setPendingSwitchId(null)}
-                >
-                  Keep editing
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="default"
-                  className="h-11 sm:h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
-                  onClick={() => {
-                    setSelectedId(pendingSwitchId);
-                    setPendingSwitchId(null);
-                  }}
-                >
-                  Switch upload
-                </Button>
-              </div>
-            </div>
+              </AlertTitle>
+              <AlertDescription className="flex flex-col gap-2">
+                <span className="text-xs">
+                  Your draft stays saved on this upload if you return to it later.
+                </span>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-11 sm:h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
+                    onClick={() => setPendingSwitchId(null)}
+                  >
+                    Keep editing
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="default"
+                    className="h-11 sm:h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
+                    onClick={() => {
+                      setSelectedId(pendingSwitchId);
+                      setPendingSwitchId(null);
+                    }}
+                  >
+                    Switch upload
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
           )}
         </Field>
       )}
