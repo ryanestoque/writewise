@@ -610,12 +610,25 @@ def test_incomplete_measurement_without_rubric_is_not_releasable(
 ):
     current = attempts[-1]["id"]
     admin.table("manual_score").delete().eq("submission_id", current).execute()
-    admin.table("measurement").update({"spacing_score": None}).eq(
+    admin.table("measurement").update({"letter_formation_score": None}).eq(
         "submission_id", current
     ).execute()
     with pytest.raises(APIError) as error:
         mutate(family, assigned_activity["id"], "release", {"submission_id": current})
     assert error.value.code == "WW410"
+
+
+def test_single_word_null_spacing_measurement_without_rubric_is_releasable(
+    family, assigned_activity, attempts
+):
+    current = attempts[-1]["id"]
+    admin.table("manual_score").delete().eq("submission_id", current).execute()
+    admin.table("measurement").update({"spacing_score": None}).eq(
+        "submission_id", current
+    ).execute()
+    result = mutate(family, assigned_activity["id"], "release", {"submission_id": current})
+    assert result["submission_id"] == current
+    assert result["released_at"] is not None
 
 
 def test_pin_cannot_select_another_childs_completed_attempt(family, assigned_activity, attempts):

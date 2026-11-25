@@ -79,6 +79,32 @@ class TestCriterionScores:
         )
         assert scores.composite_score == 80.0
 
+    def test_both_optional_criteria_none_averages_three_core_criteria(self):
+        scores = CriterionScores(
+            letter_formation_score=80.0,
+            size_consistency_score=90.0,
+            spacing_score=None,
+            slant_score=None,
+            baseline_alignment_score=70.0,
+        )
+        assert scores.composite_score == 80.0
+
+    @pytest.mark.parametrize(
+        "missing_core",
+        ["letter_formation_score", "size_consistency_score", "baseline_alignment_score"],
+    )
+    def test_missing_core_criterion_yields_none_composite(self, missing_core):
+        kwargs = {
+            "letter_formation_score": 80.0,
+            "size_consistency_score": 80.0,
+            "spacing_score": 80.0,
+            "slant_score": 80.0,
+            "baseline_alignment_score": 80.0,
+        }
+        kwargs[missing_core] = None
+        scores = CriterionScores(**kwargs)
+        assert scores.composite_score is None
+
 
 class TestManualScoreProvider:
     def test_returns_none_at_upload_time(self, sample_aggregate, sample_ml_result):

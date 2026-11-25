@@ -304,30 +304,26 @@ create table public.measurement (
   baseline_alignment_score numeric(5,2) check (baseline_alignment_score between 0 and 100),
 
   -- Nullable per-criterion scores: NULL for Phase 1 submissions, and individual
-  -- unmeasurable criteria (spacing on single-word samples, slant with no stems) remain NULL.
-  -- composite_score averages all non-null criteria (NULL if all 5 are NULL).
+  -- unmeasurable optional criteria (spacing on single-word samples, slant with no stems) remain NULL.
+  -- composite_score requires all three core criteria (letter_formation, size_consistency,
+  -- baseline_alignment) and averages all non-null criteria (3, 4, or 5); NULL otherwise.
   composite_score numeric(5,2) generated always as (
     case
-      when (
-        (case when letter_formation_score is not null then 1 else 0 end)
-        + (case when size_consistency_score is not null then 1 else 0 end)
-        + (case when spacing_score is not null then 1 else 0 end)
-        + (case when slant_score is not null then 1 else 0 end)
-        + (case when baseline_alignment_score is not null then 1 else 0 end)
-      ) = 0 then null
+      when letter_formation_score is null
+        or size_consistency_score is null
+        or baseline_alignment_score is null
+      then null
       else round(
         (
-          coalesce(letter_formation_score, 0)
-          + coalesce(size_consistency_score, 0)
+          letter_formation_score
+          + size_consistency_score
           + coalesce(spacing_score, 0)
           + coalesce(slant_score, 0)
-          + coalesce(baseline_alignment_score, 0)
+          + baseline_alignment_score
         ) / (
-          (case when letter_formation_score is not null then 1 else 0 end)
-          + (case when size_consistency_score is not null then 1 else 0 end)
+          3
           + (case when spacing_score is not null then 1 else 0 end)
           + (case when slant_score is not null then 1 else 0 end)
-          + (case when baseline_alignment_score is not null then 1 else 0 end)
         ),
         2
       )

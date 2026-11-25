@@ -66,10 +66,18 @@ class CriterionScores:
 
     @property
     def composite_score(self) -> float | None:
-        """Unweighted arithmetic mean of all non-null criteria, or None if all are None.
+        """Unweighted arithmetic mean of present criteria once all core criteria are scored.
 
+        Core criteria (letter_formation, size_consistency, baseline_alignment) are required;
+        optional criteria (spacing, slant) may be None (N/A) and are excluded from the average.
         Mirrors the Postgres stored generated column on public.measurement (DATABASE §8).
         """
+        if (
+            self.letter_formation_score is None
+            or self.size_consistency_score is None
+            or self.baseline_alignment_score is None
+        ):
+            return None
         present = [
             s
             for s in (
@@ -81,8 +89,6 @@ class CriterionScores:
             )
             if s is not None
         ]
-        if not present:
-            return None
         return round(sum(present) / len(present), 2)
 
     def to_dict(self) -> dict[str, float | None]:
