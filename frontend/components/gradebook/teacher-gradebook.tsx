@@ -18,6 +18,7 @@ import {
   ExternalLink,
   Users,
   FileText,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -36,9 +37,9 @@ import { GradebookBulkDialog } from "./gradebook-bulk-dialog";
 import { QueryRecovery } from "@/components/shared/query-recovery";
 import { FloatingActionBar } from "@/components/ui/floating-action-bar";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
+import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Empty,
@@ -48,14 +49,6 @@ import {
   EmptyContent,
   EmptyMedia,
 } from "@/components/ui/empty";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -96,14 +89,16 @@ export function TeacherGradebook({
   });
   const [chosenSection, setChosenSection] = useState<string | null>(initialSectionId ?? null);
   const [activityId, setActivityId] = useState(initialActivityId);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
   const sectionId = sections.data?.some((section) => section.id === chosenSection)
     ? (chosenSection ?? undefined)
     : sections.data?.[0]?.id;
 
-  const sectionItems = useMemo(
+  const sectionItems = useMemo<FilterPillItem[]>(
     () =>
       (sections.data ?? []).map((sec) => ({
-        value: sec.id,
+        id: sec.id,
         label: sec.name,
       })),
     [sections.data]
@@ -128,6 +123,21 @@ export function TeacherGradebook({
     }
   }
 
+  async function download() {
+    if (!sectionId) return;
+    setExporting(true);
+    setExportError("");
+    try {
+      await downloadGradebookCsv(userId, sectionId);
+      toast.success("Class record CSV downloaded");
+    } catch (failure) {
+      if (!(failure instanceof Error && failure.name === "AbortError"))
+        setExportError("CSV could not be downloaded. Try again.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   if (!active)
     return (
       <p role="status" className="text-muted-foreground text-sm">
@@ -136,42 +146,31 @@ export function TeacherGradebook({
     );
 
   return (
-    <div className="w-full min-w-0 space-y-4 sm:space-y-5">
-      {/* Top Header Row with integrated Section Selector */}
-      <div className="flex items-center justify-between sm:justify-start gap-3 print:hidden">
-        <h1 className="font-heading text-2xl font-semibold text-foreground shrink-0">Gradebook</h1>
-        {sections.data && sections.data.length > 0 && (
-          <div className="flex items-center gap-2 min-w-0">
-            <Label htmlFor="gradebook-section-select" className="sr-only">
-              Section
-            </Label>
-            <Select
-              items={sectionItems}
-              value={sectionId ?? null}
-              onValueChange={(val) => {
-                if (val) setSection(val);
-              }}
-            >
-              <SelectTrigger
-                id="gradebook-section-select"
-                className="min-w-[112px] max-w-[200px] sm:w-[180px] data-[size=default]:h-10 sm:data-[size=default]:h-9 cursor-pointer"
-                aria-label="Select section"
-              >
-                <SelectValue placeholder="Select section" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {sectionItems.map((item) => (
-                    <SelectItem key={item.value} value={item.value} className="cursor-pointer">
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
+    <div className="w-full min-w-0 space-y-5 sm:space-y-6">
+      {/* Page Header — matches Dashboard, Activities, and Roster */}
+      <div className="flex items-center justify-between gap-3 sm:gap-4 print:hidden">
+        <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
+          Gradebook
+        </h1>
+        {sectionId && (
+          <Button
+            variant="outline"
+            onClick={() => void download()}
+            disabled={exporting}
+            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] border-border text-foreground hover:bg-muted text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer shrink-0"
+            aria-label={exporting ? "Downloading class record" : "Export class record"}
+          >
+            <Download className="w-4 h-4 mr-1.5 text-muted-foreground shrink-0" aria-hidden="true" />
+            <span>{exporting ? "Downloading…" : "Export CSV"}</span>
+          </Button>
         )}
       </div>
+
+      {exportError && (
+        <p role="alert" className="text-destructive text-sm print:hidden">
+          {exportError}
+        </p>
+      )}
 
       {sections.isError ? (
         <QueryRecovery
@@ -183,17 +182,17 @@ export function TeacherGradebook({
       ) : sections.isPending ? (
         <div className="space-y-4">
           <div className="flex gap-3">
-            <Skeleton className="h-10 w-56 rounded-md" />
-            <Skeleton className="h-10 w-40 rounded-md" />
+            <Skeleton className="h-10 w-56 rounded-xl" />
+            <Skeleton className="h-10 w-40 rounded-xl" />
           </div>
-          <div className="rounded-md border p-6 space-y-3">
-            <Skeleton className="h-8 w-full rounded-md" />
-            <Skeleton className="h-12 w-full rounded-md" />
-            <Skeleton className="h-12 w-full rounded-md" />
+          <div className="rounded-xl sm:rounded-2xl border border-border p-6 space-y-3 shadow-warm">
+            <Skeleton className="h-8 w-full rounded-lg" />
+            <Skeleton className="h-12 w-full rounded-lg" />
+            <Skeleton className="h-12 w-full rounded-lg" />
           </div>
         </div>
       ) : !sections.data.length ? (
-        <Empty className="rounded-md border bg-card p-8">
+        <Empty className="rounded-xl sm:rounded-2xl border border-border bg-surface dark:bg-card p-8 shadow-warm">
           <EmptyMedia variant="icon">
             <Users className="size-5" />
           </EmptyMedia>
@@ -218,7 +217,7 @@ export function TeacherGradebook({
               </p>
               <Button
                 variant="outline"
-                className="h-10 sm:h-9 cursor-pointer"
+                className="h-10 sm:h-9 cursor-pointer rounded-lg sm:rounded-xl"
                 onClick={handleClearActivityFilter}
               >
                 Show all activities
@@ -239,6 +238,8 @@ export function TeacherGradebook({
               activityId={activityId}
               totalSectionsCount={sections.data.length}
               sections={sections.data}
+              sectionItems={sectionItems}
+              onSelectSection={setSection}
               onClearActivityFilter={handleClearActivityFilter}
             />
           )}
@@ -254,6 +255,8 @@ function SectionGrid({
   activityId,
   totalSectionsCount = 1,
   sections,
+  sectionItems,
+  onSelectSection,
   onClearActivityFilter,
 }: {
   userId: string;
@@ -261,6 +264,8 @@ function SectionGrid({
   activityId?: string;
   totalSectionsCount?: number;
   sections?: components["schemas"]["SectionResponse"][];
+  sectionItems: FilterPillItem[];
+  onSelectSection: (id: string) => void;
   onClearActivityFilter?: () => void;
 }) {
   const router = useRouter();
@@ -269,6 +274,7 @@ function SectionGrid({
   const actions = useGradebookActions(userId);
   const isTouchDevice = useIsTouchDevice();
   const tableRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -279,16 +285,27 @@ function SectionGrid({
     studentIds: string[];
     eligibleCount: number;
   } | null>(null);
-  const [exporting, setExporting] = useState(false);
-  const [exportError, setExportError] = useState("");
   const [viewMode, setViewMode] = useState<"points" | "diagnostic">("points");
   const [activeCell, setActiveCell] = useState<{ row: number; col: number }>({ row: 0, col: 0 });
 
-  // Escape key handler to clear bulk student selection
+  // "/" focuses search; Escape clears bulk student selection
   useEffect(() => {
     function handleKeyDown(e: globalThis.KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      const isTyping =
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable);
+
       if (e.key === "Escape" && selected.size > 0 && !cell && !bulk) {
         setSelected(new Set());
+        return;
+      }
+
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey && !isTyping && !cell && !bulk) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
       }
     }
     window.addEventListener("keydown", handleKeyDown);
@@ -392,20 +409,6 @@ function SectionGrid({
       return next;
     });
 
-  async function download() {
-    setExporting(true);
-    setExportError("");
-    try {
-      await downloadGradebookCsv(userId, sectionId);
-      toast.success("Class record CSV downloaded");
-    } catch (failure) {
-      if (!(failure instanceof Error && failure.name === "AbortError"))
-        setExportError("CSV could not be downloaded. Try again.");
-    } finally {
-      setExporting(false);
-    }
-  }
-
   async function handleSaveScore(actId: string, studId: string, score: string) {
     const points = score === "" ? null : Number(score);
     try {
@@ -481,49 +484,68 @@ function SectionGrid({
     }
   }
 
+  const currentActivityFilterLabel =
+    ACTIVITY_FILTER_ITEMS.find((item) => item.value === filter)?.label ?? "All activities";
+
   return (
-    <div className="w-full min-w-0 space-y-3 sm:space-y-4">
-      {/* Action Toolbar: 2 compact rows on mobile, single horizontal row on sm+ */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 print:hidden">
-        <div className="flex items-center gap-2 sm:contents">
-          <Input
+    <div className="w-full min-w-0 space-y-4">
+      {/* Unified Filter & Search Toolbar — matches Activities and Roster */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 lg:gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm print:hidden">
+        {/* Row 1 on mobile / Left on desktop: Search + Activity Filter */}
+        <div className="flex items-center gap-2 shrink-0">
+          <SearchInput
+            ref={searchInputRef}
             aria-label="Find student in gradebook"
             placeholder="Find student…"
-            className="flex-1 min-w-0 sm:flex-none sm:w-56 h-10 sm:h-9"
+            containerClassName="flex-1 min-w-0 lg:w-60"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
+            onClear={() => setSearch("")}
           />
-          <Select
-            items={ACTIVITY_FILTER_ITEMS}
-            value={filter}
-            onValueChange={(val) => {
-              if (val) setFilter(val);
-            }}
-          >
-            <SelectTrigger
-              className="w-[140px] shrink-0 sm:w-[170px] data-[size=default]:h-10 sm:data-[size=default]:h-9 cursor-pointer"
+
+          <DropdownMenu>
+            <DropdownMenuTrigger
               aria-label="Show activities"
+              className="inline-flex items-center justify-between gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[36px] text-xs font-medium rounded-lg sm:rounded-xl border border-border bg-background text-foreground hover:bg-muted/60 transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {ACTIVITY_FILTER_ITEMS.map((item) => (
-                  <SelectItem key={item.value} value={item.value} className="cursor-pointer">
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+              <span>{currentActivityFilterLabel}</span>
+              <ChevronDown className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              {ACTIVITY_FILTER_ITEMS.map((item) => (
+                <DropdownMenuItem
+                  key={item.value}
+                  onClick={() => setFilter(item.value)}
+                  className="cursor-pointer text-xs justify-between"
+                >
+                  <span>{item.label}</span>
+                  {filter === item.value && (
+                    <span className="text-primary font-bold">✓</span>
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        <div className="flex items-center justify-between gap-2 sm:contents">
+        {/* Row 2 on mobile / Right on desktop: Section FilterPills + View Mode Toggle */}
+        <div className="flex items-center justify-between lg:justify-end gap-2 min-w-0 flex-1">
+          {sectionItems.length > 0 && (
+            <FilterPills
+              items={sectionItems}
+              value={sectionId}
+              onChange={onSelectSection}
+              label="Section:"
+              ariaLabel="Select section"
+              containerClassName="min-w-0 flex-1 lg:flex-initial lg:justify-end"
+            />
+          )}
+
           <div
             role="radiogroup"
             aria-label="Gradebook view mode"
             onKeyDown={handleViewModeKeyDown}
-            className="inline-flex rounded-lg border bg-muted/40 p-0.5 text-xs font-medium h-10 sm:h-9 items-center"
+            className="inline-flex items-center rounded-lg sm:rounded-xl border border-border bg-background p-0.5 text-xs font-medium shrink-0"
           >
             <button
               type="button"
@@ -532,13 +554,13 @@ function SectionGrid({
               tabIndex={viewMode === "points" ? 0 : -1}
               onClick={() => setViewMode("points")}
               className={cn(
-                "px-2.5 py-1.5 rounded-md transition-colors cursor-pointer min-h-8 whitespace-nowrap",
+                "px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-[34px] sm:min-h-[28px] whitespace-nowrap",
                 viewMode === "points"
-                  ? "bg-background text-foreground shadow-xs font-semibold"
+                  ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground shadow-warm-sm font-semibold"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              Points<span className="hidden sm:inline"> View</span>
+              Points
             </button>
             <button
               type="button"
@@ -547,34 +569,20 @@ function SectionGrid({
               tabIndex={viewMode === "diagnostic" ? 0 : -1}
               onClick={() => setViewMode("diagnostic")}
               className={cn(
-                "px-2.5 py-1.5 rounded-md transition-colors cursor-pointer min-h-8 whitespace-nowrap",
+                "px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-[34px] sm:min-h-[28px] whitespace-nowrap",
                 viewMode === "diagnostic"
-                  ? "bg-background text-foreground shadow-xs font-semibold"
+                  ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground shadow-warm-sm font-semibold"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              Diagnostic<span className="hidden sm:inline"> View</span>
+              Diagnostic
             </button>
           </div>
-
-          <Button
-            variant="outline"
-            className="h-10 sm:h-9 shrink-0 sm:ml-auto px-3"
-            disabled={exporting}
-            onClick={() => void download()}
-            aria-label={exporting ? "Downloading class record" : "Export class record"}
-          >
-            <Download aria-hidden className="mr-1.5 size-4" />
-            <span className="sm:hidden">{exporting ? "…" : "Export"}</span>
-            <span className="hidden sm:inline">
-              {exporting ? "Downloading…" : "Export class record"}
-            </span>
-          </Button>
         </div>
       </div>
 
       {/* Section Readiness Summary Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 sm:gap-3 rounded-lg border bg-muted/30 px-3 py-2 sm:px-4 sm:py-2.5 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 sm:gap-3 rounded-xl border border-border bg-surface/70 dark:bg-card/70 px-3.5 py-2.5 text-xs">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 sm:gap-x-4">
           <span className="text-foreground font-medium">
             Class: <strong className="font-semibold">{book.section_name}</strong> ({book.rows.length} students)
@@ -602,19 +610,14 @@ function SectionGrid({
         </div>
       </div>
 
-      <p className="text-muted-foreground text-xs print:hidden">
-        {selected.size ? `${selected.size} students selected. ` : `${rows.length} students shown. `}
-        Totals include drafts across all activities. Students without a section appear in the roster.
-      </p>
-
-      {exportError && (
-        <p role="alert" className="text-destructive text-sm">
-          {exportError}
+      {selected.size > 0 && (
+        <p className="text-muted-foreground text-xs print:hidden">
+          {selected.size} {selected.size === 1 ? "student" : "students"} selected.
         </p>
       )}
 
       {!book.rows.length ? (
-        <Empty className="rounded-md border bg-card p-8">
+        <Empty className="rounded-xl sm:rounded-2xl border border-border bg-surface dark:bg-card p-8 shadow-warm">
           <EmptyMedia variant="icon">
             <Users className="size-5" />
           </EmptyMedia>
@@ -631,7 +634,7 @@ function SectionGrid({
           </EmptyContent>
         </Empty>
       ) : !activities.length ? (
-        <Empty className="rounded-md border bg-card p-8">
+        <Empty className="rounded-xl sm:rounded-2xl border border-border bg-surface dark:bg-card p-8 shadow-warm">
           <EmptyMedia variant="icon">
             <FileText className="size-5" />
           </EmptyMedia>
@@ -662,7 +665,7 @@ function SectionGrid({
           <div
             ref={tableRef}
             className={cn(
-              "bg-card max-h-[70svh] overflow-auto rounded-md border transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring print:max-h-none print:overflow-visible print:border-none",
+              "bg-surface dark:bg-card max-h-[70svh] overflow-auto rounded-xl sm:rounded-2xl border border-border shadow-warm transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring print:max-h-none print:overflow-visible print:border-none print:shadow-none",
               selected.size > 0 && "pb-24 sm:pb-20"
             )}
             tabIndex={-1}
