@@ -52,12 +52,61 @@ def test_incomplete_measurement_uses_complete_recorded_manual_rubric():
     assert score.composite == Decimal("62.5")
 
 
-@pytest.mark.parametrize("invalid", [None, "NaN", "Infinity", "-1", "100.01", "bad", True])
-def test_incomplete_or_invalid_criteria_do_not_produce_a_grade(invalid):
+@pytest.mark.parametrize("invalid", ["NaN", "Infinity", "-1", "100.01", "bad", True])
+def test_invalid_criteria_values_do_not_produce_a_grade(invalid):
     measured = scores("82") | {"spacing_score": invalid}
     provider = get_score_provider("calibrated")
     assert provider.recorded_grade_score(measured, None) is None
     assert provider.recorded_grade_score(None, measured) is None
+
+
+@pytest.mark.parametrize(
+    "missing_key",
+    ["letter_formation_score", "size_consistency_score", "baseline_alignment_score"],
+)
+def test_missing_core_criterion_does_not_produce_a_grade(missing_key):
+    measured = scores("82") | {missing_key: None}
+    provider = get_score_provider("calibrated")
+    assert provider.recorded_grade_score(measured, None) is None
+    assert provider.recorded_grade_score(None, measured) is None
+
+
+def test_nullable_spacing_produces_four_criterion_composite_and_points():
+    provider = get_score_provider("calibrated")
+    measured = {
+        "letter_formation_score": "80",
+        "size_consistency_score": "90",
+        "spacing_score": None,
+        "slant_score": "70",
+        "baseline_alignment_score": "80",
+    }
+    cal = provider.recorded_grade_score(measured, None)
+    assert cal is not None
+    assert cal.source == "calibrated"
+    assert cal.composite == Decimal("80")
+    assert provider.activity_points(Decimal("20"), cal) == Decimal("16.00")
+
+    manual = {
+        "letter_formation_score": "87.5",
+        "size_consistency_score": "62.5",
+        "spacing_score": None,
+        "slant_score": "62.5",
+        "baseline_alignment_score": "87.5",
+    }
+    man = provider.recorded_grade_score(None, manual)
+    assert man is not None
+    assert man.source == "manual"
+    assert man.composite == Decimal("75")
+    assert provider.activity_points(Decimal("20"), man) == Decimal("15.00")
+
+
+def test_nullable_calibrated_slant_produces_four_criterion_composite():
+    provider = get_score_provider("calibrated")
+    measured = scores("80") | {"slant_score": None}
+    cal = provider.recorded_grade_score(measured, None)
+    assert cal is not None
+    assert cal.source == "calibrated"
+    assert cal.composite == Decimal("80")
 
 
 @pytest.mark.parametrize("invalid", ["NaN", "Infinity", "-1", "100.01", "bad", True])

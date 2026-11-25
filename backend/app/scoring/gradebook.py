@@ -12,6 +12,10 @@ CRITERIA = (
     "slant",
     "baseline_alignment",
 )
+OPTIONAL_CRITERIA: dict[Literal["manual", "calibrated"], frozenset[str]] = {
+    "calibrated": frozenset({"spacing", "slant"}),
+    "manual": frozenset({"spacing"}),
+}
 CENT = Decimal("0.01")
 MAX_POINTS = Decimal("9999.99")
 
@@ -41,7 +45,8 @@ def resolve_recorded_score(
     """Prefer complete recorded measurements, then a complete retained manual rubric.
 
     The recorded source, not the currently configured inference engine, determines
-    historical scores. Missing criteria cannot be averaged into a complete grade.
+    historical scores. Optional criteria (spacing, and slant on calibrated rows) may
+    be None (N/A) and are excluded from the denominator; core criteria remain required.
     """
     candidates: tuple[
         tuple[Literal["manual", "calibrated"], Mapping[str, object] | None], ...
@@ -49,9 +54,20 @@ def resolve_recorded_score(
     for source, record in candidates:
         if not record:
             continue
+        optional = OPTIONAL_CRITERIA[source]
         try:
-            values = [_score_decimal(record[f"{name}_score"]) for name in CRITERIA]
-            composite = sum(values, Decimal(0)) / Decimal(5)
+            values: list[Decimal] = []
+            for name in CRITERIA:
+                key = f"{name}_score"
+                raw = record.get(key)
+                if raw is None:
+                    if name in optional:
+                        continue
+                    raise ValueError(f"Missing required criterion: {key}")
+                values.append(_score_decimal(raw))
+            if not values:
+                continue
+            composite = sum(values, Decimal(0)) / Decimal(len(values))
             if source == "calibrated" and record.get("composite_score") is not None:
                 composite = _score_decimal(record["composite_score"])
         except (KeyError, ValueError):
