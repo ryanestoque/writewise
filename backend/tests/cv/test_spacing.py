@@ -40,10 +40,26 @@ def test_spacing_metrics_normal_distribution():
 
 
 def test_spacing_metrics_empty_or_single():
-    # Empty lines
+    # Empty lines -> None summaries (never 0.0)
     w_empty, l_empty = compute_spacing_metrics([])
-    assert w_empty.mean == 0.0 and w_empty.std == 0.0
-    assert l_empty.mean == 0.0 and l_empty.std == 0.0
+    assert w_empty.mean is None and w_empty.std is None
+    assert l_empty.mean is None and l_empty.std is None
+
+    # Single-word line (no word gaps, but has intra-word gaps)
+    line_one_word = LineSegment(
+        line_index=0,
+        row_band=(0, 100),
+        topline_y=20,
+        midline_y=50,
+        baseline_y=80,
+        words=[],
+        word_gaps=[],
+        raw_word_gaps=[],
+        intra_word_gaps=[0.25, 0.35],
+    )
+    w_one, l_one = compute_spacing_metrics([line_one_word])
+    assert w_one.mean is None and w_one.std is None
+    assert l_one.mean == 0.3 and l_one.std is not None
 
     # Single gap
     line_single = LineSegment(

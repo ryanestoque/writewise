@@ -14,7 +14,7 @@ from app.cv.segmentation import LineSegment
 def calc_stats(values: List[float]) -> MetricSummary:
     """Calculate mean and sample standard deviation for a list of values."""
     if not values:
-        return MetricSummary(mean=0.0, std=0.0)
+        return MetricSummary(mean=None, std=None)
     if len(values) == 1:
         return MetricSummary(mean=round(float(values[0]), 2), std=0.0)
 
