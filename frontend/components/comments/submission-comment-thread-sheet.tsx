@@ -1,12 +1,7 @@
 "use client";
 
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet } from "@/components/ui/sheet";
+import { CommentSheetContent } from "./comment-sheet-shell";
 import { SubmissionCommentThread } from "./submission-comment-thread";
 import type { CommentLocation, CommentWorksheetContext } from "@/lib/comments/types";
 
@@ -31,23 +26,13 @@ export function SubmissionCommentThreadSheet({
   audience?: "parent" | "teacher";
   worksheetContext?: CommentWorksheetContext;
 }) {
-  const isParent = audience === "parent";
-  const title = isParent
-    ? (activityTitle || (studentName ? `Notes · ${studentName}` : "Notes"))
-    : (activityTitle || studentName || "Comments");
-  const description = isParent
-    ? "Message your child's teacher about this worksheet."
-    : "A private conversation about this worksheet upload.";
-
   return (
     <Sheet open={open && !!target} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg">
-        <SheetHeader className="shrink-0 px-4 pt-4 pb-2 pr-14">
-          <SheetTitle className="line-clamp-2" title={title}>
-            {title}
-          </SheetTitle>
-          <SheetDescription className="sr-only">{description}</SheetDescription>
-        </SheetHeader>
+      <CommentSheetContent
+        audience={audience}
+        activityTitle={activityTitle}
+        studentName={studentName}
+      >
         {open && target && (
           <SubmissionCommentThread
             key={`${userId}:${target.submissionId}`}
@@ -62,7 +47,7 @@ export function SubmissionCommentThreadSheet({
             open={open}
           />
         )}
-      </SheetContent>
+      </CommentSheetContent>
     </Sheet>
   );
 }

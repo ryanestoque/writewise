@@ -104,7 +104,7 @@ export const ThreadEntryView = memo(function ThreadEntryView({
               ref={deleteButtonRef}
               size="xs"
               variant="ghost"
-              className="h-10 sm:h-7 min-h-10 sm:min-h-7 px-2.5 cursor-pointer touch-manipulation"
+              className="h-11 md:h-7 min-h-11 md:min-h-7 px-3 md:px-2.5 cursor-pointer touch-manipulation"
               onClick={() => {
                 setDeleteError(null);
                 setConfirm(true);
@@ -128,7 +128,7 @@ export const ThreadEntryView = memo(function ThreadEntryView({
                 <Button
                   size="sm"
                   variant="destructive"
-                  className="h-11 sm:h-8 min-h-11 sm:min-h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
+                  className="h-11 md:h-8 min-h-11 md:min-h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
                   disabled={deleting}
                   onClick={async () => {
                     setDeleteError(null);
@@ -146,7 +146,7 @@ export const ThreadEntryView = memo(function ThreadEntryView({
                   ref={keepButtonRef}
                   size="sm"
                   variant="outline"
-                  className="h-11 sm:h-8 min-h-11 sm:min-h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
+                  className="h-11 md:h-8 min-h-11 md:min-h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
                   disabled={deleting}
                   onClick={() => {
                     setDeleteError(null);

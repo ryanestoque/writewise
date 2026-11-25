@@ -6,16 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { useCommentAccountId } from "@/lib/hooks/use-comments";
 import type { CommentWorksheetContext, WorkCommentScope } from "@/lib/comments/types";
+import { CommentSheetContent } from "./comment-sheet-shell";
 import { SubmissionCommentPicker } from "./submission-comment-picker";
 
 export function WorkCommentsButton({
@@ -54,21 +48,13 @@ export function WorkCommentsButton({
 
   const accessibleLabel = isParent
     ? activityTitle
-      ? `${activityTitle}${hasUnread ? ", unread notes" : ""}`
+      ? `Notes for ${activityTitle}${hasUnread ? ", unread notes" : ""}`
       : `Notes with ${teacherDisplay}${hasUnread ? ", unread notes" : ""}`
     : activityTitle
       ? `Comments for ${activityTitle}${hasUnread ? ", unread comments" : ""}`
       : studentName
         ? `Comments for ${studentName}${hasUnread ? ", unread comments" : ""}`
         : `Comments${hasUnread ? ", unread comments" : ""}`;
-
-  const sheetTitle = isParent
-    ? (activityTitle || (studentName ? `Notes · ${studentName}` : "Notes"))
-    : (activityTitle || studentName || "Comments");
-
-  const sheetDescription = isParent
-    ? "Message your child's teacher about this worksheet."
-    : "Private conversation about this worksheet upload.";
 
   const wrappedContext = useMemo<CommentWorksheetContext | undefined>(() => {
     if (!worksheetContext) return undefined;
@@ -98,7 +84,7 @@ export function WorkCommentsButton({
               variant="outline"
               size="sm"
               className={cn(
-                "h-11 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50 touch-manipulation",
+                "h-11 md:h-9 min-h-11 md:min-h-9 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer border-border/80 hover:bg-muted/50 touch-manipulation",
                 className
               )}
               aria-label={accessibleLabel}
@@ -121,13 +107,11 @@ export function WorkCommentsButton({
           )}
         </SheetTrigger>
       )}
-      <SheetContent className="w-full sm:max-w-lg">
-        <SheetHeader className="shrink-0 px-4 pt-4 pb-2 pr-14">
-          <SheetTitle className="line-clamp-2" title={sheetTitle}>
-            {sheetTitle}
-          </SheetTitle>
-          <SheetDescription className="sr-only">{sheetDescription}</SheetDescription>
-        </SheetHeader>
+      <CommentSheetContent
+        audience={audience}
+        activityTitle={activityTitle}
+        studentName={studentName}
+      >
         {open && (
           <PickerContent
             scope={scope}
@@ -137,7 +121,7 @@ export function WorkCommentsButton({
             worksheetContext={wrappedContext}
           />
         )}
-      </SheetContent>
+      </CommentSheetContent>
     </Sheet>
   );
 }

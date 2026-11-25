@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -56,10 +56,10 @@ export function SubmissionCommentPicker({
 }) {
   const query = useCommentAttempts(userId, scope, open);
   if (!open) return null;
-  if (!query.isAccountActive)
+  if (!query.isAccountChecking && !query.isAccountActive)
     return (
-      <div className="p-4" role="status">
-        <Alert>
+      <div className="p-4">
+        <Alert role="status">
           <AlertCircle className="size-4" aria-hidden="true" />
           <AlertTitle>Sign-in required</AlertTitle>
           <AlertDescription>Sign in again to view notes.</AlertDescription>
@@ -68,7 +68,7 @@ export function SubmissionCommentPicker({
     );
   if (query.isError)
     return (
-      <div role="alert" className="flex flex-col gap-3 p-4">
+      <div className="flex flex-col gap-3 p-4">
         <Alert variant="destructive">
           <AlertCircle className="size-4" aria-hidden="true" />
           <AlertTitle>Could not load worksheet uploads</AlertTitle>
@@ -77,7 +77,7 @@ export function SubmissionCommentPicker({
         <Button
           variant="outline"
           size="sm"
-          className="h-11 sm:h-9 w-fit text-xs sm:text-sm font-medium cursor-pointer touch-manipulation"
+          className="h-11 md:h-9 min-h-11 md:min-h-9 w-fit text-xs sm:text-sm font-medium cursor-pointer touch-manipulation"
           onClick={() => void query.refetch()}
         >
           Try again
@@ -128,9 +128,21 @@ function LoadedPicker({
     () => selectCommentAttempt(rows, activeSubmissionId, explicitSubmissionId)?.submission_id ?? null
   );
   const [pendingSwitchId, setPendingSwitchId] = useState<string | null>(null);
+  const selectTriggerRef = useRef<HTMLButtonElement>(null);
+  const keepEditingButtonRef = useRef<HTMLButtonElement>(null);
+  const wasPendingSwitchRef = useRef(false);
   const unread = useUnreadCommentThreads(userId);
   const selectedIndex = rows.findIndex((row) => row.submission_id === selectedId);
   const selected = selectedIndex >= 0 ? rows[selectedIndex] : undefined;
+
+  useEffect(() => {
+    if (pendingSwitchId && !wasPendingSwitchRef.current) {
+      keepEditingButtonRef.current?.focus();
+    } else if (!pendingSwitchId && wasPendingSwitchRef.current) {
+      selectTriggerRef.current?.focus();
+    }
+    wasPendingSwitchRef.current = Boolean(pendingSwitchId);
+  }, [pendingSwitchId]);
   if (!rows.length)
     return (
       <Empty>
@@ -182,7 +194,7 @@ function LoadedPicker({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {rows.length > 1 && (
-        <Field className="shrink-0 px-4 pt-1 pb-3">
+        <Field className="shrink-0 gap-1.5 px-4 pt-0.5 pb-2 sm:gap-2 sm:pt-1 sm:pb-3">
           <FieldLabel htmlFor={id}>Worksheet upload</FieldLabel>
           <Select
             value={selected?.submission_id ?? ""}
@@ -191,8 +203,9 @@ function LoadedPicker({
             }}
           >
             <SelectTrigger
+              ref={selectTriggerRef}
               id={id}
-              className="h-11 sm:h-9 w-full bg-card border-border font-sans tabular-nums cursor-pointer touch-manipulation"
+              className="h-11 md:h-9 min-h-11 md:min-h-9 w-full bg-card border-border font-sans tabular-nums cursor-pointer touch-manipulation"
             >
               <SelectValue placeholder="Choose an upload">
                 {selected ? renderUploadSummary(selected, selectedIndex) : undefined}
@@ -213,7 +226,7 @@ function LoadedPicker({
             </SelectContent>
           </Select>
           {pendingSwitchId && (
-            <Alert className="mt-2 bg-secondary/45">
+            <Alert role="group" aria-label="Unsaved note warning" className="mt-2 bg-secondary/45">
               <AlertCircle aria-hidden="true" />
               <AlertTitle>
                 You have an unsent note on this upload. Keep editing or switch uploads anyway?
@@ -224,10 +237,11 @@ function LoadedPicker({
                 </span>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button
+                    ref={keepEditingButtonRef}
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="h-11 sm:h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
+                    className="h-11 md:h-8 min-h-11 md:min-h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
                     onClick={() => setPendingSwitchId(null)}
                   >
                     Keep editing
@@ -236,7 +250,7 @@ function LoadedPicker({
                     type="button"
                     size="sm"
                     variant="default"
-                    className="h-11 sm:h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
+                    className="h-11 md:h-8 min-h-11 md:min-h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
                     onClick={() => {
                       setSelectedId(pendingSwitchId);
                       setPendingSwitchId(null);

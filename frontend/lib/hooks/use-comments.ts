@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { accountRequestSignal, withAccountScope } from "@/lib/supabase/account-scope";
@@ -29,26 +29,70 @@ import {
 import { invalidateNotifications } from "@/lib/hooks/use-notifications";
 import type { components } from "@/types/api";
 
+type AccountSnapshot = {
+  status: "loading" | "ready";
+  userId: string | null;
+};
+
+const LOADING_ACCOUNT_SNAPSHOT: AccountSnapshot = { status: "loading", userId: null };
+let accountSnapshot: AccountSnapshot = LOADING_ACCOUNT_SNAPSHOT;
+const accountListeners = new Set<() => void>();
+let unsubscribeAuth: (() => void) | null = null;
+let subscriberCount = 0;
+
+function notifyAccountListeners() {
+  for (const listener of accountListeners) {
+    listener();
+  }
+}
+
+function subscribeAccount(listener: () => void) {
+  accountListeners.add(listener);
+  subscriberCount += 1;
+  if (subscriberCount === 1 && typeof window !== "undefined") {
+    const { data } = createClient().auth.onAuthStateChange((_event, session) => {
+      const nextUserId = session?.user.id ?? null;
+      if (accountSnapshot.status === "ready" && accountSnapshot.userId === nextUserId) {
+        return;
+      }
+      accountSnapshot = { status: "ready", userId: nextUserId };
+      notifyAccountListeners();
+    });
+    unsubscribeAuth = () => data.subscription.unsubscribe();
+  }
+  return () => {
+    accountListeners.delete(listener);
+    subscriberCount -= 1;
+    if (subscriberCount === 0) {
+      unsubscribeAuth?.();
+      unsubscribeAuth = null;
+      accountSnapshot = LOADING_ACCOUNT_SNAPSHOT;
+    }
+  };
+}
+
+function getAccountSnapshot(): AccountSnapshot {
+  return accountSnapshot;
+}
+
+function getServerAccountSnapshot(): AccountSnapshot {
+  return LOADING_ACCOUNT_SNAPSHOT;
+}
+
+function useCommentAccountSnapshot() {
+  return useSyncExternalStore(subscribeAccount, getAccountSnapshot, getServerAccountSnapshot);
+}
+
 function useActiveCommentAccount(userId: string) {
-  const [account, setAccount] = useState<string | null>(null);
-  useEffect(() => {
-    const { data } = createClient().auth.onAuthStateChange((_event, session) =>
-      setAccount(session?.user.id ?? null)
-    );
-    return () => data.subscription.unsubscribe();
-  }, [userId]);
-  return account === userId;
+  const snapshot = useCommentAccountSnapshot();
+  return {
+    active: snapshot.status === "ready" && snapshot.userId === userId,
+    checking: snapshot.status === "loading",
+  };
 }
 
 export function useCommentAccountId() {
-  const [userId, setUserId] = useState<string | null>(null);
-  useEffect(() => {
-    const { data } = createClient().auth.onAuthStateChange((_event, session) =>
-      setUserId(session?.user.id ?? null)
-    );
-    return () => data.subscription.unsubscribe();
-  }, []);
-  return userId;
+  return useCommentAccountSnapshot().userId;
 }
 
 function retryRead(count: number, error: Error) {
@@ -63,7 +107,7 @@ function retryRead(count: number, error: Error) {
 
 export function useCommentThread(userId: string, target: ThreadTarget, open: boolean) {
   const client = useQueryClient();
-  const active = useActiveCommentAccount(userId);
+  const { active, checking } = useActiveCommentAccount(userId);
   const identity = `${userId}:${threadIdentity(target)}`;
   const moreController = useRef<AbortController | null>(null);
   useEffect(() => {
@@ -163,6 +207,7 @@ export function useCommentThread(userId: string, target: ThreadTarget, open: boo
         ? new ApiError({ code: "NOT_FOUND", message: "Conversation unavailable." })
         : query.error,
     isAccountActive: active,
+    isAccountChecking: checking,
     loadMore: () => {
       if (active && open && !more.isPending && !query.isFetching) more.mutate();
     },
@@ -231,7 +276,7 @@ export function useCommentActions(userId: string, target: ThreadTarget) {
 }
 
 export function useCommentSummaries(userId: string, scope: ThreadScope, open: boolean) {
-  const active = useActiveCommentAccount(userId);
+  const { active } = useActiveCommentAccount(userId);
   const query = useQuery({
     queryKey: commentKeys.summaries(userId, scope),
     queryFn: ({ signal }) => {
@@ -261,7 +306,7 @@ export function useCommentSummaries(userId: string, scope: ThreadScope, open: bo
 }
 
 export function useUnreadCommentThreads(userId: string, enabled = true) {
-  const active = useActiveCommentAccount(userId);
+  const { active } = useActiveCommentAccount(userId);
   const query = useQuery({
     queryKey: commentKeys.unread(userId),
     queryFn: ({ signal }) => {
@@ -280,7 +325,7 @@ export function useUnreadCommentThreads(userId: string, enabled = true) {
 }
 
 export function useCommentAttempts(userId: string, scope: WorkCommentScope, open: boolean) {
-  const active = useActiveCommentAccount(userId);
+  const { active, checking } = useActiveCommentAccount(userId);
   const query = useQuery({
     queryKey: commentKeys.attempts(userId, scope),
     queryFn: ({ signal }) => {
@@ -304,5 +349,10 @@ export function useCommentAttempts(userId: string, scope: WorkCommentScope, open
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: "always",
   });
-  return { ...query, data: active && !query.isError ? query.data : undefined, isAccountActive: active };
+  return {
+    ...query,
+    data: active && !query.isError ? query.data : undefined,
+    isAccountActive: active,
+    isAccountChecking: checking,
+  };
 }

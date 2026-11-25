@@ -55,7 +55,7 @@ export function CommentComposer({
 
   return (
     <form
-      className="bg-card shrink-0 border-t border-border px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:py-4"
+      className="bg-card shrink-0 border-t border-border px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] sm:py-3.5"
       onSubmit={async (event) => {
         event.preventDefault();
         if (!valid || disabled || pending || busy) return;
@@ -73,15 +73,15 @@ export function CommentComposer({
         }
       }}
     >
-      <Field data-invalid={overLimit || undefined}>
+      <Field data-invalid={overLimit || undefined} className="gap-1.5 sm:gap-2">
         <FieldLabel htmlFor={id}>
           {recipientLabel ? `Note for ${recipientLabel}` : "Your note"}
         </FieldLabel>
         <Textarea
-          className="max-h-32 overflow-y-auto"
+          className="min-h-12 sm:min-h-16 max-h-24 sm:max-h-32 overflow-y-auto"
           id={id}
           value={draft}
-          rows={3}
+          rows={2}
           disabled={disabled || pending || busy}
           aria-describedby={errorIds}
           aria-invalid={overLimit || undefined}
@@ -105,7 +105,7 @@ export function CommentComposer({
           <Button
             type="submit"
             size="sm"
-            className="h-11 sm:h-9 px-4 cursor-pointer touch-manipulation"
+            className="h-11 md:h-9 min-h-11 md:min-h-9 px-4 cursor-pointer touch-manipulation"
             disabled={disabled || pending || busy || !valid}
           >
             {pending || busy ? "Sending…" : "Send note"}

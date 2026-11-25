@@ -94,13 +94,25 @@ export function SubmissionCommentThread({
   );
 
   useEffect(() => {
-    if (query.isError || !query.isAccountActive || !matchesLocation) {
+    if (
+      query.isError ||
+      (!query.isAccountChecking && !query.isAccountActive) ||
+      !matchesLocation
+    ) {
       resetPost();
       resetDelete();
       resetLock();
       attempted.current.clear();
     }
-  }, [query.isError, query.isAccountActive, matchesLocation, resetPost, resetDelete, resetLock]);
+  }, [
+    query.isError,
+    query.isAccountChecking,
+    query.isAccountActive,
+    matchesLocation,
+    resetPost,
+    resetDelete,
+    resetLock,
+  ]);
 
   useEffect(() => {
     if (!open || !query.isAccountActive || !thread || !matchesLocation || !canAcknowledge(thread))
@@ -131,18 +143,18 @@ export function SubmissionCommentThread({
   if (!open) return null;
   if (!matchesLocation)
     return (
-      <div className="p-4" role="status">
-        <Alert>
+      <div className="p-4">
+        <Alert role="status">
           <AlertCircle className="size-4" aria-hidden="true" />
           <AlertTitle>Conversation unavailable</AlertTitle>
           <AlertDescription>This conversation does not match the selected worksheet.</AlertDescription>
         </Alert>
       </div>
     );
-  if (!query.isAccountActive)
+  if (!query.isAccountChecking && !query.isAccountActive)
     return (
-      <div className="p-4" role="status">
-        <Alert>
+      <div className="p-4">
+        <Alert role="status">
           <AlertCircle className="size-4" aria-hidden="true" />
           <AlertTitle>Sign-in required</AlertTitle>
           <AlertDescription>Sign in again to view these notes.</AlertDescription>
@@ -151,7 +163,7 @@ export function SubmissionCommentThread({
     );
   if (query.isError)
     return (
-      <div className="flex flex-col gap-3 p-4" role="alert">
+      <div className="flex flex-col gap-3 p-4">
         <Alert variant="destructive">
           <AlertCircle className="size-4" aria-hidden="true" />
           <AlertTitle>Could not load notes</AlertTitle>
@@ -164,7 +176,7 @@ export function SubmissionCommentThread({
         <Button
           variant="outline"
           size="sm"
-          className="h-11 sm:h-9 px-4 cursor-pointer touch-manipulation"
+          className="h-11 md:h-9 min-h-11 md:min-h-9 w-fit px-4 cursor-pointer touch-manipulation"
           onClick={() => void query.retry()}
         >
           Try again
@@ -230,7 +242,7 @@ export function SubmissionCommentThread({
   return (
     <section aria-label="Worksheet notes" className="flex min-h-0 flex-1 flex-col">
       {hasSubHeaderContent ? (
-        <div className="flex flex-col gap-2 border-b border-border px-4 py-3">
+        <div className="flex shrink-0 flex-col gap-2 border-b border-border px-4 py-2 sm:py-3">
           {!compactHeader && (
             <>
               <div className="flex flex-wrap items-baseline gap-2 min-w-0">
@@ -290,7 +302,7 @@ export function SubmissionCommentThread({
                       variant="outline"
                       onClick={worksheetContext.onViewWorksheet}
                       aria-label="View worksheet"
-                      className="h-10 sm:h-8 min-h-10 sm:min-h-8 px-3 sm:px-2.5 text-xs gap-1.5 cursor-pointer touch-manipulation"
+                      className="h-11 md:h-8 min-h-11 md:min-h-8 px-3 md:px-2.5 text-xs gap-1.5 cursor-pointer touch-manipulation"
                     >
                       <Eye className="size-3.5 shrink-0" aria-hidden="true" data-icon="inline-start" />
                       <span className="min-[360px]:hidden">View</span>
@@ -305,7 +317,7 @@ export function SubmissionCommentThread({
                       variant="default"
                       onClick={worksheetContext.onSendNewPhoto}
                       aria-label="Send new photo"
-                      className="h-10 sm:h-8 min-h-10 sm:min-h-8 px-3 sm:px-2.5 text-xs gap-1.5 cursor-pointer touch-manipulation"
+                      className="h-11 md:h-8 min-h-11 md:min-h-8 px-3 md:px-2.5 text-xs gap-1.5 cursor-pointer touch-manipulation"
                     >
                       <Camera className="size-3.5 shrink-0" aria-hidden="true" data-icon="inline-start" />
                       <span className="min-[360px]:hidden">Photo</span>
@@ -322,7 +334,7 @@ export function SubmissionCommentThread({
             <Button
               size="sm"
               variant="outline"
-              className="h-11 sm:h-9 px-3 cursor-pointer touch-manipulation"
+              className="h-11 md:h-9 min-h-11 md:min-h-9 px-3 cursor-pointer touch-manipulation"
               disabled={actions.setLocked.isPending}
               onClick={() => {
                 setFeedback(null);
@@ -343,7 +355,7 @@ export function SubmissionCommentThread({
       ) : null}
 
       {(feedback || query.loadMoreError) && (
-        <div className="border-b px-4 py-3" role="alert">
+        <div className="shrink-0 border-b px-4 py-3">
           <Alert variant="destructive" className="py-3">
             <AlertCircle className="size-4" aria-hidden="true" />
             <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
@@ -351,7 +363,7 @@ export function SubmissionCommentThread({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-10 sm:h-8 min-h-10 sm:min-h-8 px-3 cursor-pointer touch-manipulation"
+                className="h-11 md:h-8 min-h-11 md:min-h-8 px-3 cursor-pointer touch-manipulation"
                 onClick={() => {
                   attempted.current.clear();
                   setFeedback(null);
@@ -366,11 +378,8 @@ export function SubmissionCommentThread({
       )}
 
       <MessageScrollerProvider autoScroll defaultScrollPosition="end">
-        <MessageScroller className="min-h-0 flex-1">
+        <MessageScroller className="min-h-28 flex-1">
           <MessageScrollerViewport
-            role="log"
-            aria-live="polite"
-            aria-relevant="additions"
             aria-label="Worksheet notes history"
             preserveScrollOnPrepend
           >
@@ -380,7 +389,7 @@ export function SubmissionCommentThread({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-10 sm:h-8 min-h-10 sm:min-h-8 px-3.5 text-xs cursor-pointer touch-manipulation"
+                    className="h-11 md:h-8 min-h-11 md:min-h-8 px-3.5 text-xs cursor-pointer touch-manipulation"
                     disabled={query.isLoadingMore || query.isFetching}
                     onClick={query.loadMore}
                   >
@@ -425,7 +434,7 @@ export function SubmissionCommentThread({
           <MessageScrollerButton
             direction="end"
             size="sm"
-            className="h-10 sm:h-8 w-auto rounded-full px-3.5 shadow-warm-sm"
+            className="h-11 md:h-8 min-h-11 md:min-h-8 w-auto rounded-full px-3.5 shadow-warm-sm touch-manipulation"
           >
             Jump to latest
           </MessageScrollerButton>
