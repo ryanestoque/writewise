@@ -69,15 +69,15 @@ class TestCriterionScores:
         assert scores.to_dict()["composite_score"] == 80.0
         assert "composite_score" not in scores.to_db_dict()
 
-    def test_partial_scores_composite_is_none(self):
+    def test_partial_scores_composite_averages_present_criteria(self):
         scores = CriterionScores(
             letter_formation_score=80.0,
-            size_consistency_score=80.0,
+            size_consistency_score=90.0,
             spacing_score=None,
-            slant_score=80.0,
+            slant_score=70.0,
             baseline_alignment_score=80.0,
         )
-        assert scores.composite_score is None
+        assert scores.composite_score == 80.0
 
 
 class TestManualScoreProvider:
@@ -119,7 +119,50 @@ class TestCalibratedScoreProvider:
     def test_unmeasurable_slant_is_not_scored_as_upright_or_ideal(self, aggregate):
         scores = CalibratedScoreProvider().compute_scores(aggregate, 80)
         assert scores.slant_score is None
-        assert scores.composite_score is None
+        assert scores.composite_score is not None
+
+    @pytest.mark.parametrize(
+        "aggregate",
+        [
+            {"word_spacing": {"mean": None, "std": None}, "slant": {"mean": SLANT_TARGET_DEG}},
+            {"word_spacing_mean": None, "slant_mean": SLANT_TARGET_DEG},
+            AggregateMetrics(
+                slant=MetricSummary(mean=SLANT_TARGET_DEG, std=1.0),
+                word_spacing=MetricSummary(mean=None, std=None),
+                letter_spacing=MetricSummary(mean=0.25, std=0.05),
+                baseline_deviation=MetricSummary(mean=0.0, std=0.01),
+                size_consistency=MetricSummary(mean=SIZE_RATIO_TARGET, std=0.05),
+            ),
+        ],
+    )
+    def test_single_word_unmeasurable_spacing_is_none_and_composite_averages_four(
+        self, aggregate
+    ):
+        scores = CalibratedScoreProvider().compute_scores(aggregate, ml_result=80.0)
+        assert scores.spacing_score is None
+        assert scores.composite_score is not None
+        expected = round(
+            (
+                scores.letter_formation_score
+                + scores.size_consistency_score
+                + scores.slant_score
+                + scores.baseline_alignment_score
+            )
+            / 4.0,
+            2,
+        )
+        assert scores.composite_score == expected
+
+    def test_multi_word_connected_cursive_without_letter_gaps_uses_word_score(self):
+        aggregate = AggregateMetrics(
+            slant=MetricSummary(mean=SLANT_TARGET_DEG, std=1.0),
+            word_spacing=MetricSummary(mean=2.4, std=0.1),
+            letter_spacing=MetricSummary(mean=None, std=None),
+            baseline_deviation=MetricSummary(mean=0.0, std=0.01),
+            size_consistency=MetricSummary(mean=SIZE_RATIO_TARGET, std=0.05),
+        )
+        scores = CalibratedScoreProvider().compute_scores(aggregate, ml_result=80.0)
+        assert scores.spacing_score == 65.0
 
     def test_ideal_measurements_produce_high_scores(self, sample_aggregate, sample_ml_result):
         provider = CalibratedScoreProvider()

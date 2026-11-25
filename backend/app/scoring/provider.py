@@ -66,20 +66,24 @@ class CriterionScores:
 
     @property
     def composite_score(self) -> float | None:
-        """Unweighted arithmetic mean of all 5 criteria, or None if any criterion is None.
+        """Unweighted arithmetic mean of all non-null criteria, or None if all are None.
 
         Mirrors the Postgres stored generated column on public.measurement (DATABASE §8).
         """
-        scores = [
-            self.letter_formation_score,
-            self.size_consistency_score,
-            self.spacing_score,
-            self.slant_score,
-            self.baseline_alignment_score,
+        present = [
+            s
+            for s in (
+                self.letter_formation_score,
+                self.size_consistency_score,
+                self.spacing_score,
+                self.slant_score,
+                self.baseline_alignment_score,
+            )
+            if s is not None
         ]
-        if any(s is None for s in scores):
+        if not present:
             return None
-        return round(sum(scores) / 5.0, 2)
+        return round(sum(present) / len(present), 2)
 
     def to_dict(self) -> dict[str, float | None]:
         """API_SPEC §3.3 scores dictionary containing all 5 criteria + composite_score."""
@@ -225,18 +229,24 @@ class CalibratedScoreProvider(ScoreProvider):
             else None
         )
 
-        # 2. Spacing score: combination of word spacing and letter spacing consistency
+        # 2. Spacing score: requires inter-word gaps; single-word samples are N/A (None)
         word_spacing_mean = self._extract_metric(
-            aggregate, "word_spacing", "mean", default=WORD_GAP_TARGET_RATIO
+            aggregate, "word_spacing", "mean", default=math.nan
         )
         letter_spacing_mean = self._extract_metric(
-            aggregate, "letter_spacing", "mean", default=LETTER_GAP_TARGET_RATIO
+            aggregate, "letter_spacing", "mean", default=math.nan
         )
-        word_gap_dev = abs(word_spacing_mean - WORD_GAP_TARGET_RATIO)
-        letter_gap_dev = abs(letter_spacing_mean - LETTER_GAP_TARGET_RATIO)
-        word_score = _clamp(100.0 - word_gap_dev * WORD_GAP_PENALTY_FACTOR)
-        letter_score = _clamp(100.0 - letter_gap_dev * LETTER_GAP_PENALTY_FACTOR)
-        spacing_score = _clamp(0.6 * word_score + 0.4 * letter_score)
+        if not math.isfinite(word_spacing_mean):
+            spacing_score = None
+        else:
+            word_gap_dev = abs(word_spacing_mean - WORD_GAP_TARGET_RATIO)
+            word_score = _clamp(100.0 - word_gap_dev * WORD_GAP_PENALTY_FACTOR)
+            if math.isfinite(letter_spacing_mean):
+                letter_gap_dev = abs(letter_spacing_mean - LETTER_GAP_TARGET_RATIO)
+                letter_score = _clamp(100.0 - letter_gap_dev * LETTER_GAP_PENALTY_FACTOR)
+                spacing_score = _clamp(0.6 * word_score + 0.4 * letter_score)
+            else:
+                spacing_score = word_score
 
         # 3. Baseline alignment score: penalty for vertical deviation from detected baseline
         baseline_dev_mean = self._extract_metric(
