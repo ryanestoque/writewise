@@ -17,7 +17,7 @@ export interface ManualScore {
   letter_formation_score?: number | null;
   size_consistency_band: ScoreBand;
   size_consistency_score?: number | null;
-  spacing_band: ScoreBand;
+  spacing_band: ScoreBand | null;
   spacing_score?: number | null;
   slant_band: ScoreBand;
   slant_score?: number | null;
@@ -28,7 +28,7 @@ export interface ManualScore {
 export interface ManualScorePayload {
   letter_formation_band: ScoreBand;
   size_consistency_band: ScoreBand;
-  spacing_band: ScoreBand;
+  spacing_band: ScoreBand | null;
   slant_band: ScoreBand;
   baseline_alignment_band: ScoreBand;
 }

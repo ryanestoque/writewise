@@ -214,7 +214,7 @@ export function SubmissionDetailContent({
     async (scores: {
       letter_formation_band: ScoreBand;
       size_consistency_band: ScoreBand;
-      spacing_band: ScoreBand;
+      spacing_band: ScoreBand | null;
       slant_band: ScoreBand;
       baseline_alignment_band: ScoreBand;
     }) => {
@@ -307,7 +307,9 @@ export function SubmissionDetailContent({
   }, []);
 
   const recordedComposite = useMemo(() => {
-    return calculateCompositeRubric(submission.manual_score);
+    return calculateCompositeRubric(submission.manual_score, {
+      nullSpacingIsNotApplicable: true,
+    });
   }, [submission.manual_score]);
 
   const handleScroll = useCallback(() => {
@@ -707,6 +709,24 @@ export function SubmissionDetailContent({
       studentId: submission.student_id,
     });
   };
+
+  const spacingNotApplicableReason = useMemo(() => {
+    const reason = diagnosticOverlay?.spacing?.not_applicable_reason;
+    if (reason) return reason;
+    if (
+      (hasCalibratedScores && measurement?.spacing_score == null) ||
+      (submission.manual_score && submission.manual_score.spacing_band == null) ||
+      (measurement && measurement.word_spacing_mean == null && measurement.raw_output != null)
+    ) {
+      return "Single-word sample — no word spacing to evaluate";
+    }
+    return null;
+  }, [
+    diagnosticOverlay?.spacing?.not_applicable_reason,
+    hasCalibratedScores,
+    measurement,
+    submission.manual_score,
+  ]);
 
   const activeCriterionInfo = selectedCriterion
     ? CRITERIA_GUIDE[selectedCriterion]
@@ -1273,7 +1293,13 @@ export function SubmissionDetailContent({
                                 {/* Phase 2: 5 Criteria breakdown */}
                                 <div className="space-y-1.5 sm:space-y-2">
                                   {criteria.map((c) => {
-                                    const band = getScoreBandLabel(c.score);
+                                    const isCriterionNA = c.score === null || c.score === undefined;
+                                    const band = isCriterionNA
+                                      ? {
+                                          band: "N/A",
+                                          className: "bg-muted/60 text-muted-foreground border-border",
+                                        }
+                                      : getScoreBandLabel(c.score);
                                     const isSelected = selectedCriterion === c.name;
                                     const inlineId = `phase2-criterion-guide-inline-${c.name.toLowerCase().replace(/\s+/g, "-")}`;
                                     return (
@@ -1289,10 +1315,10 @@ export function SubmissionDetailContent({
                                                 : inlineId
                                               : undefined
                                           }
-                                          aria-label={`${c.name}: ${c.score !== null && c.score !== undefined
-                                            ? `${Math.round(c.score)}%`
-                                            : "Unrated"
-                                            } (${band.band}). Tap to focus coaching tip.`}
+                                          aria-label={`${c.name}: ${!isCriterionNA
+                                            ? `${Math.round(c.score!)}% (${band.band})`
+                                            : "Not applicable"
+                                            }. Tap to focus coaching tip.`}
                                           className={`w-full flex items-center justify-between px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border transition-all text-xs sm:text-sm text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] sm:min-h-0 touch-manipulation ${isSelected
                                             ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/30"
                                             : "bg-surface dark:bg-card border-border/70 hover:border-border hover:bg-muted/30"
@@ -1342,6 +1368,11 @@ export function SubmissionDetailContent({
                                             aria-label={`${c.name} coaching tip`}
                                             className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-[11px] space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none"
                                           >
+                                            {c.name === "Spacing" && spacingNotApplicableReason && (
+                                              <p className="text-muted-foreground font-medium leading-snug">
+                                                {spacingNotApplicableReason}
+                                              </p>
+                                            )}
                                             <p className="text-foreground/85 leading-snug">
                                               <strong className="font-semibold text-brand-900 dark:text-brand-200">{c.name}:</strong>{" "}
                                               {activeCriterionInfo.rubricGoal}
@@ -1387,7 +1418,7 @@ export function SubmissionDetailContent({
                                                   />
                                                   <span>
                                                     {recordedComposite.isComplete
-                                                      ? `${recordedComposite.totalPoints}/20 pts (${recordedComposite.avgPercentage}%) • ${recordedComposite.overallBandMeta.label}`
+                                                      ? `${recordedComposite.totalPoints}/${recordedComposite.maxPoints} pts (${recordedComposite.avgPercentage}%) • ${recordedComposite.overallBandMeta.label}`
                                                       : `${recordedComposite.totalPoints}/${recordedComposite.maxPoints} pts`}
                                                   </span>
                                                 </Badge>
@@ -1413,7 +1444,15 @@ export function SubmissionDetailContent({
                                             {RUBRIC_CRITERIA.map((criterion) => {
                                               const bandValue =
                                                 submission.manual_score?.[criterion.key];
-                                              const bandMeta = getBandMeta(bandValue);
+                                              const bandMeta =
+                                                criterion.key === "spacing_band" && bandValue == null
+                                                  ? {
+                                                      label: "N/A",
+                                                      badgeClass:
+                                                        "bg-muted/60 text-muted-foreground border-border",
+                                                      dotColor: "bg-muted-foreground",
+                                                    }
+                                                  : getBandMeta(bandValue);
                                               const isSelected =
                                                 selectedCriterion === criterion.shortName;
                                               const attentionCount =
@@ -1497,6 +1536,11 @@ export function SubmissionDetailContent({
                                                       aria-label={`${criterion.shortName} coaching tip`}
                                                       className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-[11px] space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none"
                                                     >
+                                                      {criterion.key === "spacing_band" && spacingNotApplicableReason && (
+                                                        <p className="text-muted-foreground font-medium leading-snug">
+                                                          {spacingNotApplicableReason}
+                                                        </p>
+                                                      )}
                                                       <p className="text-foreground/85 leading-snug">
                                                         <strong className="font-semibold text-brand-900 dark:text-brand-200">{criterion.shortName}:</strong>{" "}
                                                         {activeCriterionInfo.rubricGoal}
@@ -1572,6 +1616,11 @@ export function SubmissionDetailContent({
                                 id="criterion-diagnostic-guide"
                                 className="hidden lg:block p-3 sm:p-3.5 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1.5 text-xs sm:text-sm animate-in fade-in-50 duration-200 motion-reduce:animate-none"
                               >
+                                {selectedCriterion === "Spacing" && spacingNotApplicableReason && (
+                                  <p className="text-muted-foreground font-medium leading-relaxed">
+                                    {spacingNotApplicableReason}
+                                  </p>
+                                )}
                                 <p className="text-foreground/85 leading-relaxed">
                                   <strong className="font-semibold text-brand-900 dark:text-brand-200">
                                     {selectedCriterion}:

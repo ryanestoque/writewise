@@ -42,6 +42,7 @@ export interface SpacingAnnotation {
 
 export interface SpacingOverlay {
   annotations: SpacingAnnotation[];
+  not_applicable_reason?: string | null;
 }
 
 export interface SizeAnnotation {

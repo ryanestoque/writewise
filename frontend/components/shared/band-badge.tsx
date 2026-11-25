@@ -5,6 +5,7 @@ import { getBandMeta, getBandFromScore, type ScoreBand } from "@/lib/utils/scori
 interface BandBadgeProps {
   band?: ScoreBand | null;
   score?: number | null;
+  notApplicable?: boolean;
   size?: "sm" | "default";
   showDot?: boolean;
   className?: string;
@@ -13,13 +14,20 @@ interface BandBadgeProps {
 export function BandBadge({
   band,
   score,
+  notApplicable = false,
   size = "default",
   showDot = true,
   className,
 }: BandBadgeProps) {
   const resolvedBand =
     band ?? (score !== undefined && score !== null ? getBandFromScore(score) : null);
-  const meta = getBandMeta(resolvedBand);
+  const meta = notApplicable
+    ? {
+        label: "N/A",
+        badgeClass: "bg-muted/60 text-muted-foreground border-border",
+        dotColor: "bg-muted-foreground",
+      }
+    : getBandMeta(resolvedBand);
 
   return (
     <Badge

@@ -43,7 +43,12 @@ export function CriterionFeedbackRow({
 }: CriterionFeedbackRowProps) {
   const meta = PARENT_CRITERIA_METADATA[criterionKey];
   const displayLabel = label || meta?.label || criterionKey;
-  const diagnosticNote = band ? DIAGNOSTIC_NOTES[criterionKey][band] : null;
+  const isNotApplicable = score == null && band == null;
+  const diagnosticNote = band
+    ? DIAGNOSTIC_NOTES[criterionKey][band]
+    : isNotApplicable && criterionKey === "spacing"
+      ? "Not evaluated on a single-word sample because there are no spaces between words."
+      : null;
   const hasDetails = Boolean(diagnosticNote || homePracticeTip);
   const isExpanded = Boolean(showDiagnosticNote && hasDetails);
 
@@ -66,7 +71,7 @@ export function CriterionFeedbackRow({
       </div>
 
       <div className="shrink-0 flex items-center gap-2">
-        <BandBadge band={band} score={score} size="sm" showDot />
+        <BandBadge band={band} score={score} notApplicable={isNotApplicable} size="sm" showDot />
         {score != null && (
           <span className="text-xs font-semibold font-sans tabular-nums text-muted-foreground">
             {Math.round(score)}%
