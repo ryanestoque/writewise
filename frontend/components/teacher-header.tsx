@@ -57,12 +57,12 @@ export function TeacherHeader({ userId }: { userId: string }) {
 
   return (
     <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between gap-2 border-b bg-background/95 backdrop-blur-xs px-4 sm:px-6">
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-center gap-2 min-w-0 flex-1">
         <Tooltip>
           <TooltipTrigger
             render={
               <SidebarTrigger
-                className="-ml-1 size-10 text-muted-foreground hover:text-foreground md:size-9"
+                className="-ml-1 size-10 text-muted-foreground hover:text-foreground md:size-9 shrink-0"
                 id="sidebar-toggle"
                 aria-controls="teacher-sidebar"
                 aria-keyshortcuts="Control+B Meta+B"
@@ -76,45 +76,38 @@ export function TeacherHeader({ userId }: { userId: string }) {
           </TooltipContent>
         </Tooltip>
 
-        <Breadcrumb className="truncate">
-          <BreadcrumbList>
-            <BreadcrumbItem className="hidden sm:inline-flex">
+        <Breadcrumb className="min-w-0">
+          <BreadcrumbList className="flex-nowrap">
+            <BreadcrumbItem className="hidden sm:inline-flex shrink-0">
               <BreadcrumbLink
                 render={<Link href="/dashboard" />}
-                className="text-xs"
+                className="text-xs whitespace-nowrap"
               >
                 WriteWise
               </BreadcrumbLink>
             </BreadcrumbItem>
-            <BreadcrumbSeparator className="hidden sm:inline-flex" />
+            <BreadcrumbSeparator className="hidden sm:inline-flex shrink-0" />
 
             {isSubRoute ? (
               <>
-                <BreadcrumbItem>
+                <BreadcrumbItem className="hidden sm:inline-flex shrink-0">
                   <BreadcrumbLink
                     render={<Link href={`/${primarySegment}`} />}
-                    className="text-xs truncate max-w-[110px] sm:max-w-none"
+                    className="text-xs whitespace-nowrap"
                   >
-                    {primarySegment === "activities" && segments.length === 2 ? (
-                      <>
-                        <span className="sm:hidden">Activities</span>
-                        <span className="hidden sm:inline">{primaryTitle}</span>
-                      </>
-                    ) : (
-                      primaryTitle
-                    )}
+                    {primaryTitle}
                   </BreadcrumbLink>
                 </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage className="text-xs font-medium truncate max-w-[130px] sm:max-w-[240px]">
+                <BreadcrumbSeparator className="hidden sm:inline-flex shrink-0" />
+                <BreadcrumbItem className="min-w-0">
+                  <BreadcrumbPage className="text-sm font-medium sm:text-xs truncate">
                     {subTitle}
                   </BreadcrumbPage>
                 </BreadcrumbItem>
               </>
             ) : (
-              <BreadcrumbItem>
-                <BreadcrumbPage className="text-xs font-medium">
+              <BreadcrumbItem className="min-w-0">
+                <BreadcrumbPage className="text-sm font-medium sm:text-xs truncate">
                   {primaryTitle}
                 </BreadcrumbPage>
               </BreadcrumbItem>
