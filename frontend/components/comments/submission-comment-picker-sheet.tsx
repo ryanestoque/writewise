@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -70,23 +70,24 @@ export function WorkCommentsButton({
     ? "Message your child's teacher about this worksheet."
     : "Private conversation about this worksheet upload.";
 
-  const wrappedContext: CommentWorksheetContext | undefined = worksheetContext
-    ? {
-        ...worksheetContext,
-        onViewWorksheet: worksheetContext.onViewWorksheet
-          ? () => {
-              setOpen(false);
-              worksheetContext.onViewWorksheet?.();
-            }
-          : undefined,
-        onSendNewPhoto: worksheetContext.onSendNewPhoto
-          ? () => {
-              setOpen(false);
-              worksheetContext.onSendNewPhoto?.();
-            }
-          : undefined,
-      }
-    : undefined;
+  const wrappedContext = useMemo<CommentWorksheetContext | undefined>(() => {
+    if (!worksheetContext) return undefined;
+    return {
+      ...worksheetContext,
+      onViewWorksheet: worksheetContext.onViewWorksheet
+        ? () => {
+            setOpen(false);
+            worksheetContext.onViewWorksheet?.();
+          }
+        : undefined,
+      onSendNewPhoto: worksheetContext.onSendNewPhoto
+        ? () => {
+            setOpen(false);
+            worksheetContext.onSendNewPhoto?.();
+          }
+        : undefined,
+    };
+  }, [worksheetContext, setOpen]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -113,7 +114,7 @@ export function WorkCommentsButton({
           {hasUnread && (
             <Badge
               variant="secondary"
-              className="rounded-full bg-primary/15 px-1.5 sm:px-2 text-[11px] sm:text-xs font-semibold text-primary shrink-0"
+              className="rounded-full bg-primary/15 px-1.5 sm:px-2 text-xs font-semibold text-primary shrink-0"
             >
               Unread
             </Badge>
@@ -121,8 +122,10 @@ export function WorkCommentsButton({
         </SheetTrigger>
       )}
       <SheetContent className="w-full sm:max-w-lg">
-        <SheetHeader className="shrink-0 px-4 pt-3.5 pb-2 sm:pt-4 sm:pb-2.5 pr-14">
-          <SheetTitle className="truncate">{sheetTitle}</SheetTitle>
+        <SheetHeader className="shrink-0 px-4 pt-4 pb-2 pr-14">
+          <SheetTitle className="line-clamp-2" title={sheetTitle}>
+            {sheetTitle}
+          </SheetTitle>
           <SheetDescription className="sr-only">{sheetDescription}</SheetDescription>
         </SheetHeader>
         {open && (

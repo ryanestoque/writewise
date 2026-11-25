@@ -86,7 +86,7 @@ export function SubmissionCommentTabs({
               {hasUnread && (
                 <Badge
                   variant="secondary"
-                  className="h-auto rounded-full bg-primary/15 px-2 py-0.5 font-semibold text-primary text-[11px]"
+                  className="h-auto rounded-full bg-primary/15 px-2 py-0.5 font-semibold text-primary text-xs"
                 >
                   Unread
                 </Badge>

@@ -42,8 +42,10 @@ export function SubmissionCommentThreadSheet({
   return (
     <Sheet open={open && !!target} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-lg">
-        <SheetHeader className="shrink-0 px-4 pt-3.5 pb-2 sm:pt-4 sm:pb-2.5 pr-14">
-          <SheetTitle className="truncate">{title}</SheetTitle>
+        <SheetHeader className="shrink-0 px-4 pt-4 pb-2 pr-14">
+          <SheetTitle className="line-clamp-2" title={title}>
+            {title}
+          </SheetTitle>
           <SheetDescription className="sr-only">{description}</SheetDescription>
         </SheetHeader>
         {open && target && (

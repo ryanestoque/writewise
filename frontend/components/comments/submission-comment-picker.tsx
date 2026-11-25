@@ -28,6 +28,13 @@ const UPLOAD_TIME_FORMAT = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
 });
 
+const UPLOAD_STATUS_LABELS = {
+  processing: "Analyzing",
+  rejected: "Needs new photo",
+  completed: "Uploaded",
+  returned: "Returned",
+} as const;
+
 export function SubmissionCommentPicker({
   userId,
   scope,
@@ -53,7 +60,7 @@ export function SubmissionCommentPicker({
     return (
       <div className="p-4" role="status">
         <Alert>
-          <AlertCircle className="size-4" />
+          <AlertCircle className="size-4" aria-hidden="true" />
           <AlertTitle>Sign-in required</AlertTitle>
           <AlertDescription>Sign in again to view notes.</AlertDescription>
         </Alert>
@@ -63,7 +70,7 @@ export function SubmissionCommentPicker({
     return (
       <div role="alert" className="flex flex-col gap-3 p-4">
         <Alert variant="destructive">
-          <AlertCircle className="size-4" />
+          <AlertCircle className="size-4" aria-hidden="true" />
           <AlertTitle>Could not load worksheet uploads</AlertTitle>
           <AlertDescription>Unable to retrieve upload attempts for this worksheet.</AlertDescription>
         </Alert>
@@ -134,16 +141,32 @@ function LoadedPicker({
       </Empty>
     );
 
-  const formatUploadLabel = (row: CommentAttempt, index: number) => {
+  const renderUploadSummary = (row: CommentAttempt, index: number, multiline = false) => {
     const timestamp = UPLOAD_TIME_FORMAT.format(new Date(row.submitted_at));
-    const statusLabel = {
-      processing: "Analyzing",
-      rejected: "Needs a new photo",
-      completed: "Uploaded",
-      returned: "Returned",
-    }[row.submission_status];
-    const unreadLabel = unread.data?.has(row.submission_id) ? " · Unread" : "";
-    return `Upload ${rows.length - index} · ${timestamp} · ${statusLabel}${unreadLabel}`;
+    const statusLabel = UPLOAD_STATUS_LABELS[row.submission_status];
+    const isUnread = Boolean(unread.data?.has(row.submission_id));
+    return (
+      <span
+        className={
+          multiline
+            ? "flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-1"
+            : "flex min-w-0 flex-1 items-center justify-between gap-2"
+        }
+      >
+        <span className={multiline ? undefined : "truncate"}>
+          {`Upload ${rows.length - index} · ${timestamp}`}
+        </span>
+        <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <span>{statusLabel}</span>
+          {isUnread && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-xs font-semibold text-primary">
+              <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />
+              Unread
+            </span>
+          )}
+        </span>
+      </span>
+    );
   };
 
   const handleUploadChange = (nextSubmissionId: string) => {
@@ -159,7 +182,7 @@ function LoadedPicker({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {rows.length > 1 && (
-        <Field className="shrink-0 px-4 pt-1 pb-2.5">
+        <Field className="shrink-0 px-4 pt-1 pb-3">
           <FieldLabel htmlFor={id}>Worksheet upload</FieldLabel>
           <Select
             value={selected?.submission_id ?? ""}
@@ -172,7 +195,7 @@ function LoadedPicker({
               className="h-11 sm:h-9 w-full bg-card border-border font-sans tabular-nums cursor-pointer touch-manipulation"
             >
               <SelectValue placeholder="Choose an upload">
-                {selected ? formatUploadLabel(selected, selectedIndex) : undefined}
+                {selected ? renderUploadSummary(selected, selectedIndex) : undefined}
               </SelectValue>
             </SelectTrigger>
             <SelectContent align="start">
@@ -183,7 +206,7 @@ function LoadedPicker({
                     value={row.submission_id}
                     className="font-sans tabular-nums cursor-pointer"
                   >
-                    {formatUploadLabel(row, index)}
+                    {renderUploadSummary(row, index, true)}
                   </SelectItem>
                 ))}
               </SelectGroup>
@@ -191,7 +214,7 @@ function LoadedPicker({
           </Select>
           {pendingSwitchId && (
             <Alert className="mt-2 bg-secondary/45">
-              <AlertCircle />
+              <AlertCircle aria-hidden="true" />
               <AlertTitle>
                 You have an unsent note on this upload. Keep editing or switch uploads anyway?
               </AlertTitle>

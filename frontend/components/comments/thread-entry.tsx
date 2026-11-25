@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Message, MessageContent, MessageFooter, MessageHeader } from "@/components/ui/message";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Marker, MarkerContent } from "@/components/ui/marker";
 import { Button } from "@/components/ui/button";
-import { commentFeedback } from "@/lib/comments/presentation";
+import { commentFeedback, formatTeacherLabel } from "@/lib/comments/presentation";
 import type { ThreadEntry } from "@/lib/comments/types";
 
 const REASONS = {
@@ -24,7 +24,7 @@ const ENTRY_TIME_FORMAT = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
 });
 
-export function ThreadEntryView({
+export const ThreadEntryView = memo(function ThreadEntryView({
   entry,
   onDelete,
   deleting = false,
@@ -39,6 +39,19 @@ export function ThreadEntryView({
 }) {
   const [confirm, setConfirm] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
+  const keepButtonRef = useRef<HTMLButtonElement>(null);
+  const wasConfirmingRef = useRef(false);
+
+  useEffect(() => {
+    if (confirm && !wasConfirmingRef.current) {
+      keepButtonRef.current?.focus();
+    } else if (!confirm && wasConfirmingRef.current) {
+      deleteButtonRef.current?.focus();
+    }
+    wasConfirmingRef.current = confirm;
+  }, [confirm]);
+
   const time = (
     <time dateTime={entry.event_at} className="font-sans tabular-nums">
       {ENTRY_TIME_FORMAT.format(new Date(entry.event_at))}
@@ -63,7 +76,7 @@ export function ThreadEntryView({
   const authorLabel = entry.is_mine
     ? "You"
     : entry.author_role === "teacher"
-      ? (teacherName ?? "Teacher")
+      ? formatTeacherLabel(teacherName)
       : actorRole === "parent"
         ? "Co-parent / Guardian"
         : "Parent";
@@ -88,6 +101,7 @@ export function ThreadEntryView({
           {time}
           {entry.is_mine && !entry.deleted_at && !confirm && (
             <Button
+              ref={deleteButtonRef}
               size="xs"
               variant="ghost"
               className="h-10 sm:h-7 min-h-10 sm:min-h-7 px-2.5 cursor-pointer touch-manipulation"
@@ -129,6 +143,7 @@ export function ThreadEntryView({
                   {deleting ? "Deleting…" : "Delete note"}
                 </Button>
                 <Button
+                  ref={keepButtonRef}
                   size="sm"
                   variant="outline"
                   className="h-11 sm:h-8 min-h-11 sm:min-h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
@@ -147,4 +162,4 @@ export function ThreadEntryView({
       </MessageContent>
     </Message>
   );
-}
+});

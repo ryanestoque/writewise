@@ -144,10 +144,10 @@
 }
 
 .dark {
-  /* Dark mode placeholders */
+  /* Dark mode surface hierarchy */
   --background: #1e2422;
   --foreground: #f7f8f7;
-  --surface: #2a3330;
+  --surface: #252d2a;
   --card: #2a3330;
   --card-foreground: #f7f8f7;
   --popover: #2a3330;
@@ -160,7 +160,7 @@
   --secondary: #145049;
   --secondary-foreground: #e4f1ef;
 
-  --muted: #2a3330;
+  --muted: #343f3b;
   --muted-foreground: #e3e6e4;
 
   --accent: #145049;

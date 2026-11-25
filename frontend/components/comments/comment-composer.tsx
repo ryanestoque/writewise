@@ -45,9 +45,17 @@ export function CommentComposer({
     setCommentDraft(draftKey, next);
   };
 
+  const errorIds = [
+    `${id}-count`,
+    overLimit ? `${id}-limit-error` : null,
+    error ? `${id}-error` : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <form
-      className="bg-card shrink-0 px-4 py-3 sm:py-4"
+      className="bg-card shrink-0 border-t border-border px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:py-4"
       onSubmit={async (event) => {
         event.preventDefault();
         if (!valid || disabled || pending || busy) return;
@@ -75,7 +83,7 @@ export function CommentComposer({
           value={draft}
           rows={3}
           disabled={disabled || pending || busy}
-          aria-describedby={error ? `${id}-count ${id}-error` : `${id}-count`}
+          aria-describedby={errorIds}
           aria-invalid={overLimit || undefined}
           aria-keyshortcuts="Control+Enter Meta+Enter"
           placeholder="Write a note or question…"
@@ -90,7 +98,7 @@ export function CommentComposer({
         <div className="flex items-center justify-between gap-3">
           <FieldDescription
             id={`${id}-count`}
-            className={cn("font-sans tabular-nums", overLimit && "text-destructive")}
+            className={cn("font-sans tabular-nums", overLimit && "text-destructive font-medium")}
           >
             {displayCount}/1000 characters
           </FieldDescription>
@@ -103,8 +111,13 @@ export function CommentComposer({
             {pending || busy ? "Sending…" : "Send note"}
           </Button>
         </div>
+        {overLimit ? (
+          <p id={`${id}-limit-error`} role="status" aria-live="polite" className="text-destructive text-xs sm:text-sm">
+            Shorten your note to 1,000 characters or fewer.
+          </p>
+        ) : null}
         {error ? (
-          <p id={`${id}-error`} role="alert" className="text-destructive text-sm">
+          <p id={`${id}-error`} role="alert" className="text-destructive text-xs sm:text-sm">
             {error}
           </p>
         ) : null}

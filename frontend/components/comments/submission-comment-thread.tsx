@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Camera, Eye } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertCircle, Camera, Eye, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import {
   MessageScrollerProvider,
   MessageScroller,
@@ -16,7 +17,7 @@ import { useCommentActions, useCommentThread } from "@/lib/hooks/use-comments";
 import { useNotificationRead } from "@/lib/hooks/use-notifications";
 import { canAcknowledge } from "@/lib/comments/data";
 import { buildCommentDraftKey } from "@/lib/comments/drafts";
-import { commentFeedback } from "@/lib/comments/presentation";
+import { commentFeedback, formatTeacherLabel } from "@/lib/comments/presentation";
 import type { CommentLocation, CommentWorksheetContext, ThreadTarget } from "@/lib/comments/types";
 import { matchesCommentLocation } from "@/lib/comments/selection";
 import { ApiError } from "@/lib/utils/api-error";
@@ -24,7 +25,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatDate, getRelativeTime, normalizeActivityPrompt } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
-import { AlertCircle } from "lucide-react";
 import { CommentComposer } from "./comment-composer";
 import { ThreadEntryView } from "./thread-entry";
 
@@ -78,19 +78,20 @@ export function SubmissionCommentThread({
   const resetPost = actions.post.reset;
   const resetDelete = actions.deleteComment.reset;
   const resetLock = actions.setLocked.reset;
+  const deleteCommentMutateAsync = actions.deleteComment.mutateAsync;
 
-  if (
-    open &&
-    thread &&
-    matchesLocation &&
-    thread.unread_notice &&
-    unreadBoundary?.submissionId !== thread.submission_id
-  ) {
-    setUnreadBoundary({
-      submissionId: thread.submission_id,
-      version: thread.unread_notice.comment_version,
-    });
-  }
+  const chronologicalEntries = useMemo(
+    () => (thread ? [...thread.entries].reverse() : []),
+    [thread]
+  );
+
+  const handleDeleteEntry = useCallback(
+    async (id: string) => {
+      setFeedback(null);
+      await deleteCommentMutateAsync(id);
+    },
+    [deleteCommentMutateAsync]
+  );
 
   useEffect(() => {
     if (query.isError || !query.isAccountActive || !matchesLocation) {
@@ -108,16 +109,23 @@ export function SubmissionCommentThread({
     const key = `${notice.id}:${notice.comment_version}`;
     if (attempted.current.has(key)) return;
     attempted.current.add(key);
-    void markRead({ id: notice.id, expectedCommentVersion: notice.comment_version }).catch(
-      (error) => {
+    const submissionId = thread.submission_id;
+    void markRead({ id: notice.id, expectedCommentVersion: notice.comment_version })
+      .then(() => {
+        setUnreadBoundary((prev) =>
+          prev?.submissionId === submissionId
+            ? prev
+            : { submissionId, version: notice.comment_version }
+        );
+      })
+      .catch((error) => {
         if (error instanceof ApiError && error.code === "COMMENT_READ_CONFLICT") {
           void refetch();
           return;
         }
         if (!(error instanceof Error && error.name === "AbortError"))
           setFeedback("Could not update unread status. Refresh to try again.");
-      }
-    );
+      });
   }, [open, query.isAccountActive, thread, matchesLocation, markRead, refetch]);
 
   if (!open) return null;
@@ -125,7 +133,7 @@ export function SubmissionCommentThread({
     return (
       <div className="p-4" role="status">
         <Alert>
-          <AlertCircle className="size-4" />
+          <AlertCircle className="size-4" aria-hidden="true" />
           <AlertTitle>Conversation unavailable</AlertTitle>
           <AlertDescription>This conversation does not match the selected worksheet.</AlertDescription>
         </Alert>
@@ -135,7 +143,7 @@ export function SubmissionCommentThread({
     return (
       <div className="p-4" role="status">
         <Alert>
-          <AlertCircle className="size-4" />
+          <AlertCircle className="size-4" aria-hidden="true" />
           <AlertTitle>Sign-in required</AlertTitle>
           <AlertDescription>Sign in again to view these notes.</AlertDescription>
         </Alert>
@@ -143,9 +151,9 @@ export function SubmissionCommentThread({
     );
   if (query.isError)
     return (
-      <div className="flex flex-col gap-3 p-4" role="status">
+      <div className="flex flex-col gap-3 p-4" role="alert">
         <Alert variant="destructive">
-          <AlertCircle className="size-4" />
+          <AlertCircle className="size-4" aria-hidden="true" />
           <AlertTitle>Could not load notes</AlertTitle>
           <AlertDescription>
             {query.error instanceof ApiError && query.error.code === "NOT_FOUND"
@@ -189,9 +197,10 @@ export function SubmissionCommentThread({
     Boolean(worksheetContext?.targetText) ||
     showCompactMeta;
 
-  const chronologicalEntries = [...thread.entries].reverse();
   const activeUnreadVersion =
-    unreadBoundary?.submissionId === thread.submission_id ? unreadBoundary.version : null;
+    (unreadBoundary?.submissionId === thread.submission_id ? unreadBoundary.version : null) ??
+    thread.unread_notice?.comment_version ??
+    null;
   const firstUnreadEntryId =
     activeUnreadVersion !== null
       ? chronologicalEntries.find(
@@ -202,27 +211,26 @@ export function SubmissionCommentThread({
         )?.id ?? null
       : null;
 
-  const formattedTeacherName = teacherName?.trim()
-    ? teacherName.trim().toLowerCase().startsWith("teacher")
-      ? teacherName.trim()
-      : `Teacher ${teacherName.trim().split(/\s+/)[0]}`
-    : "Teacher";
+  const formattedTeacherName = formatTeacherLabel(teacherName);
 
   const recipientLabel =
     thread.actor_role === "parent" ? formattedTeacherName : `${studentFirstName}'s family`;
 
-  const emptyMessage = thread.can_post
+  const emptyDescription = thread.can_post
     ? thread.actor_role === "parent"
-      ? `No notes yet. Write a quick note to ${teacherName ?? "your child's teacher"} about this worksheet.`
-      : `No notes yet. Write a quick note to ${studentFirstName}'s family about this worksheet.`
-    : "No notes were added before comments closed.";
+      ? `Write a quick note to ${formattedTeacherName} about this worksheet.`
+      : `Write a quick note to ${studentFirstName}'s family about this worksheet.`
+    : "No notes were added before notes closed.";
 
   const hasSubHeaderContent = !compactHeader || showContextStrip || thread.can_lock || !thread.can_post;
+  const compactPrimaryLabel = worksheetContext?.targetText
+    ? `"${normalizeActivityPrompt(worksheetContext.targetText)}"`
+    : thread.activity_title;
 
   return (
     <section aria-label="Worksheet notes" className="flex min-h-0 flex-1 flex-col">
       {hasSubHeaderContent ? (
-        <div className={cn("border-b px-4 flex flex-col gap-2", compactHeader ? "py-2.5" : "py-3")}>
+        <div className="flex flex-col gap-2 border-b border-border px-4 py-3">
           {!compactHeader && (
             <>
               <div className="flex flex-wrap items-baseline gap-2 min-w-0">
@@ -260,18 +268,21 @@ export function SubmissionCommentThread({
             <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
               <div className="min-w-0 flex-1 flex flex-col gap-0.5">
                 {(showCompactMeta || worksheetContext?.targetText) && (
-                  <p className="text-xs font-medium text-foreground truncate">
-                    {worksheetContext?.targetText
-                      ? `"${normalizeActivityPrompt(worksheetContext.targetText)}"`
-                      : thread.activity_title}
+                  <p
+                    className="text-xs font-medium text-foreground line-clamp-2"
+                    title={compactPrimaryLabel}
+                  >
+                    {compactPrimaryLabel}
                   </p>
                 )}
-                <p className="text-muted-foreground text-xs font-sans tabular-nums truncate">
-                  {formatDate(thread.submitted_at)}
-                </p>
+                {showCompactMeta && (
+                  <p className="text-muted-foreground text-xs font-sans tabular-nums truncate">
+                    {formatDate(thread.submitted_at)}
+                  </p>
+                )}
               </div>
               {(worksheetContext?.onViewWorksheet || canRetakePhoto) && (
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-2 sm:gap-1.5 shrink-0">
                   {worksheetContext?.onViewWorksheet && (
                     <Button
                       type="button"
@@ -279,7 +290,7 @@ export function SubmissionCommentThread({
                       variant="outline"
                       onClick={worksheetContext.onViewWorksheet}
                       aria-label="View worksheet"
-                      className="h-8 min-h-8 px-2 sm:px-2.5 text-xs gap-1 sm:gap-1.5 cursor-pointer touch-manipulation"
+                      className="h-10 sm:h-8 min-h-10 sm:min-h-8 px-3 sm:px-2.5 text-xs gap-1.5 cursor-pointer touch-manipulation"
                     >
                       <Eye className="size-3.5 shrink-0" aria-hidden="true" data-icon="inline-start" />
                       <span className="min-[360px]:hidden">View</span>
@@ -294,7 +305,7 @@ export function SubmissionCommentThread({
                       variant="default"
                       onClick={worksheetContext.onSendNewPhoto}
                       aria-label="Send new photo"
-                      className="h-8 min-h-8 px-2 sm:px-2.5 text-xs gap-1 sm:gap-1.5 cursor-pointer touch-manipulation"
+                      className="h-10 sm:h-8 min-h-10 sm:min-h-8 px-3 sm:px-2.5 text-xs gap-1.5 cursor-pointer touch-manipulation"
                     >
                       <Camera className="size-3.5 shrink-0" aria-hidden="true" data-icon="inline-start" />
                       <span className="min-[360px]:hidden">Photo</span>
@@ -332,15 +343,15 @@ export function SubmissionCommentThread({
       ) : null}
 
       {(feedback || query.loadMoreError) && (
-        <div className="border-b px-4 py-2.5" role="alert">
-          <Alert variant="destructive" className="py-2.5">
-            <AlertCircle className="size-4" />
+        <div className="border-b px-4 py-3" role="alert">
+          <Alert variant="destructive" className="py-3">
+            <AlertCircle className="size-4" aria-hidden="true" />
             <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
               <span>{feedback ?? "Could not load older notes."}</span>
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 px-3 cursor-pointer touch-manipulation"
+                className="h-10 sm:h-8 min-h-10 sm:min-h-8 px-3 cursor-pointer touch-manipulation"
                 onClick={() => {
                   attempted.current.clear();
                   setFeedback(null);
@@ -356,14 +367,20 @@ export function SubmissionCommentThread({
 
       <MessageScrollerProvider autoScroll defaultScrollPosition="end">
         <MessageScroller className="min-h-0 flex-1">
-          <MessageScrollerViewport aria-label="Worksheet notes history" preserveScrollOnPrepend>
+          <MessageScrollerViewport
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions"
+            aria-label="Worksheet notes history"
+            preserveScrollOnPrepend
+          >
             <MessageScrollerContent className="gap-4 p-4">
               {thread.next_cursor && (
                 <div className="flex justify-center">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 px-3.5 text-xs cursor-pointer touch-manipulation"
+                    className="h-10 sm:h-8 min-h-10 sm:min-h-8 px-3.5 text-xs cursor-pointer touch-manipulation"
                     disabled={query.isLoadingMore || query.isFetching}
                     onClick={query.loadMore}
                   >
@@ -373,7 +390,15 @@ export function SubmissionCommentThread({
               )}
 
               {chronologicalEntries.length === 0 && (
-                <p className="text-muted-foreground py-6 text-center text-sm">{emptyMessage}</p>
+                <Empty className="my-auto p-6">
+                  <EmptyMedia variant="icon">
+                    <MessageSquare className="size-5 text-muted-foreground" aria-hidden="true" />
+                  </EmptyMedia>
+                  <EmptyHeader>
+                    <EmptyTitle>No notes yet</EmptyTitle>
+                    <EmptyDescription>{emptyDescription}</EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
               )}
 
               {chronologicalEntries.map((entry) => (
@@ -391,10 +416,7 @@ export function SubmissionCommentThread({
                     actorRole={thread.actor_role}
                     teacherName={teacherName}
                     deleting={actions.deleteComment.isPending}
-                    onDelete={async (id) => {
-                      setFeedback(null);
-                      await actions.deleteComment.mutateAsync(id);
-                    }}
+                    onDelete={handleDeleteEntry}
                   />
                 </MessageScrollerItem>
               ))}
@@ -421,7 +443,7 @@ export function SubmissionCommentThread({
           }}
         />
       ) : (
-        <div className="bg-muted/35 text-muted-foreground shrink-0 border-t px-4 py-3 text-xs sm:text-sm">
+        <div className="bg-muted/35 text-muted-foreground shrink-0 border-t px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:py-3 text-xs sm:text-sm">
           {thread.read_only_reasons.map((reason) => READ_ONLY[reason]).join(" ")}
         </div>
       )}

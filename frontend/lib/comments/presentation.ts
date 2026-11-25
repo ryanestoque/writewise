@@ -1,5 +1,12 @@
 import { ApiError } from "@/lib/utils/api-error";
 
+export function formatTeacherLabel(teacherName?: string): string {
+  const trimmed = teacherName?.trim();
+  if (!trimmed) return "Teacher";
+  if (trimmed.toLowerCase().startsWith("teacher")) return trimmed;
+  return `Teacher ${trimmed.split(/\s+/)[0]}`;
+}
+
 export function commentFeedback(error: unknown): string {
   if (error instanceof ApiError) {
     switch (error.code) {
