@@ -177,3 +177,36 @@ def test_mixed_strokes_are_flagged_even_when_word_means_are_identical():
     assert annotations[0]["severity"] == "needs_attention"
     assert "within-word" in annotations[0]["note"]
     assert annotations[1]["severity"] == "normal"
+
+
+def test_single_word_sets_spacing_not_applicable_reason():
+    raw_output = {
+        "guide_lines": {"baseline_y": [420], "midline_y": [360], "topline_y": [300]},
+        "lines": [
+            {
+                "line_index": 0,
+                "words": [
+                    {
+                        "word_index": 0,
+                        "bbox": [50, 360, 120, 60],
+                        "slant_deg": 12.0,
+                        "baseline_deviation_ratio": 0.02,
+                        "size_ratio": 1.0,
+                        "letter_formation_score": 85.0,
+                    }
+                ],
+                "word_gaps": [],
+                "intra_word_gaps": [0.2],
+            }
+        ],
+    }
+
+    overlay = generate_diagnostic_overlay(raw_output)
+    assert overlay["spacing"]["annotations"] == []
+    assert overlay["spacing"]["not_applicable_reason"] is not None
+    assert "Single-word" in overlay["spacing"]["not_applicable_reason"]
+
+
+def test_multi_word_has_no_spacing_not_applicable_reason():
+    overlay = generate_diagnostic_overlay(make_sample_raw_output())
+    assert overlay["spacing"]["not_applicable_reason"] is None

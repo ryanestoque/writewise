@@ -39,6 +39,7 @@ class SpacingAnnotation(BaseModel):
 
 class SpacingOverlay(BaseModel):
     annotations: list[SpacingAnnotation] = Field(default_factory=list)
+    not_applicable_reason: str | None = None
 
 
 class SizeAnnotation(BaseModel):

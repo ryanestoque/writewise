@@ -55,10 +55,12 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
             "letter_formation": 0,
         }
 
+        total_words = 0
         lines = raw_output.get("lines") or []
         for line in lines:
             line_idx = line.get("line_index", 0)
             words = line.get("words") or []
+            total_words += len(words)
             word_gaps = line.get("word_gaps") or []
 
             # Line-level slant statistics
@@ -217,6 +219,11 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
 
         weakest = max(attention_counts, key=lambda k: attention_counts[k])
         total_attention = sum(attention_counts.values())
+        spacing_not_applicable_reason = (
+            "Single-word sample — no word spacing to evaluate"
+            if total_words > 0 and len(spacing_annotations) == 0
+            else None
+        )
 
         overlay = DiagnosticOverlay(
             summary=OverlaySummary(
@@ -227,7 +234,10 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
                 guide_lines=guide_lines,
                 annotations=baseline_annotations,
             ),
-            spacing=SpacingOverlay(annotations=spacing_annotations),
+            spacing=SpacingOverlay(
+                annotations=spacing_annotations,
+                not_applicable_reason=spacing_not_applicable_reason,
+            ),
             size=SizeOverlay(annotations=size_annotations),
             slant=SlantOverlay(annotations=slant_annotations),
             letter_formation=FormationOverlay(annotations=formation_annotations),
@@ -241,7 +251,7 @@ def generate_diagnostic_overlay(raw_output: dict[str, Any]) -> dict[str, Any]:
                 "guide_lines": {"baseline_y": [], "midline_y": [], "topline_y": []},
                 "annotations": [],
             },
-            "spacing": {"annotations": []},
+            "spacing": {"annotations": [], "not_applicable_reason": None},
             "size": {"annotations": []},
             "slant": {"annotations": []},
             "letter_formation": {"annotations": []},
