@@ -247,6 +247,8 @@ def test_derive_calibration_constants(mock_paired_records):
 
     assert "SLANT_TARGET_DEG" in constants
     assert "SLANT_PENALTY_FACTOR" in constants
+    assert "SLANT_STD_TOLERANCE_DEG" in constants
+    assert "SLANT_STD_PENALTY_FACTOR" in constants
     assert "WORD_GAP_TARGET_RATIO" in constants
     assert "WORD_GAP_PENALTY_FACTOR" in constants
     assert "BASELINE_DEV_PENALTY_FACTOR" in constants
@@ -255,6 +257,8 @@ def test_derive_calibration_constants(mock_paired_records):
 
     # Excellent slant mean in fixture is ~12.7
     assert 11.0 <= constants["SLANT_TARGET_DEG"] <= 15.0
+    # Mean-angle penalty must stay bounded so upright cursive does not collapse to 0%
+    assert 1.0 <= constants["SLANT_PENALTY_FACTOR"] <= 3.5
     # Size ratio target in fixture is ~1.0
     assert 0.9 <= constants["SIZE_RATIO_TARGET"] <= 1.1
 

@@ -50,6 +50,8 @@ RUBRIC_BANDS = [
 DEFAULT_CALIBRATION = {
     "SLANT_TARGET_DEG": 12.5,
     "SLANT_PENALTY_FACTOR": 2.5,
+    "SLANT_STD_TOLERANCE_DEG": 2.0,
+    "SLANT_STD_PENALTY_FACTOR": 4.0,
     "WORD_GAP_TARGET_RATIO": 2.0,
     "WORD_GAP_PENALTY_FACTOR": 35.0,
     "LETTER_GAP_TARGET_RATIO": 0.4,
@@ -297,21 +299,30 @@ def derive_calibration_constants(records: List[Dict[str, Any]]) -> Dict[str, Any
     validate_slant_methods(records)
     constants = dict(DEFAULT_CALIBRATION)
 
-    # 1. Slant
+    # 1. Slant (mean-angle deviation + inter-word consistency)
     slant_stats = compute_band_distribution(records, "slant_mean", "manual_slant_band")
     if slant_stats["Excellent"]["count"] > 0 and slant_stats["Excellent"]["median"] is not None:
         constants["SLANT_TARGET_DEG"] = round(slant_stats["Excellent"]["median"], 2)
 
-    # Slant penalty factor: based on deviation spread from target
+    # Share the 75-point band drop between mean-angle deviation and inter-word consistency,
+    # keeping SLANT_PENALTY_FACTOR bounded so upright cursive (~0°) does not collapse to 0%.
     target_slant = constants["SLANT_TARGET_DEG"]
     exc_slant = slant_stats["Excellent"]["median"]
     ni_slant = slant_stats["Needs Improvement"]["median"]
     if exc_slant is not None and ni_slant is not None:
         delta_dev = abs(ni_slant - target_slant) - abs(exc_slant - target_slant)
         if delta_dev > 1.0:
-            # Score drop is 75 (from ~87.5 to ~12.5)
-            penalty = 75.0 / delta_dev
-            constants["SLANT_PENALTY_FACTOR"] = round(max(1.0, min(10.0, penalty)), 2)
+            penalty = 35.0 / delta_dev
+            constants["SLANT_PENALTY_FACTOR"] = round(max(1.0, min(3.5, penalty)), 2)
+
+    slant_std_stats = compute_band_distribution(records, "slant_std", "manual_slant_band")
+    exc_slant_std = slant_std_stats["Excellent"]["median"]
+    ni_slant_std = slant_std_stats["Needs Improvement"]["median"]
+    if exc_slant_std is not None and ni_slant_std is not None:
+        delta_std = ni_slant_std - exc_slant_std
+        if delta_std > 0.5:
+            std_penalty = 40.0 / delta_std
+            constants["SLANT_STD_PENALTY_FACTOR"] = round(max(2.0, min(6.0, std_penalty)), 2)
 
     # 2. Spacing (Word & Letter)
     word_stats = compute_band_distribution(records, "word_spacing_mean", "manual_spacing_band")
@@ -481,6 +492,8 @@ def generate_markdown_report(analysis_results: Dict[str, Any], output_path: Path
             "```python",
             f"SLANT_TARGET_DEG = {constants.get('SLANT_TARGET_DEG', 12.5)}",
             f"SLANT_PENALTY_FACTOR = {constants.get('SLANT_PENALTY_FACTOR', 2.5)}",
+            f"SLANT_STD_TOLERANCE_DEG = {constants.get('SLANT_STD_TOLERANCE_DEG', 2.0)}",
+            f"SLANT_STD_PENALTY_FACTOR = {constants.get('SLANT_STD_PENALTY_FACTOR', 4.0)}",
             "",
             f"WORD_GAP_TARGET_RATIO = {constants.get('WORD_GAP_TARGET_RATIO', 2.0)}",
             f"WORD_GAP_PENALTY_FACTOR = {constants.get('WORD_GAP_PENALTY_FACTOR', 35.0)}",
@@ -580,6 +593,17 @@ def run_analysis(
                 float(r["manual_slant_score"]) if r.get("manual_slant_score") is not None else None
             ),
             "expected_sign": None,
+        },
+        {
+            "criterion": "Slant (Consistency)",
+            "metric": "slant_std",
+            "x_extractor": lambda r: (
+                float(r["slant_std"]) if r.get("slant_std") is not None else None
+            ),
+            "y_extractor": lambda r: (
+                float(r["manual_slant_score"]) if r.get("manual_slant_score") is not None else None
+            ),
+            "expected_sign": -1,  # Lower inter-word spread = higher score
         },
         {
             "criterion": "Word Spacing",
@@ -687,6 +711,9 @@ def run_analysis(
     # 2. Band distribution breakdowns
     band_distributions = {
         "Slant (slant_mean)": compute_band_distribution(records, "slant_mean", "manual_slant_band"),
+        "Slant Consistency (slant_std)": compute_band_distribution(
+            records, "slant_std", "manual_slant_band"
+        ),
         "Word Spacing (word_spacing_mean)": compute_band_distribution(
             records, "word_spacing_mean", "manual_spacing_band"
         ),

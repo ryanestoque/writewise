@@ -222,6 +222,54 @@ class TestCalibratedScoreProvider:
         assert scores.composite_score is not None
         assert scores.composite_score < 70.0
 
+    def test_upright_consistent_cursive_does_not_collapse_to_zero(self):
+        provider = CalibratedScoreProvider()
+        upright_aggregate = AggregateMetrics(
+            slant=MetricSummary(mean=0.5, std=0.7),
+            word_spacing=MetricSummary(mean=WORD_GAP_TARGET_RATIO, std=0.1),
+            letter_spacing=MetricSummary(mean=LETTER_GAP_TARGET_RATIO, std=0.02),
+            baseline_deviation=MetricSummary(mean=0.0, std=0.01),
+            size_consistency=MetricSummary(mean=SIZE_RATIO_TARGET, std=0.02),
+        )
+        scores = provider.compute_scores(upright_aggregate, ml_result=80.0)
+        assert scores.slant_score is not None
+        assert 50.0 <= scores.slant_score < 75.0
+
+    def test_inconsistent_slant_std_penalized_even_at_target_mean(self):
+        provider = CalibratedScoreProvider()
+        consistent = AggregateMetrics(
+            slant=MetricSummary(mean=SLANT_TARGET_DEG, std=2.0),
+            word_spacing=MetricSummary(mean=WORD_GAP_TARGET_RATIO, std=0.1),
+            letter_spacing=MetricSummary(mean=LETTER_GAP_TARGET_RATIO, std=0.02),
+            baseline_deviation=MetricSummary(mean=0.0, std=0.01),
+            size_consistency=MetricSummary(mean=SIZE_RATIO_TARGET, std=0.02),
+        )
+        erratic = AggregateMetrics(
+            slant=MetricSummary(mean=SLANT_TARGET_DEG, std=10.0),
+            word_spacing=MetricSummary(mean=WORD_GAP_TARGET_RATIO, std=0.1),
+            letter_spacing=MetricSummary(mean=LETTER_GAP_TARGET_RATIO, std=0.02),
+            baseline_deviation=MetricSummary(mean=0.0, std=0.01),
+            size_consistency=MetricSummary(mean=SIZE_RATIO_TARGET, std=0.02),
+        )
+        consistent_scores = provider.compute_scores(consistent, ml_result=80.0)
+        erratic_scores = provider.compute_scores(erratic, ml_result=80.0)
+        assert consistent_scores.slant_score == 100.0
+        assert erratic_scores.slant_score is not None
+        assert erratic_scores.slant_score < 75.0
+
+    def test_backward_and_chaotic_slant_scores_needs_improvement(self):
+        provider = CalibratedScoreProvider()
+        chaotic_backward = AggregateMetrics(
+            slant=MetricSummary(mean=-10.0, std=10.0),
+            word_spacing=MetricSummary(mean=WORD_GAP_TARGET_RATIO, std=0.1),
+            letter_spacing=MetricSummary(mean=LETTER_GAP_TARGET_RATIO, std=0.02),
+            baseline_deviation=MetricSummary(mean=0.0, std=0.01),
+            size_consistency=MetricSummary(mean=SIZE_RATIO_TARGET, std=0.02),
+        )
+        scores = provider.compute_scores(chaotic_backward, ml_result=80.0)
+        assert scores.slant_score is not None
+        assert scores.slant_score < 25.0
+
     def test_letter_formation_identity_passthrough_and_clamping(self, sample_aggregate):
         provider = CalibratedScoreProvider()
 

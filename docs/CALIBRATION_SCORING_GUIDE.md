@@ -82,7 +82,7 @@ The calibration constants are derived as follows:
 
 | Criterion | Metric Key | Empirical Target Derivation | Empirical Penalty Derivation |
 | :--- | :--- | :--- | :--- |
-| **Slant** | `slant_mean` | `SLANT_TARGET_DEG` = Median of *Excellent* band | $\text{Penalty} = \frac{75.0}{\Delta \text{deviation}}$ between *Needs Improvement* and *Excellent* |
+| **Slant** | `slant_mean`, `slant_std` | `SLANT_TARGET_DEG` = Median of *Excellent* band; `SLANT_STD_TOLERANCE_DEG` = `2.0°` | Mean-angle penalty bounded to `[1.0, 3.5]` pts/deg + consistency penalty on `max(0, slant_std - tolerance)` |
 | **Word Spacing** | `word_spacing_mean` | `WORD_GAP_TARGET_RATIO` = Median of *Excellent* band | $\text{Penalty} = \frac{75.0}{\Delta \text{deviation}}$ across rubric bands |
 | **Letter Spacing** | `letter_spacing_mean` | `LETTER_GAP_TARGET_RATIO` = Median of *Excellent* band | $\text{Penalty} = \frac{75.0}{\Delta \text{deviation}}$ across rubric bands |
 | **Baseline Alignment**| `baseline_deviation_mean` | Ideal baseline deviation = $0.0$ | $\text{Penalty} = \frac{75.0}{\Delta \text{deviation}}$ relative to guideline height |
@@ -98,27 +98,30 @@ Once constants are derived from the research script, they are updated in [backen
 
 ```python
 # Calibration baseline targets and penalty constants derived from Spearman analysis
-SLANT_TARGET_DEG = 12.5  # Ideal forward cursive slant (~10°-15°)
+SLANT_TARGET_DEG = 12.97  # Ideal forward cursive slant (~13°)
 SLANT_PENALTY_FACTOR = 2.5
+SLANT_STD_TOLERANCE_DEG = 2.0  # Natural word-to-word slant variation allowed
+SLANT_STD_PENALTY_FACTOR = 4.0
 
-WORD_GAP_TARGET_RATIO = 2.0  # Ideal word spacing relative to midline height
+WORD_GAP_TARGET_RATIO = 1.4  # Ideal word spacing relative to midline height
 WORD_GAP_PENALTY_FACTOR = 35.0
 
-LETTER_GAP_TARGET_RATIO = 0.4  # Ideal letter spacing relative to midline height
+LETTER_GAP_TARGET_RATIO = 0.12  # Ideal letter spacing relative to midline height
 LETTER_GAP_PENALTY_FACTOR = 100.0
 
-BASELINE_DEV_PENALTY_FACTOR = 350.0  # Deviation relative to guideline height
+BASELINE_DEV_PENALTY_FACTOR = 800.0  # Deviation relative to guideline height
 
-SIZE_RATIO_TARGET = 1.0  # Proportion matching expected 3-line guideline height
+SIZE_RATIO_TARGET = 1.14  # Proportion matching expected 3-line guideline height
 SIZE_DEV_PENALTY_FACTOR = 120.0
 ```
 
 ### Criterion Scoring Formulas
 In `CalibratedScoreProvider.compute_scores(...)`:
 
-1. **Slant Score:**
-   $$\text{dev} = |\text{slant\_mean} - \text{SLANT\_TARGET\_DEG}|$$
-   $$\text{score} = \text{clamp}(100.0 - \text{dev} \times \text{SLANT\_PENALTY\_FACTOR})$$
+1. **Slant Score (Forward Lean + Inter-Word Consistency):**
+   $$\text{mean\_penalty} = |\text{slant\_mean} - \text{SLANT\_TARGET\_DEG}| \times \text{SLANT\_PENALTY\_FACTOR}$$
+   $$\text{std\_penalty} = \max(0.0,\; \text{slant\_std} - \text{SLANT\_STD\_TOLERANCE\_DEG}) \times \text{SLANT\_STD\_PENALTY\_FACTOR}$$
+   $$\text{score} = \text{clamp}(100.0 - \text{mean\_penalty} - \text{std\_penalty})$$
 
 2. **Spacing Score (Blended Word & Letter Spacing):**
    $$\text{word\_score} = \text{clamp}(100.0 - |\text{word\_spacing} - \text{WORD\_GAP\_TARGET}| \times \text{WORD\_PENALTY})$$

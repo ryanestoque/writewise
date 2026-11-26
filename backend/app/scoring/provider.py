@@ -26,7 +26,9 @@ logger = logging.getLogger(__name__)
 # Calibration baseline targets and penalty constants derived from Spearman analysis.
 # Empirical constants derived from paired Phase 1 data (research/analyze_correlations.py).
 SLANT_TARGET_DEG = 12.97  # Ideal forward cursive slant (~13°)
-SLANT_PENALTY_FACTOR = 10.0
+SLANT_PENALTY_FACTOR = 2.5  # Mean-angle deviation penalty (pts/deg)
+SLANT_STD_TOLERANCE_DEG = 2.0  # Natural inter-word slant variation allowed without penalty
+SLANT_STD_PENALTY_FACTOR = 4.0  # Consistency penalty above tolerance (pts/deg)
 
 WORD_GAP_TARGET_RATIO = 1.4  # Ideal word spacing relative to midline height
 WORD_GAP_PENALTY_FACTOR = 35.0
@@ -226,14 +228,19 @@ class CalibratedScoreProvider(ScoreProvider):
         aggregate: AggregateMetrics | dict[str, Any],
         ml_result: LetterFormationResult | float | None = None,
     ) -> CriterionScores:
-        # 1. Slant score: penalty for deviation from standard ~12.5° forward slant
+        # 1. Slant score: combines forward-lean deviation and inter-word consistency
         slant_mean = self._extract_metric(aggregate, "slant", "mean", default=math.nan)
-        # Unsupported lean must not become an invented upright or ideal angle.
-        slant_score = (
-            _clamp(100.0 - abs(slant_mean - SLANT_TARGET_DEG) * SLANT_PENALTY_FACTOR)
-            if math.isfinite(slant_mean)
-            else None
-        )
+        slant_std = self._extract_metric(aggregate, "slant", "std", default=0.0)
+        if not math.isfinite(slant_mean):
+            # Unsupported lean must not become an invented upright or ideal angle.
+            slant_score = None
+        else:
+            slant_mean_penalty = abs(slant_mean - SLANT_TARGET_DEG) * SLANT_PENALTY_FACTOR
+            slant_std_excess = (
+                max(0.0, slant_std - SLANT_STD_TOLERANCE_DEG) if math.isfinite(slant_std) else 0.0
+            )
+            slant_std_penalty = slant_std_excess * SLANT_STD_PENALTY_FACTOR
+            slant_score = _clamp(100.0 - slant_mean_penalty - slant_std_penalty)
 
         # 2. Spacing score: requires inter-word gaps; single-word samples are N/A (None)
         word_spacing_mean = self._extract_metric(
