@@ -15,6 +15,7 @@ Full architectural and mathematical details are documented in [CALIBRATION_SCORI
 | [`analyze_correlations.py`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/research/analyze_correlations.py) | Computes Spearman's Rho ($\rho$), evaluates rubric band distributions, derives constants for `backend/app/scoring/provider.py`, and generates thesis defense reports. | `research/output/correlation_analysis_report.md`<br>`research/output/correlation_analysis_results.json` |
 | [`backfill_scores.py`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/research/backfill_scores.py) | Calculates and persists calibrated scores on existing Phase 1 measurements using calibrated thresholds. | Database updates to `measurement` rows |
 | [`reset_scores.py`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/research/reset_scores.py) | Resets calibrated scores on `measurement` rows back to NULL for reverting to interactive Phase 1 manual rating mode. | Database updates to `measurement` rows |
+| [`seed_dev_accounts.py`](file:///c:/Users/Admin/Documents/CODING%20PROJECTS/writewise/research/seed_dev_accounts.py) | Idempotently seeds login-ready dev teacher & parent accounts, one section, and two linked students in `writewise-dev`. | Auth users + `section`, `student`, `teacher_student`, `student_parent` rows |
 
 ---
 
