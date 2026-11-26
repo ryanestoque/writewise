@@ -141,6 +141,32 @@
   --sidebar-accent-foreground: #145049;
   --sidebar-border: #e3e6e4;
   --sidebar-ring: #1b6b63;
+
+  /* Solid Toast Surface Tokens */
+  --toast-bg: #ffffff;
+  --toast-fg: #1e2422;
+  --toast-border: #d5dcd9;
+  --toast-description: #5b6663;
+
+  --toast-success-bg: #1b6b63;
+  --toast-success-fg: #ffffff;
+  --toast-success-border: #145049;
+  --toast-success-description: #e4f1ef;
+
+  --toast-error-bg: #9c4a2f;
+  --toast-error-fg: #ffffff;
+  --toast-error-border: #7d3a24;
+  --toast-error-description: #fae7e0;
+
+  --toast-warning-bg: #7a4e00;
+  --toast-warning-fg: #ffffff;
+  --toast-warning-border: #5e3c00;
+  --toast-warning-description: #f7e8c1;
+
+  --toast-info-bg: #1e3a38;
+  --toast-info-fg: #ffffff;
+  --toast-info-border: #142927;
+  --toast-info-description: #d6e6e4;
 }
 
 .dark {
@@ -196,6 +222,32 @@
   --sidebar-accent-foreground: #e4f1ef;
   --sidebar-border: #5b6663;
   --sidebar-ring: #e4f1ef;
+
+  /* Solid Toast Surface Tokens (Dark) */
+  --toast-bg: #2a3330;
+  --toast-fg: #f7f8f7;
+  --toast-border: #44504c;
+  --toast-description: #c8d0cd;
+
+  --toast-success-bg: #145049;
+  --toast-success-fg: #f0f9f7;
+  --toast-success-border: #298d83;
+  --toast-success-description: #b8ddd7;
+
+  --toast-error-bg: #843c25;
+  --toast-error-fg: #fdf5f2;
+  --toast-error-border: #b85d3f;
+  --toast-error-description: #f3d2c6;
+
+  --toast-warning-bg: #6b4504;
+  --toast-warning-fg: #fef9e7;
+  --toast-warning-border: #a87618;
+  --toast-warning-description: #f3dfa4;
+
+  --toast-info-bg: #1e3a38;
+  --toast-info-fg: #f0f9f7;
+  --toast-info-border: #396662;
+  --toast-info-description: #c4dedb;
 }
 
 @layer base {
@@ -317,7 +369,8 @@
   nav,
   header,
   aside,
-  [data-slot="dialog-overlay"] {
+  [data-slot="dialog-overlay"],
+  [data-sonner-toaster] {
     display: none !important;
   }
 
@@ -442,6 +495,128 @@
 
 .view-transition-auth-card {
   view-transition-name: auth-card;
+}
+
+/* =========================================================================
+   Standardized Solid Toast Surfaces (Sonner)
+   100% opaque semantic backgrounds with WCAG AA+ contrast across all pages.
+   ========================================================================= */
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
+  background-color: var(--toast-bg);
+  color: var(--toast-fg);
+  border: 1px solid var(--toast-border);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 28px rgba(30, 40, 35, 0.14), 0 2px 8px rgba(30, 40, 35, 0.08);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  padding: 14px 16px;
+  gap: 10px;
+}
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-title] {
+  font-weight: 500;
+  color: inherit;
+}
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-description] {
+  color: var(--toast-description);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-icon] {
+  color: inherit;
+  margin-top: 1px;
+}
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-button] {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0 10px;
+  height: 28px;
+  transition: opacity 150ms ease-out, background-color 150ms ease-out;
+}
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-button]:hover {
+  background-color: var(--primary-hover);
+}
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-cancel] {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0 10px;
+  height: 28px;
+}
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="success"] {
+  background-color: var(--toast-success-bg);
+  color: var(--toast-success-fg);
+  border-color: var(--toast-success-border);
+}
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="success"] [data-description] {
+  color: var(--toast-success-description);
+}
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="error"] {
+  background-color: var(--toast-error-bg);
+  color: var(--toast-error-fg);
+  border-color: var(--toast-error-border);
+}
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="error"] [data-description] {
+  color: var(--toast-error-description);
+}
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="warning"] {
+  background-color: var(--toast-warning-bg);
+  color: var(--toast-warning-fg);
+  border-color: var(--toast-warning-border);
+}
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="warning"] [data-description] {
+  color: var(--toast-warning-description);
+}
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="info"] {
+  background-color: var(--toast-info-bg);
+  color: var(--toast-info-fg);
+  border-color: var(--toast-info-border);
+}
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="info"] [data-description] {
+  color: var(--toast-info-description);
+}
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="success"] [data-button],
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="error"] [data-button],
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="warning"] [data-button],
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="info"] [data-button] {
+  background-color: #ffffff;
+  color: #1e2422;
+}
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="success"] [data-button]:hover,
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="error"] [data-button]:hover,
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="warning"] [data-button]:hover,
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="info"] [data-button]:hover {
+  background-color: #f0f4f3;
+}
+
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="success"] [data-cancel],
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="error"] [data-cancel],
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="warning"] [data-cancel],
+.writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="info"] [data-cancel] {
+  background-color: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
 }
 
 
