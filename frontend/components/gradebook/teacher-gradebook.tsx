@@ -210,26 +210,6 @@ export function TeacherGradebook({
         </Empty>
       ) : (
         <>
-          {activityId && (
-            <div className="flex flex-wrap items-center gap-3 text-sm print:hidden">
-              <p className="text-muted-foreground">
-                Showing the linked activity. Choose a section to review its grades.
-              </p>
-              <Button
-                variant="outline"
-                className="h-10 sm:h-9 cursor-pointer rounded-lg sm:rounded-xl"
-                onClick={handleClearActivityFilter}
-              >
-                Show all activities
-              </Button>
-              <Link
-                href={`/activities/${encodeURIComponent(activityId)}`}
-                className="focus-visible:ring-ring inline-flex h-10 sm:h-9 items-center rounded underline underline-offset-4 focus-visible:ring-2"
-              >
-                Back to activity
-              </Link>
-            </div>
-          )}
           {sectionId && (
             <SectionGrid
               key={`${userId}:${sectionId}`}
