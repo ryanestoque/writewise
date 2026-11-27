@@ -5,6 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
@@ -16,8 +17,10 @@ import {
 } from "lucide-react";
 import { useGradebookActions, type GradebookCell } from "@/lib/hooks/use-gradebook";
 import { ApiError } from "@/lib/utils/api-error";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import {
   Sheet,
@@ -591,19 +594,22 @@ export function WorkGradeSheet({
               ) : null}
 
               {/* Submission Lifecycle & Exceptions */}
-              <details
-                className="group rounded-xl border border-border/60 bg-muted/15 p-4 text-sm transition-colors open:bg-muted/25"
-                onToggle={(e) => {
-                  setShowLifecycleDetails((e.target as HTMLDetailsElement).open);
-                }}
+              <Collapsible
+                open={showLifecycleDetails}
+                onOpenChange={setShowLifecycleDetails}
+                className={cn(
+                  "rounded-xl border border-border/60 bg-muted/15 p-4 text-sm transition-colors",
+                  showLifecycleDetails && "bg-muted/25"
+                )}
               >
-                <summary className="flex cursor-pointer list-none items-center justify-between font-medium text-foreground min-h-9 select-none">
+                <CollapsibleTrigger
+                  type="button"
+                  className="flex w-full cursor-pointer items-center justify-between font-medium text-foreground min-h-9 select-none rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring [&[data-panel-open]>svg]:rotate-180"
+                >
                   <span>Submission lifecycle &amp; exceptions</span>
-                  <span className="text-xs text-muted-foreground transition-transform group-open:rotate-180">
-                    ▼
-                  </span>
-                </summary>
-                <div className="pt-3">
+                  <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200" aria-hidden="true" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
                   {showLifecycleDetails && (
                     <WorkGradeDetails
                       key={`${userId}:${cell.activity_id}:${cell.student_id}`}
@@ -612,8 +618,8 @@ export function WorkGradeSheet({
                       studentName={studentName}
                     />
                   )}
-                </div>
-              </details>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           </TabsContent>
         </Tabs>

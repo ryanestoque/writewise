@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Kbd } from "@/components/ui/kbd";
 import { toast } from "sonner";
 import {
   Field,
@@ -1312,7 +1313,7 @@ function UploadFlow({
 
                     {/* Desktop Clipboard Paste Hint */}
                     <p className="relative z-10 text-[11px] text-muted-foreground/80 mt-2 hidden sm:block">
-                      Tip: You can also paste an image directly with <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border text-[10px] font-mono">Ctrl+V</kbd>
+                      Tip: You can also paste an image directly with <Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded border border-border text-[10px] font-mono">Ctrl+V</Kbd>
                     </p>
                   </div>
                 )}

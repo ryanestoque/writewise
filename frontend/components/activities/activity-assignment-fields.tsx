@@ -167,11 +167,15 @@ export function ActivityRosterField({ form }: { form: UseFormReturn<ActivityForm
         ))}
       </div>
       {!!students?.length && (
-        <details>
-          <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Individual students (optional)
-          </summary>
-          <div className="mt-2 flex max-h-44 flex-col gap-2 overflow-y-auto p-1">
+        <Collapsible>
+          <CollapsibleTrigger
+            type="button"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer py-1 rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring [&[data-panel-open]>svg]:rotate-180"
+          >
+            <ChevronDown className="size-4 transition-transform duration-200" aria-hidden="true" />
+            <span>Individual students (optional)</span>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-2 flex max-h-44 flex-col gap-2 overflow-y-auto p-1">
             {students.map((student) => (
               <label key={student.id} className="flex min-h-9 items-center gap-3 text-sm cursor-pointer">
                 <Checkbox
@@ -184,8 +188,8 @@ export function ActivityRosterField({ form }: { form: UseFormReturn<ActivityForm
                 </span>
               </label>
             ))}
-          </div>
-        </details>
+          </CollapsibleContent>
+        </Collapsible>
       )}
       {sections &&
         students &&

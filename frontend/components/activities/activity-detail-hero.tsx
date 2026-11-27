@@ -7,6 +7,7 @@ import type { Activity } from "@/lib/hooks/use-activities";
 import type { ScoreBandInfo } from "@/lib/utils/submission-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/ui/kbd";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { WorksheetPrompt } from "@/components/activities/worksheet-prompt";
@@ -204,9 +205,12 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
         {!compact && (
           <>
             <span className="hidden sm:inline">Upload worksheets</span>
-            <kbd className="ml-1 hidden rounded border px-1 text-xs md:inline">
+            <Kbd
+              aria-hidden="true"
+              className="ml-1 hidden h-5 min-w-0 rounded border border-primary-foreground/30 bg-primary-foreground/10 px-1 text-xs text-primary-foreground md:inline-flex"
+            >
               {altKey}+U
-            </kbd>
+            </Kbd>
           </>
         )}
       </Button>

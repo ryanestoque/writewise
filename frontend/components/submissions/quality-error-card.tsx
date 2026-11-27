@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Kbd } from "@/components/ui/kbd";
 import {
   AlertCircle,
   Camera,
@@ -1258,12 +1259,12 @@ export function QualityErrorCard({
                 >
                   <Camera className="size-3.5" aria-hidden="true" />
                   <span>Retake Photo</span>
-                  <kbd
+                  <Kbd
                     aria-hidden="true"
-                    className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded bg-primary-foreground/20 text-xs font-sans"
+                    className="ml-1 hidden h-auto min-w-0 rounded border border-primary-foreground/30 bg-primary-foreground/10 px-1.5 py-0.5 text-xs font-sans text-primary-foreground sm:inline-flex"
                   >
                     R
-                  </kbd>
+                  </Kbd>
                   <span className="sr-only"> (press R)</span>
                 </Button>
               </div>
