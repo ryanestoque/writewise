@@ -10,7 +10,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
 import {
@@ -346,13 +349,15 @@ export function ClassTable({
             />
           </div>
           {hasActiveFilters && (
-            <button
+            <Button
               type="button"
+              variant="link"
+              size="xs"
               onClick={onClearFilters}
-              className="text-xs font-medium text-primary hover:underline shrink-0 px-2 min-h-[36px] inline-flex items-center rounded-md cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+              className="shrink-0 min-h-[40px] sm:min-h-[36px] px-2 text-xs cursor-pointer"
             >
               Clear filters
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -361,65 +366,70 @@ export function ClassTable({
       <div className="sm:hidden space-y-2.5">
         {/* Compact mobile sort bar */}
         <div className="flex items-center justify-between gap-2">
-          <label htmlFor="mobile-student-sort" className="text-xs font-medium text-muted-foreground shrink-0">
+          <Label htmlFor="mobile-student-sort" className="text-xs font-medium text-muted-foreground shrink-0">
             Sort by
-          </label>
+          </Label>
           <div className="flex items-center gap-1.5 flex-1 max-w-[240px]">
-            <select
+            <NativeSelect
               id="mobile-student-sort"
+              size="sm"
               value={sortField}
-              onChange={(e) => {
-                onSortChange(e.target.value as SortField, "asc");
-              }}
-              className="flex-1 min-h-[40px] px-2.5 rounded-lg border border-border bg-card text-base sm:text-xs font-medium text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+              onChange={(e) => onSortChange(e.target.value as SortField, "asc")}
+              className="flex-1 w-full"
             >
               {COLUMNS.map((col) => (
-                <option key={col.field} value={col.field}>
+                <NativeSelectOption key={col.field} value={col.field}>
                   {col.label}
-                </option>
+                </NativeSelectOption>
               ))}
-            </select>
-            <button
+            </NativeSelect>
+            <Button
               type="button"
+              variant="outline"
+              size="icon"
               onClick={() => onSortChange(sortField, sortDirection === "asc" ? "desc" : "asc")}
               aria-label={`Sort direction: ${sortDirection === "asc" ? "ascending" : "descending"}. Click to toggle.`}
-              className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-lg border border-border bg-card text-foreground hover:bg-muted cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+              className="min-h-[40px] min-w-[40px] rounded-lg cursor-pointer touch-manipulation"
             >
               {sortDirection === "asc" ? (
                 <ArrowUp className="size-4 text-primary" aria-hidden="true" />
               ) : (
                 <ArrowDown className="size-4 text-primary" aria-hidden="true" />
               )}
-            </button>
+            </Button>
           </div>
         </div>
 
         {isLoading ? (
           <div className="space-y-2.5">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-20 rounded-xl border border-border bg-card p-3.5 animate-pulse"
-              />
+              <Skeleton key={i} className="h-20 w-full rounded-xl" />
             ))}
           </div>
         ) : filteredStudents.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card py-10 px-4 text-center">
-            <div className="flex flex-col items-center justify-center space-y-2">
-              <SearchX className="size-8 text-muted-foreground/60" aria-hidden="true" />
-              <p className="text-sm font-semibold text-foreground">No students match your filter</p>
-              <p className="text-xs text-muted-foreground">Try clearing your search or filters.</p>
-              <button
-                type="button"
-                onClick={onClearFilters}
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "sm" }),
-                  "mt-2 min-h-[44px] px-4 rounded-lg text-xs cursor-pointer touch-manipulation"
-                )}
-              >
-                Reset filters
-              </button>
-            </div>
+          <div className="rounded-xl border border-border bg-card">
+            <Empty className="py-10 px-4 gap-3">
+              <EmptyMedia variant="icon">
+                <SearchX aria-hidden="true" />
+              </EmptyMedia>
+              <EmptyHeader>
+                <EmptyTitle className="text-base">No students match your filter</EmptyTitle>
+                <EmptyDescription className="text-xs">
+                  Try clearing your search or filters.
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onClearFilters}
+                  className="min-h-[44px] px-4 rounded-lg text-xs cursor-pointer touch-manipulation"
+                >
+                  Reset filters
+                </Button>
+              </EmptyContent>
+            </Empty>
           </div>
         ) : (
           <ul role="list" className="space-y-2">
@@ -541,30 +551,37 @@ export function ClassTable({
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i} className="animate-pulse border-b border-border/50">
+                  <TableRow key={i} className="border-b border-border/50">
                     <TableCell colSpan={9} className="py-4 px-4">
-                      <div className="h-6 bg-muted/60 rounded-md w-full" />
+                      <Skeleton className="h-6 w-full rounded-md" />
                     </TableCell>
                   </TableRow>
                 ))
               ) : filteredStudents.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="py-12 text-center">
-                    <div className="flex flex-col items-center justify-center space-y-2">
-                      <SearchX className="size-8 text-muted-foreground/60" aria-hidden="true" />
-                      <p className="text-sm font-semibold text-foreground">No students match your filter</p>
-                      <p className="text-xs text-muted-foreground">Try clearing your search or filters.</p>
-                      <button
-                        type="button"
-                        onClick={onClearFilters}
-                        className={cn(
-                          buttonVariants({ variant: "outline", size: "sm" }),
-                          "mt-2 min-h-[36px] rounded-lg text-xs cursor-pointer"
-                        )}
-                      >
-                        Reset filters
-                      </button>
-                    </div>
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={9} className="p-0">
+                    <Empty className="py-12 px-4 gap-3">
+                      <EmptyMedia variant="icon">
+                        <SearchX aria-hidden="true" />
+                      </EmptyMedia>
+                      <EmptyHeader>
+                        <EmptyTitle className="text-base">No students match your filter</EmptyTitle>
+                        <EmptyDescription className="text-xs">
+                          Try clearing your search or filters.
+                        </EmptyDescription>
+                      </EmptyHeader>
+                      <EmptyContent>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={onClearFilters}
+                          className="min-h-[36px] rounded-lg text-xs cursor-pointer"
+                        >
+                          Reset filters
+                        </Button>
+                      </EmptyContent>
+                    </Empty>
                   </TableCell>
                 </TableRow>
               ) : (
