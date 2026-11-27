@@ -51,10 +51,10 @@ Do **not** force these domain-specific components into generic shadcn primitives
 | **B — Portal Quick Wins** | Task 5 | Portal-wide `<kbd>` → `Kbd` and `<details>`/`<summary>` → `Collapsible` | Low | [x] Done |
 | **B — Portal Quick Wins** | Task 6 | Portal-wide raw `role="alert"` banners → `Alert` & `SubmissionCard` single-value bars → `Progress` | Low | [x] Done |
 | **B — Portal Quick Wins** | Task 7 | `FilterPills` & `SearchInput` internal raw `<button>` cleanup + `ActivityReviewToolbar` | Low | [x] Done |
-| **C — Gradebook & Review** | Task 8 | `TeacherGradebook` sticky grid table (`Table` primitives without breaking `sticky` / `role="grid"`) | Medium | [ ] Pending |
-| **C — Gradebook & Review** | Task 9 | `GradebookCellButton` inline editor (`Input`, `Button`, `Badge`, `Spinner`) | Medium | [ ] Pending |
-| **C — Gradebook & Review** | Task 10 | `SubmissionDetailContent` hand-rolled tablist → `Tabs` & `RawMeasurementsTable` cards/badges | Medium | [ ] Pending |
-| **C — Gradebook & Review** | Task 11 | `ManualRubricEntryForm` & `WorksheetImageInspector` raw buttons/inputs | Medium | [ ] Pending |
+| **C — Gradebook & Review** | Task 8 | `TeacherGradebook` sticky grid table (`Table` primitives without breaking `sticky` / `role="grid"`) | Medium | [x] Done |
+| **C — Gradebook & Review** | Task 9 | `GradebookCellButton` inline editor (`Input`, `Button`, `Badge`, `Spinner`) | Medium | [x] Done |
+| **C — Gradebook & Review** | Task 10 | `SubmissionDetailContent` hand-rolled tablist → `Tabs` & `RawMeasurementsTable` cards/badges | Medium | [x] Done |
+| **C — Gradebook & Review** | Task 11 | `ManualRubricEntryForm` & `WorksheetImageInspector` raw buttons/inputs | Medium | [x] Done |
 | **D — Global Modals** | Task 12 | `QuickUploadDialog`, `RubricReferenceDialog` (→ `Accordion` + `Card`) & `CursiveGuideDialog` (→ `SearchInput` + `ToggleGroup` + `Button`) | Medium | [ ] Pending |
 
 ---

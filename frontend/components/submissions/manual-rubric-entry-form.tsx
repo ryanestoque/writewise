@@ -4,7 +4,9 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Kbd } from "@/components/ui/kbd";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1011,44 +1013,50 @@ export function ManualRubricEntryForm({
           </DropdownMenu>
 
           <div className="flex items-center p-0.5 rounded-lg bg-muted/60 border border-border/80 shrink-0">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="xs"
               onClick={() => setLayoutMode("stepper")}
-              className={`px-2 py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-11 sm:min-h-[26px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${layoutMode === "stepper"
-                  ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
-                  : "text-muted-foreground hover:text-foreground"
+              className={`px-2 py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer h-auto min-h-11 sm:min-h-[26px] flex items-center gap-1 touch-manipulation ${layoutMode === "stepper"
+                  ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60 hover:bg-surface dark:hover:bg-card"
+                  : "text-muted-foreground hover:text-foreground hover:bg-transparent"
                 }`}
               aria-pressed={layoutMode === "stepper"}
               title="Focus Mode (1 criterion at a time)"
             >
               <Layers className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
               <span>Focus</span>
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="ghost"
+              size="xs"
               onClick={() => setLayoutMode("list")}
-              className={`px-2 py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer min-h-11 sm:min-h-[26px] flex items-center gap-1 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${layoutMode === "list"
-                  ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
-                  : "text-muted-foreground hover:text-foreground"
+              className={`px-2 py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer h-auto min-h-11 sm:min-h-[26px] flex items-center gap-1 touch-manipulation ${layoutMode === "list"
+                  ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60 hover:bg-surface dark:hover:bg-card"
+                  : "text-muted-foreground hover:text-foreground hover:bg-transparent"
                 }`}
               aria-pressed={layoutMode === "list"}
               title="All Mode (show all 5 criteria)"
             >
               <LayoutList className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
               <span>All (5)</span>
-            </button>
+            </Button>
           </div>
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => setShowKeyboardHelp((prev) => !prev)}
-            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg cursor-pointer flex items-center justify-center min-h-11 min-w-11 sm:min-h-7 sm:min-w-7 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg cursor-pointer size-11 min-h-11 min-w-11 sm:size-7 sm:min-h-7 sm:min-w-7 touch-manipulation"
             title="Toggle Keyboard Shortcuts (Keys 1–4)"
             aria-label="Toggle Keyboard Shortcuts"
             aria-expanded={showKeyboardHelp}
           >
             <Keyboard className="size-3.5" aria-hidden="true" />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -1090,15 +1098,16 @@ export function ManualRubricEntryForm({
               const bandMeta = getBandMeta(stepBand);
 
               return (
-                <button
+                <Button
                   key={criterion.key}
                   type="button"
+                  variant="outline"
                   onClick={() => handleSelectCriterion(idx)}
-                  className={`flex flex-col items-center justify-center py-1.5 px-1.5 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-[42px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${isStepActive
-                      ? "bg-brand-100 dark:bg-brand-950 text-brand-950 dark:text-brand-200 border-brand-500 ring-2 ring-brand-400/40 font-bold"
+                  className={`h-auto whitespace-normal flex flex-col items-center justify-center gap-0 py-1.5 px-1.5 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-[42px] touch-manipulation ${isStepActive
+                      ? "bg-brand-100 hover:bg-brand-100 dark:bg-brand-950 dark:hover:bg-brand-950 text-brand-950 hover:text-brand-950 dark:text-brand-200 dark:hover:text-brand-200 border-brand-500 ring-2 ring-brand-400/40 font-bold"
                       : isRated
-                        ? "bg-surface dark:bg-card border-brand-200/80 dark:border-brand-900/80 text-foreground"
-                        : "bg-muted/30 border-border/60 text-muted-foreground hover:border-border"
+                        ? "bg-surface dark:bg-card border-brand-200/80 dark:border-brand-900/80 text-foreground hover:bg-surface dark:hover:bg-card"
+                        : "bg-muted/30 border-border/60 text-muted-foreground hover:border-border hover:bg-muted/30 hover:text-muted-foreground"
                     }`}
                   aria-label={`Step ${idx + 1}: ${criterion.shortName}${isRated
                       ? stepBand === "not_applicable"
@@ -1128,7 +1137,7 @@ export function ManualRubricEntryForm({
                       </>
                     )}
                   </div>
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -1502,15 +1511,13 @@ export function ManualRubricEntryForm({
           )}
 
           {canGoNext && (
-            <label className="inline-flex items-center gap-1.5 text-xs sm:text-[11px] text-muted-foreground cursor-pointer select-none touch-manipulation px-2 py-1 rounded-md hover:bg-muted/40 transition-colors min-h-11 sm:min-h-0">
-              <input
-                type="checkbox"
+            <Label className="inline-flex items-center gap-1.5 text-xs sm:text-[11px] font-normal text-muted-foreground cursor-pointer select-none touch-manipulation px-2 py-1 rounded-md hover:bg-muted/40 transition-colors min-h-11 sm:min-h-0">
+              <Checkbox
                 checked={autoAdvance}
-                onChange={(e) => setAutoAdvance(e.target.checked)}
-                className="size-3.5 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary"
+                onCheckedChange={(checked) => setAutoAdvance(Boolean(checked))}
               />
               <span>Next student on save</span>
-            </label>
+            </Label>
           )}
         </div>
 

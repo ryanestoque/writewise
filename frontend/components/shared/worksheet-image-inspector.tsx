@@ -584,10 +584,12 @@ export function WorksheetImageInspector({
       </div>
       {showImageTools && collapsibleImageTools && !imageToolsExpanded && (
         <div className="w-full flex items-center justify-between gap-2 px-2 py-1 text-xs">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setImageToolsExpanded(true)}
-            className="inline-flex items-center gap-1.5 h-11 sm:h-7 min-h-11 sm:min-h-0 px-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-11 sm:h-7 min-h-11 sm:min-h-0 px-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer touch-manipulation gap-1.5"
             aria-expanded={false}
           >
             <SlidersHorizontal className="size-3.5" aria-hidden="true" />
@@ -604,7 +606,7 @@ export function WorksheetImageInspector({
               </span>
             )}
             <ChevronDown className="size-3.5 opacity-70" aria-hidden="true" />
-          </button>
+          </Button>
           {showShortcutsLegend && (
             <span className="text-[11px] text-muted-foreground hidden sm:inline">
               <Kbd className="h-auto min-w-0 font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border">C</Kbd> ink ·{" "}
@@ -690,15 +692,17 @@ export function WorksheetImageInspector({
             <ZoomOut className="size-3.5" aria-hidden="true" />
           </Button>
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={handleResetZoom}
-            className="px-2.5 sm:px-2 py-1 sm:py-0.5 h-11 sm:h-7 min-h-11 sm:min-h-0 flex items-center justify-center text-xs font-sans tabular-nums font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded-lg touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+            className="px-2.5 sm:px-2 py-1 sm:py-0.5 h-11 sm:h-7 min-h-11 sm:min-h-0 text-xs font-sans tabular-nums font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded-lg touch-manipulation"
             title="Click to reset zoom (Key: 0)"
             aria-label={`Current zoom ${Math.round(zoomScale * 100)} percent. Click to reset (Shortcut: 0).`}
           >
             {Math.round(zoomScale * 100)}%
-          </button>
+          </Button>
 
           <Button
             type="button"
@@ -829,15 +833,17 @@ export function WorksheetImageInspector({
               <ZoomOut className="size-3.5" aria-hidden="true" />
             </Button>
 
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={handleResetZoom}
-              className="px-2.5 sm:px-2 py-2 sm:py-0.5 min-h-[44px] sm:min-h-[32px] flex items-center justify-center text-xs sm:text-[11px] font-sans tabular-nums font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded-lg touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+              className="px-2.5 sm:px-2 py-2 sm:py-0.5 h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] text-xs sm:text-[11px] font-sans tabular-nums font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded-lg touch-manipulation"
               title="Click to reset zoom (Key: 0)"
               aria-label={`Current zoom ${Math.round(zoomScale * 100)} percent. Click to reset (Shortcut: 0).`}
             >
               {Math.round(zoomScale * 100)}%
-            </button>
+            </Button>
 
             <Button
               type="button"
@@ -1031,20 +1037,22 @@ export function WorksheetImageInspector({
 
         {/* Reset view overlay pill when panned or zoomed */}
         {(zoomScale > 1 || panOffset.x !== 0 || panOffset.y !== 0) && (
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onPointerDown={(e) => e.stopPropagation()}
             onPointerUp={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
               handleResetZoom();
             }}
-            className="absolute bottom-2.5 right-2.5 z-10 bg-background/95 dark:bg-card/95 text-foreground px-3 py-2 rounded-lg border border-border shadow-xs text-xs font-medium flex items-center gap-1.5 hover:bg-muted transition-colors cursor-pointer min-h-11 sm:min-h-9 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="absolute bottom-2.5 right-2.5 z-10 bg-background/95 dark:bg-card/95 text-foreground px-3 py-2 rounded-lg border-border shadow-xs text-xs font-medium gap-1.5 hover:bg-muted transition-colors cursor-pointer h-auto min-h-11 sm:min-h-9 touch-manipulation"
             title="Reset zoom & pan (Key: 0)"
           >
             <RotateCcw className="size-3.5 text-muted-foreground" aria-hidden="true" />
             <span>Reset view</span>
-          </button>
+          </Button>
         )}
       </div>
 
