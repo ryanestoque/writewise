@@ -11,10 +11,14 @@ import {
   memo,
   type KeyboardEvent,
 } from "react";
-import { Pencil, SlidersHorizontal, Check, X, Loader2, MessageSquare } from "lucide-react";
+import { Pencil, SlidersHorizontal, Check, X, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import type { GradebookCell } from "@/lib/hooks/use-gradebook";
 import { BandBadge } from "@/components/shared/band-badge";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { getBandFromScore, PARENT_BAND_EXPLANATIONS } from "@/lib/utils/scoring";
 import { validPointsInput } from "./points-field";
 import { cn } from "@/lib/utils";
@@ -237,7 +241,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
         data-gradecell-active
       >
         <div className="flex items-center gap-1.5">
-          <input
+          <Input
             ref={inputRef}
             type="text"
             inputMode="decimal"
@@ -249,30 +253,31 @@ export const GradebookCellButton = memo(function GradebookCellButton({
             }}
             onKeyDown={handleInputKeyDown}
             className={cn(
-              "h-8 w-16 rounded-sm border px-1.5 text-center text-base sm:text-sm font-semibold tabular-nums focus:outline-none focus:ring-1 focus:ring-primary",
+              "h-8 w-16 rounded-sm px-1.5 text-center text-base sm:text-sm font-semibold tabular-nums",
               error ? "border-destructive text-destructive" : "border-input bg-background"
             )}
             placeholder="—"
             aria-label={`Score for ${label ?? "cell"}`}
             aria-describedby={error ? `${cellId}-error` : `${cellId}-hint`}
+            aria-invalid={Boolean(error)}
           />
           <span className="text-muted-foreground text-xs font-normal">/ {cell.points_possible}</span>
           <div className="ml-auto flex items-center gap-1">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               disabled={isSaving}
               onClick={() => void handleCommit()}
               aria-label="Save score"
-              className="text-primary hover:bg-muted relative after:absolute after:-inset-1.5 inline-flex size-7 items-center justify-center rounded-sm transition-colors cursor-pointer"
+              className="text-primary relative after:absolute after:-inset-1.5 size-7 rounded-sm cursor-pointer"
             >
-              {isSaving ? (
-                <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" />
-              ) : (
-                <Check className="size-3.5" />
-              )}
-            </button>
-            <button
+              {isSaving ? <Spinner className="size-3.5" /> : <Check className="size-3.5" />}
+            </Button>
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               disabled={isSaving}
               onClick={() => {
                 setIsEditing(false);
@@ -281,10 +286,10 @@ export const GradebookCellButton = memo(function GradebookCellButton({
                 cellRef.current?.focus();
               }}
               aria-label="Cancel editing"
-              className="text-muted-foreground hover:bg-muted relative after:absolute after:-inset-1.5 inline-flex size-7 items-center justify-center rounded-sm transition-colors cursor-pointer"
+              className="text-muted-foreground relative after:absolute after:-inset-1.5 size-7 rounded-sm cursor-pointer"
             >
               <X className="size-3.5" />
-            </button>
+            </Button>
           </div>
         </div>
         {error ? (
@@ -347,9 +352,12 @@ export const GradebookCellButton = memo(function GradebookCellButton({
                   <span className="text-xs font-semibold tabular-nums text-foreground">
                     {Math.round(Number(cell.assessment_composite))}%
                   </span>
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium tracking-tight bg-muted text-foreground border border-border/50">
+                  <Badge
+                    variant="outline"
+                    className="h-auto px-1.5 py-0.5 rounded text-[10px] font-medium tracking-tight bg-muted text-foreground border-border/50"
+                  >
                     {cell.assessment_source === "manual" ? "Teacher rubric" : "Calibrated"}
-                  </span>
+                  </Badge>
                 </div>
               ) : statusLabel === "Awaiting scan" ? (
                 <span className="text-xs text-muted-foreground italic flex items-center gap-1">
@@ -361,9 +369,12 @@ export const GradebookCellButton = memo(function GradebookCellButton({
               )}
 
               {cell.late && (
-                <span className="inline-flex items-center px-1 rounded text-xs font-medium bg-band-2/15 text-band-2-text border border-band-2/30">
+                <Badge
+                  variant="outline"
+                  className="h-auto px-1 py-0 rounded text-xs font-medium bg-band-2/15 text-band-2-text border-band-2/30"
+                >
                   Late
-                </span>
+                </Badge>
               )}
 
               {hasUnreadComments && (
@@ -386,29 +397,33 @@ export const GradebookCellButton = memo(function GradebookCellButton({
               )}
             >
               {canEditScore && (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-xs"
                   onClick={(e) => {
                     e.stopPropagation();
                     startEditing();
                   }}
                   aria-label={`Edit score for ${label ?? "student"}`}
-                  className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
+                  className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 size-6 rounded-sm cursor-pointer"
                 >
                   <Pencil className="size-3" aria-hidden="true" />
-                </button>
+                </Button>
               )}
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-xs"
                 onClick={(e) => {
                   e.stopPropagation();
                   onOpen();
                 }}
                 aria-label={`Inspect details for ${label ?? "student"}`}
-                className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
+                className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 size-6 rounded-sm cursor-pointer"
               >
                 <SlidersHorizontal className="size-3" aria-hidden="true" />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -425,9 +440,12 @@ export const GradebookCellButton = memo(function GradebookCellButton({
             <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
               <span className="block text-sm font-semibold tabular-nums text-foreground truncate">
                 {cell.coursework_status === "Excused" ? (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground">
+                  <Badge
+                    variant="secondary"
+                    className="h-auto px-1.5 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground"
+                  >
                     Excused
-                  </span>
+                  </Badge>
                 ) : cell.points_possible === null ? (
                   <span className="text-xs text-muted-foreground font-normal">Bands only</span>
                 ) : cell.final_points === null ? (
@@ -448,9 +466,12 @@ export const GradebookCellButton = memo(function GradebookCellButton({
               </span>
 
               {cell.late && (
-                <span className="inline-flex items-center px-1 rounded text-xs font-medium bg-band-2/15 text-band-2-text border border-band-2/30">
+                <Badge
+                  variant="outline"
+                  className="h-auto px-1 py-0 rounded text-xs font-medium bg-band-2/15 text-band-2-text border-band-2/30"
+                >
                   Late
-                </span>
+                </Badge>
               )}
 
               {hasUnreadComments && (
@@ -473,29 +494,33 @@ export const GradebookCellButton = memo(function GradebookCellButton({
               )}
             >
               {canEditScore && (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-xs"
                   onClick={(e) => {
                     e.stopPropagation();
                     startEditing();
                   }}
                   aria-label={`Edit score for ${label ?? "student"}`}
-                  className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
+                  className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 size-6 rounded-sm cursor-pointer"
                 >
                   <Pencil className="size-3" aria-hidden="true" />
-                </button>
+                </Button>
               )}
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-xs"
                 onClick={(e) => {
                   e.stopPropagation();
                   onOpen();
                 }}
                 aria-label={`Inspect details for ${label ?? "student"}`}
-                className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 flex size-6 items-center justify-center rounded-sm transition-colors cursor-pointer"
+                className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 size-6 rounded-sm cursor-pointer"
               >
                 <SlidersHorizontal className="size-3" aria-hidden="true" />
-              </button>
+              </Button>
             </div>
           </div>
 
