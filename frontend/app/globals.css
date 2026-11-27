@@ -264,6 +264,14 @@
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+  button,
+  [role="button"],
+  a,
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
   html {
     @apply font-sans;
   }
@@ -624,6 +632,22 @@
 .writewise-toaster[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="info"] [data-cancel] {
   background-color: rgba(255, 255, 255, 0.16);
   color: #ffffff;
+}
+
+/* =========================================================================
+   Prevent iOS / Touch Auto-Zoom on Form Controls
+   WebKit on iOS/iPadOS auto-zooms any focused input/textarea/select under
+   16px — including landscape phones & tablets where sm:/md: breakpoints
+   would otherwise step down to text-sm (14px). Scoping to coarse touch
+   pointers keeps desktop mouse layouts untouched while preserving full
+   pinch-to-zoom accessibility (no maximum-scale=1 / user-scalable=no).
+   ========================================================================= */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="range"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]),
+  textarea,
+  select {
+    font-size: max(1rem, 16px);
+  }
 }
 
 

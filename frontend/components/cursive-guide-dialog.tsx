@@ -513,7 +513,7 @@ export function CursiveGuideDialog({
                         handleClearSearch();
                       }
                     }}
-                    className="w-full h-10 sm:h-9 pl-8 pr-8 text-xs rounded-lg border border-border/80 bg-background placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all [&::-webkit-search-cancel-button]:hidden"
+                    className="w-full h-10 sm:h-9 pl-8 pr-8 text-base sm:text-xs rounded-lg border border-border/80 bg-background placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all [&::-webkit-search-cancel-button]:hidden"
                   />
                   {searchQuery && (
                     <button

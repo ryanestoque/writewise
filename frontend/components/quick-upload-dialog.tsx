@@ -1153,7 +1153,7 @@ function UploadFlow({
                             id="camera-select"
                             value={selectedDeviceId}
                             onChange={(e) => handleSwitchCamera(e.target.value)}
-                            className="text-xs bg-muted/80 text-foreground border border-border rounded-lg px-2 py-1 max-w-[150px] truncate cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+                            className="text-base sm:text-xs bg-muted/80 text-foreground border border-border rounded-lg px-2 py-1 max-w-[150px] truncate cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                           >
                             {videoDevices.map((dev, idx) => (
                               <option key={dev.deviceId || idx} value={dev.deviceId}>

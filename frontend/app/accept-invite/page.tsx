@@ -346,7 +346,7 @@ function AcceptInviteForm() {
                 required
                 minLength={6}
                 disabled={isSubmitting}
-                className="h-10 pr-10 text-sm"
+                className="h-10 pr-10 text-base sm:text-sm"
               />
               <button
                 type="button"
@@ -378,7 +378,7 @@ function AcceptInviteForm() {
                 required
                 minLength={6}
                 disabled={isSubmitting}
-                className="h-10 pr-10 text-sm"
+                className="h-10 pr-10 text-base sm:text-sm"
               />
               <button
                 type="button"

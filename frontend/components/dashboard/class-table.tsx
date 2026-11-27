@@ -371,7 +371,7 @@ export function ClassTable({
               onChange={(e) => {
                 onSortChange(e.target.value as SortField, "asc");
               }}
-              className="flex-1 min-h-[40px] px-2.5 rounded-lg border border-border bg-card text-xs font-medium text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex-1 min-h-[40px] px-2.5 rounded-lg border border-border bg-card text-base sm:text-xs font-medium text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
             >
               {COLUMNS.map((col) => (
                 <option key={col.field} value={col.field}>

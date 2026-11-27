@@ -194,7 +194,7 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
                     maxLength={50}
                     aria-invalid={!!createError}
                     aria-describedby={createError ? "new-section-error" : undefined}
-                    className="h-10 sm:h-9 text-sm"
+                    className="h-10 sm:h-9 text-base sm:text-sm"
                   />
                   <Button
                     type="submit"
