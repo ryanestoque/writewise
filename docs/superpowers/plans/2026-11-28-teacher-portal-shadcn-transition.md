@@ -44,10 +44,10 @@ Do **not** force these domain-specific components into generic shadcn primitives
 
 | Phase | Task | Surface / Scope | Risk | Status |
 |---|---|---|---|---|
-| **A — Dashboard & Shell** | Task 1 | Dashboard error banner & `SummaryCards` (`Alert`, `Card`, `Badge`) | Low | [ ] Pending |
-| **A — Dashboard & Shell** | Task 2 | `ClassTable` mobile sort bar, reset buttons & skeletons (`NativeSelect`, `Label`, `Button`, `Skeleton`) | Low | [ ] Pending |
-| **A — Dashboard & Shell** | Task 3 | `StudentDrillDownDrawer` steppers, alerts, cards, badges & empty states | Low | [ ] Pending |
-| **A — Dashboard & Shell** | Task 4 | `TeacherSidebar` CTAs, avatars & pending badges (`Button`, `Avatar`, `SidebarMenuBadge`) | Low | [ ] Pending |
+| **A — Dashboard & Shell** | Task 1 | Dashboard error banner & `SummaryCards` (`Alert`, `Card`, `Badge`) | Low | [x] Done |
+| **A — Dashboard & Shell** | Task 2 | `ClassTable` mobile sort bar, reset buttons & skeletons (`NativeSelect`, `Label`, `Button`, `Skeleton`) | Low | [x] Done |
+| **A — Dashboard & Shell** | Task 3 | `StudentDrillDownDrawer` steppers, alerts, cards, badges & empty states | Low | [x] Done |
+| **A — Dashboard & Shell** | Task 4 | `TeacherSidebar` CTAs, avatars & pending badges (`Button`, `Avatar`, `Badge`) | Low | [x] Done |
 | **B — Portal Quick Wins** | Task 5 | Portal-wide `<kbd>` → `Kbd` and `<details>`/`<summary>` → `Collapsible` | Low | [ ] Pending |
 | **B — Portal Quick Wins** | Task 6 | Portal-wide raw `role="alert"` banners → `Alert` & `SubmissionCard` single-value bars → `Progress` | Low | [ ] Pending |
 | **B — Portal Quick Wins** | Task 7 | `FilterPills` & `SearchInput` internal raw `<button>` cleanup + `ActivityReviewToolbar` | Low | [ ] Pending |

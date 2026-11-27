@@ -33,6 +33,9 @@ import {
   GraduationCapIcon,
 } from "lucide-react";
 import { BrandIcon, BrandLogo } from "@/components/brand-logo";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import { useShortcutKeys } from "@/hooks/use-shortcut-keys";
@@ -155,7 +158,7 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <button
+                  <Button
                     type="button"
                     onClick={() => {
                       if (isMobile) setOpenMobile(false);
@@ -164,7 +167,7 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                     aria-haspopup="dialog"
                     aria-expanded={uploadOpen}
                     aria-keyshortcuts="Control+K Meta+K"
-                    className="flex items-center justify-center gap-2 w-full h-11 md:h-10 px-4 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-medium text-sm shadow-xs hover:bg-sidebar-primary/90 transition-colors cursor-pointer group/cta focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
+                    className="w-full h-11 md:h-10 gap-2 px-4 bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 shadow-xs cursor-pointer group/cta focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                     id="quick-upload-worksheet"
                   />
                 }
@@ -205,8 +208,9 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <button
+                  <Button
                     type="button"
+                    size="icon"
                     onClick={() => {
                       if (isMobile) setOpenMobile(false);
                       openUpload();
@@ -215,7 +219,7 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                     aria-haspopup="dialog"
                     aria-expanded={uploadOpen}
                     aria-keyshortcuts="Control+K Meta+K"
-                    className="flex aspect-square size-10 md:size-9 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 transition-colors shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
+                    className="size-10 md:size-9 bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                   />
                 }
               >
@@ -290,12 +294,13 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                             <span className="truncate group-data-[collapsible=icon]:hidden">{item.title}</span>
                           </div>
                           {showBadge && (
-                            <span
-                              className="ml-auto group-data-[collapsible=icon]:hidden inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs font-semibold tabular-nums bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border border-brand-200/60 dark:border-brand-900/60"
-                              aria-label={`${pendingSubmissionsCount} pending submissions`}
+                            <Badge
+                              variant="secondary"
+                              className="ml-auto group-data-[collapsible=icon]:hidden min-w-5 px-1.5 rounded-full font-semibold tabular-nums bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-200/60 dark:border-brand-900/60"
                             >
                               <span aria-hidden="true">{displayCount}</span>
-                            </span>
+                              <span className="sr-only"> pending submissions</span>
+                            </Badge>
                           )}
                         </div>
                       </SidebarMenuButton>
@@ -408,9 +413,11 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                   />
                 }
               >
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-semibold text-xs shrink-0 border border-brand-200/60 dark:border-brand-900/60">
-                  {getInitials(user.fullName)}
-                </div>
+                <Avatar className="size-8 rounded-lg after:rounded-lg after:border-brand-200/60 dark:after:border-brand-900/60">
+                  <AvatarFallback className="rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-semibold text-xs">
+                    {getInitials(user.fullName)}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="grid flex-1 min-w-0 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                   <span className="truncate font-medium text-sidebar-foreground text-sm">
                     {user.fullName}
@@ -430,9 +437,11 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
               >
                 <div className="p-2">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="flex aspect-square size-9 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-semibold text-xs border border-brand-200/60 dark:border-brand-900/60 shrink-0">
-                      {getInitials(user.fullName)}
-                    </div>
+                    <Avatar className="size-9 rounded-lg after:rounded-lg after:border-brand-200/60 dark:after:border-brand-900/60">
+                      <AvatarFallback className="rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-semibold text-xs">
+                        {getInitials(user.fullName)}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="flex flex-col min-w-0 flex-1">
                       <span className="font-semibold text-xs text-foreground truncate">
                         {user.fullName}
