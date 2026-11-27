@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
 import {
   type Submission,
@@ -999,10 +1000,12 @@ export function SubmissionDetailContent({
       {/* Top Back Navigation Trail for Page View */}
       {variant === "page" && onClose && (
         <nav aria-label="Breadcrumb navigation" className="print:hidden pb-1 -ml-2">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={handleProtectedClose}
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg px-2 py-1.5 min-h-10 sm:min-h-8 hover:bg-muted/50 cursor-pointer"
+            className="gap-1.5 text-xs text-muted-foreground hover:text-foreground font-medium group rounded-lg px-2 py-1.5 h-auto min-h-10 sm:min-h-8 hover:bg-muted/50 cursor-pointer"
           >
             <ArrowLeft
               className="size-3.5 transition-transform group-hover:-translate-x-0.5"
@@ -1011,7 +1014,7 @@ export function SubmissionDetailContent({
             <span className="truncate max-w-xs sm:max-w-md">
               {resolvedActivityTitle ? `Back to ${resolvedActivityTitle}` : "Back to Activity"}
             </span>
-          </button>
+          </Button>
         </nav>
       )}
 
@@ -1245,447 +1248,432 @@ export function SubmissionDetailContent({
                 const effectiveTab: "rubric" | "metrics" | "comments" =
                   !showMetricsTab && rightPaneTab === "metrics" ? "rubric" : rightPaneTab;
 
-                return (
-                  <>
+                const desktopGuideCard =
+                  isDesktopGuideRendered && activeCriterionInfo ? (
                     <div
-                      role="tablist"
-                      aria-label="Submission review panels"
-                      className="flex items-center p-1 sm:p-1.5 rounded-xl bg-muted/60 border border-border/80 gap-1 sm:gap-1.5"
+                      id="criterion-diagnostic-guide"
+                      className="hidden lg:block p-3 sm:p-3.5 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1.5 text-xs sm:text-sm animate-in fade-in-50 duration-200 motion-reduce:animate-none"
                     >
-                      {tabs.map((tab, tabIdx) => {
-                        const isActive = effectiveTab === tab.id;
-                        return (
-                          <button
-                            key={tab.id}
-                            type="button"
-                            role="tab"
-                            id={`submission-tab-${tab.id}`}
-                            aria-selected={isActive}
-                            aria-controls={`submission-tabpanel-${tab.id}`}
-                            tabIndex={isActive ? 0 : -1}
-                            onClick={() => setRightPaneTab(tab.id)}
-                            onKeyDown={(e) => {
-                              let nextIdx: number | null = null;
-                              if (e.key === "ArrowRight") nextIdx = (tabIdx + 1) % tabs.length;
-                              else if (e.key === "ArrowLeft") nextIdx = (tabIdx - 1 + tabs.length) % tabs.length;
-                              else if (e.key === "Home") nextIdx = 0;
-                              else if (e.key === "End") nextIdx = tabs.length - 1;
-                              if (nextIdx !== null) {
-                                e.preventDefault();
-                                const targetTab = tabs[nextIdx];
-                                setRightPaneTab(targetTab.id);
-                                document.getElementById(`submission-tab-${targetTab.id}`)?.focus();
-                              }
-                            }}
-                            className={cn(
-                              "flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-semibold transition-colors cursor-pointer min-h-11 sm:min-h-0 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
-                              isActive
-                                ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60"
-                                : "text-muted-foreground hover:text-foreground"
-                            )}
-                          >
-                            <span className="truncate">{tab.label}</span>
-                            {tab.id === "comments" && hasUnreadComments && (
-                              <span className="inline-flex items-center rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] sm:text-xs font-bold text-primary shrink-0">
-                                Unread
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
+                      {selectedCriterion === "Spacing" && spacingNotApplicableReason && (
+                        <p className="text-muted-foreground font-medium leading-relaxed">
+                          {spacingNotApplicableReason}
+                        </p>
+                      )}
+                      <p className="text-foreground/85 leading-relaxed">
+                        <strong className="font-semibold text-brand-900 dark:text-brand-200">
+                          {selectedCriterion}:
+                        </strong>{" "}
+                        {activeCriterionInfo.rubricGoal}
+                      </p>
+                      <p className="text-brand-800 dark:text-brand-300 leading-relaxed">
+                        <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
+                      </p>
                     </div>
+                  ) : null;
+
+                return (
+                  <Tabs
+                    value={effectiveTab}
+                    onValueChange={(value) =>
+                      setRightPaneTab(value as "rubric" | "metrics" | "comments")
+                    }
+                    className="gap-3"
+                  >
+                    <TabsList
+                      aria-label="Submission review panels"
+                      activateOnFocus
+                      className="w-full group-data-horizontal/tabs:h-auto flex items-center p-1 sm:p-1.5 rounded-xl bg-muted/60 border border-border/80 gap-1 sm:gap-1.5"
+                    >
+                      {tabs.map((tab) => (
+                        <TabsTrigger
+                          key={tab.id}
+                          value={tab.id}
+                          id={`submission-tab-${tab.id}`}
+                          aria-controls={`submission-tabpanel-${tab.id}`}
+                          className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-3 sm:px-4 group-data-[variant=default]/tabs-list:h-auto group-data-[variant=default]/tabs-list:rounded-lg text-xs sm:text-sm font-semibold transition-colors cursor-pointer min-h-11 sm:min-h-0 touch-manipulation data-active:bg-surface dark:data-active:bg-card data-active:text-foreground dark:data-active:text-foreground data-active:shadow-xs data-active:border-border/60!"
+                        >
+                          <span className="truncate">{tab.label}</span>
+                          {tab.id === "comments" && hasUnreadComments && (
+                            <Badge
+                              variant="secondary"
+                              className="h-auto rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] sm:text-xs font-bold text-primary shrink-0"
+                            >
+                              Unread
+                            </Badge>
+                          )}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
 
                     {/* COMMENTS TAB PANEL (Worksheet remains pinned on left!) */}
-                    {effectiveTab === "comments" && (
-                      <div
-                        id="submission-tabpanel-comments"
-                        role="tabpanel"
-                        aria-labelledby="submission-tab-comments"
-                        className="rounded-xl border border-border/80 bg-surface dark:bg-card shadow-xs overflow-hidden flex flex-col min-h-80"
-                      >
-                        {open && (commentUserId ? (
-                          <SubmissionCommentThread
-                            key={`${commentUserId}:${submission.id}`}
-                            userId={commentUserId}
-                            target={{ submissionId: submission.id }}
-                            location={{
-                              submissionId: submission.id,
-                              activityId: submission.activity_id,
-                              studentId: submission.student_id,
-                            }}
-                            studentName={submission.student?.full_name}
-                            compactHeader
-                            open
-                          />
-                        ) : (
-                          <div className="p-4 space-y-3" role="status" aria-label="Loading conversation">
-                            <Skeleton className="h-6 w-48 rounded-md" />
-                            <Skeleton className="h-16 w-full rounded-xl" />
+                    <TabsContent
+                      value="comments"
+                      id="submission-tabpanel-comments"
+                      className="rounded-xl border border-border/80 bg-surface dark:bg-card shadow-xs overflow-hidden flex flex-col min-h-80"
+                    >
+                      {open && (commentUserId ? (
+                        <SubmissionCommentThread
+                          key={`${commentUserId}:${submission.id}`}
+                          userId={commentUserId}
+                          target={{ submissionId: submission.id }}
+                          location={{
+                            submissionId: submission.id,
+                            activityId: submission.activity_id,
+                            studentId: submission.student_id,
+                          }}
+                          studentName={submission.student?.full_name}
+                          compactHeader
+                          open
+                        />
+                      ) : (
+                        <div className="p-4 space-y-3" role="status" aria-label="Loading conversation">
+                          <Skeleton className="h-6 w-48 rounded-md" />
+                          <Skeleton className="h-16 w-full rounded-xl" />
+                        </div>
+                      ))}
+                    </TabsContent>
+
+                    {/* ASSESSMENT / RUBRIC PANEL */}
+                    <TabsContent
+                      value="rubric"
+                      id="submission-tabpanel-rubric"
+                      className="space-y-2.5"
+                    >
+                      {/* REJECTED / QUALITY GATE FAILED STATE */}
+                      {submission.status === "rejected" && (
+                        <SubmissionRejectionCard
+                          submission={submission}
+                          onReupload={handleReupload}
+                        />
+                      )}
+
+                      {/* PROCESSING STATE */}
+                      {submission.status === "processing" && (
+                        <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-warning/10 border border-warning/30 space-y-2.5 text-center">
+                          <div className="flex size-11 items-center justify-center rounded-2xl bg-warning/20 text-warning-foreground mx-auto motion-safe:animate-pulse">
+                            <Clock className="size-5 sm:size-6" aria-hidden="true" />
                           </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* ASSESSMENT / RUBRIC / METRICS PANELS */}
-                    {effectiveTab !== "comments" && (
-                      <div
-                        id={`submission-tabpanel-${effectiveTab}`}
-                        role="tabpanel"
-                        aria-labelledby={`submission-tab-${effectiveTab}`}
-                        className="space-y-2.5"
-                      >
-                        {/* REJECTED / QUALITY GATE FAILED STATE */}
-                        {submission.status === "rejected" && (
-                          <SubmissionRejectionCard
-                            submission={submission}
-                            onReupload={handleReupload}
-                          />
-                        )}
-
-                        {/* PROCESSING STATE */}
-                        {submission.status === "processing" && (
-                          <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-warning/10 border border-warning/30 space-y-2.5 text-center">
-                            <div className="flex size-11 items-center justify-center rounded-2xl bg-warning/20 text-warning-foreground mx-auto motion-safe:animate-pulse">
-                              <Clock className="size-5 sm:size-6" aria-hidden="true" />
-                            </div>
-                            <div className="space-y-1 max-w-sm mx-auto">
-                              <h3 className="text-sm font-heading font-semibold text-foreground">
-                                Analyzing Handwriting
-                              </h3>
-                              <p className="text-xs text-muted-foreground leading-relaxed">
-                                Evaluating letter formation, spacing, slant, and baseline alignment.
-                              </p>
-                            </div>
+                          <div className="space-y-1 max-w-sm mx-auto">
+                            <h3 className="text-sm font-heading font-semibold text-foreground">
+                              Analyzing Handwriting
+                            </h3>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              Evaluating letter formation, spacing, slant, and baseline alignment.
+                            </p>
                           </div>
-                        )}
+                        </div>
+                      )}
 
-                        {/* COMPLETED STATE */}
-                        {(submission.status === "completed" || submission.status === "returned") && (
-                          <div className="space-y-2.5">
-                            {hasCalibratedScores ? (
-                              <div className="space-y-4">
-                                {/* Phase 2: Overall Composite Score Card */}
-                                <Card size="sm" className="border-border/80 shadow-none gap-2.5">
-                                  <CardContent className="space-y-2.5">
-                                    <div className="flex items-center justify-between gap-2">
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        {compositeBandMeta && (
-                                          <span
-                                            className={cn("size-2.5 rounded-full shrink-0", compositeBandMeta.dotColor)}
-                                            aria-hidden="true"
-                                          />
-                                        )}
-                                        <h3 className="text-base sm:text-lg font-heading font-semibold text-foreground truncate">
-                                          {compositeBandMeta?.label ?? "Overall Score"}
-                                        </h3>
-                                      </div>
-                                      {compositeScore !== null && compositeScore !== undefined && (
-                                        <Badge
-                                          variant="outline"
-                                          className="h-auto rounded-md text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 border-border/60 shrink-0"
-                                        >
-                                          {Math.round(compositeScore)}% overall
-                                        </Badge>
+                      {/* COMPLETED STATE */}
+                      {(submission.status === "completed" || submission.status === "returned") && (
+                        <div className="space-y-2.5">
+                          {hasCalibratedScores ? (
+                            <div className="space-y-4">
+                              {/* Phase 2: Overall Composite Score Card */}
+                              <Card size="sm" className="border-border/80 shadow-none gap-2.5">
+                                <CardContent className="space-y-2.5">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      {compositeBandMeta && (
+                                        <span
+                                          className={cn("size-2.5 rounded-full shrink-0", compositeBandMeta.dotColor)}
+                                          aria-hidden="true"
+                                        />
                                       )}
+                                      <h3 className="text-base sm:text-lg font-heading font-semibold text-foreground truncate">
+                                        {compositeBandMeta?.label ?? "Overall Score"}
+                                      </h3>
                                     </div>
                                     {compositeScore !== null && compositeScore !== undefined && (
-                                      <BandPositionBar
-                                        score={compositeScore}
-                                        height="sm"
-                                        showBandLabels={false}
-                                        showThresholds={true}
-                                        ariaLabel={`Overall score: ${Math.round(compositeScore)}%`}
-                                        ariaValueText={`${Math.round(compositeScore)}% overall`}
-                                      />
-                                    )}
-                                  </CardContent>
-                                </Card>
-
-                                {/* Phase 2: Unified Skill Breakdown Card */}
-                                <div className="space-y-2">
-                                  <h3 className="text-sm font-heading font-semibold text-foreground px-0.5">
-                                    Skill breakdown
-                                  </h3>
-
-                                  <Card className="border-border/80 shadow-none py-0 gap-0 divide-y divide-border/60">
-                                    {criteria.map((c) => {
-                                      const isCriterionNA = c.score === null || c.score === undefined;
-                                      const isSelected = selectedCriterion === c.name;
-                                      const isTop = topStrength?.key === c.key;
-                                      const isFocus = practiceFocus?.key === c.key;
-                                      const highlightBadge = isTop
-                                        ? "top_strength"
-                                        : isFocus
-                                          ? "practice_focus"
-                                          : null;
-                                      const alertCount = criterionAttentionCounts[c.name] ?? 0;
-                                      const guide = CRITERIA_GUIDE[c.name];
-
-                                      return (
-                                        <CriterionFeedbackRow
-                                          key={c.key}
-                                          criterionKey={c.key}
-                                          label={c.name}
-                                          score={c.score ?? null}
-                                          band={c.band}
-                                          notApplicable={isCriterionNA}
-                                          highlightBadge={highlightBadge}
-                                          subtitleMeta={
-                                            alertCount > 0 ? (
-                                              <span className="text-xs font-medium text-band-1-text tabular-nums">
-                                                {alertCount} {alertCount === 1 ? "alert" : "alerts"}
-                                              </span>
-                                            ) : null
-                                          }
-                                          isActive={isSelected}
-                                          showDiagnosticNote={isSelected}
-                                          showPositionBar={false}
-                                          notApplicableNote={
-                                            c.name === "Spacing" && isCriterionNA
-                                              ? spacingNotApplicableReason
-                                              : null
-                                          }
-                                          diagnosticNoteOverride={guide?.rubricGoal ?? null}
-                                          tipLabel="Coaching tip:"
-                                          homePracticeTip={guide?.coachingTip ?? null}
-                                          onInspect={() => {
-                                            handleSelectCriterion(isSelected ? null : c.name);
-                                          }}
-                                        />
-                                      );
-                                    })}
-                                  </Card>
-                                </div>
-                              </div>
-                            ) : (
-                              <>
-                                {/* TAB 1: TEACHER RUBRIC ASSESSMENT */}
-                                {effectiveTab === "rubric" && (
-                                  <div className="space-y-4">
-                                    {submission.manual_score && (!isEditingRubric || !canEditRubric) ? (
-                                      <>
-                                        {/* READ-ONLY / CONFIRMED RUBRIC STATE */}
-                                        <Card size="sm" className="border-border/80 shadow-none gap-2.5">
-                                          <CardContent className="space-y-2.5">
-                                            <div className="flex items-center justify-between gap-2 flex-wrap">
-                                              <div className="flex items-center gap-2 min-w-0">
-                                                {recordedComposite && (
-                                                  <span
-                                                    className={cn(
-                                                      "size-2.5 rounded-full shrink-0",
-                                                      recordedComposite.overallBandMeta.dotColor
-                                                    )}
-                                                    aria-hidden="true"
-                                                  />
-                                                )}
-                                                <h3 className="text-base sm:text-lg font-heading font-semibold text-foreground truncate">
-                                                  {recordedComposite?.overallBandMeta.label ?? "Teacher Benchmark"}
-                                                </h3>
-                                              </div>
-                                              <div className="flex items-center gap-2 shrink-0">
-                                                {recordedComposite && (
-                                                  <Badge
-                                                    variant="outline"
-                                                    className="h-auto rounded-md text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 border-border/60"
-                                                  >
-                                                    {recordedComposite.isComplete
-                                                      ? `${recordedComposite.totalPoints}/${recordedComposite.maxPoints} pts · ${recordedComposite.avgPercentage}%`
-                                                      : `${recordedComposite.totalPoints}/${recordedComposite.maxPoints} pts`}
-                                                  </Badge>
-                                                )}
-                                                {canEditRubric && (
-                                                  <Button
-                                                    ref={editButtonRef}
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => setIsEditingRubric(true)}
-                                                    className="h-10 sm:h-7 min-h-10 sm:min-h-0 px-3 sm:px-2.5 text-xs rounded-lg text-brand-800 dark:text-brand-200 border-brand-300 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 gap-1.5 cursor-pointer touch-manipulation shrink-0 font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
-                                                    aria-label="Edit recorded rubric scores"
-                                                  >
-                                                    <Edit3 className="size-3" aria-hidden="true" />
-                                                    <span>Edit</span>
-                                                  </Button>
-                                                )}
-                                              </div>
-                                            </div>
-                                            {recordedComposite?.isComplete && (
-                                              <BandPositionBar
-                                                score={recordedComposite.avgPercentage}
-                                                height="sm"
-                                                showBandLabels={false}
-                                                showThresholds={true}
-                                                ariaLabel={`Teacher benchmark score: ${recordedComposite.avgPercentage}%`}
-                                                ariaValueText={`${recordedComposite.avgPercentage}% overall`}
-                                              />
-                                            )}
-                                          </CardContent>
-                                        </Card>
-
-                                        <div className="space-y-2">
-                                          <h3 className="text-sm font-heading font-semibold text-foreground px-0.5">
-                                            Skill breakdown
-                                          </h3>
-
-                                          <Card
-                                            role="group"
-                                            aria-label="Recorded criterion breakdown"
-                                            className="border-border/80 shadow-none py-0 gap-0 divide-y divide-border/60"
-                                          >
-                                            {RUBRIC_CRITERIA.map((criterion) => {
-                                              const bandValue =
-                                                submission.manual_score?.[criterion.key] ?? null;
-                                              const isSpacingNA =
-                                                criterion.key === "spacing_band" && bandValue == null;
-                                              const isSelected =
-                                                selectedCriterion === criterion.shortName;
-                                              const attentionCount =
-                                                criterionAttentionCounts[criterion.shortName] ??
-                                                criterionAttentionCounts[criterion.name] ??
-                                                0;
-                                              const metric = extractCriterionCVMetric(
-                                                criterion.key,
-                                                submission.measurement
-                                              );
-                                              const guide = CRITERIA_GUIDE[criterion.shortName];
-                                              const criterionKey = criterion.key.replace(/_band$/, "") as CriterionKey;
-
-                                              return (
-                                                <CriterionFeedbackRow
-                                                  key={criterion.key}
-                                                  criterionKey={criterionKey}
-                                                  label={criterion.shortName}
-                                                  score={null}
-                                                  band={isSpacingNA ? null : bandValue}
-                                                  notApplicable={isSpacingNA}
-                                                  subtitleMeta={
-                                                    metric || attentionCount > 0 ? (
-                                                      <>
-                                                        {metric && (
-                                                          <span
-                                                            className={cn(
-                                                              "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-sans font-medium border tabular-nums",
-                                                              metric.badgeClass
-                                                            )}
-                                                            title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
-                                                          >
-                                                            <span
-                                                              className={cn("size-1.5 rounded-full", metric.dotClass)}
-                                                              aria-hidden="true"
-                                                            />
-                                                            <span>{metric.value}</span>
-                                                          </span>
-                                                        )}
-                                                        {attentionCount > 0 && (
-                                                          <span className="text-xs font-medium text-band-1-text tabular-nums">
-                                                            {attentionCount}{" "}
-                                                            {attentionCount === 1 ? "alert" : "alerts"}
-                                                          </span>
-                                                        )}
-                                                      </>
-                                                    ) : null
-                                                  }
-                                                  isActive={isSelected}
-                                                  showDiagnosticNote={isSelected}
-                                                  showPositionBar={false}
-                                                  notApplicableNote={
-                                                    isSpacingNA ? spacingNotApplicableReason : null
-                                                  }
-                                                  diagnosticNoteOverride={guide?.rubricGoal ?? null}
-                                                  tipLabel="Coaching tip:"
-                                                  homePracticeTip={guide?.coachingTip ?? null}
-                                                  onInspect={() => {
-                                                    handleSelectCriterion(
-                                                      isSelected ? null : criterion.shortName
-                                                    );
-                                                  }}
-                                                />
-                                              );
-                                            })}
-                                          </Card>
-                                        </div>
-                                      </>
-                                    ) : canEditRubric ? (
-                                      /* INTERACTIVE RUBRIC ENTRY FORM */
-                                      <ManualRubricEntryForm
-                                        key={submission.id}
-                                        submissionId={submission.id}
-                                        initialScores={submission.manual_score}
-                                        measurement={submission.measurement}
-                                        onSuccess={handleSuccessEditingRubric}
-                                        onCancel={handleCancelEditingRubric}
-                                        onDirtyChange={setIsRubricDirty}
-                                        onFocusCriterion={handleSelectCriterion}
-                                        canGoNext={canGoNext}
-                                        canRelease={canReleaseSubmission}
-                                        onSaveAndRelease={handleSaveAndReleaseRubric}
-                                        onAdvanceNext={() => {
-                                          if (
-                                            canGoNext &&
-                                            submissions &&
-                                            onNavigate
-                                          ) {
-                                            setIsRubricDirty(false);
-                                            onNavigate(submissions[effectiveIndex + 1]);
-                                          }
-                                        }}
-                                        onNavigateBack={() => {
-                                          if (onNavigate) {
-                                            onNavigate(submission);
-                                            setIsEditingRubric(true);
-                                          }
-                                        }}
-                                      />
-                                    ) : (
-                                      <p className="rounded-xl border border-border/80 bg-surface p-3 text-xs text-muted-foreground dark:bg-card">
-                                        {scoringEngine.isPending || scoringEngine.isFetching
-                                          ? "Checking the active scoring mode…"
-                                          : scoringEngine.isError
-                                            ? "Rubric editing is unavailable because the scoring mode could not be confirmed."
-                                            : "Manual rubric scoring is unavailable while calibrated scoring is active."}
-                                      </p>
+                                      <Badge
+                                        variant="outline"
+                                        className="h-auto rounded-md text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 border-border/60 shrink-0"
+                                      >
+                                        {Math.round(compositeScore)}% overall
+                                      </Badge>
                                     )}
                                   </div>
-                                )}
+                                  {compositeScore !== null && compositeScore !== undefined && (
+                                    <BandPositionBar
+                                      score={compositeScore}
+                                      height="sm"
+                                      showBandLabels={false}
+                                      showThresholds={true}
+                                      ariaLabel={`Overall score: ${Math.round(compositeScore)}%`}
+                                      ariaValueText={`${Math.round(compositeScore)}% overall`}
+                                    />
+                                  )}
+                                </CardContent>
+                              </Card>
 
-                                {/* TAB 2: PHYSICAL RAW CV MEASUREMENTS */}
-                                {effectiveTab === "metrics" && (
-                                  <RawMeasurementsTable
-                                    measurement={measurement}
-                                    selectedCriterion={selectedCriterion}
-                                    onSelectCriterion={handleSelectCriterion}
-                                  />
-                                )}
-                              </>
-                            )}
+                              {/* Phase 2: Unified Skill Breakdown Card */}
+                              <div className="space-y-2">
+                                <h3 className="text-sm font-heading font-semibold text-foreground px-0.5">
+                                  Skill breakdown
+                                </h3>
 
-                            {/* Focused Criterion Diagnostic Insight Card (Desktop view >=lg; mobile/tablet handled inline) */}
-                            {isDesktopGuideRendered && activeCriterionInfo && (
-                              <div
-                                id="criterion-diagnostic-guide"
-                                className="hidden lg:block p-3 sm:p-3.5 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1.5 text-xs sm:text-sm animate-in fade-in-50 duration-200 motion-reduce:animate-none"
-                              >
-                                {selectedCriterion === "Spacing" && spacingNotApplicableReason && (
-                                  <p className="text-muted-foreground font-medium leading-relaxed">
-                                    {spacingNotApplicableReason}
-                                  </p>
-                                )}
-                                <p className="text-foreground/85 leading-relaxed">
-                                  <strong className="font-semibold text-brand-900 dark:text-brand-200">
-                                    {selectedCriterion}:
-                                  </strong>{" "}
-                                  {activeCriterionInfo.rubricGoal}
-                                </p>
-                                <p className="text-brand-800 dark:text-brand-300 leading-relaxed">
-                                  <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
-                                </p>
+                                <Card className="border-border/80 shadow-none py-0 gap-0 divide-y divide-border/60">
+                                  {criteria.map((c) => {
+                                    const isCriterionNA = c.score === null || c.score === undefined;
+                                    const isSelected = selectedCriterion === c.name;
+                                    const isTop = topStrength?.key === c.key;
+                                    const isFocus = practiceFocus?.key === c.key;
+                                    const highlightBadge = isTop
+                                      ? "top_strength"
+                                      : isFocus
+                                        ? "practice_focus"
+                                        : null;
+                                    const alertCount = criterionAttentionCounts[c.name] ?? 0;
+                                    const guide = CRITERIA_GUIDE[c.name];
+
+                                    return (
+                                      <CriterionFeedbackRow
+                                        key={c.key}
+                                        criterionKey={c.key}
+                                        label={c.name}
+                                        score={c.score ?? null}
+                                        band={c.band}
+                                        notApplicable={isCriterionNA}
+                                        highlightBadge={highlightBadge}
+                                        subtitleMeta={
+                                          alertCount > 0 ? (
+                                            <span className="text-xs font-medium text-band-1-text tabular-nums">
+                                              {alertCount} {alertCount === 1 ? "alert" : "alerts"}
+                                            </span>
+                                          ) : null
+                                        }
+                                        isActive={isSelected}
+                                        showDiagnosticNote={isSelected}
+                                        showPositionBar={false}
+                                        notApplicableNote={
+                                          c.name === "Spacing" && isCriterionNA
+                                            ? spacingNotApplicableReason
+                                            : null
+                                        }
+                                        diagnosticNoteOverride={guide?.rubricGoal ?? null}
+                                        tipLabel="Coaching tip:"
+                                        homePracticeTip={guide?.coachingTip ?? null}
+                                        onInspect={() => {
+                                          handleSelectCriterion(isSelected ? null : c.name);
+                                        }}
+                                      />
+                                    );
+                                  })}
+                                </Card>
                               </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-4">
+                              {submission.manual_score && (!isEditingRubric || !canEditRubric) ? (
+                                <>
+                                  {/* READ-ONLY / CONFIRMED RUBRIC STATE */}
+                                  <Card size="sm" className="border-border/80 shadow-none gap-2.5">
+                                    <CardContent className="space-y-2.5">
+                                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          {recordedComposite && (
+                                            <span
+                                              className={cn(
+                                                "size-2.5 rounded-full shrink-0",
+                                                recordedComposite.overallBandMeta.dotColor
+                                              )}
+                                              aria-hidden="true"
+                                            />
+                                          )}
+                                          <h3 className="text-base sm:text-lg font-heading font-semibold text-foreground truncate">
+                                            {recordedComposite?.overallBandMeta.label ?? "Teacher Benchmark"}
+                                          </h3>
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                          {recordedComposite && (
+                                            <Badge
+                                              variant="outline"
+                                              className="h-auto rounded-md text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 border-border/60"
+                                            >
+                                              {recordedComposite.isComplete
+                                                ? `${recordedComposite.totalPoints}/${recordedComposite.maxPoints} pts · ${recordedComposite.avgPercentage}%`
+                                                : `${recordedComposite.totalPoints}/${recordedComposite.maxPoints} pts`}
+                                            </Badge>
+                                          )}
+                                          {canEditRubric && (
+                                            <Button
+                                              ref={editButtonRef}
+                                              type="button"
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => setIsEditingRubric(true)}
+                                              className="h-10 sm:h-7 min-h-10 sm:min-h-0 px-3 sm:px-2.5 text-xs rounded-lg text-brand-800 dark:text-brand-200 border-brand-300 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 gap-1.5 cursor-pointer touch-manipulation shrink-0 font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                                              aria-label="Edit recorded rubric scores"
+                                            >
+                                              <Edit3 className="size-3" aria-hidden="true" />
+                                              <span>Edit</span>
+                                            </Button>
+                                          )}
+                                        </div>
+                                      </div>
+                                      {recordedComposite?.isComplete && (
+                                        <BandPositionBar
+                                          score={recordedComposite.avgPercentage}
+                                          height="sm"
+                                          showBandLabels={false}
+                                          showThresholds={true}
+                                          ariaLabel={`Teacher benchmark score: ${recordedComposite.avgPercentage}%`}
+                                          ariaValueText={`${recordedComposite.avgPercentage}% overall`}
+                                        />
+                                      )}
+                                    </CardContent>
+                                  </Card>
+
+                                  <div className="space-y-2">
+                                    <h3 className="text-sm font-heading font-semibold text-foreground px-0.5">
+                                      Skill breakdown
+                                    </h3>
+
+                                    <Card
+                                      role="group"
+                                      aria-label="Recorded criterion breakdown"
+                                      className="border-border/80 shadow-none py-0 gap-0 divide-y divide-border/60"
+                                    >
+                                      {RUBRIC_CRITERIA.map((criterion) => {
+                                        const bandValue =
+                                          submission.manual_score?.[criterion.key] ?? null;
+                                        const isSpacingNA =
+                                          criterion.key === "spacing_band" && bandValue == null;
+                                        const isSelected =
+                                          selectedCriterion === criterion.shortName;
+                                        const attentionCount =
+                                          criterionAttentionCounts[criterion.shortName] ??
+                                          criterionAttentionCounts[criterion.name] ??
+                                          0;
+                                        const metric = extractCriterionCVMetric(
+                                          criterion.key,
+                                          submission.measurement
+                                        );
+                                        const guide = CRITERIA_GUIDE[criterion.shortName];
+                                        const criterionKey = criterion.key.replace(/_band$/, "") as CriterionKey;
+
+                                        return (
+                                          <CriterionFeedbackRow
+                                            key={criterion.key}
+                                            criterionKey={criterionKey}
+                                            label={criterion.shortName}
+                                            score={null}
+                                            band={isSpacingNA ? null : bandValue}
+                                            notApplicable={isSpacingNA}
+                                            subtitleMeta={
+                                              metric || attentionCount > 0 ? (
+                                                <>
+                                                  {metric && (
+                                                    <span
+                                                      className={cn(
+                                                        "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-sans font-medium border tabular-nums",
+                                                        metric.badgeClass
+                                                      )}
+                                                      title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
+                                                    >
+                                                      <span
+                                                        className={cn("size-1.5 rounded-full", metric.dotClass)}
+                                                        aria-hidden="true"
+                                                      />
+                                                      <span>{metric.value}</span>
+                                                    </span>
+                                                  )}
+                                                  {attentionCount > 0 && (
+                                                    <span className="text-xs font-medium text-band-1-text tabular-nums">
+                                                      {attentionCount}{" "}
+                                                      {attentionCount === 1 ? "alert" : "alerts"}
+                                                    </span>
+                                                  )}
+                                                </>
+                                              ) : null
+                                            }
+                                            isActive={isSelected}
+                                            showDiagnosticNote={isSelected}
+                                            showPositionBar={false}
+                                            notApplicableNote={
+                                              isSpacingNA ? spacingNotApplicableReason : null
+                                            }
+                                            diagnosticNoteOverride={guide?.rubricGoal ?? null}
+                                            tipLabel="Coaching tip:"
+                                            homePracticeTip={guide?.coachingTip ?? null}
+                                            onInspect={() => {
+                                              handleSelectCriterion(
+                                                isSelected ? null : criterion.shortName
+                                              );
+                                            }}
+                                          />
+                                        );
+                                      })}
+                                    </Card>
+                                  </div>
+                                </>
+                              ) : canEditRubric ? (
+                                /* INTERACTIVE RUBRIC ENTRY FORM */
+                                <ManualRubricEntryForm
+                                  key={submission.id}
+                                  submissionId={submission.id}
+                                  initialScores={submission.manual_score}
+                                  measurement={submission.measurement}
+                                  onSuccess={handleSuccessEditingRubric}
+                                  onCancel={handleCancelEditingRubric}
+                                  onDirtyChange={setIsRubricDirty}
+                                  onFocusCriterion={handleSelectCriterion}
+                                  canGoNext={canGoNext}
+                                  canRelease={canReleaseSubmission}
+                                  onSaveAndRelease={handleSaveAndReleaseRubric}
+                                  onAdvanceNext={() => {
+                                    if (
+                                      canGoNext &&
+                                      submissions &&
+                                      onNavigate
+                                    ) {
+                                      setIsRubricDirty(false);
+                                      onNavigate(submissions[effectiveIndex + 1]);
+                                    }
+                                  }}
+                                  onNavigateBack={() => {
+                                    if (onNavigate) {
+                                      onNavigate(submission);
+                                      setIsEditingRubric(true);
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                <p className="rounded-xl border border-border/80 bg-surface p-3 text-xs text-muted-foreground dark:bg-card">
+                                  {scoringEngine.isPending || scoringEngine.isFetching
+                                    ? "Checking the active scoring mode…"
+                                    : scoringEngine.isError
+                                      ? "Rubric editing is unavailable because the scoring mode could not be confirmed."
+                                      : "Manual rubric scoring is unavailable while calibrated scoring is active."}
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Focused Criterion Diagnostic Insight Card (Desktop view >=lg; mobile/tablet handled inline) */}
+                          {desktopGuideCard}
+                        </div>
+                      )}
+                    </TabsContent>
+
+                    {/* PHYSICAL RAW CV MEASUREMENTS PANEL */}
+                    {showMetricsTab && (
+                      <TabsContent
+                        value="metrics"
+                        id="submission-tabpanel-metrics"
+                        className="space-y-2.5"
+                      >
+                        <RawMeasurementsTable
+                          measurement={measurement}
+                          selectedCriterion={selectedCriterion}
+                          onSelectCriterion={handleSelectCriterion}
+                        />
+
+                        {/* Focused Criterion Diagnostic Insight Card (Desktop view >=lg; mobile/tablet handled inline) */}
+                        {desktopGuideCard}
+                      </TabsContent>
                     )}
-                  </>
+                  </Tabs>
                 );
               })()}
 

@@ -5,6 +5,9 @@ import type { Submission } from "@/lib/hooks/use-submissions";
 import { CRITERIA_GUIDE } from "./manual-rubric-entry-form";
 import { CV_BENCHMARK_RANGES } from "@/lib/utils/scoring";
 import { Info } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export function formatMetric(
   mean: number | null | undefined,
@@ -376,10 +379,15 @@ export function RawMeasurementsTable({
   return (
     <div className="space-y-1.5">
       {!measurement && (
-        <div className="p-2.5 rounded-xl bg-muted/40 border border-border/70 text-xs text-muted-foreground flex items-center gap-2">
-          <Info className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
-          <span>Physical geometric measurements are pending computer vision feature extraction.</span>
-        </div>
+        <Alert
+          role="status"
+          className="bg-muted/40 border-border/70 px-3 py-2 text-xs text-muted-foreground items-center"
+        >
+          <Info className="size-3.5 text-muted-foreground shrink-0 translate-y-0!" aria-hidden="true" />
+          <AlertDescription className="text-xs">
+            Physical geometric measurements are pending computer vision feature extraction.
+          </AlertDescription>
+        </Alert>
       )}
 
       <div className="space-y-1.5">
@@ -406,30 +414,36 @@ export function RawMeasurementsTable({
                     : "bg-surface dark:bg-card border-border/70 hover:border-brand-300 dark:hover:border-brand-800 hover:bg-muted/30"
                 }`}
               >
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={() => onSelectCriterion(c.name)}
                   aria-pressed={isSelected}
                   aria-labelledby={`${titleId} ${valueId}`}
-                  className="w-full flex items-center justify-between gap-2 text-left cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-lg touch-manipulation min-h-11 sm:min-h-0"
+                  className="w-full h-auto px-0 justify-between gap-2 text-left font-normal whitespace-normal hover:bg-transparent dark:hover:bg-transparent cursor-pointer rounded-lg touch-manipulation min-h-11 sm:min-h-0"
                 >
                   <div className="min-w-0 flex items-center gap-2 flex-wrap">
                     <span id={titleId} className="font-semibold text-foreground truncate block">
                       {c.name}
                     </span>
                     {c.benchmark && (
-                      <span
-                        className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border inline-flex items-center gap-1 ${c.benchmark.badgeClass}`}
+                      <Badge
+                        variant="outline"
+                        className={`h-auto rounded-full text-[11px] font-semibold px-2 py-0.5 gap-1 ${c.benchmark.badgeClass}`}
                       >
                         <span className={`size-1.5 rounded-full shrink-0 ${c.benchmark.dotClass}`} aria-hidden="true" />
                         <span>{c.benchmark.label}</span>
-                      </span>
+                      </Badge>
                     )}
                   </div>
-                  <span id={valueId} className="font-sans font-semibold text-foreground tabular-nums text-xs px-2 py-0.5 rounded-md bg-muted/60 border border-border/60 shrink-0">
+                  <Badge
+                    id={valueId}
+                    variant="outline"
+                    className="h-auto font-sans font-semibold text-foreground tabular-nums text-xs px-2 py-0.5 rounded-md bg-muted/60 border-border/60 shrink-0"
+                  >
                     {c.primaryValue}
-                  </span>
-                </button>
+                  </Badge>
+                </Button>
 
                 {/* Visual Target Range Meter */}
                 {c.benchmark?.meter && (
