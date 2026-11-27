@@ -91,7 +91,7 @@ export const ThreadEntryView = memo(function ThreadEntryView({
         >
           <BubbleContent className="break-words whitespace-pre-wrap">
             {entry.deleted_at ? (
-              <span className="text-muted-foreground italic">This note was deleted.</span>
+              <span className="text-muted-foreground italic">This comment was deleted.</span>
             ) : (
               entry.body
             )}
@@ -115,8 +115,8 @@ export const ThreadEntryView = memo(function ThreadEntryView({
           )}
         </MessageFooter>
         {confirm && !entry.deleted_at && (
-          <Alert role="group" aria-label="Delete your note">
-            <AlertTitle>Delete this note?</AlertTitle>
+          <Alert role="group" aria-label="Delete your comment">
+            <AlertTitle>Delete this comment?</AlertTitle>
             <AlertDescription className="flex flex-col gap-2.5">
               <span>Its text will be removed for everyone.</span>
               {deleteError && (
@@ -140,7 +140,7 @@ export const ThreadEntryView = memo(function ThreadEntryView({
                     }
                   }}
                 >
-                  {deleting ? "Deleting…" : "Delete note"}
+                  {deleting ? "Deleting…" : "Delete comment"}
                 </Button>
                 <Button
                   ref={keepButtonRef}
@@ -153,7 +153,7 @@ export const ThreadEntryView = memo(function ThreadEntryView({
                     setConfirm(false);
                   }}
                 >
-                  Keep note
+                  Keep comment
                 </Button>
               </div>
             </AlertDescription>

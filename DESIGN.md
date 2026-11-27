@@ -254,6 +254,19 @@ WriteWise avoids generic "AI magic" motifs in favor of grounded, domain-specific
 
 **The Functional Iconography Rule.** No Lucide icons for non-interactable elements (e.g., headers, pill badges, stat cards). Rely on typography and visual hierarchy instead. Exceptions are strictly limited to empty states and explicit status/alert indicators (e.g., error warnings, success checkmarks).
 
+## Terminology Standard
+
+WriteWise enforces a one-concept, one-noun vocabulary across both Teacher and Parent portals to prevent label drift and ambiguity:
+
+| Term | Canonical Meaning | Where Used |
+|---|---|---|
+| **Assessment** | The scored evaluation of a worksheet (overall developmental band, percentage, and 5-skill breakdown). | Scored submission tabs (`Assessment \| Comments` on both Teacher Phase 2 and Parent) and system-level headings. |
+| **Comments** | The two-way private Teacher ↔ Parent conversation thread attached to a specific worksheet upload. Never called "Notes". | All conversation tabs, action buttons (`Comments`), unread pills (`Unread comment` / `Unread Comments`), composers, and sheets. |
+| **Teacher note** | The one-way revision message a teacher attaches when returning a worksheet for another photo (`return_note`). | Return banner/callout inside `WorksheetViewDialog`, `PendingWorksheetDialog`, and `SubmissionReturnedAlert`. |
+| **Feedback** | The written diagnostic prose and practice tips inside an assessment ("what we see + what to practice next"). | Skill breakdown descriptions, coaching/home tips, and empty states (`No feedback yet`, `Example feedback`). |
+| **Rubric** | Phase 1 manual teacher scoring/editing and the 4-band scoring reference. | Teacher Phase 1 tab (`Rubric \| CV Metrics \| Comments`) and rubric entry form. |
+| **Status** | Review state of an ungraded, pending, returned, or rejected worksheet before scores exist. | `PendingWorksheetDialog` (`Status \| Comments`). |
+
 ## Do's and Don'ts
 
 ### Do:

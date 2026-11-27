@@ -58,7 +58,7 @@ export function PendingWorksheetDialog({
     >
       <DialogContent className="w-[calc(100%-1.5rem)] sm:w-[95vw] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[min(94dvh,calc(100dvh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
         {/* Header matching WorksheetViewDialog */}
-        <DialogHeader className="p-4 sm:p-5 pb-0 border-b-0 bg-card/80">
+        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border bg-card/80">
           <div className="flex items-center justify-between gap-3 pr-10">
             <div className="min-w-0 space-y-1">
               <Button
@@ -77,7 +77,9 @@ export function PendingWorksheetDialog({
               <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
                 <span className="font-medium text-foreground">{childName}</span>
                 <span>&middot;</span>
-                <span className="font-sans tabular-nums">{formattedDate}</span>
+                <time dateTime={item.submissionDate} className="font-sans tabular-nums">
+                  {formattedDate}
+                </time>
                 {item.targetText && (
                   <>
                     <span>&middot;</span>
@@ -91,89 +93,98 @@ export function PendingWorksheetDialog({
           </div>
         </DialogHeader>
 
-        {/* Content Body: Unified Multimodal Split View */}
-        <SubmissionCommentTabs
-          key={item.submissionId}
-          submissionId={item.submissionId}
-          studentName={childName}
-          initialView={initialView}
-          commentsLabel="Notes"
-          tabBarClassName="px-4 sm:px-5"
-          open
-        >
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* Content Body: Split view (Worksheet pinned left, Status & Notes tabbed right) */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
             {/* Left Column: Photo Inspector */}
-            <div className="lg:col-span-7 flex flex-col justify-center w-full gap-3">
+            <div className="lg:col-span-6 lg:sticky lg:top-0 flex flex-col w-full gap-3">
               <WorksheetImageInspector
                 imageUrl={image.data}
                 altText={`Handwriting worksheet submitted for ${childName}`}
                 isLoading={image.isLoading}
                 isError={image.isError}
                 onRetry={() => image.refetch()}
-                headerLabel="Uploaded Worksheet Photo"
-                imageToolsDisclosure={true}
-                aspectRatioClass="h-[230px] sm:h-[320px] lg:h-auto lg:min-h-[420px] lg:max-h-[min(640px,calc(100dvh-14rem))]"
+                headerLabel="Handwritten Worksheet"
+                showShortcutsLegend={false}
+                collapsibleImageTools={true}
+                flatFrame={true}
+                keyboardScope="focused"
+                aspectRatioClass="max-h-[min(640px,calc(100dvh-14rem))] min-h-[220px]"
               />
             </div>
 
-            {/* Right Column: Status & Teacher Note */}
-            <div className="lg:col-span-5 space-y-4 w-full">
-              <Card className="p-0 gap-0 shadow-warm-sm">
-                <CardContent className="p-4 sm:p-5 space-y-4">
-                  {/* Status Headline & Explanation */}
-                  <div className="space-y-1.5">
-                    <h3 className="font-heading text-base font-semibold text-foreground">
-                      {item.status === "returned"
-                        ? "New photo requested"
-                        : item.status === "rejected"
-                          ? "Clearer photo needed"
-                          : "Waiting for teacher review"}
-                    </h3>
+            {/* Right Column: Tabbed Status & Notes */}
+            <div className="lg:col-span-6 flex flex-col w-full min-w-0">
+              <SubmissionCommentTabs
+                key={item.submissionId}
+                submissionId={item.submissionId}
+                studentName={childName}
+                initialView={initialView}
+                detailsLabel="Status"
+                commentsLabel="Comments"
+                variant="default"
+                open
+              >
+                <div className="space-y-4 w-full">
+                  <Card className="p-0 gap-0 border-border/80 shadow-none">
+                    <CardContent className="p-4 sm:p-5 space-y-4">
+                      {/* Status Headline & Explanation */}
+                      <div className="space-y-1.5">
+                        <h3 className="font-heading text-base font-semibold text-foreground">
+                          {item.status === "returned"
+                            ? "New photo requested"
+                            : item.status === "rejected"
+                              ? "Clearer photo needed"
+                              : "Waiting for teacher review"}
+                        </h3>
 
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {item.status === "returned"
-                        ? "Your teacher asked for another photo. Earlier uploads stay saved in history."
-                        : item.status === "rejected"
-                          ? "This photo couldn't be read clearly. Retake it flat in even light."
-                          : "Worksheet received. Feedback will appear here once your teacher shares it."}
-                    </p>
-                  </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {item.status === "returned"
+                            ? "Your teacher asked for another photo. Earlier uploads stay saved in history."
+                            : item.status === "rejected"
+                              ? "This photo couldn't be read clearly. Retake it flat in even light."
+                              : "Worksheet received. Feedback will appear here once your teacher shares it."}
+                        </p>
+                      </div>
 
-                  {/* Teacher Return Note if present (flat, border-divided) */}
-                  {item.returnNote && (
-                    <div className="border-t border-border/70 pt-3 space-y-1">
-                      <p className="text-xs font-semibold text-muted-foreground">
-                        Teacher note
-                      </p>
-                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                        {item.returnNote}
-                      </p>
-                    </div>
-                  )}
+                      {/* Teacher Return Note if present */}
+                      {item.returnNote && (
+                        <div
+                          role="status"
+                          className="rounded-xl border border-band-2/40 bg-band-2/15 p-3 text-xs sm:text-sm space-y-1"
+                        >
+                          <p className="text-xs font-semibold text-band-2-text">
+                            Teacher note
+                          </p>
+                          <p className="text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                            {item.returnNote}
+                          </p>
+                        </div>
+                      )}
 
-                  {/* Primary Action */}
-                  {canSendNewPhoto && (
-                    <div className="pt-2 border-t border-border/60">
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          onBack();
-                          onUploadActivity?.(item.activityId);
-                        }}
-                        className="w-full h-10 min-h-[40px] gap-2 font-semibold cursor-pointer"
-                      >
-                        <Camera className="size-4" aria-hidden="true" />
-                        <span>Send new photo</span>
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                      {/* Primary Action */}
+                      {canSendNewPhoto && (
+                        <div className="pt-2 border-t border-border/60">
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              onBack();
+                              onUploadActivity?.(item.activityId);
+                            }}
+                            className="w-full h-11 sm:h-9 gap-2 font-semibold cursor-pointer touch-manipulation"
+                          >
+                            <Camera className="size-4" aria-hidden="true" />
+                            <span>Send new photo</span>
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </SubmissionCommentTabs>
             </div>
           </div>
         </div>
-        </SubmissionCommentTabs>
       </DialogContent>
     </Dialog>
   );

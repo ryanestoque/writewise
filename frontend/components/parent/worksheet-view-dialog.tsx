@@ -13,8 +13,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Toggle } from "@/components/ui/toggle";
 import {
   DropdownMenu,
@@ -23,17 +21,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
 import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
 import { GuideLineOverlay, type GuideLines } from "@/components/shared/guide-line-overlay";
 import {
+  CalmOverlayToolbar,
   DiagnosticOverlay,
-  OVERLAY_COLORS,
   getAttentionItems,
   type CriterionFilter,
   type DiagnosticOverlayData,
@@ -54,11 +47,9 @@ import {
   type CriterionKey,
 } from "@/lib/utils/scoring";
 import {
-  HelpCircle,
   MoreHorizontal,
   PenLine,
   Trash2,
-  X,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -73,14 +64,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { SubmissionCommentTabs } from "@/components/comments/submission-comment-tabs";
-
-const CRITERION_SHORT_LABELS: Record<CriterionKey, string> = {
-  letter_formation: "Formation",
-  size_consistency: "Size",
-  spacing: "Spacing",
-  slant: "Slant",
-  baseline_alignment: "Baseline",
-};
 
 interface WorksheetViewDialogProps {
   open: boolean;
@@ -250,19 +233,16 @@ export function WorksheetViewDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-[calc(100%-1.5rem)] sm:w-[95vw] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[min(94dvh,calc(100dvh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
         {/* Header */}
-        <DialogHeader
-          className={cn(
-            "p-4 sm:p-5 bg-card/80",
-            submissionId ? "pb-0 border-b-0" : "pb-3 border-b border-border"
-          )}
-        >
+        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border bg-card/80">
           <div className="flex items-start justify-between gap-2 pr-11 sm:pr-10">
             <div className="min-w-0 space-y-1">
               <DialogTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
                 {childName ? `${childName}'s Worksheet` : "Worksheet Feedback"}
               </DialogTitle>
               <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
-                <span className="font-sans tabular-nums">{formattedDate}</span>
+                <time dateTime={submissionDate} className="font-sans tabular-nums">
+                  {formattedDate}
+                </time>
                 {displayTargetText && (
                   <>
                     <span>&middot;</span>
@@ -280,9 +260,9 @@ export function WorksheetViewDialog({
                   render={
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="outline"
                       size="icon-sm"
-                      className="size-10 sm:size-8 shrink-0 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+                      className="size-10 sm:size-8 rounded-lg border-border/70 shrink-0 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
                       aria-label="Worksheet options"
                     />
                   }
@@ -305,159 +285,46 @@ export function WorksheetViewDialog({
               </DropdownMenu>
             )}
           </div>
-          {returnNote && <p className="text-sm whitespace-pre-wrap pt-1 pb-2">{returnNote}</p>}
         </DialogHeader>
 
-        {/* Content Body */}
-        <SubmissionCommentTabs
-          key={`${submissionId ?? "none"}:${initialView}`}
-          submissionId={submissionId}
-          open={open}
-          initialView={initialView}
-          studentName={childName}
-          commentsLabel="Notes"
-          tabBarClassName="px-4 sm:px-5"
-          onViewChange={setActiveView}
-        >
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-              {/* Left (Desktop) / Top (Mobile): Worksheet Photo & Single-Line Marks Bar */}
-              <div className="lg:col-span-7 flex flex-col w-full gap-3">
-                <WorksheetImageInspector
-                  imageUrl={imageUrl}
-                  altText={`Handwriting worksheet submitted for ${childName}`}
-                  isLoading={isImageLoading}
-                  isError={isImageError}
-                  onRetry={() => {
-                    void refetchImage();
-                  }}
-                  headerLabel="Handwritten Worksheet"
-                  showShortcutsLegend={false}
-                  showImageTools={false}
-                  flatFrame={true}
-                  keyboardScope="focused"
-                  aspectRatioClass="max-h-[min(640px,calc(100dvh-14rem))] min-h-[220px]"
+        {/* Content Body: Split view (Worksheet pinned left, Feedback & Notes tabbed right) */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
+            {/* Left (Desktop) / Top (Mobile): Worksheet Photo & Single-Line Marks Bar */}
+            <div className="lg:col-span-6 lg:sticky lg:top-0 flex flex-col w-full gap-3">
+              <WorksheetImageInspector
+                imageUrl={imageUrl}
+                altText={`Handwriting worksheet submitted for ${childName}`}
+                isLoading={isImageLoading}
+                isError={isImageError}
+                onRetry={() => {
+                  void refetchImage();
+                }}
+                headerLabel="Handwritten Worksheet"
+                showShortcutsLegend={false}
+                collapsibleImageTools={true}
+                flatFrame={true}
+                keyboardScope="focused"
+                aspectRatioClass="max-h-[min(640px,calc(100dvh-14rem))] min-h-[220px]"
                   diagnosticToolbar={
                     resolvedOverlay ? (
-                      <div className="flex items-center justify-between gap-1.5 sm:gap-2 px-1.5 sm:px-2 py-1 min-h-10 sm:min-h-9 flex-nowrap w-full">
-                        {/* Left: Switch + Contextual Label / Filter Chip */}
-                        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink">
-                          <Switch
-                            id="parent-toggle-writing-marks"
-                            size="sm"
-                            checked={showOverlay}
-                            onCheckedChange={setShowOverlay}
-                            aria-label="Toggle writing marks overlay"
-                          />
-
-                          {showOverlay && activeCriterion !== "all" ? (
-                            <div className="inline-flex items-center gap-1.5 min-w-0">
-                              <span className="hidden sm:inline text-xs font-medium text-foreground shrink-0">
-                                Writing marks:
-                              </span>
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => {
-                                  setCriterionOverride("all");
-                                  setSelectedAttentionItem(null);
-                                }}
-                                className="h-auto min-h-10 sm:min-h-8 rounded-md px-2 py-1 text-xs font-medium text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-950 gap-1 cursor-pointer touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-500 shrink min-w-0"
-                                title="Filtering by this skill. Click to show all marks."
-                              >
-                                <span className="hidden sm:inline truncate max-w-[140px]">
-                                  {PARENT_CRITERIA_METADATA[activeCriterion as CriterionKey]?.label ??
-                                    activeCriterion}
-                                </span>
-                                <span className="sm:hidden font-medium">
-                                  {CRITERION_SHORT_LABELS[activeCriterion as CriterionKey] ??
-                                    activeCriterion}
-                                </span>
-                                <X className="size-3 opacity-70 shrink-0" aria-hidden="true" />
-                                <span className="sr-only">Show all marks</span>
-                              </Button>
-                            </div>
-                          ) : (
-                            <Label
-                              htmlFor="parent-toggle-writing-marks"
-                              className="inline-flex items-center text-xs font-medium text-foreground cursor-pointer min-h-10 sm:min-h-8 touch-manipulation shrink-0"
-                            >
-                              <span className="hidden sm:inline">Show writing marks</span>
-                              <span className="hidden min-[360px]:inline sm:hidden">Writing marks</span>
-                              <span className="min-[360px]:hidden">Marks</span>
-                            </Label>
-                          )}
-                        </div>
-
-                        {/* Right: Lines toggle + Guide Popover */}
-                        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                          {paperLinesToggle}
-
-                          {showOverlay && (
-                            <Popover>
-                              <PopoverTrigger
-                                render={
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-auto min-h-10 sm:min-h-8 rounded-md px-1.5 sm:px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 gap-1 cursor-pointer touch-manipulation shrink-0 focus-visible:ring-2 focus-visible:ring-brand-500"
-                                    aria-label="What the writing marks mean"
-                                    title="What the writing marks mean"
-                                  />
-                                }
-                              >
-                                <HelpCircle className="size-3.5" aria-hidden="true" />
-                                <span className="hidden min-[380px]:inline">Guide</span>
-                              </PopoverTrigger>
-                              <PopoverContent
-                                align="end"
-                                className="w-72 max-w-[calc(100vw-2rem)] rounded-xl p-3.5 text-xs space-y-2.5 shadow-warm border border-border"
-                              >
-                                <p className="font-semibold text-foreground">
-                                  What the marks mean
-                                </p>
-                                <div className="space-y-2 text-muted-foreground leading-snug">
-                                  <div className="flex items-start gap-2">
-                                    <span
-                                      className="mt-1 size-2.5 rounded-full shrink-0"
-                                      style={{ backgroundColor: OVERLAY_COLORS.consistent.stroke }}
-                                      aria-hidden="true"
-                                    />
-                                    <p>
-                                      <strong className="text-foreground font-medium">Steady strokes:</strong>{" "}
-                                      Clear letter shapes, even spacing, and smooth line placement.
-                                    </p>
-                                  </div>
-                                  <div className="flex items-start gap-2">
-                                    <span
-                                      className="mt-1 size-2.5 rounded-full shrink-0"
-                                      style={{ backgroundColor: OVERLAY_COLORS.needs_attention.stroke }}
-                                      aria-hidden="true"
-                                    />
-                                    <p>
-                                      <strong className="text-foreground font-medium">Practice spots:</strong>{" "}
-                                      Areas where loops, gaps, lean, or line placement can steady with practice.
-                                    </p>
-                                  </div>
-                                  <div className="flex items-start gap-2">
-                                    <span
-                                      className="mt-1 size-2.5 rounded-full shrink-0"
-                                      style={{ backgroundColor: OVERLAY_COLORS.guidelines.midline }}
-                                      aria-hidden="true"
-                                    />
-                                    <p>
-                                      <strong className="text-foreground font-medium">Paper lines:</strong>{" "}
-                                      Top, middle, and base guides showing expected letter height.
-                                    </p>
-                                  </div>
-                                </div>
-                              </PopoverContent>
-                            </Popover>
-                          )}
-                        </div>
-                      </div>
+                      <CalmOverlayToolbar
+                        overlay={resolvedOverlay}
+                        activeCriterion={activeCriterion}
+                        onChangeCriterion={(next) => {
+                          setCriterionOverride(next);
+                          setSelectedAttentionItem(null);
+                        }}
+                        visible={showOverlay}
+                        onToggleVisible={setShowOverlay}
+                        selectedAttentionId={activeAttentionItem?.id}
+                        onSelectAttentionItem={setSelectedAttentionItem}
+                        showGuideLines={showGuideLines}
+                        onToggleGuideLines={() => setShowGuideLines((prev) => !prev)}
+                        hasGuideLines={Boolean(resolvedGuideLines)}
+                        isParentView={true}
+                        showStepper={false}
+                      />
                     ) : (
                       <div className="flex items-center justify-between gap-2 px-2 sm:px-2.5 py-1 sm:py-1.5 text-xs text-muted-foreground min-h-10 sm:min-h-9 flex-nowrap w-full">
                         <span className="truncate">
@@ -491,94 +358,121 @@ export function WorksheetViewDialog({
                 </WorksheetImageInspector>
               </div>
 
-              {/* Right (Desktop) / Below Photo (Mobile): Overall Summary + 5 Skills */}
-              <div className="lg:col-span-5 space-y-4 w-full">
-                {compositeScore != null && (
-                  <Card size="sm" className="border-border/80 shadow-none gap-2.5">
-                    <CardContent className="space-y-2.5">
-                      <div className="flex items-center justify-between gap-2">
-                        {compositeBandMeta && (
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span
-                              className={cn("size-2.5 rounded-full shrink-0", compositeBandMeta.dotColor)}
-                              aria-hidden="true"
-                            />
-                            <h3 className="text-base sm:text-lg font-heading font-semibold text-foreground truncate">
-                              {compositeBandMeta.label}
-                            </h3>
-                          </div>
-                        )}
-                        <Badge
-                          variant="outline"
-                          className="h-auto rounded-md text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 border-border/60 shrink-0"
-                        >
-                          {Math.round(compositeScore)}% overall
-                        </Badge>
+              {/* Right (Desktop) / Below Photo (Mobile): Tabbed Feedback & Notes */}
+              <div className="lg:col-span-6 flex flex-col w-full min-w-0">
+                <SubmissionCommentTabs
+                  key={`${submissionId ?? "none"}:${initialView}`}
+                  submissionId={submissionId}
+                  open={open}
+                  initialView={initialView}
+                  studentName={childName}
+                  detailsLabel="Assessment"
+                  commentsLabel="Comments"
+                  variant="default"
+                  onViewChange={setActiveView}
+                >
+                  <div className="space-y-4 w-full">
+                    {returnNote && (
+                      <div
+                        role="status"
+                        className="rounded-xl border border-band-2/40 bg-band-2/15 p-3 text-xs sm:text-sm space-y-1"
+                      >
+                        <p className="text-xs font-semibold text-band-2-text">
+                          Teacher note
+                        </p>
+                        <p className="text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                          {returnNote}
+                        </p>
                       </div>
+                    )}
 
-                      <BandPositionBar
-                        score={compositeScore}
-                        height="sm"
-                        showBandLabels={false}
-                        showThresholds={true}
-                        ariaLabel={`Overall score: ${Math.round(compositeScore)}%`}
-                        ariaValueText={`${Math.round(compositeScore)}% overall`}
-                      />
-                    </CardContent>
-                  </Card>
-                )}
+                    {compositeScore != null && (
+                      <Card size="sm" className="border-border/80 shadow-none gap-2.5">
+                        <CardContent className="space-y-2.5">
+                          <div className="flex items-center justify-between gap-2">
+                            {compositeBandMeta && (
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span
+                                  className={cn("size-2.5 rounded-full shrink-0", compositeBandMeta.dotColor)}
+                                  aria-hidden="true"
+                                />
+                                <h3 className="text-base sm:text-lg font-heading font-semibold text-foreground truncate">
+                                  {compositeBandMeta.label}
+                                </h3>
+                              </div>
+                            )}
+                            <Badge
+                              variant="outline"
+                              className="h-auto rounded-md text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 border-border/60 shrink-0"
+                            >
+                              {Math.round(compositeScore)}% overall
+                            </Badge>
+                          </div>
 
-                {scores && bands && (
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-heading font-semibold text-foreground px-0.5">
-                      Skill breakdown
-                    </h3>
-
-                    <Card className="border-border/80 shadow-none py-0 gap-0 divide-y divide-border/60">
-                      {PARENT_CRITERIA_LIST.map((criterion) => {
-                        const isTop = topStrength?.key === criterion.key;
-                        const isFocus = practiceFocus?.key === criterion.key;
-                        const highlightBadge = isTop
-                          ? "top_strength"
-                          : isFocus
-                            ? "practice_focus"
-                            : null;
-                        const score = scores[criterion.key];
-                        const band = bands[criterion.key];
-                        const isRowActive = activeCriterion === criterion.key;
-                        const criterionMeta = PARENT_CRITERIA_METADATA[criterion.key];
-                        const homeTip = isFocus ? practiceFocus?.meta.homeTip : criterionMeta?.homeTip;
-
-                        return (
-                          <CriterionFeedbackRow
-                            key={criterion.key}
-                            criterionKey={criterion.key}
-                            label={criterion.label}
-                            score={score}
-                            band={band}
-                            highlightBadge={highlightBadge}
-                            isActive={isRowActive}
-                            showDiagnosticNote={isRowActive}
-                            showPositionBar={false}
-                            homePracticeTip={isRowActive ? homeTip : null}
-                            onInspect={() => {
-                              if (isRowActive) {
-                                setCriterionOverride("all");
-                                setSelectedAttentionItem(null);
-                              } else {
-                                handleCriterionSelect(criterion.key);
-                              }
-                            }}
+                          <BandPositionBar
+                            score={compositeScore}
+                            height="sm"
+                            showBandLabels={false}
+                            showThresholds={true}
+                            ariaLabel={`Overall score: ${Math.round(compositeScore)}%`}
+                            ariaValueText={`${Math.round(compositeScore)}% overall`}
                           />
-                        );
-                      })}
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {scores && bands && (
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-heading font-semibold text-foreground px-0.5">
+                          Skill breakdown
+                        </h3>
+
+                        <Card className="border-border/80 shadow-none py-0 gap-0 divide-y divide-border/60">
+                          {PARENT_CRITERIA_LIST.map((criterion) => {
+                            const isTop = topStrength?.key === criterion.key;
+                            const isFocus = practiceFocus?.key === criterion.key;
+                            const highlightBadge = isTop
+                              ? "top_strength"
+                              : isFocus
+                                ? "practice_focus"
+                                : null;
+                            const score = scores[criterion.key];
+                            const band = bands[criterion.key];
+                            const isRowActive = activeCriterion === criterion.key;
+                            const criterionMeta = PARENT_CRITERIA_METADATA[criterion.key];
+                            const homeTip = isFocus ? practiceFocus?.meta.homeTip : criterionMeta?.homeTip;
+
+                            return (
+                              <CriterionFeedbackRow
+                                key={criterion.key}
+                                criterionKey={criterion.key}
+                                label={criterion.label}
+                                score={score}
+                                band={band}
+                                highlightBadge={highlightBadge}
+                                isActive={isRowActive}
+                                showDiagnosticNote={isRowActive}
+                                showPositionBar={false}
+                                homePracticeTip={isRowActive ? homeTip : null}
+                                onInspect={() => {
+                                  if (isRowActive) {
+                                    setCriterionOverride("all");
+                                    setSelectedAttentionItem(null);
+                                  } else {
+                                    handleCriterionSelect(criterion.key);
+                                  }
+                                }}
+                              />
+                            );
+                          })}
+                        </Card>
+                      </div>
+                    )}
                   </div>
-                )}
+                </SubmissionCommentTabs>
               </div>
             </div>
           </div>
-        </SubmissionCommentTabs>
 
         {/* Footer — single calm primary CTA when practice is available */}
         {onPracticeNow && activeView !== "comments" && (
@@ -606,7 +500,7 @@ export function WorksheetViewDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this upload?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently deletes your uploaded worksheet photo and its notes. This action cannot be undone, and you can send a new photo anytime.
+              This permanently deletes your uploaded worksheet photo and its comments. This action cannot be undone, and you can send a new photo anytime.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

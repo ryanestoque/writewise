@@ -285,34 +285,34 @@ export function SubmissionLifecycleControls({
         {submission.status === "returned" ? (
           <Badge
             variant="outline"
-            className="text-[10px] sm:text-[11px] font-semibold h-5 px-2 bg-band-2/15 text-band-2-text border-band-2/40"
+            className="rounded-full text-[11px] font-semibold h-5 px-2.5 bg-band-2/15 text-band-2-text border-band-2/40"
           >
             Returned
           </Badge>
         ) : completed && active && submission.released_at ? (
           <Badge
             variant="outline"
-            className="text-[10px] sm:text-[11px] h-5 px-2 font-medium border-band-4/40 text-band-4-text bg-band-4/15"
+            className="rounded-full text-[11px] h-5 px-2.5 font-medium border-band-4/40 text-band-4-text bg-band-4/15"
           >
             Result released
           </Badge>
         ) : active ? (
           <Badge
             variant="secondary"
-            className="text-[10px] sm:text-[11px] font-medium h-5 px-2 bg-muted/80 text-foreground"
+            className="rounded-full text-[11px] font-medium h-5 px-2.5 bg-muted/80 text-foreground"
           >
             {work?.work_status ?? "Counted attempt"}
           </Badge>
         ) : (
           <Badge
             variant="outline"
-            className="text-[10px] sm:text-[11px] font-medium h-5 px-2 text-muted-foreground border-border/80"
+            className="rounded-full text-[11px] font-medium h-5 px-2.5 text-muted-foreground border-border/80"
           >
             Historical attempt
           </Badge>
         )}
         {work?.pinned_submission_id === submission.id && (
-          <Badge variant="outline" className="text-[10px] sm:text-[11px] h-5 px-1.5 font-medium border-border/70 text-muted-foreground">
+          <Badge variant="outline" className="rounded-full text-[11px] h-5 px-2 font-medium border-border/70 text-muted-foreground">
             Pinned
           </Badge>
         )}
@@ -417,7 +417,7 @@ export function SubmissionLifecycleControls({
             title="Return worksheet to student/parent for another attempt"
           >
             <RotateCcw className="size-3.5" aria-hidden="true" />
-            <span>Return</span>
+            <span>Return worksheet</span>
           </Button>
         )}
         {canRelease && (
@@ -526,7 +526,7 @@ export function SubmissionLifecycleControls({
             onClick={() => setReturnOpen(true)}
             disabled={pending}
           >
-            Return
+            Return worksheet
           </Button>
         )}
         {canRelease && (

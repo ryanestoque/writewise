@@ -29,9 +29,9 @@ import { CommentComposer } from "./comment-composer";
 import { ThreadEntryView } from "./thread-entry";
 
 const READ_ONLY = {
-  unassigned: "This activity is no longer assigned. Past notes stay readable.",
-  archived: "This activity is archived. Notes are read-only until it is unarchived.",
-  locked: "The teacher has closed new notes on this worksheet.",
+  unassigned: "This activity is no longer assigned. Past comments stay readable.",
+  archived: "This activity is archived. Comments are read-only until it is unarchived.",
+  locked: "The teacher has closed new comments on this worksheet.",
 };
 
 const STATUS_LABELS = {
@@ -157,7 +157,7 @@ export function SubmissionCommentThread({
         <Alert role="status">
           <AlertCircle className="size-4" aria-hidden="true" />
           <AlertTitle>Sign-in required</AlertTitle>
-          <AlertDescription>Sign in again to view these notes.</AlertDescription>
+          <AlertDescription>Sign in again to view these comments.</AlertDescription>
         </Alert>
       </div>
     );
@@ -166,11 +166,11 @@ export function SubmissionCommentThread({
       <div className="flex flex-col gap-3 p-4">
         <Alert variant="destructive">
           <AlertCircle className="size-4" aria-hidden="true" />
-          <AlertTitle>Could not load notes</AlertTitle>
+          <AlertTitle>Could not load comments</AlertTitle>
           <AlertDescription>
             {query.error instanceof ApiError && query.error.code === "NOT_FOUND"
-              ? "These notes are no longer available."
-              : "Unable to retrieve notes from the server."}
+              ? "These comments are no longer available."
+              : "Unable to retrieve comments from the server."}
           </AlertDescription>
         </Alert>
         <Button
@@ -185,7 +185,7 @@ export function SubmissionCommentThread({
     );
   if (!thread)
     return (
-      <div className="flex flex-col gap-3 p-4" role="status" aria-label="Loading notes">
+      <div className="flex flex-col gap-3 p-4" role="status" aria-label="Loading comments">
         <Skeleton className="h-5 w-44 rounded-md" />
         <Skeleton className="h-4 w-64 rounded-md" />
         <div className="flex flex-col gap-2 pt-3">
@@ -230,9 +230,9 @@ export function SubmissionCommentThread({
 
   const emptyDescription = thread.can_post
     ? thread.actor_role === "parent"
-      ? `Write a quick note to ${formattedTeacherName} about this worksheet.`
-      : `Write a quick note to ${studentFirstName}'s family about this worksheet.`
-    : "No notes were added before notes closed.";
+      ? `Write a comment to ${formattedTeacherName} about this worksheet.`
+      : `Write a comment to ${studentFirstName}'s family about this worksheet.`
+    : "No comments were added before comments closed.";
 
   const hasSubHeaderContent = !compactHeader || showContextStrip || thread.can_lock || !thread.can_post;
   const compactPrimaryLabel = worksheetContext?.targetText
@@ -240,7 +240,7 @@ export function SubmissionCommentThread({
     : thread.activity_title;
 
   return (
-    <section aria-label="Worksheet notes" className="flex min-h-0 flex-1 flex-col">
+    <section aria-label="Worksheet comments" className="flex min-h-0 flex-1 flex-col">
       {hasSubHeaderContent ? (
         <div className="flex shrink-0 flex-col gap-2 border-b border-border px-4 py-2 sm:py-3">
           {!compactHeader && (
@@ -347,8 +347,8 @@ export function SubmissionCommentThread({
               {actions.setLocked.isPending
                 ? "Saving…"
                 : thread.comments_locked
-                  ? "Unlock notes"
-                  : "Lock notes"}
+                  ? "Unlock comments"
+                  : "Lock comments"}
             </Button>
           )}
         </div>
@@ -359,7 +359,7 @@ export function SubmissionCommentThread({
           <Alert variant="destructive" className="py-3">
             <AlertCircle className="size-4" aria-hidden="true" />
             <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
-              <span>{feedback ?? "Could not load older notes."}</span>
+              <span>{feedback ?? "Could not load older comments."}</span>
               <Button
                 size="sm"
                 variant="outline"
@@ -380,7 +380,7 @@ export function SubmissionCommentThread({
       <MessageScrollerProvider autoScroll defaultScrollPosition="end">
         <MessageScroller className="min-h-28 flex-1">
           <MessageScrollerViewport
-            aria-label="Worksheet notes history"
+            aria-label="Worksheet comments history"
             preserveScrollOnPrepend
           >
             <MessageScrollerContent className="gap-4 p-4">
@@ -393,7 +393,7 @@ export function SubmissionCommentThread({
                     disabled={query.isLoadingMore || query.isFetching}
                     onClick={query.loadMore}
                   >
-                    {query.isLoadingMore ? "Loading older notes…" : "Load older notes"}
+                    {query.isLoadingMore ? "Loading older comments…" : "Load older comments"}
                   </Button>
                 </div>
               )}
@@ -404,7 +404,7 @@ export function SubmissionCommentThread({
                     <MessageSquare className="size-5 text-muted-foreground" aria-hidden="true" />
                   </EmptyMedia>
                   <EmptyHeader>
-                    <EmptyTitle>No notes yet</EmptyTitle>
+                    <EmptyTitle>No comments yet</EmptyTitle>
                     <EmptyDescription>{emptyDescription}</EmptyDescription>
                   </EmptyHeader>
                 </Empty>

@@ -1,5 +1,6 @@
 export { DiagnosticOverlay, extractDiagnosticOverlay } from "./diagnostic-overlay";
 export { OverlayToolbar } from "./overlay-toolbar";
+export { CalmOverlayToolbar } from "./calm-overlay-toolbar";
 export { AnnotationTooltip } from "./annotation-tooltip";
 export { DiagnosticFallbackBanner } from "./diagnostic-fallback-banner";
 export { OVERLAY_COLORS, OVERLAY_WEIGHTS, CRITERIA_META } from "./constants";

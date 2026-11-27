@@ -17,6 +17,7 @@ export function SubmissionCommentTabs({
   location,
   studentName,
   teacherName,
+  detailsLabel = "Details",
   commentsLabel = "Comments",
   variant = "line",
   tabBarClassName,
@@ -30,6 +31,7 @@ export function SubmissionCommentTabs({
   location?: CommentLocation;
   studentName?: string;
   teacherName?: string;
+  detailsLabel?: string;
   commentsLabel?: string;
   variant?: "line" | "default";
   tabBarClassName?: string;
@@ -76,7 +78,7 @@ export function SubmissionCommentTabs({
               value="details"
               className="min-h-11 sm:min-h-10 flex-1 sm:flex-none px-2 py-2 text-xs sm:text-sm font-semibold cursor-pointer whitespace-nowrap rounded-none touch-manipulation data-active:text-primary data-active:after:bg-primary"
             >
-              Details
+              {detailsLabel}
             </TabsTrigger>
             <TabsTrigger
               value="comments"
@@ -96,18 +98,27 @@ export function SubmissionCommentTabs({
         </div>
       ) : (
         <TabsList
-          className={cn("mx-4 mt-3 shrink-0 h-auto min-h-10 sm:min-h-9", tabBarClassName)}
+          className={cn(
+            "w-full h-auto group-data-horizontal/tabs:h-auto p-1 sm:p-1.5 rounded-xl bg-muted/60 border border-border/80 gap-1 sm:gap-1.5 shrink-0",
+            tabBarClassName
+          )}
           aria-label="Submission view"
         >
-          <TabsTrigger value="details" className="min-h-10 sm:min-h-9 px-3 touch-manipulation">
-            Details
+          <TabsTrigger
+            value="details"
+            className="flex-1 min-h-11 sm:min-h-0 h-auto group-data-[variant=default]/tabs-list:h-auto py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg group-data-[variant=default]/tabs-list:rounded-lg text-xs sm:text-sm font-semibold cursor-pointer touch-manipulation data-active:bg-surface dark:data-active:bg-card data-active:text-foreground data-active:shadow-xs data-active:border-border/60!"
+          >
+            {detailsLabel}
           </TabsTrigger>
-          <TabsTrigger value="comments" className="min-h-10 sm:min-h-9 px-3 gap-2 touch-manipulation">
-            {commentsLabel}
+          <TabsTrigger
+            value="comments"
+            className="flex-1 min-h-11 sm:min-h-0 h-auto group-data-[variant=default]/tabs-list:h-auto py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg group-data-[variant=default]/tabs-list:rounded-lg text-xs sm:text-sm font-semibold gap-1.5 sm:gap-2 cursor-pointer touch-manipulation data-active:bg-surface dark:data-active:bg-card data-active:text-foreground data-active:shadow-xs data-active:border-border/60!"
+          >
+            <span>{commentsLabel}</span>
             {hasUnread && (
               <Badge
                 variant="secondary"
-                className="h-auto rounded-full bg-primary/15 px-2 py-0.5 font-semibold text-primary"
+                className="h-auto rounded-full bg-primary/15 px-1.5 py-0.5 text-[11px] font-semibold text-primary"
               >
                 Unread
               </Badge>
@@ -116,14 +127,19 @@ export function SubmissionCommentTabs({
         </TabsList>
       )}
 
-      <TabsContent value="details" className="flex min-h-0 flex-1 flex-col">
+      <TabsContent value="details" className={cn("flex min-h-0 flex-1 flex-col", variant === "default" && "mt-3")}>
         {children}
       </TabsContent>
-      <TabsContent value="comments" className="flex min-h-0 flex-1 flex-col">
+      <TabsContent value="comments" className={cn("flex min-h-0 flex-1 flex-col", variant === "default" && "mt-3")}>
         {open &&
           view === "comments" &&
           (userId ? (
-            <div className="flex min-h-72 min-w-0 flex-1 flex-col">
+            <div
+              className={cn(
+                "flex min-h-72 min-w-0 flex-1 flex-col",
+                variant === "default" && "rounded-xl border border-border/80 bg-surface dark:bg-card shadow-xs overflow-hidden"
+              )}
+            >
               <SubmissionCommentThread
                 key={`${userId}:${submissionId}`}
                 userId={userId}
@@ -136,7 +152,7 @@ export function SubmissionCommentTabs({
               />
             </div>
           ) : (
-            <div className="p-4 space-y-3" role="status" aria-label="Loading notes">
+            <div className="p-4 space-y-3" role="status" aria-label="Loading comments">
               <Skeleton className="h-6 w-48 rounded-md" />
               <Skeleton className="h-16 w-full rounded-xl" />
             </div>

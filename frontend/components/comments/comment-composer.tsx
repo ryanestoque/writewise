@@ -75,7 +75,7 @@ export function CommentComposer({
     >
       <Field data-invalid={overLimit || undefined} className="gap-1.5 sm:gap-2">
         <FieldLabel htmlFor={id}>
-          {recipientLabel ? `Note for ${recipientLabel}` : "Your note"}
+          {recipientLabel ? `Comment for ${recipientLabel}` : "Your comment"}
         </FieldLabel>
         <Textarea
           className="min-h-12 sm:min-h-16 max-h-24 sm:max-h-32 overflow-y-auto"
@@ -86,7 +86,7 @@ export function CommentComposer({
           aria-describedby={errorIds}
           aria-invalid={overLimit || undefined}
           aria-keyshortcuts="Control+Enter Meta+Enter"
-          placeholder="Write a note or question…"
+          placeholder="Write a comment or question…"
           onChange={(event) => updateDraft(event.target.value)}
           onKeyDown={(event) => {
             if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
@@ -108,12 +108,12 @@ export function CommentComposer({
             className="h-11 md:h-9 min-h-11 md:min-h-9 px-4 cursor-pointer touch-manipulation"
             disabled={disabled || pending || busy || !valid}
           >
-            {pending || busy ? "Sending…" : "Send note"}
+            {pending || busy ? "Sending…" : "Send comment"}
           </Button>
         </div>
         {overLimit ? (
           <p id={`${id}-limit-error`} role="status" aria-live="polite" className="text-destructive text-xs sm:text-sm">
-            Shorten your note to 1,000 characters or fewer.
+            Shorten your comment to 1,000 characters or fewer.
           </p>
         ) : null}
         {error ? (

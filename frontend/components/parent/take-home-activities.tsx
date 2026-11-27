@@ -947,7 +947,7 @@ function ActivityCard({
         {closed && !excused && category === "closed" && (
           <p className="text-xs text-muted-foreground">
             {work.attempts.length > 0 || submission?.submissionId
-              ? "Deadline passed. Use Notes to ask your teacher for late submission."
+              ? "Deadline passed. Use Comments to ask your teacher for late submission."
               : "Deadline passed. Contact your teacher directly for late submission."}
           </p>
         )}

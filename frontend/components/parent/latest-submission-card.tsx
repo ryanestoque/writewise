@@ -336,7 +336,7 @@ export function LatestSubmissionCard({
               aria-haspopup="dialog"
             >
               <MessageSquare data-icon="inline-start" className="text-primary" aria-hidden="true" />
-              <span>Notes with teacher</span>
+              <span>Comments</span>
               {hasUnreadComments && (
                 <Badge variant="secondary" className="rounded-full text-primary font-semibold">
                   Unread

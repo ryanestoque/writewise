@@ -48,8 +48,8 @@ export function WorkCommentsButton({
 
   const accessibleLabel = isParent
     ? activityTitle
-      ? `Notes for ${activityTitle}${hasUnread ? ", unread notes" : ""}`
-      : `Notes with ${teacherDisplay}${hasUnread ? ", unread notes" : ""}`
+      ? `Comments for ${activityTitle}${hasUnread ? ", unread comments" : ""}`
+      : `Comments with ${teacherDisplay}${hasUnread ? ", unread comments" : ""}`
     : activityTitle
       ? `Comments for ${activityTitle}${hasUnread ? ", unread comments" : ""}`
       : studentName
@@ -96,7 +96,7 @@ export function WorkCommentsButton({
             aria-hidden="true"
             data-icon="inline-start"
           />
-          <span className="truncate">{isParent ? "Notes" : "Comments"}</span>
+          <span className="truncate">Comments</span>
           {hasUnread && (
             <Badge
               variant="secondary"
@@ -151,7 +151,7 @@ function PickerContent({
       open
     />
   ) : (
-    <div className="flex flex-col gap-3 p-4" role="status" aria-label="Loading notes">
+    <div className="flex flex-col gap-3 p-4" role="status" aria-label="Loading comments">
       <Skeleton className="h-5 w-44 rounded-md" />
       <Skeleton className="h-16 w-3/4 rounded-xl" />
       <Skeleton className="h-16 w-2/3 ml-auto rounded-xl" />

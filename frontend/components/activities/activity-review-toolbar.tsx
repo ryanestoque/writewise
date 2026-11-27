@@ -392,7 +392,7 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                   )}
                 >
                   <MessageSquare className="size-3.5 shrink-0" aria-hidden="true" />
-                  <span>Unread Notes</span>
+                  <span>Unread Comments</span>
                   <span
                     className={cn(
                       "text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors tabular-nums",

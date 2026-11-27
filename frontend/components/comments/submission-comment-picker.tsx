@@ -62,7 +62,7 @@ export function SubmissionCommentPicker({
         <Alert role="status">
           <AlertCircle className="size-4" aria-hidden="true" />
           <AlertTitle>Sign-in required</AlertTitle>
-          <AlertDescription>Sign in again to view notes.</AlertDescription>
+          <AlertDescription>Sign in again to view comments.</AlertDescription>
         </Alert>
       </div>
     );
@@ -148,7 +148,7 @@ function LoadedPicker({
       <Empty>
         <EmptyHeader>
           <EmptyTitle>No worksheet uploaded</EmptyTitle>
-          <EmptyDescription>Notes are available after a worksheet photo is uploaded.</EmptyDescription>
+          <EmptyDescription>Comments are available after a worksheet photo is uploaded.</EmptyDescription>
         </EmptyHeader>
       </Empty>
     );
@@ -226,10 +226,10 @@ function LoadedPicker({
             </SelectContent>
           </Select>
           {pendingSwitchId && (
-            <Alert role="group" aria-label="Unsaved note warning" className="mt-2 bg-secondary/45">
+            <Alert role="group" aria-label="Unsaved comment warning" className="mt-2 bg-secondary/45">
               <AlertCircle aria-hidden="true" />
               <AlertTitle>
-                You have an unsent note on this upload. Keep editing or switch uploads anyway?
+                You have an unsent comment on this upload. Keep editing or switch uploads anyway?
               </AlertTitle>
               <AlertDescription className="flex flex-col gap-2">
                 <span className="text-xs">
@@ -283,7 +283,7 @@ function LoadedPicker({
         />
       ) : (
         <p role="status" className="p-4 text-sm text-muted-foreground">
-          Choose an upload to view its notes. The previous upload may no longer be available.
+          Choose an upload to view its comments. The previous upload may no longer be available.
         </p>
       )}
     </div>

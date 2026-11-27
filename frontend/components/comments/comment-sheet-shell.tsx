@@ -20,7 +20,7 @@ export function getCommentSheetCopy({
 }) {
   const isParent = audience === "parent";
   const title = isParent
-    ? activityTitle || (studentName ? `Notes · ${studentName}` : "Notes")
+    ? activityTitle || (studentName ? `Comments · ${studentName}` : "Comments")
     : activityTitle || studentName || "Comments";
   const description = isParent
     ? "Message your child's teacher about this worksheet."

@@ -162,10 +162,10 @@ function HistoryItemRow({
               size="sm"
               onClick={() => onOpenWorksheetView(item, undefined, "comments")}
               aria-haspopup="dialog"
-              aria-label={`Read unread notes for "${displayTargetText}"`}
+              aria-label={`Read unread comments for "${displayTargetText}"`}
               className="h-10 sm:h-8 px-2.5 text-xs font-semibold border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 cursor-pointer touch-manipulation"
             >
-              Unread note
+              Unread comment
             </Button>
           )}
         </div>
