@@ -2,6 +2,7 @@ import * as React from "react";
 import { Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 
@@ -98,16 +99,18 @@ export function SearchInput({
         {...props}
       />
       {hasValue ? (
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-xs"
           onClick={handleClear}
           disabled={disabled}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer rounded-full p-1.5 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2 after:content-['']"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 active:not-aria-[haspopup]:-translate-y-1/2 cursor-pointer rounded-full text-muted-foreground hover:text-foreground after:absolute after:-inset-2 after:content-['']"
           aria-label="Clear search"
           tabIndex={-1}
         >
           <X className="size-3.5" aria-hidden="true" />
-        </button>
+        </Button>
       ) : showShortcut ? (
         <div
           className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 hidden items-center sm:flex"

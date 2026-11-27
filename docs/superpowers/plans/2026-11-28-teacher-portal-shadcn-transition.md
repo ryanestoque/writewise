@@ -48,9 +48,9 @@ Do **not** force these domain-specific components into generic shadcn primitives
 | **A — Dashboard & Shell** | Task 2 | `ClassTable` mobile sort bar, reset buttons & skeletons (`NativeSelect`, `Label`, `Button`, `Skeleton`) | Low | [x] Done |
 | **A — Dashboard & Shell** | Task 3 | `StudentDrillDownDrawer` steppers, alerts, cards, badges & empty states | Low | [x] Done |
 | **A — Dashboard & Shell** | Task 4 | `TeacherSidebar` CTAs, avatars & pending badges (`Button`, `Avatar`, `Badge`) | Low | [x] Done |
-| **B — Portal Quick Wins** | Task 5 | Portal-wide `<kbd>` → `Kbd` and `<details>`/`<summary>` → `Collapsible` | Low | [ ] Pending |
-| **B — Portal Quick Wins** | Task 6 | Portal-wide raw `role="alert"` banners → `Alert` & `SubmissionCard` single-value bars → `Progress` | Low | [ ] Pending |
-| **B — Portal Quick Wins** | Task 7 | `FilterPills` & `SearchInput` internal raw `<button>` cleanup + `ActivityReviewToolbar` | Low | [ ] Pending |
+| **B — Portal Quick Wins** | Task 5 | Portal-wide `<kbd>` → `Kbd` and `<details>`/`<summary>` → `Collapsible` | Low | [x] Done |
+| **B — Portal Quick Wins** | Task 6 | Portal-wide raw `role="alert"` banners → `Alert` & `SubmissionCard` single-value bars → `Progress` | Low | [x] Done |
+| **B — Portal Quick Wins** | Task 7 | `FilterPills` & `SearchInput` internal raw `<button>` cleanup + `ActivityReviewToolbar` | Low | [x] Done |
 | **C — Gradebook & Review** | Task 8 | `TeacherGradebook` sticky grid table (`Table` primitives without breaking `sticky` / `role="grid"`) | Medium | [ ] Pending |
 | **C — Gradebook & Review** | Task 9 | `GradebookCellButton` inline editor (`Input`, `Button`, `Badge`, `Spinner`) | Medium | [ ] Pending |
 | **C — Gradebook & Review** | Task 10 | `SubmissionDetailContent` hand-rolled tablist → `Tabs` & `RawMeasurementsTable` cards/badges | Medium | [ ] Pending |

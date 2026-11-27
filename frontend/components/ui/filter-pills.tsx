@@ -1,6 +1,8 @@
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export interface FilterPillItem<T extends string = string> {
   id: T;
@@ -137,15 +139,17 @@ export function FilterPills<T extends string = string>({
     >
       {/* Scroll Left Button */}
       {canScrollLeft && (
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="icon-xs"
           onClick={handleScrollLeft}
           aria-label="Scroll left"
           tabIndex={-1}
-          className="absolute left-0 z-10 flex size-7 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring cursor-pointer shrink-0"
+          className="absolute left-0 z-10 size-7 rounded-full bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted dark:bg-background/90 dark:hover:bg-muted cursor-pointer"
         >
           <ChevronLeft className="size-4" />
-        </button>
+        </Button>
       )}
 
       {/* Scrollable Container */}
@@ -170,54 +174,57 @@ export function FilterPills<T extends string = string>({
           const Icon = item.icon;
 
           return (
-            <button
+            <Button
               key={item.id}
               type="button"
+              variant={isSelected ? "default" : "outline"}
+              size="sm"
               id={`${groupId}-pill-${item.id}`}
               disabled={item.disabled}
               onClick={() => onChange(item.id)}
               aria-pressed={isSelected}
               className={cn(
-                "relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[40px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer touch-manipulation",
-                "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                "relative h-auto gap-1.5 px-3 py-1.5 min-h-[40px] sm:min-h-[32px] text-xs font-medium rounded-lg transition-all cursor-pointer touch-manipulation",
                 "after:absolute after:-inset-x-1 after:inset-y-0 after:content-['']",
-                "disabled:pointer-events-none disabled:opacity-50",
                 isSelected
-                  ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
-                  : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground",
+                  ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary hover:bg-brand-700 dark:hover:bg-primary shadow-warm-sm font-semibold"
+                  : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground dark:bg-background dark:hover:bg-muted/60",
                 pillClassName
               )}
             >
               {Icon && <Icon className="size-3.5 shrink-0" />}
               <span>{item.label}</span>
               {item.count !== undefined && (
-                <span
+                <Badge
+                  variant="secondary"
                   className={cn(
-                    "text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors",
+                    "h-auto text-xs font-semibold px-1.5 py-0.5 rounded-full tabular-nums transition-colors",
                     isSelected
                       ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
                       : "bg-muted text-foreground"
                   )}
                 >
                   {item.count}
-                </span>
+                </Badge>
               )}
-            </button>
+            </Button>
           );
         })}
       </div>
 
       {/* Scroll Right Button */}
       {canScrollRight && (
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="icon-xs"
           onClick={handleScrollRight}
           aria-label="Scroll right"
           tabIndex={-1}
-          className="absolute right-0 z-10 flex size-7 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring cursor-pointer shrink-0"
+          className="absolute right-0 z-10 size-7 rounded-full bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted dark:bg-background/90 dark:hover:bg-muted cursor-pointer"
         >
           <ChevronRight className="size-4" />
-        </button>
+        </Button>
       )}
     </div>
   );

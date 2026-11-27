@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   SlidersHorizontal,
   CheckSquare,
@@ -50,6 +51,13 @@ const secondaryFilters: { id: SubmissionFilter; label: string }[] = [
   { id: "needs_action", label: "Needs action (any)" },
   { id: "unread_comments", label: "Unread comments" },
 ];
+
+const PILL_BASE_CLASS =
+  "relative h-auto gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs font-medium rounded-lg transition-all cursor-pointer whitespace-nowrap";
+const PILL_ACTIVE_CLASS =
+  "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary hover:bg-brand-700 dark:hover:bg-primary shadow-warm-sm font-semibold";
+const PILL_INACTIVE_CLASS =
+  "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground dark:bg-background dark:hover:bg-muted/60";
 
 export interface ActivityReviewToolbarProps {
   searchInputRef: RefObject<HTMLInputElement | null>;
@@ -242,15 +250,17 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
           {/* Status filter pills track with scroll indicators */}
           <div className="relative min-w-0 flex-1 flex items-center group/pills">
             {canScrollLeft && (
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="icon-xs"
                 onClick={handleScrollLeft}
                 aria-hidden="true"
                 tabIndex={-1}
-                className="absolute left-0 z-10 flex size-8 sm:size-7 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring cursor-pointer shrink-0"
+                className="absolute left-0 z-10 size-8 sm:size-7 rounded-full bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted dark:bg-background/90 dark:hover:bg-muted cursor-pointer"
               >
                 <ChevronLeft className="size-4" />
-              </button>
+              </Button>
             )}
 
             <div
@@ -260,18 +270,18 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
               style={maskStyle}
               className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth max-w-full touch-pan-x overscroll-x-contain py-0.5"
             >
-              <button
+              <Button
                 type="button"
+                variant={statusFilter === "all" ? "default" : "outline"}
+                size="sm"
                 onClick={() => {
                   if (viewMode !== "grouped") onViewModeChange("grouped");
                   onStatusFilterChange("all");
                 }}
                 aria-pressed={statusFilter === "all"}
                 className={cn(
-                  "relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
-                  statusFilter === "all"
-                    ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
-                    : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
+                  PILL_BASE_CLASS,
+                  statusFilter === "all" ? PILL_ACTIVE_CLASS : PILL_INACTIVE_CLASS
                 )}
               >
                 <span>All Students</span>
@@ -287,20 +297,22 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                     {allWorkFilter.count}
                   </span>
                 )}
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
+                variant={statusFilter === "needs_scoring" ? "default" : "outline"}
+                size="sm"
                 onClick={() => {
                   if (viewMode !== "grouped") onViewModeChange("grouped");
                   onStatusFilterChange("needs_scoring");
                 }}
                 aria-pressed={statusFilter === "needs_scoring"}
                 className={cn(
-                  "relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                  PILL_BASE_CLASS,
                   statusFilter === "needs_scoring"
-                    ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
-                    : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
+                    ? PILL_ACTIVE_CLASS
+                    : PILL_INACTIVE_CLASS
                 )}
               >
                 <span>To Grade</span>
@@ -316,20 +328,22 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                     {needsScoringCount}
                   </span>
                 )}
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
+                variant={statusFilter === "missing" ? "default" : "outline"}
+                size="sm"
                 onClick={() => {
                   if (viewMode !== "grouped") onViewModeChange("grouped");
                   onStatusFilterChange("missing");
                 }}
                 aria-pressed={statusFilter === "missing"}
                 className={cn(
-                  "relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                  PILL_BASE_CLASS,
                   statusFilter === "missing"
-                    ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
-                    : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
+                    ? PILL_ACTIVE_CLASS
+                    : PILL_INACTIVE_CLASS
                 )}
               >
                 <span>Missing</span>
@@ -345,20 +359,22 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                     {missingCount}
                   </span>
                 )}
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
+                variant={statusFilter === "released" ? "default" : "outline"}
+                size="sm"
                 onClick={() => {
                   if (viewMode !== "grouped") onViewModeChange("grouped");
                   onStatusFilterChange("released");
                 }}
                 aria-pressed={statusFilter === "released"}
                 className={cn(
-                  "relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                  PILL_BASE_CLASS,
                   statusFilter === "released"
-                    ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
-                    : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
+                    ? PILL_ACTIVE_CLASS
+                    : PILL_INACTIVE_CLASS
                 )}
               >
                 <span>Done &amp; Released</span>
@@ -374,21 +390,23 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                     {releasedCount}
                   </span>
                 )}
-              </button>
+              </Button>
 
               {unreadCommentsCount > 0 && (
-                <button
+                <Button
                   type="button"
+                  variant={statusFilter === "unread_comments" ? "default" : "outline"}
+                  size="sm"
                   onClick={() => {
                     if (viewMode !== "grouped") onViewModeChange("grouped");
                     onStatusFilterChange("unread_comments");
                   }}
                   aria-pressed={statusFilter === "unread_comments"}
                   className={cn(
-                    "relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                    PILL_BASE_CLASS,
                     statusFilter === "unread_comments"
-                      ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
-                      : "border-primary/30 text-primary bg-primary/5 hover:bg-primary/10"
+                      ? PILL_ACTIVE_CLASS
+                      : "border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 hover:text-primary dark:bg-primary/5 dark:hover:bg-primary/10"
                   )}
                 >
                   <MessageSquare className="size-3.5 shrink-0" aria-hidden="true" />
@@ -403,21 +421,23 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                   >
                     {unreadCommentsCount}
                   </span>
-                </button>
+                </Button>
               )}
 
               <div className="inline-flex items-center shrink-0">
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     render={
-                      <button
+                      <Button
                         type="button"
+                        variant={isSecondaryActive ? "default" : "outline"}
+                        size="sm"
                         aria-pressed={isSecondaryActive}
                         className={cn(
-                          "relative inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs font-medium rounded-lg border transition-all shrink-0 cursor-pointer whitespace-nowrap focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                          PILL_BASE_CLASS,
                           isSecondaryActive
-                            ? "rounded-r-none bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary shadow-warm-sm font-semibold"
-                            : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
+                            ? cn(PILL_ACTIVE_CLASS, "rounded-r-none")
+                            : PILL_INACTIVE_CLASS
                         )}
                       />
                     }
@@ -463,28 +483,32 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
                   </DropdownMenuContent>
                 </DropdownMenu>
                 {isSecondaryActive && (
-                  <button
+                  <Button
                     type="button"
+                    variant="default"
+                    size="icon-sm"
                     aria-label="Clear additional filter"
                     onClick={() => onStatusFilterChange("all")}
-                    className="size-[44px] min-h-[44px] min-w-[44px] sm:size-[32px] sm:min-h-[32px] sm:min-w-[32px] inline-flex items-center justify-center rounded-r-lg border border-l-0 border-brand-700 dark:border-primary bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground hover:bg-destructive hover:border-destructive hover:text-white transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                    className="size-[44px] min-h-[44px] min-w-[44px] sm:size-[32px] sm:min-h-[32px] sm:min-w-[32px] rounded-l-none rounded-r-lg border border-l-0 border-brand-700 dark:border-primary bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground hover:bg-destructive hover:border-destructive hover:text-white dark:hover:bg-destructive dark:hover:border-destructive dark:hover:text-destructive-foreground transition-colors cursor-pointer shrink-0"
                   >
                     <X className="size-3.5" aria-hidden="true" />
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
 
             {canScrollRight && (
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="icon-xs"
                 onClick={handleScrollRight}
                 aria-hidden="true"
                 tabIndex={-1}
-                className="absolute right-0 z-10 flex size-8 sm:size-7 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring cursor-pointer shrink-0"
+                className="absolute right-0 z-10 size-8 sm:size-7 rounded-full bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted dark:bg-background/90 dark:hover:bg-muted cursor-pointer"
               >
                 <ChevronRight className="size-4" />
-              </button>
+              </Button>
             )}
           </div>
 
@@ -598,12 +622,12 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
               onCheckedChange={onToggleSelectAll}
               aria-label="Select all displayed attempts"
             />
-            <label
+            <Label
               htmlFor="select-all-displayed-attempts"
-              className="cursor-pointer text-sm select-none"
+              className="cursor-pointer text-sm font-normal select-none"
             >
               Select displayed attempts
-            </label>
+            </Label>
           </div>
           <span className="text-muted-foreground text-xs">
             {selectedCount} selected. Use the bar below to release, excuse, or delete.
@@ -612,13 +636,15 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
             <div className="flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-xs text-amber-900 dark:text-amber-200">
               <span>{hiddenSelectedCount} hidden not shown</span>
               {onClearHiddenSelection && (
-                <button
+                <Button
                   type="button"
+                  variant="link"
+                  size="xs"
                   onClick={onClearHiddenSelection}
-                  className="ml-1 underline hover:no-underline font-semibold cursor-pointer rounded focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
+                  className="ml-1 h-auto px-0 py-0 text-xs font-semibold text-amber-900 dark:text-amber-200 underline hover:no-underline cursor-pointer rounded"
                 >
                   Clear hidden
-                </button>
+                </Button>
               )}
             </div>
           )}
