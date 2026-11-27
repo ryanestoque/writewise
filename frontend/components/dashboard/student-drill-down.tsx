@@ -23,11 +23,15 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Empty,
+  EmptyMedia,
   EmptyHeader,
   EmptyTitle,
   EmptyDescription,
   EmptyContent,
 } from "@/components/ui/empty";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   type StudentScoreSummary,
   useStudentScoreHistory,
@@ -256,29 +260,33 @@ export function StudentDrillDownDrawer({
 
               {studentPosition && studentPosition.total > 1 && (onPreviousStudent || onNextStudent) && (
                 <div className="flex items-center gap-1 shrink-0" aria-label="Step between students">
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="icon-sm"
                     onClick={onPreviousStudent}
                     disabled={!onPreviousStudent}
                     title="Previous student (Alt + Left)"
                     aria-label="Previous student"
-                    className="min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg border border-border bg-background text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                    className="min-h-[40px] min-w-[40px] sm:min-h-[36px] sm:min-w-[36px] cursor-pointer touch-manipulation"
                   >
                     <ChevronLeft className="size-4" aria-hidden="true" />
-                  </button>
+                  </Button>
                   <span className="text-xs font-medium text-muted-foreground tabular-nums px-1">
                     {studentPosition.current}/{studentPosition.total}
                   </span>
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="icon-sm"
                     onClick={onNextStudent}
                     disabled={!onNextStudent}
                     title="Next student (Alt + Right)"
                     aria-label="Next student"
-                    className="min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg border border-border bg-background text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                    className="min-h-[40px] min-w-[40px] sm:min-h-[36px] sm:min-w-[36px] cursor-pointer touch-manipulation"
                   >
                     <ChevronRight className="size-4" aria-hidden="true" />
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -321,9 +329,9 @@ export function StudentDrillDownDrawer({
                   >
                     <History className="size-3.5 shrink-0" aria-hidden="true" />
                     <span>History</span>
-                    <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-xs leading-none bg-muted text-muted-foreground font-bold tabular-nums">
+                    <Badge variant="secondary" className="ml-0.5 h-5 px-1.5 text-xs font-bold tabular-nums">
                       {history.length}
-                    </span>
+                    </Badge>
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -340,33 +348,28 @@ export function StudentDrillDownDrawer({
               </div>
             ) : error ? (
               /* Dedicated Error State */
-              <div
-                role="alert"
-                className="p-8 sm:p-12 rounded-xl border border-destructive/20 bg-destructive/5 text-center flex flex-col items-center justify-center space-y-3.5 my-auto w-full"
-              >
-                <div className="p-3.5 rounded-full bg-background border border-destructive/30 text-destructive shadow-warm-xs">
-                  <AlertCircle className="size-6 text-destructive" aria-hidden="true" />
-                </div>
-                <div className="space-y-1.5 max-w-sm">
-                  <h4 className="text-base font-semibold text-foreground">
-                    Couldn&apos;t load worksheet history
-                  </h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
+              <Alert variant="destructive" className="my-auto">
+                <AlertCircle className="size-4" aria-hidden="true" />
+                <AlertTitle className="font-semibold">
+                  Couldn&apos;t load worksheet history
+                </AlertTitle>
+                <AlertDescription className="flex flex-col items-start gap-3">
+                  <span className="text-xs leading-relaxed">
                     We couldn&apos;t load {student.fullName}&apos;s worksheet history right now. Check your internet connection and try again.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-2 min-h-[44px] sm:min-h-[36px] px-4 text-xs font-semibold gap-1.5 cursor-pointer border-destructive/30 hover:bg-destructive/10 text-destructive rounded-lg"
-                  onClick={() => refetch()}
-                  disabled={isRefetching}
-                >
-                  <RefreshCw className={cn("size-3.5 shrink-0", isRefetching && "animate-spin motion-reduce:animate-none")} aria-hidden="true" />
-                  <span>{isRefetching ? "Retrying…" : "Try again"}</span>
-                </Button>
-              </div>
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="min-h-[44px] sm:min-h-[36px] px-4 text-xs font-semibold gap-1.5 cursor-pointer border-destructive/30 bg-background hover:bg-destructive/10 text-destructive rounded-lg"
+                    onClick={() => refetch()}
+                    disabled={isRefetching}
+                  >
+                    <RefreshCw className={cn("size-3.5 shrink-0", isRefetching && "animate-spin motion-reduce:animate-none")} aria-hidden="true" />
+                    <span>{isRefetching ? "Retrying…" : "Try again"}</span>
+                  </Button>
+                </AlertDescription>
+              </Alert>
             ) : !hasSubmissions ? (
               /* Actionable Pedagogical Onboarding & Criteria Preview Empty State */
               <div className="space-y-6">
@@ -415,9 +418,9 @@ export function StudentDrillDownDrawer({
                           <span className="text-xs font-semibold text-foreground">
                             {criterion.shortName}
                           </span>
-                          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/40 shrink-0">
+                          <Badge variant="secondary" className="text-xs font-medium shrink-0">
                             Awaiting Assessment
-                          </span>
+                          </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground leading-normal">
                           {criterion.hint}
@@ -432,63 +435,65 @@ export function StudentDrillDownDrawer({
                 <TabsContent value="overview" className="mt-0 focus-visible:outline-none space-y-6">
               {/* Integrated Overall Performance & Highlights Hero Card */}
               {student.scores.composite !== null && (
-                <div className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-warm-xs space-y-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="space-y-0.5">
-                      <span className="text-xs font-medium text-muted-foreground block">
-                        Overall Performance
-                      </span>
-                      <div>
-                        <span className="font-sans text-2xl sm:text-3xl font-bold tabular-nums text-foreground">
-                          {student.scores.composite.toFixed(1)}%
+                <Card size="sm" className="shadow-warm-xs">
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="space-y-0.5">
+                        <span className="text-xs font-medium text-muted-foreground block">
+                          Overall Performance
                         </span>
+                        <div>
+                          <span className="font-sans text-2xl sm:text-3xl font-bold tabular-nums text-foreground">
+                            {student.scores.composite.toFixed(1)}%
+                          </span>
+                        </div>
                       </div>
+                      <BandBadge score={student.scores.composite} size="default" showDot />
                     </div>
-                    <BandBadge score={student.scores.composite} size="default" showDot />
-                  </div>
 
-                  {(topStrength || focusArea) && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3.5 border-t border-border/60">
-                      {topStrength && (
-                        <div className="p-3 rounded-lg bg-muted/20 border border-border/60 space-y-1.5 min-w-0">
-                          <span className="text-xs font-medium text-muted-foreground block">
-                            Top Strength
-                          </span>
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm font-semibold truncate text-foreground">
-                              {topStrength.shortName}
+                    {(topStrength || focusArea) && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3.5 border-t border-border/60">
+                        {topStrength && (
+                          <div className="p-3 rounded-lg bg-muted/20 border border-border/60 space-y-1.5 min-w-0">
+                            <span className="text-xs font-medium text-muted-foreground block">
+                              Top Strength
                             </span>
-                            <span className="font-sans text-sm font-bold tabular-nums text-foreground shrink-0">
-                              {topStrength.score.toFixed(1)}%
-                            </span>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-semibold truncate text-foreground">
+                                {topStrength.shortName}
+                              </span>
+                              <span className="font-sans text-sm font-bold tabular-nums text-foreground shrink-0">
+                                {topStrength.score.toFixed(1)}%
+                              </span>
+                            </div>
+                            <div>
+                              <BandBadge score={topStrength.score} band={topStrength.band} size="sm" showDot />
+                            </div>
                           </div>
-                          <div>
-                            <BandBadge score={topStrength.score} band={topStrength.band} size="sm" showDot />
-                          </div>
-                        </div>
-                      )}
+                        )}
 
-                      {focusArea && (
-                        <div className="p-3 rounded-lg bg-muted/20 border border-border/60 space-y-1.5 min-w-0">
-                          <span className="text-xs font-medium text-muted-foreground block">
-                            Priority Focus
-                          </span>
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm font-semibold truncate text-foreground">
-                              {focusArea.shortName}
+                        {focusArea && (
+                          <div className="p-3 rounded-lg bg-muted/20 border border-border/60 space-y-1.5 min-w-0">
+                            <span className="text-xs font-medium text-muted-foreground block">
+                              Priority Focus
                             </span>
-                            <span className="font-sans text-sm font-bold tabular-nums text-foreground shrink-0">
-                              {focusArea.score.toFixed(1)}%
-                            </span>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-semibold truncate text-foreground">
+                                {focusArea.shortName}
+                              </span>
+                              <span className="font-sans text-sm font-bold tabular-nums text-foreground shrink-0">
+                                {focusArea.score.toFixed(1)}%
+                              </span>
+                            </div>
+                            <div>
+                              <BandBadge score={focusArea.score} band={focusArea.band} size="sm" showDot />
+                            </div>
                           </div>
-                          <div>
-                            <BandBadge score={focusArea.score} band={focusArea.band} size="sm" showDot />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               )}
 
               {/* 5-Criteria Diagnostic Breakdown */}
@@ -498,15 +503,17 @@ export function StudentDrillDownDrawer({
                     Diagnostic Breakdown
                   </h3>
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
                       type="button"
+                      variant="link"
+                      size="xs"
                       onClick={toggleExpandAll}
                       aria-expanded={accordionValue.length === allCriteriaKeys.length}
                       aria-controls="diagnostic-breakdown-accordion"
-                      className="text-xs font-medium text-primary hover:underline cursor-pointer min-h-[40px] px-2 -my-2.5 inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="min-h-[40px] px-2 -my-2.5 font-medium cursor-pointer"
                     >
                       {accordionValue.length === allCriteriaKeys.length ? "Collapse all" : "Expand all"}
-                    </button>
+                    </Button>
                     {latestSubmission && (
                       <>
                         <span className="text-muted-foreground" aria-hidden="true">•</span>
@@ -591,14 +598,16 @@ export function StudentDrillDownDrawer({
                     Recent Worksheets
                   </h3>
                   {history.length > 3 && (
-                    <button
+                    <Button
                       type="button"
+                      variant="link"
+                      size="xs"
                       onClick={() => setActiveTab("history")}
-                      className="text-xs font-semibold text-primary hover:underline cursor-pointer min-h-[40px] px-2 -my-2.5 inline-flex items-center gap-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="min-h-[40px] px-2 -my-2.5 font-semibold cursor-pointer"
                     >
                       <span>View all {history.length}</span>
                       <ChevronRight className="size-3" aria-hidden="true" />
-                    </button>
+                    </Button>
                   )}
                 </div>
 
@@ -617,9 +626,9 @@ export function StudentDrillDownDrawer({
                               &quot;{item.targetText}&quot;
                             </span>
                             {item.isTakeHome && (
-                              <span className="text-xs leading-none px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground border border-border/40 font-medium shrink-0">
+                              <Badge variant="secondary" className="text-xs font-medium shrink-0">
                                 Take-Home
-                              </span>
+                              </Badge>
                             )}
                           </div>
                           <div className="text-xs font-medium text-muted-foreground tabular-nums">
@@ -704,30 +713,39 @@ export function StudentDrillDownDrawer({
               </div>
 
               {history.length < 2 ? (
-                <div className="p-8 sm:p-10 rounded-xl border border-dashed border-border/80 bg-muted/20 text-center flex flex-col items-center justify-center space-y-3.5 my-auto">
-                  <div className="p-3 rounded-full bg-background border border-border/60 text-primary shadow-warm-xs">
-                    <LineChart className="size-5" aria-hidden="true" />
-                  </div>
-                  <div className="space-y-1.5 max-w-sm">
-                    <h4 className="text-sm font-semibold text-foreground">
-                      Trend Tracking Unlocks at 2 Worksheets
-                    </h4>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {student.fullName} has 1 evaluated worksheet. Once a second worksheet is graded, WriteWise will plot criterion trajectories, score velocity, and progress comparisons over time.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("overview")}
-                    className="min-h-[40px] sm:min-h-[32px] px-3 inline-flex items-center rounded-md text-xs font-semibold text-primary hover:underline cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                <Empty className="p-8 sm:p-10 rounded-xl border border-dashed border-border/80 bg-muted/20 my-auto">
+                  <EmptyMedia
+                    variant="icon"
+                    className="rounded-full bg-background border border-border/60 text-primary shadow-warm-xs"
                   >
-                    View latest breakdown in Overview &rarr;
-                  </button>
-                </div>
+                    <LineChart className="size-5" aria-hidden="true" />
+                  </EmptyMedia>
+                  <EmptyHeader>
+                    <EmptyTitle className="text-sm font-semibold text-foreground">
+                      Trend Tracking Unlocks at 2 Worksheets
+                    </EmptyTitle>
+                    <EmptyDescription className="text-xs leading-relaxed">
+                      {student.fullName} has 1 evaluated worksheet. Once a second worksheet is graded, WriteWise will plot criterion trajectories, score velocity, and progress comparisons over time.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  <EmptyContent>
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="xs"
+                      onClick={() => setActiveTab("overview")}
+                      className="min-h-[40px] sm:min-h-[32px] px-3 font-semibold cursor-pointer touch-manipulation"
+                    >
+                      View latest breakdown in Overview &rarr;
+                    </Button>
+                  </EmptyContent>
+                </Empty>
               ) : (
-                <div className="p-4 rounded-xl border border-border bg-card shadow-warm-xs">
-                  <CriterionTrendChart history={history} showBandLegend={false} />
-                </div>
+                <Card size="sm" className="shadow-warm-xs">
+                  <CardContent>
+                    <CriterionTrendChart history={history} showBandLegend={false} />
+                  </CardContent>
+                </Card>
               )}
             </TabsContent>
 
@@ -754,9 +772,9 @@ export function StudentDrillDownDrawer({
                             &quot;{item.targetText}&quot;
                           </span>
                           {item.isTakeHome && (
-                            <span className="text-xs leading-none px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground border border-border/40 font-medium shrink-0">
+                            <Badge variant="secondary" className="text-xs font-medium shrink-0">
                               Take-Home
-                            </span>
+                            </Badge>
                           )}
                         </div>
                         <div className="text-xs font-medium text-muted-foreground tabular-nums">
