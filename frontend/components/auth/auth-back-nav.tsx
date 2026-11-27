@@ -24,7 +24,6 @@ export function AuthBackNav({
         "group inline-flex items-center gap-2 rounded-full border border-border/80 bg-card/90 px-3.5 py-1.5 text-xs font-medium text-muted-foreground shadow-xs backdrop-blur-xs transition-all duration-200 hover:border-brand-300 hover:bg-card hover:text-foreground hover:shadow-warm-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-[40px] select-none",
         className
       )}
-      aria-label={label}
     >
       <ArrowLeftIcon
         aria-hidden="true"

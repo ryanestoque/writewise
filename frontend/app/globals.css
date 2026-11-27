@@ -51,6 +51,7 @@
   --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
+  --color-input-border: var(--input-border);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
@@ -122,6 +123,7 @@
 
   --border: #e3e6e4;
   --input: #e3e6e4;
+  --input-border: #8a9490;
   --ring: #1b6b63;
 
   --radius: 0.5rem; /* 8px base */
@@ -201,6 +203,7 @@
 
   --border: #5b6663;
   --input: #5b6663;
+  --input-border: #828e8a;
   --ring: #e4f1ef;
 
   --chart-1: #b6754a;
@@ -402,7 +405,7 @@
 @keyframes authCardEntrance {
   0% {
     opacity: 0;
-    transform: translateY(28px);
+    transform: translateY(10px);
   }
   100% {
     opacity: 1;
@@ -413,7 +416,7 @@
 @keyframes authNavEntrance {
   0% {
     opacity: 0;
-    transform: translateY(-12px);
+    transform: translateY(-6px);
   }
   100% {
     opacity: 1;
@@ -449,15 +452,15 @@
 }
 
 @utility animate-auth-card {
-  animation: authCardEntrance 950ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: authCardEntrance 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @utility animate-auth-nav {
-  animation: authNavEntrance 800ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: authNavEntrance 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @utility animate-auth-guidelines {
-  animation: authGuidelinesEntrance 1050ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: authGuidelinesEntrance 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* View Transitions Declarations */
@@ -466,7 +469,7 @@
 }
 
 ::view-transition-group(brand-logo) {
-  animation-duration: 950ms;
+  animation-duration: 300ms;
   animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -477,16 +480,16 @@
 }
 
 ::view-transition-group(auth-card) {
-  animation-duration: 950ms;
+  animation-duration: 300ms;
   animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 ::view-transition-old(root) {
-  animation: 350ms cubic-bezier(0.22, 1, 0.36, 1) both vtFadeOut;
+  animation: 200ms cubic-bezier(0.22, 1, 0.36, 1) both vtFadeOut;
 }
 
 ::view-transition-new(root) {
-  animation: 950ms cubic-bezier(0.22, 1, 0.36, 1) both vtFadeIn;
+  animation: 300ms cubic-bezier(0.22, 1, 0.36, 1) both vtFadeIn;
 }
 
 .view-transition-brand-logo {

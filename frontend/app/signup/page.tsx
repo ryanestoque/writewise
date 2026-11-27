@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -15,10 +17,10 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { BrandLogo } from "@/components/brand-logo";
+import { BrandIcon } from "@/components/brand-logo";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { ResponsiveTurnstile } from "@/components/auth/responsive-turnstile";
 import { MIN_PASSWORD_LENGTH } from "@/lib/auth/password-policy";
-import { Turnstile } from "@marsidev/react-turnstile";
 import {
   CircleAlertIcon,
   EyeIcon,
@@ -29,9 +31,33 @@ import {
   GraduationCapIcon,
   HeartHandshakeIcon,
   CheckIcon,
+  ExternalLinkIcon,
+  ShieldCheckIcon,
 } from "lucide-react";
 
 type UserRole = "teacher" | "parent";
+type ValidatableField = "fullName" | "email" | "password";
+type ErrorField = ValidatableField | "captcha";
+type FieldErrors = Partial<Record<ErrorField, string>>;
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateFieldValue(
+  field: ValidatableField,
+  values: { fullName: string; email: string; password: string }
+): string | undefined {
+  if (field === "fullName") {
+    return values.fullName.trim() ? undefined : "Enter your full name.";
+  }
+  if (field === "email") {
+    return EMAIL_REGEX.test(values.email.trim())
+      ? undefined
+      : "Enter a valid email address.";
+  }
+  return values.password.length >= MIN_PASSWORD_LENGTH
+    ? undefined
+    : `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`;
+}
 
 function SignUpForm() {
   const searchParams = useSearchParams();
@@ -42,14 +68,24 @@ function SignUpForm() {
   const [schoolName, setSchoolName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [touchedFields, setTouchedFields] = useState<
+    Partial<Record<ValidatableField, boolean>>
+  >({});
   const [isLoading, setIsLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<TurnstileInstance>(undefined);
+  const resendCaptchaRef = useRef<TurnstileInstance>(undefined);
   const turnstileSiteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
+
+  const fullNameInputRef = useRef<HTMLInputElement>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const errorAlertRef = useRef<HTMLDivElement>(null);
+  const successContainerRef = useRef<HTMLDivElement>(null);
 
   // Success state (confirmation email sent)
   const [isSuccess, setIsSuccess] = useState(false);
@@ -57,6 +93,7 @@ function SignUpForm() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [isResending, setIsResending] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [resendIsError, setResendIsError] = useState(false);
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -69,42 +106,106 @@ function SignUpForm() {
     return () => clearInterval(interval);
   }, [resendCooldown]);
 
+  useEffect(() => {
+    if (isSuccess) {
+      requestAnimationFrame(() => successContainerRef.current?.focus());
+    }
+  }, [isSuccess]);
+
   const hasMinLength = password.length >= MIN_PASSWORD_LENGTH;
-  const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
+
+  function updateFieldErrorOnChange(
+    field: ValidatableField,
+    nextValues: { fullName: string; email: string; password: string }
+  ) {
+    if (!fieldErrors[field] && !touchedFields[field]) return;
+    const nextError = validateFieldValue(field, nextValues);
+    setFieldErrors((prev) => {
+      if (prev[field] === nextError) return prev;
+      const updated = { ...prev };
+      if (nextError) {
+        updated[field] = nextError;
+      } else {
+        delete updated[field];
+      }
+      return updated;
+    });
+  }
+
+  function handleFieldBlur(field: ValidatableField) {
+    setTouchedFields((prev) => ({ ...prev, [field]: true }));
+    const err = validateFieldValue(field, { fullName, email, password });
+    setFieldErrors((prev) => {
+      const updated = { ...prev };
+      if (err) {
+        updated[field] = err;
+      } else {
+        delete updated[field];
+      }
+      return updated;
+    });
+  }
+
+  function focusFirstInvalidField(errors: FieldErrors) {
+    if (errors.fullName) {
+      requestAnimationFrame(() => fullNameInputRef.current?.focus());
+    } else if (errors.email) {
+      requestAnimationFrame(() => emailInputRef.current?.focus());
+    } else if (errors.password) {
+      requestAnimationFrame(() => passwordInputRef.current?.focus());
+    } else if (errors.captcha) {
+      requestAnimationFrame(() => errorAlertRef.current?.focus());
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (isLoading) return;
     setFormError(null);
 
-    if (password.length < MIN_PASSWORD_LENGTH) {
-      setFormError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setFormError("Passwords do not match.");
-      return;
-    }
+    const nextErrors: FieldErrors = {};
+    const values = { fullName, email, password };
+    (["fullName", "email", "password"] as const).forEach((field) => {
+      const err = validateFieldValue(field, values);
+      if (err) nextErrors[field] = err;
+    });
 
     if (turnstileSiteKey && !captchaToken) {
-      setFormError("Please complete the security verification.");
+      nextErrors.captcha = "Please complete the security verification.";
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setTouchedFields({ fullName: true, email: true, password: true });
+      setFieldErrors(nextErrors);
+      if (
+        nextErrors.captcha &&
+        !nextErrors.fullName &&
+        !nextErrors.email &&
+        !nextErrors.password
+      ) {
+        setFormError(nextErrors.captcha);
+      }
+      focusFirstInvalidField(nextErrors);
       return;
     }
 
+    setFieldErrors({});
     setIsLoading(true);
+
+    const trimmedName = fullName.trim();
+    const trimmedEmail = email.trim();
 
     try {
       const redirectUrl = `${window.location.origin}/auth/callback?next=/login`;
       const trimmedSchool = schoolName.trim();
       const { error: signUpError } = await supabase.auth.signUp({
-        email: email.trim(),
+        email: trimmedEmail,
         password,
         options: {
-
           captchaToken: captchaToken ?? undefined,
           data: {
             role,
-            full_name: fullName.trim(),
+            full_name: trimmedName,
             ...(role === "teacher" && trimmedSchool
               ? { school_name: trimmedSchool }
               : {}),
@@ -118,43 +219,63 @@ function SignUpForm() {
         const code = (signUpError as { code?: string }).code;
 
         if (code === "weak_password") {
-          setFormError(
-            "Choose a stronger password — this one is too short or has appeared in a data breach."
-          );
+          const msg =
+            "Choose a stronger password — avoid common words or breached passwords.";
+          setFieldErrors({ password: msg });
+          requestAnimationFrame(() => passwordInputRef.current?.focus());
         } else if (
           status === 429 ||
           code === "over_email_send_rate_limit" ||
           code === "rate_limit_exceeded"
         ) {
           setFormError("Too many attempts. Please wait a minute and try again.");
+          requestAnimationFrame(() => errorAlertRef.current?.focus());
         } else if (code === "email_address_invalid") {
-          setFormError("Enter a valid email address.");
+          const msg = "Enter a valid email address.";
+          setFieldErrors({ email: msg });
+          requestAnimationFrame(() => emailInputRef.current?.focus());
         } else if (code === "signup_disabled") {
           setFormError("Sign-ups are currently closed.");
+          requestAnimationFrame(() => errorAlertRef.current?.focus());
         } else if (code === "captcha_failed") {
-          setFormError("Security verification failed. Please try again.");
-          setCaptchaToken(null);
+          const msg = "Security verification failed. Please try again.";
+          setFieldErrors({ captcha: msg });
+          setFormError(msg);
+          requestAnimationFrame(() => errorAlertRef.current?.focus());
         } else {
           setFormError("Something went wrong. Please try again.");
+          requestAnimationFrame(() => errorAlertRef.current?.focus());
         }
-        setIsLoading(false);
         return;
       }
 
-      setSubmittedEmail(email.trim());
+      setSubmittedEmail(trimmedEmail);
+      setResendMessage(null);
+      setResendIsError(false);
       setIsSuccess(true);
       setResendCooldown(60);
-      setIsLoading(false);
     } catch {
       setFormError("An unexpected error occurred. Please try again.");
+      requestAnimationFrame(() => errorAlertRef.current?.focus());
+    } finally {
+      // Turnstile tokens are single-use, including when the auth request fails.
+      setCaptchaToken(null);
+      captchaRef.current?.reset();
       setIsLoading(false);
     }
   }
 
   async function handleResendEmail() {
     if (!submittedEmail || resendCooldown > 0 || isResending) return;
+    if (turnstileSiteKey && !captchaToken) {
+      setResendIsError(true);
+      setResendMessage("Please complete the security verification below before resending.");
+      return;
+    }
+
     setIsResending(true);
     setResendMessage(null);
+    setResendIsError(false);
 
     try {
       const redirectUrl = `${window.location.origin}/auth/callback?next=/login`;
@@ -162,86 +283,150 @@ function SignUpForm() {
         type: "signup",
         email: submittedEmail,
         options: {
-
           emailRedirectTo: redirectUrl,
+          captchaToken: captchaToken ?? undefined,
         },
       });
 
       if (resendError) {
         const status = (resendError as { status?: number }).status;
         const code = (resendError as { code?: string }).code;
+        setResendIsError(true);
         if (
           status === 429 ||
           code === "over_email_send_rate_limit" ||
           code === "rate_limit_exceeded"
         ) {
           setResendMessage("Rate limit exceeded. Please wait a moment before trying again.");
+        } else if (code === "captcha_failed") {
+          setResendMessage("Security verification failed. Please complete the check and try again.");
         } else {
           setResendMessage("Failed to resend confirmation email. Please try again.");
         }
       } else {
         setResendCooldown(60);
+        setResendIsError(false);
         setResendMessage("A new confirmation email has been sent. Please check your inbox.");
       }
     } catch {
+      setResendIsError(true);
       setResendMessage("Failed to resend email. Please try again later.");
     } finally {
+      setCaptchaToken(null);
+      resendCaptchaRef.current?.reset();
       setIsResending(false);
     }
   }
 
+  const passwordDescribedBy = [
+    fieldErrors.password ? "password-error" : null,
+    "password-requirement",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs transition-all duration-200">
-      <CardHeader className="space-y-1.5 text-center pb-2 pt-6">
-        <div className="flex justify-center -my-1">
-          <Link
-            href="/"
-            aria-label="Back to WriteWise home"
-            className="inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-transform hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <BrandLogo size="xl" priority className="view-transition-brand-logo" />
-          </Link>
+    <Card className="border-border/80 bg-card/95 pb-0 shadow-warm backdrop-blur-xs transition-all duration-200">
+      <CardHeader className="space-y-3 text-center pb-2 pt-6">
+        <div className="flex justify-center">
+          <div className="inline-flex size-14 items-center justify-center rounded-2xl border border-border/80 bg-surface p-1 shadow-warm-sm view-transition-brand-logo">
+            <BrandIcon size={48} priority className="size-full rounded-xl" />
+          </div>
         </div>
-        <h1 className="sr-only">Create a WriteWise account</h1>
+        <div className="space-y-1">
+          <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground">
+            {isSuccess ? "Check your email" : "Create your account"}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {isSuccess
+              ? `We sent a verification link to ${submittedEmail}.`
+              : role === "teacher"
+                ? "Set up your teacher workspace for cursive assessment."
+                : "Follow your child’s cursive progress and feedback."}
+          </p>
+        </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         {isSuccess ? (
-          <div className="space-y-4 py-2 text-center animate-in fade-in-50 duration-200">
+          <div
+            ref={successContainerRef}
+            tabIndex={-1}
+            className="space-y-4 py-1 text-center outline-none animate-in fade-in-50 duration-200 motion-reduce:animate-none motion-reduce:transition-none"
+          >
             <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 ring-4 ring-brand-100/70 dark:bg-brand-950/60 dark:text-brand-400 dark:ring-brand-900/50">
-              <MailIcon className="size-6" />
-            </div>
-
-            <div className="space-y-1">
-              <h2 className="text-base font-semibold text-foreground font-heading">
-                Check your email
-              </h2>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                We sent a confirmation link to{" "}
-                <span className="font-semibold text-foreground">{submittedEmail}</span>.
-              </p>
+              <MailIcon className="size-6" aria-hidden="true" />
             </div>
 
             <Alert className="border-brand-200 bg-brand-50/70 text-brand-900 dark:border-brand-900 dark:bg-brand-950/50 dark:text-brand-300 text-left">
-              <CheckCircle2Icon className="size-4 text-brand-600 dark:text-brand-400" />
-              <AlertDescription className="text-xs leading-relaxed">
-                Please click the link in your email to verify your account. Once verified, you can sign in to WriteWise.
+              <CheckCircle2Icon
+                className="size-4 text-brand-600 dark:text-brand-400"
+                aria-hidden="true"
+              />
+              <AlertDescription className="text-sm leading-relaxed space-y-1.5">
+                <p>
+                  Click the link in your email to verify your account, and check your spam or junk folder if it doesn’t appear right away.
+                </p>
+                <p className="text-brand-800/90 dark:text-brand-300/90">
+                  {role === "teacher"
+                    ? "Once verified, sign in to create your class roster and activities."
+                    : "Once verified, sign in—your child’s teacher will link your account to their student record."}
+                </p>
+                <p className="text-xs text-brand-800/80 dark:text-brand-300/80">
+                  Already registered with this email? Sign in below with your existing password.
+                </p>
               </AlertDescription>
             </Alert>
 
-            {resendMessage && (
-              <p className="text-xs text-muted-foreground animate-in fade-in-50">
-                {resendMessage}
-              </p>
+            {turnstileSiteKey && (
+              <ResponsiveTurnstile
+                id="signup-resend-captcha"
+                className="mx-auto"
+                ref={resendCaptchaRef}
+                siteKey={turnstileSiteKey}
+                onSuccess={(token) => {
+                  setCaptchaToken(token);
+                  if (resendIsError) setResendMessage(null);
+                }}
+                onExpire={() => setCaptchaToken(null)}
+                onTimeout={() => setCaptchaToken(null)}
+                onError={() => {
+                  setCaptchaToken(null);
+                  setResendIsError(true);
+                  setResendMessage("Security verification could not load. Please try again.");
+                }}
+                options={{ theme: "auto" }}
+              />
             )}
 
-            <div className="space-y-2 pt-1">
+            <p
+              aria-live="polite"
+              className={cn(
+                "min-h-4 text-xs",
+                resendIsError ? "text-destructive" : "text-muted-foreground"
+              )}
+            >
+              {resendMessage ?? ""}
+            </p>
+
+            <div className="space-y-2.5 pt-0.5">
+              <Link
+                href="/login"
+                className={cn(
+                  buttonVariants({ variant: "default", size: "lg" }),
+                  "h-10 sm:h-9 w-full font-medium transition-all duration-150"
+                )}
+              >
+                Go to Sign in
+                <ArrowRightIcon className="ml-2 size-4" aria-hidden="true" />
+              </Link>
+
               <Button
                 id="signup-resend"
                 type="button"
                 variant="outline"
                 size="sm"
-                className="w-full text-xs"
+                className="h-10 sm:h-9 w-full text-xs"
                 disabled={resendCooldown > 0 || isResending}
                 onClick={handleResendEmail}
               >
@@ -261,22 +446,34 @@ function SignUpForm() {
                 type="button"
                 onClick={() => {
                   setIsSuccess(false);
-                  setPassword("");
-                  setConfirmPassword("");
+                  setResendMessage(null);
+                  setResendIsError(false);
+                  setFormError(null);
+                  setFieldErrors({});
+                  setCaptchaToken(null);
+                  captchaRef.current?.reset();
+                  resendCaptchaRef.current?.reset();
                 }}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded py-1"
+                className="inline-flex min-h-[40px] sm:min-h-[36px] items-center justify-center px-3 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md"
               >
                 Entered the wrong email? Use a different email
               </button>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="grid gap-4" noValidate={false}>
+          <form
+            onSubmit={handleSubmit}
+            aria-busy={isLoading}
+            className="grid gap-5"
+            noValidate
+          >
             {formError && (
               <Alert
+                ref={errorAlertRef}
+                tabIndex={-1}
                 variant="destructive"
                 id="signup-error"
-                className="[&>svg]:translate-y-0 animate-in fade-in-50 slide-in-from-top-1 duration-200 motion-reduce:animate-none motion-reduce:transition-none"
+                className="outline-none [&>svg]:translate-y-0 animate-in fade-in-50 slide-in-from-top-1 duration-200 motion-reduce:animate-none motion-reduce:transition-none"
               >
                 <CircleAlertIcon aria-hidden="true" />
                 <AlertDescription className="text-xs leading-normal">
@@ -285,245 +482,322 @@ function SignUpForm() {
               </Alert>
             )}
 
-            {/* Role selector pill */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-foreground">
-                I am registering as a
-              </Label>
-              <div
-                role="radiogroup"
-                aria-label="Account role"
-                className="grid grid-cols-2 gap-1 rounded-lg bg-muted/60 p-1 border border-border/60"
-              >
-                <button
-                  type="button"
-                  id="signup-role-teacher"
-                  role="radio"
-                  aria-checked={role === "teacher"}
-                  onClick={() => setRole("teacher")}
-                  className={`flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                    role === "teacher"
-                      ? "bg-card text-foreground shadow-xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <GraduationCapIcon className="size-3.5 shrink-0" />
-                  Teacher
-                </button>
-                <button
-                  type="button"
-                  id="signup-role-parent"
-                  role="radio"
-                  aria-checked={role === "parent"}
-                  onClick={() => setRole("parent")}
-                  className={`flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                    role === "parent"
-                      ? "bg-card text-foreground shadow-xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <HeartHandshakeIcon className="size-3.5 shrink-0" />
-                  Parent
-                </button>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-normal px-0.5">
-                {role === "teacher"
-                  ? "Manage your class roster and assess cursive handwriting."
-                  : "Your child's teacher will link your account to their student records."}
-              </p>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="fullName" className="text-xs font-semibold text-foreground">
-                Full name
-              </Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder={role === "teacher" ? "Maria Santos" : "Juan dela Cruz"}
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                autoComplete="name"
-                disabled={isLoading}
-                className="h-10 text-sm"
-              />
-            </div>
-
-            {role === "teacher" && (
-              <div className="grid gap-2 animate-in fade-in-50 duration-150">
-                <div className="flex items-center justify-between">
-                  <Label
-                    htmlFor="schoolName"
-                    className="text-xs font-semibold text-foreground"
-                  >
-                    School / Institution
-                  </Label>
-                  <span className="text-[11px] text-muted-foreground">
-                    Optional
-                  </span>
-                </div>
-                <Input
-                  id="schoolName"
-                  type="text"
-                  placeholder="e.g. Holy Cross of Davao College"
-                  value={schoolName}
-                  onChange={(e) => setSchoolName(e.target.value)}
-                  autoComplete="organization"
-                  disabled={isLoading}
-                  className="h-10 text-sm"
-                />
-                <p className="text-[11px] text-muted-foreground leading-normal px-0.5">
-                  Appears in your class rosters and portal sidebar.
-                </p>
-              </div>
-            )}
-
-            <div className="grid gap-2">
-              <Label htmlFor="email" className="text-xs font-semibold text-foreground">
-                Email address
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@school.edu"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                autoCapitalize="none"
-                spellCheck={false}
-                enterKeyHint="next"
-                disabled={isLoading}
-                aria-invalid={!!formError}
-                aria-describedby={formError ? "signup-error" : undefined}
-                className="h-10 text-sm"
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-xs font-semibold text-foreground">
-                  Password
-                </Label>
-                <span
-                  className={`inline-flex items-center gap-1 text-[11px] transition-colors ${
-                    hasMinLength ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground"
-                  }`}
-                >
-                  {hasMinLength ? (
-                    <CheckIcon className="size-3" aria-hidden="true" />
-                  ) : null}
-                  At least 10 characters
-                </span>
-              </div>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="new-password"
-                  enterKeyHint="next"
-                  disabled={isLoading}
-                  className="h-10 pr-10 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  disabled={isLoading}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute right-1 top-1/2 -translate-y-1/2 flex size-8 items-center justify-center rounded-md p-1.5 transition-colors outline-none focus-visible:ring-2 disabled:pointer-events-none"
-                >
-                  {showPassword ? (
-                    <EyeOffIcon className="size-4" aria-hidden="true" />
-                  ) : (
-                    <EyeIcon className="size-4" aria-hidden="true" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="confirmPassword" className="text-xs font-semibold text-foreground">
-                  Confirm password
-                </Label>
-                {confirmPassword && (
-                  <span
-                    className={`inline-flex items-center gap-1 text-[11px] ${
-                      passwordsMatch ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-amber-600 dark:text-amber-400"
+            {/* Group 1: Role & Profile */}
+            <div className="grid gap-4">
+              <fieldset className="space-y-2">
+                <legend className="text-xs font-semibold text-foreground">
+                  I am registering as a
+                </legend>
+                <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted/60 p-1 border border-border/70">
+                  <label
+                    htmlFor="signup-role-teacher"
+                    className={`flex min-h-10 sm:min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 text-sm transition-all duration-150 has-[:focus-visible]:outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary ${
+                      role === "teacher"
+                        ? "bg-surface text-foreground shadow-xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground font-medium"
                     }`}
                   >
-                    {passwordsMatch ? "Passwords match" : "Does not match"}
-                  </span>
+                    <input
+                      id="signup-role-teacher"
+                      type="radio"
+                      name="role"
+                      value="teacher"
+                      checked={role === "teacher"}
+                      onChange={() => setRole("teacher")}
+                      disabled={isLoading}
+                      className="sr-only"
+                    />
+                    <GraduationCapIcon className="size-4 shrink-0" aria-hidden="true" />
+                    <span>Teacher</span>
+                  </label>
+                  <label
+                    htmlFor="signup-role-parent"
+                    className={`flex min-h-10 sm:min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 text-sm transition-all duration-150 has-[:focus-visible]:outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary ${
+                      role === "parent"
+                        ? "bg-surface text-foreground shadow-xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground font-medium"
+                    }`}
+                  >
+                    <input
+                      id="signup-role-parent"
+                      type="radio"
+                      name="role"
+                      value="parent"
+                      checked={role === "parent"}
+                      onChange={() => setRole("parent")}
+                      disabled={isLoading}
+                      className="sr-only"
+                    />
+                    <HeartHandshakeIcon className="size-4 shrink-0" aria-hidden="true" />
+                    <span>Parent</span>
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed px-0.5">
+                  {role === "teacher"
+                    ? "Manage your class roster, activities, and cursive assessments."
+                    : "Your child’s teacher will link your account to their student record."}
+                </p>
+              </fieldset>
+
+              <div className="grid gap-1.5">
+                <Label htmlFor="fullName" className="text-xs font-semibold text-foreground">
+                  Full name
+                </Label>
+                <Input
+                  ref={fullNameInputRef}
+                  id="fullName"
+                  type="text"
+                  placeholder={role === "teacher" ? "Maria Santos" : "Juan dela Cruz"}
+                  value={fullName}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFullName(value);
+                    updateFieldErrorOnChange("fullName", {
+                      fullName: value,
+                      email,
+                      password,
+                    });
+                  }}
+                  onBlur={() => handleFieldBlur("fullName")}
+                  required
+                  autoComplete="name"
+                  enterKeyHint="next"
+                  disabled={isLoading}
+                  aria-invalid={Boolean(fieldErrors.fullName)}
+                  aria-describedby={fieldErrors.fullName ? "fullName-error" : undefined}
+                  className="h-10 sm:h-9"
+                />
+                {fieldErrors.fullName && (
+                  <p id="fullName-error" className="mt-1 text-xs text-destructive">
+                    {fieldErrors.fullName}
+                  </p>
                 )}
               </div>
-              <div className="relative">
+
+              {role === "teacher" && (
+                <div className="grid gap-1.5 animate-in fade-in-50 duration-150 motion-reduce:animate-none motion-reduce:transition-none">
+                  <div className="flex items-center justify-between">
+                    <Label
+                      htmlFor="schoolName"
+                      className="text-xs font-semibold text-foreground"
+                    >
+                      School / Institution
+                    </Label>
+                    <span className="text-xs text-muted-foreground">
+                      Optional
+                    </span>
+                  </div>
+                  <Input
+                    id="schoolName"
+                    type="text"
+                    placeholder="e.g. Davao Central Elementary School"
+                    value={schoolName}
+                    onChange={(e) => setSchoolName(e.target.value)}
+                    autoComplete="organization"
+                    enterKeyHint="next"
+                    disabled={isLoading}
+                    className="h-10 sm:h-9"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Group 2: Account Credentials */}
+            <div className="grid gap-4 border-t border-border/60 pt-4">
+              <div className="grid gap-1.5">
+                <Label htmlFor="email" className="text-xs font-semibold text-foreground">
+                  Email address
+                </Label>
                 <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  ref={emailInputRef}
+                  id="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setEmail(value);
+                    updateFieldErrorOnChange("email", {
+                      fullName,
+                      email: value,
+                      password,
+                    });
+                  }}
+                  onBlur={() => handleFieldBlur("email")}
                   required
-                  autoComplete="new-password"
-                  enterKeyHint="go"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  enterKeyHint="next"
                   disabled={isLoading}
-                  className="h-10 pr-10 text-sm"
+                  aria-invalid={Boolean(fieldErrors.email)}
+                  aria-describedby={fieldErrors.email ? "email-error" : undefined}
+                  className="h-10 sm:h-9"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword((prev) => !prev)}
-                  disabled={isLoading}
-                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                  className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute right-1 top-1/2 -translate-y-1/2 flex size-8 items-center justify-center rounded-md p-1.5 transition-colors outline-none focus-visible:ring-2 disabled:pointer-events-none"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOffIcon className="size-4" aria-hidden="true" />
-                  ) : (
-                    <EyeIcon className="size-4" aria-hidden="true" />
-                  )}
-                </button>
+                {fieldErrors.email && (
+                  <p id="email-error" className="mt-1 text-xs text-destructive">
+                    {fieldErrors.email}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid gap-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="password" className="text-xs font-semibold text-foreground">
+                    Password
+                  </Label>
+                  <span
+                    id="password-requirement"
+                    aria-live="polite"
+                    aria-atomic="true"
+                    className={cn(
+                      "inline-flex items-center gap-1 text-xs transition-colors",
+                      hasMinLength
+                        ? "text-band-4-text font-medium"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    {hasMinLength ? (
+                      <CheckIcon className="size-3.5" aria-hidden="true" />
+                    ) : null}
+                    <span className="sr-only">
+                      {hasMinLength ? "Requirement met: " : "Requirement: "}
+                    </span>
+                    At least {MIN_PASSWORD_LENGTH} characters
+                  </span>
+                </div>
+                <div className="relative">
+                  <Input
+                    ref={passwordInputRef}
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setPassword(value);
+                      updateFieldErrorOnChange("password", {
+                        fullName,
+                        email,
+                        password: value,
+                      });
+                    }}
+                    onBlur={() => handleFieldBlur("password")}
+                    required
+                    autoComplete="new-password"
+                    enterKeyHint={turnstileSiteKey ? "done" : "go"}
+                    disabled={isLoading}
+                    aria-invalid={Boolean(fieldErrors.password)}
+                    aria-describedby={passwordDescribedBy}
+                    className="h-10 sm:h-9 pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    disabled={isLoading}
+                    aria-pressed={showPassword}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute right-0.5 top-1/2 -translate-y-1/2 flex size-10 sm:size-9 items-center justify-center rounded-md transition-colors outline-none focus-visible:ring-2 disabled:pointer-events-none"
+                  >
+                    {showPassword ? (
+                      <EyeOffIcon className="size-4" aria-hidden="true" />
+                    ) : (
+                      <EyeIcon className="size-4" aria-hidden="true" />
+                    )}
+                  </button>
+                </div>
+                {fieldErrors.password && (
+                  <p id="password-error" className="mt-1 text-xs text-destructive">
+                    {fieldErrors.password}
+                  </p>
+                )}
               </div>
             </div>
 
             {turnstileSiteKey && (
-              <div className="my-2 flex justify-center">
-                <Turnstile
+              <div className="grid gap-1.5">
+                <ResponsiveTurnstile
+                  id="signup-captcha"
+                  className="mx-auto"
+                  ref={captchaRef}
                   siteKey={turnstileSiteKey}
                   onSuccess={(token) => {
                     setCaptchaToken(token);
-                    setFormError(null);
+                    setFieldErrors((prev) => {
+                      if (!prev.captcha) return prev;
+                      const next = { ...prev };
+                      delete next.captcha;
+                      return next;
+                    });
+                    if (formError === fieldErrors.captcha) {
+                      setFormError(null);
+                    }
                   }}
                   onExpire={() => setCaptchaToken(null)}
+                  onTimeout={() => setCaptchaToken(null)}
                   onError={() => {
+                    const msg = "Security verification could not load. Please try again.";
                     setCaptchaToken(null);
+                    setFieldErrors((prev) => ({ ...prev, captcha: msg }));
+                    setFormError(msg);
                   }}
                   options={{
                     theme: "auto",
                   }}
                 />
+                {fieldErrors.captcha && (
+                  <p
+                    id="captcha-error"
+                    className="mt-1 text-center text-xs text-destructive"
+                  >
+                    {fieldErrors.captcha}
+                  </p>
+                )}
               </div>
             )}
 
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Read our{" "}
-              <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
-                Privacy Policy (opens in a new tab)
+            <div className="flex items-start gap-2.5 rounded-lg border border-border/80 bg-muted/40 px-3 py-2.5 text-xs leading-relaxed text-foreground">
+              <ShieldCheckIcon
+                className="mt-0.5 size-4 shrink-0 text-primary"
+                aria-hidden="true"
+              />
+              <p>
+                {role === "teacher"
+                  ? "Students never need accounts or logins—paper consent and roster records stay managed by you."
+                  : "Students never need accounts—your child’s teacher handles paper consent and links your account after email verification."}
+              </p>
+            </div>
+
+            <p className="text-center text-xs leading-relaxed text-muted-foreground">
+              By signing up, you agree to our{" "}
+              <Link
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-0.5 rounded py-1.5 -my-1.5 sm:py-0.5 sm:-my-0.5 font-medium text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <span>Privacy Policy</span>
+                <ExternalLinkIcon className="size-3 shrink-0" aria-hidden="true" />
+                <span className="sr-only"> (opens in a new tab)</span>
               </Link>{" "}
               and{" "}
-              <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
-                Terms of Service (opens in a new tab)
-              </Link>{" "}
-              before creating an account. Account registration does not replace the separate paper consent for a child’s participation.
+              <Link
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-0.5 rounded py-1.5 -my-1.5 sm:py-0.5 sm:-my-0.5 font-medium text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <span>Terms of Service</span>
+                <ExternalLinkIcon className="size-3 shrink-0" aria-hidden="true" />
+                <span className="sr-only"> (opens in a new tab)</span>
+              </Link>
+              .
             </p>
 
             <Button
               id="signup-submit"
               type="submit"
               size="lg"
-              className="mt-1 h-10 w-full font-medium transition-all duration-150"
+              className="h-10 sm:h-9 w-full font-medium transition-all duration-150"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -542,12 +816,12 @@ function SignUpForm() {
         )}
       </CardContent>
 
-      <CardFooter className="flex flex-col items-center justify-center border-t border-border/60 bg-muted/20 px-6 py-3.5 text-center text-xs text-muted-foreground">
-        <p>
-          Already have an account?{" "}
+      <CardFooter className="flex flex-col items-center justify-center border-t border-border/60 bg-muted/20 px-6 py-3.5 [.border-t]:pt-3.5 text-center text-xs text-muted-foreground">
+        <p className="flex flex-wrap items-center justify-center gap-x-1">
+          <span>Already have an account?</span>
           <Link
             href="/login"
-            className="font-medium text-primary hover:underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+            className="inline-flex items-center min-h-[40px] sm:min-h-[36px] px-1 font-medium text-primary hover:underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
           >
             Sign in
           </Link>

@@ -29,14 +29,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
-import { BrandLogo } from "@/components/brand-logo";
+import { BrandIcon } from "@/components/brand-logo";
 import {
   CircleAlertIcon,
   EyeIcon,
   EyeOffIcon,
-  HelpCircleIcon,
   ArrowRightIcon,
-  SchoolIcon,
   CheckCircle2Icon,
 } from "lucide-react";
 
@@ -131,10 +129,10 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
       />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-base font-semibold text-foreground font-heading">
+          <DialogTitle className="text-lg font-semibold text-foreground font-heading">
             {isSent ? "Check Your Email" : "Reset Password"}
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
+          <DialogDescription className="text-sm text-muted-foreground leading-relaxed mt-1">
             {isSent
               ? "We've sent recovery instructions to your registered email address."
               : "Enter your registered email address to receive a password reset link."}
@@ -145,7 +143,7 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
           <div className="space-y-4 py-1">
             <Alert className="border-brand-200 bg-brand-50/70 text-brand-900 dark:border-brand-900 dark:bg-brand-950/50 dark:text-brand-300">
               <CheckCircle2Icon className="size-4 text-brand-600 dark:text-brand-400" />
-              <AlertDescription className="text-xs leading-relaxed">
+              <AlertDescription className="text-sm leading-relaxed">
                 If an account exists for <span className="font-semibold">{resetEmail}</span>, a password reset link has been sent. Please check your inbox and spam folder.
               </AlertDescription>
             </Alert>
@@ -154,7 +152,7 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
               <button
                 type="button"
                 onClick={() => setIsSent(false)}
-                className="text-xs font-medium text-primary hover:text-primary/80 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                className="inline-flex items-center min-h-[40px] sm:min-h-[36px] px-2 text-xs font-medium text-primary hover:text-primary/80 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
               >
                 Entered the wrong email? Try again
               </button>
@@ -166,9 +164,8 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
                   <Button
                     type="button"
                     variant="default"
-                    size="sm"
                     autoFocus
-                    className="w-full sm:w-auto"
+                    className="h-10 sm:h-9 w-full sm:w-auto"
                   >
                     Done
                   </Button>
@@ -177,11 +174,11 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
             </DialogFooter>
           </div>
         ) : (
-          <form onSubmit={handleSendReset} className="space-y-4 pt-1">
+          <form onSubmit={handleSendReset} aria-busy={isSending} className="space-y-5 pt-1">
             {sendError && (
               <Alert variant="destructive">
                 <CircleAlertIcon className="size-4" />
-                <AlertDescription id="reset-email-error" className="text-xs">
+                <AlertDescription id="reset-email-error" className="text-sm">
                   {sendError}
                 </AlertDescription>
               </Alert>
@@ -199,34 +196,28 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
                 type="email"
                 required
                 autoComplete="email"
-                placeholder="you@school.edu"
+                placeholder="name@example.com"
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
                 disabled={isSending}
                 aria-invalid={!!sendError}
                 aria-describedby={sendError ? "reset-email-error" : undefined}
-                className="h-9 text-xs"
+                className="h-10 sm:h-9"
               />
             </div>
 
-            <div className="space-y-2 rounded-xl border border-border/80 bg-muted/40 p-3 text-xs text-foreground">
-              <div className="flex items-start gap-2">
-                <SchoolIcon className="size-3.5 text-primary shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <p className="font-medium text-foreground text-xs">Teachers & Staff:</p>
-                  <p className="text-muted-foreground text-xs leading-normal">
-                    You can also contact your department head or school admin for direct credential assistance.
-                  </p>
-                </div>
+            <div className="space-y-2.5 rounded-xl border border-border/80 bg-muted/40 p-3.5 text-sm text-foreground">
+              <div className="space-y-0.5">
+                <p className="font-medium text-foreground text-sm">Teachers</p>
+                <p className="text-muted-foreground text-sm leading-normal">
+                  Reach out to your WriteWise pilot coordinator if you need help verifying or recovering your account.
+                </p>
               </div>
-              <div className="border-t border-border/60 pt-2 flex items-start gap-2">
-                <HelpCircleIcon className="size-3.5 text-primary shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <p className="font-medium text-foreground text-xs">Parents:</p>
-                  <p className="text-muted-foreground text-xs leading-normal">
-                    Reach out to your child&apos;s class adviser or coordinator to verify your registered email.
-                  </p>
-                </div>
+              <div className="border-t border-border/60 pt-2.5 space-y-0.5">
+                <p className="font-medium text-foreground text-sm">Parents</p>
+                <p className="text-muted-foreground text-sm leading-normal">
+                  Contact your child&apos;s teacher to confirm which email address is linked to your family.
+                </p>
               </div>
             </div>
 
@@ -253,9 +244,8 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
                     disabled={isSending}
-                    className="w-full sm:w-auto"
+                    className="h-10 sm:h-9 w-full sm:w-auto"
                   >
                     Cancel
                   </Button>
@@ -263,8 +253,7 @@ function ForgotPasswordDialog({ initialEmail = "" }: { initialEmail?: string }) 
               />
               <Button
                 type="submit"
-                size="sm"
-                className="w-full sm:w-auto"
+                className="h-10 sm:h-9 w-full sm:w-auto"
                 disabled={isSending || !resetEmail.trim()}
               >
                 {isSending ? (
@@ -289,17 +278,28 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [errorScope, setErrorScope] = useState<"credentials" | "form" | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isUnconfirmed, setIsUnconfirmed] = useState(false);
   const [isResendingConfirm, setIsResendingConfirm] = useState(false);
-  const [resendConfirmSuccess, setResendConfirmSuccess] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const captchaRef = useRef<TurnstileInstance>(undefined);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const errorAlertRef = useRef<HTMLDivElement>(null);
   const turnstileSiteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
 
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   // Handle ?confirmed=true toast
   useEffect(() => {
@@ -348,18 +348,25 @@ function LoginForm() {
 
   const missingRoleError =
     searchParams.get("error") === "missing_role"
-      ? "Your account is missing a role assignment. Please contact your school administrator or coordinator."
+      ? "Your account setup isn't finished yet. Please contact your WriteWise pilot coordinator or your child's teacher to complete access."
       : null;
 
   const confirmationFailedError =
     searchParams.get("error") === "confirmation_failed"
-      ? "That confirmation link is invalid or expired. Please sign up again or request a new confirmation link."
+      ? "That confirmation link is invalid or expired. Enter your email below to request a new confirmation link, or sign up again."
       : null;
 
   const error = formError ?? missingRoleError ?? confirmationFailedError;
+  const showResendConfirmation = isUnconfirmed || Boolean(confirmationFailedError);
 
   async function handleResendConfirmation() {
-    if (!email.trim() || isResendingConfirm) return;
+    if (!email.trim() || isResendingConfirm || resendCooldown > 0) return;
+    if (turnstileSiteKey && !captchaToken) {
+      setFormError("Please complete the security verification before resending.");
+      setErrorScope("form");
+      return;
+    }
+
     setIsResendingConfirm(true);
     try {
       const { error: resendError } = await supabase.auth.resend({
@@ -367,17 +374,20 @@ function LoginForm() {
         email: email.trim(),
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback?next=/login`,
+          captchaToken: captchaToken ?? undefined,
         },
       });
       if (resendError) {
         toast.error("Failed to resend confirmation email. Please try again.");
       } else {
-        setResendConfirmSuccess(true);
+        setResendCooldown(60);
         toast.success("Confirmation email resent! Please check your inbox.");
       }
     } catch {
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
+      setCaptchaToken(null);
+      captchaRef.current?.reset();
       setIsResendingConfirm(false);
     }
   }
@@ -386,9 +396,13 @@ function LoginForm() {
     e.preventDefault();
     if (isLoading) return;
     setFormError(null);
+    setErrorScope(null);
+    setIsUnconfirmed(false);
 
     if (turnstileSiteKey && !captchaToken) {
       setFormError("Please complete the security verification.");
+      setErrorScope("form");
+      requestAnimationFrame(() => errorAlertRef.current?.focus());
       return;
     }
 
@@ -404,18 +418,26 @@ function LoginForm() {
       if (authError) {
         if (authError.code === "invalid_credentials") {
           setFormError("Invalid email or password.");
+          setErrorScope("credentials");
+          setIsLoading(false);
+          requestAnimationFrame(() => passwordInputRef.current?.focus());
+          return;
         } else if (authError.code === "email_not_confirmed") {
           setIsUnconfirmed(true);
           setFormError("Please confirm your email address before signing in. Check your inbox for the link.");
+          setErrorScope("form");
         } else if (authError.code === "captcha_failed") {
           setFormError("Security verification failed. Please try again.");
+          setErrorScope("form");
         } else if (authError.status === 429 || authError.code === "over_request_rate_limit") {
           setFormError("Too many sign-in attempts. Please wait a moment and try again.");
+          setErrorScope("form");
         } else {
           setFormError("Something went wrong. Please try again.");
+          setErrorScope("form");
         }
-        setPassword("");
         setIsLoading(false);
+        requestAnimationFrame(() => errorAlertRef.current?.focus());
         return;
       }
 
@@ -423,107 +445,133 @@ function LoginForm() {
       router.refresh();
     } catch {
       setFormError("Something went wrong. Please try again.");
+      setErrorScope("form");
       setIsLoading(false);
+      requestAnimationFrame(() => errorAlertRef.current?.focus());
     } finally {
       setCaptchaToken(null);
       captchaRef.current?.reset();
     }
   }
 
+  const hasCredentialError = errorScope === "credentials";
+
   return (
-    <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-warm backdrop-blur-xs transition-all duration-200">
-      <CardHeader className="space-y-1.5 text-center pb-2 pt-6">
-        <div className="flex justify-center -my-1">
-          <Link
-            href="/"
-            aria-label="Back to WriteWise home"
-            className="inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-transform hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <BrandLogo size="xl" priority className="view-transition-brand-logo" />
-          </Link>
+    <Card className="w-full max-w-md border-border/80 bg-card/95 pb-0 shadow-warm backdrop-blur-xs transition-all duration-200">
+      <CardHeader className="space-y-3 text-center pb-2 pt-6">
+        <div className="flex justify-center">
+          <div className="inline-flex size-14 items-center justify-center rounded-2xl border border-border/80 bg-surface p-1 shadow-warm-sm view-transition-brand-logo">
+            <BrandIcon size={48} priority className="size-full rounded-xl" />
+          </div>
         </div>
-        <h1 className="sr-only">WriteWise Login</h1>
+        <div className="space-y-1">
+          <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground">
+            Welcome back
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Sign in to your teacher or parent portal
+          </p>
+        </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        <form onSubmit={handleSubmit} className="grid gap-4" noValidate={false}>
+      <CardContent className="space-y-5">
+        <form onSubmit={handleSubmit} aria-busy={isLoading} className="grid gap-5">
           {error && (
             <div className="space-y-2">
               <Alert
+                ref={errorAlertRef}
+                tabIndex={-1}
                 variant="destructive"
                 id="login-error"
-                className="[&>svg]:translate-y-0 animate-in fade-in-50 slide-in-from-top-1 duration-200 motion-reduce:animate-none motion-reduce:transition-none"
+                className="outline-none [&>svg]:translate-y-0 animate-in fade-in-50 slide-in-from-top-1 duration-200 motion-reduce:animate-none motion-reduce:transition-none"
               >
                 <CircleAlertIcon aria-hidden="true" />
                 <AlertDescription className="text-xs leading-normal">
                   {error}
                 </AlertDescription>
               </Alert>
-              {isUnconfirmed && (
-                <div className="flex items-center justify-between px-1 text-xs">
-                  <span className="text-muted-foreground">Didn&apos;t receive it?</span>
+              {showResendConfirmation && (
+                <div className="flex items-center justify-between gap-2 px-1 text-xs">
+                  <span className="text-muted-foreground">
+                    {email.trim() ? "Didn't receive it?" : "Enter your email below first"}
+                  </span>
                   <button
                     type="button"
                     onClick={handleResendConfirmation}
-                    disabled={isResendingConfirm || resendConfirmSuccess}
-                    className="font-medium text-primary hover:underline disabled:opacity-50"
+                    disabled={!email.trim() || isResendingConfirm || resendCooldown > 0}
+                    className="inline-flex items-center min-h-[40px] sm:min-h-[36px] px-1.5 font-medium text-primary hover:underline disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
                   >
-                    {isResendingConfirm ? "Resending…" : resendConfirmSuccess ? "Email sent!" : "Resend confirmation email"}
+                    {isResendingConfirm
+                      ? "Resending…"
+                      : resendCooldown > 0
+                        ? `Resend in ${resendCooldown}s`
+                        : "Resend confirmation email"}
                   </button>
                 </div>
               )}
             </div>
           )}
 
-          <div className="grid gap-2">
+          <div className="grid gap-1.5">
             <Label htmlFor="email" className="text-xs font-semibold text-foreground">
               Email address
             </Label>
             <Input
               id="email"
               type="email"
-              placeholder="you@school.edu"
+              placeholder="name@example.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (formError) {
+                  setFormError(null);
+                  setErrorScope(null);
+                }
+              }}
               required
               autoComplete="email"
               autoCapitalize="none"
               spellCheck={false}
               enterKeyHint="next"
               disabled={isLoading}
-              aria-invalid={!!error}
+              aria-invalid={hasCredentialError}
               aria-describedby={error ? "login-error" : undefined}
-              className="h-10 text-sm"
+              className="h-10 sm:h-9"
             />
           </div>
 
-          <div className="grid gap-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password" className="text-xs font-semibold text-foreground">
-                Password
-              </Label>
-              <ForgotPasswordDialog initialEmail={email} />
-            </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="password" className="text-xs font-semibold text-foreground">
+              Password
+            </Label>
             <div className="relative">
               <Input
+                ref={passwordInputRef}
                 id="password"
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (formError) {
+                    setFormError(null);
+                    setErrorScope(null);
+                  }
+                }}
                 required
                 autoComplete="current-password"
                 enterKeyHint="go"
                 disabled={isLoading}
-                aria-invalid={!!error}
+                aria-invalid={hasCredentialError}
                 aria-describedby={error ? "login-error" : undefined}
-                className="h-10 pr-10 text-sm"
+                className="h-10 sm:h-9 pr-12"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
                 disabled={isLoading}
+                aria-pressed={showPassword}
                 aria-label={showPassword ? "Hide password" : "Show password"}
-                className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute right-1 top-1/2 -translate-y-1/2 flex size-8 items-center justify-center rounded-md p-1.5 transition-colors outline-none focus-visible:ring-2 disabled:pointer-events-none"
+                className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute right-0.5 top-1/2 -translate-y-1/2 flex size-10 sm:size-9 items-center justify-center rounded-md transition-colors outline-none focus-visible:ring-2 disabled:pointer-events-none"
               >
                 {showPassword ? (
                   <EyeOffIcon className="size-4" aria-hidden="true" />
@@ -532,12 +580,14 @@ function LoginForm() {
                 )}
               </button>
             </div>
+            <div className="flex justify-end">
+              <ForgotPasswordDialog initialEmail={email} />
+            </div>
           </div>
 
           {turnstileSiteKey && (
             <ResponsiveTurnstile
               id="login-captcha"
-              className="mx-auto"
               ref={captchaRef}
               siteKey={turnstileSiteKey}
               onSuccess={setCaptchaToken}
@@ -546,6 +596,7 @@ function LoginForm() {
               onError={() => {
                 setCaptchaToken(null);
                 setFormError("Security verification could not load. Please try again.");
+                setErrorScope("form");
               }}
               options={{ theme: "auto" }}
             />
@@ -555,7 +606,7 @@ function LoginForm() {
             id="login-submit"
             type="submit"
             size="lg"
-            className="mt-1 h-10 w-full font-medium transition-all duration-150"
+            className="mt-1 h-10 sm:h-9 w-full font-medium transition-all duration-150"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -573,12 +624,12 @@ function LoginForm() {
         </form>
       </CardContent>
 
-      <CardFooter className="flex flex-col items-center justify-center border-t border-border/60 bg-muted/20 px-6 py-3.5 text-center text-xs text-muted-foreground">
-        <p>
-          Don&apos;t have an account?{" "}
+      <CardFooter className="flex flex-col items-center justify-center border-t border-border/60 bg-muted/20 px-6 py-3.5 [.border-t]:pt-3.5 text-center text-xs text-muted-foreground">
+        <p className="flex flex-wrap items-center justify-center gap-x-1">
+          <span>Don&apos;t have an account?</span>
           <Link
             href="/signup"
-            className="font-medium text-primary hover:underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+            className="inline-flex items-center min-h-[40px] sm:min-h-[36px] px-1 font-medium text-primary hover:underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
           >
             Sign up
           </Link>

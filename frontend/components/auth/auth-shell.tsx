@@ -22,7 +22,7 @@ export function AuthShell({
   className,
 }: AuthShellProps) {
   return (
-    <div className="relative flex min-h-svh flex-col bg-background antialiased selection:bg-brand-200 selection:text-brand-900">
+    <div className="relative isolate flex min-h-svh flex-col bg-background antialiased selection:bg-brand-200 selection:text-brand-900">
       <HandwritingGuidelineBackground />
 
       {/* Top Navigation Bar with Back Action */}
