@@ -60,6 +60,7 @@ import { FloatingActionBar } from "@/components/ui/floating-action-bar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Kbd } from "@/components/ui/kbd";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1085,26 +1086,22 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
             <span>Back to Activities</span>
           </Link>
         </div>
-        <div
-          role="alert"
-          className="border-destructive/20 bg-destructive/10 text-destructive flex flex-col items-center justify-between gap-4 rounded-xl border p-4 sm:flex-row"
-        >
-          <div className="flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
-            <span className="text-sm font-medium">
-              Activity not found or unable to load. Please check your connection and try again.
-            </span>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            className="border-destructive/30 hover:bg-destructive/10 text-destructive min-h-11 cursor-pointer md:min-h-9"
-          >
-            <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" />
-            Retry
-          </Button>
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle aria-hidden="true" />
+          <AlertTitle>Activity not found or unable to load</AlertTitle>
+          <AlertDescription className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between [&>p]:mb-0">
+            <p>Please check your connection and try again.</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              className="border-destructive/30 hover:bg-destructive/10 text-destructive min-h-11 shrink-0 cursor-pointer md:min-h-9"
+            >
+              <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
@@ -1295,9 +1292,12 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
               >
                 <PenLine className="size-3.5 shrink-0" aria-hidden="true" />
                 <span>Start Grading ({allPendingScoringSubmissions.length} Pending)</span>
-                <kbd className="text-primary-foreground/75 border-primary-foreground/30 ml-1 hidden rounded border px-1.5 py-0.5 text-[10px] font-mono sm:inline-block">
+                <Kbd
+                  aria-hidden="true"
+                  className="ml-1 hidden h-auto min-w-0 rounded border border-primary-foreground/30 bg-primary-foreground/10 px-1.5 py-0.5 font-mono text-[10px] font-medium text-primary-foreground sm:inline-flex"
+                >
                   {altKey}+G
-                </kbd>
+                </Kbd>
               </Button>
             )}
 
@@ -1443,26 +1443,22 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
             ))}
           </div>
         ) : submissionsError ? (
-          <div
-            role="alert"
-            className="border-destructive/20 bg-destructive/10 text-destructive flex flex-col items-center justify-between gap-4 rounded-xl border p-4 sm:flex-row"
-          >
-            <div className="flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
-              <span className="text-sm font-medium">
-                Couldn&apos;t load submissions. Check your connection and try again.
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetchSubmissions()}
-              className="border-destructive/30 hover:bg-destructive/10 text-destructive min-h-11 cursor-pointer md:min-h-9"
-            >
-              <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" />
-              Retry
-            </Button>
-          </div>
+          <Alert variant="destructive">
+            <AlertCircle aria-hidden="true" />
+            <AlertTitle>Couldn&apos;t load submissions</AlertTitle>
+            <AlertDescription className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between [&>p]:mb-0">
+              <p>Check your connection and try again.</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetchSubmissions()}
+                className="border-destructive/30 hover:bg-destructive/10 text-destructive min-h-11 shrink-0 cursor-pointer md:min-h-9"
+              >
+                <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
         ) : submissions?.length === 0 && (viewMode === "all" || !assignedStudents.length) ? (
           /* Empty state: No submissions at all */
           <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">

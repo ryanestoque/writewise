@@ -15,7 +15,9 @@ import { EditActivityDialog } from "@/components/activities/edit-activity-dialog
 import { DeleteActivityDialog } from "@/components/activities/delete-activity-dialog";
 import { ActivityCard } from "@/components/activities/activity-card";
 import { FloatingActionBar } from "@/components/ui/floating-action-bar";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/ui/kbd";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -373,26 +375,22 @@ export default function ActivitiesPage() {
   if (error) {
     return (
       <div className="w-full">
-        <div
-          role="alert"
-          className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl border border-destructive/20 bg-destructive/10 text-destructive"
-        >
-          <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 shrink-0" />
-            <span className="text-sm font-medium">
-              Unable to load activities. Please check your connection and try again.
-            </span>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            className="border-destructive/30 hover:bg-destructive/10 text-destructive"
-          >
-            <RotateCcw className="w-4 h-4 mr-1.5" />
-            Retry
-          </Button>
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle aria-hidden="true" />
+          <AlertTitle>Unable to load activities</AlertTitle>
+          <AlertDescription className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between [&>p]:mb-0">
+            <p>Please check your connection and try again.</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              className="min-h-11 md:min-h-9 shrink-0 border-destructive/30 text-destructive hover:bg-destructive/10 cursor-pointer"
+            >
+              <RotateCcw className="mr-1.5 size-4" aria-hidden="true" />
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
@@ -414,13 +412,17 @@ export default function ActivitiesPage() {
               setDuplicatingActivity(null);
               setIsCreateOpen(true);
             }}
+            aria-keyshortcuts="c"
             className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer"
           >
-            <Plus className="w-4 h-4 mr-1.5 shrink-0" />
+            <Plus className="w-4 h-4 mr-1.5 shrink-0" aria-hidden="true" />
             <span>Create Activity</span>
-            <kbd className="hidden sm:inline-flex items-center justify-center ml-2 px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground/90 bg-white/20 dark:bg-white/15 rounded border border-white/30 shadow-2xs font-mono">
+            <Kbd
+              aria-hidden="true"
+              className="ml-2 hidden h-auto min-w-0 rounded border border-primary-foreground/30 bg-primary-foreground/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-primary-foreground shadow-2xs sm:inline-flex"
+            >
               C
-            </kbd>
+            </Kbd>
           </Button>
         </div>
       </div>

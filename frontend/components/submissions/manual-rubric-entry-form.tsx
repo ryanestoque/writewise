@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Kbd } from "@/components/ui/kbd";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1000,9 +1002,9 @@ export function ManualRubricEntryForm({
                     <span className={`size-2 rounded-full ${option.dotColor}`} aria-hidden="true" />
                     <span>All {option.label}</span>
                   </span>
-                  <kbd className="text-[10px] font-mono text-muted-foreground ml-3">
+                  <Kbd className="ml-3 h-auto min-w-0 bg-transparent px-1 font-mono text-[10px] text-muted-foreground">
                     Alt+{option.shortcutKey}
-                  </kbd>
+                  </Kbd>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -1054,30 +1056,26 @@ export function ManualRubricEntryForm({
       {showKeyboardHelp && (
         <div className="p-2.5 rounded-lg bg-muted/40 border border-border/70 text-[11px] text-muted-foreground flex items-center justify-between gap-x-3 gap-y-1.5 flex-wrap animate-in fade-in-50 duration-150 motion-reduce:animate-none">
           <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
-            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">1–4</kbd> Rate</span>
-            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Alt+1–4</kbd> Quick fill</span>
-            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">J/K</kbd> Student</span>
-            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">C</kbd> Ink</span>
-            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">L</kbd> Magnify</span>
-            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">+/-/0</kbd> Zoom</span>
-            <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Alt+[/]</kbd> Focus area</span>
+            <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">1–4</Kbd> Rate</span>
+            <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Alt+1–4</Kbd> Quick fill</span>
+            <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">J/K</Kbd> Student</span>
+            <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">C</Kbd> Ink</span>
+            <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">L</Kbd> Magnify</span>
+            <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">+/-/0</Kbd> Zoom</span>
+            <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Alt+[/]</Kbd> Focus area</span>
           </div>
-          <span><kbd className="px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Ctrl+Enter</kbd> Submit</span>
+          <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Ctrl+Enter</Kbd> Submit</span>
         </div>
       )}
 
       {submitErrorMsg && (
-        <div
-          role="alert"
-          aria-live="polite"
-          className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-start gap-2"
-        >
-          <AlertCircle className="size-4 shrink-0 mt-0.5" aria-hidden="true" />
-          <div className="flex-1 min-w-0">
-            <span className="font-semibold block">Submission Error</span>
-            <span>{submitErrorMsg}</span>
-          </div>
-        </div>
+        <Alert variant="destructive" aria-live="polite" className="text-xs">
+          <AlertCircle aria-hidden="true" />
+          <AlertTitle>Submission Error</AlertTitle>
+          <AlertDescription className="text-xs [&>p]:mb-0">
+            {submitErrorMsg}
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* ---------------- FOCUS STEPPER MODE (Unified across all viewports) ---------------- */}

@@ -10,6 +10,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import {
   MoreHorizontal,
@@ -330,24 +331,22 @@ export default function RosterPage() {
   if (error) {
     return (
       <div className="w-full">
-        <div
-          role="alert"
-          className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl border border-destructive/20 bg-destructive/10 text-destructive"
-        >
-          <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 shrink-0" />
-            <span className="text-sm font-medium">Failed to load roster: {error.message}</span>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            className="border-destructive/30 hover:bg-destructive/10 text-destructive"
-          >
-            <RotateCcw className="w-4 h-4 mr-1.5" />
-            Retry
-          </Button>
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle aria-hidden="true" />
+          <AlertTitle>Failed to load roster</AlertTitle>
+          <AlertDescription className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between [&>p]:mb-0">
+            <p>{error.message}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              className="min-h-11 md:min-h-9 shrink-0 border-destructive/30 text-destructive hover:bg-destructive/10 cursor-pointer"
+            >
+              <RotateCcw className="mr-1.5 size-4" aria-hidden="true" />
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }

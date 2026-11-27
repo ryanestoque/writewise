@@ -19,6 +19,7 @@ import {
   Users,
   FileText,
   ChevronDown,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -36,6 +37,7 @@ import { WorkGradeSheet } from "./work-grade-sheet";
 import { GradebookBulkDialog } from "./gradebook-bulk-dialog";
 import { QueryRecovery } from "@/components/shared/query-recovery";
 import { FloatingActionBar } from "@/components/ui/floating-action-bar";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
@@ -167,9 +169,11 @@ export function TeacherGradebook({
       </div>
 
       {exportError && (
-        <p role="alert" className="text-destructive text-sm print:hidden">
-          {exportError}
-        </p>
+        <Alert variant="destructive" className="print:hidden">
+          <AlertCircle aria-hidden="true" />
+          <AlertTitle>Export failed</AlertTitle>
+          <AlertDescription className="[&>p]:mb-0">{exportError}</AlertDescription>
+        </Alert>
       )}
 
       {sections.isError ? (

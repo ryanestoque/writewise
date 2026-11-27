@@ -12,6 +12,7 @@ import {
 import { formatDate, getRelativeTime } from "@/lib/utils/formatters";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -474,24 +475,20 @@ export const SubmissionCard = memo(function SubmissionCard({
                                 </span>
                               </div>
                             </div>
-                            <div
-                              className="bg-muted/80 dark:bg-white/10 dark:ring-1 dark:ring-white/10 h-1.5 w-full overflow-hidden rounded-full"
-                              role="progressbar"
-                              aria-valuenow={score}
-                              aria-valuemin={0}
-                              aria-valuemax={100}
-                              aria-label={`${c.name}: ${score}% (${c.band})`}
-                            >
-                              <div
-                                className={cn(
-                                  "h-full w-full rounded-full transition-transform duration-300 ease-out origin-left motion-reduce:transition-none",
-                                  c.barClass
-                                )}
-                                style={{
-                                  transform: `scaleX(${Math.max(0, Math.min(100, score)) / 100})`,
-                                }}
-                              />
-                            </div>
+                            <Progress
+                              value={Math.max(0, Math.min(100, score))}
+                              aria-label={
+                                c.score != null
+                                  ? `${c.name}: ${Math.round(c.score)}% (${c.band})`
+                                  : `${c.name}: Unrated`
+                              }
+                              className="gap-0"
+                              trackClassName="bg-muted/80 dark:bg-white/10 dark:ring-1 dark:ring-white/10 h-1.5"
+                              indicatorClassName={cn(
+                                "rounded-full motion-reduce:transition-none",
+                                c.barClass
+                              )}
+                            />
                           </div>
                         );
                       })}
