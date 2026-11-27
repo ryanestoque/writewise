@@ -8,7 +8,9 @@ import {
 } from "@marsidev/react-turnstile";
 import { cn } from "@/lib/utils";
 
-type TurnstileSize = "flexible" | "compact";
+const FLEXIBLE_MIN_WIDTH = 300;
+const FLEXIBLE_HEIGHT = 65;
+
 type TurnstileTheme = "light" | "dark";
 
 export interface ResponsiveTurnstileProps extends TurnstileProps {
@@ -23,10 +25,7 @@ export const ResponsiveTurnstile = forwardRef<
   ref
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [resolvedSize, setResolvedSize] = useState<TurnstileSize>(() => {
-    if (typeof window === "undefined") return "flexible";
-    return window.innerWidth < 380 ? "compact" : "flexible";
-  });
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
   const [appTheme, setAppTheme] = useState<TurnstileTheme>(() => {
     if (typeof document === "undefined") return "light";
     return document.documentElement.classList.contains("dark")
@@ -38,16 +37,18 @@ export const ResponsiveTurnstile = forwardRef<
     const el = containerRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
 
-    const updateSize = (width: number) => {
+    const updateWidth = (width: number) => {
       if (width <= 0) return;
-      setResolvedSize(width < 300 ? "compact" : "flexible");
+      setContainerWidth((prev) =>
+        prev !== null && Math.abs(prev - width) < 0.5 ? prev : width
+      );
     };
 
-    updateSize(el.getBoundingClientRect().width);
+    updateWidth(el.getBoundingClientRect().width);
 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        updateSize(entry.contentRect.width);
+        updateWidth(entry.contentRect.width);
       }
     });
     observer.observe(el);
@@ -70,25 +71,51 @@ export const ResponsiveTurnstile = forwardRef<
     return () => observer.disconnect();
   }, []);
 
-  const size = options?.size ?? resolvedSize;
+  const size = options?.size ?? "flexible";
   const theme =
     options?.theme && options.theme !== "auto" ? options.theme : appTheme;
+
+  const needsScale =
+    size === "flexible" &&
+    containerWidth !== null &&
+    containerWidth > 0 &&
+    containerWidth < FLEXIBLE_MIN_WIDTH;
+  const scale = needsScale ? containerWidth / FLEXIBLE_MIN_WIDTH : 1;
 
   return (
     <div
       ref={containerRef}
-      className={cn("my-1 flex w-full justify-center overflow-hidden", className)}
+      style={
+        needsScale
+          ? { height: `${Math.ceil(FLEXIBLE_HEIGHT * scale)}px` }
+          : undefined
+      }
+      className={cn("my-1 w-full overflow-hidden", className)}
     >
-      <Turnstile
-        key={`${size}-${theme}`}
-        {...props}
-        options={{
-          ...options,
-          size,
-          theme,
-        }}
-        ref={turnstileRef ?? ref}
-      />
+      <div
+        className={needsScale ? undefined : "w-full"}
+        style={
+          needsScale
+            ? {
+                width: `${FLEXIBLE_MIN_WIDTH}px`,
+                transform: `scale(${scale})`,
+                transformOrigin: "top left",
+              }
+            : undefined
+        }
+      >
+        <Turnstile
+          key={`${size}-${theme}`}
+          className="w-full"
+          {...props}
+          options={{
+            ...options,
+            size,
+            theme,
+          }}
+          ref={turnstileRef ?? ref}
+        />
+      </div>
     </div>
   );
 });
