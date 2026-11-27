@@ -45,3 +45,48 @@ export function AuthShell({
     </div>
   );
 }
+
+/**
+ * Card-shaped loading placeholder matching AuthShell's centered auth card geometry
+ * so Suspense boundaries around useSearchParams() do not cause layout shift.
+ */
+export function AuthCardSkeleton({
+  variant = "login",
+}: {
+  variant?: "login" | "signup";
+}) {
+  return (
+    <div
+      role="status"
+      aria-label="Loading form"
+      className={cn(
+        "w-full max-w-md rounded-xl border border-border/80 bg-card/95 p-4 sm:p-6 shadow-warm flex flex-col justify-between gap-6",
+        variant === "signup" ? "min-h-[600px]" : "min-h-[450px]"
+      )}
+    >
+      <div className="flex flex-col items-center gap-3 pt-2">
+        <div className="size-14 rounded-2xl bg-muted animate-pulse" />
+        <div className="h-7 w-44 rounded-md bg-muted animate-pulse" />
+        <div className="h-4 w-56 rounded-md bg-muted animate-pulse" />
+      </div>
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <div className="h-3.5 w-24 rounded bg-muted animate-pulse" />
+          <div className="h-10 sm:h-9 w-full rounded-lg bg-muted animate-pulse" />
+        </div>
+        <div className="space-y-1.5">
+          <div className="h-3.5 w-20 rounded bg-muted animate-pulse" />
+          <div className="h-10 sm:h-9 w-full rounded-lg bg-muted animate-pulse" />
+        </div>
+        {variant === "signup" && (
+          <div className="space-y-1.5">
+            <div className="h-3.5 w-28 rounded bg-muted animate-pulse" />
+            <div className="h-10 sm:h-9 w-full rounded-lg bg-muted animate-pulse" />
+          </div>
+        )}
+        <div className="h-11 sm:h-9 w-full rounded-lg bg-muted animate-pulse mt-2" />
+      </div>
+      <div className="h-8 w-full rounded-md bg-muted/60 animate-pulse" />
+    </div>
+  );
+}

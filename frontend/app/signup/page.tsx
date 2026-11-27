@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { TurnstileInstance } from "@marsidev/react-turnstile";
@@ -18,45 +19,46 @@ import {
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { BrandIcon } from "@/components/brand-logo";
-import { AuthShell } from "@/components/auth/auth-shell";
-import { ResponsiveTurnstile } from "@/components/auth/responsive-turnstile";
+import { AuthShell, AuthCardSkeleton } from "@/components/auth/auth-shell";
 import { MIN_PASSWORD_LENGTH } from "@/lib/auth/password-policy";
+import {
+  isRateLimitAuthError,
+  validateEmail,
+  validateFullName,
+  validateNewPassword,
+} from "@/lib/auth/validation";
 import {
   CircleAlertIcon,
   EyeIcon,
   EyeOffIcon,
   ArrowRightIcon,
   CheckCircle2Icon,
-  MailIcon,
   GraduationCapIcon,
   HeartHandshakeIcon,
   CheckIcon,
   ExternalLinkIcon,
-  ShieldCheckIcon,
 } from "lucide-react";
+
+const LazyTurnstile = dynamic(
+  () =>
+    import("@/components/auth/responsive-turnstile").then(
+      (m) => m.ResponsiveTurnstile
+    ),
+  { ssr: false }
+);
 
 type UserRole = "teacher" | "parent";
 type ValidatableField = "fullName" | "email" | "password";
 type ErrorField = ValidatableField | "captcha";
 type FieldErrors = Partial<Record<ErrorField, string>>;
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 function validateFieldValue(
   field: ValidatableField,
   values: { fullName: string; email: string; password: string }
 ): string | undefined {
-  if (field === "fullName") {
-    return values.fullName.trim() ? undefined : "Enter your full name.";
-  }
-  if (field === "email") {
-    return EMAIL_REGEX.test(values.email.trim())
-      ? undefined
-      : "Enter a valid email address.";
-  }
-  return values.password.length >= MIN_PASSWORD_LENGTH
-    ? undefined
-    : `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`;
+  if (field === "fullName") return validateFullName(values.fullName);
+  if (field === "email") return validateEmail(values.email);
+  return validateNewPassword(values.password);
 }
 
 function SignUpForm() {
@@ -215,29 +217,24 @@ function SignUpForm() {
       });
 
       if (signUpError) {
-        const status = (signUpError as { status?: number }).status;
-        const code = (signUpError as { code?: string }).code;
+        const authErr = signUpError as { status?: number; code?: string };
 
-        if (code === "weak_password") {
+        if (authErr.code === "weak_password") {
           const msg =
             "Choose a stronger password — avoid common words or breached passwords.";
           setFieldErrors({ password: msg });
           requestAnimationFrame(() => passwordInputRef.current?.focus());
-        } else if (
-          status === 429 ||
-          code === "over_email_send_rate_limit" ||
-          code === "rate_limit_exceeded"
-        ) {
+        } else if (isRateLimitAuthError(authErr)) {
           setFormError("Too many attempts. Please wait a minute and try again.");
           requestAnimationFrame(() => errorAlertRef.current?.focus());
-        } else if (code === "email_address_invalid") {
+        } else if (authErr.code === "email_address_invalid") {
           const msg = "Enter a valid email address.";
           setFieldErrors({ email: msg });
           requestAnimationFrame(() => emailInputRef.current?.focus());
-        } else if (code === "signup_disabled") {
+        } else if (authErr.code === "signup_disabled") {
           setFormError("Sign-ups are currently closed.");
           requestAnimationFrame(() => errorAlertRef.current?.focus());
-        } else if (code === "captcha_failed") {
+        } else if (authErr.code === "captcha_failed") {
           const msg = "Security verification failed. Please try again.";
           setFieldErrors({ captcha: msg });
           setFormError(msg);
@@ -269,7 +266,9 @@ function SignUpForm() {
     if (!submittedEmail || resendCooldown > 0 || isResending) return;
     if (turnstileSiteKey && !captchaToken) {
       setResendIsError(true);
-      setResendMessage("Please complete the security verification below before resending.");
+      setResendMessage(
+        "Please complete the security verification below before resending."
+      );
       return;
     }
 
@@ -289,24 +288,27 @@ function SignUpForm() {
       });
 
       if (resendError) {
-        const status = (resendError as { status?: number }).status;
-        const code = (resendError as { code?: string }).code;
+        const authErr = resendError as { status?: number; code?: string };
         setResendIsError(true);
-        if (
-          status === 429 ||
-          code === "over_email_send_rate_limit" ||
-          code === "rate_limit_exceeded"
-        ) {
-          setResendMessage("Rate limit exceeded. Please wait a moment before trying again.");
-        } else if (code === "captcha_failed") {
-          setResendMessage("Security verification failed. Please complete the check and try again.");
+        if (isRateLimitAuthError(authErr)) {
+          setResendMessage(
+            "Rate limit exceeded. Please wait a moment before trying again."
+          );
+        } else if (authErr.code === "captcha_failed") {
+          setResendMessage(
+            "Security verification failed. Please complete the check and try again."
+          );
         } else {
-          setResendMessage("Failed to resend confirmation email. Please try again.");
+          setResendMessage(
+            "Failed to resend confirmation email. Please try again."
+          );
         }
       } else {
         setResendCooldown(60);
         setResendIsError(false);
-        setResendMessage("A new confirmation email has been sent. Please check your inbox.");
+        setResendMessage(
+          "A new confirmation email has been sent. Please check your inbox."
+        );
       }
     } catch {
       setResendIsError(true);
@@ -326,11 +328,16 @@ function SignUpForm() {
     .join(" ");
 
   return (
-    <Card className="border-border/80 bg-card/95 pb-0 shadow-warm backdrop-blur-xs transition-all duration-200">
+    <Card className="border-border/80 bg-card/95 pb-0 shadow-warm backdrop-blur-xs">
       <CardHeader className="space-y-3 text-center pb-2 pt-6">
         <div className="flex justify-center">
           <div className="inline-flex size-14 items-center justify-center rounded-2xl border border-border/80 bg-surface p-1 shadow-warm-sm view-transition-brand-logo">
-            <BrandIcon size={48} priority className="size-full rounded-xl" />
+            <BrandIcon
+              size={48}
+              alt="WriteWise"
+              priority
+              className="size-full rounded-xl"
+            />
           </div>
         </div>
         <div className="space-y-1">
@@ -354,35 +361,30 @@ function SignUpForm() {
             tabIndex={-1}
             className="space-y-4 py-1 text-center outline-none animate-in fade-in-50 duration-200 motion-reduce:animate-none motion-reduce:transition-none"
           >
-            <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 ring-4 ring-brand-100/70 dark:bg-brand-950/60 dark:text-brand-400 dark:ring-brand-900/50">
-              <MailIcon className="size-6" aria-hidden="true" />
-            </div>
-
-            <Alert className="border-brand-200 bg-brand-50/70 text-brand-900 dark:border-brand-900 dark:bg-brand-950/50 dark:text-brand-300 text-left">
-              <CheckCircle2Icon
-                className="size-4 text-brand-600 dark:text-brand-400"
-                aria-hidden="true"
-              />
+            <Alert variant="success" className="text-left">
+              <CheckCircle2Icon className="size-4" aria-hidden="true" />
               <AlertDescription className="text-sm leading-relaxed space-y-1.5">
                 <p>
-                  Click the link in your email to verify your account, and check your spam or junk folder if it doesn’t appear right away.
+                  Click the link in your email to verify your account, and check
+                  your spam or junk folder if it doesn’t appear right away.
                 </p>
-                <p className="text-brand-800/90 dark:text-brand-300/90">
+                <p className="opacity-90">
                   {role === "teacher"
                     ? "Once verified, sign in to create your class roster and activities."
                     : "Once verified, sign in—your child’s teacher will link your account to their student record."}
                 </p>
-                <p className="text-xs text-brand-800/80 dark:text-brand-300/80">
-                  Already registered with this email? Sign in below with your existing password.
+                <p className="text-xs opacity-80">
+                  Already registered with this email? Sign in below with your
+                  existing password.
                 </p>
               </AlertDescription>
             </Alert>
 
             {turnstileSiteKey && (
-              <ResponsiveTurnstile
+              <LazyTurnstile
                 id="signup-resend-captcha"
                 className="mx-auto"
-                ref={resendCaptchaRef}
+                turnstileRef={resendCaptchaRef}
                 siteKey={turnstileSiteKey}
                 onSuccess={(token) => {
                   setCaptchaToken(token);
@@ -393,9 +395,10 @@ function SignUpForm() {
                 onError={() => {
                   setCaptchaToken(null);
                   setResendIsError(true);
-                  setResendMessage("Security verification could not load. Please try again.");
+                  setResendMessage(
+                    "Security verification could not load. Please try again."
+                  );
                 }}
-                options={{ theme: "auto" }}
               />
             )}
 
@@ -414,7 +417,7 @@ function SignUpForm() {
                 href="/login"
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
-                  "h-10 sm:h-9 w-full font-medium transition-all duration-150"
+                  "h-11 sm:h-9 w-full font-medium"
                 )}
               >
                 Go to Sign in
@@ -454,7 +457,7 @@ function SignUpForm() {
                   captchaRef.current?.reset();
                   resendCaptchaRef.current?.reset();
                 }}
-                className="inline-flex min-h-[40px] sm:min-h-[36px] items-center justify-center px-3 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md"
+                className="inline-flex min-h-[40px] sm:min-h-[36px] items-center justify-center px-3 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md"
               >
                 Entered the wrong email? Use a different email
               </button>
@@ -476,7 +479,7 @@ function SignUpForm() {
                 className="outline-none [&>svg]:translate-y-0 animate-in fade-in-50 slide-in-from-top-1 duration-200 motion-reduce:animate-none motion-reduce:transition-none"
               >
                 <CircleAlertIcon aria-hidden="true" />
-                <AlertDescription className="text-xs leading-normal">
+                <AlertDescription className="text-sm leading-normal">
                   {formError}
                 </AlertDescription>
               </Alert>
@@ -491,7 +494,7 @@ function SignUpForm() {
                 <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted/60 p-1 border border-border/70">
                   <label
                     htmlFor="signup-role-teacher"
-                    className={`flex min-h-10 sm:min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 text-sm transition-all duration-150 has-[:focus-visible]:outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary ${
+                    className={`flex min-h-10 sm:min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 text-sm transition-[color,background-color,box-shadow] duration-150 has-[:focus-visible]:outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring ${
                       role === "teacher"
                         ? "bg-surface text-foreground shadow-xs font-semibold"
                         : "text-muted-foreground hover:text-foreground font-medium"
@@ -507,12 +510,15 @@ function SignUpForm() {
                       disabled={isLoading}
                       className="sr-only"
                     />
-                    <GraduationCapIcon className="size-4 shrink-0" aria-hidden="true" />
+                    <GraduationCapIcon
+                      className="size-4 shrink-0"
+                      aria-hidden="true"
+                    />
                     <span>Teacher</span>
                   </label>
                   <label
                     htmlFor="signup-role-parent"
-                    className={`flex min-h-10 sm:min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 text-sm transition-all duration-150 has-[:focus-visible]:outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary ${
+                    className={`flex min-h-10 sm:min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 text-sm transition-[color,background-color,box-shadow] duration-150 has-[:focus-visible]:outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring ${
                       role === "parent"
                         ? "bg-surface text-foreground shadow-xs font-semibold"
                         : "text-muted-foreground hover:text-foreground font-medium"
@@ -528,7 +534,10 @@ function SignUpForm() {
                       disabled={isLoading}
                       className="sr-only"
                     />
-                    <HeartHandshakeIcon className="size-4 shrink-0" aria-hidden="true" />
+                    <HeartHandshakeIcon
+                      className="size-4 shrink-0"
+                      aria-hidden="true"
+                    />
                     <span>Parent</span>
                   </label>
                 </div>
@@ -540,14 +549,19 @@ function SignUpForm() {
               </fieldset>
 
               <div className="grid gap-1.5">
-                <Label htmlFor="fullName" className="text-xs font-semibold text-foreground">
+                <Label
+                  htmlFor="fullName"
+                  className="text-xs font-semibold text-foreground"
+                >
                   Full name
                 </Label>
                 <Input
                   ref={fullNameInputRef}
                   id="fullName"
                   type="text"
-                  placeholder={role === "teacher" ? "Maria Santos" : "Juan dela Cruz"}
+                  placeholder={
+                    role === "teacher" ? "Maria Santos" : "Juan dela Cruz"
+                  }
                   value={fullName}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -564,11 +578,17 @@ function SignUpForm() {
                   enterKeyHint="next"
                   disabled={isLoading}
                   aria-invalid={Boolean(fieldErrors.fullName)}
-                  aria-describedby={fieldErrors.fullName ? "fullName-error" : undefined}
+                  aria-describedby={
+                    fieldErrors.fullName ? "fullName-error" : undefined
+                  }
                   className="h-10 sm:h-9"
                 />
                 {fieldErrors.fullName && (
-                  <p id="fullName-error" className="mt-1 text-xs text-destructive">
+                  <p
+                    id="fullName-error"
+                    role="alert"
+                    className="mt-1 text-xs text-destructive"
+                  >
                     {fieldErrors.fullName}
                   </p>
                 )}
@@ -576,7 +596,7 @@ function SignUpForm() {
 
               {role === "teacher" && (
                 <div className="grid gap-1.5 animate-in fade-in-50 duration-150 motion-reduce:animate-none motion-reduce:transition-none">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <Label
                       htmlFor="schoolName"
                       className="text-xs font-semibold text-foreground"
@@ -605,7 +625,10 @@ function SignUpForm() {
             {/* Group 2: Account Credentials */}
             <div className="grid gap-4 border-t border-border/60 pt-4">
               <div className="grid gap-1.5">
-                <Label htmlFor="email" className="text-xs font-semibold text-foreground">
+                <Label
+                  htmlFor="email"
+                  className="text-xs font-semibold text-foreground"
+                >
                   Email address
                 </Label>
                 <Input
@@ -631,19 +654,28 @@ function SignUpForm() {
                   enterKeyHint="next"
                   disabled={isLoading}
                   aria-invalid={Boolean(fieldErrors.email)}
-                  aria-describedby={fieldErrors.email ? "email-error" : undefined}
+                  aria-describedby={
+                    fieldErrors.email ? "email-error" : undefined
+                  }
                   className="h-10 sm:h-9"
                 />
                 {fieldErrors.email && (
-                  <p id="email-error" className="mt-1 text-xs text-destructive">
+                  <p
+                    id="email-error"
+                    role="alert"
+                    className="mt-1 text-xs text-destructive"
+                  >
                     {fieldErrors.email}
                   </p>
                 )}
               </div>
 
               <div className="grid gap-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <Label htmlFor="password" className="text-xs font-semibold text-foreground">
+                <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                  <Label
+                    htmlFor="password"
+                    className="text-xs font-semibold text-foreground"
+                  >
                     Password
                   </Label>
                   <span
@@ -695,7 +727,9 @@ function SignUpForm() {
                     onClick={() => setShowPassword((prev) => !prev)}
                     disabled={isLoading}
                     aria-pressed={showPassword}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                     className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute right-0.5 top-1/2 -translate-y-1/2 flex size-10 sm:size-9 items-center justify-center rounded-md transition-colors outline-none focus-visible:ring-2 disabled:pointer-events-none"
                   >
                     {showPassword ? (
@@ -706,7 +740,11 @@ function SignUpForm() {
                   </button>
                 </div>
                 {fieldErrors.password && (
-                  <p id="password-error" className="mt-1 text-xs text-destructive">
+                  <p
+                    id="password-error"
+                    role="alert"
+                    className="mt-1 text-xs text-destructive"
+                  >
                     {fieldErrors.password}
                   </p>
                 )}
@@ -715,10 +753,10 @@ function SignUpForm() {
 
             {turnstileSiteKey && (
               <div className="grid gap-1.5">
-                <ResponsiveTurnstile
+                <LazyTurnstile
                   id="signup-captcha"
                   className="mx-auto"
-                  ref={captchaRef}
+                  turnstileRef={captchaRef}
                   siteKey={turnstileSiteKey}
                   onSuccess={(token) => {
                     setCaptchaToken(token);
@@ -735,18 +773,17 @@ function SignUpForm() {
                   onExpire={() => setCaptchaToken(null)}
                   onTimeout={() => setCaptchaToken(null)}
                   onError={() => {
-                    const msg = "Security verification could not load. Please try again.";
+                    const msg =
+                      "Security verification could not load. Please try again.";
                     setCaptchaToken(null);
                     setFieldErrors((prev) => ({ ...prev, captcha: msg }));
                     setFormError(msg);
-                  }}
-                  options={{
-                    theme: "auto",
                   }}
                 />
                 {fieldErrors.captcha && (
                   <p
                     id="captcha-error"
+                    role="alert"
                     className="mt-1 text-center text-xs text-destructive"
                   >
                     {fieldErrors.captcha}
@@ -755,28 +792,19 @@ function SignUpForm() {
               </div>
             )}
 
-            <div className="flex items-start gap-2.5 rounded-lg border border-border/80 bg-muted/40 px-3 py-2.5 text-xs leading-relaxed text-foreground">
-              <ShieldCheckIcon
-                className="mt-0.5 size-4 shrink-0 text-primary"
-                aria-hidden="true"
-              />
-              <p>
-                {role === "teacher"
-                  ? "Students never need accounts or logins—paper consent and roster records stay managed by you."
-                  : "Students never need accounts—your child’s teacher handles paper consent and links your account after email verification."}
-              </p>
-            </div>
-
             <p className="text-center text-xs leading-relaxed text-muted-foreground">
               By signing up, you agree to our{" "}
               <Link
                 href="/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-0.5 rounded py-1.5 -my-1.5 sm:py-0.5 sm:-my-0.5 font-medium text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="inline-flex min-h-[40px] sm:min-h-0 items-center gap-0.5 rounded px-1 -my-2 sm:my-0 sm:px-0.5 py-1 sm:py-0.5 font-medium text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <span>Privacy Policy</span>
-                <ExternalLinkIcon className="size-3 shrink-0" aria-hidden="true" />
+                <ExternalLinkIcon
+                  className="size-3 shrink-0"
+                  aria-hidden="true"
+                />
                 <span className="sr-only"> (opens in a new tab)</span>
               </Link>{" "}
               and{" "}
@@ -784,10 +812,13 @@ function SignUpForm() {
                 href="/terms"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-0.5 rounded py-1.5 -my-1.5 sm:py-0.5 sm:-my-0.5 font-medium text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="inline-flex min-h-[40px] sm:min-h-0 items-center gap-0.5 rounded px-1 -my-2 sm:my-0 sm:px-0.5 py-1 sm:py-0.5 font-medium text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <span>Terms of Service</span>
-                <ExternalLinkIcon className="size-3 shrink-0" aria-hidden="true" />
+                <ExternalLinkIcon
+                  className="size-3 shrink-0"
+                  aria-hidden="true"
+                />
                 <span className="sr-only"> (opens in a new tab)</span>
               </Link>
               .
@@ -797,7 +828,7 @@ function SignUpForm() {
               id="signup-submit"
               type="submit"
               size="lg"
-              className="h-10 sm:h-9 w-full font-medium transition-all duration-150"
+              className="h-11 sm:h-9 w-full font-medium"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -816,12 +847,12 @@ function SignUpForm() {
         )}
       </CardContent>
 
-      <CardFooter className="flex flex-col items-center justify-center border-t border-border/60 bg-muted/20 px-6 py-3.5 [.border-t]:pt-3.5 text-center text-xs text-muted-foreground">
+      <CardFooter className="flex flex-col items-center justify-center border-t border-border/60 bg-muted/20 px-(--card-spacing) py-3.5 [.border-t]:pt-3.5 text-center text-xs text-muted-foreground">
         <p className="flex flex-wrap items-center justify-center gap-x-1">
           <span>Already have an account?</span>
           <Link
             href="/login"
-            className="inline-flex items-center min-h-[40px] sm:min-h-[36px] px-1 font-medium text-primary hover:underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+            className="inline-flex items-center min-h-[40px] sm:min-h-[36px] px-1 font-medium text-primary hover:underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
           >
             Sign in
           </Link>
@@ -833,11 +864,8 @@ function SignUpForm() {
 
 export default function SignUpPage() {
   return (
-    <AuthShell
-      backHref="/"
-      backLabel="Back to home"
-    >
-      <Suspense fallback={<Spinner className="size-8 text-primary" />}>
+    <AuthShell backHref="/" backLabel="Back to home">
+      <Suspense fallback={<AuthCardSkeleton variant="signup" />}>
         <SignUpForm />
       </Suspense>
     </AuthShell>
