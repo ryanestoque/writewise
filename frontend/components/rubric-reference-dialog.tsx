@@ -403,7 +403,7 @@ export function RubricReferenceDialog({
         overlayClassName="bg-foreground/25 supports-backdrop-filter:backdrop-blur-xs"
         className="p-0 overflow-hidden flex flex-col gap-0 shadow-warm w-[calc(100%-1.5rem)] sm:max-w-2xl max-h-[min(90dvh,calc(100dvh-2rem))] rounded-2xl"
       >
-        <DialogHeader className="p-4 sm:p-5 border-b border-border/70 bg-background/95 backdrop-blur-xs shrink-0">
+        <DialogHeader className="p-4 sm:p-5 pb-2 shrink-0">
           <div className="flex flex-wrap items-center justify-between gap-2 min-w-0 pr-10 sm:pr-8">
             <DialogTitle className="text-base sm:text-lg font-heading font-semibold text-foreground tracking-tight">
               {isParent ? "Score Guide" : "Scoring Rubric"}
