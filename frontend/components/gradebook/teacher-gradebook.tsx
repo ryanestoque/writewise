@@ -42,7 +42,17 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Empty,
   EmptyHeader,
@@ -531,36 +541,40 @@ function SectionGrid({
             onKeyDown={handleViewModeKeyDown}
             className="inline-flex items-center rounded-lg sm:rounded-xl border border-border bg-background p-0.5 text-xs font-medium shrink-0"
           >
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="xs"
               role="radio"
               aria-checked={viewMode === "points"}
               tabIndex={viewMode === "points" ? 0 : -1}
               onClick={() => setViewMode("points")}
               className={cn(
-                "px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-[34px] sm:min-h-[28px] whitespace-nowrap",
+                "h-auto px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-[34px] sm:min-h-[28px] whitespace-nowrap",
                 viewMode === "points"
-                  ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground shadow-warm-sm font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground hover:bg-brand-700 dark:hover:bg-primary hover:text-white dark:hover:text-primary-foreground shadow-warm-sm font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-transparent dark:hover:bg-transparent"
               )}
             >
               Points
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="ghost"
+              size="xs"
               role="radio"
               aria-checked={viewMode === "diagnostic"}
               tabIndex={viewMode === "diagnostic" ? 0 : -1}
               onClick={() => setViewMode("diagnostic")}
               className={cn(
-                "px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-[34px] sm:min-h-[28px] whitespace-nowrap",
+                "h-auto px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-[34px] sm:min-h-[28px] whitespace-nowrap",
                 viewMode === "diagnostic"
-                  ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground shadow-warm-sm font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground hover:bg-brand-700 dark:hover:bg-primary hover:text-white dark:hover:text-primary-foreground shadow-warm-sm font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-transparent dark:hover:bg-transparent"
               )}
             >
               Diagnostic
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -656,25 +670,26 @@ function SectionGrid({
             aria-label={`${book.section_name} grades, scroll for more activities. Use arrow keys to navigate cells, Enter to edit, Space to inspect.`}
             onKeyDown={moveFocus}
           >
-            <table
+            <Table
+              disableContainer
               className="w-full border-collapse text-sm"
               role="grid"
               aria-colcount={activities.length + 2}
               aria-rowcount={rows.length + 1}
             >
-              <caption className="sr-only">
+              <TableCaption className="sr-only mt-0">
                 {book.section_name} coursework. Draft totals include all activities. Use arrow keys
                 between grade cells, Enter to edit, Space to inspect.
-              </caption>
-              <thead className="bg-card sticky top-0 z-20 print:static">
-                <tr className="border-b" role="row" aria-rowindex={1}>
-                  <th
+              </TableCaption>
+              <TableHeader className="bg-card sticky top-0 z-20 print:static">
+                <TableRow className="border-b hover:bg-transparent" role="row" aria-rowindex={1}>
+                  <TableHead
                     scope="col"
                     role="columnheader"
                     aria-colindex={1}
-                    className="bg-card sticky left-0 z-30 min-w-32 max-w-36 sm:min-w-48 border-r p-3 text-left print:static"
+                    className="bg-card sticky left-0 z-30 h-auto min-w-32 max-w-36 sm:min-w-48 border-r p-3 [&:has([role=checkbox])]:pr-3 text-left whitespace-normal print:static"
                   >
-                    <label className="flex items-center gap-2.5 sm:gap-3 font-medium text-foreground cursor-pointer select-none">
+                    <Label className="flex items-center gap-2.5 sm:gap-3 font-medium text-foreground cursor-pointer select-none">
                       <Checkbox
                         aria-label="Select shown students"
                         className="print:hidden"
@@ -691,15 +706,15 @@ function SectionGrid({
                         }
                       />
                       <span>Student</span>
-                    </label>
-                  </th>
+                    </Label>
+                  </TableHead>
                   {activities.map((act, actIndex) => (
-                    <th
+                    <TableHead
                       key={act.id}
                       scope="col"
                       role="columnheader"
                       aria-colindex={actIndex + 2}
-                      className="max-w-64 min-w-44 sm:min-w-56 border-r p-3 text-left align-top"
+                      className="h-auto max-w-64 min-w-44 sm:min-w-56 border-r p-3 text-left align-top whitespace-normal"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
@@ -763,36 +778,36 @@ function SectionGrid({
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                    </th>
+                    </TableHead>
                   ))}
-                  <th
+                  <TableHead
                     scope="col"
                     role="columnheader"
                     aria-colindex={activities.length + 2}
-                    className="min-w-32 sm:min-w-40 p-3 text-left font-medium text-foreground"
+                    className="h-auto min-w-32 sm:min-w-40 p-3 text-left font-medium text-foreground whitespace-normal"
                   >
                     Overall
                     <p className="text-muted-foreground mt-0.5 text-xs font-normal">
                       Includes drafts
                     </p>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {rows.map((row, rowIndex) => (
-                  <tr
+                  <TableRow
                     key={row.student_id}
                     role="row"
                     aria-rowindex={rowIndex + 2}
                     className="border-b last:border-0 hover:bg-muted/30 transition-colors group/row"
                   >
-                    <th
+                    <TableHead
                       scope="row"
                       role="rowheader"
                       aria-colindex={1}
-                      className="bg-card sticky left-0 z-10 border-r p-3 text-left font-medium print:static group-hover/row:bg-muted/30 transition-colors"
+                      className="bg-card sticky left-0 z-10 h-auto border-r p-3 [&:has([role=checkbox])]:pr-3 text-left font-medium whitespace-normal print:static group-hover/row:bg-muted/30 transition-colors"
                     >
-                      <label className="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none">
+                      <Label className="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none leading-snug">
                         <Checkbox
                           checked={selected.has(row.student_id)}
                           onCheckedChange={(checked) => toggle(row.student_id, !!checked)}
@@ -800,30 +815,30 @@ function SectionGrid({
                           className="print:hidden"
                         />
                         <span className="break-words text-foreground line-clamp-2">{row.student_name}</span>
-                      </label>
-                    </th>
+                      </Label>
+                    </TableHead>
                     {activities.map((act, column) => {
                       const work = row.cells.find((entry) => entry.activity_id === act.id);
                       const isCellFocused = activeCell.row === rowIndex && activeCell.col === column;
                       if (!work) {
                         return (
-                          <td
+                          <TableCell
                             key={act.id}
                             role="gridcell"
                             aria-colindex={column + 2}
-                            className="border-r p-1 align-top text-muted-foreground text-xs"
+                            className="border-r p-1 align-top text-muted-foreground text-xs whitespace-normal"
                           >
                             Not assigned
-                          </td>
+                          </TableCell>
                         );
                       }
                       return (
-                        <td
+                        <TableCell
                           key={act.id}
                           role="gridcell"
                           aria-colindex={column + 2}
                           aria-selected={isCellFocused}
-                          className="border-r p-1 align-top"
+                          className="border-r p-1 align-top whitespace-normal"
                         >
                           <GradebookCellButton
                             cell={work}
@@ -843,10 +858,10 @@ function SectionGrid({
                             }
                             onNavigateDown={handleNavigateDown}
                           />
-                        </td>
+                        </TableCell>
                       );
                     })}
-                    <td
+                    <TableCell
                       role="gridcell"
                       aria-colindex={activities.length + 2}
                       aria-selected={activeCell.row === rowIndex && activeCell.col === activities.length}
@@ -859,7 +874,7 @@ function SectionGrid({
                         row.totals.percentage === null ? "no included grades" : `${row.totals.percentage}%`
                       }`}
                       className={cn(
-                        "p-3 align-top tabular-nums transition-colors focus-visible:outline-none",
+                        "p-3 align-top tabular-nums whitespace-normal transition-colors focus-visible:outline-none",
                         activeCell.row === rowIndex && activeCell.col === activities.length
                           ? "border-primary/60 ring-2 ring-primary/40 bg-muted/40"
                           : ""
@@ -873,11 +888,11 @@ function SectionGrid({
                           ? "No included grades"
                           : `${row.totals.percentage}%`}
                       </p>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
             {!rows.length && (
               <div className="p-8 text-center space-y-2">
                 <p className="text-sm text-muted-foreground">No students match “{search}”.</p>
