@@ -2,6 +2,8 @@
 
 import type { ClassAverages } from "@/lib/hooks/use-dashboard";
 import { BandBadge } from "@/components/shared/band-badge";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -37,21 +39,22 @@ export function SummaryCards({
   if (isLoading) {
     return (
       <div className={cn("grid grid-cols-1 xl:grid-cols-12 gap-3 sm:gap-4", className)}>
-        <div className="xl:col-span-4 p-4 sm:p-5 rounded-xl border border-border bg-card shadow-warm space-y-3">
-          <Skeleton className="h-4 w-28" />
-          <Skeleton className="h-8 w-24" />
-          <Skeleton className="h-4 w-48" />
-        </div>
+        <Card size="sm" className="xl:col-span-4 py-4 sm:py-5 shadow-warm">
+          <CardContent className="px-4 sm:px-5 space-y-3">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-4 w-48" />
+          </CardContent>
+        </Card>
         <div className="xl:col-span-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="p-3.5 sm:p-4 rounded-xl border border-border bg-card shadow-warm space-y-3"
-            >
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-7 w-16" />
-              <Skeleton className="h-5 w-24 rounded-full" />
-            </div>
+            <Card key={i} size="sm" className="py-4 shadow-warm">
+              <CardContent className="px-4 space-y-3">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-7 w-16" />
+                <Skeleton className="h-5 w-24 rounded-full" />
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>
@@ -73,8 +76,11 @@ export function SummaryCards({
   return (
     <div className={cn("grid grid-cols-1 xl:grid-cols-12 gap-3 sm:gap-4", className)}>
       {/* Lead Classroom Triage Anchor Card */}
-      <div className="xl:col-span-4 p-4 sm:p-5 rounded-xl border border-brand-200/80 dark:border-brand-800 bg-gradient-to-b from-brand-50/40 via-card to-card dark:from-brand-950/30 dark:via-card dark:to-card shadow-warm ring-1 ring-brand-500/20 flex flex-col justify-between gap-3">
-        <div className="flex items-start justify-between gap-2">
+      <Card
+        size="sm"
+        className="xl:col-span-4 border-brand-200/80 dark:border-brand-800 bg-gradient-to-b from-brand-50/40 via-card to-card dark:from-brand-950/30 dark:via-card dark:to-card shadow-warm ring-1 ring-brand-500/20 justify-between gap-3 py-4 sm:py-5"
+      >
+        <CardContent className="px-4 sm:px-5 flex items-start justify-between gap-2">
           <div className="space-y-1">
             <span className="text-xs font-semibold text-muted-foreground block">
               Class Average
@@ -86,10 +92,10 @@ export function SummaryCards({
               <BandBadge score={compositeScore} size="sm" />
             </div>
           </div>
-        </div>
+        </CardContent>
 
         {/* Single-line Pedagogical Focus Summary */}
-        <div className="pt-2.5 border-t border-border/60 text-xs text-muted-foreground leading-relaxed">
+        <CardFooter className="px-4 sm:px-5 [.border-t]:pt-3 border-t border-border/60 text-xs text-muted-foreground leading-relaxed">
           {scoredCount === 0 ? (
             <span>Upload and grade a worksheet to see class-wide focus areas.</span>
           ) : lowestCriterion ? (
@@ -111,8 +117,8 @@ export function SummaryCards({
           ) : (
             <span>All assessed criteria are currently on track.</span>
           )}
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
 
       {/* 5 Penmanship Criteria Strip */}
       <div className="xl:col-span-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -124,35 +130,41 @@ export function SummaryCards({
             lowestCriterion.score < 75;
 
           return (
-            <div
+            <Card
               key={card.key}
+              size="sm"
               className={cn(
-                "p-3.5 sm:p-4 rounded-xl border bg-card shadow-warm flex flex-col justify-between gap-2 transition-colors hover:border-brand-300/60 dark:hover:border-brand-800",
+                "py-4 shadow-warm justify-between gap-2 transition-colors hover:border-brand-300/60 dark:hover:border-brand-800",
                 isFocus
                   ? "border-band-1/40 dark:border-band-1/50"
                   : "border-border"
               )}
             >
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-xs font-semibold text-muted-foreground truncate">
-                  {card.title}
-                </span>
-                {isFocus && (
-                  <span className="text-[11px] font-semibold text-band-1-text dark:text-amber-300 shrink-0">
-                    Focus
+              <CardContent className="px-4 flex flex-col justify-between gap-2 h-full">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-xs font-semibold text-muted-foreground truncate">
+                    {card.title}
                   </span>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <span className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground tabular-nums block">
-                  {score !== null ? `${score.toFixed(1)}%` : "—"}
-                </span>
-                <div>
-                  <BandBadge score={score} size="sm" />
+                  {isFocus && (
+                    <Badge
+                      variant="outline"
+                      className="h-auto rounded-full px-1.5 py-0 text-[11px] font-semibold border-band-1/40 bg-band-1/10 text-band-1-text dark:text-amber-300 shrink-0"
+                    >
+                      Focus
+                    </Badge>
+                  )}
                 </div>
-              </div>
-            </div>
+
+                <div className="space-y-1.5">
+                  <span className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground tabular-nums block">
+                    {score !== null ? `${score.toFixed(1)}%` : "—"}
+                  </span>
+                  <div>
+                    <BandBadge score={score} size="sm" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           );
         })}
       </div>

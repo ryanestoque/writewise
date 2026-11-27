@@ -17,6 +17,7 @@ import {
 import { StudentDrillDownDrawer } from "@/components/dashboard/student-drill-down";
 import { SubmissionDetailDialog } from "@/components/submissions/submission-detail-dialog";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { getBandFromScore } from "@/lib/utils/scoring";
 import {
@@ -266,27 +267,27 @@ export default function DashboardPage() {
 
       {/* Error Alert */}
       {error && (
-        <div
-          role="alert"
-          className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-start gap-3"
-        >
-          <AlertCircle className="size-5 shrink-0 mt-0.5" aria-hidden="true" />
-          <div className="space-y-1">
-            <h4 className="font-semibold text-xs">Couldn&apos;t load class analytics</h4>
-            <p className="text-xs opacity-90 leading-relaxed">
+        <Alert variant="destructive">
+          <AlertCircle className="size-4" aria-hidden="true" />
+          <AlertTitle className="text-sm font-semibold">
+            Couldn&apos;t load class analytics
+          </AlertTitle>
+          <AlertDescription className="text-xs opacity-90 leading-relaxed flex flex-col items-start gap-2">
+            <span>
               We couldn&apos;t load your class scores right now. Check your internet connection and try again.
-            </p>
+            </span>
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={() => refetch()}
               disabled={isRefetching}
-              className="mt-2 min-h-[40px] sm:min-h-[32px] px-3 text-xs font-medium rounded-lg border-destructive/30 hover:bg-destructive/10 text-destructive cursor-pointer"
+              className="min-h-[40px] sm:min-h-[32px] px-3 text-xs font-medium rounded-lg border-destructive/30 hover:bg-destructive/10 text-destructive cursor-pointer"
             >
               {isRefetching ? "Retrying…" : "Try again"}
             </Button>
-          </div>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Section 1: Summary Cards Grid */}
