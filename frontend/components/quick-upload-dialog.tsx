@@ -19,6 +19,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Kbd } from "@/components/ui/kbd";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import { toast } from "sonner";
 import {
   Field,
@@ -727,11 +733,13 @@ function UploadFlow({
                   aria-current={isCurrent ? "step" : undefined}
                 >
                   {canJump && !isCurrent ? (
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setStep(s.step as Step)}
                       aria-label={`${s.label} — Step ${s.step}, completed`}
-                      className="group flex items-center gap-1.5 sm:gap-2 min-w-0 p-1 -m-1 rounded-lg transition-colors hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary text-left"
+                      className="group h-auto shrink min-w-0 justify-start gap-1.5 sm:gap-2 p-1 -m-1 hover:bg-muted/80 text-left font-normal"
                     >
                       <div
                         className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-all ${
@@ -745,7 +753,7 @@ function UploadFlow({
                       <span className="text-xs sm:text-sm truncate font-medium text-foreground group-hover:text-primary transition-colors">
                         {s.label}
                       </span>
-                    </button>
+                    </Button>
                   ) : (
                     <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                       <div
@@ -1015,20 +1023,18 @@ function UploadFlow({
                 )}
 
                 {isDuplicateSubmission && (
-                  <div
-                    role="alert"
-                    className="flex items-start gap-2.5 p-3 rounded-xl border border-warning/30 bg-warning/10 text-warning-foreground text-xs animate-in fade-in duration-150 motion-reduce:animate-none"
+                  <Alert
+                    variant="destructive"
+                    className="animate-in fade-in duration-150 motion-reduce:animate-none"
                   >
-                    <AlertCircleIcon className="size-4 text-warning shrink-0 mt-0.5" />
-                    <div className="space-y-0.5">
-                      <p className="font-semibold text-foreground text-xs sm:text-sm">
-                        Worksheet already uploaded this session
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        A submission for <strong className="text-foreground font-medium">{selectedStudent?.full_name ?? "this student"}</strong> was already recorded for this activity. Submitting again will add another submission attempt.
-                      </p>
-                    </div>
-                  </div>
+                    <AlertCircleIcon aria-hidden="true" />
+                    <AlertTitle className="text-xs sm:text-sm font-semibold">
+                      Worksheet already uploaded this session
+                    </AlertTitle>
+                    <AlertDescription className="text-xs leading-relaxed">
+                      A submission for <strong className="font-medium">{selectedStudent?.full_name ?? "this student"}</strong> was already recorded for this activity. Submitting again will add another submission attempt.
+                    </AlertDescription>
+                  </Alert>
                 )}
               </>
             )}
@@ -1072,14 +1078,16 @@ function UploadFlow({
                       </p>
                       <p className="text-muted-foreground leading-relaxed">{lastRetakeTip.tip}</p>
                     </div>
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon-xs"
                       onClick={() => setLastRetakeTip(null)}
-                      className="text-muted-foreground hover:text-foreground shrink-0 p-0.5 rounded cursor-pointer"
+                      className="relative after:absolute after:-inset-2 sm:after:hidden text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
                       aria-label="Dismiss tip"
                     >
                       <XIcon className="size-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 )}
 
@@ -1149,19 +1157,22 @@ function UploadFlow({
                     <div className="flex items-center justify-between w-full pt-3 px-1 gap-2">
                       {videoDevices.length > 1 ? (
                         <div className="flex items-center gap-1.5 min-w-0">
-                          <label htmlFor="camera-select" className="sr-only">Select camera input</label>
-                          <select
+                          <Label htmlFor="camera-select" className="sr-only">
+                            Select camera input
+                          </Label>
+                          <NativeSelect
                             id="camera-select"
+                            size="sm"
                             value={selectedDeviceId}
                             onChange={(e) => handleSwitchCamera(e.target.value)}
-                            className="text-base sm:text-xs bg-muted/80 text-foreground border border-border rounded-lg px-2 py-1 max-w-[150px] truncate cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+                            className="max-w-[150px]"
                           >
                             {videoDevices.map((dev, idx) => (
-                              <option key={dev.deviceId || idx} value={dev.deviceId}>
+                              <NativeSelectOption key={dev.deviceId || idx} value={dev.deviceId}>
                                 {dev.label || `Camera ${idx + 1}`}
-                              </option>
+                              </NativeSelectOption>
                             ))}
-                          </select>
+                          </NativeSelect>
                         </div>
                       ) : (
                         <span className="text-xs text-muted-foreground flex items-center gap-1.5 pl-1">
@@ -1326,10 +1337,11 @@ function UploadFlow({
 
                 {/* Streamlined Photo Quality Guide (Collapsible Accordion Below Dropzone) */}
                 <div className="rounded-xl bg-muted/30 overflow-hidden text-xs">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => setShowTips((prev) => !prev)}
-                    className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-muted/50 transition-colors text-left font-medium text-foreground cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="w-full h-auto justify-between rounded-none px-3.5 py-2.5 hover:bg-muted/50 text-left font-medium text-foreground cursor-pointer"
                     aria-expanded={showTips}
                     aria-controls={photoTipsId}
                   >
@@ -1345,7 +1357,7 @@ function UploadFlow({
                         }`}
                       />
                     </div>
-                  </button>
+                  </Button>
                   {showTips && (
                     <div id={photoTipsId} className="px-3.5 pb-3.5 pt-1.5 border-t border-border/40 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs animate-in fade-in-50 duration-150 motion-reduce:animate-none">
                       <div className="flex items-start gap-2.5 p-2 rounded-lg bg-background/60 dark:bg-muted/30">
@@ -1428,20 +1440,18 @@ function UploadFlow({
                 </div>
                 {/* Duplicate Submission Advisory on Step 3 */}
                 {isDuplicateSubmission && (
-                  <div
-                    role="alert"
-                    className="flex items-start gap-2.5 p-3 rounded-xl border border-warning/30 bg-warning/10 text-warning-foreground text-xs animate-in fade-in duration-150 motion-reduce:animate-none"
+                  <Alert
+                    variant="destructive"
+                    className="animate-in fade-in duration-150 motion-reduce:animate-none"
                   >
-                    <AlertCircleIcon className="size-4 text-warning shrink-0 mt-0.5" />
-                    <div className="space-y-0.5">
-                      <p className="font-semibold text-foreground text-xs sm:text-sm">
-                        Worksheet already uploaded this session
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        A submission for <strong className="text-foreground font-medium">{selectedStudent?.full_name ?? "this student"}</strong> was already uploaded for this activity. Submitting again will add another submission attempt.
-                      </p>
-                    </div>
-                  </div>
+                    <AlertCircleIcon aria-hidden="true" />
+                    <AlertTitle className="text-xs sm:text-sm font-semibold">
+                      Worksheet already uploaded this session
+                    </AlertTitle>
+                    <AlertDescription className="text-xs leading-relaxed">
+                      A submission for <strong className="font-medium">{selectedStudent?.full_name ?? "this student"}</strong> was already uploaded for this activity. Submitting again will add another submission attempt.
+                    </AlertDescription>
+                  </Alert>
                 )}
 
                 <div className="rounded-2xl border border-border bg-card p-4 space-y-3">

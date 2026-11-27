@@ -2,16 +2,21 @@
 
 import React, { useState } from "react";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  ChevronDownIcon,
-  ChevronsUpDownIcon,
-} from "lucide-react";
+import { ChevronsUpDownIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface RubricReferenceDialogProps {
@@ -366,34 +371,13 @@ export function RubricReferenceDialog({
 }: RubricReferenceDialogProps) {
   const isParent = variant === "parent";
 
-  const [expandedCriteria, setExpandedCriteria] = useState<Set<string>>(new Set());
-
-  const toggleCriterion = (id: string) => {
-    setExpandedCriteria((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  const [expandedCriteria, setExpandedCriteria] = useState<string[]>([]);
 
   const allExpanded =
-    criteria.length > 0 && criteria.every((c) => expandedCriteria.has(c.id));
+    criteria.length > 0 && criteria.every((c) => expandedCriteria.includes(c.id));
 
   const toggleAll = () => {
-    if (allExpanded) {
-      setExpandedCriteria((prev) => {
-        const next = new Set(prev);
-        criteria.forEach((c) => next.delete(c.id));
-        return next;
-      });
-    } else {
-      setExpandedCriteria((prev) => {
-        const next = new Set(prev);
-        criteria.forEach((c) => next.add(c.id));
-        return next;
-      });
-    }
+    setExpandedCriteria(allExpanded ? [] : criteria.map((c) => c.id));
   };
 
   return (
@@ -427,90 +411,78 @@ export function RubricReferenceDialog({
                   {isParent ? "Handwriting Skills" : "Diagnostic Criteria"}
                 </h3>
 
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="xs"
                   onClick={toggleAll}
                   aria-expanded={allExpanded}
-                  className="min-h-10 sm:min-h-0 py-2 sm:py-1 px-2.5 sm:px-1.5 -mr-1.5 text-xs text-primary hover:text-primary/80 font-medium inline-flex items-center gap-1.5 cursor-pointer rounded-md hover:bg-primary/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  className="h-11 sm:h-6 -mr-1.5 gap-1.5 px-2.5 sm:px-1.5 text-primary hover:bg-primary/5 hover:text-primary/80 aria-expanded:bg-transparent aria-expanded:text-primary cursor-pointer"
                 >
                   <ChevronsUpDownIcon className="size-3.5" aria-hidden="true" />
                   <span>{allExpanded ? "Collapse all" : "Expand all"}</span>
-                </button>
+                </Button>
               </div>
 
-              <div className="space-y-2">
+              <Accordion
+                multiple
+                value={expandedCriteria}
+                onValueChange={(val) =>
+                  setExpandedCriteria(
+                    Array.isArray(val) ? (val as string[]) : val ? [val as string] : []
+                  )
+                }
+                className="gap-2 rounded-none border-0 overflow-visible"
+              >
                 {criteria.map((item) => {
-                    const isExpanded = expandedCriteria.has(item.id);
+                  const isExpanded = expandedCriteria.includes(item.id);
 
-                    return (
-                      <div
-                        key={item.id}
-                        className={cn(
-                          "rounded-xl border transition-all duration-150 overflow-hidden",
-                          isExpanded
-                            ? "border-primary/30 bg-card shadow-xs"
-                            : "border-border/70 bg-card/60 hover:bg-card hover:border-border"
-                        )}
-                      >
-                        <h4 className="m-0 p-0 font-normal">
-                          <button
-                            id={`criterion-header-${item.id}`}
-                            type="button"
-                            onClick={() => toggleCriterion(item.id)}
-                            aria-expanded={isExpanded}
-                            aria-controls={isExpanded ? `criterion-panel-${item.id}` : undefined}
-                            className="w-full flex items-center justify-between p-3.5 text-left transition-colors gap-3 cursor-pointer select-none rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
-                          >
-                            <span className="flex items-center gap-2.5 min-w-0">
-                              <span className="block min-w-0">
-                                <span className="text-sm font-semibold text-foreground tracking-tight block">
-                                  {item.name}
-                                </span>
-                                <span className="block text-xs sm:text-sm text-muted-foreground line-clamp-1 mt-0.5">
-                                  {item.classroomStandard}
-                                </span>
-                              </span>
+                  return (
+                    <AccordionItem
+                      key={item.id}
+                      value={item.id}
+                      className={cn(
+                        "rounded-xl border transition-all duration-150 overflow-hidden",
+                        isExpanded
+                          ? "border-primary/30 bg-card data-open:bg-card shadow-xs"
+                          : "border-border/70 bg-card/60 hover:bg-card hover:border-border"
+                      )}
+                    >
+                      <AccordionTrigger className="items-center gap-3 p-3.5 text-left rounded-xl hover:no-underline cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset">
+                        <span className="flex items-center gap-2.5 min-w-0">
+                          <span className="block min-w-0">
+                            <span className="text-sm font-semibold text-foreground tracking-tight block">
+                              {item.name}
                             </span>
+                            <span className="block text-xs sm:text-sm font-normal text-muted-foreground line-clamp-1 mt-0.5">
+                              {item.classroomStandard}
+                            </span>
+                          </span>
+                        </span>
+                      </AccordionTrigger>
 
-                            <ChevronDownIcon
-                              className={cn(
-                                "size-4 text-muted-foreground shrink-0 transition-transform duration-200",
-                                isExpanded && "rotate-180 text-primary"
-                              )}
-                              aria-hidden="true"
-                            />
-                          </button>
-                        </h4>
+                      <AccordionContent className="pt-3.5 pb-4 border-t border-border/50 space-y-3 [&_p:not(:last-child)]:mb-0">
+                        <CriterionVisualGuide criterionId={item.id} isParent={isParent} />
 
-                        {isExpanded && (
-                          <div
-                            id={`criterion-panel-${item.id}`}
-                            role="region"
-                            aria-labelledby={`criterion-header-${item.id}`}
-                            className="px-3.5 sm:px-4 pb-4 pt-3.5 border-t border-border/50 space-y-3 bg-muted/10"
-                          >
-                            <CriterionVisualGuide criterionId={item.id} isParent={isParent} />
-
-                            <div className="text-sm text-muted-foreground leading-relaxed space-y-1.5 bg-muted/30 p-3 rounded-lg border border-border/40">
-                              <p>
-                                <span className="font-semibold text-foreground">
-                                  {isParent ? "What we check: " : "Technical: "}
-                                </span>
-                                {isParent ? item.parentDescription : item.description}
-                              </p>
-                              <p>
-                                <span className="font-semibold text-foreground">
-                                  {isParent ? "Common things to practice: " : "Detects: "}
-                                </span>
-                                {isParent ? item.parentFocus : item.diagnosticFocus}
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                        <div className="text-sm text-muted-foreground leading-relaxed space-y-1.5 bg-muted/30 p-3 rounded-lg border border-border/40">
+                          <p>
+                            <span className="font-semibold text-foreground">
+                              {isParent ? "What we check: " : "Technical: "}
+                            </span>
+                            {isParent ? item.parentDescription : item.description}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-foreground">
+                              {isParent ? "Common things to practice: " : "Detects: "}
+                            </span>
+                            {isParent ? item.parentFocus : item.diagnosticFocus}
+                          </p>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+              </Accordion>
             </section>
 
             {/* Section 2: Score Levels */}
@@ -530,14 +502,16 @@ export function RubricReferenceDialog({
                 className="grid gap-2.5 grid-cols-1 sm:grid-cols-2"
               >
                 {scoringBands.map((band) => (
-                    <div
-                      key={band.band}
-                      role="listitem"
-                      className={cn(
-                        "p-3.5 rounded-xl border transition-colors space-y-1.5",
-                        band.containerClass
-                      )}
-                    >
+                  <Card
+                    key={band.band}
+                    size="sm"
+                    role="listitem"
+                    className={cn(
+                      "py-3.5 shadow-none transition-colors",
+                      band.containerClass
+                    )}
+                  >
+                    <CardContent className="px-3.5 space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <span
@@ -555,9 +529,10 @@ export function RubricReferenceDialog({
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {isParent ? band.parentDesc : band.desc}
                       </p>
-                    </div>
-                  ))}
-                </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </section>
           </div>
         </div>

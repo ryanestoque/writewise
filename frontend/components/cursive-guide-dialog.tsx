@@ -8,9 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { SearchInput } from "@/components/ui/search-input";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
-  SearchIcon,
-  XCircleIcon,
   RotateCcwIcon,
   CheckCircle2Icon,
   AlertTriangleIcon,
@@ -224,25 +225,6 @@ export function CursiveGuideDialog({
     searchInputRef.current?.focus();
   };
 
-  function handleRadioGroupKeyDown<T extends string>(
-    e: React.KeyboardEvent<HTMLDivElement>,
-    options: readonly T[],
-    current: T,
-    onSelect: (value: T) => void
-  ) {
-    const idx = options.indexOf(current);
-    let next = -1;
-    if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (idx + 1) % options.length;
-    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = (idx - 1 + options.length) % options.length;
-    else if (e.key === "Home") next = 0;
-    else if (e.key === "End") next = options.length - 1;
-    if (next < 0) return;
-    e.preventDefault();
-    onSelect(options[next]);
-    const buttons = e.currentTarget.querySelectorAll<HTMLElement>('[role="radio"]');
-    buttons[next]?.focus();
-  }
-
   const handleGridKeyDown = (e: React.KeyboardEvent) => {
     if (!["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
     e.preventDefault();
@@ -308,45 +290,33 @@ export function CursiveGuideDialog({
             <span className="text-xs font-semibold text-foreground">
               Step-by-Step Formation
             </span>
-            <div
-              role="radiogroup"
+            <ToggleGroup
+              value={[activeStepTab]}
+              multiple={false}
+              spacing={1}
+              onValueChange={(vals) => {
+                if (vals.length > 0) {
+                  setActiveStepTab(vals[0] as "lower" | "upper");
+                }
+              }}
               aria-label="Formation step case"
-              onKeyDown={(e) =>
-                handleRadioGroupKeyDown(e, ["lower", "upper"] as const, activeStepTab, setActiveStepTab)
-              }
-              className="inline-flex items-center p-0.5 rounded-md border border-border/70 bg-background text-xs"
+              className="inline-flex items-center p-0.5 gap-0.5 rounded-md border border-border/70 bg-background text-xs"
             >
-              <button
-                type="button"
-                role="radio"
-                aria-checked={activeStepTab === "lower"}
-                tabIndex={activeStepTab === "lower" ? 0 : -1}
-                onClick={() => setActiveStepTab("lower")}
-                className={cn(
-                  "min-h-[40px] sm:min-h-[28px] px-2.5 py-1 inline-flex items-center justify-center rounded font-medium transition-all cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40",
-                  activeStepTab === "lower"
-                    ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
+              <ToggleGroupItem
+                value="lower"
+                size="sm"
+                className="min-h-[40px] sm:min-h-[28px] h-auto px-2.5 py-1 text-xs rounded font-medium text-muted-foreground hover:text-foreground hover:bg-transparent aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:bg-primary aria-pressed:hover:text-primary-foreground aria-pressed:font-semibold aria-pressed:shadow-2xs cursor-pointer touch-manipulation"
               >
                 Lower ({activeLetter.lower})
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={activeStepTab === "upper"}
-                tabIndex={activeStepTab === "upper" ? 0 : -1}
-                onClick={() => setActiveStepTab("upper")}
-                className={cn(
-                  "min-h-[40px] sm:min-h-[28px] px-2.5 py-1 inline-flex items-center justify-center rounded font-medium transition-all cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40",
-                  activeStepTab === "upper"
-                    ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="upper"
+                size="sm"
+                className="min-h-[40px] sm:min-h-[28px] h-auto px-2.5 py-1 text-xs rounded font-medium text-muted-foreground hover:text-foreground hover:bg-transparent aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:bg-primary aria-pressed:hover:text-primary-foreground aria-pressed:font-semibold aria-pressed:shadow-2xs cursor-pointer touch-manipulation"
               >
                 Upper ({activeLetter.upper})
-              </button>
-            </div>
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
 
           <ol className="space-y-1.5 text-xs text-muted-foreground pl-0 list-none">
@@ -420,16 +390,18 @@ export function CursiveGuideDialog({
             <div className="flex items-center justify-between gap-2 min-w-0 pr-14 sm:pr-8">
               {/* Back to Grid Button */}
               <div className="flex items-center gap-2 min-w-0">
-                <button
+                <Button
                   ref={backButtonRef}
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={handleBackToGrid}
-                  className="inline-flex items-center gap-1.5 h-10 px-2.5 -ml-1 text-xs font-semibold rounded-lg text-primary hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95"
+                  className="gap-1.5 h-10 px-2.5 -ml-1 text-xs font-semibold rounded-lg text-primary hover:text-primary hover:bg-primary/10 shrink-0 active:scale-95"
                   aria-label="Back to alphabet letters list"
                 >
                   <ArrowLeftIcon className="size-4 shrink-0" aria-hidden="true" />
                   <span>All Letters</span>
-                </button>
+                </Button>
                 <DialogTitle className="sr-only">
                   Letter {activeLetter?.id} Guide
                 </DialogTitle>
@@ -437,36 +409,40 @@ export function CursiveGuideDialog({
 
               {/* Prev / Next Stepper (Min 40px touch targets for mobile thumbs, clear of dialog Close X) */}
               <div className="flex items-center gap-1.5 shrink-0">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="icon"
                   onClick={handlePrevLetter}
                   disabled={!hasPrevLetter}
                   className={cn(
-                    "size-10 flex items-center justify-center rounded-xl border border-border/80 text-muted-foreground transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95",
+                    "size-10 rounded-xl border-border/80 text-muted-foreground active:scale-95",
                     hasPrevLetter
-                      ? "hover:text-foreground hover:bg-muted/70 bg-background shadow-2xs cursor-pointer"
-                      : "opacity-35 cursor-not-allowed bg-muted/20"
+                      ? "hover:text-foreground hover:bg-muted/70 bg-background shadow-2xs"
+                      : "opacity-35 bg-muted/20"
                   )}
                   aria-label="Previous letter"
                   title="Previous letter"
                 >
                   <ChevronLeftIcon className="size-4" aria-hidden="true" />
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="outline"
+                  size="icon"
                   onClick={handleNextLetter}
                   disabled={!hasNextLetter}
                   className={cn(
-                    "size-10 flex items-center justify-center rounded-xl border border-border/80 text-muted-foreground transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95",
+                    "size-10 rounded-xl border-border/80 text-muted-foreground active:scale-95",
                     hasNextLetter
-                      ? "hover:text-foreground hover:bg-muted/70 bg-background shadow-2xs cursor-pointer"
-                      : "opacity-35 cursor-not-allowed bg-muted/20"
+                      ? "hover:text-foreground hover:bg-muted/70 bg-background shadow-2xs"
+                      : "opacity-35 bg-muted/20"
                   )}
                   aria-label="Next letter"
                   title="Next letter"
                 >
                   <ChevronRightIcon className="size-4" aria-hidden="true" />
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
@@ -487,110 +463,64 @@ export function CursiveGuideDialog({
               {/* Top Bar: Search Input + Case Mode Selector */}
               <div className="flex items-center gap-2.5">
                 {/* Quick Search */}
-                <div role="search" aria-label="Search cursive letters" className="relative flex-1 min-w-0">
-                  <label htmlFor="cursive-search-input" className="sr-only">
-                    Filter cursive alphabet by letter or keyword
-                  </label>
-                  <SearchIcon
-                    className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/70 pointer-events-none"
-                    aria-hidden="true"
-                  />
-                  <input
+                <div role="search" aria-label="Search cursive letters" className="flex-1 min-w-0">
+                  <SearchInput
                     id="cursive-search-input"
                     ref={searchInputRef}
-                    type="search"
-                    placeholder={
-                      isMobile
-                        ? "Search letters (e.g., 'G', 'loop')..."
-                        : "Search letters (e.g., 'G', 'loop')... (Press '/')"
-                    }
+                    containerClassName="w-full sm:w-full"
+                    placeholder="Search letters (e.g., 'G', 'loop')..."
+                    aria-label="Filter cursive alphabet by letter or keyword"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onClear={handleClearSearch}
                     onKeyDown={(e) => {
                       if (e.key === "Escape" && searchQuery) {
-                        e.preventDefault();
                         e.stopPropagation();
-                        handleClearSearch();
                       }
                     }}
-                    className="w-full h-10 sm:h-9 pl-8 pr-8 text-base sm:text-xs rounded-lg border border-border/80 bg-background placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all [&::-webkit-search-cancel-button]:hidden"
+                    className="text-base sm:text-xs rounded-lg"
                   />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={handleClearSearch}
-                      className="absolute right-1 top-1/2 -translate-y-1/2 size-10 sm:size-7 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer rounded-md hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                      aria-label="Clear search"
-                    >
-                      <XCircleIcon className="size-3.5" aria-hidden="true" />
-                    </button>
-                  )}
                 </div>
 
                 {/* Case Mode Selector (Desktop) */}
-                <div
-                  role="radiogroup"
+                <ToggleGroup
+                  value={[caseFilter]}
+                  multiple={false}
+                  spacing={1}
+                  onValueChange={(vals) => {
+                    if (vals.length > 0) {
+                      setCaseFilter(vals[0] as "pairs" | "upper" | "lower");
+                    }
+                  }}
                   aria-label="Filter letter case"
-                  onKeyDown={(e) =>
-                    handleRadioGroupKeyDown(e, ["pairs", "upper", "lower"] as const, caseFilter, setCaseFilter)
-                  }
-                  className="hidden sm:inline-flex items-center p-0.5 rounded-lg border border-border/70 bg-muted/40 shrink-0"
+                  className="hidden sm:inline-flex items-center p-0.5 gap-0.5 rounded-lg border border-border/70 bg-muted/40 shrink-0"
                 >
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={caseFilter === "pairs"}
-                    tabIndex={caseFilter === "pairs" ? 0 : -1}
-                    onClick={() => setCaseFilter("pairs")}
-                    className={cn(
-                      "px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-                      caseFilter === "pairs"
-                        ? "bg-background text-foreground shadow-2xs font-semibold"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    Pairs (Aa)
-                  </button>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={caseFilter === "upper"}
-                    tabIndex={caseFilter === "upper" ? 0 : -1}
-                    onClick={() => setCaseFilter("upper")}
-                    className={cn(
-                      "px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-                      caseFilter === "upper"
-                        ? "bg-background text-foreground shadow-2xs font-semibold"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    Upper (A–Z)
-                  </button>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={caseFilter === "lower"}
-                    tabIndex={caseFilter === "lower" ? 0 : -1}
-                    onClick={() => setCaseFilter("lower")}
-                    className={cn(
-                      "px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-                      caseFilter === "lower"
-                        ? "bg-background text-foreground shadow-2xs font-semibold"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    Lower (a–z)
-                  </button>
-                </div>
+                  {[
+                    { value: "pairs", label: "Pairs (Aa)" },
+                    { value: "upper", label: "Upper (A–Z)" },
+                    { value: "lower", label: "Lower (a–z)" },
+                  ].map((opt) => (
+                    <ToggleGroupItem
+                      key={opt.value}
+                      value={opt.value}
+                      size="sm"
+                      className="h-auto px-2.5 py-1 text-xs font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-transparent aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:hover:bg-background aria-pressed:shadow-2xs aria-pressed:font-semibold cursor-pointer"
+                    >
+                      {opt.label}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
 
                 {/* Mobile Filters Toggle */}
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="icon"
                   onClick={() => setIsFiltersOpen(!isFiltersOpen)}
                   className={cn(
-                    "sm:hidden relative flex items-center justify-center size-10 rounded-lg border transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer",
+                    "sm:hidden relative size-10 rounded-lg shrink-0",
                     isFiltersOpen
-                      ? "bg-primary/10 border-primary/30 text-primary"
+                      ? "bg-primary/10 border-primary/30 text-primary hover:bg-primary/15 hover:text-primary aria-expanded:bg-primary/10 aria-expanded:text-primary"
                       : "border-border/80 bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   )}
                   aria-label={zoneFilter !== "all" ? `Toggle filters (${zoneFilter} active)` : "Toggle filters"}
@@ -603,7 +533,7 @@ export function CursiveGuideDialog({
                       aria-hidden="true"
                     />
                   )}
-                </button>
+                </Button>
               </div>
 
               {/* Active Filter Reminder Tag (Mobile collapsed state, with generous 40px touch dismissal hit area) */}
@@ -618,90 +548,64 @@ export function CursiveGuideDialog({
                         : zoneFilter === "descender"
                           ? "Descenders"
                           : "High Joiners"}
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setZoneFilter("all")}
-                      className="inline-flex items-center justify-center size-10 min-h-[40px] min-w-[40px] rounded-full text-primary hover:text-foreground hover:bg-primary/20 transition-colors cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                      className="size-10 min-h-[40px] min-w-[40px] rounded-full text-primary hover:text-foreground hover:bg-primary/20 touch-manipulation"
                       aria-label="Clear active filter"
                     >
                       <span className="text-sm font-bold leading-none" aria-hidden="true">×</span>
-                    </button>
+                    </Button>
                   </span>
                 </div>
               )}
 
               {/* Mobile-Only Case Selector (when filters expanded) */}
               {isFiltersOpen && (
-                <div
-                  role="radiogroup"
+                <ToggleGroup
+                  value={[caseFilter]}
+                  multiple={false}
+                  spacing={1}
+                  onValueChange={(vals) => {
+                    if (vals.length > 0) {
+                      setCaseFilter(vals[0] as "pairs" | "upper" | "lower");
+                    }
+                  }}
                   aria-label="Filter letter case"
-                  onKeyDown={(e) =>
-                    handleRadioGroupKeyDown(e, ["pairs", "upper", "lower"] as const, caseFilter, setCaseFilter)
-                  }
-                  className="sm:hidden flex items-center p-0.5 rounded-lg border border-border/70 bg-muted/40 shrink-0 self-start w-full animate-in fade-in slide-in-from-top-1"
+                  className="sm:hidden flex items-center p-0.5 gap-0.5 rounded-lg border border-border/70 bg-muted/40 shrink-0 self-start w-full animate-in fade-in slide-in-from-top-1"
                 >
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={caseFilter === "pairs"}
-                    tabIndex={caseFilter === "pairs" ? 0 : -1}
-                    onClick={() => setCaseFilter("pairs")}
-                    className={cn(
-                      "flex-1 px-2.5 py-2 min-h-10 text-xs font-medium rounded-md transition-all cursor-pointer text-center flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-                      caseFilter === "pairs"
-                        ? "bg-background text-foreground shadow-2xs font-semibold"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    Pairs (Aa)
-                  </button>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={caseFilter === "upper"}
-                    tabIndex={caseFilter === "upper" ? 0 : -1}
-                    onClick={() => setCaseFilter("upper")}
-                    className={cn(
-                      "flex-1 px-2.5 py-2 min-h-10 text-xs font-medium rounded-md transition-all cursor-pointer text-center flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-                      caseFilter === "upper"
-                        ? "bg-background text-foreground shadow-2xs font-semibold"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    Upper (A–Z)
-                  </button>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={caseFilter === "lower"}
-                    tabIndex={caseFilter === "lower" ? 0 : -1}
-                    onClick={() => setCaseFilter("lower")}
-                    className={cn(
-                      "flex-1 px-2.5 py-2 min-h-10 text-xs font-medium rounded-md transition-all cursor-pointer text-center flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-                      caseFilter === "lower"
-                        ? "bg-background text-foreground shadow-2xs font-semibold"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    Lower (a–z)
-                  </button>
-                </div>
+                  {[
+                    { value: "pairs", label: "Pairs (Aa)" },
+                    { value: "upper", label: "Upper (A–Z)" },
+                    { value: "lower", label: "Lower (a–z)" },
+                  ].map((opt) => (
+                    <ToggleGroupItem
+                      key={opt.value}
+                      value={opt.value}
+                      size="sm"
+                      className="flex-1 h-auto px-2.5 py-2 min-h-10 text-xs font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-transparent aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:hover:bg-background aria-pressed:shadow-2xs aria-pressed:font-semibold cursor-pointer"
+                    >
+                      {opt.label}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
               )}
 
               {/* Dedicated Zone / Category Filter Chips Row (Horizontal Scroll Rail on Mobile with 40px touch targets) */}
-              <div
-                role="radiogroup"
+              <ToggleGroup
+                value={[zoneFilter]}
+                multiple={false}
+                spacing={1}
+                onValueChange={(vals) => {
+                  if (vals.length > 0) {
+                    setZoneFilter(vals[0] as typeof zoneFilter);
+                  }
+                }}
                 aria-label="Filter by letter category"
-                onKeyDown={(e) =>
-                  handleRadioGroupKeyDown(
-                    e,
-                    ["all", "ascender", "midline", "descender", "highJoiner"] as const,
-                    zoneFilter,
-                    setZoneFilter
-                  )
-                }
                 className={cn(
-                  "flex items-center gap-1.5 text-xs pt-0.5 overflow-x-auto pb-1 sm:pb-0 sm:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+                  "flex w-full items-center gap-1.5 text-xs pt-0.5 overflow-x-auto pb-1 sm:pb-0 sm:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
                   !isFiltersOpen && "hidden sm:flex"
                 )}
               >
@@ -711,30 +615,18 @@ export function CursiveGuideDialog({
                   { id: "midline", label: "Midline", count: 14, description: "Short letters within midline zone" },
                   { id: "descender", label: "Descenders", count: 6, description: "Tail letters extending below baseline" },
                   { id: "highJoiner", label: "High Joiners", count: 4, description: "Letters that connect from midline (b, o, v, w)" },
-                ].map((chip) => {
-                  const isActive = zoneFilter === chip.id;
-                  return (
-                    <button
-                      key={chip.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={isActive}
-                      tabIndex={isActive ? 0 : -1}
-                      title={chip.description}
-                      onClick={() => setZoneFilter(chip.id as typeof zoneFilter)}
-                      className={cn(
-                        "px-3 py-2 sm:py-1 min-h-10 sm:min-h-8 rounded-full text-xs font-medium shrink-0 transition-all cursor-pointer border flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95",
-                        isActive
-                          ? "bg-primary text-primary-foreground border-primary shadow-2xs font-semibold"
-                          : "bg-background/80 text-muted-foreground border-border/70 hover:text-foreground hover:bg-muted/60"
-                      )}
-                    >
-                      {chip.label}
-                      <span className="ml-1 text-xs opacity-80 tabular-nums">({chip.count})</span>
-                    </button>
-                  );
-                })}
-              </div>
+                ].map((chip) => (
+                  <ToggleGroupItem
+                    key={chip.id}
+                    value={chip.id}
+                    title={chip.description}
+                    className="h-auto px-3 py-2 sm:py-1 min-h-10 sm:min-h-8 rounded-full text-xs font-medium shrink-0 transition-all cursor-pointer border border-border/70 bg-background/80 text-muted-foreground hover:text-foreground hover:bg-muted/60 aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:border-primary aria-pressed:hover:bg-primary aria-pressed:hover:text-primary-foreground aria-pressed:shadow-2xs aria-pressed:font-semibold active:scale-95"
+                  >
+                    {chip.label}
+                    <span className="ml-1 text-xs opacity-80 tabular-nums">({chip.count})</span>
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
             </div>
           )}
 
@@ -769,14 +661,16 @@ export function CursiveGuideDialog({
               {filteredLetters.length === 0 ? (
                 <div className="p-8 text-center rounded-xl border border-dashed border-border/80 bg-muted/20 space-y-3">
                   <p className="text-xs font-medium text-foreground">No letters match your search criteria</p>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={handleClearSearch}
-                    className="inline-flex items-center justify-center gap-1.5 h-10 sm:h-8 px-3.5 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/15 rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    className="gap-1.5 h-10 sm:h-8 px-3.5 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/15 hover:text-primary rounded-lg"
                   >
                     <RotateCcwIcon className="size-3.5" aria-hidden="true" />
                     Reset filters
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <div
@@ -797,8 +691,9 @@ export function CursiveGuideDialog({
 
                     return (
                       <div key={item.id} className="min-w-0 print:break-inside-avoid">
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
                           role="radio"
                           aria-checked={isSelected}
                           data-letter-id={item.id}
@@ -809,11 +704,11 @@ export function CursiveGuideDialog({
                           }}
                           aria-label={`Letter ${item.id}, ${item.zoneLabel} zone. Click to view formation guide.`}
                           className={cn(
-                            "w-full relative group flex flex-col text-left rounded-xl border transition-all duration-150 overflow-hidden cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                            "w-full relative group flex flex-col items-stretch justify-start p-0 text-left rounded-xl border transition-all duration-150 overflow-hidden cursor-pointer select-none whitespace-normal",
                             "h-20 sm:h-24 print:h-20 print:border-black print:bg-white",
                             isSelected
-                              ? "border-primary ring-2 ring-primary/40 bg-card shadow-sm dark:bg-card/90"
-                              : "border-border/70 bg-card/60 hover:bg-card hover:border-border hover:shadow-2xs dark:bg-card/40"
+                              ? "border-primary ring-2 ring-primary/40 bg-card hover:bg-card dark:bg-card/90 dark:hover:bg-card/90 shadow-sm"
+                              : "border-border/70 bg-card/60 hover:bg-card hover:border-border hover:shadow-2xs dark:bg-card/40 dark:hover:bg-card"
                           )}
                         >
                           <div className="relative z-10 flex items-center justify-between px-3 pt-2 pb-0.5 min-w-0">
@@ -832,7 +727,7 @@ export function CursiveGuideDialog({
                               {letterDisplayText}
                             </span>
                           </div>
-                        </button>
+                        </Button>
                       </div>
                     );
                   })}

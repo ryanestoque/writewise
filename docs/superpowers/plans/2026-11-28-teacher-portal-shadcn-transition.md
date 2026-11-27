@@ -55,7 +55,7 @@ Do **not** force these domain-specific components into generic shadcn primitives
 | **C — Gradebook & Review** | Task 9 | `GradebookCellButton` inline editor (`Input`, `Button`, `Badge`, `Spinner`) | Medium | [x] Done |
 | **C — Gradebook & Review** | Task 10 | `SubmissionDetailContent` hand-rolled tablist → `Tabs` & `RawMeasurementsTable` cards/badges | Medium | [x] Done |
 | **C — Gradebook & Review** | Task 11 | `ManualRubricEntryForm` & `WorksheetImageInspector` raw buttons/inputs | Medium | [x] Done |
-| **D — Global Modals** | Task 12 | `QuickUploadDialog`, `RubricReferenceDialog` (→ `Accordion` + `Card`) & `CursiveGuideDialog` (→ `SearchInput` + `ToggleGroup` + `Button`) | Medium | [ ] Pending |
+| **D — Global Modals** | Task 12 | `QuickUploadDialog`, `RubricReferenceDialog` (→ `Accordion` + `Card`) & `CursiveGuideDialog` (→ `SearchInput` + `ToggleGroup` + `Button`) | Medium | [x] Done |
 
 ---
 
@@ -625,8 +625,8 @@ git commit -m "refactor(ui): migrate global teacher dialogs to shadcn primitives
 
 ## Final Verification Checklist (Before Merging)
 
-- [ ] `cd frontend && npx eslint .` passes with 0 errors.
-- [ ] `cd frontend && npx tsc --noEmit` passes with 0 errors.
-- [ ] `node .agent/skills/impeccable/scripts/detect.mjs --json` reports no new regressions on touched files.
+- [x] `cd frontend && npx eslint .` passes with 0 errors.
+- [x] `cd frontend && npx tsc --noEmit` passes with 0 errors.
+- [x] `node .agent/skills/impeccable/scripts/detect.mjs --json` reports no new regressions on touched files.
 - [ ] Manual QA completed across `/dashboard`, `/roster`, `/activities`, `/activities/[id]`, `/gradebook`, and all global modals on desktop and mobile viewports (`<640px`).
-- [ ] Re-run raw-element audit across `frontend/app/(teacher)` and `frontend/components/` to confirm only explicitly out-of-scope custom elements remain.
+- [x] Re-run raw-element audit across `frontend/app/(teacher)` and `frontend/components/` to confirm only explicitly out-of-scope custom elements remain.
