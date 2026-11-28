@@ -475,10 +475,11 @@ export function ClassTable({
                   variant="outline"
                   size="sm"
                   render={
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
                       onClick={() => onSelectStudent(student)}
-                      className="min-h-11 w-full bg-card text-left hover:bg-muted/50 cursor-pointer"
+                      className="h-auto min-h-11 w-full justify-between bg-card text-left font-normal hover:bg-muted/50 cursor-pointer"
                     />
                   }
                 >

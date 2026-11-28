@@ -8,12 +8,14 @@ function Progress({
   className,
   trackClassName,
   indicatorClassName,
+  trackChildren,
   children,
   value,
   ...props
 }: ProgressPrimitive.Root.Props & {
   trackClassName?: string;
   indicatorClassName?: string;
+  trackChildren?: React.ReactNode;
 }) {
   return (
     <ProgressPrimitive.Root
@@ -24,13 +26,13 @@ function Progress({
     >
       {children}
       <ProgressTrack className={trackClassName}>
-        <ProgressIndicator className={indicatorClassName} />
+        {trackChildren ?? <ProgressIndicator className={indicatorClassName} />}
       </ProgressTrack>
     </ProgressPrimitive.Root>
   );
 }
 
-function ProgressTrack({ className, ...props }: ProgressPrimitive.Track.Props) {
+function ProgressTrack({ className, children, ...props }: ProgressPrimitive.Track.Props) {
   return (
     <ProgressPrimitive.Track
       className={cn(
@@ -39,7 +41,9 @@ function ProgressTrack({ className, ...props }: ProgressPrimitive.Track.Props) {
       )}
       data-slot="progress-track"
       {...props}
-    />
+    >
+      {children}
+    </ProgressPrimitive.Track>
   );
 }
 

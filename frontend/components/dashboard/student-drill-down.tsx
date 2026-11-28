@@ -829,11 +829,12 @@ function SubmissionHistoryItem({
       variant="outline"
       size="sm"
       render={
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={() => onOpenSubmission(item.submissionId, item.activityId)}
           aria-label={`View worksheet submission for "${item.targetText}", scored ${item.compositeScore != null ? `${item.compositeScore.toFixed(1)}%` : "—"}`}
-          className="group min-h-11 w-full bg-card text-left hover:bg-muted/50 cursor-pointer"
+          className="group h-auto min-h-11 w-full justify-between bg-card text-left font-normal hover:bg-muted/50 cursor-pointer"
         />
       }
     >
