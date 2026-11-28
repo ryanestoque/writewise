@@ -154,8 +154,8 @@ export const FloatingActionBar = memo(function FloatingActionBar({
               </Tooltip>
             </div>
           </aside>
-    </TooltipProvider>
-  )}
-</>
+        </TooltipProvider>
+      )}
+    </>
   );
 });

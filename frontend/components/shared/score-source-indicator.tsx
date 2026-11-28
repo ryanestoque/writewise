@@ -19,7 +19,6 @@ export function ScoreSourceIndicator({
   className,
 }: ScoreSourceIndicatorProps) {
   const isManual = source === "manual";
-  const isCalibrated = source === "calibrated";
   const label = compact
     ? isManual
       ? "Teacher rubric"
@@ -37,19 +36,14 @@ export function ScoreSourceIndicator({
               type="button"
               variant="link"
               size="xs"
-              title={
-                isManual
-                  ? "Teacher-Assessed Rubric: Evaluated directly by classroom teacher"
-                  : "Automated Diagnostic Engine: Evaluated automatically across 5 cursive standards"
-              }
               aria-label={
                 isManual
-                  ? "Teacher-assessed score: click for details"
-                  : "Auto-calibrated score: click for details"
+                  ? "Teacher-assessed score: focus or hover for details"
+                  : "Auto-calibrated score: focus or hover for details"
               }
               className={cn(
                 "h-auto p-0 text-xs font-medium",
-                isCalibrated ? "text-primary" : "text-band-2-text",
+                isManual ? "text-primary" : "text-band-2-text",
                 className
               )}
             />

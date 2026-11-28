@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 export interface FilterPillItem<T extends string = string> {
@@ -189,9 +189,11 @@ export function FilterPills<T extends string = string>({
       {/* Scrollable Container */}
       <ScrollArea
         ref={scrollAreaRef}
+        orientation="horizontal"
         style={maskStyle}
+        viewportClassName="overscroll-x-contain pb-2"
         className={cn(
-          "w-full min-w-0 touch-pan-x touch-pan-y overscroll-x-contain transition-[mask-image]",
+          "w-full min-w-0 touch-pan-x touch-pan-y transition-[mask-image]",
           className
         )}
       >
@@ -252,7 +254,6 @@ export function FilterPills<T extends string = string>({
             })}
           </ToggleGroup>
         </div>
-        <ScrollBar orientation="horizontal" className="h-1.5" />
       </ScrollArea>
 
       {/* Scroll Right Button */}
