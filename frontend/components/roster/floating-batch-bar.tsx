@@ -8,7 +8,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ArrowRightLeft, Download, Trash2 } from "lucide-react";
-import { FloatingActionBar } from "@/components/ui/floating-action-bar";
+import { FloatingActionBar } from "@/components/shared/floating-action-bar";
 
 interface FloatingBatchBarProps {
   /** Number of currently selected items */

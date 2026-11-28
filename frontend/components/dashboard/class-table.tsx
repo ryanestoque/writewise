@@ -31,8 +31,8 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SearchInput } from "@/components/ui/search-input";
-import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
+import { SearchInput } from "@/components/shared/search-input";
+import { FilterPills, type FilterPillItem } from "@/components/shared/filter-pills";
 import {
   Tooltip,
   TooltipTrigger,

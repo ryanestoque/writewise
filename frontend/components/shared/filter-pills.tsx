@@ -16,6 +16,8 @@ export interface FilterPillItem<T extends string = string> {
     "data-icon"?: string;
   }>;
   disabled?: boolean;
+  className?: string;
+  badgeClassName?: string;
 }
 
 export interface FilterPillsProps<T extends string = string> {
@@ -24,6 +26,7 @@ export interface FilterPillsProps<T extends string = string> {
   onChange: (value: T) => void;
   label?: string;
   ariaLabel?: string;
+  trailing?: React.ReactNode;
   className?: string;
   containerClassName?: string;
   pillClassName?: string;
@@ -35,6 +38,7 @@ export function FilterPills<T extends string = string>({
   onChange,
   label,
   ariaLabel,
+  trailing,
   className,
   containerClassName,
   pillClassName,
@@ -233,7 +237,8 @@ export function FilterPills<T extends string = string>({
                     "relative h-auto min-h-10 gap-1.5 rounded-lg border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all cursor-pointer touch-manipulation hover:bg-muted/60 hover:text-foreground sm:min-h-8",
                     "data-pressed:border-primary data-pressed:bg-primary data-pressed:font-semibold data-pressed:text-primary-foreground data-pressed:shadow-warm-sm data-pressed:hover:bg-primary data-pressed:hover:text-primary-foreground",
                     "after:absolute after:-inset-x-1 after:inset-y-0 after:content-['']",
-                    pillClassName
+                    pillClassName,
+                    item.className
                   )}
                 >
                   {Icon && <Icon data-icon="inline-start" aria-hidden="true" />}
@@ -244,7 +249,8 @@ export function FilterPills<T extends string = string>({
                       className={cn(
                         "h-auto rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums transition-colors",
                         isSelected &&
-                          "bg-primary-foreground/20 text-primary-foreground"
+                          "bg-primary-foreground/20 text-primary-foreground",
+                        item.badgeClassName
                       )}
                     >
                       {item.count}
@@ -254,6 +260,7 @@ export function FilterPills<T extends string = string>({
               );
             })}
           </ToggleGroup>
+          {trailing}
         </div>
       </ScrollArea>
 
