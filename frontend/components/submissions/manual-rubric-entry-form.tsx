@@ -841,7 +841,7 @@ export function ManualRubricEntryForm({
               `button[data-criterion="${RUBRIC_CRITERIA[nextIndex].key}"][data-band="${targetOption.band}"]`
             ) ??
             formRef.current?.querySelector<HTMLButtonElement>(
-              `fieldset[aria-labelledby="criterion-label-${RUBRIC_CRITERIA[nextIndex].key}"] button[aria-pressed="true"], fieldset[aria-labelledby="criterion-label-${RUBRIC_CRITERIA[nextIndex].key}"] button[data-criterion]`
+              `[data-slot="toggle-group"][aria-labelledby$="criterion-label-${RUBRIC_CRITERIA[nextIndex].key}"] button[aria-pressed="true"], [data-slot="toggle-group"][aria-labelledby$="criterion-label-${RUBRIC_CRITERIA[nextIndex].key}"] button[data-criterion]`
             );
           nextBtn?.focus();
         }, 0);

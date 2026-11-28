@@ -443,6 +443,7 @@ export function SubmissionDetailContent({
         target?.isContentEditable ||
         target?.getAttribute?.("role") === "radio" ||
         target?.closest?.('fieldset[role="radiogroup"]') ||
+        target?.closest?.('[data-slot="toggle-group"]') ||
         target?.getAttribute?.("role") === "tab" ||
         target?.closest?.('[role="tablist"]') ||
         target?.closest?.('[data-radix-focus-guard]') ||
