@@ -2,15 +2,19 @@
 
 import dynamic from "next/dynamic";
 import { Camera } from "lucide-react";
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { NotificationWorkLoadingSkeleton } from "@/components/parent/parent-portal-skeletons";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveModal,
+  ResponsiveModalBody,
+  ResponsiveModalContent,
+  ResponsiveModalDescription,
+  ResponsiveModalFooter,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+} from "@/components/shared/responsive-modal";
 import { useActivityNow } from "@/components/activities/activity-work-status";
 import { useParentNotificationWork } from "@/lib/hooks/use-parent-data";
 import {
@@ -91,79 +95,94 @@ export function NotificationWorkDestination({
     );
 
   return (
-    <Dialog
+    <ResponsiveModal
       open
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
+      <ResponsiveModalContent className="sm:max-w-lg">
+        <ResponsiveModalHeader>
+          <ResponsiveModalTitle>
             {work.status === "ready" ? work.activity.title : "Activity update"}
-          </DialogTitle>
-          <DialogDescription className="sr-only">
+          </ResponsiveModalTitle>
+          <ResponsiveModalDescription className="sr-only">
             {work.status === "ready"
               ? `Review activity instructions, due date, and submission status for ${childName}.`
               : "View your activity update."}
-          </DialogDescription>
-        </DialogHeader>
-        {work.status === "loading" ? (
-          <NotificationWorkLoadingSkeleton />
-        ) : work.status === "error" ? (
-          <div className="flex flex-wrap items-center justify-between gap-3 py-2" role="alert">
-            <p className="text-sm text-foreground">
-              Could not load this work. Please try again.
+          </ResponsiveModalDescription>
+        </ResponsiveModalHeader>
+
+        <ResponsiveModalBody className="flex flex-col gap-3 px-5 py-2 md:p-0">
+          {work.status === "loading" ? (
+            <NotificationWorkLoadingSkeleton />
+          ) : work.status === "error" ? (
+            <Alert variant="destructive">
+              <AlertTitle>Could not load this work</AlertTitle>
+              <AlertDescription>Please try again.</AlertDescription>
+              <AlertAction>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={work.retry}
+                  className="h-10 sm:h-8 touch-manipulation cursor-pointer"
+                >
+                  Try again
+                </Button>
+              </AlertAction>
+            </Alert>
+          ) : work.status === "unavailable" ? (
+            <p className="text-sm text-muted-foreground py-2">
+              This work is no longer available.
             </p>
-            <Button
-              variant="outline"
-              onClick={work.retry}
-              className="h-11 md:h-9 min-h-[44px] md:min-h-0 touch-manipulation cursor-pointer shrink-0"
-            >
-              Try again
-            </Button>
-          </div>
-        ) : work.status === "unavailable" ? (
-          <p className="text-sm text-muted-foreground py-2">
-            This work is no longer available.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            <div className="rounded-lg border border-border/80 bg-muted/30 p-3 space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">Worksheet prompt</p>
-              <p className="text-sm font-medium text-foreground">{work.activity.target_text}</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <Card size="sm" className="bg-muted/30 border-border/80 py-0 shadow-none">
+                <CardContent className="flex flex-col gap-1 p-3">
+                  <p className="text-xs font-medium text-muted-foreground">Worksheet prompt</p>
+                  <p className="text-sm font-medium text-foreground">{work.activity.target_text}</p>
+                </CardContent>
+              </Card>
+              {work.activity.instructions && (
+                <p className="text-muted-foreground text-sm whitespace-pre-wrap">
+                  {work.activity.instructions}
+                </p>
+              )}
+              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+                <dt className="text-muted-foreground">Status</dt>
+                <dd className="font-medium text-foreground">
+                  {work.work.work_status === "Draft" ? "Turned in" : work.work.work_status}
+                </dd>
+                <dt className="text-muted-foreground">Due</dt>
+                <dd className="font-sans tabular-nums text-foreground">
+                  {work.work.effective_due_at
+                    ? formatActivityDueAt(work.work.effective_due_at)
+                    : "No deadline"}
+                </dd>
+              </dl>
+              {work.work.return_note && (
+                <Alert role="status" className="border-band-2/40 bg-band-2/15 p-3">
+                  <AlertTitle className="text-xs font-semibold text-band-2-text">
+                    Teacher note
+                  </AlertTitle>
+                  <AlertDescription className="text-sm text-foreground/90 whitespace-pre-wrap">
+                    {work.work.return_note}
+                  </AlertDescription>
+                </Alert>
+              )}
+              {!work.assigned && (
+                <p className="text-muted-foreground text-xs">
+                  This activity is kept in your child&apos;s history.
+                </p>
+              )}
             </div>
-            {work.activity.instructions && (
-              <p className="text-muted-foreground text-sm whitespace-pre-wrap">
-                {work.activity.instructions}
-              </p>
-            )}
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-              <dt className="text-muted-foreground">Status</dt>
-              <dd className="font-medium text-foreground">
-                {work.work.work_status === "Draft" ? "Turned in" : work.work.work_status}
-              </dd>
-              <dt className="text-muted-foreground">Due</dt>
-              <dd className="font-sans tabular-nums text-foreground">
-                {work.work.effective_due_at
-                  ? formatActivityDueAt(work.work.effective_due_at)
-                  : "No deadline"}
-              </dd>
-            </dl>
-            {work.work.return_note && (
-              <p className="rounded-lg border border-border/80 bg-muted/30 p-3 text-sm whitespace-pre-wrap">
-                {work.work.return_note}
-              </p>
-            )}
-            {!work.assigned && (
-              <p className="text-muted-foreground text-xs">
-                This activity is kept in your child&apos;s history.
-              </p>
-            )}
-          </div>
-        )}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+          )}
+        </ResponsiveModalBody>
+
+        <ResponsiveModalFooter showCloseButton={false} className="pt-3.5 sm:pt-2 sm:justify-between">
           <Button
+            type="button"
             variant="outline"
             onClick={onClose}
             className="h-11 md:h-9 min-h-[44px] md:min-h-0 touch-manipulation cursor-pointer"
@@ -177,16 +196,16 @@ export function NotificationWorkDestination({
                 onClose();
                 onUploadActivity?.(work.activity.id);
               }}
-              className="h-11 md:h-9 min-h-[44px] md:min-h-0 gap-1.5 font-semibold touch-manipulation cursor-pointer"
+              className="h-11 md:h-9 min-h-[44px] md:min-h-0 font-semibold touch-manipulation cursor-pointer"
             >
-              <Camera className="size-4" aria-hidden="true" />
+              <Camera data-icon="inline-start" aria-hidden="true" />
               <span>
                 {work.work.work_status === "Returned" ? "Send new photo" : "Send photo"}
               </span>
             </Button>
           )}
-        </div>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveModalFooter>
+      </ResponsiveModalContent>
+    </ResponsiveModal>
   );
 }
